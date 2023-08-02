@@ -10,17 +10,17 @@ type FeatureItem = {
 
 const FeatureList: FeatureItem[] = [
   {
-    title: 'Easy to Use',
+    title: 'Rust-native',
     Svg: require('@site/static/img/undraw_docusaurus_mountain.svg').default,
     description: (
       <>
-        Docusaurus was designed from the ground up to be easily installed and
-        used to get your website up and running quickly.
+        BOP is written in Rust. Rust smart contracts are first-class citizens with support
+        for `rust-bitcoin`.
       </>
     ),
   },
   {
-    title: 'Focus on What Matters',
+    title: 'EVM and OP-Stack compatible',
     Svg: require('@site/static/img/undraw_docusaurus_tree.svg').default,
     description: (
       <>

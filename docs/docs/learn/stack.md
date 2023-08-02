@@ -1,40 +1,36 @@
 ---
-sidebar_position: 2
-sidebar_label: BOP
+sidebar_position: 3
 ---
+# The BOP Stack
 
-# Bitcoin Optimistic Rollup
-
-The key of BOP is to unify the compatibility of the EVM, OP Stack, and Bitcoin rust libraries. On a high level, this is achieved by separating out the six parts of the OP Stack and making adjustments where necessary while staying backward compatible.
-
-The Substrate framework allows great freedom to change the implementation of a chain. By using and modifying existing pallets, BOP achieves compatibility with EVM, OP Stack, and Bitcoin Rust libraries.
+As BOP is compatible with the OP Stack, it uses the [six OP Stack layers](https://stack.optimism.io/docs/understand/landscape/) and adds one layer for Bitcoin interoperability.
 
 BOP has the following stack:
 
 1. Governance: on-chain governance is used to upgrade and change the BOP stack.
-2. Settlement layer: the settlement layer is the L1 from which BOP receives its finality and consensus security. BOPa uses Ethereum for settlement with the long-term vision to also rollup against Bitcoin once ZKPVERIFY or similar OP codes are available.
+2. Settlement layer: the settlement layer is the L1 from which BOP receives its finality and consensus security. BOP uses Ethereum for settlement with the long-term vision to rollup against Bitcoin once suitable OP codes are available.
 3. Execution layer: The execution layer is implemented in substrate and exposes three domains for state transition functions:
     1. Core runtime: implemented in Rust and substrate as a governance-controlled upgradeable runtime that houses a BTC light client, DeFi functions, governance, and more.
-    2. Rust smart contracts: implemented in Rust and the ink eDSL as a way for Bitcoin smart contract engineers to leverage the power of `rust-bitcoin` and other libraries to implement immutable smart contracts interacting with the core runtime and the EVM.
+    2. Rust smart contracts: implemented in Rust and the ink! eDSL as a way for Bitcoin smart contract engineers to leverage the power of `rust-bitcoin` and other libraries to implement immutable smart contracts interacting with the core runtime and the EVM.
     3. EVM smart contracts: implemented through the frontier pallet, a runtime to execute EVM smart contracts that can interact with the core runtime and the Rust smart contracts to support EVM wallets and tooling (Safe, Fireblocks, Etherscan, …)
 4. Derivation layer:
 5. Sequencing layer:
-6. Data availability layer:
-7. Bridge layer:
-8. Multi-chain connector layer:
-9. DeFi layer:
-10. Programmability layer:
+6. Data availability layer: The data availability layer stores inputs to the execution layer. BOP is yet to decide which DA layer to use among several options iuncluding Bitcoin, Ethereum, or Celestia.
+7. Bitcoin layer: The Bitcoin layer provides access to BTC and other assets from the Bitcoin chain as well as data reads from Bitcoin via alight client. BOP uses a novel bridge design where minters create a synthetic Bitcoin on BOP that can be swapped cross-chain with BTC without trusted intermediaries.
 
 ## Data Availability
 
-OP Stack uses Ethereum as the DA layer.
+A Data Availability (DA) layer stores the raw inputs to the state transition function for the execution layer. The OP Stack supports [multiple DAs but sets Ethereum as the de-facto DA](https://stack.optimism.io/docs/understand/landscape/#data-availability). The OP Stack Superchain is considering a dedicated [Plasma DA chain](https://stack.optimism.io/docs/understand/explainer/#alt-data-availability-layer-plasma-protocol) to address rising cost and limited scalability of Ethereum as a DA layer.
 
-OPEN QUESTIONS
-- Should BOP use Ethereum as well to stay compatible with the OP Stack Superchain concept or is this not a requirement? If it's not a requirement, it would be ideal to use Bitcoin as a DA layer. However, this might also be costly and having a dedicated DA layer like Celestia could be a better option.
+BOP is considering the following DA layers:
+
+- Bitcoin: The Celestia team has a specification for [using Bitcoin as a DA layer](https://github.com/rollkit/bitcoin-da/blob/main/spec.md) that suits BOP needs and would ensure compatibility with Celestia deployments.
+- Ethereum: OP Stack uses Ethereum as a DA [with a dedicated specification](https://github.com/ethereum-optimism/optimism/blob/129032f15b76b0d2a940443a39433de931a97a44/specs/derivation.md#batch-submission-wire-format).
+- Others: There are other DA options like Celestia.
 
 ## Sequencing
 
-The OP Stack uses a single, centralized sequencer. 
+The OP Stack uses a single, centralized sequencer.
 
 OPEN QUESTIONS
 - Should we stick with a PoA-style sequencer as well? We could use AURA for that.
@@ -63,5 +59,4 @@ In the future, BOP can also expose capabilities to be ZK-compatible where the da
 ## Bridge
 
 ...add details about bridge here.
-
 
