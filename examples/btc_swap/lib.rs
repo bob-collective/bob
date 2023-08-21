@@ -1,142 +1,183 @@
 #![cfg_attr(not(feature = "std"), no_std, no_main)]
 
-#[ink::contract]
+use bitcoin::{
+    compat::ConvertFromInterlayBitcoin,
+    types::{FullTransactionProof, Transaction},
+};
+use brc21::{Brc21, Brc21Operation};
+use ink::{env::Environment, prelude::vec::Vec};
+    use ord::Inscription;
+
+mod brc21;
+mod ord;
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
+pub enum CustomEnvironment {}
+
+impl Environment for CustomEnvironment {
+    const MAX_EVENT_TOPICS: usize = <ink::env::DefaultEnvironment as Environment>::MAX_EVENT_TOPICS;
+
+    type AccountId = <ink::env::DefaultEnvironment as Environment>::AccountId;
+    type Balance = <ink::env::DefaultEnvironment as Environment>::Balance;
+    type Hash = <ink::env::DefaultEnvironment as Environment>::Hash;
+    type BlockNumber = <ink::env::DefaultEnvironment as Environment>::BlockNumber;
+    type Timestamp = <ink::env::DefaultEnvironment as Environment>::Timestamp;
+
+    type ChainExtension = DoSomethingInRuntime;
+}
+
+#[ink::chain_extension]
+pub trait DoSomethingInRuntime {
+    type ErrorCode = RuntimeErr;
+
+    /// Note: this gives the operation a corresponding `func_id` (1101 in this case),
+    /// and the chain-side chain extension will get the `func_id` to do further operations.
+    #[ink(extension = 1101)]
+    fn get_and_verify_bitcoin_payment(full_proof: FullTransactionProof, address: Vec<u8>) -> Option<u64>;
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq, scale::Encode, scale::Decode)]
+#[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
+pub enum RuntimeErr {
+    SomeFailure,
+}
+
+impl ink::env::chain_extension::FromStatusCode for RuntimeErr {
+    fn from_status_code(status_code: u32) -> Result<(), Self> {
+        match status_code {
+            0 => Ok(()),
+            1 => Err(Self::SomeFailure),
+            _ => panic!("encountered unknown status code"),
+        }
+    }
+}
+
+/// Creates a swap contract where Alice locks DOT with a price limit in a contract that
+/// Bob can acquire by sending BTC on the Bitcoin chain that Alice provided.
+///
+/// Note: this is a proof of concept protocol and should not be used in production due to flaws in
+/// the protocol and implementation.
+///
+/// ## Protocol
+///
+/// - Alice provides a BTC address, a price limit, and a DOT amount to lock in the contract.
+/// - Bob sends BTC to the address provided by Alice.
+/// - Anyone (Alice, Bob, or a third party) provides a BTC transaction proof to the contract.
+/// The proof triggers a DOT transfer from the contract to Bob.
+#[ink::contract(env = crate::CustomEnvironment)]
 mod btc_swap {
+    use super::*;
+    use bitcoin::Address as BtcAddress;
+    use ink::storage::Mapping;
+    use scale::Encode;
+
+    /// Defines the limit order contract
+    #[derive(scale::Decode, scale::Encode)]
+    #[cfg_attr(
+        feature = "std",
+        derive(Debug, PartialEq, Eq, scale_info::TypeInfo, ink::storage::traits::StorageLayout)
+    )]
+    pub struct LimitOrder {
+        /// The BTC address to send BTC to
+        /// can't store as `BtcAddress`, since `StorageLayout` is not implemented, and we can't derive it
+        /// due to the hashes inside it not implementing `StorageLayout`
+        btc_address: Vec<u8>,
+        /// The price limit for the BTC denoted in satoshis
+        min_satoshis: u64,
+        /// The DOT amount to lock in the contract denoted in planck
+        plancks: u128,
+    }
 
     /// Defines the storage of your contract.
     /// Add new fields to the below struct in order
     /// to add new static storage fields to your contract.
     #[ink(storage)]
     pub struct BtcSwap {
-        /// Stores a single `bool` value on the storage.
-        value: bool,
+        /// Stores a mapping from an account to a limit order.
+        orders: ink::storage::Mapping<AccountId, LimitOrder>,
     }
 
     impl BtcSwap {
-        /// Constructor that initializes the `bool` value to the given `init_value`.
         #[ink(constructor)]
-        pub fn new(init_value: bool) -> Self {
-            Self { value: init_value }
+        pub fn new() -> Self {
+            let orders = Mapping::default();
+            Self { orders }
         }
 
-        /// Constructor that initializes the `bool` value to `false`.
-        ///
-        /// Constructors can delegate to other constructors.
-        #[ink(constructor)]
-        pub fn default() -> Self {
-            Self::new(Default::default())
+        #[ink(message, payable)]
+        pub fn create_trade(&mut self, btc_address: BtcAddress, min_satoshis: u64) {
+            assert!(min_satoshis > 0);
+
+            let caller = self.env().caller();
+            let offer = self.env().transferred_value();
+
+            let order = LimitOrder {
+                btc_address: btc_address.encode(),
+                min_satoshis,
+                plancks: offer,
+            };
+            self.orders.insert(caller, &order);
         }
 
-        /// A message that can be called on instantiated contracts.
-        /// This one flips the value of the stored `bool` from `true`
-        /// to `false` and vice versa.
         #[ink(message)]
-        pub fn flip(&mut self) {
-            self.value = !self.value;
+        pub fn execute_trade(&mut self, counterparty: AccountId, full_proof: FullTransactionProof) {
+            let caller = self.env().caller();
+            let order = self.orders.get(&counterparty).unwrap();
+
+            let transferred_sats = self
+                .env()
+                .extension()
+                .get_and_verify_bitcoin_payment(full_proof, order.btc_address)
+                .unwrap()
+                .unwrap_or(0);
+
+            assert!(transferred_sats >= order.min_satoshis);
+
+            self.env().transfer(caller, order.plancks).unwrap();
         }
 
-        /// Simply returns the current value of our `bool`.
         #[ink(message)]
-        pub fn get(&self) -> bool {
-            self.value
-        }
-    }
+        pub fn brc21_test(&mut self, interlay_tx: Transaction) {
+            let tx = interlay_tx.to_rust_bitcoin().unwrap();
+            let has_taproot_outputs = tx.output.iter().any(|x| x.script_pubkey.is_v1_p2tr());
+            if has_taproot_outputs {
+                self.env().transfer(self.env().caller(), 1).unwrap();
+            } else {
+                self.env().transfer(self.env().caller(), 2).unwrap();
+            }
 
-    /// Unit tests in Rust are normally defined within such a `#[cfg(test)]`
-    /// module and test functions are marked with a `#[test]` attribute.
-    /// The below code is technically just normal Rust code.
-    #[cfg(test)]
-    mod tests {
-        /// Imports all the definitions from the outer scope so we can use them here.
-        use super::*;
+            let inscriptions = Inscription::from_transaction(&tx);
 
-        /// We test if the default constructor does its job.
-        #[ink::test]
-        fn default_works() {
-            let btc_swap = BtcSwap::default();
-            assert_eq!(btc_swap.get(), false);
-        }
+            let body_bytes = inscriptions[0].clone().inscription.into_body().unwrap();
+            let parsed: Brc21 = serde_json::from_slice(&body_bytes).unwrap();
 
-        /// We test a simple use case of our contract.
-        #[ink::test]
-        fn it_works() {
-            let mut btc_swap = BtcSwap::new(false);
-            assert_eq!(btc_swap.get(), false);
-            btc_swap.flip();
-            assert_eq!(btc_swap.get(), true);
-        }
-    }
-
-
-    /// This is how you'd write end-to-end (E2E) or integration tests for ink! contracts.
-    ///
-    /// When running these you need to make sure that you:
-    /// - Compile the tests with the `e2e-tests` feature flag enabled (`--features e2e-tests`)
-    /// - Are running a Substrate node which contains `pallet-contracts` in the background
-    #[cfg(all(test, feature = "e2e-tests"))]
-    mod e2e_tests {
-        /// Imports all the definitions from the outer scope so we can use them here.
-        use super::*;
-
-        /// A helper function used for calling contract messages.
-        use ink_e2e::build_message;
-
-        /// The End-to-End test `Result` type.
-        type E2EResult<T> = std::result::Result<T, Box<dyn std::error::Error>>;
-
-        /// We test that we can upload and instantiate the contract using its default constructor.
-        #[ink_e2e::test]
-        async fn default_works(mut client: ink_e2e::Client<C, E>) -> E2EResult<()> {
-            // Given
-            let constructor = BtcSwapRef::default();
-
-            // When
-            let contract_account_id = client
-                .instantiate("btc_swap", &ink_e2e::alice(), constructor, 0, None)
-                .await
-                .expect("instantiate failed")
-                .account_id;
-
-            // Then
-            let get = build_message::<BtcSwapRef>(contract_account_id.clone())
-                .call(|btc_swap| btc_swap.get());
-            let get_result = client.call_dry_run(&ink_e2e::alice(), &get, 0, None).await;
-            assert!(matches!(get_result.return_value(), false));
-
-            Ok(())
-        }
-
-        /// We test that we can read and write a value from the on-chain contract contract.
-        #[ink_e2e::test]
-        async fn it_works(mut client: ink_e2e::Client<C, E>) -> E2EResult<()> {
-            // Given
-            let constructor = BtcSwapRef::new(false);
-            let contract_account_id = client
-                .instantiate("btc_swap", &ink_e2e::bob(), constructor, 0, None)
-                .await
-                .expect("instantiate failed")
-                .account_id;
-
-            let get = build_message::<BtcSwapRef>(contract_account_id.clone())
-                .call(|btc_swap| btc_swap.get());
-            let get_result = client.call_dry_run(&ink_e2e::bob(), &get, 0, None).await;
-            assert!(matches!(get_result.return_value(), false));
-
-            // When
-            let flip = build_message::<BtcSwapRef>(contract_account_id.clone())
-                .call(|btc_swap| btc_swap.flip());
-            let _flip_result = client
-                .call(&ink_e2e::bob(), flip, 0, None)
-                .await
-                .expect("flip failed");
-
-            // Then
-            let get = build_message::<BtcSwapRef>(contract_account_id.clone())
-                .call(|btc_swap| btc_swap.get());
-            let get_result = client.call_dry_run(&ink_e2e::bob(), &get, 0, None).await;
-            assert!(matches!(get_result.return_value(), true));
-
-            Ok(())
+            match parsed {
+                Brc21 {
+                    op: Brc21Operation::Transfer { amt },
+                    tick,
+                } => {
+                    todo!()
+                }
+                Brc21 {
+                    op: Brc21Operation::Mint { amt, src },
+                    tick,
+                } => {
+                    todo!()
+                }
+                Brc21 {
+                    op: Brc21Operation::Redeem { acc, amt, dest },
+                    tick,
+                } => {
+                    todo!()
+                }
+                Brc21 {
+                    op: Brc21Operation::Deploy { id, max, src },
+                    tick,
+                } => {
+                    todo!()
+                }
+            }
         }
     }
 }
