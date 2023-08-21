@@ -8,7 +8,7 @@ sidebar_label: BOB Overview
 The key of BOB is to unify the compatibility of Bitcoin Rust libraries, the EVM, and a rollup. In essence:
 
 - Interacting with BOB is the same as interacting with any EVM chain with compatibility with the same wallets and tools.
-- Programming on BOB adds the option to write smart contracts with Rust and a WASM execution layer and with the EVM. Existing projects can deploy their existing Solidity/EVM code. New projects can be created in Rust, or off-chain protocols can be made available on-chain through Rust smart contracts.
+- Programming on BOB adds the option to write smart contracts with Rust and a WASM execution layer and with the EVM. Existing projects can deploy their existing Solidity/EVM code. New projects can be created in Rust or off-chain protocols can be made available on-chain through Rust smart contracts.
 - Access to Bitcoin the asset is provided via a bridge. Access to Bitcoin state is provided via a light client.
 - Access to Ethereum assets and state is provided by the rollup.
 

@@ -2,7 +2,13 @@
 sidebar_position: 1
 ---
 
-# Getting started
+# Getting Started
+
+:::note
+
+This is alpha-stage software. There will be dragons. If you are planning to play with this, feel free to reach out in the #builders-lounge on our Discord server for help, feedback, and to report bugs.
+
+:::
 
 ## Installation
 
@@ -24,27 +30,28 @@ To create a new project, run the following command:
 cargo contract new <project-name>
 ```
 
-Write the contract in the generated `lib.rs` file. 
-
-Build and run tests like above.
-
-## Deploy
-
-Deploy the contract to the local testnet:
+This will create a project with the following structure:
 
 ```bash
-cargo contract upload
+<project-name>
+├── lib.rs
+├── Cargo.toml
+├── .gitignore
 ```
 
-## Interact
+By default, the contract is initialized with the `flipper` example from the [ink! documentation](https://github.com/paritytech/ink-examples/tree/main/flipper).
 
-Interact with the contract on the local testnet:
+### Test
+
+Writing and executing unit tests is the easiest way to test your contracts. These do not require running a local node but rather uses `cargo` to perform the tests.
+
+Test the contract:
 
 ```bash
-cargo contract call
+cargo test
 ```
 
 ## Useful resources
 
 - ink! documentation: https://use.ink/getting-started/setup
-- hackathon template: https://github.com/scio-labs/inkathon
+- Hackathon template: https://github.com/scio-labs/inkathon
