@@ -23,3 +23,28 @@ To create a new project, run the following command:
 ```bash
 cargo contract new <project-name>
 ```
+
+Write the contract in the generated `lib.rs` file. 
+
+Build and run tests like above.
+
+## Deploy
+
+Deploy the contract to the local testnet:
+
+```bash
+cargo contract upload
+```
+
+## Interact
+
+Interact with the contract on the local testnet:
+
+```bash
+cargo contract call
+```
+
+## Useful resources
+
+- ink! documentation: https://use.ink/getting-started/setup
+- hackathon template: https://github.com/scio-labs/inkathon

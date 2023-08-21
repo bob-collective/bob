@@ -6,12 +6,12 @@ const darkCodeTheme = require('prism-react-renderer/themes/dracula');
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: 'BOP',
-  tagline: 'The Bitcoin Optimistic Protocol',
+  title: 'BOB',
+  tagline: 'Building on Bitcoin',
   favicon: 'img/favicon.ico',
 
   // Set the production url of your site here
-  url: 'https://bop.interlay.io',
+  url: 'https://bob.interlay.io',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
   baseUrl: '/',
@@ -37,7 +37,7 @@ const config = {
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl:
-            'https://github.com/interlay/bop/docs/',
+            'https://github.com/interlay/bob/tree/master/docs/',
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
@@ -50,20 +50,20 @@ const config = {
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
       // Replace with your project's social card
-      image: 'img/docusaurus-social-card.jpg',
+      image: 'img/bob-social-card.jpg',
       navbar: {
-        title: 'BOP',
+        title: 'BOB',
         logo: {
-          alt: 'Bop Logo',
+          alt: 'BOB Logo',
           src: 'img/logo.svg',
         },
         items: [
-          {
-            type: 'docSidebar',
-            sidebarId: 'rootSidebar',
-            position: 'left',
-            label: 'Quick Start',
-          },
+          // {
+          //   type: 'docSidebar',
+          //   sidebarId: 'rootSidebar',
+          //   position: 'left',
+          //   label: 'Quick Start',
+          // },
           {
             type: 'docSidebar',
             sidebarId: 'learnSidebar',
@@ -77,7 +77,7 @@ const config = {
             label: 'Build',
           },
           {
-            href: 'https://github.com/interlay/bop',
+            href: 'https://github.com/interlay/bob',
             label: 'GitHub',
             position: 'right',
           },
@@ -104,7 +104,7 @@ const config = {
             items: [
               {
                 label: 'GitHub',
-                href: 'https://github.com/interlay/bop',
+                href: 'https://github.com/interlay/bob',
               },
             ],
           },

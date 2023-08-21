@@ -1,3 +1,3 @@
-# BOP
+# BOB
 
-Bitcoin Optimistic Rollup (BOP) is a Substrate-based, Bitcoin-optimized, and OP Stack-compatible smart contract development kit.
+Building on Bitcoin (BOB) is a Substrate-based, Bitcoin-optimized, and EVM-compatible rollup and smart contract development kit.
