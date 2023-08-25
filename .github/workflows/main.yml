@@ -1,0 +1,23 @@
+name: Add issues and pull requests to backlog
+
+on:
+  issues:
+    types:
+      - opened
+      
+jobs:
+  add-to-project:
+    name: Add issue and pull request to project
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/add-to-project@v0.5.0
+        with:
+          project-url: https://github.com/orgs/interlay/projects/2
+          github-token: ${{ secrets.PROJECTS }}
+          label: roadmap
+          label-operator: NOT
+      - uses: actions/add-to-project@v0.5.0
+        with:
+          project-url: https://github.com/orgs/interlay/projects/1
+          github-token: ${{ secrets.PROJECTS }}
+          label: roadmap
