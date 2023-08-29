@@ -7,10 +7,12 @@ const darkCodeTheme = require('prism-react-renderer/themes/dracula');
 const GITHUB_LINK = 'https://github.com/bob-collective/bob';
 const LANDING_PAGE = 'https://gobob.xyz';
 const DOCS_PAGE = 'https://docs.gobob.xyz';
+const DISCORD = 'https://discordapp.com/invite/interlay';
+const TWITTER = 'https://twitter.com/build_on_bob';
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: 'BOB: Building on Bitcoin',
+  title: 'BOB - Build on Bitcoin',
   tagline: 'A layer 2 stack empowering everyone to build and innovate on Bitcoin.',
   favicon: 'img/favicon.ico',
   url: DOCS_PAGE,
@@ -90,11 +92,11 @@ const config = {
             items: [
               {
                 label: 'Discord',
-                href: 'https://discordapp.com/invite/interlay',
+                href: DISCORD,
               },
               {
                 label: 'Twitter',
-                href: 'https://twitter.com/interlayHQ',
+                href: TWITTER,
               },
             ],
           },
