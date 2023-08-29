@@ -4,6 +4,10 @@
 const lightCodeTheme = require('prism-react-renderer/themes/github');
 const darkCodeTheme = require('prism-react-renderer/themes/dracula');
 
+const GITHUB_LINK = 'https://github.com/bob-collective/bob';
+const LANDING_PAGE = 'https://bob.interlay.io';
+const DOCS_PAGE = 'https://build.interlay.io';
+
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   title: 'BOB',
@@ -11,13 +15,13 @@ const config = {
   favicon: 'img/favicon.ico',
 
   // Set the production url of your site here
-  url: 'https://bob.interlay.io',
+  url: DOCS_PAGE,
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
   baseUrl: '/',
 
   onBrokenLinks: 'throw',
-  onBrokenMarkdownLinks: 'warn',
+  onBrokenMarkdownLinks: 'throw',
 
   // Even if you don't use internalization, you can use this field to set useful
   // metadata like html lang. For example, if your site is Chinese, you may want
@@ -37,7 +41,7 @@ const config = {
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl:
-            'https://github.com/interlay/bob/tree/master/docs/',
+            `${GITHUB_LINK}/tree/master/docs/`,
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
@@ -49,21 +53,14 @@ const config = {
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
-      // Replace with your project's social card
-      image: 'img/bob-social-card.jpg',
+      image: 'img/bob-social-card.png',
       navbar: {
-        title: 'BOB',
         logo: {
           alt: 'BOB Logo',
           src: 'img/logo.svg',
+          srcDark: 'img/logo-light.svg',
         },
         items: [
-          // {
-          //   type: 'docSidebar',
-          //   sidebarId: 'rootSidebar',
-          //   position: 'left',
-          //   label: 'Quick Start',
-          // },
           {
             type: 'docSidebar',
             sidebarId: 'learnSidebar',
@@ -104,12 +101,12 @@ const config = {
             items: [
               {
                 label: 'GitHub',
-                href: 'https://github.com/interlay/bob',
+                href: GITHUB_LINK,
               },
             ],
           },
         ],
-        copyright: `Copyright © ${new Date().getFullYear()} Interlay. Built with Docusaurus.`,
+        copyright: `Copyright © ${new Date().getFullYear()} Distributed Crafts.`,
       },
       prism: {
         theme: lightCodeTheme,
@@ -117,8 +114,15 @@ const config = {
       },
       colorMode: {
         defaultMode: 'dark',
+        disableSwitch: true,
+        respectPrefersColorScheme: false,
       }
     }),
+
+  markdown: {
+    mermaid: true,
+  },
+  themes: ['@docusaurus/theme-mermaid'],
 };
 
 module.exports = config;
