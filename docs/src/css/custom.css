@@ -26,6 +26,7 @@
 
 /* For readability concerns, you should choose a lighter palette in dark mode. */
 [data-theme='dark'] {
+  --ifm-background-color: #000000 !important;
   --ifm-color-primary: #f58b00;
   --ifm-color-primary-dark: #dd7d00;
   --ifm-color-primary-darker: #d07600;
@@ -41,4 +42,8 @@
   --ifm-color-secondary-lighter: #aab2f3;
   --ifm-color-secondary-lightest: #d9ddfa;
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+}
+
+.footer {
+  background-color: #343536;
 }

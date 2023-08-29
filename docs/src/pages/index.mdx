@@ -1,11 +1,12 @@
 ---
 hide_table_of_contents: true
 ---
+import styles from './index.module.css';
 
-<div class="hero shadow--lw" style={{marginBottom: '2rem'}}>
-  <div class="container">
-    <h1 class="hero__title">Build on Bitcoin</h1>
-    <p class="hero__subtitle">The first Bitcoin rollup stack with Rust smart contracts, native Bitcoin libraries, and full EVM compatibility.</p>
+<div className={styles.hero}>
+  <div>
+    <h1 className="hero__title">Build on Bitcoin</h1>
+    <p className="hero__subtitle">A layer 2 stack empowering everyone to build and innovate on Bitcoin.</p>
   </div>
 </div>
 
@@ -17,39 +18,39 @@ BOB encompasses a set of core values enabling builders to innovate on Bitcoin.
 - **Real-world impact**: The innovations made should have an improvement for people by giving them access to Bitcoin values. BOB is an enabler to bring the BTC advantages to new and existing use cases.
 - **Freedom of choice**: Projects deployed on BOB should also be able to deploy on other rollups and chains. Builders should focus on unique values of the product without having to worry about platform risk of BOB.
 
-<div class="row" style={{marginTop: '2rem'}}>
-  <div class="col">
+<div className="row" style={{marginTop: '2rem'}}>
+  <div className="col">
     <h2>Get Started</h2>
   </div>
 </div>
-<div class="row">
-    <div class="col">
-        <div class="card">
-            <div class="card__header">
+<div className="row">
+    <div className="col">
+        <div className="card">
+            <div className="card__header">
               <h3>Learn</h3>
             </div>
-            <div class="card__body">
+            <div className="card__body">
               <p>
                 Understand why we are building BOB and how it works on a high level. Then, dive into the details of the stack and the technology.
               </p>
             </div>
-            <div class="card__footer">
-                <a href="/docs/learn/introduction/ideal-l2" class="button button--block button--secondary">Learn more</a>
+            <div className="card__footer">
+                <a href="/docs/learn/introduction/ideal-l2" className="button button--block button--secondary">Learn more</a>
             </div>
         </div>
     </div>
-    <div class="col">
-        <div class="card">
-            <div class="card__header">
+    <div className="col">
+        <div className="card">
+            <div className="card__header">
               <h3>Build</h3>
             </div>
-            <div class="card__body">
+            <div className="card__body">
               <p>
                 One of the best ways to understand technology is using it. Follow our tutorials to build your first BOB project.
               </p>
             </div>
-            <div class="card__footer">
-                <a href="/docs/build" class="button button--block button--primary">Start building</a>
+            <div className="card__footer">
+                <a href="/docs/build" className="button button--block button--primary">Start building</a>
             </div>
         </div>
     </div>

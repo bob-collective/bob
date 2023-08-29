@@ -123,7 +123,7 @@ const config = {
         id: 'sign_up',
         content:
           'Stay up to date with the BOB collective. <a target="_blank" rel="noopener noreferrer" href="https://interlay.typeform.com/to/qIBFgIZJ">Sign up</a>.',
-        backgroundColor: '#091E42',
+        backgroundColor: '#f58b00',
         textColor: '#fff',
         isCloseable: true,
       },
