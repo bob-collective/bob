@@ -5,20 +5,19 @@ const lightCodeTheme = require('prism-react-renderer/themes/github');
 const darkCodeTheme = require('prism-react-renderer/themes/dracula');
 
 const GITHUB_LINK = 'https://github.com/bob-collective/bob';
-const LANDING_PAGE = 'https://bob.interlay.io';
-const DOCS_PAGE = 'https://build.interlay.io';
+const LANDING_PAGE = 'https://gobob.xyz';
+const DOCS_PAGE = 'https://docs.gobob.xyz';
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   title: 'BOB: Building on Bitcoin',
   tagline: 'The first Bitcoin rollup stack with Rust smart contracts, native Bitcoin libraries, and full EVM compatibility.',
   favicon: 'img/favicon.ico',
-
-  // Set the production url of your site here
   url: DOCS_PAGE,
-  // Set the /<baseUrl>/ pathname under which your site is served
-  // For GitHub pages deployment, it is often '/<projectName>/'
   baseUrl: '/',
+
+  organizationName: 'bob-collective',
+  projectName: 'bob',
 
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'throw',
@@ -54,7 +53,10 @@ const config = {
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
       image: 'img/bob-social-card.png',
+      metadata: [
+        { name: 'keywords', content:'bitcoin, layer 2, scaling, rollup, rust, smart contracts, evm, solidity, collective, open source, blockchain'},],
       navbar: {
+        title: '',
         logo: {
           alt: 'BOB Logo',
           src: 'img/logo.svg',
