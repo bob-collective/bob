@@ -10,8 +10,8 @@ const DOCS_PAGE = 'https://build.interlay.io';
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: 'BOB',
-  tagline: 'Building on Bitcoin',
+  title: 'BOB: Building on Bitcoin',
+  tagline: 'The first Bitcoin rollup stack with Rust smart contracts, native Bitcoin libraries, and full EVM compatibility.',
   favicon: 'img/favicon.ico',
 
   // Set the production url of your site here
@@ -74,7 +74,7 @@ const config = {
             label: 'Build',
           },
           {
-            href: 'https://github.com/interlay/bob',
+            href: GITHUB_LINK,
             label: 'GitHub',
             position: 'right',
           },
@@ -106,7 +106,7 @@ const config = {
             ],
           },
         ],
-        copyright: `Copyright © ${new Date().getFullYear()} Distributed Crafts.`,
+        copyright: `Build with ❤️ by the BOB Collective. ${new Date().getFullYear()}.`,
       },
       prism: {
         theme: lightCodeTheme,
@@ -116,7 +116,15 @@ const config = {
         defaultMode: 'dark',
         disableSwitch: true,
         respectPrefersColorScheme: false,
-      }
+      },
+      announcementBar: {
+        id: 'sign_up',
+        content:
+          'Stay up to date with the BOB collective. <a target="_blank" rel="noopener noreferrer" href="https://interlay.typeform.com/to/qIBFgIZJ">Sign up</a>.',
+        backgroundColor: '#091E42',
+        textColor: '#fff',
+        isCloseable: true,
+      },
     }),
 
   markdown: {

@@ -12,7 +12,7 @@ Bitcoin forms a defensive layer for the entire web3 space, manifesting its core 
 - **Decentralization**: Bitcoin operates without a central governing body. It is maintained by a distributed network of nodes, ensuring open participation and resistance to censorship and external authoritative interference.
 - **Portability**: Bitcoin can be seamlessly transferred to any recipient globally, available 24/7.
 
-New experiments relying on these values can flourish and trade some of these values to favor innovation and novel use cases. In turn. successful experiments can be adopted by Bitcoin itself, further strengthening the Bitcoin ecosystem. By default, creation should not weaken Bitcoin's core values but expand them within a dedicated ecosystem.
+New experiments relying on these values can flourish and trade some of these values to favor innovation and novel use cases. In turn, successful experiments can be adopted by Bitcoin itself, further strengthening the Bitcoin ecosystem. By default, creation should not weaken Bitcoin's core values but expand them within a dedicated ecosystem.
 
 ## Scaling, User Experience, and Privacy
 

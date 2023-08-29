@@ -1,3 +1,8 @@
+---
+sidebar_position: 3
+sidebar_label: Build with BOB
+---
+
 # Use Case Ideas
 
 - Decentralized Bitcoin interest (convert staking rewards of other tokens to Bitcoin)
