@@ -11,7 +11,7 @@ const DOCS_PAGE = 'https://docs.gobob.xyz';
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   title: 'BOB: Building on Bitcoin',
-  tagline: 'The first Bitcoin rollup stack with Rust smart contracts, native Bitcoin libraries, and full EVM compatibility.',
+  tagline: 'A layer 2 stack empowering everyone to build and innovate on Bitcoin.',
   favicon: 'img/favicon.ico',
   url: DOCS_PAGE,
   baseUrl: '/',
