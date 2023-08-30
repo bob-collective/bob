@@ -19,7 +19,7 @@ BOB positions itself as the builder stack for experimentation, real-world impact
 BOB is three things:
 
 - A builder platform that allows anyone to create novel applications:
-  - BOB supports Rust smart contracts. Many Bitcoin innovation (ord, LN, nostr, BDK) happens in Rust, a mature and well-designed language. This allows innovation for new use cases without having to rewrite logic.
+  - BOB supports Rust smart contracts. Many Bitcoin innovations (ord, LN, nostr, BDK) happen in Rust, a mature and well-designed language. This allows innovation for new use cases without having to rewrite logic.
   - BOB is EVM-compatible. Novel applications and mature tooling already exist on EVM chains. Innovators can build on top of these applications without having to rewrite existing logic in other programming languages.
 - A novel BTC bridge that allows users and builders access to BTC and Bitcoin data (BRC20s, ordinals, …).
 - A rollup that allows users and builders access to ETH, ERC20s, and Ethereum data (NFTs, ENS, …).
