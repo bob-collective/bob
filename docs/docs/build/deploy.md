@@ -12,7 +12,7 @@ Inside the directory of your projects, build the contract:
 cargo contract build --release
 ```
 
-Check out the [ink documentation](https://use.ink/getting-started/building-your-contract) for detailed information on the build process and the build artifacts.
+Check out the [ink! documentation](https://use.ink/getting-started/building-your-contract) for detailed information on the build process and the build artifacts.
 
 ## Deploy the contract
 
@@ -36,7 +36,7 @@ cargo contract upload --suri //Alice
 cargo contract instantiate --suri //Alice --args <your-args>
 ```
 
-Check out the [ink tutorial](https://use.ink/getting-started/deploy-your-contract) for more details.
+Check out the [ink! tutorial](https://use.ink/getting-started/deploy-your-contract) for more details.
 
 ### Success
 
@@ -66,4 +66,3 @@ Interact with the contract on the local testnet:
 ```bash
 cargo contract call --contract <address> --message <function_name> --suri //Alice
 ```
-
