@@ -4,7 +4,7 @@ BOB is a Bitcoin-augmented rollup bringing experimentation and freedom of choice
 
 ## Learn more
 
-- [Website](https://bob.interlay.io)
+- [Website](https://www.gobob.xyz/)
 - [Docs](https://docs.gobob.xyz/)
 
 ## Contribution
