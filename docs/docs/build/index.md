@@ -43,7 +43,7 @@ By default, the contract is initialized with the `flipper` example from the [ink
 
 ### Test
 
-Writing and executing unit tests is the easiest way to test your contracts. These do not require running a local node but rather uses `cargo` to perform the tests.
+Writing and executing unit tests is the easiest way to test your contracts. These do not require running a local node but rather use `cargo` to perform the tests.
 
 Test the contract:
 

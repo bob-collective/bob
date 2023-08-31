@@ -8,10 +8,9 @@ sidebar_position: 3
 
 :::info
 
-The following steps require to manually compile the blockchain node and the client submitting the BTC headers. This is a temporary solution until we have released binaries. Compile times will take significantly longer than the previous steps.
+The following steps require developers to manually compile the blockchain node and the client submitting the BTC headers. This is a temporary solution until we have released binaries. Compile times will take significantly longer than the previous steps.
 
 :::
-
 
 We are going to set up three components to have a complete environment:
 

@@ -1,6 +1,6 @@
 # Contribute to BOB
 
-We are just getting started with BOB and there's plenty new things to be built, researched, and experimented with. The BOB collective is strengtened by each contributor.
+We are just getting started with BOB and there are plenty of new things to be built, researched, and experimented with. The BOB collective is strengthened by each contributor.
 
 ## How to Contribute
 

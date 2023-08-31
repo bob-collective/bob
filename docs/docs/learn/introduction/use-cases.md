@@ -13,7 +13,7 @@ sidebar_label: Build with BOB
   - Bridging assets to Bitcoin as BRC20s (BRC21)
   - Bridging BRC20 from Bitcoin to other ecosystems (BRC42)
 - Ordinals exchange
-- AI and Bitcoin integrations
+- AI & Bitcoin integrations
 - ZK Rust smart contracts
 - BTC DEXes, lending & derivatives
 - BTC-backed stablecoins

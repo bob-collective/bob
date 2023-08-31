@@ -1,51 +1,51 @@
 // @ts-check
 // Note: type annotations allow type checking and IDEs autocompletion
 
-const lightCodeTheme = require('prism-react-renderer/themes/github');
-const darkCodeTheme = require('prism-react-renderer/themes/dracula');
+const lightCodeTheme = require("prism-react-renderer/themes/github");
+const darkCodeTheme = require("prism-react-renderer/themes/dracula");
 
-const GITHUB_LINK = 'https://github.com/bob-collective/bob';
-const LANDING_PAGE = 'https://gobob.xyz';
-const DOCS_PAGE = 'https://docs.gobob.xyz';
-const DISCORD = 'https://discordapp.com/invite/interlay';
-const TWITTER = 'https://twitter.com/build_on_bob';
+const GITHUB_LINK = "https://github.com/bob-collective/bob";
+const LANDING_PAGE = "https://gobob.xyz";
+const DOCS_PAGE = "https://docs.gobob.xyz";
+const DISCORD = "https://discordapp.com/invite/interlay";
+const TWITTER = "https://twitter.com/build_on_bob";
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: 'BOB - Build on Bitcoin',
-  tagline: 'A layer 2 stack empowering everyone to build and innovate on Bitcoin.',
-  favicon: 'img/favicon.ico',
+  title: "BOB - Build on Bitcoin",
+  tagline:
+    "A layer 2 stack empowering everyone to build and innovate on Bitcoin.",
+  favicon: "img/favicon.ico",
   url: DOCS_PAGE,
-  baseUrl: '/',
+  baseUrl: "/",
 
-  organizationName: 'bob-collective',
-  projectName: 'bob',
+  organizationName: "bob-collective",
+  projectName: "bob",
 
-  onBrokenLinks: 'throw',
-  onBrokenMarkdownLinks: 'throw',
+  onBrokenLinks: "throw",
+  onBrokenMarkdownLinks: "throw",
 
   // Even if you don't use internalization, you can use this field to set useful
   // metadata like html lang. For example, if your site is Chinese, you may want
   // to replace "en" with "zh-Hans".
   i18n: {
-    defaultLocale: 'en',
-    locales: ['en'],
+    defaultLocale: "en",
+    locales: ["en"],
   },
 
   presets: [
     [
-      'classic',
+      "classic",
       /** @type {import('@docusaurus/preset-classic').Options} */
       ({
         docs: {
-          sidebarPath: require.resolve('./sidebars.js'),
+          sidebarPath: require.resolve("./sidebars.js"),
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
-          editUrl:
-            `${GITHUB_LINK}/tree/master/docs/`,
+          editUrl: `${GITHUB_LINK}/tree/master/docs/`,
         },
         theme: {
-          customCss: require.resolve('./src/css/custom.css'),
+          customCss: require.resolve("./src/css/custom.css"),
         },
       }),
     ],
@@ -54,79 +54,84 @@ const config = {
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
-      image: 'img/bob-social-card.png',
+      image: "img/bob-social-card.png",
       metadata: [
-        { name: 'keywords', content:'bitcoin, layer 2, scaling, rollup, rust, smart contracts, evm, solidity, collective, open source, blockchain'},],
+        {
+          name: "keywords",
+          content:
+            "bitcoin, layer 2, scaling, rollup, rust, smart contracts, evm, solidity, collective, open source, blockchain",
+        },
+      ],
       navbar: {
-        title: '',
+        title: "",
         logo: {
-          alt: 'BOB Logo',
-          src: 'img/logo.svg',
-          srcDark: 'img/logo-light.svg',
+          alt: "BOB Logo",
+          src: "img/logo.svg",
+          srcDark: "img/logo-light.svg",
         },
         items: [
           {
-            type: 'docSidebar',
-            sidebarId: 'learnSidebar',
-            position: 'left',
-            label: 'Learn',
+            type: "docSidebar",
+            sidebarId: "learnSidebar",
+            position: "left",
+            label: "Learn",
           },
           {
-            type: 'docSidebar',
-            sidebarId: 'buildSidebar',
-            position: 'left',
-            label: 'Build',
+            type: "docSidebar",
+            sidebarId: "buildSidebar",
+            position: "left",
+            label: "Build",
           },
           {
             href: GITHUB_LINK,
-            label: 'GitHub',
-            position: 'right',
+            label: "GitHub",
+            position: "right",
           },
         ],
       },
       footer: {
-        style: 'dark',
+        style: "dark",
         links: [
           {
-            title: 'Community',
+            title: "Community",
             items: [
               {
-                label: 'Discord',
+                label: "Discord",
                 href: DISCORD,
               },
               {
-                label: 'Twitter',
+                label: "Twitter",
                 href: TWITTER,
               },
             ],
           },
           {
-            title: 'More',
+            title: "More",
             items: [
               {
-                label: 'GitHub',
+                label: "GitHub",
                 href: GITHUB_LINK,
               },
             ],
           },
         ],
-        copyright: `Build with ❤️ by the BOB Collective. ${new Date().getFullYear()}.`,
+        copyright: `Built with ❤️ by the BOB Collective. ${new Date().getFullYear()}.`,
       },
       prism: {
         theme: lightCodeTheme,
         darkTheme: darkCodeTheme,
       },
       colorMode: {
-        defaultMode: 'dark',
+        defaultMode: "dark",
         disableSwitch: true,
         respectPrefersColorScheme: false,
       },
       announcementBar: {
-        id: 'sign_up',
+        id: "sign_up",
         content:
           'Stay up to date with the BOB collective. <a target="_blank" rel="noopener noreferrer" href="https://interlay.typeform.com/to/qIBFgIZJ">Sign up</a>.',
-        backgroundColor: '#f58b00',
-        textColor: '#fff',
+        backgroundColor: "#f58b00",
+        textColor: "#fff",
         isCloseable: true,
       },
     }),
@@ -134,7 +139,7 @@ const config = {
   markdown: {
     mermaid: true,
   },
-  themes: ['@docusaurus/theme-mermaid'],
+  themes: ["@docusaurus/theme-mermaid"],
 };
 
 module.exports = config;
