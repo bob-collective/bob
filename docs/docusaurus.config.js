@@ -33,6 +33,25 @@ const config = {
     locales: ["en"],
   },
 
+  plugins: [
+    () => ({
+      name: "inject-tag",
+      injectHtmlTags() {
+        return {
+          headTags: [
+            {
+              tagName: "script",
+              attributes: {
+                href: "https://cdn.usefathom.com/script.js",
+                dataSite: "NBNJSTNS",
+                defer: true,
+              },
+            },
+          ],
+        };
+      },
+    }),
+  ],
   presets: [
     [
       "classic",
