@@ -6,13 +6,13 @@ import {BobWrappedBtc} from "./wrapped.sol";
 contract Bridge {
     uint256 public number;
     uint256 public collateralThreshold;
-    uint256 nextRedeemId;
-    mapping(uint256 => RedeemRequest) public redeemRequests; // cant have struct as key, nor tupple
+    uint256 nextOrderId;
+    mapping(uint256 => Order) public orders; // cant have struct as key, nor tupple
     mapping(address => uint256) public suppliedCollateral;
     uint256 totalCollateral;
     BobWrappedBtc wrapped = new BobWrappedBtc();
 
-    struct RedeemRequest {
+    struct Order {
         bool open; // actually redundant now that we have accepterAddress
         uint256 amountZbtc;
         uint256 amountBtc;
@@ -33,7 +33,7 @@ contract Bridge {
     }
 
     /// lock COL in exchange for zBTC and cCOL
-    function mintZbtc() public payable {
+    function mint() public payable {
         uint256 collateral = msg.value; // this is the amount of eth sent to the contract
         uint256 mintedAmount = colToBtc(collateral) / collateralThreshold;
         wrapped.sudoMint(msg.sender, mintedAmount);
@@ -43,7 +43,7 @@ contract Bridge {
     }
 
     /// request zBTC to be redeemed for given amount of BTC.
-    function requestRedeem(
+    function requestSwap(
         uint256 amountZbtc,
         uint256 amountBtc,
         BitcoinAddress calldata bitcoinAddress
@@ -52,8 +52,8 @@ contract Bridge {
         wrapped.sudoTransferFrom(msg.sender, address(this), amountZbtc);
         require(amountZbtc != 0);
 
-        uint256 id = nextRedeemId++;
-        redeemRequests[id] = RedeemRequest({
+        uint256 id = nextOrderId++;
+        orders[id] = Order({
             open: true,
             amountZbtc: amountZbtc,
             amountBtc: amountBtc,
@@ -63,39 +63,46 @@ contract Bridge {
         });
     }
 
-    function acceptRedeem(uint256 id) public {
-        RedeemRequest storage redeemRequest = redeemRequests[id];
-        require(redeemRequest.open);
+    function acceptSwap(uint256 id) public {
+        Order storage order = orders[id];
+        require(order.open);
 
         // todo: protocol should probably require some sort of collateral deposit here
 
-        redeemRequest.open = false;
-        redeemRequest.accepterAddress = msg.sender;
+        order.open = false;
+        order.accepterAddress = msg.sender;
     }
 
     // not documented, but presumably required
-    function cancelRedeem(uint256 id) public {}
+    function cancelSwap(uint256 id) public {
+        Order storage order = orders[id];
+        require(order.requesterAddress == msg.sender);
+        // ensure the request was not accepted yet
+        require(order.accepterAddress == address(0));
+        
+        delete orders[id];
+    }
 
-    function executeRedeem(
+    function executeSwap(
         uint256 id,
         TransactionProof calldata transactionProof
     ) public {
         // todo: check proof
 
-        // move the zbtc thta was locked to whoever accepted the redeem
-        RedeemRequest storage redeemRequest = redeemRequests[id];
+        // move the zbtc thta was locked to whoever accepted the order
+        Order storage order = orders[id];
 
         // check that the storage item exists and has been accepted
-        require(!redeemRequest.open);
-        require(redeemRequest.amountZbtc != 0);
+        require(!order.open);
+        require(order.amountZbtc != 0);
 
         wrapped.transfer(
-            redeemRequest.accepterAddress,
-            redeemRequest.amountZbtc
+            order.accepterAddress,
+            order.amountZbtc
         );
 
         // clean up storage
-        delete redeemRequests[id];
+        delete orders[id];
     }
 
     function liquidate(uint256 amountZbtc) public {
@@ -108,7 +115,7 @@ contract Bridge {
         callerAddress.transfer(collateral);
     }
 
-    function withdrawFreeCol() public {
+    function withdraw() public {
         uint256 totalZbtc = wrapped.totalSupply();
         uint256 requiredCol = btcToCol(totalZbtc * collateralThreshold);
         uint256 colFree = totalCollateral - requiredCol;

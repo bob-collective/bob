@@ -33,7 +33,7 @@ contract BridgeTest is Bridge, Test {
         vm.startPrank(alice);
         uint256 balanceBefore = address(this).balance;
         (bool _success, ) = address(this).call{value: _amount}(
-            abi.encodeWithSignature("mintZbtc()", alice)
+            abi.encodeWithSignature("mint()", alice)
         );
         assertTrue(_success, "deposited payment.");
 
@@ -57,7 +57,7 @@ contract BridgeTest is Bridge, Test {
         vm.deal(alice, _amount);
         vm.startPrank(alice);
         (bool _success, ) = address(this).call{value: _amount}(
-            abi.encodeWithSignature("mintZbtc()", alice)
+            abi.encodeWithSignature("mint()", alice)
         );
         assertTrue(_success);
 
@@ -78,7 +78,7 @@ contract BridgeTest is Bridge, Test {
         vm.deal(alice, _amount);
         vm.startPrank(alice);
         (bool _success, ) = address(this).call{value: _amount}(
-            abi.encodeWithSignature("mintZbtc()", alice)
+            abi.encodeWithSignature("mint()", alice)
         );
         assertTrue(_success);
 
@@ -90,7 +90,7 @@ contract BridgeTest is Bridge, Test {
         assertEq(collateralThreshold, 1); // sanity check that writing to storage worked
 
         uint256 lockedBefore = suppliedCollateral[alice];
-        this.withdrawFreeCol();
+        this.withdraw();
         assertEq(suppliedCollateral[alice], lockedBefore / 2);
     }
 
@@ -103,25 +103,25 @@ contract BridgeTest is Bridge, Test {
         vm.deal(alice, amountCol);
         vm.startPrank(alice);
         (bool _success, ) = address(this).call{value: amountCol}(
-            abi.encodeWithSignature("mintZbtc()", alice)
+            abi.encodeWithSignature("mint()", alice)
         );
         assertTrue(_success, "deposited payment.");
 
         BitcoinAddress memory btcAddress = BitcoinAddress({bitcoinAddress: 1});
-        this.requestRedeem(zbtcAmount, btcAmount, btcAddress);
+        this.requestSwap(zbtcAmount, btcAmount, btcAddress);
 
-        // RedeemRequest memory redeemRequest = redeemRequests(0);
-        assertEq(redeemRequests[0].amountZbtc, zbtcAmount);
-        assertEq(redeemRequests[0].amountBtc, btcAmount);
-        assertTrue(redeemRequests[0].open);
+        // Order memory order = orders(0);
+        assertEq(orders[0].amountZbtc, zbtcAmount);
+        assertEq(orders[0].amountBtc, btcAmount);
+        assertTrue(orders[0].open);
 
         vm.startPrank(bob);
-        this.acceptRedeem(0);
-        assertFalse(redeemRequests[0].open);
+        this.acceptSwap(0);
+        assertFalse(orders[0].open);
 
         TransactionProof memory proof = TransactionProof({dummy: 1});
         assertEqDecimal(wrapped.balanceOf(bob), 0, wrapped.decimals());
-        this.executeRedeem(0, proof);
+        this.executeSwap(0, proof);
         assertEqDecimal(wrapped.balanceOf(bob), zbtcAmount, wrapped.decimals());
     }
 }
