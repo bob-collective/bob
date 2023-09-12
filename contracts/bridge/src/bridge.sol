@@ -1,15 +1,16 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import {ERC20} from "lib/openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
+import {BobWrappedBtc} from "./wrapped.sol";
 
-contract Bridge is ERC20 {
+contract Bridge {
     uint256 public number;
     uint256 public collateralThreshold;
     uint256 nextRedeemId;
     mapping(uint256 => RedeemRequest) public redeemRequests; // cant have struct as key, nor tupple
     mapping(address => uint256) public suppliedCollateral;
     uint256 totalCollateral;
+    BobWrappedBtc wrapped = new BobWrappedBtc();
 
     struct RedeemRequest {
         bool open; // actually redundant now that we have accepterAddress
@@ -27,7 +28,7 @@ contract Bridge is ERC20 {
         uint256 dummy;
     }
 
-    constructor(uint256 threshold) ERC20("Our ZBTC", "ZBTC") {
+    constructor(uint256 threshold) {
         collateralThreshold = threshold;
     }
 
@@ -35,7 +36,7 @@ contract Bridge is ERC20 {
     function mintZbtc() public payable {
         uint256 collateral = msg.value; // this is the amount of eth sent to the contract
         uint256 mintedAmount = colToBtc(collateral) / collateralThreshold;
-        _mint(msg.sender, mintedAmount);
+        wrapped.sudoMint(msg.sender, mintedAmount);
 
         suppliedCollateral[msg.sender] += collateral;
         totalCollateral += collateral;
@@ -48,7 +49,7 @@ contract Bridge is ERC20 {
         BitcoinAddress calldata bitcoinAddress
     ) public {
         // lock Zbtc by transfering it to the contract address
-        _transfer(msg.sender, address(this), amountZbtc);
+        wrapped.sudoTransferFrom(msg.sender, address(this), amountZbtc);
         require(amountZbtc != 0);
 
         uint256 id = nextRedeemId++;
@@ -88,19 +89,18 @@ contract Bridge is ERC20 {
         require(!redeemRequest.open);
         require(redeemRequest.amountZbtc != 0);
 
-        _transfer(
-            address(this),
+        wrapped.transfer(
             redeemRequest.accepterAddress,
             redeemRequest.amountZbtc
         );
 
-        delete redeemRequests[id];
         // clean up storage
+        delete redeemRequests[id];
     }
 
     function liquidate(uint256 amountZbtc) public {
         // burn the zbtc erc20
-        _burn(msg.sender, amountZbtc);
+        wrapped.sudoBurnFrom(msg.sender, amountZbtc);
 
         // transfer eth to caller
         uint256 collateral = btcToCol(amountZbtc);
@@ -109,7 +109,7 @@ contract Bridge is ERC20 {
     }
 
     function withdrawFreeCol() public {
-        uint256 totalZbtc = totalSupply();
+        uint256 totalZbtc = wrapped.totalSupply();
         uint256 requiredCol = btcToCol(totalZbtc * collateralThreshold);
         uint256 colFree = totalCollateral - requiredCol;
         uint256 withdrawal = colFree < suppliedCollateral[msg.sender]

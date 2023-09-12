@@ -38,12 +38,16 @@ contract BridgeTest is Bridge, Test {
         assertTrue(_success, "deposited payment.");
 
         // zbtc minted
-        assertEqDecimal(balanceOf(alice), _amount / 5 / 2, decimals());
+        assertEqDecimal(
+            wrapped.balanceOf(alice),
+            _amount / 5 / 2,
+            wrapped.decimals()
+        );
         // col has been transferred to contract
         assertEqDecimal(
             address(this).balance,
             balanceBefore + _amount,
-            decimals()
+            wrapped.decimals()
         );
     }
 
@@ -58,10 +62,14 @@ contract BridgeTest is Bridge, Test {
         assertTrue(_success);
 
         // liquidate 25% of what was minted
-        assertEqDecimal(balanceOf(alice), 100, decimals());
+        assertEqDecimal(wrapped.balanceOf(alice), 100, wrapped.decimals());
         this.liquidate(25);
-        assertEqDecimal(balanceOf(alice), 75, decimals());
-        assertEqDecimal(address(alice).balance, btcToCol(25), decimals());
+        assertEqDecimal(wrapped.balanceOf(alice), 75, wrapped.decimals());
+        assertEqDecimal(
+            address(alice).balance,
+            btcToCol(25),
+            wrapped.decimals()
+        );
     }
 
     function testWithdraw() public {
@@ -112,8 +120,8 @@ contract BridgeTest is Bridge, Test {
         assertFalse(redeemRequests[0].open);
 
         TransactionProof memory proof = TransactionProof({dummy: 1});
-        assertEqDecimal(balanceOf(bob), 0, decimals());
+        assertEqDecimal(wrapped.balanceOf(bob), 0, wrapped.decimals());
         this.executeRedeem(0, proof);
-        assertEqDecimal(balanceOf(bob), zbtcAmount, decimals());
+        assertEqDecimal(wrapped.balanceOf(bob), zbtcAmount, wrapped.decimals());
     }
 }
