@@ -8,16 +8,23 @@ using SafeERC20 for IERC20;
 contract MarketPlace {
     mapping(uint256 => Order) public ercErcOrders; // cant have struct as key, nor tupple
 
-    event placeOrder(uint indexed orderId, Order order); // todo: should we index by requesteraddress?
+    event placeOrder(
+        uint indexed orderId,
+        address indexed requesterAddress,
+        uint256 offeringAmount,
+        address offeringToken,
+        uint256 askingAmount,
+        address askingToken
+    );
     event acceptOrder(
         uint indexed orderId,
-        address who,
+        address indexed who,
         uint buyAmount,
         uint saleAmount
     );
     event withdrawOrder(uint indexed orderId);
 
-    uint256 nextOrderId;
+    uint256 public nextOrderId;
 
     struct Order {
         uint256 offeringAmount;
@@ -54,7 +61,14 @@ contract MarketPlace {
 
         ercErcOrders[id] = order;
 
-        emit placeOrder(id, order);
+        emit placeOrder(
+            id,
+            order.requesterAddress,
+            order.offeringAmount,
+            order.offeringToken,
+            order.askingAmount,
+            order.askingToken
+        );
     }
 
     function acceptErcErcOrder(uint id, uint saleAmount) public {
@@ -99,7 +113,7 @@ contract MarketPlace {
         emit withdrawOrder(id);
     }
 
-    function getOpenOrders() public view returns (Order[] memory) {
+    function getOpenOrders() external view returns (Order[] memory) {
         uint numOpenOrders = 0;
         for (uint i = 0; i < nextOrderId; i++) {
             if (ercErcOrders[i].offeringAmount > 0) {
