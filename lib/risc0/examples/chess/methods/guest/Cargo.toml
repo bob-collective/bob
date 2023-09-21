@@ -1,0 +1,11 @@
+[package]
+name = "checkmate"
+version = "0.12.0"
+edition = "2021"
+
+[workspace]
+
+[dependencies]
+chess-core = { path = "../../core" }
+risc0-zkvm = { path = "../../../../risc0/zkvm", default-features = false, features = ["std"] }
+shakmaty = "0.22"
