@@ -12,6 +12,7 @@ contract MarketPlace {
     mapping(uint256 => AcceptedBtcSellOrder) public acceptedBtcSellOrders;
 
     uint256 nextOrderId;
+    uint256 public constant REQUEST_EXPIRATION_SECONDS = 86400; // 1 day
 
     struct BtcSellOrder {
         uint256 amountBtc;
@@ -27,6 +28,7 @@ contract MarketPlace {
         uint ercAmount;
         address requester;
         address accepter;
+        uint acceptTime;
     }
 
     struct BtcBuyOrder {
@@ -43,6 +45,7 @@ contract MarketPlace {
         uint ercAmount;
         address requester;
         address accepter;
+        uint acceptTime;
     }
 
     struct BitcoinAddress {
@@ -98,10 +101,10 @@ contract MarketPlace {
             ercToken: order.askingToken,
             ercAmount: sellAmount,
             requester: order.requester,
-            accepter: msg.sender
+            accepter: msg.sender,
+            acceptTime: block.timestamp
         });
     }
-
 
     function proofBtcSellOrder(
         uint id,
@@ -113,7 +116,10 @@ contract MarketPlace {
 
         // todo: check proof
 
-        IERC20(accept.ercToken).safeTransfer(accept.requester, accept.ercAmount);
+        IERC20(accept.ercToken).safeTransfer(
+            accept.requester,
+            accept.ercAmount
+        );
 
         delete acceptedBtcSellOrders[id];
     }
@@ -129,7 +135,9 @@ contract MarketPlace {
     function cancelAcceptedBtcSellOrder(uint id) public {
         AcceptedBtcSellOrder storage order = acceptedBtcSellOrders[id];
 
-        // todo: check that it's expired
+        require(
+            block.timestamp > order.acceptTime + REQUEST_EXPIRATION_SECONDS
+        );
 
         require(order.accepter == msg.sender);
 
@@ -180,7 +188,8 @@ contract MarketPlace {
             ercToken: order.offeringToken,
             ercAmount: buyAmount,
             requester: order.requester,
-            accepter: msg.sender
+            accepter: msg.sender,
+            acceptTime: block.timestamp
         });
 
         uint acceptId = nextOrderId++;
@@ -222,7 +231,9 @@ contract MarketPlace {
 
         require(accept.requester == msg.sender);
 
-        // todo: check that it's expired
+        require(
+            block.timestamp > accept.acceptTime + REQUEST_EXPIRATION_SECONDS
+        );
 
         // release the locked erc20s
         IERC20(accept.ercToken).safeTransfer(msg.sender, accept.ercAmount);
