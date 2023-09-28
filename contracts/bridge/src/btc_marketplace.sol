@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 using SafeERC20 for IERC20;
 
-contract MarketPlace {
+contract BtcMarketPlace {
     mapping(uint256 => BtcBuyOrder) public btcBuyOrders;
     mapping(uint256 => AcceptedBtcBuyOrder) public acceptedBtcBuyOrders;
     mapping(uint256 => BtcSellOrder) public btcSellOrders;
@@ -13,6 +13,43 @@ contract MarketPlace {
 
     uint256 nextOrderId;
     uint256 public constant REQUEST_EXPIRATION_SECONDS = 86400; // 1 day
+
+    // todo: should we merge buy&sell structs? They're structurally identical except for the
+    // bitcoinaddress location.
+
+    event placeBtcSellOrderEvent(
+        uint indexed orderId,
+        uint256 amountBtc,
+        address buyingToken,
+        uint buyAmount
+    );
+    event acceptBtcSellOrderEvent(
+        uint indexed id,
+        uint indexed acceptId,
+        BitcoinAddress bitcoinAddress,
+        uint256 amountBtc,
+        uint256 ercAmount,
+        address ercToken
+    );
+    event proofBtcSellOrderEvent(uint id, TransactionProof _proof);
+    event withdrawBtcSellOrderEvent(uint id);
+    event cancelAcceptedBtcSellOrderEvent(uint id);
+    event placeBtcBuyOrderEvent(
+        uint256 amountBtc,
+        BitcoinAddress bitcoinAddress,
+        address sellingToken,
+        uint saleAmount
+    );
+    event acceptBtcBuyOrderEvent(
+        uint indexed orderId,
+        uint indexed acceptId,
+        uint256 amountBtc,
+        uint256 ercAmount,
+        address ercToken
+    );
+    event proofBtcBuyOrderEvent(uint id, TransactionProof _proof);
+    event withdrawBtcBuyOrderEvent(uint id);
+    event cancelAcceptedBtcBuyOrderEvent(uint id);
 
     struct BtcSellOrder {
         uint256 amountBtc;
@@ -72,6 +109,8 @@ contract MarketPlace {
             askingAmount: buyAmount,
             requester: msg.sender
         });
+
+        emit placeBtcSellOrderEvent(id, amountBtc, buyingToken, buyAmount);
     }
 
     function acceptBtcSellOrder(
@@ -94,8 +133,8 @@ contract MarketPlace {
             sellAmount
         );
 
-        uint256 id = nextOrderId++;
-        acceptedBtcSellOrders[id] = AcceptedBtcSellOrder({
+        uint256 acceptId = nextOrderId++;
+        acceptedBtcSellOrders[acceptId] = AcceptedBtcSellOrder({
             bitcoinAddress: bitcoinAddress,
             amountBtc: amountBtc,
             ercToken: order.askingToken,
@@ -104,6 +143,15 @@ contract MarketPlace {
             accepter: msg.sender,
             acceptTime: block.timestamp
         });
+
+        emit acceptBtcSellOrderEvent(
+            id,
+            acceptId,
+            bitcoinAddress,
+            amountBtc,
+            sellAmount,
+            order.askingToken
+        );
     }
 
     function proofBtcSellOrder(
@@ -122,6 +170,7 @@ contract MarketPlace {
         );
 
         delete acceptedBtcSellOrders[id];
+        emit proofBtcSellOrderEvent(id, _proof);
     }
 
     function withdrawBtcSellOrder(uint id) public {
@@ -130,6 +179,8 @@ contract MarketPlace {
         require(order.requester == msg.sender);
 
         delete btcBuyOrders[id];
+
+        emit withdrawBtcSellOrderEvent(id);
     }
 
     function cancelAcceptedBtcSellOrder(uint id) public {
@@ -140,8 +191,12 @@ contract MarketPlace {
         );
 
         require(order.accepter == msg.sender);
+        // give accepter its tokens back
+        IERC20(order.ercToken).safeTransfer(msg.sender, order.ercAmount);
 
         delete btcBuyOrders[id];
+
+        emit cancelAcceptedBtcSellOrderEvent(id);
     }
 
     function placeBtcBuyOrder(
@@ -167,12 +222,19 @@ contract MarketPlace {
             offeringAmount: saleAmount,
             requester: msg.sender
         });
+
+        emit placeBtcBuyOrderEvent(
+            amountBtc,
+            bitcoinAddress,
+            sellingToken,
+            saleAmount
+        );
     }
 
     function acceptBtcBuyOrder(uint id, uint256 amountBtc) public {
         BtcBuyOrder storage order = btcBuyOrders[id];
 
-        require(amountBtc <= order.offeringAmount);
+        require(amountBtc <= order.amountBtc);
         require(amountBtc > 0);
 
         // todo: make safe
@@ -180,8 +242,9 @@ contract MarketPlace {
 
         assert(buyAmount > 0);
 
-        assert(order.amountBtc >= buyAmount);
-        order.amountBtc -= buyAmount;
+        assert(order.offeringAmount >= buyAmount);
+        order.offeringAmount -= buyAmount;
+        order.amountBtc -= amountBtc;
 
         AcceptedBtcBuyOrder memory accept = AcceptedBtcBuyOrder({
             amountBtc: amountBtc,
@@ -195,6 +258,14 @@ contract MarketPlace {
         uint acceptId = nextOrderId++;
 
         acceptedBtcBuyOrders[acceptId] = accept;
+
+        emit acceptBtcBuyOrderEvent(
+            id,
+            acceptId,
+            amountBtc,
+            buyAmount,
+            order.offeringToken
+        );
     }
 
     function proofBtcBuyOrder(
@@ -210,6 +281,8 @@ contract MarketPlace {
         IERC20(accept.ercToken).safeTransfer(accept.accepter, accept.ercAmount);
 
         delete acceptedBtcBuyOrders[id];
+
+        emit proofBtcBuyOrderEvent(id, _proof);
     }
 
     function withdrawBtcBuyOrder(uint id) public {
@@ -224,6 +297,8 @@ contract MarketPlace {
         );
 
         delete btcBuyOrders[id];
+
+        emit withdrawBtcBuyOrderEvent(id);
     }
 
     function cancelAcceptedBtcBuyOrder(uint id) public {
@@ -237,5 +312,10 @@ contract MarketPlace {
 
         // release the locked erc20s
         IERC20(accept.ercToken).safeTransfer(msg.sender, accept.ercAmount);
+
+        // note: we don't make the accepted amount available for new trades but if we want to,
+        // we could implement that
+
+        emit cancelAcceptedBtcBuyOrderEvent(id);
     }
 }
