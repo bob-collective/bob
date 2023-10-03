@@ -117,7 +117,7 @@ contract BtcMarketPlace {
         uint id,
         BitcoinAddress calldata bitcoinAddress,
         uint256 amountBtc
-    ) public {
+    ) public returns (uint) {
         BtcSellOrder storage order = btcSellOrders[id];
 
         require(amountBtc > 0);
@@ -152,6 +152,8 @@ contract BtcMarketPlace {
             sellAmount,
             order.askingToken
         );
+
+        return acceptId;
     }
 
     function proofBtcSellOrder(
@@ -231,7 +233,10 @@ contract BtcMarketPlace {
         );
     }
 
-    function acceptBtcBuyOrder(uint id, uint256 amountBtc) public {
+    function acceptBtcBuyOrder(
+        uint id,
+        uint256 amountBtc
+    ) public returns (uint) {
         BtcBuyOrder storage order = btcBuyOrders[id];
 
         require(amountBtc <= order.amountBtc);
@@ -266,6 +271,8 @@ contract BtcMarketPlace {
             buyAmount,
             order.offeringToken
         );
+
+        return acceptId;
     }
 
     function proofBtcBuyOrder(
