@@ -178,7 +178,7 @@ contract BtcMarketPlace {
 
         require(order.requester == msg.sender);
 
-        delete btcBuyOrders[id];
+        delete btcSellOrders[id];
 
         emit withdrawBtcSellOrderEvent(id);
     }
@@ -194,7 +194,7 @@ contract BtcMarketPlace {
         // give accepter its tokens back
         IERC20(order.ercToken).safeTransfer(msg.sender, order.ercAmount);
 
-        delete btcBuyOrders[id];
+        delete btcSellOrders[id];
 
         emit cancelAcceptedBtcSellOrderEvent(id);
     }
@@ -315,6 +315,8 @@ contract BtcMarketPlace {
 
         // note: we don't make the accepted amount available for new trades but if we want to,
         // we could implement that
+
+        delete acceptedBtcBuyOrders[id];
 
         emit cancelAcceptedBtcBuyOrderEvent(id);
     }
