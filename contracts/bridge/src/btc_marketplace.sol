@@ -318,4 +318,108 @@ contract BtcMarketPlace {
 
         emit cancelAcceptedBtcBuyOrderEvent(id);
     }
+
+    function getOpenBtcSellOrders()
+        external
+        view
+        returns (BtcSellOrder[] memory, uint[] memory)
+    {
+        uint numOpenOrders = 0;
+        for (uint i = 0; i < nextOrderId; i++) {
+            if (btcSellOrders[i].amountBtc > 0) {
+                numOpenOrders++;
+            }
+        }
+
+        BtcSellOrder[] memory ret = new BtcSellOrder[](numOpenOrders);
+        uint[] memory identifiers = new uint[](numOpenOrders);
+        uint numPushed = 0;
+        for (uint i = 0; i < nextOrderId; i++) {
+            if (btcSellOrders[i].amountBtc > 0) {
+                ret[numPushed] = btcSellOrders[i];
+                identifiers[numPushed] = i;
+                numPushed++;
+            }
+        }
+        return (ret, identifiers);
+    }
+
+    function getOpenAcceptedBtcSellOrders()
+        external
+        view
+        returns (AcceptedBtcSellOrder[] memory, uint[] memory)
+    {
+        uint numOpenOrders = 0;
+        for (uint i = 0; i < nextOrderId; i++) {
+            if (acceptedBtcSellOrders[i].amountBtc > 0) {
+                numOpenOrders++;
+            }
+        }
+
+        AcceptedBtcSellOrder[] memory ret = new AcceptedBtcSellOrder[](
+            numOpenOrders
+        );
+        uint[] memory identifiers = new uint[](numOpenOrders);
+        uint numPushed = 0;
+        for (uint i = 0; i < nextOrderId; i++) {
+            if (acceptedBtcSellOrders[i].amountBtc > 0) {
+                ret[numPushed] = acceptedBtcSellOrders[i];
+                identifiers[numPushed] = i;
+                numPushed++;
+            }
+        }
+        return (ret, identifiers);
+    }
+
+    function getOpenBtcBuyOrders()
+        external
+        view
+        returns (BtcBuyOrder[] memory, uint[] memory)
+    {
+        uint numOpenOrders = 0;
+        for (uint i = 0; i < nextOrderId; i++) {
+            if (btcBuyOrders[i].amountBtc > 0) {
+                numOpenOrders++;
+            }
+        }
+
+        BtcBuyOrder[] memory ret = new BtcBuyOrder[](numOpenOrders);
+        uint[] memory identifiers = new uint[](numOpenOrders);
+        uint numPushed = 0;
+        for (uint i = 0; i < nextOrderId; i++) {
+            if (btcBuyOrders[i].amountBtc > 0) {
+                ret[numPushed] = btcBuyOrders[i];
+                identifiers[numPushed] = i;
+                numPushed++;
+            }
+        }
+        return (ret, identifiers);
+    }
+
+    function getOpenAcceptedBtcBuyOrders()
+        external
+        view
+        returns (AcceptedBtcBuyOrder[] memory, uint[] memory)
+    {
+        uint numOpenOrders = 0;
+        for (uint i = 0; i < nextOrderId; i++) {
+            if (acceptedBtcBuyOrders[i].amountBtc > 0) {
+                numOpenOrders++;
+            }
+        }
+
+        AcceptedBtcBuyOrder[] memory ret = new AcceptedBtcBuyOrder[](
+            numOpenOrders
+        );
+        uint[] memory identifiers = new uint[](numOpenOrders);
+        uint numPushed = 0;
+        for (uint i = 0; i < nextOrderId; i++) {
+            if (acceptedBtcBuyOrders[i].amountBtc > 0) {
+                ret[numPushed] = acceptedBtcBuyOrders[i];
+                identifiers[numPushed] = i;
+                numPushed++;
+            }
+        }
+        return (ret, identifiers);
+    }
 }
