@@ -26,7 +26,8 @@ contract BonsaiStarter is BonsaiCallbackReceiver {
     /// @notice Cache of the results calculated by our guest program in Bonsai.
     /// @dev Using a cache is one way to handle the callback from Bonsai. Upon callback, the
     ///      information from the journal is stored in the cache for later use by the contract.
-    mapping(uint256 => uint256) public fibonacciCache;
+    // mapping(uint256 => uint256) public fibonacciCache;
+    bytes public result;
 
     /// @notice Image ID of the only zkVM binary to accept callbacks from.
     bytes32 public immutable fibImageId;
@@ -40,30 +41,30 @@ contract BonsaiStarter is BonsaiCallbackReceiver {
         fibImageId = _fibImageId;
     }
 
-    event CalculateFibonacciCallback(uint256 indexed n, uint256 result);
+    event CalculateFibonacciCallback(bytes result);
 
     /// @notice Returns nth number in the Fibonacci sequence.
     /// @dev The sequence is defined as 1, 1, 2, 3, 5 ... with fibonacci(0) == 1.
     ///      Only precomputed results can be returned. Call calculate_fibonacci(n) to precompute.
     function fibonacci(uint256 n) external view returns (uint256) {
-        uint256 result = fibonacciCache[n];
-        require(result != 0, "value not available in cache");
-        return result;
+        // uint256 result = fibonacciCache[n];
+        // require(result != 0, "value not available in cache");
+        return 0;
     }
 
     /// @notice Callback function logic for processing verified journals from Bonsai.
-    function storeResult(uint256 n, uint256 result) external onlyBonsaiCallback(fibImageId) {
-        emit CalculateFibonacciCallback(n, result);
-        fibonacciCache[n] = result;
+    function storeResult(bytes calldata receivedResult) external onlyBonsaiCallback(fibImageId) {
+        emit CalculateFibonacciCallback(receivedResult);
+        result = receivedResult;
     }
 
     /// @notice Sends a request to Bonsai to have have the nth Fibonacci number calculated.
     /// @dev This function sends the request to Bonsai through the on-chain relay.
     ///      The request will trigger Bonsai to run the specified RISC Zero guest program with
     ///      the given input and asynchronously return the verified results via the callback below.
-    function calculateFibonacci(uint256 n) external {
+    function calculateFibonacci(bytes calldata pubkey, bytes calldata secureId) external {
         bonsaiRelay.requestCallback(
-            fibImageId, abi.encode(n), address(this), this.storeResult.selector, BONSAI_CALLBACK_GAS_LIMIT
+            fibImageId, abi.encode(pubkey, secureId), address(this), this.storeResult.selector, BONSAI_CALLBACK_GAS_LIMIT
         );
     }
 }

@@ -31,16 +31,22 @@ contract BonsaiStarterTest is BonsaiTest {
 
         // Anticipate a callback request to the relay
         vm.expectCall(address(bonsaiRelay), abi.encodeWithSelector(IBonsaiRelay.requestCallback.selector));
+
+        bytes memory pubkey = hex"027becf3c0642228336f8182a04081870bb8445453c6eac4960dd05622960a3bf7";
+        bytes memory secureId = hex"0101010101010101010101010101010101010101010101010101010101010101";
+
+        
         // Request the callback
-        starter.calculateFibonacci(128);
+        starter.calculateFibonacci(pubkey, secureId);
 
         // Anticipate a callback invocation on the starter contract
         vm.expectCall(address(starter), abi.encodeWithSelector(BonsaiStarter.storeResult.selector));
         // Relay the solution as a callback
         runPendingCallbackRequest();
 
+        bytes memory expected = hex"039cb8d281b3aa8b4429c1b52c6d307b45fb29638288b9e4602b470c1d71c5ac80";
         // Validate the Fibonacci solution value
-        uint256 result = starter.fibonacci(128);
-        assertEq(result, uint256(407305795904080553832073954));
+        bytes memory resultq = starter.result();
+        assertEq(resultq, expected);
     }
 }

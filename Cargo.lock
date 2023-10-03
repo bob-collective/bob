@@ -512,6 +512,7 @@ version = "0.1.0"
 dependencies = [
  "risc0-build",
  "risc0-zkvm",
+ "secp256k1",
 ]
 
 [[package]]
@@ -3784,6 +3785,22 @@ dependencies = [
  "pkcs8",
  "subtle",
  "zeroize",
+]
+
+[[package]]
+name = "secp256k1"
+version = "0.20.1"
+source = "git+https://github.com/rust-bitcoin/rust-secp256k1?rev=8e61874#8e61874d7706143f90a303e8077f69cb8873edff"
+dependencies = [
+ "secp256k1-sys",
+]
+
+[[package]]
+name = "secp256k1-sys"
+version = "0.4.0"
+source = "git+https://github.com/rust-bitcoin/rust-secp256k1?rev=8e61874#8e61874d7706143f90a303e8077f69cb8873edff"
+dependencies = [
+ "cc",
 ]
 
 [[package]]
