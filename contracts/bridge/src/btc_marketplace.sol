@@ -59,6 +59,7 @@ contract BtcMarketPlace {
     }
 
     struct AcceptedBtcSellOrder {
+        uint orderId;
         BitcoinAddress bitcoinAddress;
         uint256 amountBtc;
         address ercToken;
@@ -77,6 +78,7 @@ contract BtcMarketPlace {
     }
 
     struct AcceptedBtcBuyOrder {
+        uint orderId;
         uint256 amountBtc;
         address ercToken;
         uint ercAmount;
@@ -135,6 +137,7 @@ contract BtcMarketPlace {
 
         uint256 acceptId = nextOrderId++;
         acceptedBtcSellOrders[acceptId] = AcceptedBtcSellOrder({
+            orderId: id,
             bitcoinAddress: bitcoinAddress,
             amountBtc: amountBtc,
             ercToken: order.askingToken,
@@ -252,6 +255,7 @@ contract BtcMarketPlace {
         order.amountBtc -= amountBtc;
 
         AcceptedBtcBuyOrder memory accept = AcceptedBtcBuyOrder({
+            orderId: id,
             amountBtc: amountBtc,
             ercToken: order.offeringToken,
             ercAmount: buyAmount,
