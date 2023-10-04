@@ -59,6 +59,7 @@ contract BtcMarketPlace {
     }
 
     struct AcceptedBtcSellOrder {
+        uint orderId;
         BitcoinAddress bitcoinAddress;
         uint256 amountBtc;
         address ercToken;
@@ -77,6 +78,7 @@ contract BtcMarketPlace {
     }
 
     struct AcceptedBtcBuyOrder {
+        uint orderId;
         uint256 amountBtc;
         address ercToken;
         uint ercAmount;
@@ -135,6 +137,7 @@ contract BtcMarketPlace {
 
         uint256 acceptId = nextOrderId++;
         acceptedBtcSellOrders[acceptId] = AcceptedBtcSellOrder({
+            orderId: id,
             bitcoinAddress: bitcoinAddress,
             amountBtc: amountBtc,
             ercToken: order.askingToken,
@@ -252,6 +255,7 @@ contract BtcMarketPlace {
         order.amountBtc -= amountBtc;
 
         AcceptedBtcBuyOrder memory accept = AcceptedBtcBuyOrder({
+            orderId: id,
             amountBtc: amountBtc,
             ercToken: order.offeringToken,
             ercAmount: buyAmount,
@@ -335,7 +339,7 @@ contract BtcMarketPlace {
     {
         uint numOpenOrders = 0;
         for (uint i = 0; i < nextOrderId; i++) {
-            if (btcSellOrders[i].amountBtc > 0) {
+            if (btcSellOrders[i].requester != address(0x0)) {
                 numOpenOrders++;
             }
         }
@@ -344,7 +348,7 @@ contract BtcMarketPlace {
         uint[] memory identifiers = new uint[](numOpenOrders);
         uint numPushed = 0;
         for (uint i = 0; i < nextOrderId; i++) {
-            if (btcSellOrders[i].amountBtc > 0) {
+            if (btcSellOrders[i].requester != address(0x0)) {
                 ret[numPushed] = btcSellOrders[i];
                 identifiers[numPushed] = i;
                 numPushed++;
@@ -387,7 +391,7 @@ contract BtcMarketPlace {
     {
         uint numOpenOrders = 0;
         for (uint i = 0; i < nextOrderId; i++) {
-            if (btcBuyOrders[i].amountBtc > 0) {
+            if (btcBuyOrders[i].requester != address(0x0)) {
                 numOpenOrders++;
             }
         }
@@ -396,7 +400,7 @@ contract BtcMarketPlace {
         uint[] memory identifiers = new uint[](numOpenOrders);
         uint numPushed = 0;
         for (uint i = 0; i < nextOrderId; i++) {
-            if (btcBuyOrders[i].amountBtc > 0) {
+            if (btcBuyOrders[i].requester != address(0x0)) {
                 ret[numPushed] = btcBuyOrders[i];
                 identifiers[numPushed] = i;
                 numPushed++;
