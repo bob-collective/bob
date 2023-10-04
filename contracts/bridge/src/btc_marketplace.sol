@@ -339,7 +339,7 @@ contract BtcMarketPlace {
     {
         uint numOpenOrders = 0;
         for (uint i = 0; i < nextOrderId; i++) {
-            if (btcSellOrders[i].amountBtc > 0) {
+            if (btcSellOrders[i].requester != address(0x0)) {
                 numOpenOrders++;
             }
         }
@@ -348,7 +348,7 @@ contract BtcMarketPlace {
         uint[] memory identifiers = new uint[](numOpenOrders);
         uint numPushed = 0;
         for (uint i = 0; i < nextOrderId; i++) {
-            if (btcSellOrders[i].amountBtc > 0) {
+            if (btcSellOrders[i].requester != address(0x0)) {
                 ret[numPushed] = btcSellOrders[i];
                 identifiers[numPushed] = i;
                 numPushed++;
@@ -391,7 +391,7 @@ contract BtcMarketPlace {
     {
         uint numOpenOrders = 0;
         for (uint i = 0; i < nextOrderId; i++) {
-            if (btcBuyOrders[i].amountBtc > 0) {
+            if (btcBuyOrders[i].requester != address(0x0)) {
                 numOpenOrders++;
             }
         }
@@ -400,7 +400,7 @@ contract BtcMarketPlace {
         uint[] memory identifiers = new uint[](numOpenOrders);
         uint numPushed = 0;
         for (uint i = 0; i < nextOrderId; i++) {
-            if (btcBuyOrders[i].amountBtc > 0) {
+            if (btcBuyOrders[i].requester != address(0x0)) {
                 ret[numPushed] = btcBuyOrders[i];
                 identifiers[numPushed] = i;
                 numPushed++;
