@@ -127,6 +127,9 @@ contract BtcMarketPlace {
 
         uint sellAmount = (amountBtc * order.askingAmount) / order.amountBtc;
         assert(sellAmount > 0);
+        assert(order.askingAmount >= sellAmount);
+        order.askingAmount -= sellAmount;
+        order.amountBtc -= amountBtc;
 
         // "lock" selling token by transferring to contract
         IERC20(order.askingToken).safeTransferFrom(
@@ -199,7 +202,7 @@ contract BtcMarketPlace {
         // give accepter its tokens back
         IERC20(order.ercToken).safeTransfer(msg.sender, order.ercAmount);
 
-        delete btcSellOrders[id];
+        delete acceptedBtcSellOrders[id];
 
         emit cancelAcceptedBtcSellOrderEvent(id);
     }
