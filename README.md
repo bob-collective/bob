@@ -10,3 +10,25 @@ BOB is a Bitcoin-augmented rollup bringing experimentation and freedom of choice
 ## Contribution
 
 BOB is an open-source project. We welcome contributions of all sorts. There are many ways to help, from reporting issues, contributing code, and helping us improve our community.
+
+## Getting Started
+
+We use foundry extensively for maintaining and testing this contract suite:
+
+### Build
+
+```shell
+$ forge build
+```
+
+### Test
+
+```shell
+$ forge test
+```
+
+### Format
+
+```shell
+$ forge fmt
+```
