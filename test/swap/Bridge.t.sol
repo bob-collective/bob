@@ -5,7 +5,7 @@ using stdStorage for StdStorage;
 
 import {ERC20} from "openzeppelin-contracts/token/ERC20/ERC20.sol";
 import {stdStorage, StdStorage, Test, console} from "forge-std/Test.sol";
-import {Bridge} from "../src/swap/Bridge.sol";
+import {Bridge} from "../../src/swap/Bridge.sol";
 import {Utilities} from "./Utilities.sol";
 
 contract BridgeTest is Bridge, Test {
