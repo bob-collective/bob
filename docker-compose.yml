@@ -1,7 +1,7 @@
 version: "3.8"
 services:
     bitcoind:
-        image: "ruimarinho/bitcoin-core:22"
+        image: "ruimarinho/bitcoin-core:23"
         command:
             - -regtest
             - -server
@@ -14,7 +14,7 @@ services:
             - "18443:18443"
 
     bitcoin-cli:
-        image: "ruimarinho/bitcoin-core:22"
+        image: "ruimarinho/bitcoin-core:23"
         command:
             - /bin/sh
             - -c
