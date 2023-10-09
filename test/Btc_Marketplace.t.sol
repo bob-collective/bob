@@ -6,8 +6,8 @@ using stdStorage for StdStorage;
 import {ERC20} from "openzeppelin-contracts/token/ERC20/ERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {stdStorage, StdStorage, Test, console} from "forge-std/Test.sol";
-import {BtcMarketPlace} from "../src/btc_marketplace.sol";
-import {Utilities} from "./utils/Utilities.sol";
+import {BtcMarketPlace} from "../src/swap/Btc_Marketplace.sol";
+import {Utilities} from "./Utilities.sol";
 
 contract ArbitaryErc20 is ERC20, Ownable {
     constructor(
