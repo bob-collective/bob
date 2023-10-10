@@ -2,6 +2,7 @@ pragma solidity ^0.8.13;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {BitcoinTx} from "../bridge/BitcoinTx.sol";
 
 using SafeERC20 for IERC20;
 
@@ -31,7 +32,7 @@ contract BtcMarketPlace {
         uint256 ercAmount,
         address ercToken
     );
-    event proofBtcSellOrderEvent(uint id, TransactionProof _proof);
+    event proofBtcSellOrderEvent(uint id);
     event withdrawBtcSellOrderEvent(uint id);
     event cancelAcceptedBtcSellOrderEvent(uint id);
     event placeBtcBuyOrderEvent(
@@ -47,7 +48,7 @@ contract BtcMarketPlace {
         uint256 ercAmount,
         address ercToken
     );
-    event proofBtcBuyOrderEvent(uint id, TransactionProof _proof);
+    event proofBtcBuyOrderEvent(uint id);
     event withdrawBtcBuyOrderEvent(uint id);
     event cancelAcceptedBtcBuyOrderEvent(uint id);
 
@@ -164,7 +165,8 @@ contract BtcMarketPlace {
 
     function proofBtcSellOrder(
         uint id,
-        TransactionProof calldata _proof
+        BitcoinTx.Info calldata transaction,
+        BitcoinTx.Proof calldata proof
     ) public {
         AcceptedBtcSellOrder storage accept = acceptedBtcSellOrders[id];
 
@@ -178,7 +180,7 @@ contract BtcMarketPlace {
         );
 
         delete acceptedBtcSellOrders[id];
-        emit proofBtcSellOrderEvent(id, _proof);
+        emit proofBtcSellOrderEvent(id);
     }
 
     function withdrawBtcSellOrder(uint id) public {
@@ -284,7 +286,8 @@ contract BtcMarketPlace {
 
     function proofBtcBuyOrder(
         uint id,
-        TransactionProof calldata _proof
+        BitcoinTx.Info calldata transaction,
+        BitcoinTx.Proof calldata proof
     ) public {
         AcceptedBtcBuyOrder storage accept = acceptedBtcBuyOrders[id];
 
@@ -296,7 +299,7 @@ contract BtcMarketPlace {
 
         delete acceptedBtcBuyOrders[id];
 
-        emit proofBtcBuyOrderEvent(id, _proof);
+        emit proofBtcBuyOrderEvent(id);
     }
 
     function withdrawBtcBuyOrder(uint id) public {
