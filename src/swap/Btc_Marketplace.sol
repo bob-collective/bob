@@ -12,7 +12,7 @@ contract BtcMarketPlace {
     mapping(uint256 => AcceptedBtcSellOrder) public acceptedBtcSellOrders;
 
     uint256 nextOrderId;
-    uint256 public constant REQUEST_EXPIRATION_SECONDS = 86400; // 1 day
+    uint256 public constant REQUEST_EXPIRATION_SECONDS = 6 hours;
 
     // todo: should we merge buy&sell structs? They're structurally identical except for the
     // bitcoinaddress location.
@@ -88,7 +88,7 @@ contract BtcMarketPlace {
     }
 
     struct BitcoinAddress {
-        uint256 bitcoinAddress; // todo: use the right type
+        string bitcoinAddress; // todo: use the right type
     }
     struct TransactionProof {
         // todo: fields here
