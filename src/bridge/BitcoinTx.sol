@@ -132,31 +132,6 @@ library BitcoinTx {
         // stored, it is used as a function's calldata argument.
     }
 
-    /// @notice Represents info about an unspent transaction output.
-    struct UTXO {
-        /// @notice Hash of the transaction the output belongs to.
-        /// @dev Byte order corresponds to the Bitcoin internal byte order.
-        bytes32 txHash;
-        /// @notice Index of the transaction output (0-indexed).
-        uint32 txOutputIndex;
-        /// @notice Value of the transaction output.
-        uint64 txOutputValue;
-        // This struct doesn't contain `__gap` property as the structure is not
-        // stored, it is used as a function's calldata argument.
-    }
-
-    /// @notice Represents Bitcoin signature in the R/S/V format.
-    struct RSVSignature {
-        /// @notice Signature r value.
-        bytes32 r;
-        /// @notice Signature s value.
-        bytes32 s;
-        /// @notice Signature recovery value.
-        uint8 v;
-        // This struct doesn't contain `__gap` property as the structure is not
-        // stored, it is used as a function's calldata argument.
-    }
-
     /// @notice Validates the SPV proof of the Bitcoin transaction.
     ///         Reverts in case the validation or proof verification fail.
     /// @param txInfo Bitcoin transaction data.
@@ -246,105 +221,116 @@ library BitcoinTx {
         );
     }
 
-    /// @notice Extracts public key hash from the provided P2PKH or P2WPKH output.
-    ///         Reverts if the validation fails.
-    /// @param output The transaction output.
-    /// @return pubKeyHash 20-byte public key hash the output locks funds on.
-    /// @dev Requirements:
-    ///      - The output must be of P2PKH or P2WPKH type and lock the funds
-    ///        on a 20-byte public key hash.
-    function extractPubKeyHash(BridgeState.Storage storage, bytes memory output)
-        internal
-        pure
-        returns (bytes20 pubKeyHash)
-    {
-        bytes memory pubKeyHashBytes = output.extractHash();
-
-        require(
-            pubKeyHashBytes.length == 20,
-            "Output's public key hash must have 20 bytes"
-        );
-
-        pubKeyHash = pubKeyHashBytes.slice20(0);
-
-        // The output consists of an 8-byte value and a variable length script.
-        // To extract just the script, we ignore the first 8 bytes.
-        uint256 scriptLen = output.length - 8;
-
-        // The P2PKH script is 26 bytes long.
-        // The P2WPKH script is 23 bytes long.
-        // A valid script must have one of these lengths,
-        // and we can identify the expected script type by the length.
-        require(
-            scriptLen == 26 || scriptLen == 23,
-            "Output must be P2PKH or P2WPKH"
-        );
-
-        if (scriptLen == 26) {
-            // Compare to the expected P2PKH script.
-            bytes26 script = bytes26(output.slice32(8));
-
-            require(
-                script == makeP2PKHScript(pubKeyHash),
-                "Invalid P2PKH script"
-            );
-        }
-
-        if (scriptLen == 23) {
-            // Compare to the expected P2WPKH script.
-            bytes23 script = bytes23(output.slice32(8));
-
-            require(
-                script == makeP2WPKHScript(pubKeyHash),
-                "Invalid P2WPKH script"
-            );
-        }
-
-        return pubKeyHash;
+    /// @notice Represents temporary information needed during the processing of
+    ///         the Bitcoin transaction outputs. This structure is an internal one
+    ///         and should not be exported outside of the transaction processing code.
+    /// @dev Allows to mitigate "stack too deep" errors on EVM.
+    struct TxOutputsProcessingInfo {
+        // The first output starting index in the transaction.
+        uint256 outputStartingIndex;
+        // The number of outputs in the transaction.
+        uint256 outputsCount;
+        // This struct doesn't contain `__gap` property as the structure is not
+        // stored, it is used as a function's memory argument.
     }
 
-    /// @notice Build the P2PKH script from the given public key hash.
-    /// @param pubKeyHash The 20-byte public key hash.
-    /// @return The P2PKH script.
-    /// @dev The P2PKH script has the following byte format:
-    ///      <0x1976a914> <20-byte PKH> <0x88ac>. According to
-    ///      https://en.bitcoin.it/wiki/Script#Opcodes this translates to:
-    ///      - 0x19: Byte length of the entire script
-    ///      - 0x76: OP_DUP
-    ///      - 0xa9: OP_HASH160
-    ///      - 0x14: Byte length of the public key hash
-    ///      - 0x88: OP_EQUALVERIFY
-    ///      - 0xac: OP_CHECKSIG
-    ///      which matches the P2PKH structure as per:
-    ///      https://en.bitcoin.it/wiki/Transaction#Pay-to-PubkeyHash
-    function makeP2PKHScript(bytes20 pubKeyHash)
-        internal
-        pure
-        returns (bytes26)
-    {
-        bytes26 P2PKHScriptMask = hex"1976a914000000000000000000000000000000000000000088ac";
+    /// @notice Processes the Bitcoin transaction output vector.
+    /// @param scriptPubKeyHash Expected Bitcoin scriptPubKey keccak256 hash.
+    /// @param txOutputVector Bitcoin transaction output vector.
+    ///        This function assumes vector's structure is valid so it
+    ///        must be validated using e.g. `BTCUtils.validateVout` function
+    ///        before it is passed here.
+    /// @return value Outcomes of the processing.
+    function getTxOutputValue(
+        bytes32 scriptPubKeyHash,
+        bytes memory txOutputVector
+    ) internal returns (uint64 value) {
+        // Determining the total number of transaction outputs in the same way as
+        // for number of inputs. See `BitcoinTx.outputVector` docs for more details.
+        (
+            uint256 outputsCompactSizeUintLength,
+            uint256 outputsCount
+        ) = txOutputVector.parseVarInt();
 
-        return ((bytes26(pubKeyHash) >> 32) | P2PKHScriptMask);
+        // To determine the first output starting index, we must jump over
+        // the compactSize uint which prepends the output vector. One byte
+        // must be added because `BtcUtils.parseVarInt` does not include
+        // compactSize uint tag in the returned length.
+        //
+        // For >= 0 && <= 252, `BTCUtils.determineVarIntDataLengthAt`
+        // returns `0`, so we jump over one byte of compactSize uint.
+        //
+        // For >= 253 && <= 0xffff there is `0xfd` tag,
+        // `BTCUtils.determineVarIntDataLengthAt` returns `2` (no
+        // tag byte included) so we need to jump over 1+2 bytes of
+        // compactSize uint.
+        //
+        // Please refer `BTCUtils` library and compactSize uint
+        // docs in `BitcoinTx` library for more details.
+        uint256 outputStartingIndex = 1 + outputsCompactSizeUintLength;
+
+        return
+            getTxOutputValue(
+                scriptPubKeyHash,
+                txOutputVector,
+                TxOutputsProcessingInfo(
+                    outputStartingIndex,
+                    outputsCount
+                )
+            );
     }
 
-    /// @notice Build the P2WPKH script from the given public key hash.
-    /// @param pubKeyHash The 20-byte public key hash.
-    /// @return The P2WPKH script.
-    /// @dev The P2WPKH script has the following format:
-    ///      <0x160014> <20-byte PKH>. According to
-    ///      https://en.bitcoin.it/wiki/Script#Opcodes this translates to:
-    ///      - 0x16: Byte length of the entire script
-    ///      - 0x00: OP_0
-    ///      - 0x14: Byte length of the public key hash
-    ///      which matches the P2WPKH structure as per:
-    ///      https://github.com/bitcoin/bips/blob/master/bip-0141.mediawiki#P2WPKH
-    function makeP2WPKHScript(bytes20 pubKeyHash)
-        internal
-        pure
-        returns (bytes23)
-    {
-        bytes23 P2WPKHScriptMask = hex"1600140000000000000000000000000000000000000000";
+    /// @notice Processes all outputs from the transaction.
+    /// @param scriptPubKeyHash Expected Bitcoin scriptPubKey keccak256 hash.
+    /// @param txOutputVector Bitcoin transaction output vector. This function
+    ///        assumes vector's structure is valid so it must be validated using
+    ///        e.g. `BTCUtils.validateVout` function before it is passed here.
+    /// @param processInfo TxOutputsProcessingInfo identifying output
+    ///        starting index and the number of outputs.
+    function getTxOutputValue(
+        bytes32 scriptPubKeyHash,
+        bytes memory txOutputVector,
+        TxOutputsProcessingInfo memory processInfo
+    ) internal returns (uint64 value) {
+        // Outputs processing loop.
+        for (uint256 i = 0; i < processInfo.outputsCount; i++) {
+            uint256 outputLength = txOutputVector
+                .determineOutputLengthAt(processInfo.outputStartingIndex);
 
-        return ((bytes23(pubKeyHash) >> 24) | P2WPKHScriptMask);
+            // Extract the value from given output.
+            uint64 outputValue = txOutputVector.extractValueAt(
+                processInfo.outputStartingIndex
+            );
+
+            // The output consists of an 8-byte value and a variable length
+            // script. To hash that script we slice the output starting from
+            // 9th byte until the end.
+            uint256 scriptLength = outputLength - 8;
+            uint256 outputScriptStart = processInfo.outputStartingIndex + 8;
+
+            bytes32 outputScriptHash;
+            /* solhint-disable-next-line no-inline-assembly */
+            assembly {
+                // The first argument to assembly keccak256 is the pointer.
+                // We point to `txOutputVector` but at the position indicated
+                // by `outputScriptStart`. To load that position, we
+                // need to call `add(outputScriptStart, 32)` because
+                // `outputScriptStart` has 32 bytes.
+                outputScriptHash := keccak256(
+                    add(txOutputVector, add(outputScriptStart, 32)),
+                    scriptLength
+                )
+            }
+
+            if (scriptPubKeyHash == outputScriptHash) {
+                return outputValue;
+            }
+
+            // Make the `outputStartingIndex` pointing to the next output by
+            // increasing it by current output's length.
+            processInfo.outputStartingIndex += outputLength;
+        }
+
+        revert("No output found for scriptPubKey");
     }
 }
