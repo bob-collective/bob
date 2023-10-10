@@ -50,7 +50,7 @@ contract MarketPlaceTest is BtcMarketPlace, Test {
 
         vm.startPrank(bob);
         token1.approve(address(this), 40);
-        this.acceptBtcSellOrder(0, BitcoinAddress({bitcoinAddress: 0}), 40);
+        this.acceptBtcSellOrder(0, BitcoinAddress({bitcoinAddress: ""}), 40);
 
         vm.startPrank(alice);
         this.proofBtcSellOrder(1, TransactionProof({dummy: 0}));
@@ -64,7 +64,7 @@ contract MarketPlaceTest is BtcMarketPlace, Test {
 
         vm.startPrank(bob);
         token1.approve(address(this), 40);
-        this.acceptBtcSellOrder(0, BitcoinAddress({bitcoinAddress: 0}), 40);
+        this.acceptBtcSellOrder(0, BitcoinAddress({bitcoinAddress: ""}), 40);
 
         vm.startPrank(alice);
         this.withdrawBtcSellOrder(0);
@@ -80,7 +80,7 @@ contract MarketPlaceTest is BtcMarketPlace, Test {
 
         vm.startPrank(bob);
         token1.approve(address(this), 40);
-        this.acceptBtcSellOrder(0, BitcoinAddress({bitcoinAddress: 0}), 40);
+        this.acceptBtcSellOrder(0, BitcoinAddress({bitcoinAddress: ""}), 40);
 
         vm.warp(block.timestamp + REQUEST_EXPIRATION_SECONDS + 1);
         assertEq(token1.balanceOf(address(this)), 4);
@@ -97,7 +97,7 @@ contract MarketPlaceTest is BtcMarketPlace, Test {
         token1.approve(address(this), 100);
         this.placeBtcBuyOrder(
             1000,
-            BitcoinAddress({bitcoinAddress: 0}),
+            BitcoinAddress({bitcoinAddress: ""}),
             address(token1),
             100
         );
@@ -118,7 +118,7 @@ contract MarketPlaceTest is BtcMarketPlace, Test {
         token1.approve(address(this), 100);
         this.placeBtcBuyOrder(
             1000,
-            BitcoinAddress({bitcoinAddress: 0}),
+            BitcoinAddress({bitcoinAddress: ""}),
             address(token1),
             100
         );
@@ -141,7 +141,7 @@ contract MarketPlaceTest is BtcMarketPlace, Test {
         token1.approve(address(this), 100);
         this.placeBtcBuyOrder(
             1000,
-            BitcoinAddress({bitcoinAddress: 0}),
+            BitcoinAddress({bitcoinAddress: ""}),
             address(token1),
             100
         );
