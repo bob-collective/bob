@@ -29,16 +29,11 @@ export interface ElectrsClient {
      * @returns The encoded merkle inclusion proof for the transaction
      */
     getMerkleProof(txId: string): Promise<MerkleProof>;
-
 }
 
 function encodeElectrsMerkleProof(merkle: string[]): string {
-    let proof = Buffer.from("")
-    merkle.forEach(function (item) {
-        // convert to little-endian
-        proof = Buffer.concat([proof, Buffer.from(item, "hex").reverse()])
-    })
-    return proof.toString("hex")
+    // convert to little-endian
+    return merkle.map(item => Buffer.from(item, "hex").reverse().toString("hex")).join('');
 }
 
 export class DefaultElectrsClient implements ElectrsClient {

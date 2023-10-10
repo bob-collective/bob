@@ -111,15 +111,8 @@ function createMerkleBranchAndRoot(hashes: Buffer[], index: number): {
     };
 }
 
-function createMerkleProof(merkle: string[]): string {
-    let proof = Buffer.from("")
-    merkle.forEach(function (item) {
-        proof = Buffer.concat([proof, Buffer.from(item, "hex")])
-    })
-    return proof.toString("hex")
-}
-
-
+// used to construct merkle proofs from the raw block data, especially useful for
+// constructing a non-standard "witness proof" which is not currently supported by electrs
 export function getMerkleProof(block: Block, txHash: string, forWitness?: boolean) {
     const txIds = block.transactions!.map(tx => tx.getHash(forWitness));
     const pos = txIds.map(value => value.toString("hex")).indexOf(txHash);
@@ -127,7 +120,8 @@ export function getMerkleProof(block: Block, txHash: string, forWitness?: boolea
     const merkleAndRoot = createMerkleBranchAndRoot(txIds, pos);
     return {
         pos: pos,
-        proof: createMerkleProof(merkleAndRoot.merkle.map(value => value.toString("hex"))),
+        // hashes are already little-endian
+        proof: merkleAndRoot.merkle.map(value => value.toString("hex")).join(''),
         root: merkleAndRoot.root.toString("hex"),
     };
 }
