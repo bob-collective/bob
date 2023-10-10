@@ -8,6 +8,26 @@ This example app is a work in progress, and the example application repository i
 
 :::
 
+## The contract
+
+The contract that this example uses can be found in `src/swap/Btc_Marketplace.sol`. Example usage can be seen in its tests in `test/swap/Btc_Marketplace.t.sol`. The contract is a work in progress, with some bitcoin-related parts being mocked. It's usage is as follows:
+
+### Buying BTC
+
+- Alice calls `placeBtcBuyOrder` and specifies amounts and a bitcoin address.
+- Bob calls `acceptBtcBuyOrder`
+- Bob makes the bitcoin transfer
+- Bob calls `proofBtcBuyOrder`, or Alice can call `cancelAcceptedBtcBuyOrder` after a timeout.
+
+### Selling BTC
+
+- Alice calls `placeBtcSellOrder` specifying the amounts
+- Bob calls `acceptBtcSellOrder` and specifies a bitcoin address
+- Alice calls `proofBtcSellOrder`, or Bob can call `cancelAcceptedBtcSellOrder`
+
+For both buying and selling orders, if the order has not yet been accepted, Alice can withdraw the request using `withdrawBtcSellOrder`/`withdrawBtcBuyOrder`.
+
+
 ## Set up local environment
 
 1. Clone [https://github.com/bob-collective/bob](https://github.com/bob-collective/bob)
@@ -27,13 +47,12 @@ Add the contact addresses for supported ERC20 tokens to your Ethereum wallet:
 - ZBTC: `0xd6cd079ee8bc26b5000a5e1ea8d434c840e3434b`
 - USDT: `0x3c252953224948E441aAfdE7b391685201ccd3bC`
 
-## Basic Protocol
 
-### Getting the smart contract ABIs
+### Getting the smart contract ABIs in the front-end
 
 This is done using a React hook which extends Viem's `getContract` method. This allows contract member types to be inferred, rather than respecified in the application.
 
-```
+```ts
 import { getContract } from 'viem';
 import { usePublicClient, useWalletClient } from 'wagmi';
 import { contracts, ContractType } from '../constants';
@@ -62,7 +81,7 @@ export { useContract };
 
 This can then be called in the application:
 
-```
+```ts
 // contracts/config.ts
 const contracts = {
   [ContractType.BTC_MARKETPLACE]: {
