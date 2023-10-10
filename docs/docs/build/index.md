@@ -10,48 +10,31 @@ This is alpha-stage software. There will be dragons. If you are planning to play
 
 :::
 
-## Installation
+## Contracts
 
-### Install Rust and Cargo
+### Installation
 
-Follow the steps from the [cargo book](https://doc.rust-lang.org/cargo/getting-started/installation.html) to install Rust and Cargo.
+#### Installing prerequisites
 
-### Install Cargo Contracts
+Follow the steps from the [foundry book](https://book.getfoundry.sh/getting-started/installation) to install the Foundry toolsuite, which contains the `forge`, `cast`, `anvil` and `chisel` tools.
 
-Follow the steps from the [cargo contracts project](https://github.com/paritytech/cargo-contract#installation).
+#### Adding BOB contracts as dependency
 
-At this point, you should be able to run `cargo contract --help` and see the help output.
+To add the contracts to your own projects, if your project is using `forge`, you can simply run `forge install bob-collective/bob` to add BOB contracts as a dependency to your project.  
 
-## Create a Project
+### Build the code
 
-To create a new project, run the following command:
+To build all the contracts, run `forge build`.
 
-```bash
-cargo contract new <project-name>
-```
+### Run the tests
 
-This will create a project with the following structure:
+To run the built-in tests, run `forge test`.
 
-```bash
-<project-name>
-├── lib.rs
-├── Cargo.toml
-├── .gitignore
-```
+### Examples
 
-By default, the contract is initialized with the `flipper` example from the [ink! documentation](https://github.com/paritytech/ink-examples/tree/main/flipper).
+The repository contains various code samples in the `src/swap` folder. To deploy a contract like the bitcoin marketplace swap example, run `forge create src/swap/Btc_Marketplace.sol:BtcMarketPlace --rpc-url 'https://l2-fluffy-bob-7mjgi9pmtg.t.conduit.xyz' --private-key "your private key here" --chain 901 --verify --verifier blockscout --verifier-url 'https://explorerl2-fluffy-bob-7mjgi9pmtg.t.conduit.xyz/api?'`.
 
-### Test
+You can then interact with the contract using through the normal means, e.g. via cast: `cast send 0x0b7bb3e86b620b06e8cdc0e72e142b0bff8c3804 "placeBtcSellOrder(uint,address,uint)" --rpc-url "https://l2-fluffy-bob-7mjgi9pmtg.t.conduit.xyz" --private-key "your private key here" 1 0x0000000000000000000000000000000000000001 1`
 
-Writing and executing unit tests is the easiest way to test your contracts. These do not require running a local node but rather use `cargo` to perform the tests.
+You will be able to see your contract deployed using the [explorer](https://explorerl2-ideal-lavender-parrotfish-s3gs5qpznm.t.conduit.xyz/). Interacting with the contract via the explorer is currently not possible due to a deployment bug in conduit.
 
-Test the contract:
-
-```bash
-cargo test
-```
-
-## Useful resources
-
-- ink! documentation: https://use.ink/getting-started/setup
-- Hackathon template: https://github.com/scio-labs/inkathon
