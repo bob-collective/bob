@@ -8,6 +8,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {stdStorage, StdStorage, Test, console} from "forge-std/Test.sol";
 import {BtcMarketPlace} from "../../src/swap/Btc_Marketplace.sol";
 import {Utilities} from "./Utilities.sol";
+import {BitcoinTx} from "../../src/bridge/BitcoinTx.sol";
 
 contract ArbitaryErc20 is ERC20, Ownable {
     constructor(
@@ -42,6 +43,25 @@ contract MarketPlaceTest is BtcMarketPlace, Test {
         token1 = new ArbitaryErc20("Some token", "TKN");
     }
 
+    function dummyTransaction() public view returns (BitcoinTx.Info memory) {
+        BitcoinTx.Info memory transaction = BitcoinTx.Info({
+            version: hex"00000002",
+            inputVector: hex"",
+            outputVector: hex"",
+            locktime: hex"00000000"
+        });
+        return transaction;
+    }
+
+    function dummyProof() public view returns (BitcoinTx.Proof memory) {
+        BitcoinTx.Proof memory transaction = BitcoinTx.Proof({
+            merkleProof: hex"",
+            txIndexInBlock: 0,
+            bitcoinHeaders: hex""
+        });
+        return transaction;
+    }
+
     function testSellBtc() public {
         token1.sudoMint(bob, 100);
 
@@ -53,7 +73,7 @@ contract MarketPlaceTest is BtcMarketPlace, Test {
         this.acceptBtcSellOrder(0, BitcoinAddress({bitcoinAddress: ""}), 40);
 
         vm.startPrank(alice);
-        this.proofBtcSellOrder(1, TransactionProof({dummy: 0}));
+        this.proofBtcSellOrder(1, dummyTransaction(), dummyProof());
     }
 
     function testWithdrawSellBtcOrder() public {
@@ -105,7 +125,7 @@ contract MarketPlaceTest is BtcMarketPlace, Test {
         vm.startPrank(bob);
         this.acceptBtcBuyOrder(0, 40);
 
-        this.proofBtcBuyOrder(1, TransactionProof({dummy: 0}));
+        this.proofBtcBuyOrder(1, dummyTransaction(), dummyProof());
         assertEq(token1.balanceOf(alice), 0);
         assertEq(token1.balanceOf(address(this)), 96);
         assertEq(token1.balanceOf(bob), 4);
