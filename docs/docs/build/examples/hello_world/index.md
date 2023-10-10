@@ -1,7 +1,0 @@
-# Hello World
-
-:::info
-
-TODO
-
-:::
