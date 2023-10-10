@@ -1,0 +1,57 @@
+version: "3.8"
+services:
+    bitcoind:
+        image: "ruimarinho/bitcoin-core:23"
+        command:
+            - -regtest
+            - -server
+            - -rpcbind=0.0.0.0
+            - -rpcallowip=0.0.0.0/0
+            - -rpcuser=rpcuser
+            - -rpcpassword=rpcpassword
+            - -fallbackfee=0.0002
+        ports:
+            - "18443:18443"
+
+    bitcoin-cli:
+        image: "ruimarinho/bitcoin-core:23"
+        command:
+            - /bin/sh
+            - -c
+            - |
+
+                bitcoin-cli -regtest -rpcconnect=bitcoind -rpcwait -rpcuser=rpcuser -rpcpassword=rpcpassword createwallet Alice
+                bitcoin-cli -regtest -rpcconnect=bitcoind -rpcwait -rpcuser=rpcuser -rpcpassword=rpcpassword loadwallet Alice
+
+                ALICE_ADDRESS=$$(bitcoin-cli -regtest -rpcconnect=bitcoind -rpcwait -rpcuser=rpcuser -rpcpassword=rpcpassword -rpcwallet=Alice getnewaddress)
+                # coins need 100 confirmations to be spendable
+                bitcoin-cli -regtest -rpcconnect=bitcoind -rpcwait -rpcuser=rpcuser -rpcpassword=rpcpassword generatetoaddress 101 $${ALICE_ADDRESS}
+
+                # automatically mine 1 block every 5 seconds
+                trap 'exit 130' TERM INT EXIT
+                while true; do
+                    bitcoin-cli -regtest -rpcconnect=bitcoind -rpcwait -rpcuser=rpcuser -rpcpassword=rpcpassword generatetoaddress 1 $${ALICE_ADDRESS}
+                    sleep 5 &
+                    wait $!
+                done
+
+    electrs:
+        image: "interlayhq/electrs:latest"
+        command:
+            - electrs
+            - -vvvv
+            - --network
+            - regtest
+            - --jsonrpc-import
+            - --cors
+            - "*"
+            - --cookie
+            - "rpcuser:rpcpassword"
+            - --daemon-rpc-addr
+            - "bitcoind:18443"
+            - --http-addr
+            - "[::0]:3002"
+            - --index-unspendables
+        ports:
+            - "3002:3002"
+        restart: always
