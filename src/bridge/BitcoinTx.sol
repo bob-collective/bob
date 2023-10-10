@@ -164,8 +164,8 @@ library BitcoinTx {
     /// @return txHash Proven 32-byte transaction hash.
     function validateProof(
         BridgeState.Storage storage self,
-        Info calldata txInfo,
-        Proof calldata proof
+        Info memory txInfo,
+        Proof memory proof
     ) internal view returns (bytes32 txHash) {
         require(
             txInfo.inputVector.validateVin(),
