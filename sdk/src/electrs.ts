@@ -85,7 +85,7 @@ export class DefaultElectrsClient implements ElectrsClient {
         if (!response.ok) {
             throw new Error(response.statusText);
         }
-        return await response.json();
+        return await response.json() as Promise<T>;
     }
 
     async getText(url: string): Promise<string> {
