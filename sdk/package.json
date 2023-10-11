@@ -1,10 +1,17 @@
 {
   "name": "bob-sdk",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "build/index.js",
+  "types": "build/index.d.ts",
+  "exports": {
+    ".": {
+      "main": "./build/index.js",
+      "types": "./build/index.d.ts"
+    }
+  },
   "scripts": {
     "test": "ts-mocha test/*.ts",
-    "build": "tsc"
+    "build": "tsc -p tsconfig.json"
   },
   "devDependencies": {
     "@types/chai": "^4.3.6",
