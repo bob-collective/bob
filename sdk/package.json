@@ -1,6 +1,6 @@
 {
   "name": "@gobob/bob-sdk",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -8,7 +8,7 @@
     "build": "tsc -p tsconfig.json"
   },
   "files": [
-    "dist/",
+    "dist/**/*",
     "!**/*.spec.*",
     "!**/*.json",
     "CHANGELOG.md",
