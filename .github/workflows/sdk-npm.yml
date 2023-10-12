@@ -1,7 +1,8 @@
 ---
 name: SDK NPM Publish
 on:
-  tag:
+  push:
+    tags:
 jobs:
   publish:
     runs-on: ubuntu-latest
