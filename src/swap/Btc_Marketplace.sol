@@ -3,10 +3,15 @@ pragma solidity ^0.8.13;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {BitcoinTx} from "../bridge/BitcoinTx.sol";
+// import {LightRelay} from "../relay/LightRelay.sol";
+import {IRelay} from "../bridge/IRelay.sol";
+import {BridgeState} from "../bridge/BridgeState.sol";
 
 using SafeERC20 for IERC20;
 
 contract BtcMarketPlace {
+    using BitcoinTx for BridgeState.Storage;
+
     mapping(uint256 => BtcBuyOrder) public btcBuyOrders;
     mapping(uint256 => AcceptedBtcBuyOrder) public acceptedBtcBuyOrders;
     mapping(uint256 => BtcSellOrder) public btcSellOrders;
@@ -14,6 +19,13 @@ contract BtcMarketPlace {
 
     uint256 nextOrderId;
     uint256 public constant REQUEST_EXPIRATION_SECONDS = 6 hours;
+
+    BridgeState.Storage internal relay;
+
+    constructor(IRelay _relay) {
+        relay.relay = _relay;
+        relay.txProofDifficultyFactor = 1; // will make this an arg later on
+    }
 
     // todo: should we merge buy&sell structs? They're structurally identical except for the
     // bitcoinaddress location.
@@ -172,7 +184,7 @@ contract BtcMarketPlace {
 
         require(accept.requester == msg.sender);
 
-        // todo: check proof
+        relay.validateProof(transaction, proof);
 
         IERC20(accept.ercToken).safeTransfer(
             accept.requester,
@@ -293,7 +305,7 @@ contract BtcMarketPlace {
 
         require(accept.accepter == msg.sender);
 
-        // todo: check proof
+        relay.validateProof(transaction, proof);
 
         IERC20(accept.ercToken).safeTransfer(accept.accepter, accept.ercAmount);
 

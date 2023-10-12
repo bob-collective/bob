@@ -63,6 +63,11 @@ export class DefaultElectrsClient implements ElectrsClient {
         return this.getText(`${this.basePath}/block/${hash}/header`);
     }
 
+    async getBlockHeaderAt(height: number): Promise<string> {
+        const blockHash = await this.getBlockHash(height);
+        return await this.getBlockHeader(blockHash);
+    }
+    
     async getTransactionHex(txId: string): Promise<string> {
         return this.getText(`${this.basePath}/tx/${txId}/hex`);
     }
