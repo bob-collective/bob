@@ -1,12 +1,20 @@
 {
   "name": "@gobob/bob-sdk",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
     "test": "ts-mocha test/*.ts",
     "build": "tsc -p tsconfig.json"
   },
+  "files": [
+    "dist/",
+    "!**/*.spec.*",
+    "!**/*.json",
+    "CHANGELOG.md",
+    "LICENSE",
+    "README.md"
+  ],
   "devDependencies": {
     "@types/chai": "^4.3.6",
     "@types/mocha": "^10.0.2",
