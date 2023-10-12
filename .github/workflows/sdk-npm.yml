@@ -3,6 +3,7 @@ name: SDK NPM Publish
 on:
   push:
     tags:
+      - "*"
 jobs:
   publish:
     runs-on: ubuntu-latest
