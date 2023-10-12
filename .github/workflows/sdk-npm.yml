@@ -21,7 +21,7 @@ jobs:
       - run: npm ci
       - run: npm test
         continue-on-error: true
-      - run: npm build
+      - run: npm run build
       - run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
