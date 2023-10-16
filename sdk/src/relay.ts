@@ -32,6 +32,13 @@ export interface BitcoinTxInfo {
  * @param electrsClient - An ElectrsClient instance for interacting with the Electrum server.
  * @param txId - The ID of the Bitcoin transaction.
  * @returns A promise that resolves to a BitcoinTxInfo object.
+ * @example
+ * ```typescript
+ * const BITCOIN_NETWORK = "regtest";
+ * const electrsClient = new DefaultElectrsClient(BITCOIN_NETWORK);
+ * const txId = "279121610d9575d132c95312c032116d6b8a58a3a31f69adf9736b493de96a16"; //enter the transaction id here
+ * const info = await getBitcoinTxInfo(electrsClient, txId);
+ * ```
  */
 export async function getBitcoinTxInfo(
     electrsClient: ElectrsClient,
@@ -78,7 +85,14 @@ export interface BitcoinTxProof {
  * @param electrsClient - An ElectrsClient instance for interacting with the Electrum server.
  * @param txId - The ID of the Bitcoin transaction.
  * @param txProofDifficultyFactor - The number of block headers to retrieve for proof verification.
- * @returns A promise that resolves to a BitcoinTxProof object.
+ * @example
+ * ```typescript
+ * const BITCOIN_NETWORK = "regtest";
+ * const electrsClient = new DefaultElectrsClient(BITCOIN_NETWORK);
+ * const txId = "279121610d9575d132c95312c032116d6b8a58a3a31f69adf9736b493de96a16";//enter the transaction id here
+ * const txProofDifficultyFactor = "1";//enter the difficulty factor
+ * const info = await getBitcoinTxProof(electrsClient, txId, txProofDifficultyFactor);
+ * ```
  */
 export async function getBitcoinTxProof(
     electrsClient: ElectrsClient,
