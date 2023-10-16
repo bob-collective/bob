@@ -98,7 +98,7 @@ The 'Fulfil order' button will now be disabled, and you will see a countdown nex
 - You will be able to complete the order as soon as one confirmation has been received.
   - If you close the modal or navigate away from the app, clicking on the 'Complete Order' button again will show you the current status of the transaction.
 
-#### Fulfilling a BTC -> ERC20 order
+#### Fulfilling a BTC -> ERC20 order (i.e., selling BTC)
 
 - Switch to the account you created for fulfilling orders.
 - In the 'Buy' table find the swap you created with your selling account offering an ERC20 token (as the seller) in exchange for BTC.
