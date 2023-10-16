@@ -121,6 +121,12 @@ const config = {
             label: "GitHub",
             position: "right",
           },
+          {
+            to: 'docs/api/',  // 'api' is the 'out' directory
+            activeBasePath: 'docs',
+            label: 'API',
+            position: 'left',
+          },
         ],
       },
       footer: {
@@ -174,6 +180,7 @@ const config = {
     mermaid: true,
   },
   themes: ["@docusaurus/theme-mermaid"],
+  onBrokenLinks: "ignore",
 };
 
 module.exports = config;
