@@ -22,5 +22,52 @@ There was only one issue highlighted in the Least Authority audit related to the
 
 ## Using the relay
 
-- To check the inclusion of a specific transaction, the `BitcoinTx.validateProof` function can be used. See `test/LightRelay.t.sol` for an example.   
-- `BitcoinTx.getTxOutputValue` can be be used to check the amount transfered to a specific address in a given `txOut`. See `test/BitcoinTx.t.sol` for an example.
+The code for the light relay is in `src/relay/LightRelay.sol` which stores the difficulty for the current and previous epoch. To update this it is possible to use `retarget(headers)` with `proofLength * 2` block headers from Bitcoin (before and after the retarget) serialized sequentially. 
+
+:::tip BOB SDK
+
+Use the `getBitcoinHeaders` function to automatically read these from the configured Electrs REST API.
+
+:::
+
+### Validating merkle proofs (SPV)
+
+To check the inclusion of a specific transaction, the `BitcoinTx.validateProof` function can be used. See `test/LightRelay.t.sol` for an example. This requires the serialized transaction and merkle proof with `txProofDifficultyFactor` block headers to prove sufficient work has been built on top.
+
+:::tip BOB SDK
+
+Refer to the `getBitcoinTxProof` and `getBitcoinTxInfo` functions to encode the expected arguments.
+
+:::
+
+### Validating merkle proofs (SPV + witness)
+
+To check that witness data is also included according to the relay we need to do the following:
+
+1. verify coinbase is included (tx + merkle proof)
+2. verify payment is included (tx + merkle proof)
+3. validate witness commitment (extract root from coinbase, provide merkle proof for wtxids)
+
+:::info
+
+Why might you want to do this? Under normal SPV assumptions it is not possible to prove witness data (such as Ordinal inscriptions) are included on the main chain.
+
+:::
+
+Use the `WitnessTx.validateWitnessProof` function to verify witness data is included. See `test/WitnessTx.t.sol` for an example. As above, this requires the serialized transaction and merkle proof for the **coinbase** transaction. To verify the witness data is included we need to encode the **payment** arguments differently. Check the expected structs in `src/bridge/WitnessTx.sol`, it requires a `witnessVector` and separate witness merkle root hash built using the block's "wtxids" - transactions serialized with the witness data and then hashed according to Bitcoin's double sha2.
+
+:::warning BOB SDK
+
+This approach is still experimental and not yet fully supported by the SDK. To construct the arguments as before use `getBitcoinTxProof` but set `forWitness` to `true` for `getBitcoinTxInfo` to get the `witnessVector`. To construct the witness merkle proof follow the test in `sdk/test/utils.test.ts` using `getMerkleProof` with the full raw block data.
+
+:::
+
+### Checking output amounts
+
+To extract the output amount `BitcoinTx.getTxOutputValue` can be be used to extract the amount transfered to a specific address. See `test/BitcoinTx.t.sol` for an example. The address is the `keccak256` hash of the expected `scriptPubKey`.
+
+:::tip BOB SDK
+
+Use `getBitcoinTxInfo` and pass the `outputVector`.
+
+:::
