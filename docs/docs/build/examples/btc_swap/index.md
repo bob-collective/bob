@@ -81,7 +81,7 @@ If you now switch back to the account you used to create the order, you will see
 
 ![fill-order-form](fill-order-form.png)
 
-#### Fulfilling an ERC20 -> BTC order
+#### Fulfilling an ERC20 -> BTC order (i.e., buying BTC)
 
 - Switch to the account you created for fulfilling orders.
 - In the 'Buy' table find the swap you created with your selling account offering BTC (as the seller) in exchange for an ERC20.
