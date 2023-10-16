@@ -10,26 +10,91 @@ export interface MerkleProof {
 
 export interface ElectrsClient {
     /**
-     * @param height The height of the Bitcoin block
-     * @returns The block hash of the Bitcoin block
+     * Get the block hash of the Bitcoin block at a specific height.
+     *
+     * This function retrieves the block hash for the Bitcoin block at the given height.
+     *
+     * @param {number} height - The height of the Bitcoin block.
+     * @returns {Promise<string>} A promise that resolves to the block hash of the Bitcoin block.
+     *
+     * @example
+     * ```typescript
+     * const electrsClient = new DefaultElectrsClient(BITCOIN_NETWORK);
+     * const blockHeight = 123456;
+     * electrs.getBlockHash(blockHeight)
+     *   .then((blockHash) => {
+     *     console.log(`Block hash at height ${blockHeight}: ${blockHash}`);
+     *   })
+     *   .catch((error) => {
+     *     console.error(`Error: ${error}`);
+     *   });
+     * ```
      */
     getBlockHash(height: number): Promise<string>;
+
     /**
-     * @param height The hash of the Bitcoin block
-     * @returns The raw block header, represented as a hex string
+     * Get the raw block header, represented as a hex string, for a Bitcoin block with a given hash.
+     *
+     * @param {string} hash - The hash of the Bitcoin block.
+     * @returns {Promise<string>} A promise that resolves to the raw block header as a hex string.
+     *
+     * @example
+     * ```typescript
+     * const electrsClient = new DefaultElectrsClient(BITCOIN_NETWORK);
+     * const blockHash = 'your_block_hash_here';
+     * electrs.getBlockHeader(blockHash)
+     *   .then((blockHeader) => {
+     *     console.log(`Raw block header for block with hash ${blockHash}: ${blockHeader}`);
+     *   })
+     *   .catch((error) => {
+     *     console.error(`Error: ${error}`);
+     *   });
+     * ```
      */
     getBlockHeader(hash: string): Promise<string>;
+    
     /**
-     * @param txId The ID of a Bitcoin transaction
-     * @returns The transaction data, represented as a hex string
+     * Get the transaction data, represented as a hex string, for a Bitcoin transaction with a given ID (txId).
+     *
+     * @param {string} txId - The ID of a Bitcoin transaction.
+     * @returns {Promise<string>} A promise that resolves to the transaction data as a hex string.
+     *
+     * @example
+     * ```typescript
+     * const electrsClient = new DefaultElectrsClient(BITCOIN_NETWORK);
+     * const transactionId = 'your_transaction_id_here';
+     * electrs.getTransactionHex(transactionId)
+     *   .then((transactionHex) => {
+     *     console.log(`Transaction hex for transaction with ID ${transactionId}: ${transactionHex}`);
+     *   })
+     *   .catch((error) => {
+     *     console.error(`Error: ${error}`);
+     *   });
+     * ```
      */
     getTransactionHex(txId: string): Promise<string>;
+    
     /**
-     * @param txId The ID of a Bitcoin transaction
-     * @returns The encoded merkle inclusion proof for the transaction
+     * Get the encoded merkle inclusion proof for a Bitcoin transaction with a given ID (txId).
+     *
+     * @param {string} txId - The ID of a Bitcoin transaction.
+     * @returns {Promise<MerkleProof>} A promise that resolves to the encoded merkle inclusion proof.
+     *
+     * @example
+     * ```typescript
+     * const electrsClient = new DefaultElectrsClient(BITCOIN_NETWORK);
+     * const transactionId = 'your_transaction_id_here';
+     * electrs.getMerkleProof(transactionId)
+     *   .then((merkleProof) => {
+     *     console.log(`Merkle inclusion proof for transaction with ID ${transactionId}: ${merkleProof}`);
+     *   })
+     *   .catch((error) => {
+     *     console.error(`Error: ${error}`);
+     *   });
+     * ```
      */
     getMerkleProof(txId: string): Promise<MerkleProof>;
-}
+ }
 
 function encodeElectrsMerkleProof(merkle: string[]): string {
     // convert to little-endian

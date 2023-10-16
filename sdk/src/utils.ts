@@ -1,6 +1,10 @@
+//@ts-nocheck
 import { Block } from "bitcoinjs-lib";
+//@ts-nocheck
 import { BufferWriter, varuint } from "bitcoinjs-lib/src/bufferutils";
+//@ts-nocheck
 import { hash256 } from "bitcoinjs-lib/src/crypto";
+//@ts-nocheck
 import { Output, Transaction } from "bitcoinjs-lib/src/transaction";
 
 function varSliceSize(someScript: Buffer): number {
@@ -89,6 +93,13 @@ function chunkArray<T>(array: T[], chunkSize: number): T[][] {
     return chunkedArray;
 }
 
+/**
+ * Create a Merkle branch and root based on a list of hashes and a specific index.
+ *
+ * @param hashes - An array of hashes for Merkle construction.
+ * @param index - The index of the hash for which the branch and root are calculated.
+ * @returns An object containing the Merkle branch and root.
+ */
 // https://github.com/Blockstream/electrs/blob/fd35014283c7d3a7a85c77b9fd647c9f09de12c9/src/util/electrum_merkle.rs#L86-L105
 function createMerkleBranchAndRoot(hashes: Buffer[], index: number): {
     merkle: Buffer[],
@@ -111,8 +122,14 @@ function createMerkleBranchAndRoot(hashes: Buffer[], index: number): {
     };
 }
 
-// used to construct merkle proofs from the raw block data, especially useful for
-// constructing a non-standard "witness proof" which is not currently supported by electrs
+/**
+ * Retrieve a Merkle proof for a Bitcoin transaction from a block's raw data.
+ *
+ * @param block - The Bitcoin block containing the transaction.
+ * @param txHash - The transaction hash to construct a proof for.
+ * @param forWitness - Set to `true` to construct a witness proof (default is `false`).
+ * @returns An object containing the position, proof, and root of the Merkle proof.
+ */
 export function getMerkleProof(block: Block, txHash: string, forWitness?: boolean) {
     const txIds = block.transactions!.map(tx => tx.getHash(forWitness));
     const pos = txIds.map(value => value.toString("hex")).indexOf(txHash);

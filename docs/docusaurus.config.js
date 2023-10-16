@@ -51,6 +51,21 @@ const config = {
         };
       },
     }),
+
+    [
+      'docusaurus-plugin-typedoc',
+      // Plugin / TypeDoc options
+      {
+        entryPoints: ['../sdk/src/*'],
+        tsconfig: 'tsconfig.json',
+        sidebar: {
+          collapsed: false,
+          position: 0,
+          fullNames: true,
+        },
+      },
+    ],
+
   ],
   presets: [
     [

@@ -37,3 +37,6 @@ docs/
 
 # Dotenv file
 .env
+
+# node modules
+node_modules/*
