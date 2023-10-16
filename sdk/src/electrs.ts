@@ -19,9 +19,10 @@ export interface ElectrsClient {
      *
      * @example
      * ```typescript
+     * const BITCOIN_NETWORK = "regtest";
      * const electrsClient = new DefaultElectrsClient(BITCOIN_NETWORK);
      * const blockHeight = 123456;
-     * electrs.getBlockHash(blockHeight)
+     * electrsClient.getBlockHash(blockHeight)
      *   .then((blockHash) => {
      *     console.log(`Block hash at height ${blockHeight}: ${blockHash}`);
      *   })
@@ -40,9 +41,10 @@ export interface ElectrsClient {
      *
      * @example
      * ```typescript
+     * const BITCOIN_NETWORK = "regtest";
      * const electrsClient = new DefaultElectrsClient(BITCOIN_NETWORK);
      * const blockHash = 'your_block_hash_here';
-     * electrs.getBlockHeader(blockHash)
+     * electrsClient.getBlockHeader(blockHash)
      *   .then((blockHeader) => {
      *     console.log(`Raw block header for block with hash ${blockHash}: ${blockHeader}`);
      *   })
@@ -61,9 +63,10 @@ export interface ElectrsClient {
      *
      * @example
      * ```typescript
+     * const BITCOIN_NETWORK = "regtest";
      * const electrsClient = new DefaultElectrsClient(BITCOIN_NETWORK);
      * const transactionId = 'your_transaction_id_here';
-     * electrs.getTransactionHex(transactionId)
+     * electrsClient.getTransactionHex(transactionId)
      *   .then((transactionHex) => {
      *     console.log(`Transaction hex for transaction with ID ${transactionId}: ${transactionHex}`);
      *   })
@@ -82,9 +85,10 @@ export interface ElectrsClient {
      *
      * @example
      * ```typescript
+     * const BITCOIN_NETWORK = "regtest";
      * const electrsClient = new DefaultElectrsClient(BITCOIN_NETWORK);
      * const transactionId = 'your_transaction_id_here';
-     * electrs.getMerkleProof(transactionId)
+     * electrsClient.getMerkleProof(transactionId)
      *   .then((merkleProof) => {
      *     console.log(`Merkle inclusion proof for transaction with ID ${transactionId}: ${merkleProof}`);
      *   })
