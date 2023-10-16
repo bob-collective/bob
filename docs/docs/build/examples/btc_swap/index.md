@@ -8,7 +8,7 @@ This example app is a work in progress, and the application repository is curren
 
 ## Demo
 
-We have created a testnet demo of the Peer to Peer swap which allows you to swap BTC for ERC20 tokens, ERC20 tokens for BTC, and exchange ERC20 tokens. The application currently supports USDT and ZBTC.
+We have created a testnet demo of the Peer to Peer swap which allows you to swap BTC for ERC20 tokens, ERC20 tokens for BTC, and exchange one ERC20 token for another. The application currently supports USDT and ZBTC.
 
 ### Connecting your wallet
 
@@ -19,23 +19,34 @@ We have created a testnet demo of the Peer to Peer swap which allows you to swap
 
 The UI can sometimes fail to connect if you have multiple wallets installed. If this happens you should disable all wallet extensions other than the one you want to use for the demo.
 
-### Creating and funding test accounts
+![connect](connect-wallet.png)
 
-- You will need two accounts for this demo, so that you can both create and fulfil orders.
-- For each account:
-  - Click the 'Get Eth' button to fund your account with Eth. This will be needed for transaction fees.
-  - Click the 'Get Tokens' button to fund your account with ERC20 tokens to used when adding an order.
+### Creating and funding test accounts
+
+:::note
+ZBTC tokens will be imported into your wallet with a ticker of bBTC. These will show as ZBTC tokens in the application.
+:::
+
+You will need two accounts for this demo, so that you can both create and fulfil orders. For each account:
+
+- Click the 'Get Eth' button to fund your account with Eth. This will be needed for transaction fees.
+- After the ETH tokens have arrived in your wallet, click on the 'Get Tokens' button to fund your account with ERC20 tokens to used when adding an order.
 - Import the ERC20 tokens from the following contract addresses:
   - ZBTC: `0xd6cd079ee8bc26b5000a5e1ea8d434c840e3434b`
   - USDT: `0x3c252953224948E441aAfdE7b391685201ccd3bC`
+
+The faucet is configured to mint 1,000 tokens for each currency. If you want to create orders for more than this amount, the faucet can be called multiple times.
 
 #### Known issues
 
 - If you have connected your wallet to an earlier version of the application, you may see an error (`No chain was provided to the request`). If this happen you should disconnect and then reconnect your wallet.
 - ETH tokens need to be minted first, as ETH is required to pay the transaction fees for minting ERC20s.
-- ZBTC tokens will be imported into your wallet with a ticker of `bBTC`. These will show as ZBTC tokens in the application.
 
 ### Creating an order
+
+:::note
+Orders are shown with a price per unit even though BTC orders cannot be partially filled. That means that if you offer 1BTC in exchange for 25,000 USDT you will see a price per unit of 0.00004 in 'Sell' table
+:::
 
 - Click on the 'Add an order' button.
 - Select the tokens you want to offer and receive
@@ -44,6 +55,8 @@ The UI can sometimes fail to connect if you have multiple wallets installed. If 
   - The first time you create an order with each token, you will be prompted to approve a spending cap before you can submit the transaction. You will only need to do this once. There is no need to submit the form twice: as soon as the spending cap transaction has completed you'll be prompted to sign the order transaction.
 
 You can see all the orders you have placed by clicking on the 'Sell' tab. Orders listed under the 'Buy' tab are available for you to fulfil.
+
+![add-order-form](add-order-form.png)
 
 ### Fulfilling an order
 
@@ -66,6 +79,8 @@ The process for fulfilling an order is slightly different depending on whether y
 
 If you now switch back to the account you used to create the order, you will see that amount available has decreased. If the order has been fulfilled completely, it will no longer be shown under the 'Sell' tab.
 
+![fill-order-form](fill-order-form.png)
+
 #### Fulfilling an ERC20 -> BTC order
 
 - Switch to the account you created for fulfilling orders.
@@ -74,7 +89,7 @@ If you now switch back to the account you used to create the order, you will see
 - Enter a valid testnet BTC address.
 - Submit the form.
 
-The 'Fulfil order' button will now be disabled, and you will see a countdown next to it. This is how long the other party in the swap has to send you the BTC. Once the time reaches 0, you will be able to cancel the order. This does not happen automatically: the other party will still be able to send the BTC unless you cancel the order.
+The 'Fulfil order' button will now be disabled, and you will see a countdown next to it. This is how long the other party in the swap has to send you the BTC. Once the timer reaches 0, you will be able to cancel the order. This does not happen automatically: the other party will still be able to send the BTC unless you cancel the order.
 
 - Switch back to your selling account.
 - You will now see an 'Accepted BTC Orders' table under the 'Sell' tab.
@@ -99,18 +114,24 @@ You will now see an 'Accepted BTC Orders' table under the buy tab.
 
 If you switch back to your selling account before completing the order, you will see the order in the 'Accepted BTC Orders' table under the 'Sell' tab. If the order is not completed by the buyer within the allowed time, you will be able to cancel the order.
 
-## The contract
+![complete-order](complete-order.png)
+
+## Demo code
+
+TODO: Code is only partially documented/
+
+### The contract
 
 The contract that this example uses can be found in `src/swap/Btc_Marketplace.sol`. Example usage can be seen in its tests in `test/swap/Btc_Marketplace.t.sol`. The contract is a work in progress, with some bitcoin-related parts being mocked. Its usage is as follows:
 
-### Buying BTC
+#### Buying BTC
 
 - Alice calls `placeBtcBuyOrder` and specifies amounts and a bitcoin address.
 - Bob calls `acceptBtcBuyOrder`
 - Bob makes the bitcoin transfer
 - Bob calls `proofBtcBuyOrder`, or Alice can call `cancelAcceptedBtcBuyOrder` after a timeout.
 
-### Selling BTC
+#### Selling BTC
 
 - Alice calls `placeBtcSellOrder` specifying the amounts
 - Bob calls `acceptBtcSellOrder` and specifies a bitcoin address
@@ -118,7 +139,7 @@ The contract that this example uses can be found in `src/swap/Btc_Marketplace.so
 
 For both buying and selling orders, if the order has not yet been accepted, Alice can withdraw the request using `withdrawBtcSellOrder`/`withdrawBtcBuyOrder`.
 
-## Set up local environment
+### Set up local environment
 
 1. Clone [https://github.com/bob-collective/bob](https://github.com/bob-collective/bob)
 2. Install [Docker](https://www.docker.com)
@@ -128,7 +149,7 @@ For both buying and selling orders, if the order has not yet been accepted, Alic
 
 An example application can be found at [https://github.com/bob-collective/bob-ui-poc](https://github.com/bob-collective/bob-ui-poc). This has been built using [Viem](https://viem.sh/), [Wagmi](https://wagmi.sh/), React and Typescript, but you can interact with the smart contract using your preferred tools and frameworks.
 
-## Funding your wallet with ERC20 tokens
+### Funding your wallet with ERC20 tokens
 
 TODO: Add faucet UI.
 
@@ -137,7 +158,7 @@ Add the contact addresses for supported ERC20 tokens to your Ethereum wallet:
 - ZBTC: `0xd6cd079ee8bc26b5000a5e1ea8d434c840e3434b`
 - USDT: `0x3c252953224948E441aAfdE7b391685201ccd3bC`
 
-### Getting the smart contract ABIs in the front-end
+#### Getting the smart contract ABIs in the front-end
 
 This is done using a React hook which extends Viem's `getContract` method. This allows contract member types to be inferred, rather than respecified in the application.
 
