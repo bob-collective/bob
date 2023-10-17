@@ -46,7 +46,7 @@ You will need two accounts for this demo, so that you can both create and fulfil
 
 :::note
 
-The faucet is configured to mint 1,000 tokens for each currency. If you want to create orders for more than this amount, the faucet can be called multiple times.
+The faucet is configured to mint 30,000 tokens for each currency. If you want to create orders for more than this amount, the faucet can be called multiple times.
 
 :::
 
