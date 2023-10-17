@@ -8,7 +8,7 @@ This example app is a work in progress, and the application repository is curren
 
 ## Demo
 
-We have created a testnet demo of the Peer to Peer swap which allows you to swap BTC for ERC20 tokens, ERC20 tokens for BTC, and exchange one ERC20 token for another. The application currently supports USDT and ZBTC.
+We have created a testnet demo of the P2P swap, allowing anyone to swap BTC for ERC20 tokens, ERC20 tokens for BTC, and exchange one ERC20 token for another. The application currently supports testnet BTC, testnet USDT, and ZBTC (ZBTC is a placeholder for an arbitrary bridged BTC token).
 
 ### Connecting your wallet
 
