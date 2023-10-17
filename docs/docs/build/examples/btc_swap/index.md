@@ -26,6 +26,12 @@ The UI can sometimes fail to connect if you have multiple wallets installed. If 
 
 :::
 
+:::note
+
+We have seen an intermittent issue connecting to wallets on some Android devices.
+
+:::
+
 - Install one of the supported EVM wallets: MetaMask and Frame. Others will likely work as well but are not tested.
 - Install one of the supported Bitcoin testnet wallets: Electrum. Others will likely work as well but are not tested.
 - Go to [demo.gobob.xyz](https://demo.gobob.xyz)
