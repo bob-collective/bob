@@ -2,10 +2,8 @@
 
 This example demonstrates how BOB is leveraged to build a peer-to-peer (P2P) swap application that allows two parties to swap ERC20 tokens and BTC without using a custodian.
 
-TODO: Rename repo, make it public, update docs
-
 :::note
-This example app is a work in progress, and the application repository is currently set to private.
+The code for this example can be [found in the P2P swap demo GitHub repository](https://github.com/bob-collective/p2p-swap-demo)
 :::
 
 ## Demo
@@ -162,12 +160,7 @@ An example application can be found at [https://github.com/bob-collective/bob-ui
 
 ### Funding Your Wallet with ERC20 Tokens
 
-TODO: Add faucet UI.
-
-Add the contact addresses for supported ERC20 tokens to your Ethereum wallet:
-
-- ZBTC: `0xd6cd079ee8bc26b5000a5e1ea8d434c840e3434b`
-- USDT: `0x3c252953224948E441aAfdE7b391685201ccd3bC`
+This can be done using the faucet buttons as described in the [Creating and Funding Test Accounts](#creating-and-funding-test-accounts)above.
 
 #### Getting the Smart Contract ABIs in the UI
 
