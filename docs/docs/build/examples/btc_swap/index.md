@@ -14,6 +14,10 @@ We have created a testnet demo of the P2P swap, allowing anyone to swap BTC for 
 
 ### Connecting Your Wallet
 
+:::note
+When connecting to our test network the gas token will be shown as BOB. This can be changed to ETH in the network settings of your wallet.
+:::
+
 - Install one of the supported EVM wallets: MetaMask and Frame. Others will likely work as well but are not tested.
 - Install one of the supported Bitcoin testnet wallets: Electrum. Others will likely work as well but are not tested.
 - Go to [demo.gobob.xyz](https://demo.gobob.xyz)
