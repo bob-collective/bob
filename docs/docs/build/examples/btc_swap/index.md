@@ -47,7 +47,7 @@ The faucet is configured to mint 1,000 tokens for each currency. If you want to 
 ### Creating an order
 
 :::note
-Orders are shown with a price per unit even though BTC orders cannot be partially filled. That means that if you offer 1BTC in exchange for 25,000 USDT you will see a price per unit of 0.00004 in 'Sell' table
+Orders are shown with a price per unit even though BTC orders cannot be partially filled. That means that if you offer 1 BTC in exchange for 25,000 USDT, you will see a price per unit of 0.00004 in 'Sell' table
 :::
 
 - Click on the 'Add an order' button.
