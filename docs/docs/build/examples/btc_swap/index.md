@@ -8,10 +8,12 @@ This example app is a work in progress, and the application repository is curren
 
 ## Demo
 
-We have created a testnet demo of the Peer to Peer swap which allows you to swap BTC for ERC20 tokens, ERC20 tokens for BTC, and exchange one ERC20 token for another. The application currently supports USDT and ZBTC.
+We have created a testnet demo of the P2P swap, allowing anyone to swap BTC for ERC20 tokens, ERC20 tokens for BTC, and exchange one ERC20 token for another. The application currently supports testnet BTC, testnet USDT, and ZBTC (ZBTC is a placeholder for an arbitrary bridged BTC token).
 
 ### Connecting Your Wallet
 
+- Install one of the supported EVM wallets: MetaMask and Frame. Others will likely work as well but are not tested.
+- Install one of the supported Bitcoin testnet wallets: Electrum. Others will likely work as well but are not tested.
 - Go to [demo.gobob.xyz](https://demo.gobob.xyz)
 - Connect to your wallet using the 'Connect Wallet' buttton at the top right of the UI.
 
@@ -47,7 +49,7 @@ The faucet is configured to mint 1,000 tokens for each currency. If you want to 
 ### Creating an Order
 
 :::note
-Orders are shown with a price per unit even though BTC orders cannot be partially filled. That means that if you offer 1BTC in exchange for 25,000 USDT you will see a price per unit of 0.00004 in 'Sell' table
+Orders are shown with a price per unit even though BTC orders cannot be partially filled. That means that if you offer 1 BTC in exchange for 25,000 USDT, you will see a price per unit of 0.00004 in 'Sell' table
 :::
 
 - Click on the 'Add an order' button.
@@ -67,7 +69,7 @@ Partial fulfillment of orders is only available for swaps involving two ERC20 to
 :::
 
 :::note
-Block times on BTC testnet are often slow, so it may take several minutes before you are able to complete the transaction.
+BTC testnet block target times are 20 minutes, so it may take several minutes before you can complete the transaction.
 :::
 
 The process for fulfilling an order is slightly different depending on whether you are swapping an ERC20 for another ERC20, or for BTC.
@@ -83,11 +85,7 @@ If you now switch back to the account you used to create the order, you will see
 
 ![fill-order-form](fill-order-form.png)
 
-#### Fulfilling an ERC20 -> BTC Order
-
-:::note
-The correct amount of BTC must be sent in a single transaction as the demo application doesn't yet detect multiple transactions.  
-:::
+#### Fulfilling an ERC20 -> BTC order (i.e., buying BTC)
 
 - Switch to the account you created for fulfilling orders.
 - In the 'Buy' table find the swap you created with your selling account offering BTC (as the seller) in exchange for an ERC20.
@@ -104,7 +102,7 @@ The 'Fulfil order' button will now be disabled, and you will see a countdown nex
 - You will be able to complete the order as soon as one confirmation has been received.
   - If you close the modal or navigate away from the app, clicking on the 'Complete Order' button again will show you the current status of the transaction.
 
-#### Fulfilling a BTC -> ERC20 Order
+#### Fulfilling a BTC -> ERC20 order (i.e., selling BTC)
 
 - Switch to the account you created for fulfilling orders.
 - In the 'Buy' table find the swap you created with your selling account offering an ERC20 token (as the seller) in exchange for BTC.
