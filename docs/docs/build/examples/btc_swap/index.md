@@ -67,7 +67,7 @@ Partial fulfillment of orders is only available for swaps involving two ERC20 to
 :::
 
 :::note
-Block times on BTC testnet are often slow, so it may take several minutes before you are able to complete the transaction.
+BTC testnet block target times are 20 minutes, so it may take several minutes before you can complete the transaction.
 :::
 
 The process for fulfilling an order is slightly different depending on whether you are swapping an ERC20 for another ERC20, or for BTC.
