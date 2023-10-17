@@ -19,7 +19,7 @@ When connecting to our test network the gas token will be shown as BOB. This can
 - Install one of the supported EVM wallets: MetaMask and Frame. Others will likely work as well but are not tested.
 - Install one of the supported Bitcoin testnet wallets: Electrum. Others will likely work as well but are not tested.
 - Go to [demo.gobob.xyz](https://demo.gobob.xyz)
-- Connect to your wallet using the 'Connect Wallet' buttton at the top right of the UI.
+- Connect to your EVM wallet using the 'Connect Wallet' button at the top right of the UI.
 
 #### Known Issue
 
