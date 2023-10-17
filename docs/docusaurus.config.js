@@ -33,25 +33,6 @@ const config = {
     locales: ["en"],
   },
 
-  plugins: [
-    () => ({
-      name: "inject-tag",
-      injectHtmlTags() {
-        return {
-          headTags: [
-            {
-              tagName: "script",
-              attributes: {
-                href: "https://cdn.usefathom.com/script.js",
-                dataSite: "NBNJSTNS",
-                defer: true,
-              },
-            },
-          ],
-        };
-      },
-    }),
-  ],
   presets: [
     [
       "classic",
@@ -158,7 +139,25 @@ const config = {
   markdown: {
     mermaid: true,
   },
-  themes: ["@docusaurus/theme-mermaid"],
+  themes: [
+    "@docusaurus/theme-mermaid",
+    ["@easyops-cn/docusaurus-search-local",
+      {
+        indexBlog: false,
+        indexDocs: true,
+        indexPages: false,
+        hashed: true,
+        highlightSearchTermsOnTargetPage: true,
+        language: ["en"],
+      }],
+  ],
+  scripts: [
+    {
+      src: "https://cdn.usefathom.com/script.js",
+      site: "NBNJSTNS",
+      defer: true,
+    },
+  ],
 };
 
 module.exports = config;
