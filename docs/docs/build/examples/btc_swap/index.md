@@ -3,7 +3,9 @@
 This example demonstrates how BOB is leveraged to build a peer-to-peer (P2P) swap application that allows two parties to swap ERC20 tokens and BTC without using a custodian.
 
 :::note
+
 The code for this example can be [found in the P2P swap demo GitHub repository](https://github.com/bob-collective/p2p-swap-demo)
+
 :::
 
 ## Demo
@@ -13,7 +15,15 @@ We have created a testnet demo of the P2P swap, allowing anyone to swap BTC for 
 ### Connecting Your Wallet
 
 :::note
+
 When connecting to our test network the gas token will be shown as BOB. This can be changed to ETH in the network settings of your wallet.
+
+:::
+
+:::note
+
+The UI can sometimes fail to connect if you have multiple wallets installed. If this happens you should disable all wallet extensions other than the one you want to use for the demo.
+
 :::
 
 - Install one of the supported EVM wallets: MetaMask and Frame. Others will likely work as well but are not tested.
@@ -21,17 +31,9 @@ When connecting to our test network the gas token will be shown as BOB. This can
 - Go to [demo.gobob.xyz](https://demo.gobob.xyz)
 - Connect to your wallet using the 'Connect Wallet' buttton at the top right of the UI.
 
-#### Known Issue
-
-The UI can sometimes fail to connect if you have multiple wallets installed. If this happens you should disable all wallet extensions other than the one you want to use for the demo.
-
 ![connect](connect-wallet.png)
 
 ### Creating and Funding Test Accounts
-
-:::note
-ZBTC tokens will be imported into your wallet with a ticker of bBTC. These will show as ZBTC tokens in the application.
-:::
 
 You will need two accounts for this demo, so that you can both create and fulfil orders. For each account:
 
@@ -43,7 +45,9 @@ You will need two accounts for this demo, so that you can both create and fulfil
 - You will also need some test BTC from the [Bitcoin testnet faucet](https://bitcoinfaucet.uo1.net/).
 
 :::note
+
 The faucet is configured to mint 1,000 tokens for each currency. If you want to create orders for more than this amount, the faucet can be called multiple times.
+
 :::
 
 #### Known Issues
@@ -54,7 +58,9 @@ The faucet is configured to mint 1,000 tokens for each currency. If you want to 
 ### Creating an Order
 
 :::note
+
 Orders are shown with a price per unit even though BTC orders cannot be partially filled. That means that if you offer 1 BTC in exchange for 25,000 USDT, you will see a price per unit of 0.00004 in 'Sell' table
+
 :::
 
 - Click on the 'Add an order' button.
@@ -70,11 +76,15 @@ You can see all the orders you have placed by clicking on the 'Sell' tab. Orders
 ### Fulfilling an Order
 
 :::note
+
 Partial fulfillment of orders is only available for swaps involving two ERC20 tokens. Swaps involving BTC can only be fulfilled in full.
+
 :::
 
 :::note
+
 BTC testnet block target times are 20 minutes, so it may take several minutes before you can complete the transaction.
+
 :::
 
 The process for fulfilling an order is slightly different depending on whether you are swapping an ERC20 for another ERC20, or for BTC.
