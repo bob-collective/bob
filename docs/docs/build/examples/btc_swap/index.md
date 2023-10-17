@@ -2,6 +2,8 @@
 
 This example demonstrates how BOB is leveraged to build a peer-to-peer (P2P) swap application that allows two parties to swap ERC20 tokens and BTC without using a custodian.
 
+TODO: Rename repo, make it public, update docs
+
 :::note
 This example app is a work in progress, and the application repository is currently set to private.
 :::
@@ -36,6 +38,8 @@ You will need two accounts for this demo, so that you can both create and fulfil
 - Import the ERC20 tokens from the following contract addresses:
   - ZBTC: `0xd6cd079ee8bc26b5000a5e1ea8d434c840e3434b`
   - USDT: `0x3c252953224948E441aAfdE7b391685201ccd3bC`
+
+[Add link to testnet BTC faucet]
 
 :::note
 The faucet is configured to mint 1,000 tokens for each currency. If you want to create orders for more than this amount, the faucet can be called multiple times.
