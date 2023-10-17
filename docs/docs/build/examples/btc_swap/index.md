@@ -33,13 +33,12 @@ ZBTC tokens will be imported into your wallet with a ticker of bBTC. These will 
 
 You will need two accounts for this demo, so that you can both create and fulfil orders. For each account:
 
-- Click the 'Get Eth' button to fund your account with Eth. This will be needed for transaction fees.
+- Click the 'Get ETH' button to fund your account with ETH. This will be needed for transaction fees.
 - After the ETH tokens have arrived in your wallet, click on the 'Get Tokens' button to fund your account with ERC20 tokens to used when adding an order.
 - Import the ERC20 tokens from the following contract addresses:
   - ZBTC: `0xd6cd079ee8bc26b5000a5e1ea8d434c840e3434b`
   - USDT: `0x3c252953224948E441aAfdE7b391685201ccd3bC`
-
-[Add link to testnet BTC faucet]
+- You will also need some test BTC from the [Bitcoin testnet faucet](https://bitcoinfaucet.uo1.net/).
 
 :::note
 The faucet is configured to mint 1,000 tokens for each currency. If you want to create orders for more than this amount, the faucet can be called multiple times.
