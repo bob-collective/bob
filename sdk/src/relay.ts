@@ -3,9 +3,6 @@
  * @ignore
  */
 import { Transaction } from "bitcoinjs-lib";
-/**
- * @ignore
- */
 //@ts-nocheck
 /**
  * @ignore
