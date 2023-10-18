@@ -6,7 +6,7 @@ sidebar_position: 1
 
 This guide provides step-by-step instructions on how to deploy smart contracts on BOB using Foundry.
 
-# Objectives
+## Objectives
 1. **Set Up Foundry for BOB**: Learn how to set up Foundry, a development environment, and configure it for your BOB smart contract development.
 
 2. **Create an Smart Contract for BOB**: Understand how to create your own Coin smart contract.
@@ -17,14 +17,14 @@ This guide provides step-by-step instructions on how to deploy smart contracts o
 
 5. **Interact with a Smart Contract Deployed on BOB**: Learn how to interact with the smart contract you've deployed on the BOB platform.
 
-# Prerequisites
+## Prerequisites
 
 Before you can deploy smart contracts on BOB, ensure you have the following prerequisites:
 
 - An account on BOB. You should have already set up an account on the network.
 - [Foundry](https://book.getfoundry.sh/) installed and configured on your development environment.
 
-# Creating Contract 
+## Creating Contract 
 
 - Start a new project with Foundry. [Installation guide](https://book.getfoundry.sh/getting-started/installation) for foundry.  
 
@@ -90,7 +90,7 @@ contract Coin {
 }
 ```
 
-# Compiling Contract 
+## Compiling Contract 
 
 - To compile contract run the followling command. 
 
@@ -98,7 +98,7 @@ contract Coin {
 $ forge build
 ```
 
-# Deploying Contract
+## Deploying Contract
 
 - To deploy the contract via the terminal, you'll need your private key. If you're using MetaMask, be cautious when exporting your private key as it can be risky.Checkout [article](https://support.metamask.io/hc/en-us/articles/360015289632-How-to-export-an-account-s-private-key) to get your private key from metamask.
 
@@ -124,11 +124,11 @@ Deployed to: 0xbd56c1FFF2d2073F84825D582808885dbB2085C6
 Transaction hash: 0x263ead5ea07e6122d4d1fe6544158502d278b23e86b2a5b143770b82eead1588
 ```
 
-# Interaction with Contract
+## Interaction with Contract
 
 - Checkout [testnet explorer](https://explorerl2-fluffy-bob-7mjgi9pmtg.t.conduit.xyz) to get contract details using Transaction hash. 
 
-![Contract details on Explorer Image](deployed_contract_on_foundry.png)
+![Contract details on Explorer Image](../../../static/img/deployed_contract_on_foundry.png)
 
 - Get [ABI](https://docs.soliditylang.org/en/latest/abi-spec.html) of Coin contract. 
 

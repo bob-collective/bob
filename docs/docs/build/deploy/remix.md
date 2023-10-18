@@ -6,7 +6,7 @@ sidebar_position: 2
 
 This guide provides step-by-step instructions on how to deploy smart contracts on BOB using Remix.
 
-# Objectives
+## Objectives
 1. **Set Up Remix for BOB**: Learn how to set up Remix, a development environment, and configure it for your BOB smart contract development.
 
 2. **Create an Smart Contract for BOB**: Understand how to create your own Coin smart contract.
@@ -17,14 +17,14 @@ This guide provides step-by-step instructions on how to deploy smart contracts o
 
 5. **Interact with a Smart Contract Deployed on BOB**: Learn how to interact with the smart contract you've deployed on the BOB platform.
 
-# Prerequisites
+## Prerequisites
 
 Before you can deploy smart contracts on BOB, ensure you have the following prerequisites:
 
 - An account on BOB. You should have already set up an account on the network.
 - Login to [Remix](https://remix.ethereum.org/) IDE.
 
-# Creating Contract 
+## Creating Contract 
 
 - Create a new project with Remix. Under `contracts` folder create a new file `Coin.sol`.
 
@@ -79,14 +79,14 @@ contract Coin {
 }
 ```
 
-# Compiling Contract 
+## Compiling Contract 
 
 - To compile contract go to `Solidity Compiler` section of IDE, select and compile `Coin` smart contract.
 
 - `Coin` smart contract can also be directly compiled by right clicking on `Coin.sol` file and selct compile. 
 
 
-# Deploying Contract
+## Deploying Contract
 
 - To deploy the compiled coin smart contract first open the metamask extension and make sure the wallet is connected to the BOB network.
 
@@ -94,18 +94,18 @@ contract Coin {
 
 - Select contract as `Coin` click `Deploy` and sign the transaction pop up message on metamask. 
 
-![Remix IDE image](remix_ide.png)
+![Remix IDE image](../../../static/img/remix_ide.png)
 
 - The contract details will be displayed in remix terminal. 
 
-![Remix IDE terminal image](remix_ide_terminal.png)
+![Remix IDE terminal image](../../../static/img/remix_ide_terminal.png)
 
 
-# Interaction with Contract
+## Interaction with Contract
 
 - Checkout [testnet explorer](https://explorerl2-fluffy-bob-7mjgi9pmtg.t.conduit.xyz) to get more contract details. 
 
-![Contract details on Explorer Image](deployed_contract_on_remix.png)
+![Contract details on Explorer Image](../../../static/img/deployed_contract_on_remix.png)
 <!-- - image.png -->
 
 - Get [ABI](https://docs.soliditylang.org/en/latest/abi-spec.html) of Coin contract from remix IDE `Solidity Compiler` Section. 
