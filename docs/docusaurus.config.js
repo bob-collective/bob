@@ -179,26 +179,7 @@ const config = {
   markdown: {
     mermaid: true,
   },
-  themes: [
-    "@docusaurus/theme-mermaid",
-    ["@easyops-cn/docusaurus-search-local",
-      {
-        indexBlog: false,
-        indexDocs: true,
-        indexPages: false,
-        hashed: true,
-        highlightSearchTermsOnTargetPage: true,
-        language: ["en"],
-      }],
-  ],
-  scripts: [
-    {
-      src: "https://cdn.usefathom.com/script.js",
-      site: "NBNJSTNS",
-      defer: true,
-    },
-  ],
-  onBrokenLinks: "ignore",
+  themes: ["@docusaurus/theme-mermaid"],
 };
 
 module.exports = config;
