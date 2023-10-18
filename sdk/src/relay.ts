@@ -2,7 +2,7 @@
 import { Transaction } from "bitcoinjs-lib";
 //@ts-nocheck
 import { ElectrsClient } from "./electrs";
-import { encodeRawInput, encodeRawOutput, encodeRawWitness } from "./utils";
+import { encodeRawInput, encodeRawOutput, encodeRawWitness, encodeRawWitness } from "./utils";
 
 /**
  * Represents information about a Bitcoin transaction.
@@ -45,6 +45,7 @@ export async function getBitcoinTxInfo(
     electrsClient: ElectrsClient,
     txId: string,
     forWitness?: boolean,
+    forWitness?: boolean,
 ): Promise<BitcoinTxInfo> {
     const txHex = await electrsClient.getTransactionHex(txId);
     const tx = Transaction.fromHex(txHex);
@@ -60,6 +61,7 @@ export async function getBitcoinTxInfo(
         inputVector: encodeRawInput(tx).toString("hex"),
         outputVector: encodeRawOutput(tx).toString("hex"),
         locktime: locktimeBuffer.toString("hex"),
+        witnessVector: forWitness ? encodeRawWitness(tx).toString("hex") : undefined,,
         witnessVector: forWitness ? encodeRawWitness(tx).toString("hex") : undefined,
     }
 }
@@ -111,7 +113,20 @@ export async function getBitcoinTxProof(
         bitcoinHeaders: bitcoinHeaders,
     }
 }
+    const bitcoinHeaders = await getBitcoinHeaders(electrsClient, merkleProof.blockHeight, txProofDifficultyFactor);
 
+    return {
+        merkleProof: merkleProof.merkle,
+        txIndexInBlock: merkleProof.pos,
+        bitcoinHeaders: bitcoinHeaders,
+    }
+}
+
+export async function getBitcoinHeaders(
+    electrsClient: ElectrsClient,
+    startHeight: number,
+    numBlocks: number,
+): Promise<string> {
 export async function getBitcoinHeaders(
     electrsClient: ElectrsClient,
     startHeight: number,
