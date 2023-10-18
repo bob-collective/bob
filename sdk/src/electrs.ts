@@ -1,7 +1,19 @@
+/**
+ * @ignore
+ */
 export const MAINNET_ESPLORA_BASE_PATH = "https://btc-mainnet.interlay.io";
+/**
+ * @ignore
+ */
 export const TESTNET_ESPLORA_BASE_PATH = "https://btc-testnet.interlay.io";
+/**
+ * @ignore
+ */
 export const REGTEST_ESPLORA_BASE_PATH = "http://localhost:3002";
 
+/**
+ * @ignore
+ */
 export interface MerkleProof {
     blockHeight: number
     merkle: string,
@@ -105,6 +117,10 @@ function encodeElectrsMerkleProof(merkle: string[]): string {
     return merkle.map(item => Buffer.from(item, "hex").reverse().toString("hex")).join('');
 }
 
+
+ /**
+ * @ignore
+ */
 export class DefaultElectrsClient implements ElectrsClient {
     private basePath: string;
 

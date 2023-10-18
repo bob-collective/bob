@@ -56,7 +56,7 @@ const config = {
       'docusaurus-plugin-typedoc',
       // Plugin / TypeDoc options
       {
-        entryPoints: ['../sdk/src/*'],
+        entryPoints: ['../sdk/src/electrs.ts'],
         tsconfig: 'tsconfig.json',
         sidebar: {
           collapsed: false,
