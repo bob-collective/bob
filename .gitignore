@@ -33,7 +33,11 @@ out/
 /broadcast/**/dry-run/
 
 # Docs
-# docs/
+# Ignore all files and folders in "docs"
+/docs/*
+
+# Allow "docs/docs/"
+!/docs/docs/build/deploy/
 
 # Dotenv file
 .env
