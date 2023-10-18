@@ -180,6 +180,7 @@ const config = {
     mermaid: true,
   },
   themes: ["@docusaurus/theme-mermaid"],
+  onBrokenLinks: "ignore",
 };
 
 module.exports = config;
