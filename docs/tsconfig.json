@@ -4,5 +4,5 @@
   "compilerOptions": {
     "baseUrl": "."
   },
-  "include": ["../sdk/src/electrs.ts"] // Adjust the path as needed
+  "include": ["../sdk/src/*"] // Adjust the path as needed
 }

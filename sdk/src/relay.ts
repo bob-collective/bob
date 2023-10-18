@@ -1,7 +1,19 @@
 //@ts-nocheck
+/**
+ * @ignore
+ */
 import { Transaction } from "bitcoinjs-lib";
+/**
+ * @ignore
+ */
 //@ts-nocheck
+/**
+ * @ignore
+ */
 import { ElectrsClient } from "./electrs";
+/**
+ * @ignore
+ */
 import { encodeRawInput, encodeRawOutput, encodeRawWitness, encodeRawWitness } from "./utils";
 
 /**
@@ -116,7 +128,31 @@ export async function getBitcoinTxProof(
         bitcoinHeaders: bitcoinHeaders,
     }
 }
-    
+ 
+/**
+ * Retrieves Bitcoin block headers using an Electrs client.
+ *
+ * @param electrsClient - The ElectrsClient instance used to interact with the Esplora API.
+ * @param startHeight - The starting block height from which to fetch headers.
+ * @param numBlocks - The number of consecutive block headers to retrieve.
+ * @returns A Promise that resolves to a concatenated string of Bitcoin block headers.
+ *
+ * @throws {Error} If there is an issue with fetching block headers.
+ *
+ * @example
+ * const BITCOIN_NETWORK = "regtest";
+ * const electrsClient = new DefaultElectrsClient(BITCOIN_NETWORK);
+ * const startHeight = 0;
+ * const numBlocks = 10;
+ *
+ * getBitcoinHeaders(electrsClient, startHeight, numBlocks)
+ *   .then(headers => {
+ *     console.log(headers); // Concatenated block headers as a string.
+ *   })
+ *   .catch(error => {
+ *     console.error(`Error: ${error.message}`);
+ *   });
+ */
 export async function getBitcoinHeaders(
     electrsClient: ElectrsClient,
     startHeight: number,
