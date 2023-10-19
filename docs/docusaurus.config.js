@@ -36,15 +36,10 @@ const config = {
   plugins: [
     [
       'docusaurus-plugin-typedoc',
-      // Plugin / TypeDoc options
       {
         entryPoints: ['../sdk/src/*'],
+        out: 'api/ts-sdk',
         tsconfig: 'tsconfig.json',
-        sidebar: {
-          collapsed: false,
-          position: 0,
-          fullNames: true,
-        },
       },
     ],
 
@@ -99,15 +94,15 @@ const config = {
             label: "Build",
           },
           {
+            type: "docSidebar",
+            sidebarId: "apiSidebar",
+            position: "left",
+            label: "API",
+          },
+          {
             href: GITHUB_LINK,
             label: "GitHub",
             position: "right",
-          },
-          {
-            to: 'docs/api/',  // 'api' is the 'out' directory
-            activeBasePath: 'docs',
-            label: 'API',
-            position: 'left',
           },
         ],
       },
