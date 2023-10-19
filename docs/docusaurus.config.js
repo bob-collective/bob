@@ -100,6 +100,11 @@ const config = {
             label: "API",
           },
           {
+            href: DISCORD,
+            label: "Discord",
+            position: "right",
+          },
+          {
             href: GITHUB_LINK,
             label: "GitHub",
             position: "right",
@@ -146,7 +151,7 @@ const config = {
       announcementBar: {
         id: "sign_up",
         content:
-          'Missing something? Want to know more? <a target="_blank" rel="noopener noreferrer" href="https://forms.gle/etYqChR3aahUFuEZ9">Provide feedback.</a>.',
+          'Missing something? Want to know more? <a target="_blank" rel="noopener noreferrer" href="https://forms.gle/etYqChR3aahUFuEZ9">Provide feedback</a>.',
         backgroundColor: "#f58b00",
         textColor: "#fff",
         isCloseable: true,
