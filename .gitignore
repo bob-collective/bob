@@ -32,11 +32,11 @@ out/
 /broadcast/*/31337/
 /broadcast/**/dry-run/
 
-# Docs
-docs/
-
 # Dotenv file
 .env
 
 # node modules
 node_modules/*
+
+# generated docs
+/docs/docs/api/*
