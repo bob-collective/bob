@@ -128,7 +128,7 @@ Transaction hash: 0x263ead5ea07e6122d4d1fe6544158502d278b23e86b2a5b143770b82eead
 
 - Checkout [testnet explorer](https://explorerl2-fluffy-bob-7mjgi9pmtg.t.conduit.xyz) to get contract details using Transaction hash. 
 
-![Contract details on Explorer Image](../../../static/img/deployed_contract_on_foundry.png)
+![Contract details on Explorer Image](deployed_contract_on_foundry.png)
 
 - Get [ABI](https://docs.soliditylang.org/en/latest/abi-spec.html) of Coin contract. 
 

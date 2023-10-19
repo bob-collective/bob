@@ -94,18 +94,18 @@ contract Coin {
 
 - Select contract as `Coin` click `Deploy` and sign the transaction pop up message on metamask. 
 
-![Remix IDE image](../../../static/img/remix_ide.png)
+![Remix IDE image](remix_ide.png)
 
 - The contract details will be displayed in remix terminal. 
 
-![Remix IDE terminal image](../../../static/img/remix_ide_terminal.png)
+![Remix IDE terminal image](remix_ide_terminal.png)
 
 
 ## Interaction with Contract
 
 - Checkout [testnet explorer](https://explorerl2-fluffy-bob-7mjgi9pmtg.t.conduit.xyz) to get more contract details. 
 
-![Contract details on Explorer Image](../../../static/img/deployed_contract_on_remix.png)
+![Contract details on Explorer Image](deployed_contract_on_remix.png)
 <!-- - image.png -->
 
 - Get [ABI](https://docs.soliditylang.org/en/latest/abi-spec.html) of Coin contract from remix IDE under `Solidity Compiler` Section. 
