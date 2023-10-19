@@ -16,7 +16,7 @@ We have created a testnet demo of the P2P swap, allowing anyone to swap BTC for 
 
 :::note
 
-When connecting to our test network the gas token will be shown as BOB. This can be changed to ETH in the network settings of your wallet.
+When connecting to our test network the gas token ticker may be shown as something other than ETH. This can be changed to ETH in the network settings of your wallet.
 
 :::
 
