@@ -35,5 +35,8 @@ out/
 # Dotenv file
 .env
 
+# node modules
+node_modules/*
+
 # generated docs
 /docs/docs/api/*

@@ -33,6 +33,17 @@ const config = {
     locales: ["en"],
   },
 
+  plugins: [
+    [
+      'docusaurus-plugin-typedoc',
+      {
+        entryPoints: ['../sdk/src/*'],
+        out: 'api/ts-sdk',
+        tsconfig: 'tsconfig.json',
+      },
+    ],
+
+  ],
   presets: [
     [
       "classic",
@@ -81,6 +92,12 @@ const config = {
             sidebarId: "buildSidebar",
             position: "left",
             label: "Build",
+          },
+          {
+            type: "docSidebar",
+            sidebarId: "apiSidebar",
+            position: "left",
+            label: "API",
           },
           {
             href: GITHUB_LINK,

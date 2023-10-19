@@ -1,7 +1,22 @@
+/**
+ * Base path for the mainnet Esplora API.
+ * @default "https://btc-mainnet.interlay.io"
+ */
 export const MAINNET_ESPLORA_BASE_PATH = "https://btc-mainnet.interlay.io";
+/**
+ * Base path for the testnet Esplora API.
+ * @default "https://btc-testnet.interlay.io"
+ */
 export const TESTNET_ESPLORA_BASE_PATH = "https://btc-testnet.interlay.io";
-export const REGTEST_ESPLORA_BASE_PATH = "http://localhost:3002";
+/**
+ * Base path for the regtest Esplora API.
+ * @default "http://localhost:3003"
+ */
+export const REGTEST_ESPLORA_BASE_PATH = "http://localhost:3003";
 
+/**
+ * @ignore
+ */
 export interface MerkleProof {
     blockHeight: number
     merkle: string,
@@ -10,35 +25,129 @@ export interface MerkleProof {
 
 export interface ElectrsClient {
     /**
-     * @param height The height of the Bitcoin block
-     * @returns The block hash of the Bitcoin block
+     * Get the block hash of the Bitcoin block at a specific height.
+     *
+     * This function retrieves the block hash for the Bitcoin block at the given height.
+     *
+     * @param {number} height - The height of the Bitcoin block.
+     * @returns {Promise<string>} A promise that resolves to the block hash of the Bitcoin block.
+     *
+     * @example
+     * ```typescript
+     * const BITCOIN_NETWORK = "regtest";
+     * const electrsClient = new DefaultElectrsClient(BITCOIN_NETWORK);
+     * const blockHeight = 123456;
+     * electrsClient.getBlockHash(blockHeight)
+     *   .then((blockHash) => {
+     *     console.log(`Block hash at height ${blockHeight}: ${blockHash}`);
+     *   })
+     *   .catch((error) => {
+     *     console.error(`Error: ${error}`);
+     *   });
+     * ```
      */
     getBlockHash(height: number): Promise<string>;
+
     /**
-     * @param height The hash of the Bitcoin block
-     * @returns The raw block header, represented as a hex string
+     * Get the raw block header, represented as a hex string, for a Bitcoin block with a given hash.
+     *
+     * @param {string} hash - The hash of the Bitcoin block.
+     * @returns {Promise<string>} A promise that resolves to the raw block header as a hex string.
+     *
+     * @example
+     * ```typescript
+     * const BITCOIN_NETWORK = "regtest";
+     * const electrsClient = new DefaultElectrsClient(BITCOIN_NETWORK);
+     * const blockHash = 'your_block_hash_here';
+     * electrsClient.getBlockHeader(blockHash)
+     *   .then((blockHeader) => {
+     *     console.log(`Raw block header for block with hash ${blockHash}: ${blockHeader}`);
+     *   })
+     *   .catch((error) => {
+     *     console.error(`Error: ${error}`);
+     *   });
+     * ```
      */
     getBlockHeader(hash: string): Promise<string>;
+    
     /**
-     * @param txId The ID of a Bitcoin transaction
-     * @returns The transaction data, represented as a hex string
+     * Get the transaction data, represented as a hex string, for a Bitcoin transaction with a given ID (txId).
+     *
+     * @param {string} txId - The ID of a Bitcoin transaction.
+     * @returns {Promise<string>} A promise that resolves to the transaction data as a hex string.
+     *
+     * @example
+     * ```typescript
+     * const BITCOIN_NETWORK = "regtest";
+     * const electrsClient = new DefaultElectrsClient(BITCOIN_NETWORK);
+     * const transactionId = 'your_transaction_id_here';
+     * electrsClient.getTransactionHex(transactionId)
+     *   .then((transactionHex) => {
+     *     console.log(`Transaction hex for transaction with ID ${transactionId}: ${transactionHex}`);
+     *   })
+     *   .catch((error) => {
+     *     console.error(`Error: ${error}`);
+     *   });
+     * ```
      */
     getTransactionHex(txId: string): Promise<string>;
+    
     /**
-     * @param txId The ID of a Bitcoin transaction
-     * @returns The encoded merkle inclusion proof for the transaction
+     * Get the encoded merkle inclusion proof for a Bitcoin transaction with a given ID (txId).
+     *
+     * @param {string} txId - The ID of a Bitcoin transaction.
+     * @returns {Promise<MerkleProof>} A promise that resolves to the encoded merkle inclusion proof.
+     *
+     * @example
+     * ```typescript
+     * const BITCOIN_NETWORK = "regtest";
+     * const electrsClient = new DefaultElectrsClient(BITCOIN_NETWORK);
+     * const transactionId = 'your_transaction_id_here';
+     * electrsClient.getMerkleProof(transactionId)
+     *   .then((merkleProof) => {
+     *     console.log(`Merkle inclusion proof for transaction with ID ${transactionId}: ${merkleProof}`);
+     *   })
+     *   .catch((error) => {
+     *     console.error(`Error: ${error}`);
+     *   });
+     * ```
      */
     getMerkleProof(txId: string): Promise<MerkleProof>;
-}
+ }
 
+
+ /**
+ * @ignore
+ */
 function encodeElectrsMerkleProof(merkle: string[]): string {
     // convert to little-endian
     return merkle.map(item => Buffer.from(item, "hex").reverse().toString("hex")).join('');
 }
 
+
+/**
+ * The `DefaultElectrsClient` class provides a client for interacting with an Esplora API
+ * for Bitcoin network data retrieval.
+ */
 export class DefaultElectrsClient implements ElectrsClient {
     private basePath: string;
 
+    /**
+         * Create an instance of the `DefaultElectrsClient` with the specified network or URL.
+         * If the `networkOrUrl` parameter is omitted, it defaults to "mainnet."
+         *
+         * @param networkOrUrl The Bitcoin network (e.g., "mainnet," "testnet," "regtest") 
+         * 
+         * @returns An instance of the `DefaultElectrsClient` configured for the specified network or URL.
+         *
+         * @example
+         * const BITCOIN_NETWORK = "regtest";
+         * const electrsClient = new DefaultElectrsClient(BITCOIN_NETWORK);
+         *
+         * @example
+         * // Create a client for the mainnet using the default URL.
+         * const electrsClientMainnet = new DefaultElectrsClient();
+    */
     constructor(networkOrUrl: string = "mainnet") {
         switch (networkOrUrl) {
             case "mainnet":
@@ -55,18 +164,34 @@ export class DefaultElectrsClient implements ElectrsClient {
         }
     }
 
+
+    /**
+     * @ignore
+     */
     async getBlockHash(height: number): Promise<string> {
         return this.getText(`${this.basePath}/block-height/${height}`);
     }
 
+
+    /**
+     * @ignore
+     */
     async getBlockHeader(hash: string): Promise<string> {
         return this.getText(`${this.basePath}/block/${hash}/header`);
     }
 
+
+    /**
+     * @ignore
+     */
     async getTransactionHex(txId: string): Promise<string> {
         return this.getText(`${this.basePath}/tx/${txId}/hex`);
     }
 
+
+    /**
+     * @ignore
+     */
     async getMerkleProof(txId: string): Promise<MerkleProof> {
         const response = await this.getJson<{
             "block_height": number,
@@ -80,6 +205,10 @@ export class DefaultElectrsClient implements ElectrsClient {
         };
     }
 
+
+    /**
+     * @ignore
+     */
     async getJson<T>(url: string): Promise<T> {
         const response = await fetch(url);
         if (!response.ok) {
@@ -88,6 +217,10 @@ export class DefaultElectrsClient implements ElectrsClient {
         return await response.json() as Promise<T>;
     }
 
+
+    /**
+     * @ignore
+     */
     async getText(url: string): Promise<string> {
         const response = await fetch(url);
         if (!response.ok) {

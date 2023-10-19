@@ -1,13 +1,35 @@
+//@ts-nocheck
+/**
+ * @ignore
+ */
 import { Block } from "bitcoinjs-lib";
+//@ts-nocheck
+/**
+ * @ignore
+ */
 import { BufferWriter, varuint } from "bitcoinjs-lib/src/bufferutils";
+//@ts-nocheck
+/**
+ * @ignore
+ */
 import { hash256 } from "bitcoinjs-lib/src/crypto";
+//@ts-nocheck
+/**
+ * @ignore
+ */
 import { Output, Transaction } from "bitcoinjs-lib/src/transaction";
 
+/**
+ * @ignore
+ */
 function varSliceSize(someScript: Buffer): number {
     const length = someScript.length;
     return varuint.encodingLength(length) + length;
 }
 
+/**
+ * @ignore
+ */
 export function encodeRawInput(tx: Transaction) {
     const inputSize = varuint.encodingLength(tx.ins.length) + tx.ins.reduce((sum, input) => {
         return sum + 40 + varSliceSize(input.script);
@@ -27,10 +49,16 @@ export function encodeRawInput(tx: Transaction) {
     return inputBuffer;
 }
 
+/**
+ * @ignore
+ */
 function isOutput(out: Output): boolean {
     return out.value !== undefined;
 }
 
+/**
+ * @ignore
+ */
 export function encodeRawOutput(tx: Transaction) {
     const outputSize = varuint.encodingLength(tx.outs.length) + tx.outs.reduce((sum, output) => {
         return sum + 8 + varSliceSize(output.script);
@@ -53,6 +81,9 @@ export function encodeRawOutput(tx: Transaction) {
     return outputBuffer;
 }
 
+/**
+ * @ignore
+ */
 function vectorSize(someVector: Buffer[]): number {
     const length = someVector.length;
 
@@ -64,6 +95,9 @@ function vectorSize(someVector: Buffer[]): number {
     );
 }
 
+/**
+ * @ignore
+ */
 export function encodeRawWitness(tx: Transaction) {
     const witnessSize = tx.ins.reduce((sum, input) => {
         return sum + vectorSize(input.witness);
@@ -79,6 +113,9 @@ export function encodeRawWitness(tx: Transaction) {
     return witnessBuffer;
 }
 
+/**
+ * @ignore
+ */
 function chunkArray<T>(array: T[], chunkSize: number): T[][] {
     const chunkedArray: T[][] = [];
     let index = 0;
@@ -89,6 +126,13 @@ function chunkArray<T>(array: T[], chunkSize: number): T[][] {
     return chunkedArray;
 }
 
+/**
+ * Create a Merkle branch and root based on a list of hashes and a specific index.
+ *
+ * @param hashes - An array of hashes for Merkle construction.
+ * @param index - The index of the hash for which the branch and root are calculated.
+ * @returns An object containing the Merkle branch and root.
+ */
 // https://github.com/Blockstream/electrs/blob/fd35014283c7d3a7a85c77b9fd647c9f09de12c9/src/util/electrum_merkle.rs#L86-L105
 function createMerkleBranchAndRoot(hashes: Buffer[], index: number): {
     merkle: Buffer[],
@@ -111,8 +155,14 @@ function createMerkleBranchAndRoot(hashes: Buffer[], index: number): {
     };
 }
 
-// used to construct merkle proofs from the raw block data, especially useful for
-// constructing a non-standard "witness proof" which is not currently supported by electrs
+/**
+ * Retrieve a Merkle proof for a Bitcoin transaction from a block's raw data.
+ *
+ * @param block - The Bitcoin block containing the transaction.
+ * @param txHash - The transaction hash to construct a proof for.
+ * @param forWitness - Set to `true` to construct a witness proof (default is `false`).
+ * @returns An object containing the position, proof, and root of the Merkle proof.
+ */
 export function getMerkleProof(block: Block, txHash: string, forWitness?: boolean) {
     const txIds = block.transactions!.map(tx => tx.getHash(forWitness));
     const pos = txIds.map(value => value.toString("hex")).indexOf(txHash);
