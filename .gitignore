@@ -34,3 +34,6 @@ out/
 
 # Dotenv file
 .env
+
+# generated docs
+/docs/docs/api/*
