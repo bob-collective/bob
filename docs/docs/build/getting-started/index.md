@@ -17,13 +17,13 @@ This is alpha-stage software. We love to work closely with you to make BOB usefu
 
 ## Getting Started
 
-- [Hello World](helloworld.md): Develop your first smart contract on BOB.
-- [Testnet](testnet.md): Learn how to deploy your contracts to the testnet and interact with them.
+- [Hello World](helloworld): Develop your first smart contract on BOB.
+- [Testnet](testnet): Learn how to deploy your contracts to the testnet and interact with them.
 
 ## How To
 
-- [Bitcoin Light Client](/docs/build/components/relay.md): Learn how to interact with Bitcoin by proving transaction inclusion on BOB.
-- [Rust zkVM](/docs/build/components/bonsai.md): Learn how to write Rust off-chain code that can be verified on-chain on BOB.
+- [Bitcoin Light Client](/docs/build/how-to/relay): Learn how to interact with Bitcoin by proving transaction inclusion on BOB.
+- [Rust zkVM](/docs/build/how-to/bonsai): Learn how to write Rust off-chain code that can be verified on-chain on BOB.
 
 ## Examples
 
