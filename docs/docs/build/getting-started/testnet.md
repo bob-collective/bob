@@ -6,7 +6,7 @@ sidebar_position: 3
 
 ## Start Building
 
-BOB is fully EVM compatible so you can use any tools you are used to from Ethereum. We recommend using [Remix](/docs/build/how-to/remix) or [Foundry](/docs/build/how-to/foundry) to get started.
+BOB is fully EVM compatible so you can use any tools you are used to from Ethereum.
 
 ## Fluffy BOB
 
