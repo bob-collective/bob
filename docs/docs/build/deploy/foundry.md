@@ -22,11 +22,11 @@ This guide provides step-by-step instructions on how to deploy smart contracts o
 Before you can deploy smart contracts on BOB, ensure you have the following prerequisites:
 
 - An account on BOB. You should have already set up an account on the network.
-- [Foundry](https://book.getfoundry.sh/) installed and configured on your development environment.
+- [Foundry](https://book.getfoundry.sh/) installed and configured on your development environment. [Installation guide](https://book.getfoundry.sh/getting-started/installation) for foundry.  
 
 ## Creating Contract 
 
-- Start a new project with Foundry. [Installation guide](https://book.getfoundry.sh/getting-started/installation) for foundry.  
+- Start a new project with Foundry.
 
 ```shell
 $ forge init coin
@@ -100,7 +100,7 @@ $ forge build
 
 ## Deploying Contract
 
-- To deploy the contract via the terminal, you'll need your private key. If you're using MetaMask, be cautious when exporting your private key as it can be risky.Checkout [article](https://support.metamask.io/hc/en-us/articles/360015289632-How-to-export-an-account-s-private-key) to get your private key from metamask.
+- To deploy the contract via the terminal, you'll need your private key. If you're using MetaMask, be cautious when exporting your private key as it can be risky. Checkout [article](https://support.metamask.io/hc/en-us/articles/360015289632-How-to-export-an-account-s-private-key) to get your private key from metamask.
 
 - Deploy compiled smart contract 
 
@@ -114,9 +114,9 @@ $ forge create --rpc-url <enter_bob_rpc_url> --private-key <enter_private_key> s
 $ forge create --rpc-url wss://l2-fluffy-bob-7mjgi9pmtg.t.conduit.xyz --private-key <enter_private_key> src/Coin.sol:Coin
 ```
 
-- The rpc url can be changed checkout the [conduit](https://app.conduit.xyz/published/view/fluffy-bob-7mjgi9pmtg) to get the latest endpoints. 
+- The rpc url can be changed checkout [conduit](https://app.conduit.xyz/published/view/fluffy-bob-7mjgi9pmtg) to get the latest endpoints. 
 
-- Output should look similar to this
+- The output in the terminal should look similar to this
 
 ```shell
 Deployer: 0xd8a0bb324b46D89C105BA98C402dF0972b9164Af

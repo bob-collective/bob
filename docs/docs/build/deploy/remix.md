@@ -108,7 +108,7 @@ contract Coin {
 ![Contract details on Explorer Image](../../../static/img/deployed_contract_on_remix.png)
 <!-- - image.png -->
 
-- Get [ABI](https://docs.soliditylang.org/en/latest/abi-spec.html) of Coin contract from remix IDE `Solidity Compiler` Section. 
+- Get [ABI](https://docs.soliditylang.org/en/latest/abi-spec.html) of Coin contract from remix IDE under `Solidity Compiler` Section. 
 
 
 ## Notes
