@@ -180,7 +180,6 @@ const config = {
       defer: true,
     },
   ],
-  onBrokenLinks: "ignore",
 };
 
 module.exports = config;
