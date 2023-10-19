@@ -1,8 +1,8 @@
 ---
-sidebar_position: 2
+sidebar_position: 3
 ---
 
-# Relay
+# Bitcoin Light Client
 
 We have chosen to use the production ready [**tBTC-v2**](https://github.com/keep-network/tbtc-v2/blob/main/solidity/contracts/relay/LightRelay.sol) (summa / keep-network) relay contracts and supporting libraries to support the initial development of the BOB stack. The contracts are already well-optimized for gas consumption and have been used on mainnet Ethereum for quite some time.
 
@@ -23,6 +23,20 @@ There was only one issue highlighted in the Least Authority audit related to the
 ## Using The Relay
 
 The code for the light relay is in [`src/relay/LightRelay.sol`](https://github.com/bob-collective/bob/blob/master/src/relay/LightRelay.sol) which stores the difficulty for the current and previous epoch. To update this it is possible to use `retarget(headers)` with `proofLength * 2` block headers from Bitcoin (before and after the retarget) serialized sequentially. 
+
+### Adding BOB contracts as dependency
+
+To add the BOB contracts to your own projects, if your project is using Foundry, you can simply run `forge install bob-collective/bob` to add BOB contracts as a dependency to your project.  
+
+### Build the code
+
+To build all the contracts, run `forge build`.
+
+### Run the tests
+
+To run the built-in tests, run `forge test`.
+
+### Using the Contracts from TypeScript
 
 :::tip BOB SDK
 

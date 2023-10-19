@@ -7,5 +7,5 @@ We are just getting started with BOB and there are plenty of new things to be bu
 The best way to get started is to:
 
 - Checkout the GitHub: [bob-collective](https://github.com/bob-collective/bob)
-- Try the early alpha: [builder docs](/docs/build)
+- Try the early alpha: [builder docs](/docs/build/getting-started/helloworld)
 - Join the [Discord](https://discordapp.com/invite/interlay)
