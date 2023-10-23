@@ -1,13 +1,13 @@
 /**
  * Base path for the mainnet Esplora API.
- * @default "https://btc-mainnet.interlay.io"
+ * @default "https://btc-mainnet.gobob.xyz"
  */
-export const MAINNET_ESPLORA_BASE_PATH = "https://btc-mainnet.interlay.io";
+export const MAINNET_ESPLORA_BASE_PATH = "https://btc-mainnet.gobob.xyz";
 /**
  * Base path for the testnet Esplora API.
- * @default "https://btc-testnet.interlay.io"
+ * @default "https://btc-testnet.gobob.xyz"
  */
-export const TESTNET_ESPLORA_BASE_PATH = "https://btc-testnet.interlay.io";
+export const TESTNET_ESPLORA_BASE_PATH = "https://btc-testnet.gobob.xyz";
 /**
  * Base path for the regtest Esplora API.
  * @default "http://localhost:3003"
