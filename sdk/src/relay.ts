@@ -57,7 +57,6 @@ export async function getBitcoinTxInfo(
     electrsClient: ElectrsClient,
     txId: string,
     forWitness?: boolean,
-    forWitness?: boolean,
 ): Promise<BitcoinTxInfo> {
     const txHex = await electrsClient.getTransactionHex(txId);
     const tx = Transaction.fromHex(txHex);
@@ -125,7 +124,7 @@ export async function getBitcoinTxProof(
         bitcoinHeaders: bitcoinHeaders,
     }
 }
- 
+
 /**
  * Retrieves Bitcoin block headers using an Electrs client.
  *
