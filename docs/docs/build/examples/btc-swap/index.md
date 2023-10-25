@@ -1,10 +1,10 @@
-# BTC Swap
+# Trustless P2P Swap BTC and ERC20 using a BTC Light Client
 
 This example demonstrates how BOB is leveraged to build a peer-to-peer (P2P) swap application that allows two parties to swap ERC20 tokens and BTC without using a custodian.
 
-:::note
+:::info Example Code
 
-The code for this example can be [found in the P2P swap demo GitHub repository](https://github.com/bob-collective/p2p-swap-demo)
+The code for this example can be [found in the P2P swap demo GitHub repository](https://github.com/bob-collective/demo-p2p-swap)
 
 :::
 
