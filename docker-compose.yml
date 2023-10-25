@@ -27,11 +27,11 @@ services:
                 # coins need 100 confirmations to be spendable
                 bitcoin-cli -regtest -rpcconnect=bitcoind -rpcwait -rpcuser=rpcuser -rpcpassword=rpcpassword generatetoaddress 101 $${ALICE_ADDRESS}
 
-                # automatically mine 1 block every 5 seconds
+                # automatically mine 1 block every 10 seconds
                 trap 'exit 130' TERM INT EXIT
                 while true; do
                     bitcoin-cli -regtest -rpcconnect=bitcoind -rpcwait -rpcuser=rpcuser -rpcpassword=rpcpassword generatetoaddress 1 $${ALICE_ADDRESS}
-                    sleep 5 &
+                    sleep 10 &
                     wait $!
                 done
 
