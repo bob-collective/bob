@@ -26,10 +26,10 @@ This is alpha-stage software. We love to work closely with you to make BOB usefu
 
 ## Examples
 
-- [P2P Swap BTC and ERC20](/docs/build/examples/btc_swap/): Learn how to build a P2P Bitcoin marketplace on BOB using a BTC light client to eliminate trusted thrid parties.
+- [P2P Swap BTC and ERC20](/docs/build/examples/btc-swap/): Learn how to build a P2P Bitcoin marketplace on BOB using a BTC light client to eliminate trusted thrid parties.
 - [Inscribing Ordinals](/docs/build/examples/brc20-octopus/): Learn how to inscribe Ordinals (text, BRC20s, ...) with the UniSat wallet.
 - [Unify BTC and EVM Assets](/docs/build/examples/unified-assets-tracker/): Learn how to unify BTC and EVM assets with a single wallet by using MetaMask snaps.
 
 ## Tools
 
-- [Rust zkVM](/docs/build/how-to/bonsai): Learn how to write Rust off-chain code that can be verified on-chain on BOB.
+- [Rust zkVM](/docs/build/tools/bonsai): Learn how to write Rust off-chain code that can be verified on-chain on BOB.
