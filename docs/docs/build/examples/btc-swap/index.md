@@ -1,10 +1,10 @@
-# BTC Swap
+# Trustless P2P Swap BTC and ERC20 using a BTC Light Client
 
 This example demonstrates how BOB is leveraged to build a peer-to-peer (P2P) swap application that allows two parties to swap ERC20 tokens and BTC without using a custodian.
 
-:::note
+:::info Example Code
 
-The code for this example can be [found in the P2P swap demo GitHub repository](https://github.com/bob-collective/p2p-swap-demo)
+The code for this example can be [found in the P2P swap demo GitHub repository](https://github.com/bob-collective/demo-p2p-swap)
 
 :::
 
@@ -139,19 +139,19 @@ If you switch back to your selling account before completing the order, you will
 
 ### The Contract
 
-The contract that this example uses can be found in `src/swap/Btc_Marketplace.sol`. Example usage can be seen in its tests in `test/swap/Btc_Marketplace.t.sol`. The contract is a work in progress, with some bitcoin-related parts being mocked. Its usage is as follows:
+The contract that this example uses can be found in `src/swap/Btc_Marketplace.sol`. Example usage can be seen in its tests in `test/swap/Btc_Marketplace.t.sol`. The contract is a work in progress, with some Bitcoin-related parts being mocked. Its usage is as follows:
 
 #### Buying BTC
 
-- Alice calls `placeBtcBuyOrder` and specifies amounts and a bitcoin address.
+- Alice calls `placeBtcBuyOrder` and specifies amounts and a Bitcoin address.
 - Bob calls `acceptBtcBuyOrder`
-- Bob makes the bitcoin transfer
+- Bob makes the Bitcoin transfer
 - Bob calls `proofBtcBuyOrder`, or Alice can call `cancelAcceptedBtcBuyOrder` after a timeout.
 
 #### Selling BTC
 
 - Alice calls `placeBtcSellOrder` specifying the amounts
-- Bob calls `acceptBtcSellOrder` and specifies a bitcoin address
+- Bob calls `acceptBtcSellOrder` and specifies a Bitcoin address
 - Alice calls `proofBtcSellOrder`, or Bob can call `cancelAcceptedBtcSellOrder`
 
 For both buying and selling orders, if the order has not yet been accepted, Alice can withdraw the request using `withdrawBtcSellOrder`/`withdrawBtcBuyOrder`.

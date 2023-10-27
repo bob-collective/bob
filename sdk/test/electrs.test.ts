@@ -2,6 +2,12 @@ import { assert } from "chai";
 import { DefaultElectrsClient } from "../src/electrs";
 
 describe("Electrs Tests", () => {
+    it("should get fee rate", async () => {
+        const client = new DefaultElectrsClient("testnet");
+        const feeRate = await client.getFeeEstimate(1);
+        assert(feeRate == 1);
+    });
+
     it("should serialize merkle proof", async () => {
         const client = new DefaultElectrsClient();
         const proof = await client.getMerkleProof("b61b0172d95e266c18aea0c624db987e971a5d6d4ebc2aaed85da4642d635735");

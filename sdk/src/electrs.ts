@@ -69,7 +69,7 @@ export interface ElectrsClient {
      * ```
      */
     getBlockHeader(hash: string): Promise<string>;
-    
+
     /**
      * Get the transaction data, represented as a hex string, for a Bitcoin transaction with a given ID (txId).
      *
@@ -91,7 +91,7 @@ export interface ElectrsClient {
      * ```
      */
     getTransactionHex(txId: string): Promise<string>;
-    
+
     /**
      * Get the encoded merkle inclusion proof for a Bitcoin transaction with a given ID (txId).
      *
@@ -113,17 +113,31 @@ export interface ElectrsClient {
      * ```
      */
     getMerkleProof(txId: string): Promise<MerkleProof>;
- }
 
+    /**
+     * Get the fee estimate (in sat/vB) for the given confirmation target.
+     *
+     * @param {number} confirmationTarget - The number of blocks to be included in.
+     * @returns {Promise<number>} A promise that resolves to the fee rate.
+     */
+    getFeeEstimate(confirmationTarget: number): Promise<number>;
 
- /**
- * @ignore
- */
+    /**
+     * Broadcast a raw transaction to the network.
+     *
+     * @param {string} txHex - The hex encoded transaction.
+     * @returns {Promise<string>} A promise that resolves to the txid.
+     */
+    broadcastTx(txHex: string): Promise<string>;
+}
+
+/**
+* @ignore
+*/
 function encodeElectrsMerkleProof(merkle: string[]): string {
     // convert to little-endian
     return merkle.map(item => Buffer.from(item, "hex").reverse().toString("hex")).join('');
 }
-
 
 /**
  * The `DefaultElectrsClient` class provides a client for interacting with an Esplora API
@@ -164,14 +178,12 @@ export class DefaultElectrsClient implements ElectrsClient {
         }
     }
 
-
     /**
      * @ignore
      */
     async getBlockHash(height: number): Promise<string> {
         return this.getText(`${this.basePath}/block-height/${height}`);
     }
-
 
     /**
      * @ignore
@@ -180,14 +192,12 @@ export class DefaultElectrsClient implements ElectrsClient {
         return this.getText(`${this.basePath}/block/${hash}/header`);
     }
 
-
     /**
      * @ignore
      */
     async getTransactionHex(txId: string): Promise<string> {
         return this.getText(`${this.basePath}/tx/${txId}/hex`);
     }
-
 
     /**
      * @ignore
@@ -205,6 +215,24 @@ export class DefaultElectrsClient implements ElectrsClient {
         };
     }
 
+    /**
+     * @ignore
+     */
+    async getFeeEstimate(confirmationTarget: number): Promise<number> {
+        const response = await this.getJson<any>(`${this.basePath}/fee-estimates`);
+        return response[confirmationTarget];
+    }
+
+    /**
+     * @ignore
+     */
+    async broadcastTx(txHex: string): Promise<string> {
+        const res = await fetch(`${this.basePath}/tx`, {
+            method: 'POST',
+            body: txHex
+        });
+        return await res.text();
+    }
 
     /**
      * @ignore
@@ -216,7 +244,6 @@ export class DefaultElectrsClient implements ElectrsClient {
         }
         return await response.json() as Promise<T>;
     }
-
 
     /**
      * @ignore
