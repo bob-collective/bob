@@ -1,10 +1,10 @@
 ---
-sidebar_position: 5
+sidebar_position: 3
 ---
 
 # Ordinals
 
-Ordinals are a system for tracking and transferring satoshis, Bitcoin's smallest units and attaching data to satoshis. When such attachment of data to satoshi happens an __inscription__ is created. Inscription content is entirely on-chain, stored in taproot script-path spend scripts forever. These scripts receive witness discounts, making inscription content storage relatively economical.
+[Ordinals](https://docs.ordinals.com/) are a system for tracking and transferring satoshis, Bitcoin's smallest units and attaching data to satoshis. When such attachment of data to satoshi happens an __inscription__ is created. Inscription content is entirely on-chain, stored in taproot script-path spend scripts forever. These scripts receive witness discounts, making inscription content storage relatively economical.
 
 
 ## How to create an inscription
@@ -12,6 +12,7 @@ Inscriptions are created using taproot script. That means you have to use a P2TR
 
 ### Wallets that support taproot addresses
 
+- [`ord` wallet](https://docs.ordinals.com/guides/inscriptions.html) (Desktop, full Bitcoin node requirement)
 - [Sparrow wallet](https://sparrowwallet.com/) (Desktop)
 - [Xverse](https://www.xverse.app/download) (Browser and mobile)
 - [Unisat](https://unisat.io/download ) (Browser)
