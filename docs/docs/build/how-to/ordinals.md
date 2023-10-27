@@ -28,6 +28,7 @@ Even though the inscribing process requires only 1 satoshi to which data are ins
 
 ## How to transfer inscription
 To transfer the inscription, the satoshi to which the data were inscribed has to be transferred. To do that, simply select the inscription in your wallet and send it to the recipient's address.
+
 :::tip
 Make sure that the recipient of the transfer provided a valid P2TR address.
 :::
@@ -35,3 +36,6 @@ Make sure that the recipient of the transfer provided a valid P2TR address.
 
 ## How to explore ordinal data
 Even though inscription data are stored on the blockchain, they are not directly accessible by calling a Bitcoin node. To be able to work with inscriptions, an ordinals indexer has to be run. There is a main [open-source indexer implementation](https://github.com/casey/ord) which contains an ordinals explorer web interface and an API deployed at [ordinals.com](https://ordinals.com/).
+
+BOB provides a free public API for accessing Ordinals data on both Bitcoin mainnet and testnet. We provide OpenAPI documentation for both APIs at https://ord-mainnet.gobob.xyz/docs and https://ord-testnet.gobob.xyz/docs respectively.
+As of October 2023 the API is in beta and is subject to change. We will do our best to keep the API stable and backwards compatible. If you have any questions or suggestions, please join our Discord server at https://discord.com/invite/interlay and let us know.
