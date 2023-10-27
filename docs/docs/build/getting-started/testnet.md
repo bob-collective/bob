@@ -21,7 +21,7 @@ This page also contains a button you can click to add the BOB testnet to your wa
 - **L2 Block Explorer** https://explorerl2-fluffy-bob-7mjgi9pmtg.t.conduit.xyz
 - **Chain ID** `901`
 - **Faucet** https://app.conduit.xyz/published/view/fluffy-bob-7mjgi9pmtg - use the L2 faucet box.
-
+- **Ordinals API** https://ord-testnet.gobob.xyz/docs/
 Sometimes the faucet fails, in which case you can use curl to directly call the API:
 
 ```sh
