@@ -69,9 +69,9 @@ function App() {
           <Flex direction='column' alignItems='center' gap='spacing1'>
             <P>Current Holder</P>
             <Flex elementType='span' gap='spacing2' alignItems='center'>
-              <Jazzicon diameter={40} seed={jsNumberForAddress(flagOwner.data as string)} />
+              <Jazzicon diameter={40} seed={jsNumberForAddress(flagOwner.data || '0x0') || '0'} />
               <Span weight='bold' style={{ color: 'inherit' }} size='xl' color='tertiary'>
-                {isCurrentOwner ? 'YOU' : truncateEthAddress(flagOwner.data as string)}
+                {isCurrentOwner ? 'YOU' : truncateEthAddress(flagOwner.data || '0x0')}
               </Span>
               {isCurrentOwner && (
                 <CTA size='x-small' onPress={() => setTransfering(true)}>

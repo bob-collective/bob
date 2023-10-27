@@ -6,6 +6,7 @@ import { L2_BLOCK_EXPLORER, L2_CHAIN_ID, L2_MULTICALL3_ADDRESS, L2_RPC_URL, L2_W
 
 import { InjectedConnector } from 'wagmi/connectors/injected';
 import Web3AuthConnectorInstance from './Web3AuthConnectorInstance';
+import { goerli } from 'viem/chains';
 const L2_PROJECT_ID = import.meta.env.VITE_WALLET_CONNECT_PROJECT_ID as string;
 
 const L2_METADATA = {
@@ -38,7 +39,8 @@ const L2_CHAIN_CONFIG = {
   }
 } as const satisfies Chain;
 
-const chains = [L2_CHAIN_CONFIG];
+const chains = [goerli];
+// const chains = [L2_CHAIN_CONFIG];
 
 const { publicClient, webSocketPublicClient } = configureChains(chains, [publicProvider()]);
 

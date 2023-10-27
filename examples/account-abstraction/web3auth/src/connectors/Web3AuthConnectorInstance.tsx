@@ -9,13 +9,23 @@ import { L2_BLOCK_EXPLORER, L2_RPC_URL } from '../config';
 export default function Web3AuthConnectorInstance(chains: Chain[]) {
   // Create Web3Auth Instance
   const name = 'My App Name';
+  // const chainConfig = {
+  //   chainNamespace: 'eip155',
+  //   chainId: '0x385',
+  //   rpcTarget: L2_RPC_URL,
+  //   displayName: 'BOB',
+  //   blockExplorer: L2_BLOCK_EXPLORER,
+  //   ticker: 'ETH',
+  //   tickerName: 'Ethereum'
+  // };
+
   const chainConfig = {
     chainNamespace: 'eip155',
-    chainId: '0x385',
-    rpcTarget: L2_RPC_URL,
-    displayName: 'BOB',
-    blockExplorer: L2_BLOCK_EXPLORER,
-    ticker: 'ETH',
+    chainId: '0x5',
+    rpcTarget: 'https://goerli.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161',
+    displayName: 'Görli',
+    blockExplorer: 'https://goerli.etherscan.io',
+    ticker: 'gETH',
     tickerName: 'Ethereum'
   };
 
