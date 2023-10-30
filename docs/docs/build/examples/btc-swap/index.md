@@ -168,7 +168,7 @@ An example application can be found at [https://github.com/bob-collective/bob-ui
 
 ### Funding Your Wallet with ERC20 Tokens
 
-This can be done using the faucet buttons as described in the [Creating and Funding Test Accounts](#creating-and-funding-test-accounts)above.
+This can be done using the faucet buttons as described in the [Creating and Funding Test Accounts](#creating-and-funding-test-accounts) above.
 
 #### Getting the Smart Contract ABIs in the UI
 

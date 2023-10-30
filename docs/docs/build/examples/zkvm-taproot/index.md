@@ -18,7 +18,7 @@ It is important to note that while zkVM does not leak information about the priv
 
 :::
 
-Finally, taproot addresses are pretty flexible - the spending condition can be either pubkey-based (like P2PK) or script-based (like P2SH). This demo only works for taproot addresses of the former type. Specifically is written to work only to work with Bitcoin-core wallets, where wallets and addresses are created using the `ord` tool.
+Finally, taproot addresses are pretty flexible - the spending condition can be either pubkey-based (like P2PK) or script-based (like P2SH). This demo only works for taproot addresses of the former type. Specifically is written to work only with Bitcoin-core wallets, where wallets and addresses are created using the `ord` tool.
 
 ## Demo
 
