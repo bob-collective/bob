@@ -1,7 +1,7 @@
 version: "3.8"
 services:
     bitcoind:
-        image: "ruimarinho/bitcoin-core:23"
+        image: "ruimarinho/bitcoin-core:24"
         command:
             - -regtest
             - -server
@@ -14,7 +14,7 @@ services:
             - "18443:18443"
 
     bitcoin-cli:
-        image: "ruimarinho/bitcoin-core:23"
+        image: "ruimarinho/bitcoin-core:24"
         command:
             - /bin/sh
             - -c
@@ -35,23 +35,24 @@ services:
                     wait $!
                 done
 
-    electrs:
-        image: "interlayhq/electrs:latest"
-        command:
-            - electrs
-            - -vvvv
-            - --network
-            - regtest
-            - --jsonrpc-import
-            - --cors
-            - "*"
-            - --cookie
-            - "rpcuser:rpcpassword"
-            - --daemon-rpc-addr
-            - "bitcoind:18443"
-            - --http-addr
-            - "[::0]:3002"
-            - --index-unspendables
-        ports:
-            - "3002:3002"
-        restart: always
+# ToDo: Uncomment out once the latest image is upload to electrs.
+#    electrs:
+#        image: "interlayhq/electrs:latest"
+#        command:
+#            - electrs
+#            - -vvvv
+#            - --network
+#            - regtest
+#            - --jsonrpc-import
+#            - --cors
+#            - "*"
+#            - --cookie
+#            - "rpcuser:rpcpassword"
+#            - --daemon-rpc-addr
+#            - "bitcoind:18443"
+#            - --http-addr
+#            - "[::0]:3002"
+#            - --index-unspendables
+#        ports:
+#            - "3002:3002"
+#        restart: always

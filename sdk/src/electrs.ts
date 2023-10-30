@@ -129,6 +129,40 @@ export interface ElectrsClient {
      * @returns {Promise<string>} A promise that resolves to the txid.
      */
     broadcastTx(txHex: string): Promise<string>;
+
+    /**
+     * Retrieves an inscription based on its ID.
+     * @param {string} id - The ID of the inscription to retrieve.
+     * @returns {Promise<string>} A Promise that resolves to the inscription as a string.
+     */
+    getInscriptionFromId(id: string): Promise<string>;
+
+    /**
+     * Retrieves a list of inscriptions.
+     * @returns {Promise<string>} A Promise that resolves to a string representing a list of inscriptions.
+     */
+    getInscriptions(): Promise<string>;
+
+    /**
+     * Retrieves an inscription based on its block height.
+     * @param {string} height - The block height of the inscription to retrieve.
+     * @returns {Promise<string>} A Promise that resolves to the inscription as a string.
+     */
+    getInscriptionFromBlock(height: string): Promise<string>;
+
+    /**
+     * Retrieves an inscription based on its UTXO (Unspent Transaction Output).
+     * @param {string} utxo - The UTXO of the inscription to retrieve.
+     * @returns {Promise<string>} A Promise that resolves to the inscription as a string.
+     */
+    getInscriptionFromUTXO(utxo: string): Promise<string>;
+
+    /**
+     * Retrieves an inscription based on its sat (something specific to your use case).
+     * @param {string} sat - The sat of the inscription to retrieve.
+     * @returns {Promise<string>} A Promise that resolves to the inscription as a string.
+     */
+    getInscriptionFromSat(sat: string): Promise<string>;
 }
 
 /**
@@ -176,6 +210,44 @@ export class DefaultElectrsClient implements ElectrsClient {
             default:
                 this.basePath = networkOrUrl;
         }
+    }
+
+
+    /**
+     * @ignore
+     */
+    async getInscriptionFromId(id: string): Promise<string> {
+        return this.getText(`${this.basePath}/inscriptionfromid/${id}`);
+    }
+
+
+    /**
+     * @ignore
+     */
+    async getInscriptions(): Promise<string> {
+        return this.getText(`${this.basePath}/inscriptions`);
+    }
+
+
+    /**
+     * @ignore
+     */
+    async getInscriptionFromBlock(height: string): Promise<string> {
+        return this.getText(`${this.basePath}/inscriptionsfromblock/${height}`);
+    }
+
+    /**
+     * @ignore
+     */
+    async getInscriptionFromUTXO(utxo: string): Promise<string> {
+        return this.getText(`${this.basePath}/inscriptionsfromutxo/${utxo}`);
+    }
+
+    /**
+     * @ignore
+     */
+    async getInscriptionFromSat(sat: string): Promise<string> {
+        return this.getText(`${this.basePath}/satwithinscription/${sat}`);
     }
 
     /**
