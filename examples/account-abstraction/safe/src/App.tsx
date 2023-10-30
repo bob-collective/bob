@@ -20,7 +20,7 @@ function App() {
   const flagOwner = useQuery<string, Error, string>(['owner'], {
     enabled: !!contract,
     queryFn: () => read('flagHolder') as Promise<string>,
-    refetchInterval: 10000
+    refetchInterval: 5000
   });
 
   const capturaFlagMutation = useMutation({
@@ -80,6 +80,8 @@ function App() {
   useEffect(() => {
     setTransferAddress('');
     setTransfering(false);
+
+    flagOwner.refetch();
   }, [safeSelected]);
 
   const isCurrentOwner = safeSelected === flagOwner.data;

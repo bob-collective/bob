@@ -5,22 +5,27 @@ import { useAccountAbstraction } from '../context/AuthContext';
 
 function useContract(contractType: ContractType) {
   const [contract, setContract] = useState<ethers.Contract | null>(null);
-  const { web3Provider } = useAccountAbstraction();
+  const { web3Provider, safeSelected } = useAccountAbstraction();
 
   useEffect(() => {
     // Ensure you have an Ethereum provider set up, e.g., with MetaMask
     if (window.ethereum && web3Provider) {
-      console.log(web3Provider.network);
       const signer = web3Provider.getSigner();
 
       const contractObj = contracts[contractType];
 
-      const contractInit = new ethers.Contract(contractObj.address, contractObj.abi, signer);
-      setContract(contractInit);
+      if (safeSelected) {
+        const contractInit = new ethers.Contract(contractObj.address, contractObj.abi, signer);
+        setContract(contractInit);
+      } else {
+        const contractInit = new ethers.Contract(contractObj.address, contractObj.abi, web3Provider);
+
+        setContract(contractInit);
+      }
     } else {
       console.error('Ethereum provider not found. Make sure you have MetaMask or a similar provider installed.');
     }
-  }, [contractType, web3Provider]);
+  }, [contractType, web3Provider, safeSelected]);
 
   // Read function
   const read = async (methodName: string, ...args: unknown[]) => {

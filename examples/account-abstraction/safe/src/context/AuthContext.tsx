@@ -7,8 +7,9 @@ import { createContext, useCallback, useContext, useEffect, useState } from 'rea
 import AccountAbstraction from '@safe-global/account-abstraction-kit-poc';
 import { Web3AuthModalPack } from '@safe-global/auth-kit';
 
+import Safe, { EthersAdapter } from '@safe-global/protocol-kit';
 import { GelatoRelayPack } from '@safe-global/relay-kit';
-import { MetaTransactionData, MetaTransactionOptions } from '@safe-global/safe-core-sdk-types';
+import { MetaTransactionData } from '@safe-global/safe-core-sdk-types';
 import { useQuery } from '@tanstack/react-query';
 
 const goerliChain: Chain = {
@@ -196,7 +197,7 @@ const AccountAbstractionProvider = ({ children }: { children: JSX.Element }) => 
     const getSafeAddress = async () => {
       if (web3Provider) {
         const signer = web3Provider.getSigner();
-        const relayPack = new GelatoRelayPack();
+        const relayPack = new GelatoRelayPack('_H2parOk7AeLqmhXkgRhPjVOUUYz31FNFGJA7CwNEzE_');
         const safeAccountAbstraction = new AccountAbstraction(signer);
 
         await safeAccountAbstraction.init({ relayPack });
@@ -232,20 +233,31 @@ const AccountAbstractionProvider = ({ children }: { children: JSX.Element }) => 
     setIsRelayerLoading(true);
 
     const signer = web3Provider.getSigner();
-    const relayPack = new GelatoRelayPack();
-    const safeAccountAbstraction = new AccountAbstraction(signer);
 
-    await safeAccountAbstraction.init({ relayPack });
+    const ethAdapter = new EthersAdapter({
+      ethers,
+      signerOrProvider: signer
+    });
 
-    const dumpSafeTransafer: MetaTransactionData[] = [transaction];
+    const safeSDK = await Safe.create({
+      ethAdapter,
+      safeAddress: safeSelected
+    });
 
-    const options: MetaTransactionOptions = {
-      isSponsored: false,
-      gasLimit: '600000', // in this alfa version we need to manually set the gas limit
-      gasToken: ethers.constants.AddressZero // native token
-    };
+    const relayPack = new GelatoRelayPack('_H2parOk7AeLqmhXkgRhPjVOUUYz31FNFGJA7CwNEzE_');
 
-    const gelatoTaskId = await safeAccountAbstraction.relayTransaction(dumpSafeTransafer, options);
+    const transactions: MetaTransactionData[] = [transaction];
+
+    const safeTransaction = await relayPack.createRelayedTransaction({
+      safe: safeSDK,
+      transactions
+    });
+
+    const signedSafeTransaction = await safeSDK.signTransaction(safeTransaction);
+
+    const response = await relayPack.executeRelayTransaction(signedSafeTransaction, safeSDK);
+
+    console.log(`Relay Transaction Task ID: https://relay.gelato.digital/tasks/status/${response.taskId}`);
 
     setIsRelayerLoading(false);
     setGelatoTaskId(gelatoTaskId);
