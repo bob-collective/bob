@@ -47,6 +47,7 @@ export default function Web3AuthConnectorInstance(chains: Chain[]) {
   const privateKeyProvider = new EthereumPrivateKeyProvider({
     config: { chainConfig }
   });
+
   const openloginAdapterInstance = new OpenloginAdapter({
     privateKeyProvider,
     adapterSettings: {

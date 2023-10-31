@@ -50,6 +50,9 @@ dependencies:
   big.js:
     specifier: ^6.2.1
     version: 6.2.1
+  permissionless:
+    specifier: ^0.0.9
+    version: 0.0.9(viem@1.17.2)
   react:
     specifier: ^18.2.0
     version: 18.2.0
@@ -72,7 +75,7 @@ dependencies:
     specifier: ^0.15.0
     version: 0.15.0(vite@4.5.0)
   wagmi:
-    specifier: ^1.4.1
+    specifier: ^1.4.5
     version: 1.4.5(@types/react@18.2.33)(react-dom@18.2.0)(react@18.2.0)(typescript@5.2.2)(viem@1.17.2)
 
 devDependencies:
@@ -6056,6 +6059,14 @@ packages:
       ripemd160: 2.0.2
       safe-buffer: 5.2.1
       sha.js: 2.4.11
+    dev: false
+
+  /permissionless@0.0.9(viem@1.17.2):
+    resolution: {integrity: sha512-KtNggmRw3YvvsEZPPMJ26Gxk0AO9bAnZPvXYbDmAdIDXqqLElZnfcEmmeDMZe/K1aPHmwZmmG+EGG39g74dGrQ==}
+    peerDependencies:
+      viem: ^1.14.0
+    dependencies:
+      viem: 1.17.2(typescript@5.2.2)
     dev: false
 
   /picocolors@1.0.0:

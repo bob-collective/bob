@@ -27,6 +27,7 @@
     "@web3auth/openlogin-adapter": "^7.0.4",
     "@web3modal/wagmi": "^3.1.0",
     "big.js": "^6.2.1",
+    "permissionless": "^0.0.9",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-jazzicon": "^1.0.4",
@@ -34,7 +35,7 @@
     "truncate-eth-address": "^1.0.2",
     "viem": "^1.10.9",
     "vite-plugin-node-polyfills": "^0.15.0",
-    "wagmi": "^1.4.1"
+    "wagmi": "^1.4.5"
   },
   "devDependencies": {
     "@typechain/ethers-v6": "^0.5.0",
