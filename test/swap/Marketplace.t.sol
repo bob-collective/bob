@@ -58,7 +58,7 @@ contract MarketPlaceTest is MarketPlace, Test {
         assertEq(token1.balanceOf(bob), 600);
         assertEq(token2.balanceOf(bob), 40);
     }
-    
+
     function testPartialSwap() public {
         token1.sudoMint(alice, 1000);
         token2.sudoMint(bob, 100);
@@ -83,7 +83,6 @@ contract MarketPlaceTest is MarketPlace, Test {
         vm.startPrank(alice);
         token1.approve(address(this), 1000);
         this.placeErcErcOrder(address(token1), 1000, address(token2), 100);
-
 
         assertEq(token1.balanceOf(alice), 0);
         this.withdrawErcErcOrder(0);

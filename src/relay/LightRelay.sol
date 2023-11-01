@@ -550,6 +550,11 @@ contract LightRelay is Ownable, ILightRelay {
         return (currentEpochDifficulty, prevEpochDifficulty);
     }
 
+    function difficultyCheckEnabled() external view returns (bool) {
+        return true;
+    }
+
+
     /// @notice Get the difficulty of the specified epoch.
     /// @param epochNumber The number of the epoch (the height of the first
     /// block of the epoch, divided by 2016). Must fall within the relay range.

@@ -52,7 +52,7 @@ contract BitcoinTxTest is Test {
         );
     }
 
-    function test_GetTxOutputValue() public {        
+    function test_GetTxOutputValue() public {
         // b1273a6c00eba20ee8837e445599d1362e005f6e1a8525802ba57bc515461a3a
         uint64 value = BitcoinTx.getTxOutputValue(
             keccak256(hex"16001493adab0a7a8cb7675db135c9c97e81942025c2c9"),

@@ -20,9 +20,11 @@ contract Bridge {
         address accepterAddress;
         BitcoinAddress bitcoinAddress;
     }
+
     struct BitcoinAddress {
         uint256 bitcoinAddress; // todo: use the right type
     }
+
     struct TransactionProof {
         // todo: fields here
         uint256 dummy;
@@ -43,11 +45,7 @@ contract Bridge {
     }
 
     /// request zBTC to be redeemed for given amount of BTC.
-    function requestSwap(
-        uint256 amountZbtc,
-        uint256 amountBtc,
-        BitcoinAddress calldata bitcoinAddress
-    ) public {
+    function requestSwap(uint256 amountZbtc, uint256 amountBtc, BitcoinAddress calldata bitcoinAddress) public {
         // lock Zbtc by transfering it to the contract address
         wrapped.sudoTransferFrom(msg.sender, address(this), amountZbtc);
         require(amountZbtc != 0);
@@ -79,14 +77,11 @@ contract Bridge {
         require(order.requesterAddress == msg.sender);
         // ensure the request was not accepted yet
         require(order.accepterAddress == address(0));
-        
+
         delete orders[id];
     }
 
-    function executeSwap(
-        uint256 id,
-        TransactionProof calldata transactionProof
-    ) public {
+    function executeSwap(uint256 id, TransactionProof calldata transactionProof) public {
         // todo: check proof
 
         // move the zbtc thta was locked to whoever accepted the order
@@ -96,10 +91,7 @@ contract Bridge {
         require(!order.open);
         require(order.amountZbtc != 0);
 
-        wrapped.transfer(
-            order.accepterAddress,
-            order.amountZbtc
-        );
+        wrapped.transfer(order.accepterAddress, order.amountZbtc);
 
         // clean up storage
         delete orders[id];
@@ -119,18 +111,16 @@ contract Bridge {
         uint256 totalZbtc = wrapped.totalSupply();
         uint256 requiredCol = btcToCol(totalZbtc * collateralThreshold);
         uint256 colFree = totalCollateral - requiredCol;
-        uint256 withdrawal = colFree < suppliedCollateral[msg.sender]
-            ? colFree
-            : suppliedCollateral[msg.sender];
+        uint256 withdrawal = colFree < suppliedCollateral[msg.sender] ? colFree : suppliedCollateral[msg.sender];
         suppliedCollateral[msg.sender] -= withdrawal;
         totalCollateral -= withdrawal;
     }
 
-    function colToBtc(uint256 collateral) internal pure returns (uint) {
+    function colToBtc(uint256 collateral) internal pure returns (uint256) {
         return collateral / 5; // todo
     }
 
-    function btcToCol(uint256 collateral) internal pure returns (uint) {
+    function btcToCol(uint256 collateral) internal pure returns (uint256) {
         return collateral * 5; // todo
     }
 }
