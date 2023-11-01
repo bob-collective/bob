@@ -1,9 +1,8 @@
 /**
  * Base path for Ordinals regtest Indexer.
- * @default "http://localhost:3003"
+ * @default "http://0.0.0.0:80"
  */
 export const REGTEST_ORD_BASE_PATH = "http://0.0.0.0:80";
-
 
 /**
  * @ignore
