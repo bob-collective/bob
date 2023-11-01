@@ -26,6 +26,9 @@ There are several ways to create inscriptions, the following two are advised:
 Even though the inscribing process requires only 1 satoshi to which data are inscribed, there are associated fees to store the data based on inscription size and padding - an amount of satoshis included in the UTXO to pay for future inscriptions transfers.
 :::
 
+#### Using the SDK
+If you're developing an app with Javascript or Typescript you can use the BOB SDK to create the commit and reveal transactions required to inscribe data to an ordinal. Refer to the `inscribeText` function and provide a custom `RemoteSigner` implementation for your wallet. The test in [`sdk/test/ordinals.test.ts`](https://github.com/bob-collective/bob/blob/master/sdk/test/ordinals.test.ts) provides an example implementation using [`bitcoinjs-lib`](https://github.com/bitcoinjs/bitcoinjs-lib) and [`tiny-secp256k1`](https://github.com/bitcoinjs/tiny-secp256k1).
+
 ## How to transfer inscription
 To transfer the inscription, the satoshi to which the data were inscribed has to be transferred. To do that, simply select the inscription in your wallet and send it to the recipient's address.
 
