@@ -32,23 +32,13 @@ contract BridgeTest is Bridge, Test {
         vm.deal(alice, _amount);
         vm.startPrank(alice);
         uint256 balanceBefore = address(this).balance;
-        (bool _success, ) = address(this).call{value: _amount}(
-            abi.encodeWithSignature("mint()", alice)
-        );
+        (bool _success,) = address(this).call{value: _amount}(abi.encodeWithSignature("mint()", alice));
         assertTrue(_success, "deposited payment.");
 
         // zbtc minted
-        assertEqDecimal(
-            wrapped.balanceOf(alice),
-            _amount / 5 / 2,
-            wrapped.decimals()
-        );
+        assertEqDecimal(wrapped.balanceOf(alice), _amount / 5 / 2, wrapped.decimals());
         // col has been transferred to contract
-        assertEqDecimal(
-            address(this).balance,
-            balanceBefore + _amount,
-            wrapped.decimals()
-        );
+        assertEqDecimal(address(this).balance, balanceBefore + _amount, wrapped.decimals());
     }
 
     function testLiquidate() public {
@@ -56,20 +46,14 @@ contract BridgeTest is Bridge, Test {
 
         vm.deal(alice, _amount);
         vm.startPrank(alice);
-        (bool _success, ) = address(this).call{value: _amount}(
-            abi.encodeWithSignature("mint()", alice)
-        );
+        (bool _success,) = address(this).call{value: _amount}(abi.encodeWithSignature("mint()", alice));
         assertTrue(_success);
 
         // liquidate 25% of what was minted
         assertEqDecimal(wrapped.balanceOf(alice), 100, wrapped.decimals());
         this.liquidate(25);
         assertEqDecimal(wrapped.balanceOf(alice), 75, wrapped.decimals());
-        assertEqDecimal(
-            address(alice).balance,
-            btcToCol(25),
-            wrapped.decimals()
-        );
+        assertEqDecimal(address(alice).balance, btcToCol(25), wrapped.decimals());
     }
 
     function testWithdraw() public {
@@ -77,16 +61,11 @@ contract BridgeTest is Bridge, Test {
 
         vm.deal(alice, _amount);
         vm.startPrank(alice);
-        (bool _success, ) = address(this).call{value: _amount}(
-            abi.encodeWithSignature("mint()", alice)
-        );
+        (bool _success,) = address(this).call{value: _amount}(abi.encodeWithSignature("mint()", alice));
         assertTrue(_success);
 
         assertEq(collateralThreshold, 2);
-        stdstore
-            .target(address(this))
-            .sig(this.collateralThreshold.selector)
-            .checked_write(1);
+        stdstore.target(address(this)).sig(this.collateralThreshold.selector).checked_write(1);
         assertEq(collateralThreshold, 1); // sanity check that writing to storage worked
 
         uint256 lockedBefore = suppliedCollateral[alice];
@@ -102,9 +81,7 @@ contract BridgeTest is Bridge, Test {
 
         vm.deal(alice, amountCol);
         vm.startPrank(alice);
-        (bool _success, ) = address(this).call{value: amountCol}(
-            abi.encodeWithSignature("mint()", alice)
-        );
+        (bool _success,) = address(this).call{value: amountCol}(abi.encodeWithSignature("mint()", alice));
         assertTrue(_success, "deposited payment.");
 
         BitcoinAddress memory btcAddress = BitcoinAddress({bitcoinAddress: 1});
