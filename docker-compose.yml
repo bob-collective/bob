@@ -32,7 +32,7 @@ services:
                 trap 'exit 130' TERM INT EXIT
                 while true; do
                     bitcoin-cli -regtest -rpcconnect=bitcoind -rpcwait -rpcuser=rpcuser -rpcpassword=rpcpassword generatetoaddress 1 $${ALICE_ADDRESS}
-                    sleep 15 &
+                    sleep 10 &
                     wait $!
                 done
 
