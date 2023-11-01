@@ -30,89 +30,74 @@ contract BtcMarketPlace {
     // todo: should we merge buy&sell structs? They're structurally identical except for the
     // bitcoinaddress location.
 
-    event placeBtcSellOrderEvent(
-        uint indexed orderId,
-        uint256 amountBtc,
-        address buyingToken,
-        uint buyAmount
-    );
+    event placeBtcSellOrderEvent(uint256 indexed orderId, uint256 amountBtc, address buyingToken, uint256 buyAmount);
     event acceptBtcSellOrderEvent(
-        uint indexed id,
-        uint indexed acceptId,
+        uint256 indexed id,
+        uint256 indexed acceptId,
         BitcoinAddress bitcoinAddress,
         uint256 amountBtc,
         uint256 ercAmount,
         address ercToken
     );
-    event proofBtcSellOrderEvent(uint id);
-    event withdrawBtcSellOrderEvent(uint id);
-    event cancelAcceptedBtcSellOrderEvent(uint id);
+    event proofBtcSellOrderEvent(uint256 id);
+    event withdrawBtcSellOrderEvent(uint256 id);
+    event cancelAcceptedBtcSellOrderEvent(uint256 id);
     event placeBtcBuyOrderEvent(
-        uint256 amountBtc,
-        BitcoinAddress bitcoinAddress,
-        address sellingToken,
-        uint saleAmount
+        uint256 amountBtc, BitcoinAddress bitcoinAddress, address sellingToken, uint256 saleAmount
     );
     event acceptBtcBuyOrderEvent(
-        uint indexed orderId,
-        uint indexed acceptId,
-        uint256 amountBtc,
-        uint256 ercAmount,
-        address ercToken
+        uint256 indexed orderId, uint256 indexed acceptId, uint256 amountBtc, uint256 ercAmount, address ercToken
     );
-    event proofBtcBuyOrderEvent(uint id);
-    event withdrawBtcBuyOrderEvent(uint id);
-    event cancelAcceptedBtcBuyOrderEvent(uint id);
+    event proofBtcBuyOrderEvent(uint256 id);
+    event withdrawBtcBuyOrderEvent(uint256 id);
+    event cancelAcceptedBtcBuyOrderEvent(uint256 id);
 
     struct BtcSellOrder {
         uint256 amountBtc;
         address askingToken;
-        uint askingAmount;
+        uint256 askingAmount;
         address requester;
     }
 
     struct AcceptedBtcSellOrder {
-        uint orderId;
+        uint256 orderId;
         BitcoinAddress bitcoinAddress;
         uint256 amountBtc;
         address ercToken;
-        uint ercAmount;
+        uint256 ercAmount;
         address requester;
         address accepter;
-        uint acceptTime;
+        uint256 acceptTime;
     }
 
     struct BtcBuyOrder {
         uint256 amountBtc;
         BitcoinAddress bitcoinAddress;
         address offeringToken;
-        uint offeringAmount;
+        uint256 offeringAmount;
         address requester;
     }
 
     struct AcceptedBtcBuyOrder {
-        uint orderId;
+        uint256 orderId;
         uint256 amountBtc;
         address ercToken;
-        uint ercAmount;
+        uint256 ercAmount;
         address requester;
         address accepter;
-        uint acceptTime;
+        uint256 acceptTime;
     }
 
     struct BitcoinAddress {
         string bitcoinAddress; // todo: use the right type
     }
+
     struct TransactionProof {
         // todo: fields here
         uint256 dummy;
     }
 
-    function placeBtcSellOrder(
-        uint256 amountBtc,
-        address buyingToken,
-        uint buyAmount
-    ) public {
+    function placeBtcSellOrder(uint256 amountBtc, address buyingToken, uint256 buyAmount) public {
         require(buyingToken != address(0x0));
         require(amountBtc > 0);
         require(buyAmount > 0);
@@ -128,28 +113,23 @@ contract BtcMarketPlace {
         emit placeBtcSellOrderEvent(id, amountBtc, buyingToken, buyAmount);
     }
 
-    function acceptBtcSellOrder(
-        uint id,
-        BitcoinAddress calldata bitcoinAddress,
-        uint256 amountBtc
-    ) public returns (uint) {
+    function acceptBtcSellOrder(uint256 id, BitcoinAddress calldata bitcoinAddress, uint256 amountBtc)
+        public
+        returns (uint256)
+    {
         BtcSellOrder storage order = btcSellOrders[id];
 
         require(amountBtc > 0);
         require(amountBtc <= order.amountBtc);
 
-        uint sellAmount = (amountBtc * order.askingAmount) / order.amountBtc;
+        uint256 sellAmount = (amountBtc * order.askingAmount) / order.amountBtc;
         assert(sellAmount > 0);
         assert(order.askingAmount >= sellAmount);
         order.askingAmount -= sellAmount;
         order.amountBtc -= amountBtc;
 
         // "lock" selling token by transferring to contract
-        IERC20(order.askingToken).safeTransferFrom(
-            msg.sender,
-            address(this),
-            sellAmount
-        );
+        IERC20(order.askingToken).safeTransferFrom(msg.sender, address(this), sellAmount);
 
         uint256 acceptId = nextOrderId++;
         acceptedBtcSellOrders[acceptId] = AcceptedBtcSellOrder({
@@ -163,39 +143,27 @@ contract BtcMarketPlace {
             acceptTime: block.timestamp
         });
 
-        emit acceptBtcSellOrderEvent(
-            id,
-            acceptId,
-            bitcoinAddress,
-            amountBtc,
-            sellAmount,
-            order.askingToken
-        );
+        emit acceptBtcSellOrderEvent(id, acceptId, bitcoinAddress, amountBtc, sellAmount, order.askingToken);
 
         return acceptId;
     }
 
-    function proofBtcSellOrder(
-        uint id,
-        BitcoinTx.Info calldata transaction,
-        BitcoinTx.Proof calldata proof
-    ) public {
+    function proofBtcSellOrder(uint256 id, BitcoinTx.Info calldata transaction, BitcoinTx.Proof calldata proof)
+        public
+    {
         AcceptedBtcSellOrder storage accept = acceptedBtcSellOrders[id];
 
         require(accept.requester == msg.sender);
 
         relay.validateProof(transaction, proof);
 
-        IERC20(accept.ercToken).safeTransfer(
-            accept.requester,
-            accept.ercAmount
-        );
+        IERC20(accept.ercToken).safeTransfer(accept.requester, accept.ercAmount);
 
         delete acceptedBtcSellOrders[id];
         emit proofBtcSellOrderEvent(id);
     }
 
-    function withdrawBtcSellOrder(uint id) public {
+    function withdrawBtcSellOrder(uint256 id) public {
         BtcSellOrder storage order = btcSellOrders[id];
 
         require(order.requester == msg.sender);
@@ -205,12 +173,10 @@ contract BtcMarketPlace {
         emit withdrawBtcSellOrderEvent(id);
     }
 
-    function cancelAcceptedBtcSellOrder(uint id) public {
+    function cancelAcceptedBtcSellOrder(uint256 id) public {
         AcceptedBtcSellOrder storage order = acceptedBtcSellOrders[id];
 
-        require(
-            block.timestamp > order.acceptTime + REQUEST_EXPIRATION_SECONDS
-        );
+        require(block.timestamp > order.acceptTime + REQUEST_EXPIRATION_SECONDS);
 
         require(order.accepter == msg.sender);
         // give accepter its tokens back
@@ -225,16 +191,12 @@ contract BtcMarketPlace {
         uint256 amountBtc,
         BitcoinAddress calldata bitcoinAddress,
         address sellingToken,
-        uint saleAmount
+        uint256 saleAmount
     ) public {
         require(sellingToken != address(0x0));
 
         // "lock" selling token by transferring to contract
-        IERC20(sellingToken).safeTransferFrom(
-            msg.sender,
-            address(this),
-            saleAmount
-        );
+        IERC20(sellingToken).safeTransferFrom(msg.sender, address(this), saleAmount);
 
         uint256 id = nextOrderId++;
         btcBuyOrders[id] = BtcBuyOrder({
@@ -245,25 +207,17 @@ contract BtcMarketPlace {
             requester: msg.sender
         });
 
-        emit placeBtcBuyOrderEvent(
-            amountBtc,
-            bitcoinAddress,
-            sellingToken,
-            saleAmount
-        );
+        emit placeBtcBuyOrderEvent(amountBtc, bitcoinAddress, sellingToken, saleAmount);
     }
 
-    function acceptBtcBuyOrder(
-        uint id,
-        uint256 amountBtc
-    ) public returns (uint) {
+    function acceptBtcBuyOrder(uint256 id, uint256 amountBtc) public returns (uint256) {
         BtcBuyOrder storage order = btcBuyOrders[id];
 
         require(amountBtc <= order.amountBtc);
         require(amountBtc > 0);
 
         // todo: make safe
-        uint buyAmount = (amountBtc * order.offeringAmount) / order.amountBtc;
+        uint256 buyAmount = (amountBtc * order.offeringAmount) / order.amountBtc;
 
         assert(buyAmount > 0);
 
@@ -281,26 +235,16 @@ contract BtcMarketPlace {
             acceptTime: block.timestamp
         });
 
-        uint acceptId = nextOrderId++;
+        uint256 acceptId = nextOrderId++;
 
         acceptedBtcBuyOrders[acceptId] = accept;
 
-        emit acceptBtcBuyOrderEvent(
-            id,
-            acceptId,
-            amountBtc,
-            buyAmount,
-            order.offeringToken
-        );
+        emit acceptBtcBuyOrderEvent(id, acceptId, amountBtc, buyAmount, order.offeringToken);
 
         return acceptId;
     }
 
-    function proofBtcBuyOrder(
-        uint id,
-        BitcoinTx.Info calldata transaction,
-        BitcoinTx.Proof calldata proof
-    ) public {
+    function proofBtcBuyOrder(uint256 id, BitcoinTx.Info calldata transaction, BitcoinTx.Proof calldata proof) public {
         AcceptedBtcBuyOrder storage accept = acceptedBtcBuyOrders[id];
 
         require(accept.accepter == msg.sender);
@@ -314,30 +258,25 @@ contract BtcMarketPlace {
         emit proofBtcBuyOrderEvent(id);
     }
 
-    function withdrawBtcBuyOrder(uint id) public {
+    function withdrawBtcBuyOrder(uint256 id) public {
         BtcBuyOrder storage order = btcBuyOrders[id];
 
         require(order.requester == msg.sender);
 
         // release the locked erc20s
-        IERC20(order.offeringToken).safeTransfer(
-            msg.sender,
-            order.offeringAmount
-        );
+        IERC20(order.offeringToken).safeTransfer(msg.sender, order.offeringAmount);
 
         delete btcBuyOrders[id];
 
         emit withdrawBtcBuyOrderEvent(id);
     }
 
-    function cancelAcceptedBtcBuyOrder(uint id) public {
+    function cancelAcceptedBtcBuyOrder(uint256 id) public {
         AcceptedBtcBuyOrder storage accept = acceptedBtcBuyOrders[id];
 
         require(accept.requester == msg.sender);
 
-        require(
-            block.timestamp > accept.acceptTime + REQUEST_EXPIRATION_SECONDS
-        );
+        require(block.timestamp > accept.acceptTime + REQUEST_EXPIRATION_SECONDS);
 
         // release the locked erc20s
         IERC20(accept.ercToken).safeTransfer(msg.sender, accept.ercAmount);
@@ -350,22 +289,18 @@ contract BtcMarketPlace {
         emit cancelAcceptedBtcBuyOrderEvent(id);
     }
 
-    function getOpenBtcSellOrders()
-        external
-        view
-        returns (BtcSellOrder[] memory, uint[] memory)
-    {
-        uint numOpenOrders = 0;
-        for (uint i = 0; i < nextOrderId; i++) {
+    function getOpenBtcSellOrders() external view returns (BtcSellOrder[] memory, uint256[] memory) {
+        uint256 numOpenOrders = 0;
+        for (uint256 i = 0; i < nextOrderId; i++) {
             if (btcSellOrders[i].requester != address(0x0)) {
                 numOpenOrders++;
             }
         }
 
         BtcSellOrder[] memory ret = new BtcSellOrder[](numOpenOrders);
-        uint[] memory identifiers = new uint[](numOpenOrders);
-        uint numPushed = 0;
-        for (uint i = 0; i < nextOrderId; i++) {
+        uint256[] memory identifiers = new uint[](numOpenOrders);
+        uint256 numPushed = 0;
+        for (uint256 i = 0; i < nextOrderId; i++) {
             if (btcSellOrders[i].requester != address(0x0)) {
                 ret[numPushed] = btcSellOrders[i];
                 identifiers[numPushed] = i;
@@ -375,13 +310,9 @@ contract BtcMarketPlace {
         return (ret, identifiers);
     }
 
-    function getOpenAcceptedBtcSellOrders()
-        external
-        view
-        returns (AcceptedBtcSellOrder[] memory, uint[] memory)
-    {
-        uint numOpenOrders = 0;
-        for (uint i = 0; i < nextOrderId; i++) {
+    function getOpenAcceptedBtcSellOrders() external view returns (AcceptedBtcSellOrder[] memory, uint256[] memory) {
+        uint256 numOpenOrders = 0;
+        for (uint256 i = 0; i < nextOrderId; i++) {
             if (acceptedBtcSellOrders[i].amountBtc > 0) {
                 numOpenOrders++;
             }
@@ -390,9 +321,9 @@ contract BtcMarketPlace {
         AcceptedBtcSellOrder[] memory ret = new AcceptedBtcSellOrder[](
             numOpenOrders
         );
-        uint[] memory identifiers = new uint[](numOpenOrders);
-        uint numPushed = 0;
-        for (uint i = 0; i < nextOrderId; i++) {
+        uint256[] memory identifiers = new uint[](numOpenOrders);
+        uint256 numPushed = 0;
+        for (uint256 i = 0; i < nextOrderId; i++) {
             if (acceptedBtcSellOrders[i].amountBtc > 0) {
                 ret[numPushed] = acceptedBtcSellOrders[i];
                 identifiers[numPushed] = i;
@@ -402,22 +333,18 @@ contract BtcMarketPlace {
         return (ret, identifiers);
     }
 
-    function getOpenBtcBuyOrders()
-        external
-        view
-        returns (BtcBuyOrder[] memory, uint[] memory)
-    {
-        uint numOpenOrders = 0;
-        for (uint i = 0; i < nextOrderId; i++) {
+    function getOpenBtcBuyOrders() external view returns (BtcBuyOrder[] memory, uint256[] memory) {
+        uint256 numOpenOrders = 0;
+        for (uint256 i = 0; i < nextOrderId; i++) {
             if (btcBuyOrders[i].requester != address(0x0)) {
                 numOpenOrders++;
             }
         }
 
         BtcBuyOrder[] memory ret = new BtcBuyOrder[](numOpenOrders);
-        uint[] memory identifiers = new uint[](numOpenOrders);
-        uint numPushed = 0;
-        for (uint i = 0; i < nextOrderId; i++) {
+        uint256[] memory identifiers = new uint[](numOpenOrders);
+        uint256 numPushed = 0;
+        for (uint256 i = 0; i < nextOrderId; i++) {
             if (btcBuyOrders[i].requester != address(0x0)) {
                 ret[numPushed] = btcBuyOrders[i];
                 identifiers[numPushed] = i;
@@ -427,13 +354,9 @@ contract BtcMarketPlace {
         return (ret, identifiers);
     }
 
-    function getOpenAcceptedBtcBuyOrders()
-        external
-        view
-        returns (AcceptedBtcBuyOrder[] memory, uint[] memory)
-    {
-        uint numOpenOrders = 0;
-        for (uint i = 0; i < nextOrderId; i++) {
+    function getOpenAcceptedBtcBuyOrders() external view returns (AcceptedBtcBuyOrder[] memory, uint256[] memory) {
+        uint256 numOpenOrders = 0;
+        for (uint256 i = 0; i < nextOrderId; i++) {
             if (acceptedBtcBuyOrders[i].amountBtc > 0) {
                 numOpenOrders++;
             }
@@ -442,9 +365,9 @@ contract BtcMarketPlace {
         AcceptedBtcBuyOrder[] memory ret = new AcceptedBtcBuyOrder[](
             numOpenOrders
         );
-        uint[] memory identifiers = new uint[](numOpenOrders);
-        uint numPushed = 0;
-        for (uint i = 0; i < nextOrderId; i++) {
+        uint256[] memory identifiers = new uint[](numOpenOrders);
+        uint256 numPushed = 0;
+        for (uint256 i = 0; i < nextOrderId; i++) {
             if (acceptedBtcBuyOrders[i].amountBtc > 0) {
                 ret[numPushed] = acceptedBtcBuyOrders[i];
                 identifiers[numPushed] = i;

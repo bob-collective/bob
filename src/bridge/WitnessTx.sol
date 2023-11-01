@@ -16,6 +16,9 @@ library WitnessTx {
     using SegWitUtils for bytes;
     using ValidateSPV for bytes32;
 
+    bytes1 constant SEGWIT_MARKER = hex"00";
+    bytes1 constant SEGWIT_FLAG = hex"01";
+
     /// @notice Represents a Bitcoin transaction with the witness data.
     struct WitnessInfo {
         /// @notice Bitcoin transaction info.
@@ -45,31 +48,21 @@ library WitnessTx {
     /// @param txInfo Bitcoin transaction data.
     /// @param proof Bitcoin proof data.
     /// @return wTxHash Proven 32-byte transaction hash.
-    function validateWitnessProof(
-        WitnessInfo memory txInfo,
-        WitnessProof memory proof
-    ) internal view returns (bytes32 wTxHash) {
-        require(
-            proof.coinbaseTx.outputVector.validateVout(),
-            "Invalid coinbase output vector provided"
-        );
-        require(
-            txInfo.info.inputVector.validateVin(),
-            "Invalid payment input vector provided"
-        );
-        require(
-            txInfo.info.outputVector.validateVout(),
-            "Invalid payment output vector provided"
-        );
+    function validateWitnessProof(WitnessInfo memory txInfo, WitnessProof memory proof)
+        internal
+        view
+        returns (bytes32 wTxHash)
+    {
+        require(proof.coinbaseTx.outputVector.validateVout(), "Invalid coinbase output vector provided");
+        require(txInfo.info.inputVector.validateVin(), "Invalid payment input vector provided");
+        require(txInfo.info.outputVector.validateVout(), "Invalid payment output vector provided");
 
-        bytes32 coinbaseTxHash = abi
-            .encodePacked(
-                proof.coinbaseTx.version,
-                proof.coinbaseTx.inputVector,
-                proof.coinbaseTx.outputVector,
-                proof.coinbaseTx.locktime
-            )
-            .hash256View();
+        bytes32 coinbaseTxHash = abi.encodePacked(
+            proof.coinbaseTx.version,
+            proof.coinbaseTx.inputVector,
+            proof.coinbaseTx.outputVector,
+            proof.coinbaseTx.locktime
+        ).hash256View();
 
         require(
             coinbaseTxHash.prove(
@@ -80,32 +73,25 @@ library WitnessTx {
             "Tx merkle proof is not valid for provided header and tx hash"
         );
 
-        bytes32 paymentWTxId = abi
-            .encodePacked(
-                txInfo.info.version,
-                hex"00", // SEGWIT_MARKER
-                hex"01", // SEGWIT_FLAG
-                txInfo.info.inputVector,
-                txInfo.info.outputVector,
-                txInfo.witnessVector,
-                txInfo.info.locktime
-            )
-            .hash256View();
+        bytes32 paymentWTxId = abi.encodePacked(
+            txInfo.info.version,
+            SEGWIT_MARKER,
+            SEGWIT_FLAG,
+            txInfo.info.inputVector,
+            txInfo.info.outputVector,
+            txInfo.witnessVector,
+            txInfo.info.locktime
+        ).hash256View();
 
         require(
             paymentWTxId.prove(
-                proof.paymentMerkleRoot,
-                proof.paymentProof.merkleProof,
-                proof.paymentProof.txIndexInBlock
+                proof.paymentMerkleRoot, proof.paymentProof.merkleProof, proof.paymentProof.txIndexInBlock
             ),
             "Tx witness merkle proof is not valid for provided header and tx hash"
         );
 
         // witnessCommitment = SHA256(witnessMerkleRoot || witnessNonce)
-        bytes32 witnessCommitment = abi.encodePacked(
-            proof.paymentMerkleRoot,
-            proof.witnessNonce
-        ).hash256View();
+        bytes32 witnessCommitment = abi.encodePacked(proof.paymentMerkleRoot, proof.witnessNonce).hash256View();
 
         // extract coinbase commitment from tx out
         bytes32 coinbaseWitnessCommitment = proof.coinbaseTx.outputVector.extractWitnessCommitment();

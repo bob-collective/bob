@@ -115,8 +115,6 @@ library BitcoinTx {
         /// @dev `lock_time` from raw Bitcoin transaction data.
         ///      Encoded as 4-bytes unsigned integer, little endian.
         bytes4 locktime;
-        // This struct doesn't contain `__gap` property as the structure is not
-        // stored, it is used as a function's calldata argument.
     }
 
     /// @notice Represents data needed to perform a Bitcoin SPV proof.
@@ -128,8 +126,6 @@ library BitcoinTx {
         /// @notice Single byte-string of 80-byte bitcoin headers,
         ///         lowest height first.
         bytes bitcoinHeaders;
-        // This struct doesn't contain `__gap` property as the structure is not
-        // stored, it is used as a function's calldata argument.
     }
 
     /// @notice Validates the SPV proof of the Bitcoin transaction.
@@ -137,35 +133,19 @@ library BitcoinTx {
     /// @param txInfo Bitcoin transaction data.
     /// @param proof Bitcoin proof data.
     /// @return txHash Proven 32-byte transaction hash.
-    function validateProof(
-        BridgeState.Storage storage self,
-        Info memory txInfo,
-        Proof memory proof
-    ) internal view returns (bytes32 txHash) {
-        require(
-            txInfo.inputVector.validateVin(),
-            "Invalid input vector provided"
-        );
-        require(
-            txInfo.outputVector.validateVout(),
-            "Invalid output vector provided"
-        );
+    function validateProof(BridgeState.Storage storage self, Info memory txInfo, Proof memory proof)
+        internal
+        view
+        returns (bytes32 txHash)
+    {
+        require(txInfo.inputVector.validateVin(), "Invalid input vector provided");
+        require(txInfo.outputVector.validateVout(), "Invalid output vector provided");
 
-        txHash = abi
-            .encodePacked(
-                txInfo.version,
-                txInfo.inputVector,
-                txInfo.outputVector,
-                txInfo.locktime
-            )
-            .hash256View();
+        txHash =
+            abi.encodePacked(txInfo.version, txInfo.inputVector, txInfo.outputVector, txInfo.locktime).hash256View();
 
         require(
-            txHash.prove(
-                proof.bitcoinHeaders.extractMerkleRootLE(),
-                proof.merkleProof,
-                proof.txIndexInBlock
-            ),
+            txHash.prove(proof.bitcoinHeaders.extractMerkleRootLE(), proof.merkleProof, proof.txIndexInBlock),
             "Tx merkle proof is not valid for provided header and tx hash"
         );
 
@@ -179,12 +159,9 @@ library BitcoinTx {
     ///         Reverts in case the evaluation fails.
     /// @param bitcoinHeaders Bitcoin headers chain being part of the SPV
     ///        proof. Used to extract the observed proof difficulty.
-    function evaluateProofDifficulty(
-        BridgeState.Storage storage self,
-        bytes memory bitcoinHeaders
-    ) internal view {
+    function evaluateProofDifficulty(BridgeState.Storage storage self, bytes memory bitcoinHeaders) internal view {
         IRelay relay = self.relay;
-        
+
         // for testing
         if (!relay.difficultyCheckEnabled()) {
             return;
@@ -194,9 +171,7 @@ library BitcoinTx {
         uint256 previousEpochDifficulty = relay.getPrevEpochDifficulty();
 
         uint256 requestedDiff = 0;
-        uint256 firstHeaderDiff = bitcoinHeaders
-            .extractTarget()
-            .calculateDifficulty();
+        uint256 firstHeaderDiff = bitcoinHeaders.extractTarget().calculateDifficulty();
 
         if (firstHeaderDiff == currentEpochDifficulty) {
             requestedDiff = currentEpochDifficulty;
@@ -208,18 +183,9 @@ library BitcoinTx {
 
         uint256 observedDiff = bitcoinHeaders.validateHeaderChain();
 
-        require(
-            observedDiff != ValidateSPV.getErrBadLength(),
-            "Invalid length of the headers chain"
-        );
-        require(
-            observedDiff != ValidateSPV.getErrInvalidChain(),
-            "Invalid headers chain"
-        );
-        require(
-            observedDiff != ValidateSPV.getErrLowWork(),
-            "Insufficient work in a header"
-        );
+        require(observedDiff != ValidateSPV.getErrBadLength(), "Invalid length of the headers chain");
+        require(observedDiff != ValidateSPV.getErrInvalidChain(), "Invalid headers chain");
+        require(observedDiff != ValidateSPV.getErrLowWork(), "Insufficient work in a header");
 
         require(
             observedDiff >= requestedDiff * self.txProofDifficultyFactor,
@@ -236,8 +202,6 @@ library BitcoinTx {
         uint256 outputStartingIndex;
         // The number of outputs in the transaction.
         uint256 outputsCount;
-        // This struct doesn't contain `__gap` property as the structure is not
-        // stored, it is used as a function's memory argument.
     }
 
     /// @notice Processes the Bitcoin transaction output vector.
@@ -247,16 +211,10 @@ library BitcoinTx {
     ///        must be validated using e.g. `BTCUtils.validateVout` function
     ///        before it is passed here.
     /// @return value Outcomes of the processing.
-    function getTxOutputValue(
-        bytes32 scriptPubKeyHash,
-        bytes memory txOutputVector
-    ) internal returns (uint64 value) {
+    function getTxOutputValue(bytes32 scriptPubKeyHash, bytes memory txOutputVector) internal returns (uint64 value) {
         // Determining the total number of transaction outputs in the same way as
         // for number of inputs. See `BitcoinTx.outputVector` docs for more details.
-        (
-            uint256 outputsCompactSizeUintLength,
-            uint256 outputsCount
-        ) = txOutputVector.parseVarInt();
+        (uint256 outputsCompactSizeUintLength, uint256 outputsCount) = txOutputVector.parseVarInt();
 
         // To determine the first output starting index, we must jump over
         // the compactSize uint which prepends the output vector. One byte
@@ -275,15 +233,9 @@ library BitcoinTx {
         // docs in `BitcoinTx` library for more details.
         uint256 outputStartingIndex = 1 + outputsCompactSizeUintLength;
 
-        return
-            getTxOutputValue(
-                scriptPubKeyHash,
-                txOutputVector,
-                TxOutputsProcessingInfo(
-                    outputStartingIndex,
-                    outputsCount
-                )
-            );
+        return getTxOutputValue(
+            scriptPubKeyHash, txOutputVector, TxOutputsProcessingInfo(outputStartingIndex, outputsCount)
+        );
     }
 
     /// @notice Processes all outputs from the transaction.
@@ -300,13 +252,10 @@ library BitcoinTx {
     ) internal returns (uint64 value) {
         // Outputs processing loop.
         for (uint256 i = 0; i < processInfo.outputsCount; i++) {
-            uint256 outputLength = txOutputVector
-                .determineOutputLengthAt(processInfo.outputStartingIndex);
+            uint256 outputLength = txOutputVector.determineOutputLengthAt(processInfo.outputStartingIndex);
 
             // Extract the value from given output.
-            uint64 outputValue = txOutputVector.extractValueAt(
-                processInfo.outputStartingIndex
-            );
+            uint64 outputValue = txOutputVector.extractValueAt(processInfo.outputStartingIndex);
 
             // The output consists of an 8-byte value and a variable length
             // script. To hash that script we slice the output starting from
@@ -322,10 +271,7 @@ library BitcoinTx {
                 // by `outputScriptStart`. To load that position, we
                 // need to call `add(outputScriptStart, 32)` because
                 // `outputScriptStart` has 32 bytes.
-                outputScriptHash := keccak256(
-                    add(txOutputVector, add(outputScriptStart, 32)),
-                    scriptLength
-                )
+                outputScriptHash := keccak256(add(txOutputVector, add(outputScriptStart, 32)), scriptLength)
             }
 
             if (scriptPubKeyHash == outputScriptHash) {
