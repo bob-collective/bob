@@ -3,5 +3,7 @@
   "extends": "@tsconfig/docusaurus/tsconfig.json",
   "compilerOptions": {
     "baseUrl": "."
-  }
+  },
+  "include": ["../sdk/src/*"], // Adjust the path as needed
+  "exclude": ["../sdk/src/index.ts"]
 }

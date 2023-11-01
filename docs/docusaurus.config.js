@@ -34,23 +34,15 @@ const config = {
   },
 
   plugins: [
-    () => ({
-      name: "inject-tag",
-      injectHtmlTags() {
-        return {
-          headTags: [
-            {
-              tagName: "script",
-              attributes: {
-                href: "https://cdn.usefathom.com/script.js",
-                dataSite: "NBNJSTNS",
-                defer: true,
-              },
-            },
-          ],
-        };
+    [
+      'docusaurus-plugin-typedoc',
+      {
+        entryPoints: ['../sdk/src/*'],
+        out: 'api/ts-sdk',
+        tsconfig: 'tsconfig.json',
       },
-    }),
+    ],
+
   ],
   presets: [
     [
@@ -102,6 +94,17 @@ const config = {
             label: "Build",
           },
           {
+            type: "docSidebar",
+            sidebarId: "apiSidebar",
+            position: "left",
+            label: "API",
+          },
+          {
+            href: DISCORD,
+            label: "Discord",
+            position: "right",
+          },
+          {
             href: GITHUB_LINK,
             label: "GitHub",
             position: "right",
@@ -148,7 +151,7 @@ const config = {
       announcementBar: {
         id: "sign_up",
         content:
-          'Stay up to date with the BOB collective. <a target="_blank" rel="noopener noreferrer" href="https://interlay.typeform.com/to/qIBFgIZJ">Sign up</a>.',
+          'Missing something? Want to know more? <a target="_blank" rel="noopener noreferrer" href="https://forms.gle/etYqChR3aahUFuEZ9">Provide feedback</a>.',
         backgroundColor: "#f58b00",
         textColor: "#fff",
         isCloseable: true,
@@ -158,7 +161,25 @@ const config = {
   markdown: {
     mermaid: true,
   },
-  themes: ["@docusaurus/theme-mermaid"],
+  themes: [
+    "@docusaurus/theme-mermaid",
+    ["@easyops-cn/docusaurus-search-local",
+      {
+        indexBlog: false,
+        indexDocs: true,
+        indexPages: false,
+        hashed: true,
+        highlightSearchTermsOnTargetPage: true,
+        language: ["en"],
+      }],
+  ],
+  scripts: [
+    {
+      src: "https://cdn.usefathom.com/script.js",
+      site: "NBNJSTNS",
+      defer: true,
+    },
+  ],
 };
 
 module.exports = config;

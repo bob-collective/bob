@@ -1,18 +1,29 @@
 {
-  "name": "bob-sdk",
-  "version": "1.0.0",
-  "main": "index.js",
+  "name": "@gobob/bob-sdk",
+  "version": "1.1.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
     "test": "ts-mocha test/*.ts",
     "deploy-relay": "ts-node scripts/init-bridge.ts",
-    "build": "tsc"
+    "build": "tsc -p tsconfig.json"
   },
+  "files": [
+    "dist/**/*",
+    "!**/*.spec.*",
+    "!**/*.json",
+    "CHANGELOG.md",
+    "LICENSE",
+    "README.md"
+  ],
   "devDependencies": {
     "@types/chai": "^4.3.6",
     "@types/mocha": "^10.0.2",
     "@types/node": "^20.8.3",
     "chai": "^4.3.10",
+    "ecpair": "^2.1.0",
     "mocha": "^10.2.0",
+    "tiny-secp256k1": "^2.2.3",
     "ts-mocha": "^10.0.0",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.2.2",
