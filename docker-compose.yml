@@ -10,6 +10,7 @@ services:
             - -rpcuser=rpcuser
             - -rpcpassword=rpcpassword
             - -fallbackfee=0.0002
+            - -txindex
         ports:
             - "18443:18443"
 
@@ -31,28 +32,27 @@ services:
                 trap 'exit 130' TERM INT EXIT
                 while true; do
                     bitcoin-cli -regtest -rpcconnect=bitcoind -rpcwait -rpcuser=rpcuser -rpcpassword=rpcpassword generatetoaddress 1 $${ALICE_ADDRESS}
-                    sleep 10 &
+                    sleep 15 &
                     wait $!
                 done
 
-# ToDo: Uncomment out once the latest image is upload to electrs.
-#    electrs:
-#        image: "interlayhq/electrs:latest"
-#        command:
-#            - electrs
-#            - -vvvv
-#            - --network
-#            - regtest
-#            - --jsonrpc-import
-#            - --cors
-#            - "*"
-#            - --cookie
-#            - "rpcuser:rpcpassword"
-#            - --daemon-rpc-addr
-#            - "bitcoind:18443"
-#            - --http-addr
-#            - "[::0]:3002"
-#            - --index-unspendables
-#        ports:
-#            - "3002:3002"
-#        restart: always
+    electrs:
+        image: "interlayhq/electrs:latest"
+        command:
+            - electrs
+            - -vvvv
+            - --network
+            - regtest
+            - --jsonrpc-import
+            - --cors
+            - "*"
+            - --cookie
+            - "rpcuser:rpcpassword"
+            - --daemon-rpc-addr
+            - "bitcoind:18443"
+            - --http-addr
+            - "[::0]:3002"
+            - --index-unspendables
+        ports:
+            - "3002:3002"
+        restart: always
