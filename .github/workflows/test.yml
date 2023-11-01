@@ -1,6 +1,6 @@
 name: test
 
-on: workflow_dispatch
+on: [pull_request]
 
 env:
   FOUNDRY_PROFILE: ci
@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: true
 
-    name: Foundry project
+    name: Foundry
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -22,9 +22,14 @@ jobs:
         with:
           version: nightly
 
-      - name: Run Forge build
+      - name: Run Forge fmt
         run: |
           forge --version
+          forge fmt --check
+        id: fmt
+
+      - name: Run Forge build
+        run: |
           forge build --sizes
         id: build
 

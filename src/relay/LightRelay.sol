@@ -34,20 +34,11 @@ interface ILightRelay is IRelay {
         view
         returns (uint256 startingHeaderTimestamp, uint256 headerCount);
 
-    function getBlockDifficulty(uint256 blockNumber)
-        external
-        view
-        returns (uint256);
+    function getBlockDifficulty(uint256 blockNumber) external view returns (uint256);
 
-    function getEpochDifficulty(uint256 epochNumber)
-        external
-        view
-        returns (uint256);
+    function getEpochDifficulty(uint256 epochNumber) external view returns (uint256);
 
-    function getRelayRange()
-        external
-        view
-        returns (uint256 relayGenesis, uint256 currentEpochEnd);
+    function getRelayRange() external view returns (uint256 relayGenesis, uint256 currentEpochEnd);
 }
 
 library RelayUtils {
@@ -59,11 +50,7 @@ library RelayUtils {
     /// @return The timestamp of the header.
     /// @dev Assumes that the specified position contains a valid header.
     /// Performs no validation whatsoever.
-    function extractTimestampAt(bytes memory headers, uint256 at)
-        internal
-        pure
-        returns (uint32)
-    {
+    function extractTimestampAt(bytes memory headers, uint256 at) internal pure returns (uint32) {
         return BTCUtils.reverseUint32(uint32(headers.slice4(68 + at)));
     }
 }
@@ -119,19 +106,15 @@ contract LightRelay is Ownable, ILightRelay {
     /// @dev If the relay is used by querying the current and previous epoch
     /// difficulty, at least one retarget needs to be provided after genesis;
     /// otherwise the prevEpochDifficulty will be uninitialised and zero.
-    function genesis(
-        bytes calldata genesisHeader,
-        uint256 genesisHeight,
-        uint64 genesisProofLength
-    ) external onlyOwner {
+    function genesis(bytes calldata genesisHeader, uint256 genesisHeight, uint64 genesisProofLength)
+        external
+        onlyOwner
+    {
         require(!ready, "Genesis already performed");
 
         require(genesisHeader.length == 80, "Invalid genesis header length");
 
-        require(
-            genesisHeight % 2016 == 0,
-            "Invalid height of relay genesis block"
-        );
+        require(genesisHeight % 2016 == 0, "Invalid height of relay genesis block");
 
         require(genesisProofLength < 2016, "Proof length excessive");
         require(genesisProofLength > 0, "Proof length may not be zero");
@@ -140,10 +123,7 @@ contract LightRelay is Ownable, ILightRelay {
         currentEpoch = genesisEpoch;
         uint256 genesisTarget = genesisHeader.extractTarget();
         uint256 genesisTimestamp = genesisHeader.extractTimestamp();
-        epochs[genesisEpoch] = Epoch(
-            uint32(genesisTimestamp),
-            uint224(genesisTarget)
-        );
+        epochs[genesisEpoch] = Epoch(uint32(genesisTimestamp), uint224(genesisTarget));
         proofLength = genesisProofLength;
         currentEpochDifficulty = BTCUtils.calculateDifficulty(genesisTarget);
         ready = true;
@@ -228,23 +208,15 @@ contract LightRelay is Ownable, ILightRelay {
 
         // Validate old chain
         for (uint256 i = 0; i < proofLength; i++) {
-            (
-                bytes32 currentDigest,
-                uint256 currentHeaderTarget
-            ) = validateHeader(headers, i * 80, previousHeaderDigest);
+            (bytes32 currentDigest, uint256 currentHeaderTarget) = validateHeader(headers, i * 80, previousHeaderDigest);
 
-            require(
-                currentHeaderTarget == oldTarget,
-                "Invalid target in pre-retarget headers"
-            );
+            require(currentHeaderTarget == oldTarget, "Invalid target in pre-retarget headers");
 
             previousHeaderDigest = currentDigest;
         }
 
         // get timestamp of retarget block
-        uint256 epochEndTimestamp = headers.extractTimestampAt(
-            (proofLength - 1) * 80
-        );
+        uint256 epochEndTimestamp = headers.extractTimestampAt((proofLength - 1) * 80);
 
         // An attacker could produce blocks with timestamps in the future,
         // in an attempt to reduce the difficulty after the retarget
@@ -261,25 +233,17 @@ contract LightRelay is Ownable, ILightRelay {
         );
 
         // Expected target is the full-length target
-        uint256 expectedTarget = BTCUtils.retargetAlgorithm(
-            oldTarget,
-            latest.timestamp,
-            epochEndTimestamp
-        );
+        uint256 expectedTarget = BTCUtils.retargetAlgorithm(oldTarget, latest.timestamp, epochEndTimestamp);
 
         // Mined target is the header-encoded target
         uint256 minedTarget = 0;
 
-        uint256 epochStartTimestamp = headers.extractTimestampAt(
-            proofLength * 80
-        );
+        uint256 epochStartTimestamp = headers.extractTimestampAt(proofLength * 80);
 
         // validate new chain
         for (uint256 j = proofLength; j < proofLength * 2; j++) {
-            (
-                bytes32 _currentDigest,
-                uint256 _currentHeaderTarget
-            ) = validateHeader(headers, j * 80, previousHeaderDigest);
+            (bytes32 _currentDigest, uint256 _currentHeaderTarget) =
+                validateHeader(headers, j * 80, previousHeaderDigest);
 
             if (minedTarget == 0) {
                 // The new target has not been set, so check its correctness
@@ -299,16 +263,12 @@ contract LightRelay is Ownable, ILightRelay {
                     // We can't compare the precise and less precise representations together
                     // so we first mask them to obtain the less precise version:
                     //   (full & truncated) == truncated
-                    _currentHeaderTarget ==
-                        (expectedTarget & _currentHeaderTarget),
+                    _currentHeaderTarget == (expectedTarget & _currentHeaderTarget),
                     "Invalid target in new epoch"
                 );
             } else {
                 // The new target has been set, so remaining targets should match.
-                require(
-                    _currentHeaderTarget == minedTarget,
-                    "Unexpected target change after retarget"
-                );
+                require(_currentHeaderTarget == minedTarget, "Unexpected target change after retarget");
             }
 
             previousHeaderDigest = _currentDigest;
@@ -316,10 +276,7 @@ contract LightRelay is Ownable, ILightRelay {
 
         currentEpoch = currentEpoch + 1;
 
-        epochs[currentEpoch] = Epoch(
-            uint32(epochStartTimestamp),
-            uint224(minedTarget)
-        );
+        epochs[currentEpoch] = Epoch(uint32(epochStartTimestamp), uint224(minedTarget));
 
         uint256 oldDifficulty = currentEpochDifficulty;
         uint256 newDifficulty = BTCUtils.calculateDifficulty(minedTarget);
@@ -368,20 +325,14 @@ contract LightRelay is Ownable, ILightRelay {
 
         headerCount = headers.length / 80;
 
-        require(
-            headerCount > 1 && headerCount < 2016,
-            "Invalid number of headers"
-        );
+        require(headerCount > 1 && headerCount < 2016, "Invalid number of headers");
 
         startingHeaderTimestamp = headers.extractTimestamp();
 
         // Short-circuit the first header's validation.
         // We validate the header here to get the target which is needed to
         // precisely identify the epoch.
-        (
-            bytes32 previousHeaderDigest,
-            uint256 currentHeaderTarget
-        ) = validateHeader(headers, 0, bytes32(0));
+        (bytes32 previousHeaderDigest, uint256 currentHeaderTarget) = validateHeader(headers, 0, bytes32(0));
 
         Epoch memory nullEpoch = Epoch(0, 0);
 
@@ -411,10 +362,7 @@ contract LightRelay is Ownable, ILightRelay {
         // by reaching the most recent epoch whose starting timestamp
         // or reached before the genesis where epoch slots are empty.
         // Therefore check that the timestamp is nonzero.
-        require(
-            startingEpoch.timestamp > 0,
-            "Cannot validate chains before relay genesis"
-        );
+        require(startingEpoch.timestamp > 0, "Cannot validate chains before relay genesis");
 
         // The targets don't match. This could be because the block is invalid,
         // or it could be because of timestamp inaccuracy.
@@ -439,10 +387,7 @@ contract LightRelay is Ownable, ILightRelay {
 
                 // We have failed to find a match,
                 // therefore the target has to be invalid.
-                require(
-                    currentHeaderTarget == startingEpoch.target,
-                    "Invalid target in header chain"
-                );
+                require(currentHeaderTarget == startingEpoch.target, "Invalid target in header chain");
             }
         }
 
@@ -450,11 +395,7 @@ contract LightRelay is Ownable, ILightRelay {
         // Validate the rest.
         for (uint256 i = 1; i < headerCount; i++) {
             bytes32 currentDigest;
-            (currentDigest, currentHeaderTarget) = validateHeader(
-                headers,
-                i * 80,
-                previousHeaderDigest
-            );
+            (currentDigest, currentHeaderTarget) = validateHeader(headers, i * 80, previousHeaderDigest);
 
             // If the header's target does not match the expected target,
             // check if a retarget is possible.
@@ -469,14 +410,11 @@ contract LightRelay is Ownable, ILightRelay {
             // In this case the target must match the next epoch's target,
             // and the header's timestamp must match the epoch's start.
             if (currentHeaderTarget != startingEpoch.target) {
-                uint256 currentHeaderTimestamp = headers.extractTimestampAt(
-                    i * 80
-                );
+                uint256 currentHeaderTimestamp = headers.extractTimestampAt(i * 80);
 
                 require(
-                    nextEpoch.timestamp != 0 &&
-                        currentHeaderTarget == nextEpoch.target &&
-                        currentHeaderTimestamp == nextEpoch.timestamp,
+                    nextEpoch.timestamp != 0 && currentHeaderTarget == nextEpoch.target
+                        && currentHeaderTimestamp == nextEpoch.timestamp,
                     "Invalid target in header chain"
                 );
 
@@ -495,11 +433,7 @@ contract LightRelay is Ownable, ILightRelay {
     /// range (at or after the relay genesis, and at or before the end of the
     /// most recent epoch proven to the relay).
     /// @return The difficulty of the epoch.
-    function getBlockDifficulty(uint256 blockNumber)
-        external
-        view
-        returns (uint256)
-    {
+    function getBlockDifficulty(uint256 blockNumber) external view returns (uint256) {
         return getEpochDifficulty(blockNumber / 2016);
     }
 
@@ -514,11 +448,7 @@ contract LightRelay is Ownable, ILightRelay {
     /// included in header chains for the relay to validate.
     /// @return currentEpochEnd The height of the last block that can be
     /// included in header chains for the relay to validate.
-    function getRelayRange()
-        external
-        view
-        returns (uint256 relayGenesis, uint256 currentEpochEnd)
-    {
+    function getRelayRange() external view returns (uint256 relayGenesis, uint256 currentEpochEnd) {
         relayGenesis = genesisEpoch * 2016;
         currentEpochEnd = (currentEpoch * 2016) + 2015;
     }
@@ -526,12 +456,7 @@ contract LightRelay is Ownable, ILightRelay {
     /// @notice Returns the difficulty of the current epoch.
     /// @dev returns 0 if the relay is not ready.
     /// @return The difficulty of the current epoch.
-    function getCurrentEpochDifficulty()
-        external
-        view
-        virtual
-        returns (uint256)
-    {
+    function getCurrentEpochDifficulty() external view virtual returns (uint256) {
         return currentEpochDifficulty;
     }
 
@@ -542,11 +467,7 @@ contract LightRelay is Ownable, ILightRelay {
         return prevEpochDifficulty;
     }
 
-    function getCurrentAndPrevEpochDifficulty()
-        external
-        view
-        returns (uint256 current, uint256 previous)
-    {
+    function getCurrentAndPrevEpochDifficulty() external view returns (uint256 current, uint256 previous) {
         return (currentEpochDifficulty, prevEpochDifficulty);
     }
 
@@ -554,21 +475,13 @@ contract LightRelay is Ownable, ILightRelay {
         return true;
     }
 
-
     /// @notice Get the difficulty of the specified epoch.
     /// @param epochNumber The number of the epoch (the height of the first
     /// block of the epoch, divided by 2016). Must fall within the relay range.
     /// @return The difficulty of the epoch.
-    function getEpochDifficulty(uint256 epochNumber)
-        public
-        view
-        returns (uint256)
-    {
+    function getEpochDifficulty(uint256 epochNumber) public view returns (uint256) {
         require(epochNumber >= genesisEpoch, "Epoch is before relay genesis");
-        require(
-            epochNumber <= currentEpoch,
-            "Epoch is not proven to the relay yet"
-        );
+        require(epochNumber <= currentEpoch, "Epoch is not proven to the relay yet");
         return BTCUtils.calculateDifficulty(epochs[epochNumber].target);
     }
 
@@ -582,17 +495,14 @@ contract LightRelay is Ownable, ILightRelay {
     /// @return target The PoW target of the header.
     /// @dev Throws an exception if the header's chain or PoW are invalid.
     /// Performs no other validation.
-    function validateHeader(
-        bytes memory headers,
-        uint256 start,
-        bytes32 prevDigest
-    ) internal view returns (bytes32 digest, uint256 target) {
+    function validateHeader(bytes memory headers, uint256 start, bytes32 prevDigest)
+        internal
+        view
+        returns (bytes32 digest, uint256 target)
+    {
         // If previous block digest has been provided, require that it matches
         if (prevDigest != bytes32(0)) {
-            require(
-                headers.validateHeaderPrevHash(start, prevDigest),
-                "Invalid chain"
-            );
+            require(headers.validateHeaderPrevHash(start, prevDigest), "Invalid chain");
         }
 
         // Require that the header has sufficient work for its stated target
