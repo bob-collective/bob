@@ -58,22 +58,17 @@ contract LightRelayTest is Test {
 
     function setUp() public {
         relay = new LightRelay();
-        relay.genesis(
-            genesisHeader.data,
-            genesisHeader.height,
-            2
-        );
+        relay.genesis(genesisHeader.data, genesisHeader.height, 2);
         state.relay = relay;
         state.txProofDifficultyFactor = 2;
 
         // we need at least one retarget
         vm.warp(1459492475);
-        relay.retarget(abi.encodePacked(
-            retargetHeaders[0].data,
-            retargetHeaders[1].data,
-            retargetHeaders[2].data,
-            retargetHeaders[3].data
-        ));
+        relay.retarget(
+            abi.encodePacked(
+                retargetHeaders[0].data, retargetHeaders[1].data, retargetHeaders[2].data, retargetHeaders[3].data
+            )
+        );
     }
 
     function test_Retarget() public {
@@ -93,10 +88,7 @@ contract LightRelayTest is Test {
             BitcoinTx.Proof({
                 merkleProof: hex"0465f99dbe384bbc5d86a5242712e4154958e4b01f595f14b76f873ec349e14a16b17770af2bb48c9b2ce4dddf4631866fe3753e6c54bdcf18dfb2d4fb9983ee58e4f3be92087c843b815bbe1d5d686dc972552f7ffda4342319ceb5bea67ab0f2e463ec8ce8e3f580c5e2470ef20c5b33398ab9fea5ccbd0b3e3f6211305edafa068a28c8ac634df5bbc8064357295373b97db2600745f23ad6ebc87b66b4a8685aa8ff8e69abc5029dbf4b2fa03f05680c7a2c491410b23a5a6b27c5a91b89dac8cdd16a4460ce8ac8d17491025d29336440a133867f938a7f41cc7a64f3f04ac3817c3eb6a6a11dc30850ca4e80f9abbd42268bcc626138bc01639a902713425e7d3aca45647001fb32ff396c07027c5b081325530e74f936e6c4a8078a05f9717efd315534a84d047ee2ff0b2b93159a2b98eabb578af67ef7540a58e488b9c587a994c1a9a86937ad343ea734b7427678e3e6ba0be8f5045ce47e541bbc",
                 txIndexInBlock: 1,
-                bitcoinHeaders: abi.encodePacked(
-                    proofHeaders[0].data,
-                    proofHeaders[1].data
-                )
+                bitcoinHeaders: abi.encodePacked(proofHeaders[0].data, proofHeaders[1].data)
             })
         );
     }

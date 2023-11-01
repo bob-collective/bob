@@ -23,6 +23,15 @@ export interface MerkleProof {
     pos: number,
 }
 
+/**
+ * @ignore
+ */
+export interface UTXO {
+    txid: string
+    vout: number,
+    value: number,
+}
+
 export interface ElectrsClient {
     /**
      * Get the block hash of the Bitcoin block at a specific height.
@@ -123,6 +132,14 @@ export interface ElectrsClient {
     getFeeEstimate(confirmationTarget: number): Promise<number>;
 
     /**
+     * Get the Unspent Transaction Outputs (UTXOs) for an address.
+     *
+     * @param {string} address - The Bitcoin address to checl.
+     * @returns {Promise<Array<UTXO>>} A promise that resolves to an array of UTXOs.
+     */
+    getAddressUtxos(address: string): Promise<Array<UTXO>>;
+
+    /**
      * Broadcast a raw transaction to the network.
      *
      * @param {string} txHex - The hex encoded transaction.
@@ -195,6 +212,14 @@ export class DefaultElectrsClient implements ElectrsClient {
     /**
      * @ignore
      */
+    async getBlockHeaderAt(height: number): Promise<string> {
+        const blockHash = await this.getBlockHash(height);
+        return await this.getBlockHeader(blockHash);
+    }
+
+    /**
+     * @ignore
+     */
     async getTransactionHex(txId: string): Promise<string> {
         return this.getText(`${this.basePath}/tx/${txId}/hex`);
     }
@@ -221,6 +246,32 @@ export class DefaultElectrsClient implements ElectrsClient {
     async getFeeEstimate(confirmationTarget: number): Promise<number> {
         const response = await this.getJson<any>(`${this.basePath}/fee-estimates`);
         return response[confirmationTarget];
+    }
+
+    /**
+     * @ignore
+     */
+    async getAddressUtxos(address: string, confirmed?: boolean): Promise<Array<UTXO>> {
+        const response = await this.getJson<Array<{
+            txid: string,
+            vout: number,
+            status: {
+                confirmed: boolean,
+                block_height: number,
+                block_hash: string,
+                block_time: number
+            },
+            value: number,
+        }>>(`${this.basePath}/address/${address}/utxo`);
+        return response
+            .filter(utxo => (typeof confirmed !== "undefined") ? confirmed === utxo.status.confirmed : true)
+            .map<UTXO>(utxo => {
+                return {
+                    txid: utxo.txid,
+                    vout: utxo.vout,
+                    value: utxo.value
+                }
+            });
     }
 
     /**
