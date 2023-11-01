@@ -9,7 +9,7 @@ import {stdStorage, StdStorage, Test, console} from "forge-std/Test.sol";
 import {BtcMarketPlace} from "../../src/swap/Btc_Marketplace.sol";
 import {Utilities} from "./Utilities.sol";
 import {BitcoinTx} from "../../src/bridge/BitcoinTx.sol";
-import {DummyRelay} from "../../src/relay/DummyRelay.sol";
+import {TestLightRelay} from "../../src/relay/TestLightRelay.sol";
 
 contract ArbitaryErc20 is ERC20, Ownable {
     constructor(string memory name_, string memory symbol_) ERC20(name_, symbol_) {}
@@ -26,8 +26,9 @@ contract MarketPlaceTest is BtcMarketPlace, Test {
     address internal bob;
 
     ArbitaryErc20 token1;
+    TestLightRelay testLightRelay;
 
-    constructor() BtcMarketPlace(new DummyRelay()) {}
+    constructor() BtcMarketPlace(testLightRelay) {}
 
     function setUp() public {
         utils = new Utilities();
@@ -39,6 +40,10 @@ contract MarketPlaceTest is BtcMarketPlace, Test {
         vm.label(bob, "Bob");
 
         token1 = new ArbitaryErc20("Some token", "TKN");
+
+        testLightRelay = new TestLightRelay();
+        super.setRelay(testLightRelay);
+        testLightRelay.setDifficultyFromHeaders(dummyProof().bitcoinHeaders);
     }
 
     function dummyTransaction() public view returns (BitcoinTx.Info memory) {

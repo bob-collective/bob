@@ -3,7 +3,6 @@ pragma solidity ^0.8.13;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {BitcoinTx} from "../bridge/BitcoinTx.sol";
-// import {LightRelay} from "../relay/LightRelay.sol";
 import {IRelay} from "../bridge/IRelay.sol";
 import {BridgeState} from "../bridge/BridgeState.sol";
 
@@ -25,6 +24,10 @@ contract BtcMarketPlace {
     constructor(IRelay _relay) {
         relay.relay = _relay;
         relay.txProofDifficultyFactor = 1; // will make this an arg later on
+    }
+
+    function setRelay(IRelay _relay) internal {
+        relay.relay = _relay;
     }
 
     // todo: should we merge buy&sell structs? They're structurally identical except for the
