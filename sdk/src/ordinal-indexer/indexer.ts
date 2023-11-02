@@ -333,6 +333,21 @@ export interface OrdinalsClient {
      * ```
      */
     getInscriptionsFromSat(sat: number): Promise<Ordinal>;
+
+    /**
+     * Retrieves a list of inscriptions starting from a specified block and moving forward.
+     * @param {number} startHeight - The start block height.
+     * @returns {Promise<InscriptionsData>} A Promise that resolves to the inscription data.
+     *
+     * @example
+     * ```typescript
+     * const client = new DefaultOrdinalsClient("regtest");
+     * let startBlock: number = "enter_your_block_number_here";
+     * const inscriptions: InscriptionsData = await client.getInscriptionsFromStartBlock(block);
+     * console.log("Inscriptions Data:", inscriptions);
+     * ```
+     */
+    getInscriptionsFromStartBlock(startHeight: number): Promise<InscriptionsData>;
 }
 
 export class DefaultOrdinalsClient implements OrdinalsClient {
@@ -361,7 +376,6 @@ export class DefaultOrdinalsClient implements OrdinalsClient {
         return await this.getJson<InscriptionDataFromId>(`${this.basePath}/inscription/${id}`);
     }
 
-
     /**
      * @ignore
      */
@@ -388,6 +402,13 @@ export class DefaultOrdinalsClient implements OrdinalsClient {
      */
     async getInscriptionsFromSat(sat: number): Promise<Ordinal> {
         return await this.getJson<Ordinal>(`${this.basePath}/sat/${sat}`);
+    }
+
+    /**
+     * @ignore
+     */
+    async getInscriptionsFromStartBlock(startHeight: number): Promise<InscriptionsData> {
+        return await this.getJson<InscriptionsData>(`${this.basePath}/inscriptions/${startHeight}`);
     }
 
     /**
