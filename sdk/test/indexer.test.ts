@@ -8,7 +8,7 @@ import {
 import {assert} from "chai";
 
 
-// ToDo: Remove skip command and run for mainnet once the indexer is setup.
+// ToDo: Currently skipping the test as only works for regtest. Need to run it on mainnet once the indexer is set up.
 describe("Indexer Tests", () => {
     it.skip("should get inscriptions from id", async () => {
 
