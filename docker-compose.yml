@@ -56,3 +56,4 @@ services:
         ports:
             - "3002:3002"
         restart: always
+# ToDo: Add Ord image so that indexer client can work for regtest

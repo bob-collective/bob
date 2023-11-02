@@ -4,17 +4,17 @@ import {
     InscriptionsData,
     InscriptionUTXO,
     InscriptionDataFromId, InscriptionId,
-} from '../src/ordinals/indexer';
+} from '../src/ordinal-indexer/indexer';
 import {assert} from "chai";
 
 
-
+// ToDo: Remove skip command and run for mainnet once the indexer is setup.
 describe("Indexer Tests", () => {
     it.skip("should get inscriptions from id", async () => {
 
         const client = new DefaultOrdinalsClient("regtest");
-        let id64: InscriptionId = "d48ddc093055faa940c2a44220f77c38526b3e0f79d686a7340ba5b990a440a0i0" as InscriptionId;
-        const inscriptions: InscriptionDataFromId = await client.getInscriptionFromId(id64);
+        let inscription_id: InscriptionId = "d48ddc093055faa940c2a44220f77c38526b3e0f79d686a7340ba5b990a440a0i0" as InscriptionId;
+        const inscriptions: InscriptionDataFromId = await client.getInscriptionFromId(inscription_id);
 
         const expected_inscription: InscriptionDataFromId = {
             address: 'bcrt1pjw626gy4m7hx5htenxgfplg4lugejs7xjh3kwjfxuapz7hujaguqausksf',
@@ -39,7 +39,6 @@ describe("Indexer Tests", () => {
     });
 
     it.skip("should get inscriptions", async () => {
-        console.log("hello");
         const client = new DefaultOrdinalsClient("regtest");
         const inscriptions: InscriptionsData = await client.getInscriptions();
         // Assert that inscriptions is not null or undefined

@@ -1,5 +1,3 @@
-import {MAINNET_ESPLORA_BASE_PATH, TESTNET_ESPLORA_BASE_PATH} from "../electrs";
-
 /**
  * Base path for Ordinals regtest Indexer.
  * @default "http://0.0.0.0:80"
@@ -30,82 +28,248 @@ export type InscriptionId = string & { length: 64 };
  */
 export type InscriptionContent = string;
 
+
 /**
- * @ignore
+ * Represents a collection of inscriptions along with related metadata.
  */
 export interface InscriptionsData {
+    /**
+     * An array of inscription content.
+     */
     inscriptions: InscriptionContent[];
+
+    /**
+     * The previous entry.
+     */
     prev: string;
+
+    /**
+     * The next entry.
+     */
     next: string;
+
+    /**
+     * The lowest value.
+     */
     lowest: number;
+
+    /**
+     * The highest value.
+     */
     highest: number;
 }
 
 /**
- * @ignore
+ * Represents information about an Inscription UTXO.
  */
 export interface InscriptionUTXO {
+    /**
+     * The value of the UTXO.
+     */
     value: number;
-    script_pubkey: string,
-    address:string,
-    transaction:string,
-    sat_ranges: string,
+
+    /**
+     * The script public key.
+     */
+    script_pubkey: string;
+
+    /**
+     * The address associated with the UTXO.
+     */
+    address: string;
+
+    /**
+     * The transaction related to the UTXO.
+     */
+    transaction: string;
+
+    /**
+     * The SAT ranges.
+     */
+    sat_ranges: string;
+
+    /**
+     * An array of inscription content.
+     */
     inscriptions: InscriptionContent[];
-    runes: {},
+
+    /**
+     * A map of runes.
+     */
+    runes: Record<string, any>;
 }
 
 /**
- * @ignore
+ * Represents an ordinal.
  */
 export interface Ordinal {
-    number: number
-    decimal: string,
-    degree: string,
-    name: string,
-    block: number,
-    cycle: number,
-    epoch: number,
-    period: number,
-    offset: number,
-    rarity: string,
-    percentile: string,
-    satpoint: string,
-    timestamp: number,
+    /**
+     * The number of the ordinal.
+     */
+    number: number;
+
+    /**
+     * The decimal representation of the ordinal.
+     */
+    decimal: string;
+
+    /**
+     * The degree representation of the ordinal.
+     */
+    degree: string;
+
+    /**
+     * The name of the ordinal.
+     */
+    name: string;
+
+    /**
+     * The block associated with the ordinal.
+     */
+    block: number;
+
+    /**
+     * The cycle associated with the ordinal.
+     */
+    cycle: number;
+
+    /**
+     * The epoch associated with the ordinal.
+     */
+    epoch: number;
+
+    /**
+     * The period associated with the ordinal.
+     */
+    period: number;
+
+    /**
+     * The offset associated with the ordinal.
+     */
+    offset: number;
+
+    /**
+     * The rarity of the ordinal.
+     */
+    rarity: string;
+
+    /**
+     * The percentile representation of the ordinal.
+     */
+    percentile: string;
+
+    /**
+     * The SAT point of the ordinal.
+     */
+    satpoint: string;
+
+    /**
+     * The timestamp of the ordinal.
+     */
+    timestamp: number;
+
+    /**
+     * An array of inscription content.
+     */
     inscriptions: InscriptionContent[];
 }
 
 /**
- * @ignore
+ * Represents information about an inscription based on its ID.
  */
 export interface InscriptionDataFromId {
-    address: string,
+    /**
+     * The address associated with the inscription.
+     */
+    address: string;
+
+    /**
+     * An array of child IDs.
+     */
     children: string[];
-    content_length: number,
-    content_type: string,
-    genesis_fee: number,
-    genesis_height: number,
-    inscription_id: string,
-    inscription_number: number,
-    next: string,
-    output_value: number,
-    parent: string,
-    previous: string,
-    rune: string,
-    sat: string,
-    satpoint: string
-    timestamp: number
+
+    /**
+     * The length of the content.
+     */
+    content_length: number;
+
+    /**
+     * The content type of the inscription.
+     */
+    content_type: string;
+
+    /**
+     * The genesis fee of the inscription.
+     */
+    genesis_fee: number;
+
+    /**
+     * The genesis height of the inscription.
+     */
+    genesis_height: number;
+
+    /**
+     * The ID of the inscription.
+     */
+    inscription_id: string;
+
+    /**
+     * The number of the inscription.
+     */
+    inscription_number: number;
+
+    /**
+     * The next inscription ID.
+     */
+    next: string;
+
+    /**
+     * The output value of the inscription.
+     */
+    output_value: number;
+
+    /**
+     * The parent inscription ID.
+     */
+    parent: string;
+
+    /**
+     * The previous inscription ID.
+     */
+    previous: string;
+
+    /**
+     * The rune associated with the inscription.
+     */
+    rune: string;
+
+    /**
+     * The SAT associated with the inscription.
+     */
+    sat: string;
+
+    /**
+     * The SAT point of the inscription.
+     */
+    satpoint: string;
+
+    /**
+     * The timestamp of the inscription.
+     */
+    timestamp: number;
 }
+
 
 export interface OrdinalsClient {
     /**
      * Retrieves an inscription based on its ID.
      * @param {string} id - The ID of the inscription to retrieve.
-     * @returns {Promise<string>} A Promise that resolves to the inscription as a string.
+     * @returns {Promise<InscriptionDataFromId>} A Promise that resolves to the inscription data.
      *
      * @example
      * ```typescript
      * const client = new DefaultOrdinalsClient("regtest");
-     * let id: string = "enter_your_inscription_id_here";
+     * let inscription_id: InscriptionId = "enter_your_inscription_id_here" as InscriptionId;
      * const inscriptions: InscriptionDataFromId = await client.getInscriptionFromId(id);
      * console.log("Inscriptions Data:", inscriptions);
      * ```
@@ -114,7 +278,7 @@ export interface OrdinalsClient {
 
     /**
      * Retrieves a list of inscriptions.
-     * @returns {Promise<string>} A Promise that resolves to a string representing a list of inscriptions.
+     * @returns {Promise<InscriptionsData>} A Promise that resolves to a inscriptions data.
      *
      * @example
      * ```typescript
@@ -128,12 +292,12 @@ export interface OrdinalsClient {
     /**
      * Retrieves an inscription based on its block height.
      * @param {number} height - The block height of the inscription to retrieve.
-     * @returns {Promise<string>} A Promise that resolves to the inscription as a string.
+     * @returns {Promise<InscriptionsData>} A Promise that resolves to the inscription data.
      *
      * @example
      * ```typescript
      * const client = new DefaultOrdinalsClient("regtest");
-     * let block: string = "enter_your_block_number_here";
+     * let block: number = "enter_your_block_number_here";
      * const inscriptions: InscriptionsData = await client.getInscriptionsFromBlock(block);
      * console.log("Inscriptions Data:", inscriptions);
      * ```
@@ -143,7 +307,7 @@ export interface OrdinalsClient {
     /**
      * Retrieves an inscription based on its UTXO (Unspent Transaction Output).
      * @param {string} utxo - The UTXO of the inscription to retrieve.
-     * @returns {Promise<string>} A Promise that resolves to the inscription as a string.
+     * @returns {Promise<InscriptionUTXO>} A Promise that resolves to the inscription data.
      *
      * @example
      * ```typescript
@@ -158,14 +322,14 @@ export interface OrdinalsClient {
     /**
      * Retrieves an inscription based on its sat (something specific to your use case).
      * @param {number} sat - The sat of the inscription to retrieve.
-     * @returns {Promise<string>} A Promise that resolves to the inscription as a string.
+     * @returns {Promise<Ordinal>} A Promise that resolves to the ordinal data type.
      *
      * @example
      * ```typescript
      * const client = new DefaultOrdinalsClient("regtest");
      * let sat: string = "enter_your_sat_number_here";
-     * const inscriptions: Ordinal = await client.getInscriptionsFromSat(sat);
-     * console.log("Inscriptions Data:", inscriptions);
+     * const ordinal: Ordinal = await client.getInscriptionsFromSat(sat);
+     * console.log("Ordinal Data:", inscriptions);
      * ```
      */
     getInscriptionsFromSat(sat: number): Promise<Ordinal>;
