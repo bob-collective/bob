@@ -380,6 +380,7 @@ export class DefaultOrdinalsClient implements OrdinalsClient {
      * @ignore
      */
     async getInscriptions(): Promise<InscriptionsData> {
+        //ToDo: add filtering, sorting and pagination based on different parameters
         return await this.getJson<InscriptionsData>(`${this.basePath}/inscriptions`);
     }
 
