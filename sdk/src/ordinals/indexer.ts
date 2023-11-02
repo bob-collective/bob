@@ -51,12 +51,14 @@ export interface InscriptionUTXO {
     transaction:string,
     sat_ranges: string,
     inscriptions: InscriptionContent[];
+    runes: {},
 }
 
 /**
  * @ignore
  */
 export interface Ordinal {
+    number: number
     decimal: string,
     degree: string,
     name: string,
@@ -76,15 +78,16 @@ export interface Ordinal {
  * @ignore
  */
 export interface InscriptionDataFromId {
+    address: string,
     children: string[];
-    content_length: string,
+    content_length: number,
     content_type: string,
     genesis_fee: number,
     genesis_height: number,
     inscription_id: string,
     inscription_number: number,
     next: string,
-    output_value: string,
+    output_value: number,
     parent: string,
     previous: string,
     rune: string,
