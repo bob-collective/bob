@@ -22,8 +22,8 @@ const config = {
   organizationName: "bob-collective",
   projectName: "bob",
 
-  onBrokenLinks: "warn",
-  onBrokenMarkdownLinks: "warn",
+  onBrokenLinks: "throw",
+  onBrokenMarkdownLinks: "throw",
 
   // Even if you don't use internalization, you can use this field to set useful
   // metadata like html lang. For example, if your site is Chinese, you may want
@@ -35,14 +35,13 @@ const config = {
 
   plugins: [
     [
-      'docusaurus-plugin-typedoc',
+      "docusaurus-plugin-typedoc",
       {
-        entryPoints: ['../sdk/src/*'],
-        out: 'api/ts-sdk',
-        tsconfig: 'tsconfig.json',
+        entryPoints: ["../sdk/src/*"],
+        out: "api/ts-sdk",
+        tsconfig: "tsconfig.json",
       },
     ],
-
   ],
   presets: [
     [
@@ -163,7 +162,8 @@ const config = {
   },
   themes: [
     "@docusaurus/theme-mermaid",
-    ["@easyops-cn/docusaurus-search-local",
+    [
+      "@easyops-cn/docusaurus-search-local",
       {
         indexBlog: false,
         indexDocs: true,
@@ -171,7 +171,8 @@ const config = {
         hashed: true,
         highlightSearchTermsOnTargetPage: true,
         language: ["en"],
-      }],
+      },
+    ],
   ],
   scripts: [
     {
