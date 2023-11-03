@@ -1,18 +1,18 @@
 /**
- * Base path for Ordinals regtest Indexer.
+ * Base path for Ordinals regtest Explorer.
  * @default "http://0.0.0.0:80"
  */
 export const REGTEST_ORD_BASE_PATH = "http://0.0.0.0:80";
 
-// ToDo: Add mainnet and testnet indexer endpoint once exposed.
+// ToDo: Add mainnet and testnet Explorer endpoints once exposed.
 /**
- * Base path for Ordinals mainnet Indexer.
+ * Base path for Ordinals mainnet Explorer.
  * @default ""
  */
 export const MAINNET_ORD_BASE_PATH = "";
 
 /**
- * Base path for Ordinals testnet Indexer.
+ * Base path for Ordinals testnet Explorer.
  * @default ""
  */
 export const TESTNET_ORD_BASE_PATH = "";
