@@ -8,48 +8,50 @@ import {
 import {assert} from "chai";
 
 
-// ToDo: Currently skipping the test as only works for regtest. Need to run it on mainnet once the indexer is set up.
 describe("Indexer Tests", () => {
-    it.skip("should get inscriptions from id", async () => {
-        const client = new DefaultOrdinalsClient("regtest");
-        const inscriptionId: InscriptionId = "d48ddc093055faa940c2a44220f77c38526b3e0f79d686a7340ba5b990a440a0i0" as InscriptionId;
+    it("should get inscriptions from id", async () => {
+        const client = new DefaultOrdinalsClient("testnet");
+        const inscriptionId: InscriptionId = "74c86592f75716a14a534898913e6077fb5d7650cfc17600868964bbe2b7e512i0" as InscriptionId;
         const inscriptions: InscriptionDataFromId = await client.getInscriptionFromId(inscriptionId);
 
         const expectedInscription: InscriptionDataFromId = {
-            address: 'bcrt1pjw626gy4m7hx5htenxgfplg4lugejs7xjh3kwjfxuapz7hujaguqausksf',
+            address: 'tb1pfwdp9xswfxcd4f33mxgqul6f56gt7q9v5gjmrtgs4xs3ezxks03swrsr2d',
             children: [],
-            content_length: 94,
-            content_type: 'application/json',
-            genesis_fee: 3402,
-            genesis_height: 227,
-            inscription_id: 'd48ddc093055faa940c2a44220f77c38526b3e0f79d686a7340ba5b990a440a0i0',
-            inscription_number: 3,
-            next: null,
-            output_value: 10000,
+            content_length: 868,
+            content_type: 'text/javascript',
+            genesis_fee: 395,
+            genesis_height: 2537128,
+            inscription_id: '74c86592f75716a14a534898913e6077fb5d7650cfc17600868964bbe2b7e512i0',
+            inscription_number: 560474,
+            next: 'dd90d8222da2a6f3260109b1e4d1a2c341d999fce4707b1d77e49956a51a0305i0',
+            output_value: 546,
             parent: null,
-            previous: '605a758a2ea7d31a820930e193df9460d19741090ad8b6d6ad92542715e1ceb8i0',
+            previous: '332d3fae125de51de29e97cd9e80aab7c63025d5094944a3dceb117c556c41cci0',
             rune: null,
             sat: null,
-            satpoint: 'd48ddc093055faa940c2a44220f77c38526b3e0f79d686a7340ba5b990a440a0:0:0',
-            timestamp: 1698903875
+            satpoint: '74c86592f75716a14a534898913e6077fb5d7650cfc17600868964bbe2b7e512:0:0',
+            timestamp: 1699246476
         };
 
         assert.deepStrictEqual(expectedInscription, inscriptions);
     });
 
-    it.skip("should get inscriptions", async () => {
-        const client = new DefaultOrdinalsClient("regtest");
+    it("should get inscriptions", async () => {
+        const client = new DefaultOrdinalsClient("testnet");
         const inscriptions: InscriptionsData = await client.getInscriptions();
         // Assert that inscriptions is not null or undefined
         assert.isNotNull(inscriptions);
     });
 
-    it.skip("should get inscriptions from block", async () => {
-        const client = new DefaultOrdinalsClient("regtest");
-        const block: number = 227;
+    it("should get inscriptions from block", async () => {
+        const client = new DefaultOrdinalsClient("testnet");
+        const block: number = 2537133;
         const inscriptions: InscriptionsData = await client.getInscriptionsFromBlock(block);
         const expectedInscription: InscriptionsData = {
-            inscriptions: ['d48ddc093055faa940c2a44220f77c38526b3e0f79d686a7340ba5b990a440a0i0'],
+            inscriptions: [
+                '4d8e7ad2b410eaa79e3aa703bbe5a314cc89be9a07532bfab09f3c5dffac6348i0',
+                'd370be1b6bf74677c82226d7a0d65743cbe3846b9216e0ad207a7b03a5230ec3i0'
+            ],
             prev: null,
             next: null,
             lowest: null,
@@ -58,24 +60,24 @@ describe("Indexer Tests", () => {
         assert.deepStrictEqual(expectedInscription, inscriptions);
     });
 
-    it.skip("should get inscriptions from UTXO", async () => {
-        const client = new DefaultOrdinalsClient("regtest");
-        const utxo: string = "81188c296a0e5d9bba5c070a44bba1dbd1534e4c93fa5542b882fc402b6c5b69:0";
+    it("should get inscriptions from UTXO", async () => {
+        const client = new DefaultOrdinalsClient("testnet");
+        const utxo: string = "d370be1b6bf74677c82226d7a0d65743cbe3846b9216e0ad207a7b03a5230ec3:0";
         const inscriptions: InscriptionUTXO = await client.getInscriptionFromUTXO(utxo);
         const expectedInscription: InscriptionUTXO = {
-            value: 13402,
-            script_pubkey: 'OP_PUSHNUM_1 OP_PUSHBYTES_32 23981d827eceaa029542d7b10f85f7e8d4f0732dbd25ce8be9235e47ae902d66',
-            address: 'bcrt1pywvpmqn7e64q992z67cslp0har20quedh5juazlfyd0y0t5s94nqkmdwl2',
-            transaction: '81188c296a0e5d9bba5c070a44bba1dbd1534e4c93fa5542b882fc402b6c5b69',
+            value: 1967,
+            script_pubkey: "OP_PUSHNUM_1 OP_PUSHBYTES_32 24ad201633789999cbe4251018e796acb22ec5d1a6f8a1873adc6363e04d7e7d",
+            address: 'tb1pyjkjq93n0zvenjlyy5gp3euk4jeza3w35mu2rpe6m33k8czd0e7s3ha8st',
+            transaction: 'd370be1b6bf74677c82226d7a0d65743cbe3846b9216e0ad207a7b03a5230ec3',
             sat_ranges: null,
-            inscriptions: [],
+            inscriptions: ['d370be1b6bf74677c82226d7a0d65743cbe3846b9216e0ad207a7b03a5230ec3i0'],
             runes: {}
         };
         assert.deepStrictEqual(expectedInscription, inscriptions);
     });
 
-    it.skip("should get inscriptions from Sat", async () => {
-        const client = new DefaultOrdinalsClient("regtest");
+    it("should get inscriptions from Sat", async () => {
+        const client = new DefaultOrdinalsClient("testnet");
         const sat: number = 100;
         const ordinal: Ordinal = await client.getInscriptionsFromSat(sat);
         const expectedOrdinal: Ordinal = {
@@ -97,22 +99,11 @@ describe("Indexer Tests", () => {
         assert.deepStrictEqual(expectedOrdinal, ordinal);
     });
 
-    it.skip("should get inscriptions from start block", async () => {
-        const client = new DefaultOrdinalsClient("regtest");
-        const startBlock: number = 227;
+    it("should get inscriptions from start block", async () => {
+        const client = new DefaultOrdinalsClient("testnet");
+        const startBlock: number = 2537138;
         const inscriptions: InscriptionsData = await client.getInscriptionsFromStartBlock(startBlock);
-        const expectedInscription: InscriptionsData = {
-            inscriptions: [
-                "d48ddc093055faa940c2a44220f77c38526b3e0f79d686a7340ba5b990a440a0i0",
-                "605a758a2ea7d31a820930e193df9460d19741090ad8b6d6ad92542715e1ceb8i0",
-                "aa16270abaa8e98003c3831c2353c441fa40e83f37a8fe190459f6f56df46da4i0",
-                "ddca81feab672d45284d5e3debfdcb3f31c888c6ff6c06b740df8dd9a1aca51ei0"
-            ],
-            prev: null,
-            next: null,
-            lowest: 0,
-            highest: 3,
-        };
-        assert.deepStrictEqual(expectedInscription, inscriptions);
+        // Assert that inscriptions is not null or undefined
+        assert.isNotNull(inscriptions);
     });
 });

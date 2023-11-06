@@ -1,21 +1,20 @@
 /**
  * Base path for Ordinals regtest Explorer.
- * @default "http://0.0.0.0:80"
+ * @default "http://0.0.0.0:3003"
  */
-export const REGTEST_ORD_BASE_PATH = "http://0.0.0.0:80";
+export const REGTEST_ORD_BASE_PATH = "http://0.0.0.0:3003";
 
-// ToDo: Add mainnet and testnet Explorer endpoints once exposed.
 /**
  * Base path for Ordinals mainnet Explorer.
- * @default ""
+ * @default "https://ordinals-mainnet.gobob.xyz"
  */
-export const MAINNET_ORD_BASE_PATH = "";
+export const MAINNET_ORD_BASE_PATH = "https://ordinals-mainnet.gobob.xyz";
 
 /**
  * Base path for Ordinals testnet Explorer.
- * @default ""
+ * @default "https://ordinals-testnet.gobob.xyz"
  */
-export const TESTNET_ORD_BASE_PATH = "";
+export const TESTNET_ORD_BASE_PATH = "https://ordinals-testnet.gobob.xyz";
 
 
 /**
