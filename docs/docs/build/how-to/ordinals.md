@@ -18,7 +18,10 @@ Inscriptions are created using taproot script. That means you have to use a P2TR
 - [Unisat](https://unisat.io/download ) (Browser)
 
 ### Inscribing data
-There are several ways to create inscriptions, the following two are advised:
+If you're developing an app with Javascript or Typescript you can use the BOB SDK to create the commit and reveal transactions required to inscribe data to an ordinal. Refer to the `inscribeText` function and provide a custom `RemoteSigner` implementation for your wallet. The test in [`sdk/test/ordinals.test.ts`](https://github.com/bob-collective/bob/blob/master/sdk/test/ordinals.test.ts) provides an example implementation using [`bitcoinjs-lib`](https://github.com/bitcoinjs/bitcoinjs-lib) and [`tiny-secp256k1`](https://github.com/bitcoinjs/tiny-secp256k1).
+
+#### Using an external service
+There are other ways to create inscriptions, the following two are advised:
 - [Inscribe the Planet](https://inscribetheplanet.com/) __[RECOMMENDED]__ service which is free to use and supports file upload, direct BRC-20 deployments and minting.
 - [Default way using the `ord` client](https://docs.ordinals.com/guides/inscriptions.html) (Requires full Bitcoin node and network reindexing)
 
