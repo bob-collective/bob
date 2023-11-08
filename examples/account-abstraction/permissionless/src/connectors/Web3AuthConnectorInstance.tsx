@@ -4,7 +4,7 @@ import { Web3Auth } from '@web3auth/modal';
 import { EthereumPrivateKeyProvider } from '@web3auth/ethereum-provider';
 import { OpenloginAdapter } from '@web3auth/openlogin-adapter';
 import { Chain } from 'wagmi';
-import { L2_BLOCK_EXPLORER, L2_RPC_URL } from '../config';
+import { optimismGoerli } from 'viem/chains';
 
 export default function Web3AuthConnectorInstance(chains: Chain[]) {
   // Create Web3Auth Instance
@@ -21,12 +21,12 @@ export default function Web3AuthConnectorInstance(chains: Chain[]) {
 
   const chainConfig = {
     chainNamespace: 'eip155',
-    chainId: '0x5',
-    rpcTarget: 'https://goerli.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161',
-    displayName: 'Görli',
-    blockExplorer: 'https://goerli.etherscan.io',
-    ticker: 'gETH',
-    tickerName: 'Ethereum'
+    chainId: '0x1a4',
+    rpcTarget: optimismGoerli.rpcUrls.default.http[0],
+    displayName: optimismGoerli.name,
+    blockExplorer: optimismGoerli.blockExplorers.default.url,
+    ticker: optimismGoerli.nativeCurrency.symbol,
+    tickerName: optimismGoerli.nativeCurrency.name
   };
 
   const web3AuthInstance = new Web3Auth({

@@ -1,10 +1,10 @@
 import { bundlerActions } from 'permissionless';
 import { pimlicoBundlerActions, pimlicoPaymasterActions } from 'permissionless/actions/pimlico';
 import { concat, createClient, createPublicClient, encodeFunctionData, http } from 'viem';
-import { goerli } from 'viem/chains';
+import { optimismGoerli } from 'viem/chains';
 import { SIMPLE_ACCOUNT_FACTORY_ADDRESS } from './constants/erc4337';
 
-const chain = goerli;
+const chain = optimismGoerli;
 const apiKey = import.meta.env.VITE_PIMLICO_API_KEY; // REPLACE THIS
 
 // CREATE THE CLIENTS
@@ -14,7 +14,7 @@ export const publicClient = createPublicClient({
 });
 
 export const bundlerClient = createClient({
-  transport: http(`https://api.pimlico.io/v1/${chain.name.toLowerCase()}/rpc?apikey=${apiKey}`),
+  transport: http(`https://api.pimlico.io/v1/${'optimism-goerli'}/rpc?apikey=${apiKey}`),
   chain
 })
   .extend(bundlerActions)
@@ -22,7 +22,7 @@ export const bundlerClient = createClient({
 
 export const paymasterClient = createClient({
   // ⚠️ using v2 of the API ⚠️
-  transport: http(`https://api.pimlico.io/v2/${chain.name.toLowerCase()}/rpc?apikey=${apiKey}`),
+  transport: http(`https://api.pimlico.io/v2/${'optimism-goerli'}/rpc?apikey=${apiKey}`),
   chain
 }).extend(pimlicoPaymasterActions);
 

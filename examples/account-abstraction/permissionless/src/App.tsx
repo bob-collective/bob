@@ -1,19 +1,19 @@
 import { createWeb3Modal } from '@web3modal/wagmi/react';
-import { useAccount, useMutation, useQuery, useSignMessage } from 'wagmi';
+import { useAccount, useMutation, usePublicClient, useQuery, useSignMessage } from 'wagmi';
 import { L2_CHAIN_CONFIG, L2_PROJECT_ID, config } from './connectors/wagmi-connectors';
 
 import { CTA, Card, Flex, H1, Input, P, Span } from '@interlay/ui';
-import { UserOperation, getSenderAddress, getUserOperationHash } from 'permissionless';
+import { UserOperation, getAccountNonce, getSenderAddress, getUserOperationHash } from 'permissionless';
 import { FormEventHandler, useEffect, useState } from 'react';
 import Jazzicon, { jsNumberForAddress } from 'react-jazzicon';
 import truncateEthAddress from 'truncate-eth-address';
 import { Hex, encodeFunctionData } from 'viem';
-import { goerli } from 'viem/chains';
+import { optimismGoerli } from 'viem/chains';
 import { Layout } from './components';
-import { ContractType } from './constants';
+import { ContractType, contracts } from './constants';
 import { ENTRY_POINT_ADDRESS } from './constants/erc4337';
 import { useContract } from './hooks/useContract';
-import { bundlerClient, getInitCode, publicClient } from './sdk';
+import { bundlerClient, getInitCode, paymasterClient, publicClient } from './sdk';
 
 createWeb3Modal({
   defaultChain: L2_CHAIN_CONFIG,
@@ -29,6 +29,8 @@ function App() {
   const [transferAddress, setTransferAddress] = useState('');
   const { signMessageAsync } = useSignMessage();
 
+  const { getBytecode } = usePublicClient();
+
   const flagOwner = useQuery<string, Error, string>(['owner'], {
     queryFn: () => read.flagHolder() as Promise<string>,
     refetchInterval: 5000
@@ -41,32 +43,49 @@ function App() {
 
       const initCode = getInitCode(address);
 
-      const senderAddress = await getSenderAddress(publicClient, {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const senderAddress = await getSenderAddress(publicClient as any, {
         initCode,
         entryPoint: ENTRY_POINT_ADDRESS
+      });
+
+      const call = encodeFunctionData({
+        abi: contracts[ContractType.CTF].abi,
+        functionName: 'captureFlag',
+        args: []
       });
 
       const callData = encodeFunctionData({
         abi: [
           {
-            inputs: [],
-            name: 'captureFlag',
-            outputs: [{ type: 'address', name: '', internalType: 'address' }],
+            inputs: [
+              { name: 'dest', type: 'address' },
+              { name: 'value', type: 'uint256' },
+              { name: 'func', type: 'bytes' }
+            ],
+            name: 'execute',
+            outputs: [],
             stateMutability: 'nonpayable',
             type: 'function'
           }
-        ]
+        ],
+        args: [contracts[ContractType.CTF].address, 0n, call]
       });
 
       const gasPrice = await bundlerClient.getUserOperationGasPrice();
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const nonce = await getAccountNonce(publicClient as any, {
+        sender: senderAddress,
+        entryPoint: ENTRY_POINT_ADDRESS
+      });
+
+      const byteCode = await getBytecode({ address: senderAddress });
+
       const userOperation = {
         sender: senderAddress,
-        nonce: 2n,
-        // NOTE: should pass this if the account was not created yet
-        // initCode: initCode
-        // NOT  putting "0x" because account was already created
-        initCode: '0x',
+        nonce,
+        initCode: byteCode?.toString() ? '0x' : initCode,
         callData,
         maxFeePerGas: gasPrice.fast.maxFeePerGas,
         maxPriorityFeePerGas: gasPrice.fast.maxPriorityFeePerGas,
@@ -76,41 +95,33 @@ function App() {
       };
 
       // NOTE: code for sponsoring the userOP
-      // const sponsorUserOperationResult = await paymasterClient.sponsorUserOperation({
-      //   userOperation,
-      //   entryPoint: ENTRY_POINT_ADDRESS
-      // });
+      const sponsorUserOperationResult = await paymasterClient.sponsorUserOperation({
+        userOperation,
+        entryPoint: ENTRY_POINT_ADDRESS
+      });
 
-      // const sponsoredUserOp: UserOperation = {
-      //   ...userOperation,
-      //   ...sponsorUserOperationResult
-      // };
-
-      const finalUserOperation: UserOperation = {
+      const sponsoredUserOp: UserOperation = {
         ...userOperation,
-        callGasLimit: 60000n,
-        verificationGasLimit: 60000n,
-        preVerificationGas: 60000n,
-        paymasterAndData: '0x'
+        ...sponsorUserOperationResult
       };
 
       const signature = await signMessageAsync({
         message: {
           /** Raw data representation of the message. */
           raw: getUserOperationHash({
-            userOperation: finalUserOperation,
-            chainId: goerli.id,
+            userOperation: sponsoredUserOp,
+            chainId: optimismGoerli.id,
             entryPoint: ENTRY_POINT_ADDRESS
           })
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as unknown as any
       });
 
-      finalUserOperation.signature = signature;
+      sponsoredUserOp.signature = signature;
 
       // SUBMIT THE USER OPERATION TO BE BUNDLED
       const userOperationHash = await bundlerClient.sendUserOperation({
-        userOperation: finalUserOperation,
+        userOperation: sponsoredUserOp,
         entryPoint: ENTRY_POINT_ADDRESS
       });
 
@@ -121,7 +132,7 @@ function App() {
       const receipt = await bundlerClient.waitForUserOperationReceipt({ hash: userOperationHash });
       const txHash = receipt.receipt.transactionHash;
 
-      console.log(`UserOperation included: https://goerli.lineascan.build/tx/${txHash}`);
+      console.log(`UserOperation included: https://goerli-optimism.etherscan.io/tx/${txHash}`);
     },
     onSuccess: () => flagOwner.refetch()
   });
@@ -201,7 +212,7 @@ function App() {
         )}
         <CTA
           loading={capturaFlagMutation.isLoading}
-          disabled={flagOwner.isLoading || isCurrentOwner || transferFlagMutation.isLoading}
+          // disabled={flagOwner.isLoading || isCurrentOwner || transferFlagMutation.isLoading}
           size='large'
           fullWidth
           onPress={() => capturaFlagMutation.mutate()}
