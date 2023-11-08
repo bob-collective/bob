@@ -2,8 +2,9 @@
 pragma solidity ^0.8.13;
 
 import {BobWrappedBtc} from "./Wrapped.sol";
+import {ERC2771Recipient} from "@opengsn/packages/contracts/src/ERC2771Recipient.sol";
 
-contract Bridge {
+contract Bridge is ERC2771Recipient {
     uint256 public number;
     uint256 public collateralThreshold;
     uint256 nextOrderId;
@@ -38,16 +39,16 @@ contract Bridge {
     function mint() public payable {
         uint256 collateral = msg.value; // this is the amount of eth sent to the contract
         uint256 mintedAmount = colToBtc(collateral) / collateralThreshold;
-        wrapped.sudoMint(msg.sender, mintedAmount);
+        wrapped.sudoMint(_msgSender(), mintedAmount);
 
-        suppliedCollateral[msg.sender] += collateral;
+        suppliedCollateral[_msgSender()] += collateral;
         totalCollateral += collateral;
     }
 
     /// request zBTC to be redeemed for given amount of BTC.
     function requestSwap(uint256 amountZbtc, uint256 amountBtc, BitcoinAddress calldata bitcoinAddress) public {
         // lock Zbtc by transfering it to the contract address
-        wrapped.sudoTransferFrom(msg.sender, address(this), amountZbtc);
+        wrapped.sudoTransferFrom(_msgSender(), address(this), amountZbtc);
         require(amountZbtc != 0);
 
         uint256 id = nextOrderId++;
@@ -55,7 +56,7 @@ contract Bridge {
             open: true,
             amountZbtc: amountZbtc,
             amountBtc: amountBtc,
-            requesterAddress: msg.sender,
+            requesterAddress: _msgSender(),
             accepterAddress: address(0),
             bitcoinAddress: bitcoinAddress
         });
@@ -68,13 +69,13 @@ contract Bridge {
         // todo: protocol should probably require some sort of collateral deposit here
 
         order.open = false;
-        order.accepterAddress = msg.sender;
+        order.accepterAddress = _msgSender();
     }
 
     // not documented, but presumably required
     function cancelSwap(uint256 id) public {
         Order storage order = orders[id];
-        require(order.requesterAddress == msg.sender);
+        require(order.requesterAddress == _msgSender());
         // ensure the request was not accepted yet
         require(order.accepterAddress == address(0));
 
@@ -99,11 +100,11 @@ contract Bridge {
 
     function liquidate(uint256 amountZbtc) public {
         // burn the zbtc erc20
-        wrapped.sudoBurnFrom(msg.sender, amountZbtc);
+        wrapped.sudoBurnFrom(_msgSender(), amountZbtc);
 
         // transfer eth to caller
         uint256 collateral = btcToCol(amountZbtc);
-        address payable callerAddress = payable(msg.sender);
+        address payable callerAddress = payable(_msgSender());
         callerAddress.transfer(collateral);
     }
 
@@ -111,8 +112,8 @@ contract Bridge {
         uint256 totalZbtc = wrapped.totalSupply();
         uint256 requiredCol = btcToCol(totalZbtc * collateralThreshold);
         uint256 colFree = totalCollateral - requiredCol;
-        uint256 withdrawal = colFree < suppliedCollateral[msg.sender] ? colFree : suppliedCollateral[msg.sender];
-        suppliedCollateral[msg.sender] -= withdrawal;
+        uint256 withdrawal = colFree < suppliedCollateral[_msgSender()] ? colFree : suppliedCollateral[_msgSender()];
+        suppliedCollateral[_msgSender()] -= withdrawal;
         totalCollateral -= withdrawal;
     }
 
