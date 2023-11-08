@@ -4,12 +4,13 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {BTCUtils} from "@bob-collective/bitcoin-spv/BTCUtils.sol";
 import {BitcoinTx} from "../bridge/BitcoinTx.sol";
+import {ERC2771Recipient} from "@opengsn/packages/contracts/src/ERC2771Recipient.sol";
 import {IRelay} from "../bridge/IRelay.sol";
 import {BridgeState} from "../bridge/BridgeState.sol";
 
 using SafeERC20 for IERC20;
 
-contract BtcMarketPlace {
+contract BtcMarketPlace is ERC2771Recipient {
     using BitcoinTx for BridgeState.Storage;
 
     mapping(uint256 => BtcBuyOrder) public btcBuyOrders;
@@ -22,7 +23,8 @@ contract BtcMarketPlace {
 
     BridgeState.Storage internal relay;
 
-    constructor(IRelay _relay) {
+    constructor(IRelay _relay, address erc2771Forwarder) {
+        _setTrustedForwarder(erc2771Forwarder);
         relay.relay = _relay;
         relay.txProofDifficultyFactor = 1; // will make this an arg later on
     }
@@ -111,7 +113,7 @@ contract BtcMarketPlace {
             amountBtc: amountBtc,
             askingToken: buyingToken,
             askingAmount: buyAmount,
-            requester: msg.sender
+            requester: _msgSender()
         });
 
         emit placeBtcSellOrderEvent(id, amountBtc, buyingToken, buyAmount);
@@ -133,7 +135,7 @@ contract BtcMarketPlace {
         order.amountBtc -= amountBtc;
 
         // "lock" selling token by transferring to contract
-        IERC20(order.askingToken).safeTransferFrom(msg.sender, address(this), sellAmount);
+        IERC20(order.askingToken).safeTransferFrom(_msgSender(), address(this), sellAmount);
 
         uint256 acceptId = nextOrderId++;
         acceptedBtcSellOrders[acceptId] = AcceptedBtcSellOrder({
@@ -143,7 +145,7 @@ contract BtcMarketPlace {
             ercToken: order.askingToken,
             ercAmount: sellAmount,
             requester: order.requester,
-            accepter: msg.sender,
+            accepter: _msgSender(),
             acceptTime: block.timestamp
         });
 
@@ -156,7 +158,8 @@ contract BtcMarketPlace {
         public
     {
         AcceptedBtcSellOrder storage accept = acceptedBtcSellOrders[id];
-        require(accept.requester == msg.sender);
+
+        require(accept.requester == _msgSender());
 
         relay.validateProof(transaction, proof);
 
@@ -171,7 +174,7 @@ contract BtcMarketPlace {
     function withdrawBtcSellOrder(uint256 id) public {
         BtcSellOrder storage order = btcSellOrders[id];
 
-        require(order.requester == msg.sender);
+        require(order.requester == _msgSender());
 
         delete btcSellOrders[id];
 
@@ -183,9 +186,9 @@ contract BtcMarketPlace {
 
         require(block.timestamp > order.acceptTime + REQUEST_EXPIRATION_SECONDS);
 
-        require(order.accepter == msg.sender);
+        require(order.accepter == _msgSender());
         // give accepter its tokens back
-        IERC20(order.ercToken).safeTransfer(msg.sender, order.ercAmount);
+        IERC20(order.ercToken).safeTransfer(_msgSender(), order.ercAmount);
 
         delete acceptedBtcSellOrders[id];
 
@@ -201,7 +204,7 @@ contract BtcMarketPlace {
         require(sellingToken != address(0x0));
 
         // "lock" selling token by transferring to contract
-        IERC20(sellingToken).safeTransferFrom(msg.sender, address(this), saleAmount);
+        IERC20(sellingToken).safeTransferFrom(_msgSender(), address(this), saleAmount);
 
         uint256 id = nextOrderId++;
         btcBuyOrders[id] = BtcBuyOrder({
@@ -209,7 +212,7 @@ contract BtcMarketPlace {
             bitcoinAddress: bitcoinAddress,
             offeringToken: sellingToken,
             offeringAmount: saleAmount,
-            requester: msg.sender
+            requester: _msgSender()
         });
 
         emit placeBtcBuyOrderEvent(amountBtc, bitcoinAddress, sellingToken, saleAmount);
@@ -236,7 +239,7 @@ contract BtcMarketPlace {
             ercToken: order.offeringToken,
             ercAmount: buyAmount,
             requester: order.requester,
-            accepter: msg.sender,
+            accepter: _msgSender(),
             acceptTime: block.timestamp
         });
 
@@ -252,7 +255,7 @@ contract BtcMarketPlace {
     function proofBtcBuyOrder(uint256 id, BitcoinTx.Info calldata transaction, BitcoinTx.Proof calldata proof) public {
         AcceptedBtcBuyOrder storage accept = acceptedBtcBuyOrders[id];
 
-        require(accept.accepter == msg.sender);
+        require(accept.accepter == _msgSender());
 
         relay.validateProof(transaction, proof);
 
@@ -269,10 +272,10 @@ contract BtcMarketPlace {
     function withdrawBtcBuyOrder(uint256 id) public {
         BtcBuyOrder storage order = btcBuyOrders[id];
 
-        require(order.requester == msg.sender);
+        require(order.requester == _msgSender());
 
         // release the locked erc20s
-        IERC20(order.offeringToken).safeTransfer(msg.sender, order.offeringAmount);
+        IERC20(order.offeringToken).safeTransfer(_msgSender(), order.offeringAmount);
 
         delete btcBuyOrders[id];
 
@@ -282,12 +285,12 @@ contract BtcMarketPlace {
     function cancelAcceptedBtcBuyOrder(uint256 id) public {
         AcceptedBtcBuyOrder storage accept = acceptedBtcBuyOrders[id];
 
-        require(accept.requester == msg.sender);
+        require(accept.requester == _msgSender());
 
         require(block.timestamp > accept.acceptTime + REQUEST_EXPIRATION_SECONDS);
 
         // release the locked erc20s
-        IERC20(accept.ercToken).safeTransfer(msg.sender, accept.ercAmount);
+        IERC20(accept.ercToken).safeTransfer(_msgSender(), accept.ercAmount);
 
         // note: we don't make the accepted amount available for new trades but if we want to,
         // we could implement that
