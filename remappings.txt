@@ -1,0 +1,10 @@
+@bob-collective/bitcoin-spv/=lib/bitcoin-spv/src/
+ds-test/=lib/forge-std/lib/ds-test/src/
+forge-std/=lib/forge-std/src/
+@openzeppelin/=lib/openzeppelin-contracts/
+openzeppelin-contracts/=lib/openzeppelin-contracts/contracts/
+account-abstraction/=lib/account-abstraction/contracts/
+bitcoin-spv/=lib/bitcoin-spv/
+gsn.git/=lib/gsn.git/
+@opengsn/=lib/gsn.git/
+@account-abstraction=lib/account-abstraction/
