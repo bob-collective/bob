@@ -55,3 +55,15 @@ services:
         ports:
             - "3002:3002"
         restart: always
+
+    anvil:
+        image: "ghcr.io/foundry-rs/foundry:latest"
+        entrypoint:
+            - anvil
+            - --host
+            - "0.0.0.0"
+            - --chain-id
+            - "901"
+        ports:
+            - "8545:8545"
+        restart: always
