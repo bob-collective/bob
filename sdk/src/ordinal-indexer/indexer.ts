@@ -25,7 +25,7 @@ export type InscriptionId = string & { length: 64 };
 /**
  * @ignore
  */
-export type InscriptionContent = string;
+export type InscriptionIds = InscriptionId[];
 
 
 /**
@@ -33,9 +33,9 @@ export type InscriptionContent = string;
  */
 export interface InscriptionsData {
     /**
-     * An array of inscription content.
+     * An array of inscription ids.
      */
-    inscriptions: InscriptionContent[];
+    inscriptions: InscriptionIds[];
 
     /**
      * The previous entry.
@@ -88,9 +88,9 @@ export interface InscriptionUTXO {
     sat_ranges: string;
 
     /**
-     * An array of inscription content.
+     * An array of inscription ids.
      */
-    inscriptions: InscriptionContent[];
+    inscriptions: InscriptionIds[];
 
     /**
      * A map of runes.
@@ -168,9 +168,9 @@ export interface Ordinal {
     timestamp: number;
 
     /**
-     * An array of inscription content.
+     * An array of inscription ids.
      */
-    inscriptions: InscriptionContent[];
+    inscriptions: InscriptionIds[];
 }
 
 /**

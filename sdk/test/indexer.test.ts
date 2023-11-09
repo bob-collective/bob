@@ -49,8 +49,8 @@ describe("Indexer Tests", () => {
         const inscriptions: InscriptionsData = await client.getInscriptionsFromBlock(block);
         const expectedInscription: InscriptionsData = {
             inscriptions: [
-                '4d8e7ad2b410eaa79e3aa703bbe5a314cc89be9a07532bfab09f3c5dffac6348i0',
-                'd370be1b6bf74677c82226d7a0d65743cbe3846b9216e0ad207a7b03a5230ec3i0'
+                '4d8e7ad2b410eaa79e3aa703bbe5a314cc89be9a07532bfab09f3c5dffac6348i0' as InscriptionId,
+                'd370be1b6bf74677c82226d7a0d65743cbe3846b9216e0ad207a7b03a5230ec3i0' as InscriptionId
             ],
             prev: null,
             next: null,
@@ -70,7 +70,9 @@ describe("Indexer Tests", () => {
             address: 'tb1pyjkjq93n0zvenjlyy5gp3euk4jeza3w35mu2rpe6m33k8czd0e7s3ha8st',
             transaction: 'd370be1b6bf74677c82226d7a0d65743cbe3846b9216e0ad207a7b03a5230ec3',
             sat_ranges: null,
-            inscriptions: ['d370be1b6bf74677c82226d7a0d65743cbe3846b9216e0ad207a7b03a5230ec3i0'],
+            inscriptions: [
+                'd370be1b6bf74677c82226d7a0d65743cbe3846b9216e0ad207a7b03a5230ec3i0' as InscriptionId
+            ],
             runes: {}
         };
         assert.deepStrictEqual(expectedInscription, inscriptions);
