@@ -29,7 +29,7 @@ export type InscriptionContent = string;
 
 
 /**
- * Represents a collection of inscriptions along with related metadata.
+ * @ignore
  */
 export interface InscriptionsData {
     /**
@@ -59,7 +59,7 @@ export interface InscriptionsData {
 }
 
 /**
- * Represents information about an Inscription UTXO.
+ * @ignore
  */
 export interface InscriptionUTXO {
     /**
@@ -99,7 +99,7 @@ export interface InscriptionUTXO {
 }
 
 /**
- * Represents an ordinal.
+ * @ignore
  */
 export interface Ordinal {
     /**
@@ -174,7 +174,7 @@ export interface Ordinal {
 }
 
 /**
- * Represents information about an inscription based on its ID.
+ * @ignore
  */
 export interface InscriptionDataFromId {
     /**
