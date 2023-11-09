@@ -1,24 +1,24 @@
 export const CTFAbi = [
-  { type: 'constructor', stateMutability: 'nonpayable', inputs: [] },
+  { inputs: [], stateMutability: 'nonpayable', type: 'constructor' },
   {
-    type: 'event',
+    anonymous: false,
+    inputs: [{ indexed: true, internalType: 'address', name: 'flagHolder', type: 'address' }],
     name: 'FlagCaptured',
-    inputs: [{ type: 'address', name: 'flagHolder', internalType: 'address', indexed: true }],
-    anonymous: false
+    type: 'event'
   },
-  { type: 'function', stateMutability: 'nonpayable', outputs: [], name: 'captureFlag', inputs: [] },
+  { inputs: [], name: 'captureFlag', outputs: [], stateMutability: 'nonpayable', type: 'function' },
   {
-    type: 'function',
-    stateMutability: 'view',
-    outputs: [{ type: 'address', name: '', internalType: 'address' }],
+    inputs: [],
     name: 'flagHolder',
-    inputs: []
+    outputs: [{ internalType: 'address', name: '', type: 'address' }],
+    stateMutability: 'view',
+    type: 'function'
   },
   {
-    type: 'function',
-    stateMutability: 'nonpayable',
-    outputs: [],
+    inputs: [{ internalType: 'address', name: 'newFlagHolder', type: 'address' }],
     name: 'transferOwnership',
-    inputs: [{ type: 'address', name: 'newFlagHolder', internalType: 'address' }]
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function'
   }
 ];
