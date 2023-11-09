@@ -1,35 +1,13 @@
 import { CTA, Flex, Span } from '@interlay/ui';
 import { useWeb3Modal } from '@web3modal/wagmi/react';
 import { getSenderAddress } from 'permissionless';
+import { useState } from 'react';
 import Jazzicon, { jsNumberForAddress } from 'react-jazzicon';
 import truncateEthAddress from 'truncate-eth-address';
-import { concat, encodeFunctionData } from 'viem';
 import { useAccount, useBalance } from 'wagmi';
-import { ENTRY_POINT_ADDRESS, SIMPLE_ACCOUNT_FACTORY_ADDRESS } from '../../constants/erc4337';
+import { ENTRY_POINT_ADDRESS } from '../../constants/erc4337';
+import { getInitCode, publicClient } from '../../sdk';
 import { CTAWrapper, StyledHeader } from './Layout.styles';
-import { publicClient } from '../../sdk';
-import { useState } from 'react';
-
-const getInitCode = (ownerAddress: `0x${string}`) => {
-  return concat([
-    SIMPLE_ACCOUNT_FACTORY_ADDRESS,
-    encodeFunctionData({
-      abi: [
-        {
-          inputs: [
-            { name: 'owner', type: 'address' },
-            { name: 'salt', type: 'uint256' }
-          ],
-          name: 'createAccount',
-          outputs: [{ name: 'ret', type: 'address' }],
-          stateMutability: 'nonpayable',
-          type: 'function'
-        }
-      ],
-      args: [ownerAddress, 0n]
-    })
-  ]);
-};
 
 const Header = () => {
   const { open } = useWeb3Modal();
@@ -39,11 +17,13 @@ const Header = () => {
   const { address, isConnecting } = useAccount({
     onConnect: async ({ address }) => {
       if (!address) return;
+
+      console.log(getInitCode(address));
+
       const senderAddress = await getSenderAddress(publicClient, {
         initCode: getInitCode(address),
         entryPoint: ENTRY_POINT_ADDRESS
       });
-
       setSmartContractAddress(senderAddress);
     }
   });
