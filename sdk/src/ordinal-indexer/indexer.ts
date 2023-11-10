@@ -225,12 +225,12 @@ export interface InscriptionDataFromId {
     /**
      * The parent inscription ID.
      */
-    parent: string;
+    parent: InscriptionId;
 
     /**
      * The previous inscription ID.
      */
-    previous: string;
+    previous: InscriptionId;
 
     /**
      * The rune associated with the inscription.
@@ -347,7 +347,7 @@ export interface OrdinalsClient {
 export class DefaultOrdinalsClient implements OrdinalsClient {
     private basePath: string;
 
-    constructor(networkOrUrl: string = "regtest") {
+    constructor(networkOrUrl: string = "mainnet") {
         switch (networkOrUrl) {
             case "mainnet":
                 this.basePath = MAINNET_ORD_BASE_PATH;
