@@ -5,9 +5,24 @@ settings:
   excludeLinksFromLockfile: false
 
 dependencies:
+  '@account-abstraction/contracts':
+    specifier: ^0.6.0
+    version: 0.6.0
   '@account-abstraction/sdk':
     specifier: ^0.6.0
     version: 0.6.0
+  '@ethersproject/abi':
+    specifier: ^5.7.0
+    version: 5.7.0
+  '@ethersproject/abstract-provider':
+    specifier: ^5.7.0
+    version: 5.7.0
+  '@ethersproject/abstract-signer':
+    specifier: ^5.7.0
+    version: 5.7.0
+  '@ethersproject/providers':
+    specifier: ^5.7.2
+    version: 5.7.2
   '@gobob/bob-sdk':
     specifier: ^1.0.3
     version: 1.1.0

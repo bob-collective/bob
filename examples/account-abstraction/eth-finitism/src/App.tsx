@@ -11,6 +11,7 @@ import { Layout } from './components';
 import { ContractType, contracts } from './constants';
 import { useAccountAbstraction } from './context/AuthContext';
 import { useContract } from './hooks/useContract';
+import { HttpRpcClient } from '@account-abstraction/sdk';
 
 createWeb3Modal({
   defaultChain: L2_CHAIN_CONFIG,
@@ -24,14 +25,14 @@ function App() {
   const { address } = useAccount();
   const [isTransfering, setTransfering] = useState(false);
   const [transferAddress, setTransferAddress] = useState('');
-  const { accountAPI } = useAccountAbstraction();
+  const { accountAPI, bundlerClient } = useAccountAbstraction();
 
   const flagOwner = useQuery<string, Error, string>(['owner'], {
     queryFn: () => read.flagHolder() as Promise<string>,
     refetchInterval: 5000,
     enabled: false
   });
-
+  console.log(flagOwner);
   const capturaFlagMutation = useMutation({
     // mutationFn: () => write.captureFlag(),
     mutationFn: async () => {
@@ -45,11 +46,15 @@ function App() {
 
       const op = await accountAPI.createSignedUserOp({
         target: contracts[ContractType.CTF].address,
-        value: 0n,
+        value: 0,
         data,
         maxFeePerGas: 0x6507a5d0,
         maxPriorityFeePerGas: 0x6507a5c0
       });
+
+      await op.signature;
+
+      await bundlerClient?.sendUserOpToBundler(op);
     },
     onSuccess: () => flagOwner.refetch()
   });

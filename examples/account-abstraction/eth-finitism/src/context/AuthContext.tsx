@@ -1,12 +1,17 @@
-import { BaseAccountAPI, wrapProvider } from '@account-abstraction/sdk';
-import { providers } from 'ethers';
+import { BaseAccountAPI, ClientConfig, ERC4337EthersProvider, HttpRpcClient, SimpleAccountAPI } from '@account-abstraction/sdk';
+import { Signer, providers } from 'ethers';
 import { createContext, useContext, useState } from 'react';
 import { useAccount } from 'wagmi';
-import { L2_RPC_URL } from '../config';
 import { ENTRY_POINT_ADDRESS } from '../constants/erc4337';
+
+import { EntryPoint__factory } from '@account-abstraction/contracts';
+import { SimpleAccountFactory__factoryClass } from './customFactory';
+import { DeterministicDeployer } from './customDetDeployer';
+import { JsonRpcProvider } from '@ethersproject/providers';
 
 type accountAbstractionContextValue = {
   accountAPI?: BaseAccountAPI;
+  bundlerClient?: HttpRpcClient;
   address?: `0x${string}`;
   ownerAddress?: `0x${string}`;
 };
@@ -16,6 +21,40 @@ const initialState = {
 };
 
 const accountAbstractionContext = createContext<accountAbstractionContextValue>(initialState);
+
+const factoryInstance = new SimpleAccountFactory__factoryClass();
+
+async function wrapProvider (
+  originalProvider: JsonRpcProvider,
+  config: ClientConfig,
+  originalSigner: Signer = originalProvider.getSigner()
+): Promise<ERC4337EthersProvider> {
+  const entryPoint = EntryPoint__factory.connect(config.entryPointAddress, originalProvider)
+  // Initial SimpleAccount instance is not deployed and exists just for the interface
+  const detDeployer = new DeterministicDeployer(originalProvider)
+
+  const SimpleAccountFactory = await detDeployer.deterministicDeploy(factoryInstance, 0, [entryPoint.address])
+  const smartAccountAPI = new SimpleAccountAPI({
+    provider: originalProvider,
+    entryPointAddress: entryPoint.address,
+    owner: originalSigner,
+    factoryAddress: SimpleAccountFactory,
+    paymasterAPI: config.paymasterAPI
+  })
+  console.log('config=', config)
+  const chainId = await originalProvider.getNetwork().then(net => net.chainId)
+  const httpRpcClient = new HttpRpcClient(config.bundlerUrl, config.entryPointAddress, chainId)
+  return await new ERC4337EthersProvider(
+    chainId,
+    config,
+    originalSigner,
+    originalProvider,
+    httpRpcClient,
+    entryPoint,
+    smartAccountAPI
+  ).init()
+}
+
 
 const useAccountAbstraction = () => {
   const context = useContext(accountAbstractionContext);
@@ -29,13 +68,14 @@ const useAccountAbstraction = () => {
 
 const AccountAbstractionProvider = ({ children }: { children: JSX.Element }) => {
   const [accountAPI, setAccountAPI] = useState<BaseAccountAPI>();
+  const [bundlerClient, setBundlerClient] = useState<HttpRpcClient>()
   const [address, setAddress] = useState<`0x${string}`>();
 
   const { address: ownerAddress } = useAccount({
     onConnect: async ({ address, connector }) => {
-      if (!address || !connector) return;
+      if (!address || !connector || !window.ethereum) return;
 
-      const nProvider = new providers.JsonRpcProvider(L2_RPC_URL);
+      const nProvider = new providers.Web3Provider(window.ethereum)
 
       const config = {
         chainId: await nProvider.getNetwork().then((net) => net.chainId),
@@ -66,17 +106,29 @@ const AccountAbstractionProvider = ({ children }: { children: JSX.Element }) => 
       //   maxPriorityFeePerGas: 0x6507a5c0
       // });
 
+      // Fund the account.
+     await nProvider.getSigner().sendTransaction({
+        to: ENTRY_POINT_ADDRESS,
+        value: 1000000000000000,
+        data: `0xb760faf9000000000000000000000000${aaAddress.slice(2)}`,
+        gasLimit: 100000,
+      }) .then(async (tx) => await tx.wait());
+
       setAddress(aaAddress as `0x${string}`);
       setAccountAPI(aaProvider.smartAccountAPI);
+      setBundlerClient(aaProvider.httpRpcClient)
     }
   });
 
   console.log(address);
 
+  console.log()
+
   const state = {
     accountAPI,
     ownerAddress,
-    address
+    address,
+    bundlerClient
   };
 
   return <accountAbstractionContext.Provider value={state}>{children}</accountAbstractionContext.Provider>;
