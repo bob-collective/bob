@@ -37,7 +37,7 @@ The UI can sometimes fail to connect if you have multiple wallets installed. If 
 
 You will need two accounts for this demo, so that you can both create and fulfil orders. For each account:
 
-- Click the 'Get ETH' button to fund your account with ETH. This will be needed for transaction fees.
+- Click the 'Get Gas' button to fund your account with ETH. This will be needed for transaction fees.
 - After the ETH tokens have arrived in your wallet, click on the 'Get Tokens' button to fund your account with ERC20 tokens to used when adding an order.
 - Import the ERC20 tokens from the following contract addresses:
   - ZBTC: `0x4f01078121e90915F9f1448DE4b3C2515B5e2F3B`
