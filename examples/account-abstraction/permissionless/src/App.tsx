@@ -8,12 +8,11 @@ import { FormEventHandler, useEffect, useState } from 'react';
 import Jazzicon, { jsNumberForAddress } from 'react-jazzicon';
 import truncateEthAddress from 'truncate-eth-address';
 import { Hex, encodeFunctionData } from 'viem';
-import { optimismGoerli } from 'viem/chains';
 import { Layout } from './components';
 import { ContractType, contracts } from './constants';
 import { ENTRY_POINT_ADDRESS } from './constants/erc4337';
 import { useContract } from './hooks/useContract';
-import { bundlerClient, getInitCode, paymasterClient, publicClient } from './sdk';
+import { bundlerClient, getInitCode, publicClient } from './sdk';
 
 createWeb3Modal({
   defaultChain: L2_CHAIN_CONFIG,
@@ -24,6 +23,7 @@ createWeb3Modal({
 
 function App() {
   const { read, write } = useContract(ContractType.CTF);
+  const { read: readEntryPoint, write: writeEntryPoint } = useContract(ContractType.ENTRY_POINT);
   const { address } = useAccount();
   const [isTransfering, setTransfering] = useState(false);
   const [transferAddress, setTransferAddress] = useState('');
@@ -94,34 +94,44 @@ function App() {
           '0xa15569dd8f8324dbeabf8073fdec36d4b754f53ce5901e283c6de79af177dc94557fa3c9922cd7af2a96ca94402d35c39f266925ee6407aeb32b31d76978d4ba1c' as Hex
       };
 
-      // NOTE: code for sponsoring the userOP
-      const sponsorUserOperationResult = await paymasterClient.sponsorUserOperation({
-        userOperation,
-        entryPoint: ENTRY_POINT_ADDRESS
-      });
-
-      const sponsoredUserOp: UserOperation = {
+      const finalUserOperation: UserOperation = {
         ...userOperation,
-        ...sponsorUserOperationResult
+        callGasLimit: 50305n,
+        verificationGasLimit: 80565n,
+        preVerificationGas: 56135n,
+        paymasterAndData: '0x'
       };
+
+      // NOTE: code for sponsoring the userOP
+      // const sponsorUserOperationResult = await paymasterClient.sponsorUserOperation({
+      //   userOperation,
+      //   entryPoint: ENTRY_POINT_ADDRESS
+      // });
+
+      // const sponsoredUserOp: UserOperation = {
+      //   ...userOperation,
+      //   ...sponsorUserOperationResult
+      // };
+
+      await writeEntryPoint.depositTo([senderAddress], { value: 100000000000000n });
 
       const signature = await signMessageAsync({
         message: {
           /** Raw data representation of the message. */
           raw: getUserOperationHash({
-            userOperation: sponsoredUserOp,
-            chainId: optimismGoerli.id,
+            userOperation: finalUserOperation,
+            chainId: L2_CHAIN_CONFIG.id,
             entryPoint: ENTRY_POINT_ADDRESS
           })
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as unknown as any
       });
 
-      sponsoredUserOp.signature = signature;
+      finalUserOperation.signature = signature;
 
       // SUBMIT THE USER OPERATION TO BE BUNDLED
       const userOperationHash = await bundlerClient.sendUserOperation({
-        userOperation: sponsoredUserOp,
+        userOperation: finalUserOperation,
         entryPoint: ENTRY_POINT_ADDRESS
       });
 
