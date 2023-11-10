@@ -68,11 +68,6 @@ export interface InscriptionUTXO {
     value: number;
 
     /**
-     * The script public key.
-     */
-    script_pubkey: string;
-
-    /**
      * The address associated with the UTXO.
      */
     address: string;
@@ -394,7 +389,23 @@ export class DefaultOrdinalsClient implements OrdinalsClient {
      * @ignore
      */
     async getInscriptionFromUTXO(utxo: string): Promise<InscriptionUTXO> {
-        return await this.getJson<InscriptionUTXO>(`${this.basePath}/output/${utxo}`);
+        const response = await this.getJson<{
+            "value": number;
+            "address": string;
+            "transaction": string;
+            "sat_ranges": string;
+            "inscriptions": InscriptionIds[];
+            "runes": Record<string, any>;
+        }>(`${this.basePath}/output/${utxo}`);
+        return {
+            value: response.value,
+            address: response.address,
+            transaction: response.transaction,
+            sat_ranges: response.sat_ranges,
+            inscriptions: response.inscriptions,
+            runes: response.runes,
+        };
+
     }
 
     /**

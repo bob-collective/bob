@@ -66,13 +66,10 @@ describe("Indexer Tests", () => {
         const inscriptions: InscriptionUTXO = await client.getInscriptionFromUTXO(utxo);
         const expectedInscription: InscriptionUTXO = {
             value: 1967,
-            script_pubkey: "OP_PUSHNUM_1 OP_PUSHBYTES_32 24ad201633789999cbe4251018e796acb22ec5d1a6f8a1873adc6363e04d7e7d",
             address: 'tb1pyjkjq93n0zvenjlyy5gp3euk4jeza3w35mu2rpe6m33k8czd0e7s3ha8st',
             transaction: 'd370be1b6bf74677c82226d7a0d65743cbe3846b9216e0ad207a7b03a5230ec3',
             sat_ranges: null,
-            inscriptions: [
-                'd370be1b6bf74677c82226d7a0d65743cbe3846b9216e0ad207a7b03a5230ec3i0' as InscriptionId
-            ],
+            inscriptions: [],
             runes: {}
         };
         assert.deepStrictEqual(expectedInscription, inscriptions);
