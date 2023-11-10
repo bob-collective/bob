@@ -1,7 +1,7 @@
 version: "3.8"
 services:
     bitcoind:
-        image: "ruimarinho/bitcoin-core:23"
+        image: "ruimarinho/bitcoin-core:24"
         command:
             - -regtest
             - -server
@@ -10,11 +10,12 @@ services:
             - -rpcuser=rpcuser
             - -rpcpassword=rpcpassword
             - -fallbackfee=0.0002
+            - -txindex
         ports:
             - "18443:18443"
 
     bitcoin-cli:
-        image: "ruimarinho/bitcoin-core:23"
+        image: "ruimarinho/bitcoin-core:24"
         command:
             - /bin/sh
             - -c
@@ -66,4 +67,23 @@ services:
             - "901"
         ports:
             - "8545:8545"
+        restart: always
+
+    ordinals:
+        platform: linux/amd64
+        image: "interlayhq/ord:latest"
+        command:
+            - --rpc-url
+            - bitcoind:18443
+            - --bitcoin-rpc-pass
+            - rpcpassword
+            - --bitcoin-rpc-user
+            - rpcuser
+            - --regtest
+            - server
+            - --enable-json-api
+            - --http-port
+            - "3003"
+        ports:
+            - "3003:3003"
         restart: always
