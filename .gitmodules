@@ -7,3 +7,6 @@
 [submodule "lib/bitcoin-spv"]
 	path = lib/bitcoin-spv
 	url = https://github.com/bob-collective/bitcoin-spv
+[submodule "lib/account-abstraction"]
+	path = lib/account-abstraction
+	url = https://github.com/eth-infinitism/account-abstraction
