@@ -89,7 +89,7 @@ contract BtcMarketPlace {
     }
 
     struct BitcoinAddress {
-        string bitcoinAddress; // todo: use the right type
+        bytes scriptPubKey;
     }
 
     struct TransactionProof {
@@ -152,10 +152,13 @@ contract BtcMarketPlace {
         public
     {
         AcceptedBtcSellOrder storage accept = acceptedBtcSellOrders[id];
-
         require(accept.requester == msg.sender);
 
         relay.validateProof(transaction, proof);
+
+        // Check output script pubkey (recipient address) and amount
+        uint txOutputValue = BitcoinTx.getTxOutputValue(keccak256(accept.bitcoinAddress.scriptPubKey), transaction.outputVector);
+        assert(txOutputValue >= accept.amountBtc);
 
         IERC20(accept.ercToken).safeTransfer(accept.requester, accept.ercAmount);
 
@@ -250,6 +253,12 @@ contract BtcMarketPlace {
         require(accept.accepter == msg.sender);
 
         relay.validateProof(transaction, proof);
+
+        BtcBuyOrder storage order = btcBuyOrders[accept.orderId];
+        // Check output script pubkey (recipient address) and amount
+        uint txOutputValue = BitcoinTx.getTxOutputValue(keccak256(order.bitcoinAddress.scriptPubKey), transaction.outputVector);
+        assert(txOutputValue >= order.amountBtc);
+
 
         IERC20(accept.ercToken).safeTransfer(accept.accepter, accept.ercAmount);
 

@@ -69,7 +69,7 @@ contract MarketPlaceTest is BtcMarketPlace, Test {
 
         vm.startPrank(bob);
         token1.approve(address(this), 40);
-        this.acceptBtcSellOrder(0, BitcoinAddress({bitcoinAddress: ""}), 40);
+        this.acceptBtcSellOrder(0, BitcoinAddress({scriptPubKey: "a91476fe4e664d67c35931096d90aabbdbd8e0e11bad87"}), 40);
 
         vm.startPrank(alice);
         this.proofBtcSellOrder(1, dummyTransaction(), dummyProof());
@@ -83,7 +83,7 @@ contract MarketPlaceTest is BtcMarketPlace, Test {
 
         vm.startPrank(bob);
         token1.approve(address(this), 40);
-        this.acceptBtcSellOrder(0, BitcoinAddress({bitcoinAddress: ""}), 40);
+        this.acceptBtcSellOrder(0, BitcoinAddress({scriptPubKey: "a91476fe4e664d67c35931096d90aabbdbd8e0e11bad87"}), 40);
 
         vm.startPrank(alice);
         this.withdrawBtcSellOrder(0);
@@ -99,7 +99,7 @@ contract MarketPlaceTest is BtcMarketPlace, Test {
 
         vm.startPrank(bob);
         token1.approve(address(this), 40);
-        this.acceptBtcSellOrder(0, BitcoinAddress({bitcoinAddress: ""}), 40);
+        this.acceptBtcSellOrder(0, BitcoinAddress({scriptPubKey: "a91476fe4e664d67c35931096d90aabbdbd8e0e11bad87"}), 40);
 
         vm.warp(block.timestamp + REQUEST_EXPIRATION_SECONDS + 1);
         assertEq(token1.balanceOf(address(this)), 4);
@@ -114,7 +114,7 @@ contract MarketPlaceTest is BtcMarketPlace, Test {
 
         vm.startPrank(alice);
         token1.approve(address(this), 100);
-        this.placeBtcBuyOrder(1000, BitcoinAddress({bitcoinAddress: ""}), address(token1), 100);
+        this.placeBtcBuyOrder(1000, BitcoinAddress({scriptPubKey: "a91476fe4e664d67c35931096d90aabbdbd8e0e11bad87"}), address(token1), 100);
 
         vm.startPrank(bob);
         this.acceptBtcBuyOrder(0, 40);
@@ -130,7 +130,7 @@ contract MarketPlaceTest is BtcMarketPlace, Test {
 
         vm.startPrank(alice);
         token1.approve(address(this), 100);
-        this.placeBtcBuyOrder(1000, BitcoinAddress({bitcoinAddress: ""}), address(token1), 100);
+        this.placeBtcBuyOrder(1000, BitcoinAddress({scriptPubKey: "a91476fe4e664d67c35931096d90aabbdbd8e0e11bad87"}), address(token1), 100);
 
         vm.startPrank(bob);
         this.acceptBtcBuyOrder(0, 40);
@@ -148,7 +148,7 @@ contract MarketPlaceTest is BtcMarketPlace, Test {
 
         vm.startPrank(alice);
         token1.approve(address(this), 100);
-        this.placeBtcBuyOrder(1000, BitcoinAddress({bitcoinAddress: ""}), address(token1), 100);
+        this.placeBtcBuyOrder(1000, BitcoinAddress({scriptPubKey: "a91476fe4e664d67c35931096d90aabbdbd8e0e11bad87"}), address(token1), 100);
 
         vm.startPrank(bob);
         this.acceptBtcBuyOrder(0, 40);
