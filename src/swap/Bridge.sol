@@ -22,7 +22,7 @@ contract Bridge {
     }
 
     struct BitcoinAddress {
-        bytes scriptPubKey; 
+        bytes scriptPubKey;
     }
 
     struct TransactionProof {

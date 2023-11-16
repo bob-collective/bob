@@ -84,7 +84,8 @@ contract BridgeTest is Bridge, Test {
         (bool _success,) = address(this).call{value: amountCol}(abi.encodeWithSignature("mint()", alice));
         assertTrue(_success, "deposited payment.");
 
-        BitcoinAddress memory btcAddress = BitcoinAddress({scriptPubKey: "0xa91476fe4e664d67c35931096d90aabbdbd8e0e11bad87"});
+        BitcoinAddress memory btcAddress =
+            BitcoinAddress({scriptPubKey: "0xa91476fe4e664d67c35931096d90aabbdbd8e0e11bad87"});
         this.requestSwap(zbtcAmount, btcAmount, btcAddress);
 
         // Order memory order = orders(0);

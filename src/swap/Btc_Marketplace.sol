@@ -160,7 +160,8 @@ contract BtcMarketPlace {
         relay.validateProof(transaction, proof);
 
         // Check output script pubkey (recipient address) and amount
-        uint txOutputValue = BitcoinTx.getTxOutputValue(keccak256(accept.bitcoinAddress.scriptPubKey), transaction.outputVector);
+        uint256 txOutputValue =
+            BitcoinTx.getTxOutputValue(keccak256(accept.bitcoinAddress.scriptPubKey), transaction.outputVector);
         assert(txOutputValue >= accept.amountBtc);
 
         IERC20(accept.ercToken).safeTransfer(accept.requester, accept.ercAmount);
@@ -259,9 +260,9 @@ contract BtcMarketPlace {
 
         BtcBuyOrder storage order = btcBuyOrders[accept.orderId];
         // Check output script pubkey (recipient address) and amount
-        uint txOutputValue = BitcoinTx.getTxOutputValue(keccak256(order.bitcoinAddress.scriptPubKey), transaction.outputVector);
+        uint256 txOutputValue =
+            BitcoinTx.getTxOutputValue(keccak256(order.bitcoinAddress.scriptPubKey), transaction.outputVector);
         assert(txOutputValue >= order.amountBtc);
-
 
         IERC20(accept.ercToken).safeTransfer(accept.accepter, accept.ercAmount);
 
