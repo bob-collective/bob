@@ -64,7 +64,7 @@ contract LightRelay is Ownable, ILightRelay {
 
     bool public ready;
     // Whether the relay requires the address submitting a retarget to be
-    // authorised in advance by governance.
+    //authorized in advance by governance.
     bool public authorizationRequired;
     // Number of blocks required for each side of a retarget proof:
     // a retarget must provide `proofLength` blocks before the retarget
@@ -105,7 +105,7 @@ contract LightRelay is Ownable, ILightRelay {
     /// proof.
     /// @dev If the relay is used by querying the current and previous epoch
     /// difficulty, at least one retarget needs to be provided after genesis;
-    /// otherwise the prevEpochDifficulty will be uninitialised and zero.
+    /// otherwise the prevEpochDifficulty will be uninitialized and zero.
     function genesis(bytes calldata genesisHeader, uint256 genesisHeight, uint64 genesisProofLength)
         external
         onlyOwner
@@ -144,21 +144,21 @@ contract LightRelay is Ownable, ILightRelay {
     }
 
     /// @notice Set whether the relay requires retarget submitters to be
-    /// pre-authorised by governance.
-    /// @param status True if authorisation is to be required, false if not.
+    /// pre-authorized by governance.
+    /// @param status True if authorization is to be required, false if not.
     function setAuthorizationStatus(bool status) external onlyOwner {
         authorizationRequired = status;
         emit AuthorizationRequirementChanged(status);
     }
 
     /// @notice Authorise the given address to submit retarget proofs.
-    /// @param submitter The address to be authorised.
+    /// @param submitter The address to be authorized.
     function authorize(address submitter) external onlyOwner {
         isAuthorized[submitter] = true;
         emit SubmitterAuthorized(submitter);
     }
 
-    /// @notice Rescind the authorisation of the submitter to retarget.
+    /// @notice Rescind the authorization of the submitter to retarget.
     /// @param submitter The address to be deauthorised.
     function deauthorize(address submitter) external onlyOwner {
         isAuthorized[submitter] = false;
@@ -174,7 +174,7 @@ contract LightRelay is Ownable, ILightRelay {
     /// that the difficulty of the new epoch is calculated correctly according
     /// to the block timestamps, and that the next X blocks would be valid in
     /// the new epoch.
-    /// We have no information of block heights, so we cannot enforce that
+    /// We have no information on block heights, so we cannot enforce that
     /// retargets only happen every 2016 blocks; instead, we assume that this
     /// is the case if a valid proof of work is provided.
     /// It is possible to cheat the relay by providing X blocks from earlier in
@@ -188,7 +188,7 @@ contract LightRelay is Ownable, ILightRelay {
     /// legitimate blocks.
     /// Only the most recent epoch is vulnerable to these attacks; once a
     /// retarget has been proven to the relay, the epoch is immutable even if a
-    /// contradictory proof were to be presented later.
+    /// contradictory proof was to be presented later.
     function retarget(bytes memory headers) external relayActive {
         if (authorizationRequired) {
             require(isAuthorized[msg.sender], "Submitter unauthorized");
@@ -207,12 +207,16 @@ contract LightRelay is Ownable, ILightRelay {
         bytes32 previousHeaderDigest = bytes32(0);
 
         // Validate old chain
-        for (uint256 i = 0; i < proofLength; i++) {
+        for (uint256 i; i < proofLength;) {
             (bytes32 currentDigest, uint256 currentHeaderTarget) = validateHeader(headers, i * 80, previousHeaderDigest);
 
             require(currentHeaderTarget == oldTarget, "Invalid target in pre-retarget headers");
 
             previousHeaderDigest = currentDigest;
+
+            unchecked {
+                ++i;
+            }
         }
 
         // get timestamp of retarget block
@@ -241,7 +245,7 @@ contract LightRelay is Ownable, ILightRelay {
         uint256 epochStartTimestamp = headers.extractTimestampAt(proofLength * 80);
 
         // validate new chain
-        for (uint256 j = proofLength; j < proofLength * 2; j++) {
+        for (uint256 j = proofLength; j < proofLength * 2;) {
             (bytes32 _currentDigest, uint256 _currentHeaderTarget) =
                 validateHeader(headers, j * 80, previousHeaderDigest);
 
@@ -272,6 +276,10 @@ contract LightRelay is Ownable, ILightRelay {
             }
 
             previousHeaderDigest = _currentDigest;
+
+            unchecked {
+                ++j;
+            }
         }
 
         currentEpoch = currentEpoch + 1;
@@ -302,7 +310,7 @@ contract LightRelay is Ownable, ILightRelay {
     ///   the genesis epoch and the latest proven epoch (inclusive).
     /// If the chain contains a retarget, it is accepted if the retarget has
     /// already been proven to the relay.
-    /// If the chain contains blocks of an epoch that has not been proven to
+    /// If the chain contains blocks of an epoch that have not been proven to
     /// the relay (after a retarget within the header chain, or when the entire
     /// chain falls within an epoch that has not been proven yet), it will be
     /// rejected.
@@ -358,7 +366,7 @@ contract LightRelay is Ownable, ILightRelay {
             startingEpoch = epochs[startingEpochNumber];
         }
 
-        // We have identified the centre of the window,
+        // We have identified the center of the window,
         // by reaching the most recent epoch whose starting timestamp
         // or reached before the genesis where epoch slots are empty.
         // Therefore check that the timestamp is nonzero.
@@ -393,7 +401,7 @@ contract LightRelay is Ownable, ILightRelay {
 
         // We've found the correct epoch for the first header.
         // Validate the rest.
-        for (uint256 i = 1; i < headerCount; i++) {
+        for (uint256 i = 1; i < headerCount;) {
             bytes32 currentDigest;
             (currentDigest, currentHeaderTarget) = validateHeader(headers, i * 80, previousHeaderDigest);
 
@@ -423,6 +431,10 @@ contract LightRelay is Ownable, ILightRelay {
             }
 
             previousHeaderDigest = currentDigest;
+
+            unchecked {
+                ++i;
+            }
         }
 
         return (startingHeaderTimestamp, headerCount);
@@ -493,7 +505,7 @@ contract LightRelay is Ownable, ILightRelay {
     /// (optional; providing zeros for the digest skips the check).
     /// @return digest The digest of the current header.
     /// @return target The PoW target of the header.
-    /// @dev Throws an exception if the header's chain or PoW are invalid.
+    /// @dev Throws an exception if the header's chain or PoW is invalid.
     /// Performs no other validation.
     function validateHeader(bytes memory headers, uint256 start, bytes32 prevDigest)
         internal
