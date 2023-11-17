@@ -2,6 +2,7 @@ pragma solidity ^0.8.13;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {BTCUtils} from "@bob-collective/bitcoin-spv/BTCUtils.sol";
 import {BitcoinTx} from "../bridge/BitcoinTx.sol";
 // import {LightRelay} from "../relay/LightRelay.sol";
 import {IRelay} from "../bridge/IRelay.sol";
@@ -156,10 +157,7 @@ contract BtcMarketPlace {
 
         relay.validateProof(transaction, proof);
 
-        // Check output script pubkey (recipient address) and amount
-        uint256 txOutputValue =
-            BitcoinTx.getTxOutputValue(keccak256(accept.bitcoinAddress.scriptPubKey), transaction.outputVector);
-        assert(txOutputValue >= accept.amountBtc);
+        _checkBitcoinTxOutput(accept.amountBtc, accept.bitcoinAddress, transaction);
 
         IERC20(accept.ercToken).safeTransfer(accept.requester, accept.ercAmount);
 
@@ -256,10 +254,7 @@ contract BtcMarketPlace {
         relay.validateProof(transaction, proof);
 
         BtcBuyOrder storage order = btcBuyOrders[accept.orderId];
-        // Check output script pubkey (recipient address) and amount
-        uint256 txOutputValue =
-            BitcoinTx.getTxOutputValue(keccak256(order.bitcoinAddress.scriptPubKey), transaction.outputVector);
-        assert(txOutputValue >= order.amountBtc);
+        _checkBitcoinTxOutput(order.amountBtc, order.bitcoinAddress, transaction);
 
         IERC20(accept.ercToken).safeTransfer(accept.accepter, accept.ercAmount);
 
@@ -385,5 +380,26 @@ contract BtcMarketPlace {
             }
         }
         return (ret, identifiers);
+    }
+
+    /**
+     * Checks output script pubkey (recipient address) and amount.
+     * Reverts if transaction amount is lower or bitcoin address is not found.
+     *
+     * @param expectedBtcAmount BTC amount requested in order.
+     * @param bitcoinAddress Recipient's bitcoin address.
+     * @param transaction Transaction fulfilling the order.
+     */
+    function _checkBitcoinTxOutput(
+        uint256 expectedBtcAmount,
+        BitcoinAddress storage bitcoinAddress,
+        BitcoinTx.Info calldata transaction
+    ) private {
+        // Prefixes scriptpubkey with its size to match script output data.
+        bytes32 b = keccak256(abi.encodePacked(uint8(bitcoinAddress.scriptPubKey.length), bitcoinAddress.scriptPubKey));
+
+        uint256 txOutputValue = BitcoinTx.getTxOutputValue(b, transaction.outputVector);
+
+        require(txOutputValue >= expectedBtcAmount, "Bitcoin transaction amount is lower than in accepted order.");
     }
 }
