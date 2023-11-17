@@ -396,9 +396,10 @@ contract BtcMarketPlace {
         BitcoinTx.Info calldata transaction
     ) private {
         // Prefixes scriptpubkey with its size to match script output data.
-        bytes32 b = keccak256(abi.encodePacked(uint8(bitcoinAddress.scriptPubKey.length), bitcoinAddress.scriptPubKey));
+        bytes32 scriptPubKeyHash =
+            keccak256(abi.encodePacked(uint8(bitcoinAddress.scriptPubKey.length), bitcoinAddress.scriptPubKey));
 
-        uint256 txOutputValue = BitcoinTx.getTxOutputValue(b, transaction.outputVector);
+        uint256 txOutputValue = BitcoinTx.getTxOutputValue(scriptPubKeyHash, transaction.outputVector);
 
         require(txOutputValue >= expectedBtcAmount, "Bitcoin transaction amount is lower than in accepted order.");
     }
