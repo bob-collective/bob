@@ -11,7 +11,7 @@ import {ValidateSPV} from "@bob-collective/bitcoin-spv/ValidateSPV.sol";
 import "./BridgeState.sol";
 
 /// @title Bitcoin transaction
-/// @notice Allows to reference Bitcoin raw transaction in Solidity.
+/// @notice Allows to reference Bitcoin raw transaction in Solidity
 /// @dev See https://developer.bitcoin.org/reference/transactions.html#raw-transaction-format
 // Raw Bitcoin transaction data:
 //      | Bytes  |     Name     |        BTC type        |        Description        |
