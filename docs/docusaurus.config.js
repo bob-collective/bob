@@ -102,7 +102,7 @@ const config = {
             type: "docSidebar",
             sidebarId: "contractSidebar",
             position: "left",
-            label: "Contract",
+            label: "Contracts",
           },
           {
             href: DISCORD,
