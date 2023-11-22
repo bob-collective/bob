@@ -33,11 +33,6 @@ jobs:
           forge build --sizes
         id: build
 
-      - name: Run Forge doc
-        run: |
-          forge doc --out docs/docs/contracts
-        id: doc
-
       - name: Run Forge tests
         run: |
           forge test -vvv
