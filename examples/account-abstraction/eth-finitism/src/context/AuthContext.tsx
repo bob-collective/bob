@@ -1,4 +1,10 @@
-import { BaseAccountAPI, ClientConfig, ERC4337EthersProvider, HttpRpcClient, SimpleAccountAPI } from '@account-abstraction/sdk';
+import {
+  BaseAccountAPI,
+  ClientConfig,
+  ERC4337EthersProvider,
+  HttpRpcClient,
+  SimpleAccountAPI
+} from '@account-abstraction/sdk';
 import { Signer, providers } from 'ethers';
 import { createContext, useContext, useState } from 'react';
 import { useAccount } from 'wagmi';
@@ -24,26 +30,26 @@ const accountAbstractionContext = createContext<accountAbstractionContextValue>(
 
 const factoryInstance = new SimpleAccountFactory__factoryClass();
 
-async function wrapProvider (
+async function wrapProvider(
   originalProvider: JsonRpcProvider,
   config: ClientConfig,
   originalSigner: Signer = originalProvider.getSigner()
 ): Promise<ERC4337EthersProvider> {
-  const entryPoint = EntryPoint__factory.connect(config.entryPointAddress, originalProvider)
+  const entryPoint = EntryPoint__factory.connect(config.entryPointAddress, originalProvider);
   // Initial SimpleAccount instance is not deployed and exists just for the interface
-  const detDeployer = new DeterministicDeployer(originalProvider)
+  const detDeployer = new DeterministicDeployer(originalProvider);
 
-  const SimpleAccountFactory = await detDeployer.deterministicDeploy(factoryInstance, 0, [entryPoint.address])
+  const SimpleAccountFactory = await detDeployer.deterministicDeploy(factoryInstance, 0, [entryPoint.address]);
   const smartAccountAPI = new SimpleAccountAPI({
     provider: originalProvider,
     entryPointAddress: entryPoint.address,
     owner: originalSigner,
     factoryAddress: SimpleAccountFactory,
     paymasterAPI: config.paymasterAPI
-  })
-  console.log('config=', config)
-  const chainId = await originalProvider.getNetwork().then(net => net.chainId)
-  const httpRpcClient = new HttpRpcClient(config.bundlerUrl, config.entryPointAddress, chainId)
+  });
+  console.log('config=', config);
+  const chainId = await originalProvider.getNetwork().then((net) => net.chainId);
+  const httpRpcClient = new HttpRpcClient(config.bundlerUrl, config.entryPointAddress, chainId);
   return await new ERC4337EthersProvider(
     chainId,
     config,
@@ -52,9 +58,8 @@ async function wrapProvider (
     httpRpcClient,
     entryPoint,
     smartAccountAPI
-  ).init()
+  ).init();
 }
-
 
 const useAccountAbstraction = () => {
   const context = useContext(accountAbstractionContext);
@@ -68,14 +73,14 @@ const useAccountAbstraction = () => {
 
 const AccountAbstractionProvider = ({ children }: { children: JSX.Element }) => {
   const [accountAPI, setAccountAPI] = useState<BaseAccountAPI>();
-  const [bundlerClient, setBundlerClient] = useState<HttpRpcClient>()
+  const [bundlerClient, setBundlerClient] = useState<HttpRpcClient>();
   const [address, setAddress] = useState<`0x${string}`>();
 
   const { address: ownerAddress } = useAccount({
-    onConnect: async ({ address, connector }) => {
-      if (!address || !connector || !window.ethereum) return;
+    onConnect: async ({ address }) => {
+      if (!address || !window.ethereum) return;
 
-      const nProvider = new providers.Web3Provider(window.ethereum)
+      const nProvider = new providers.Web3Provider(window.ethereum);
 
       const config = {
         chainId: await nProvider.getNetwork().then((net) => net.chainId),
@@ -107,22 +112,21 @@ const AccountAbstractionProvider = ({ children }: { children: JSX.Element }) => 
       // });
 
       // Fund the account.
-     await nProvider.getSigner().sendTransaction({
-        to: ENTRY_POINT_ADDRESS,
-        value: 1000000000000000,
-        data: `0xb760faf9000000000000000000000000${aaAddress.slice(2)}`,
-        gasLimit: 100000,
-      }) .then(async (tx) => await tx.wait());
+      await nProvider
+        .getSigner()
+        .sendTransaction({
+          to: ENTRY_POINT_ADDRESS,
+          value: 1000000000000000,
+          data: `0xb760faf9000000000000000000000000${aaAddress.slice(2)}`,
+          gasLimit: 100000
+        })
+        .then(async (tx) => await tx.wait());
 
       setAddress(aaAddress as `0x${string}`);
       setAccountAPI(aaProvider.smartAccountAPI);
-      setBundlerClient(aaProvider.httpRpcClient)
+      setBundlerClient(aaProvider.httpRpcClient);
     }
   });
-
-  console.log(address);
-
-  console.log()
 
   const state = {
     accountAPI,
