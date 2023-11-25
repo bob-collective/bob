@@ -1,8 +1,7 @@
 # LightRelay
-[Git Source](https://github.com/bob-collective/bob/blob/b1d2e344f73495bf4b7b0690a66a25fa4693d0c3/src/relay/LightRelay.sol)
+[Git Source](https://github.com/bob-collective/bob/blob/cebdda1540fcce89f17d600bd2a84828c8c85ba6/src/relay/LightRelay.sol)
 
 **Inherits:**
-
 Ownable, [ILightRelay](../../relay/LightRelay.sol/interface.ILightRelay.md)
 
 *THE RELAY MUST NOT BE USED BEFORE GENESIS AND AT LEAST ONE RETARGET.*
