@@ -1,4 +1,4 @@
-import * as bitcoinjsLib from "bitcoinjs-lib";
+import * as bitcoin from "bitcoinjs-lib";
 
 import { DummySigner, RemoteSigner } from "./signer";
 import { CommitTxData, createCommitTxData, createTextInscription } from "./commit";
@@ -10,13 +10,13 @@ export { RemoteSigner };
  * Estimate the virtual size of a 1 input 1 output reveal tx.
  */
 function estimateTxSize(
-  network: bitcoinjsLib.Network,
+  network: bitcoin.Network,
   publicKey: Buffer,
   commitTxData: CommitTxData,
   toAddress: string,
   amount: number,
 ) {
-  const psbt = new bitcoinjsLib.Psbt({ network });
+  const psbt = new bitcoin.Psbt({ network });
 
   const { scriptTaproot, tapLeafScript } = commitTxData;
   psbt.addInput({
@@ -73,12 +73,15 @@ export async function inscribeText(
 
   const commitAddress = commitTxData.scriptTaproot.address!;
   const commitTxId = await signer.sendToAddress(commitAddress, commitTxAmount);
-  const commitUtxoIndex = await signer.getUtxoIndex(commitAddress, commitTxId);
+  const commitTx = await signer.getTransaction(commitTxId);
+
+  const scriptPubKey = bitcoin.address.toOutputScript(commitAddress, bitcoinNetwork);
+  const commitUtxoIndex = commitTx.outs.findIndex(out => out.script.equals(scriptPubKey));
 
   const commitTxResult = {
-    txId: commitTxId,
-    sendUtxoIndex: commitUtxoIndex,
-    sendAmount: commitTxAmount,
+    tx: commitTx,
+    outputIndex: commitUtxoIndex,
+    outputAmount: commitTxAmount,
   };
 
   const revealPsbt = createRevealTx(
