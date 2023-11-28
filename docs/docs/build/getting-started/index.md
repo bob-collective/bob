@@ -34,3 +34,4 @@ This is alpha-stage software. We love to work closely with you to make BOB usefu
 ## Tools
 
 - [Rust zkVM](/docs/build/tools/bonsai): Learn how to write Rust off-chain code that can be verified on-chain on BOB.
+- [Oracles](/docs/build/tools/oracles): Learn how to use oracles on BOB.
