@@ -1,12 +1,32 @@
-import { assert } from "chai";
-import { DefaultElectrsClient } from "../src/electrs";
+import { assert,expect } from "chai";
+import {DefaultElectrsClient, UTXO} from "../src/electrs";
 
 describe("Electrs Tests", () => {
-    it("should get fee rate", async () => {
+
+    it("should get block hash", async () => {
         const client = new DefaultElectrsClient("testnet");
-        const feeRate = await client.getFeeEstimate(1);
-        assert(feeRate == 1);
+        const blockHash = await client.getBlockHash(0);
+        assert.equal(blockHash,"000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943");
     });
+
+    it("should get block header", async () => {
+        const client = new DefaultElectrsClient("testnet");
+        const blockHeader = await client.getBlockHeader("000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943");
+        assert.equal(blockHeader,"0100000000000000000000000000000000000000000000000000000000000000000000003ba3edfd7a7b12b27ac72c3e67768f617fc81bc3888a51323a9fb8aa4b1e5e4adae5494dffff001d1aa4ae18");
+    });
+
+    it("should get block header at certain height", async () => {
+        const client = new DefaultElectrsClient("testnet");
+        const blockHeader = await client.getBlockHeaderAt(10);
+        assert.equal(blockHeader,"010000001e93aa99c8ff9749037d74a2207f299502fa81d56a4ea2ad5330ff50000000002ec2266c3249ce2e079059e0aec01a2d8d8306a468ad3f18f06051f2c3b1645435e9494dffff001d008918cf");
+    });
+
+    it("should get tx hex", async () => {
+        const client = new DefaultElectrsClient("testnet");
+        const txHex = await client.getTransactionHex("4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b");
+        assert.equal(txHex,"01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff4d04ffff001d0104455468652054696d65732030332f4a616e2f32303039204368616e63656c6c6f72206f6e206272696e6b206f66207365636f6e64206261696c6f757420666f722062616e6b73ffffffff0100f2052a01000000434104678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5fac00000000");
+    });
+
 
     it("should serialize merkle proof", async () => {
         const client = new DefaultElectrsClient();
@@ -20,5 +40,11 @@ describe("Electrs Tests", () => {
             "b8500d8c3c5650e84b83e73e9094de0c2bdaa4d661a3b1adacfae0f3c0f8007ab1b2be8dbf32f073068979a263152d6c234ad0" +
             "f4b70f697168502d62ead0c0194bcf77321a85a1e127afc4477dcc3c3636a7818601d9ff43f837b15ef74d387c688fc0a45b79" +
             "aec0b6");
+    });
+
+    it("should get fee rate", async () => {
+        const client = new DefaultElectrsClient("testnet");
+        const feeRate = await client.getFeeEstimate(1);
+        assert(feeRate == 1);
     });
 });
