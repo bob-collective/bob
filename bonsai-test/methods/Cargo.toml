@@ -1,0 +1,15 @@
+[package]
+name = "bonsai-starter-methods"
+version = "0.1.0"
+edition = "2021"
+
+[package.metadata.risc0]
+methods = ["guest"]
+
+[build-dependencies]
+risc0-build = { workspace = true, features = ["guest-list"] }
+
+[dependencies]
+risc0-build = { workspace = true, features = ["guest-list"] }
+risc0-zkvm = { workspace = true }
+secp256k1 = { package = "secp256k1", git = "https://github.com/rust-bitcoin/rust-secp256k1", rev = "8e61874", default-features = false }

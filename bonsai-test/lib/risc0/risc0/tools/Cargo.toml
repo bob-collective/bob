@@ -1,0 +1,16 @@
+[package]
+name = "risc0-tools"
+version = { workspace = true }
+edition = { workspace = true }
+license = { workspace = true }
+homepage = { workspace = true }
+repository = { workspace = true }
+description = "RISC Zero devtools"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+risc0-zkvm = { workspace = true, features = ["default"] }
+
+[dev-dependencies]
+assert_cmd = "2.0"
+tempfile = "3.3"

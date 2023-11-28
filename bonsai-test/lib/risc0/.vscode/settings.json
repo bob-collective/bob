@@ -1,0 +1,45 @@
+{
+  "[rust]": {
+    "editor.formatOnSave": true
+  },
+  "[starlark]": {
+    "editor.formatOnSave": true
+  },
+  "emmet.includeLanguages": {
+    "rust": "html"
+  },
+  "rust-analyzer.cargo.extraEnv": {
+    "RISC0_SKIP_BUILD": "1"
+  },
+  "files.eol": "\n",
+  "git.ignoreLimitWarning": true,
+  "files.associations": {
+    "*.sh": "shellscript",
+    "*.py": "python",
+    "*.cl": "c",
+    "*.rs": "rust",
+    "*.BUILD": "starlark",
+    "meson.build": "meson",
+    "*.mlir": "mlir",
+    "*.pbtxt": "prototxt",
+    "*.cfg": "python",
+    "*.scr": "tcl",
+    "cstddef": "cpp",
+    "*.bazel": "starlark",
+    "fstream": "cpp",
+    "ios": "cpp",
+    "iosfwd": "cpp",
+    "vector": "cpp",
+    "charconv": "cpp",
+    "stdexcept": "cpp",
+    "array": "cpp"
+  },
+  "rust-analyzer.showUnlinkedFileNotification": false,
+  "rust-analyzer.linkedProjects": [
+    "Cargo.toml",
+    "bonsai/examples/governance/Cargo.toml",
+    "examples/Cargo.toml",
+    "risc0/zkvm/methods/guest/Cargo.toml",
+    "risc0/zkvm/methods/std/Cargo.toml"
+  ]
+}

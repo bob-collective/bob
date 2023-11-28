@@ -1,0 +1,68 @@
+[package]
+name = "risc0-zkp"
+description = "RISC Zero zero-knowledge proof system core crate"
+version = { workspace = true }
+edition = { workspace = true }
+license = { workspace = true }
+homepage = { workspace = true }
+repository = { workspace = true }
+
+[[bench]]
+name = "ntt"
+harness = false
+
+[dependencies]
+anyhow = { version = "1.0", default-features = false }
+blake2 = { version = "0.10.6", default-features = false }
+bytemuck = { version = "1.12", features = ["derive"] }
+cust = { version = "0.3", optional = true }
+digest = { version = "0.10", features = ["oid"] }
+ff = { version = "0.13", features = ["derive", "bits"], optional = true }
+hex = { version = "0.4.3", default-features = false, features = ["alloc"] }
+lazy_static = { version = "1.4", optional = true }
+metal = { version = "0.25", optional = true }
+paste = "1.0"
+rand_core = "0.6"
+risc0-core = { workspace = true }
+risc0-sys = { workspace = true, optional = true }
+risc0-zkvm-platform = { workspace = true }
+serde = { version = "1.0", default-features = false, features = ["derive"] }
+tracing = { version = "0.1", default-features = false, features = ["attributes"] }
+
+[target.'cfg(not(target_os = "zkvm"))'.dependencies]
+log = "0.4"
+ndarray = { version = "0.15", features = ["rayon"], optional = true }
+rand = { version = "0.8", optional = true }
+rayon = { version = "1.5", optional = true }
+sha2 = { version = "0.10", default-features = false, features = ["compress"] }
+
+[dev-dependencies]
+criterion = "0.5"
+env_logger = "0.10"
+rand = { version = "0.8", features = ["small_rng"] }
+serial_test = "2.0"
+test-log = "0.2"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[features]
+default = ["prove"]
+cuda = [
+  "dep:cust",
+  "prove",
+  "risc0-sys/cuda",
+]
+metal = [
+  "dep:metal",
+  "prove",
+  "risc0-sys/metal",
+]
+prove = [
+  "dep:ff",
+  "dep:lazy_static",
+  "dep:ndarray",
+  "dep:rand",
+  "dep:rayon",
+  "risc0-sys",
+  "std",
+]
+std = ["anyhow/std"]
