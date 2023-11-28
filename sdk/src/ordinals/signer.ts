@@ -1,4 +1,4 @@
-import { Network, Psbt, Signer } from "bitcoinjs-lib";
+import { Network, Psbt, Signer, Transaction } from "bitcoinjs-lib";
 
 /**
  * Dummy signer implementation used to estimate tx fees.
@@ -10,7 +10,7 @@ export class DummySigner implements Signer {
     }
     sign(_hash: Buffer, _lowR?: boolean | undefined): Buffer {
         // https://github.com/bitcoin/bitcoin/blob/607d5a46aa0f5053d8643a3e2c31a69bfdeb6e9f/src/script/sign.cpp#L611
-        return Buffer.from("304502210100000000000000000000000000000000000000000000000000000000000000000220010000000000000000000000000000000000000000000000000000000000000001", "hex");
+        return Buffer.alloc(64, 0);
     }
     signSchnorr(hash: Buffer): Buffer {
         // https://github.com/bitcoin/bitcoin/blob/607d5a46aa0f5053d8643a3e2c31a69bfdeb6e9f/src/script/sign.cpp#L626
@@ -40,13 +40,12 @@ export interface RemoteSigner {
      */
     sendToAddress(toAddress: string, amount: number): Promise<string>;
     /**
-     * Get the index of a UTXO in a transaction based on the recipient address.
+     * Get the transaction based on its ID.
      *
-     * @param {string} toAddress - The address of the recipient.
-     * @param {string} txId - The transaction ID to check.
-     * @returns {Promise<number>} A promise that resolves to the UTXO index.
+     * @param {string} txId - The transaction ID to fetch.
+     * @returns {Promise<number>} A promise that resolves to the hex encoded transaction.
      */
-    getUtxoIndex(toAddress: string, txId: string): Promise<number>;
+    getTransaction(txId: string): Promise<Transaction>;
     /**
      * Sign the PSBT at the specified input index.
      *
@@ -54,5 +53,5 @@ export interface RemoteSigner {
      * @param {Psbt} psbt - The PSBT containing that input.
      * @returns {Promise<Psbt>} A promise that resolves to the signed PSBT.
      */
-    signPsbt(inputIndex: number, psbt: Psbt): Promise<Psbt>;
+    signInput(inputIndex: number, psbt: Psbt): Promise<Psbt>;
 };
