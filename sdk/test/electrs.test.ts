@@ -1,5 +1,5 @@
-import { assert,expect } from "chai";
-import {DefaultElectrsClient, UTXO} from "../src/electrs";
+import { assert } from "chai";
+import { DefaultElectrsClient } from "../src/electrs";
 
 describe("Electrs Tests", () => {
 
