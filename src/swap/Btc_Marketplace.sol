@@ -298,7 +298,7 @@ contract BtcMarketPlace {
         }
 
         BtcSellOrder[] memory ret = new BtcSellOrder[](numOpenOrders);
-        uint256[] memory identifiers = new uint[](numOpenOrders);
+        uint256[] memory identifiers = new uint256[](numOpenOrders);
         uint256 numPushed = 0;
         for (uint256 i = 0; i < nextOrderId; i++) {
             if (btcSellOrders[i].requester != address(0x0)) {
@@ -318,10 +318,8 @@ contract BtcMarketPlace {
             }
         }
 
-        AcceptedBtcSellOrder[] memory ret = new AcceptedBtcSellOrder[](
-            numOpenOrders
-        );
-        uint256[] memory identifiers = new uint[](numOpenOrders);
+        AcceptedBtcSellOrder[] memory ret = new AcceptedBtcSellOrder[](numOpenOrders);
+        uint256[] memory identifiers = new uint256[](numOpenOrders);
         uint256 numPushed = 0;
         for (uint256 i = 0; i < nextOrderId; i++) {
             if (acceptedBtcSellOrders[i].amountBtc > 0) {
@@ -342,7 +340,7 @@ contract BtcMarketPlace {
         }
 
         BtcBuyOrder[] memory ret = new BtcBuyOrder[](numOpenOrders);
-        uint256[] memory identifiers = new uint[](numOpenOrders);
+        uint256[] memory identifiers = new uint256[](numOpenOrders);
         uint256 numPushed = 0;
         for (uint256 i = 0; i < nextOrderId; i++) {
             if (btcBuyOrders[i].requester != address(0x0)) {
@@ -362,10 +360,8 @@ contract BtcMarketPlace {
             }
         }
 
-        AcceptedBtcBuyOrder[] memory ret = new AcceptedBtcBuyOrder[](
-            numOpenOrders
-        );
-        uint256[] memory identifiers = new uint[](numOpenOrders);
+        AcceptedBtcBuyOrder[] memory ret = new AcceptedBtcBuyOrder[](numOpenOrders);
+        uint256[] memory identifiers = new uint256[](numOpenOrders);
         uint256 numPushed = 0;
         for (uint256 i = 0; i < nextOrderId; i++) {
             if (acceptedBtcBuyOrders[i].amountBtc > 0) {
