@@ -4,8 +4,8 @@ pragma solidity ^0.8.13;
 import {Script, console2} from "forge-std/Script.sol";
 import "../src/paymasters/OnboardingPaymaster.sol";
 import {DummyOracle} from "../src/paymasters/Oracle.sol";
-// import {IERC2771} from "../lib/gsn.git/packages/contracts/src/interfaces/IERC2771Recipient.sol";
-import {IRelayHub} from "../lib/gsn.git/packages/contracts/src/interfaces/IRelayHub.sol";
+// import {IERC2771} from "../lib/gsn/packages/contracts/src/interfaces/IERC2771Recipient.sol";
+import {IRelayHub} from "../lib/gsn/packages/contracts/src/interfaces/IRelayHub.sol";
 
 contract OnboardingPaymasterScript is Script {
     function setUp() public {}

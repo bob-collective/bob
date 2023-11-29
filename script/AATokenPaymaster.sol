@@ -12,6 +12,8 @@ contract AATokenPaymasterScript is Script {
     function run() public {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         IERC20 token = IERC20(vm.envAddress("ERC_ADDRESS"));
+        int tokenPrice = vm.envInt("ERC_PRICE");
+        uint8 tokenDecimals = uint8(vm.envUint("ERC_DECIMALS"));
         IEntryPoint entrypoint = IEntryPoint(
             vm.envAddress("ENTRYPOINT_ADDRESS")
         );
@@ -21,15 +23,15 @@ contract AATokenPaymasterScript is Script {
 
         DummyOracle ethOracle = new DummyOracle();
         ethOracle.setPrice(189100000000); // 1 eth = 1891usd
-        DummyOracle usdcOracle = new DummyOracle();
-        usdcOracle.setPrice(100000000); // 1 usdc = 1 usd
+        DummyOracle tokenOracle = new DummyOracle();
+        tokenOracle.setPrice(tokenPrice); // set usd price * 10^8
         PimlicoERC20Paymaster paymaster = new PimlicoERC20Paymaster(
             token,
             entrypoint,
-            usdcOracle,
+            tokenOracle,
             ethOracle,
             owner,
-            18
+            tokenDecimals
         );
         paymaster.updatePrice();
         entrypoint.depositTo{value: 1 ether}(address(paymaster));

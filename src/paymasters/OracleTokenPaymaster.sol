@@ -5,8 +5,8 @@ pragma experimental ABIEncoderV2;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import "gsn.git/packages/contracts/src/forwarder/IForwarder.sol";
-import "gsn.git/packages/contracts/src/BasePaymaster.sol";
+import "gsn/packages/contracts/src/forwarder/IForwarder.sol";
+import "gsn/packages/contracts/src/BasePaymaster.sol";
 
 import {IOracle} from "./Oracle.sol";
 
@@ -27,7 +27,7 @@ contract OracleTokenPaymaster is BasePaymaster {
     uint256 public gasUsedByPost;
 
     struct TokenDetails {
-        uint div;
+        uint div; // the scaling factor of the token (NOT oracle). Usually 1e18
         IOracle oracle;
     }
     event PreRelayPayment(
@@ -44,6 +44,8 @@ contract OracleTokenPaymaster is BasePaymaster {
     );
 
     constructor(IOracle _nativeTokenOracle) {
+        require(_nativeTokenOracle.decimals() == 8, "OTP: native token oracle decimals must be 8");
+        
         nativeTokenOracle = _nativeTokenOracle;
     }
 
@@ -62,6 +64,7 @@ contract OracleTokenPaymaster is BasePaymaster {
         uint _decimals,
         IOracle _oracle
     ) external onlyOwner {
+        require(_oracle.decimals() == 8, "OTP: token oracle decimals must be 8");
         tokenOracles[_token] = TokenDetails({
             div: 10 ** _decimals,
             oracle: _oracle
@@ -96,12 +99,13 @@ contract OracleTokenPaymaster is BasePaymaster {
             "OTP: Oracle does not exist"
         );
 
-        uint192 tokenPrice = fetchPrice(_tokenOracle.oracle);
-        uint192 nativeAssetPrice = fetchPrice(nativeTokenOracle);
+        uint192 tokenPrice = fetchPrice(_tokenOracle.oracle); // #decimals: 8
+        uint192 nativeAssetPrice = fetchPrice(nativeTokenOracle); // #decimals: 8
         uint192 relativePrice = (nativeAssetPrice * uint192(_tokenOracle.div)) /
-            tokenPrice;
+            tokenPrice; // #decimals: _tokenOracle.div
 
-        uint tokenAmount = (ethAmount * relativePrice) / 1e8;
+        // #decimals: 18 + _tokenOracle.div - 18 = _tokenOracle.div
+        uint tokenAmount = (ethAmount * relativePrice) / 1e18;
 
         return tokenAmount;
     }

@@ -9,7 +9,7 @@ pragma solidity ^0.8.13;
 // import {Utilities} from "./swap/Utilities.sol";
 // import {OracleTokenPaymaster} from "../src/OracleTokenPaymaster.sol";
 // // import {}
-// import "lib/gsn.git/packages/contracts/src/BasePaymaster.sol";
+// import "lib/gsn/packages/contracts/src/BasePaymaster.sol";
 // import {Oracle} from "../src/Oracle.sol";
 // 
 // contract ArbitaryErc20 is ERC20, Ownable {

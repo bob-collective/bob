@@ -7,7 +7,7 @@ import {stdStorage, StdStorage, Test, console} from "forge-std/Test.sol";
 import {Utilities} from "./swap/Utilities.sol";
 import {OnboardingPaymaster} from "../src/paymasters/OnboardingPaymaster.sol";
 // import {}
-import "lib/gsn.git/packages/contracts/src/BasePaymaster.sol";
+import "lib/gsn/packages/contracts/src/BasePaymaster.sol";
 
 
 contract OnboardingPaymasterTest is OnboardingPaymaster, Test {

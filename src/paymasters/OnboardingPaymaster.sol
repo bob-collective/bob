@@ -5,8 +5,8 @@ pragma experimental ABIEncoderV2;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import "gsn.git/packages/contracts/src/forwarder/IForwarder.sol";
-import "gsn.git/packages/contracts/src/BasePaymaster.sol";
+import "gsn/packages/contracts/src/forwarder/IForwarder.sol";
+import "gsn/packages/contracts/src/BasePaymaster.sol";
 
 contract OnboardingPaymaster is BasePaymaster {
     address public whitelistedContract;
