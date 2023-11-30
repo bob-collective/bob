@@ -45,7 +45,20 @@ BTC may show in your balance before it is confirmed. If you try to use the appli
 
 ### Inscribing a text ordinal
 
-- Click on the 'Inscribe Ordinal' button, enter the inscription text, and submit the form.
+- Click on the 'Inscribe Ordinal' button, and then the 'Text' tab.
+- Enter the inscription text, and submit the form.
+- The ordinal will be shown in the Ordinals Portfolio table (this may take a few seconds)
+
+### Inscribing an image ordinal
+
+:::info Supported file types
+
+Only `png` files are currently supported.
+
+:::
+
+- Click on the 'Inscribe Ordinal' button, and then the 'Image' tab.
+- Click on Select File (only png files are supported), select your image, and submit the form.
 - The ordinal will be shown in the Ordinals Portfolio table (this may take a few seconds)
 
 ### Transferring an ordinal
