@@ -1,3 +1,6 @@
+---
+sidebar_position: 1
+---
 # Bitcoin Testing
 
 The recommended approach to start a local Bitcoin node for testing is to use "regtest" mode. If you have downloaded Bitcoin Core from [bitcoin.org](https://bitcoin.org/en/download) use `bitcoind -regtest` to start a regtest node. To create and fund the "Alice" wallet, use the following `bitcoin-cli` commands:
