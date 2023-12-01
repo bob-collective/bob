@@ -22,7 +22,7 @@ contract Bridge {
     }
 
     struct BitcoinAddress {
-        uint256 bitcoinAddress; // todo: use the right type
+        bytes scriptPubKey;
     }
 
     struct TransactionProof {
