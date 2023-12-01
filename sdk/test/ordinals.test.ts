@@ -4,16 +4,19 @@ import * as ECPairFactory from "ecpair";
 import { RemoteSigner, inscribeText } from "../src/ordinals";
 import { Network, Psbt, Transaction, address, initEccLib } from "bitcoinjs-lib";
 import { bitcoin } from "bitcoinjs-lib/src/networks";
+import { chunkContent, MAX_CHUNK_SIZE } from "../src/ordinals/commit";
 
 const ECPair = ECPairFactory.default(ecc);
 initEccLib(ecc);
 
 class StaticSigner implements RemoteSigner {
     keyPair: ECPairFactory.ECPairInterface;
+    txs: Map<string, Transaction>;
 
     constructor(secret: string) {
         const privateKey = Buffer.from(secret, "hex");
         this.keyPair = ECPair.fromPrivateKey(privateKey);
+        this.txs = new Map();
     }
 
     async getNetwork(): Promise<Network> {
@@ -26,15 +29,18 @@ class StaticSigner implements RemoteSigner {
 
     async sendToAddress(toAddress: string, amount: number): Promise<string> {
         const tx = new Transaction();
+        tx.addInput(Buffer.alloc(32, 0), 0);
         tx.addOutput(address.toOutputScript(toAddress), amount);
-        return tx.getId();
+        const txId = tx.getId();
+        this.txs.set(txId, tx);
+        return txId;
     }
 
-    async getUtxoIndex(_toAddress: string, _txId: string): Promise<number> {
-        return 0;
+    async getTransaction(txId: string): Promise<Transaction> {
+        return this.txs.get(txId)!;
     }
 
-    async signPsbt(inputIndex: number, psbt: Psbt): Promise<Psbt> {
+    async signInput(inputIndex: number, psbt: Psbt): Promise<Psbt> {
         psbt.signInput(inputIndex, this.keyPair);
         return psbt;
     }
@@ -46,6 +52,15 @@ describe("Ordinal Tests", () => {
         const signer = new StaticSigner(secret);
         const toAddress = "bc1pxaneaf3w4d27hl2y93fuft2xk6m4u3wc4rafevc6slgd7f5tq2dqyfgy06";
         const tx = await inscribeText(signer, toAddress, 1, "Hello World!", 546);
-        assert(tx.getId() == "5fbafffdccaecb857c2a405c4e9bb54094b10c2c3cc548222bb57d25a3f69b82");
+        assert(tx.getId() == "9312bc8a9541dd3e4b22993740ff96449a52dbca00b8be22b2979bb25053f7d6");
+    });
+
+    it("should chunk large data", async () => {
+        const data = Buffer.alloc(MAX_CHUNK_SIZE * 2 + 20, 0);
+        const chunks = chunkContent(data);
+        assert.equal(chunks.length, 3);
+        assert.equal(chunks[0].length, MAX_CHUNK_SIZE);
+        assert.equal(chunks[1].length, MAX_CHUNK_SIZE);
+        assert.equal(chunks[2].length, 20);
     });
 });
