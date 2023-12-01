@@ -64,7 +64,7 @@ describe("Ordinal API Tests", () => {
 
     it("should get inscriptions from UTXO", async () => {
         const client = new DefaultOrdinalsClient("testnet");
-        const outputJson = await client.getInscriptionFromOutPoint({
+        const outputJson = await client.getInscriptionsFromOutPoint({
             txid: "d370be1b6bf74677c82226d7a0d65743cbe3846b9216e0ad207a7b03a5230ec3",
             vout: 0
         });
