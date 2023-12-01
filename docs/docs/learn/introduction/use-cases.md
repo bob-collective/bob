@@ -1,6 +1,6 @@
 ---
 sidebar_position: 3
-sidebar_label: Build with BOB
+sidebar_label: Use Case Ideas
 ---
 
 # Use Case Ideas
