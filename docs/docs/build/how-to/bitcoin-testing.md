@@ -1,7 +1,14 @@
+<<<<<<< HEAD
 ---
 sidebar_position: 1
 sidebar_label: Test Bitcoin Locally with Regtest 
 ---
+||||||| parent of 1c12e27 (docs: order how to documents)
+=======
+---
+sidebar_position: 1
+---
+>>>>>>> 1c12e27 (docs: order how to documents)
 # Bitcoin Testing
 
 ## Starting a Local Bitcoin Development Environment
