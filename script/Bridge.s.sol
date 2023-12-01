@@ -8,10 +8,6 @@ contract BridgeScript is Script {
     function setUp() public {}
 
     function run() public {
-        bytes memory data =
-            hex"04000000473ed7b7ef2fce828c318fd5e5868344a5356c9e93b6040400000000000000004409cae5b7b2f8f18ea55f558c9bfa7c5f4778a1a53172a48fc57e172d0ed3d264c5eb56c3a40618af9bc1c7";
-        uint256 height = 403200;
-
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
 
         bytes memory genesisHeader = vm.envBytes("GENESIS_HEADER");
