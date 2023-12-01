@@ -19,8 +19,24 @@ The governance of BOB is work in progress. You can contribute with ideas by join
 
 ## Settlement
 
+:::info
+TODO
+:::
+
 ## Execution
+
+:::info
+TODO
+:::
 
 ## Rollup
 
+:::info
+TODO
+:::
+
 ## Bitcoin-augumentation
+
+:::info
+TODO
+:::
