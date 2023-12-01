@@ -53,12 +53,12 @@ BTC may show in your balance before it is confirmed. If you try to use the appli
 
 :::info Supported file types
 
-Only `png` files are currently supported.
+Only `png` and `jpg` files are currently supported.
 
 :::
 
 - Click on the 'Inscribe Ordinal' button, and then the 'Image' tab.
-- Click on Select File (only png files are supported), select your image, and submit the form.
+- Click on Select File (only png and jpg files are supported), select your image, and submit the form.
 - The ordinal will be shown in the Ordinals Portfolio table (this may take a few seconds)
 
 ### Transferring an ordinal
