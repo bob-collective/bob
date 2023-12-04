@@ -7,7 +7,7 @@ We see BOB as a collective undertaking to scale Bitcoin the right way: inheritin
 
 The technical vision outlines the endgame for BOB and describes how it differs from the first deployments. The discrepency between endgame and current state forms opportunities to contribute and push the BOB stack further.
 
-## Bringing Bitcoin Security to Rollups on Any Chain
+## Bringing Bitcoin Security to Rollups
 
 We belive that rollups and sidechains should receive their consensus security from Bitcoin rather than relying on other L1s.
 
@@ -60,13 +60,27 @@ Lack of decentalized appliocations with great UX is a major issue that can be re
 - Unified UX of Bitcoin with BOB-enhanced rollups will win out
 - Mass adoption will need privacy 
 
-## Multi-Chain and Multi-Rollup Future
+### Multi-Chain and Multi-Rollup Future
 
 - BOB is not a single rollup: different rollups can make different trade-offs for various use cases. Examples: very fast block times with limited contracting for payments, large blocks for storing ordinals, ...
 - BOB is an enhancer of existing sidechains and rollups and can be added to existing EVM chains
 
-## Off-chain Computation before On-chain Computation
+### Off-chain Computation before On-chain Computation
 
 - Even in the EVM, some computations/programs might still be too complex
 - Complex programs like a BRC20 or Ordinals co-processor should be operated off-chain and its correct execution proven on-chain
 - Simple programs can be kept on-chain
+
+## Briding BTC, Ordinals, and BRC20s
+
+We believe that in some cases, bridging BTC, Ordinals, and BRC20s to more chains with higher programmability than Bitcoin is required.
+
+### Bitcoin Bridges without Trusted Parties
+
+- In theory, if Bitcoin could verify the consensus of another chain, it would be possible to build a bridge that would only rely on the Bitcoin and other chains consensus security plus untrusted block relayers
+- In practice, verifying another chains consensus is not possible on Bitcoin and therefore we have to find workarounds
+- Add details about different bridge models
+
+:::note BOB Launch Plan
+BOB will launch with the tBTC bridge as it provides a good trade-off that features a 1:1 peg, a distribution of trust among many parties through their threshold signatures, and partial collateralization.
+:::
