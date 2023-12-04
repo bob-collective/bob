@@ -9,7 +9,7 @@ import {stdStorage, StdStorage, Test, console} from "forge-std/Test.sol";
 import {BtcMarketPlace} from "../../src/swap/Btc_Marketplace.sol";
 import {Utilities} from "./Utilities.sol";
 import {BitcoinTx} from "../../src/bridge/BitcoinTx.sol";
-import {DummyRelay} from "../../src/relay/DummyRelay.sol";
+import {TestLightRelay} from "../../src/relay/TestLightRelay.sol";
 
 contract ArbitaryErc20 is ERC20, Ownable {
     constructor(string memory name_, string memory symbol_) ERC20(name_, symbol_) {}
@@ -26,8 +26,9 @@ contract MarketPlaceTest is BtcMarketPlace, Test {
     address internal bob;
 
     ArbitaryErc20 token1;
+    TestLightRelay testLightRelay;
 
-    constructor() BtcMarketPlace(new DummyRelay()) {}
+    constructor() BtcMarketPlace(testLightRelay) {}
 
     function setUp() public {
         utils = new Utilities();
@@ -39,6 +40,10 @@ contract MarketPlaceTest is BtcMarketPlace, Test {
         vm.label(bob, "Bob");
 
         token1 = new ArbitaryErc20("Some token", "TKN");
+
+        testLightRelay = new TestLightRelay();
+        super.setRelay(testLightRelay);
+        testLightRelay.setDifficultyFromHeaders(dummyProof().bitcoinHeaders);
     }
 
     function dummyTransaction() public view returns (BitcoinTx.Info memory) {
@@ -61,6 +66,10 @@ contract MarketPlaceTest is BtcMarketPlace, Test {
         });
     }
 
+    function dummyBitcoinAddress() public returns (BitcoinAddress memory) {
+        return BitcoinAddress({scriptPubKey: hex"76a914fd7e6999cd7e7114383e014b7e612a88ab6be68f88ac"});
+    }
+
     function testSellBtc() public {
         token1.sudoMint(bob, 100);
 
@@ -69,7 +78,7 @@ contract MarketPlaceTest is BtcMarketPlace, Test {
 
         vm.startPrank(bob);
         token1.approve(address(this), 40);
-        this.acceptBtcSellOrder(0, BitcoinAddress({bitcoinAddress: ""}), 40);
+        this.acceptBtcSellOrder(0, dummyBitcoinAddress(), 40);
 
         vm.startPrank(alice);
         this.proofBtcSellOrder(1, dummyTransaction(), dummyProof());
@@ -83,7 +92,7 @@ contract MarketPlaceTest is BtcMarketPlace, Test {
 
         vm.startPrank(bob);
         token1.approve(address(this), 40);
-        this.acceptBtcSellOrder(0, BitcoinAddress({bitcoinAddress: ""}), 40);
+        this.acceptBtcSellOrder(0, dummyBitcoinAddress(), 40);
 
         vm.startPrank(alice);
         this.withdrawBtcSellOrder(0);
@@ -99,7 +108,7 @@ contract MarketPlaceTest is BtcMarketPlace, Test {
 
         vm.startPrank(bob);
         token1.approve(address(this), 40);
-        this.acceptBtcSellOrder(0, BitcoinAddress({bitcoinAddress: ""}), 40);
+        this.acceptBtcSellOrder(0, dummyBitcoinAddress(), 40);
 
         vm.warp(block.timestamp + REQUEST_EXPIRATION_SECONDS + 1);
         assertEq(token1.balanceOf(address(this)), 4);
@@ -114,7 +123,7 @@ contract MarketPlaceTest is BtcMarketPlace, Test {
 
         vm.startPrank(alice);
         token1.approve(address(this), 100);
-        this.placeBtcBuyOrder(1000, BitcoinAddress({bitcoinAddress: ""}), address(token1), 100);
+        this.placeBtcBuyOrder(1000, dummyBitcoinAddress(), address(token1), 100);
 
         vm.startPrank(bob);
         this.acceptBtcBuyOrder(0, 40);
@@ -130,7 +139,7 @@ contract MarketPlaceTest is BtcMarketPlace, Test {
 
         vm.startPrank(alice);
         token1.approve(address(this), 100);
-        this.placeBtcBuyOrder(1000, BitcoinAddress({bitcoinAddress: ""}), address(token1), 100);
+        this.placeBtcBuyOrder(1000, dummyBitcoinAddress(), address(token1), 100);
 
         vm.startPrank(bob);
         this.acceptBtcBuyOrder(0, 40);
@@ -148,7 +157,7 @@ contract MarketPlaceTest is BtcMarketPlace, Test {
 
         vm.startPrank(alice);
         token1.approve(address(this), 100);
-        this.placeBtcBuyOrder(1000, BitcoinAddress({bitcoinAddress: ""}), address(token1), 100);
+        this.placeBtcBuyOrder(1000, dummyBitcoinAddress(), address(token1), 100);
 
         vm.startPrank(bob);
         this.acceptBtcBuyOrder(0, 40);

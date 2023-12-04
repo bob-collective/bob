@@ -1,16 +1,22 @@
-import * as bitcoinjsLib from "bitcoinjs-lib";
+import * as bitcoin from "bitcoinjs-lib";
 import * as psbtUtils from "bitcoinjs-lib/src/psbt/psbtutils";
 
 import { RemoteSigner } from "./signer";
-import { CommitTxData, CommitTxResult } from "./commit";
+import { CommitTxData } from "./commit";
 
 const { witnessStackToScriptWitness } = psbtUtils;
+
+export interface CommitTxResult {
+    tx: bitcoin.Transaction;
+    outputIndex: number;
+    outputAmount: number;
+}
 
 /**
  * Create the reveal tx which spends the commit tx.
  */
 export function createRevealTx(
-    network: bitcoinjsLib.Network,
+    network: bitcoin.Network,
     commitTxData: CommitTxData,
     commitTxResult: CommitTxResult,
     toAddress: string,
@@ -18,15 +24,16 @@ export function createRevealTx(
 ) {
     const { scriptTaproot, tapLeafScript } = commitTxData;
 
-    const psbt = new bitcoinjsLib.Psbt({ network });
+    const psbt = new bitcoin.Psbt({ network });
 
     psbt.addInput({
-        hash: commitTxResult.txId,
-        index: commitTxResult.sendUtxoIndex,
+        hash: commitTxResult.tx.getId(),
+        index: commitTxResult.outputIndex,
         witnessUtxo: {
-            value: commitTxResult.sendAmount,
+            value: commitTxResult.outputAmount,
             script: scriptTaproot.output!,
         },
+        nonWitnessUtxo: commitTxResult.tx.toBuffer(),
         tapLeafScript: [tapLeafScript],
     });
 
@@ -39,11 +46,11 @@ export function createRevealTx(
 }
 
 export const customFinalizer = (commitTxData: CommitTxData) => {
-    const { outputScript, tapLeafScript } = commitTxData;
+    const { tapLeafScript } = commitTxData;
 
     return (inputIndex: number, input: any) => {
         const witness = [input.tapScriptSig[inputIndex].signature]
-            .concat(outputScript)
+            .concat(tapLeafScript.script)
             .concat(tapLeafScript.controlBlock);
 
         return {
@@ -55,10 +62,10 @@ export const customFinalizer = (commitTxData: CommitTxData) => {
 export async function signRevealTx(
     signer: RemoteSigner,
     commitTxData: CommitTxData,
-    psbt: bitcoinjsLib.Psbt
+    psbt: bitcoin.Psbt
 ) {
     // reveal should only have one input
-    psbt = await signer.signPsbt(0, psbt);
+    psbt = await signer.signInput(0, psbt);
 
     // we have to construct our witness script in a custom finalizer
     psbt.finalizeInput(0, customFinalizer(commitTxData));
