@@ -160,11 +160,6 @@ library BitcoinTx {
     function evaluateProofDifficulty(BridgeState.Storage storage self, bytes memory bitcoinHeaders) internal view {
         IRelay relay = self.relay;
 
-        // for testing
-        if (!relay.difficultyCheckEnabled()) {
-            return;
-        }
-
         uint256 currentEpochDifficulty = relay.getCurrentEpochDifficulty();
         uint256 previousEpochDifficulty = relay.getPrevEpochDifficulty();
 
