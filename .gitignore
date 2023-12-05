@@ -40,3 +40,5 @@ node_modules/*
 
 # generated docs
 /docs/docs/api/*
+
+/docs/docs/contracts/*
