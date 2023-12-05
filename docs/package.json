@@ -7,7 +7,7 @@
     "install:sdk": "cd ../sdk && yarn install",
     "start": "docusaurus start",
     "build:docs": "docusaurus build",
-    "build": "yarn install:sdk && yarn build:docs",
+    "build": "python ../docs_reformat_scripts/forge_doc_reformat.py && yarn install:sdk && yarn build:docs",
     "swizzle": "docusaurus swizzle",
     "deploy": "docusaurus deploy",
     "clear": "docusaurus clear",
