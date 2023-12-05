@@ -1,4 +1,4 @@
-# Gas fee payment in WBTC using ERC-4337
+# Gas Fee Payment in WBTC using Account Abstraction (ERC-4337)
 
 In this example, we will show how WBTC can be used for gas fee payment using the [ERC-4337 account abstraction standard](https://eips.ethereum.org/EIPS/eip-4337) on the BOB testnet. This enables users to use smart contract wallets and transact without the need to own ether.
 
@@ -9,6 +9,32 @@ The source code for this demo can be found in [this repository](https://github.c
 :::
 
 ![preview](preview.png)
+
+## Using the dApp
+
+This application uses the ERC-4337 standard and showcases how a smart contract wallet can be integrated. It contains an implementation of a custom account abstraction client that simplifies the integration of this standard into the UI. 
+
+
+The application consists of a simple form that allows you to send WBTC from the smart contract account with the gas fee paid in WBTC. To use it enter the WBTC amount and the recipient's EVM address. Then the injected wallet will ask for a user operation signature. After that, a signed user operation will be sent to the bundler which will broadcast it to the network.
+
+:::note
+Before the first user operation can be made, the paymaster smart contract has to be approved to spend your WBTC. That is why the first wallet prompt will be the WBTC approval transaction request.
+:::
+
+### Try it out
+
+1. Go to [demo-acccount-abstraction-transfer.vercel.app](https://demo-account-abstraction-transfer.vercel.app/) 
+2. Connect with your MetaMask account and get WBTC by clicking on the 'Get Tokens' button in the application header. (You will receive 30,000 WBTC that you can spend.)
+3. Add WBTC to your MetaMask, WBTC address is `0x28A13b11551f91651e8Da8Cd997886aA0B46CD16`
+4. Transfer WBTC to the smart contract account via MetaMask (displayed above the amount field in the form).
+5. Input the amount you wish to send and the recipient's address into the form fields.
+6. Click on 'Transfer'. This will require three interactions with MetaMask: first one will deposit small amount of ETH to the entry point contract so that you can sign the user operation that allows the paymaster contract to spend your WBTC. Then you will sign the approval user operation. Finally, you will sign the transfer user operation. 
+7. Wait for the transfer user operation to be executed.
+
+
+## Limitations
+
+Given that ERC-4337 is still relatively new, there is not a lot of support for this standard available yet. 
 
 ## Local development
 
@@ -33,20 +59,6 @@ Bundler (eth-infinitism):
 
 1. Run `pnpm run dev`
 2. Open `localhost:5173` in browser.
-
-
-
-## Using the dApp
-
-This application uses the ERC-4337 standard and showcases how a smart contract wallet can be integrated. It contains an implementation of a custom account abstraction client that simplifies the integration of this standard into the UI. 
-
-
-The application consists of a simple form that allows you to send WBTC from the smart contract account with the gas fee paid in WBTC. To use it enter the WBTC amount and the recipient's EVM address. Then the injected wallet will ask for a user operation signature. After that, a signed user operation will be sent to the bundler which will broadcast it to the network.
-
-:::note
-Before the first user operation can be made, the paymaster smart contract has to be approved to spend your WBTC. That is why the first wallet prompt will be the WBTC approval transaction request.
-:::
-
 
 ## Using account abstraction client
 
