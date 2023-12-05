@@ -21,7 +21,7 @@ The source code for this demo can be found in [this repository](https://github.c
 2. Move to API directory `$ cd api/`
 3. Compile and run the service with `cargo run`
 4. The API server should be now running at `localhost:8000`
-5. The API documentation can be found in `api/README.md` directory.  
+5. The API documentation can be found in `api/README.md` directory.
 
 ## Installing the UI project
 
@@ -38,8 +38,8 @@ The source code for this demo can be found in [this repository](https://github.c
 
 1. Run `pnpm dev` in `ui` directory.
 2. The UI is now running locally on port 5173.
-3. Go to `localhost:5173` and click on `Connect wallet`, your wallet will get connected and the Bitcoin snap extension will be installed. After this, you have to approve all the permissions in Metamask to access the Bitcoin addresses.
-4. Now you have Bitcoin address derived from your Metamask account, you can send testnet BTC or brc20s to see them in the app and move them around.
+3. Go to `localhost:5173` and click on `Connect wallet`, your wallet will get connected and the Bitcoin snap extension will be installed. After this, you have to approve all the permissions in MetaMask to access the Bitcoin addresses.
+4. Now you have Bitcoin address derived from your MetaMask account, you can send testnet BTC or brc20s to see them in the app and move them around.
 
 ## Notes
 
