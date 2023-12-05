@@ -28,6 +28,8 @@ We recommend creating two test profiles so that you can test transferring Ordina
 
 Once you have installed MetaMask Flask, click the 'Connect Wallet' button on [https://ordinals.gobob.xyz](https://ordinals.gobob.xyz). MetaMask will prompt you to install the Snap, and give it permissions.
 
+Take note that your BTC wallet in the Snap derives its private keys from the MetaMask's seed phrase.
+
 ### Funding your account
 
 One you have connected your wallet, you will see your derived BTC address in place of the 'Connect Wallet' button. Click on the address to copy it to the clipboard and then fund it using a BTC faucet:
