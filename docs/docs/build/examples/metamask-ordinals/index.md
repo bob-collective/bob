@@ -1,6 +1,6 @@
 # Use MetaMask to Inscribe and Transfer Ordinals, and Transfer BTC
 
-This example demonstrates how a MetaMask Snap can be used to inscribe and transfer ordinals, and transfer BTC, using only MetaMask.
+This example demonstrates how users can use a single web wallet to manage assets on both Bitcoin and BOB. The BOB MetaMask Snap can be used to inscribe and transfer ordinals, and transfer BTC, using only MetaMask as well as access any other EVM functions on BOB.
 
 :::info Example Code
 
