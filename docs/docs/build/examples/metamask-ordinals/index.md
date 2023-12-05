@@ -1,6 +1,6 @@
-# Use Metamask to Inscribe and Transfer Ordinals, and Transfer BTC
+# Use MetaMask to Inscribe and Transfer Ordinals, and Transfer BTC
 
-This example demonstrates how a Metamask Snap can be used to inscribe and transfer ordinals, and transfer BTC, using only Metamask.
+This example demonstrates how a MetaMask Snap can be used to inscribe and transfer ordinals, and transfer BTC, using only MetaMask.
 
 :::info Example Code
 
@@ -12,21 +12,21 @@ The code for this example can be [found in the GitHub repository](https://github
 
 We have created a testnet demo of the application at [https://ordinals.gobob.xyz](https://ordinals.gobob.xyz), allowing anyone to inscribe, view and transfer ordinals, and transfer BTC.
 
-:::info Metamask Flask
+:::info MetaMask Flask
 
-This demo uses [Metamask Snaps](https://metamask.io/snaps/) and can only be used with [Metamask Flask](https://metamask.io/flask/). Metamask Snaps are not currently supported on mobile wallets, so this demo will only run in the desktop version of Chrome or Firefox.
+This demo uses [MetaMask Snaps](https://metamask.io/snaps/) and can only be used with [MetaMask Flask](https://metamask.io/flask/). MetaMask Snaps are not currently supported on mobile wallets, so this demo will only run in the desktop version of Chrome or Firefox.
 
 :::
 
 ### Creating a test profile
 
-To use this demo, you will need to create a new browser profile to use with the Metamask Flask extension, as having Metamask and Metamask Flask installed in the same browser profile can cause issues.
+To use this demo, you will need to create a new browser profile to use with the MetaMask Flask extension, as having MetaMask and MetaMask Flask installed in the same browser profile can cause issues.
 
 We recommend creating two test profiles so that you can test transferring Ordinals and BTC between two accounts.
 
-### Installing the Metamask Snap
+### Installing the MetaMask Snap
 
-Once you have installed Metamask Flask, click the 'Connect Wallet' button on https://ordinals.gobob.xyz. Metamask will prompt you to install the Snap, and give it permissions.
+Once you have installed MetaMask Flask, click the 'Connect Wallet' button on https://ordinals.gobob.xyz. MetaMask will prompt you to install the Snap, and give it permissions.
 
 ### Funding your account
 
