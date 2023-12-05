@@ -1,12 +1,16 @@
 # Gas Fee Payment in WBTC using Account Abstraction (ERC-4337)
 
-In this example, we will show how WBTC can be used for gas fee payment using the [ERC-4337 account abstraction standard](https://eips.ethereum.org/EIPS/eip-4337) on the BOB testnet. This enables users to use smart contract wallets and transact without the need to own ether.
+In this example, we will show how WBTC can be used for gas fee payment using the [ERC-4337 account abstraction standard](https://eips.ethereum.org/EIPS/eip-4337) on the BOB testnet. This enables users to use smart contract wallets and transact without the need to own ETH.
 
 :::info Example Code
 
 The source code for this demo can be found in [this repository](https://github.com/bob-collective/demo-account-abstraction-transfer/).
 
 :::
+
+## Smart Contract wallets
+
+This demo showcases WBTC transfer from the smart contract wallet. Smart contract wallets utilize smart contracts rather than single private keys found in Externally Owned Address (EOA) wallets. The programmable nature of smart contract wallets allows for diverse use cases. Unlike EOAs, smart contract wallets can contain logic but rely on EOAs to sign the user operations. Therefore, integration of the smart contract wallet into UI adds an additional complexity - users need to distinguish between the signer (EAO) and the account that holds assets (smart contract wallet).
 
 ![preview](preview.png)
 
