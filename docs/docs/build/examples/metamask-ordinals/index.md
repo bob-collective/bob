@@ -26,7 +26,7 @@ We recommend creating two test profiles so that you can test transferring Ordina
 
 ### Installing the MetaMask Snap
 
-Once you have installed MetaMask Flask, click the 'Connect Wallet' button on https://ordinals.gobob.xyz. MetaMask will prompt you to install the Snap, and give it permissions.
+Once you have installed MetaMask Flask, click the 'Connect Wallet' button on [https://ordinals.gobob.xyz](https://ordinals.gobob.xyz). MetaMask will prompt you to install the Snap, and give it permissions.
 
 ### Funding your account
 
@@ -49,6 +49,8 @@ BTC may show in your balance before it is confirmed. If you try to use the appli
 - Enter the inscription text, and submit the form.
 - The ordinal will be shown in the Ordinals Portfolio table (this may take a few seconds)
 
+![inscribe-text](inscribe-text.png)
+
 ### Inscribing an image ordinal
 
 :::info Supported file types
@@ -61,12 +63,18 @@ Only `png` and `jpg` files are currently supported.
 - Click on Select File (only png and jpg files are supported), select your image, and submit the form.
 - The ordinal will be shown in the Ordinals Portfolio table (this may take a few seconds)
 
+![inscribe-image](inscribe-image.png)
+
 ### Transferring an ordinal
 
 - Click on the 'Transfer Ordinal' button next to the ordinal you would like to transfer.
 - Enter a testnet BTC address, and submit the form.
 
+![transfer-ordinal](transfer-ordinal.png)
+
 ### Transferring BTC
 
 - Click on the 'Transfer BTC' button at the top of the page.
 - Enter a testnet BTC address, and submit the form.
+
+![transfer-btc](transfer-btc.png)
