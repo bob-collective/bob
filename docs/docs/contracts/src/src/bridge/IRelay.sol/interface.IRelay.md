@@ -1,5 +1,5 @@
 # IRelay
-[Git Source](https://github.com/bob-collective/bob/blob/dae01a70f25bbe8256dca739e9a4468ec9c8194f/src/bridge/IRelay.sol)
+[Git Source](https://github.com/bob-collective/bob/blob/a99b3699ad3d0a3694628b215f3ada9fa41517db/src/bridge/IRelay.sol)
 
 Contains only the methods needed by tBTC v2. The Bitcoin relay
 provides the difficulty of the previous and current epoch. One

@@ -1,5 +1,5 @@
 # TestLightRelay
-[Git Source](https://github.com/bob-collective/bob/blob/dae01a70f25bbe8256dca739e9a4468ec9c8194f/src/relay/TestLightRelay.sol)
+[Git Source](https://github.com/bob-collective/bob/blob/a99b3699ad3d0a3694628b215f3ada9fa41517db/src/relay/TestLightRelay.sol)
 
 **Inherits:**
 [LightRelay](/src/relay/LightRelay.sol/contract.LightRelay.md)
