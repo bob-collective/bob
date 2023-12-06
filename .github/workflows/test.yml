@@ -7,11 +7,12 @@ env:
 
 jobs:
   check:
-    strategy:
-      fail-fast: true
-
     name: Foundry
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
     steps:
       - uses: actions/checkout@v4
         with:
@@ -33,12 +34,18 @@ jobs:
           forge build --sizes
         id: build
 
+      - name: Run Forge tests
+        run: |
+          forge test -vvv
+        id: test
+
       - name: Run Forge docs
         run: |
           forge doc --out docs/docs/contracts
           python3 docs_reformat_scripts/forge_doc_reformat.py
 
-      - name: Run Forge tests
-        run: |
-          forge test -vvv
-        id: test
+      - name: Commit Forge docs
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Generate Foundry docs"
+          file_pattern: "*.md"
