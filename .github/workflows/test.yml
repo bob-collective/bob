@@ -33,6 +33,11 @@ jobs:
           forge build --sizes
         id: build
 
+      - name: Run Forge docs
+        run: |
+          forge doc --out docs/docs/contracts
+          python3 docs_reformat_scripts/forge_doc_reformat.py
+
       - name: Run Forge tests
         run: |
           forge test -vvv
