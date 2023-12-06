@@ -1,5 +1,6 @@
 ---
 sidebar_position: 2
+sidebar_label: Use the Bitcoin Light Client 
 ---
 
 # Bitcoin Light Client
