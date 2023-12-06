@@ -1,5 +1,6 @@
 ---
 sidebar_position: 4
+sidebar_label: Deploy, Mint, and Transfer BRC-20
 ---
 
 # BRC-20
