@@ -1,6 +1,50 @@
+---
+sidebar_position: 1
+sidebar_label: Test Bitcoin Locally with Regtest 
+---
 # Bitcoin Testing
 
-The recommended approach to start a local Bitcoin node for testing is to use "regtest" mode. If you have downloaded Bitcoin Core from [bitcoin.org](https://bitcoin.org/en/download) use `bitcoind -regtest` to start a regtest node. To create and fund the "Alice" wallet, use the following `bitcoin-cli` commands:
+## Starting a Local Bitcoin Development Environment
+
+### Using Docker (Recommended)
+
+We have a [`docker-compose.yml`](https://github.com/bob-collective/bob/blob/master/docker-compose.yml) setup script in the BOB repository.
+
+The docker file will:
+
+- Run the Bitcoin daemon
+- Fund the "Alice" wallet
+- Mine a block every ten seconds
+- Start the [Esplora](https://github.com/Blockstream/esplora) backend to index the local chain and provide a [REST API](https://github.com/blockstream/esplora/blob/master/API.md)
+- Start the [ord](https://github.com/ordinals/ord) ordinals indexer, block explorer, and wallet
+
+### Using Bitcoin Core
+
+The recommended approach to start a local Bitcoin node for testing is to use "regtest" mode. If you have downloaded Bitcoin Core from [bitcoin.org](https://bitcoin.org/en/download) use the following to start a regtest node.
+
+```shell
+bitcoind -regtest -daemon
+```
+
+To stop the node, use the following command:
+
+```shell
+bitcoin-cli -regtest stop
+```
+
+### Using Nigiri Bitcoin
+
+For an alterantive development environment check out [Nigiri Bitcoin](https://github.com/vulpemventures/nigiri/) which also packages a Liquid daemon and an Electrum server.
+
+## Funding a Wallet
+
+:::info
+
+This step is only required if you are not using the `docker-compose.yml` script.
+
+:::
+
+To create and fund the "Alice" wallet, use the following `bitcoin-cli` commands:
 
 ```shell
 bitcoin-cli -regtest createwallet Alice
@@ -10,11 +54,11 @@ bitcoin-cli -regtest generatetoaddress 101 ${ALICE_ADDRESS}
 
 :::info
 
-Funds from the coinbase transaction need 100 confirmations to be spendable, so make sure to mine a sufficient number of blocks.
+Funds from the coinbase transaction need 100 confirmations to be spendable, so make sure to mine a sufficient number of blocks. The command above mines 101 blocks, which is the minimum required for the funds to be spendable.
 
 :::
 
-We also have a [`docker-compose.yml`](https://github.com/bob-collective/bob/blob/master/docker-compose.yml) setup script in the BOB repository to run the Bitcoin daemon, fund the "Alice" wallet and mine a block every ten seconds. This will also run the [Esplora](https://github.com/Blockstream/esplora) backend to index the local chain and provide a REST API. For a more complete development environment check out [Nigiri Bitcoin](https://github.com/vulpemventures/nigiri/) which also packages a Liquid daemon and an Electrum server.
+## Transferring Funds
 
 To create and send funds to the "Bob" wallet, use the following commands:
 
