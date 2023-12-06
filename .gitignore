@@ -42,3 +42,4 @@ node_modules/*
 /docs/docs/api/*
 
 /docs/docs/contracts/*
+!/docs/docs/contracts/contract_references.md
