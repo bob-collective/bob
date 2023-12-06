@@ -47,5 +47,5 @@ jobs:
       - name: Commit Forge docs
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "Generate Foundry docs"
+          commit_message: "chore: Generate Foundry docs"
           file_pattern: "./docs/"
