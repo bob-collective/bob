@@ -40,6 +40,3 @@ node_modules/*
 
 # generated docs
 /docs/docs/api/*
-
-/docs/docs/contracts/*
-!/docs/docs/contracts/contract_references.md
