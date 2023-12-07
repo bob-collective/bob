@@ -14,7 +14,7 @@ BOB is fully EVM compatible so you can use any tools you are used to from Ethere
 - Description: Official public BOB testnet
 - Chain ID: 111
 - RPC URL (BOB): https://testnet.rpc.gobob.xyz/
-- Explorer (BOB): 
+- Explorer (BOB): https://explorerl2new-puff-bob-jznbxtoq7h.t.conduit.xyz/
 - Bridge (BOB - Sepolia): https://puff-bob-jznbxtoq7h.testnets.superbridge.app/
 - RPC URL (Ethereum Sepolia): https://chainlist.org/chain/11155111
 - Explorer (Ethereum Sepolia): https://sepolia.etherscan.io/
