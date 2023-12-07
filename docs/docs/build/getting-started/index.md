@@ -18,7 +18,7 @@ This is alpha-stage software. We love to work closely with you to make BOB usefu
 ## Getting Started
 
 - [Hello World](helloworld): Develop your first smart contract on BOB.
-- [Testnet](testnet): Learn how to deploy your contracts to the testnet and interact with them.
+- [Networks](networks): Learn how to deploy your contracts to the BOB networks and interact with them.
 
 ## How To
 
