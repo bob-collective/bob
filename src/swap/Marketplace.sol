@@ -93,7 +93,7 @@ contract MarketPlace is ERC2771Recipient {
         emit withdrawOrder(id);
     }
 
-    function getOpenOrders() external view returns (Order[] memory) {
+    function getOpenOrders() external view returns (Order[] memory, uint256[] memory) {
         uint256 numOpenOrders = 0;
         for (uint256 i = 0; i < nextOrderId; i++) {
             if (ercErcOrders[i].offeringAmount > 0) {
@@ -101,13 +101,15 @@ contract MarketPlace is ERC2771Recipient {
             }
         }
         Order[] memory ret = new Order[](numOpenOrders);
+        uint256[] memory identifiers = new uint256[](numOpenOrders);
         uint256 numPushed = 0;
         for (uint256 i = 0; i < nextOrderId; i++) {
             if (ercErcOrders[i].offeringAmount > 0) {
                 ret[numPushed] = ercErcOrders[i];
+                identifiers[numPushed] = i;
                 numPushed++;
             }
         }
-        return ret;
+        return (ret, identifiers);
     }
 }
