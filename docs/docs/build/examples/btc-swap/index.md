@@ -10,7 +10,7 @@ The code for this example can be [found in the P2P swap demo GitHub repository](
 
 ## Demo
 
-We have created a testnet demo of the P2P swap, allowing anyone to swap BTC for ERC20 tokens, ERC20 tokens for BTC, and exchange one ERC20 token for another. The application currently supports testnet BTC, testnet USDT, and ZBTC (ZBTC is a placeholder for an arbitrary bridged BTC token).
+We have created a testnet demo of the P2P swap, allowing anyone to swap BTC for ERC20 tokens, ERC20 tokens for BTC, and exchange one ERC20 token for another. The application currently supports testnet BTC, testnet USDC, and WBTC (WBTC is a placeholder for an arbitrary bridged BTC token).
 
 ### Connecting Your Wallet
 
@@ -37,11 +37,11 @@ The UI can sometimes fail to connect if you have multiple wallets installed. If 
 
 You will need two accounts for this demo, so that you can both create and fulfil orders. For each account:
 
-- Click the 'Get Gas' button to fund your account with ETH. This will be needed for transaction fees.
+- Fund your account with ETH from a [Sepolia testnet](https://faucetlink.to/sepolia) and then transfer it to the BOB network using [Superbridge](https://puff-bob-jznbxtoq7h.testnets.superbridge.app/). This will be needed for transaction fees.
 - After the ETH tokens have arrived in your wallet, click on the 'Get Tokens' button to fund your account with ERC20 tokens to used when adding an order.
 - Import the ERC20 tokens from the following contract addresses:
-  - ZBTC: `0x4f01078121e90915F9f1448DE4b3C2515B5e2F3B`
-  - USDT: `0x3c252953224948E441aAfdE7b391685201ccd3bC`
+  - WBTC: `0x2868d708e442A6a940670d26100036d426F1e16b`
+  - USDC: `0x27c3321E40f039d10D5FF831F528C9CEAE601B1d`
 - You will also need some test BTC from the [Bitcoin testnet faucet](https://bitcoinfaucet.uo1.net/).
 
 :::note
