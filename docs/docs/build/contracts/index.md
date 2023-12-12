@@ -8,7 +8,7 @@
 
 ### BOB Core Contracts
 
-- tBTC Relay: `0x077c5ed60fABb260784891786c6573373fDa8A3E`
+- tBTC Relay: `0xe92317b90E4Ee2a97933d774C7088c32A9AABC6D`
 
 ### Tokens (ERC20)
 
