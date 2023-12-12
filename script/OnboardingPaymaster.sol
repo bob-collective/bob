@@ -11,12 +11,11 @@ contract OnboardingPaymasterScript is Script {
     function setUp() public {}
 
     function run() public {
-    
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         IRelayHub relay = IRelayHub(vm.envAddress("RELAY_ADDRESS"));
         // bytes memory b = vm.envBytes("WHITELIST_SELECTOR");
         // (uint32 whitelistSelector) = abi.decode(b, (uint32));
-        uint tmp = vm.envUint("WHITELIST_SELECTOR");
+        uint256 tmp = vm.envUint("WHITELIST_SELECTOR");
         address forwarder = vm.envAddress("FORWARDER_ADDRESS");
         uint32 whitelistSelector = uint32(tmp);
         address whitelistAddress = vm.envAddress("WHITELIST_ADDRESS");

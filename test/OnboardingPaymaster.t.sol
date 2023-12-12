@@ -9,7 +9,6 @@ import {OnboardingPaymaster} from "../src/paymasters/OnboardingPaymaster.sol";
 // import {}
 import "lib/gsn/packages/contracts/src/BasePaymaster.sol";
 
-
 contract OnboardingPaymasterTest is OnboardingPaymaster, Test {
     Utilities internal utils;
     address payable[] internal users;

@@ -12,10 +12,9 @@ contract TestingWbtcScript is Script {
     function setUp() public {}
 
     function run() public {
-    
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address forwarder = vm.envAddress("FORWARDER_ADDRESS");
-        int tokenPrice = vm.envInt("ERC_PRICE");
+        int256 tokenPrice = vm.envInt("ERC_PRICE");
         // address payable mtPaymaster = payable(vm.envAddress("MT_PAYMASTER_ADDRESS"));
 
         vm.startBroadcast(deployerPrivateKey);

@@ -23,21 +23,11 @@ contract TestingErc20 is ERC20, ERC20Burnable, Ownable, ERC2771Recipient {
         _mint(_msgSender(), amount);
     }
 
-    function _msgSender()
-        internal
-        view
-        override(Context, ERC2771Recipient)
-        returns (address sender)
-    {
+    function _msgSender() internal view override(Context, ERC2771Recipient) returns (address sender) {
         sender = ERC2771Recipient._msgSender();
     }
 
-    function _msgData()
-        internal
-        view
-        override(Context, ERC2771Recipient)
-        returns (bytes calldata)
-    {
+    function _msgData() internal view override(Context, ERC2771Recipient) returns (bytes calldata) {
         return ERC2771Recipient._msgData();
     }
 
