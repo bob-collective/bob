@@ -15,8 +15,6 @@ import {IOracle} from "../Oracle.sol";
 // import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 // import "./SafeTransferLib.sol";
 
-
-
 // using SafeERC20 for IERC20;
 
 /// @title PimlicoERC20Paymaster
@@ -43,11 +41,7 @@ contract PimlicoERC20Paymaster is BasePaymaster {
 
     event ConfigUpdated(uint32 priceMarkup, uint32 updateThreshold);
 
-    event UserOperationSponsored(
-        address indexed user,
-        uint256 actualTokenNeeded,
-        uint256 actualGasCost
-    );
+    event UserOperationSponsored(address indexed user, uint256 actualTokenNeeded, uint256 actualGasCost);
 
     /// @notice Initializes the PimlicoERC20Paymaster contract with the given parameters.
     /// @param _token The ERC20 token used for transaction fee payments.
@@ -70,29 +64,17 @@ contract PimlicoERC20Paymaster is BasePaymaster {
         priceUpdateThreshold = 25e3; // 2.5%  1e6 = 100%
         transferOwnership(_owner);
         tokenDecimals = 10 ** _tokenDecimals;
-        require(
-            _tokenOracle.decimals() == 8,
-            "PP-ERC20 : token oracle decimals must be 8"
-        );
-        require(
-            _nativeAssetOracle.decimals() == 8,
-            "PP-ERC20 : native asset oracle decimals must be 8"
-        );
+        require(_tokenOracle.decimals() == 8, "PP-ERC20 : token oracle decimals must be 8");
+        require(_nativeAssetOracle.decimals() == 8, "PP-ERC20 : native asset oracle decimals must be 8");
     }
 
     /// @notice Updates the price markup and price update threshold configurations.
     /// @param _priceMarkup The new price markup percentage (1e6 = 100%).
     /// @param _updateThreshold The new price update threshold percentage (1e6 = 100%).
-    function updateConfig(
-        uint32 _priceMarkup,
-        uint32 _updateThreshold
-    ) external onlyOwner {
+    function updateConfig(uint32 _priceMarkup, uint32 _updateThreshold) external onlyOwner {
         require(_priceMarkup <= 120e4, "PP-ERC20 : price markup too high");
         require(_priceMarkup >= 1e6, "PP-ERC20 : price markeup too low");
-        require(
-            _updateThreshold <= 1e6,
-            "PP-ERC20 : update threshold too high"
-        );
+        require(_updateThreshold <= 1e6, "PP-ERC20 : update threshold too high");
         priceMarkup = _priceMarkup;
         priceUpdateThreshold = _updateThreshold;
         emit ConfigUpdated(_priceMarkup, _updateThreshold);
@@ -110,9 +92,7 @@ contract PimlicoERC20Paymaster is BasePaymaster {
         // This function updates the cached ERC20/ETH price ratio
         uint192 tokenPrice = fetchPrice(tokenOracle);
         uint192 nativeAssetPrice = fetchPrice(nativeAssetOracle);
-        previousPrice =
-            (nativeAssetPrice * uint192(tokenDecimals)) /
-            tokenPrice;
+        previousPrice = (nativeAssetPrice * uint192(tokenDecimals)) / tokenPrice;
     }
 
     /// @notice Validates a paymaster user operation and calculates the required token amount for the transaction.
@@ -120,11 +100,7 @@ contract PimlicoERC20Paymaster is BasePaymaster {
     /// @param requiredPreFund The amount of tokens required for pre-funding.
     /// @return context The context containing the token amount and user sender address (if applicable).
     /// @return validationResult A uint256 value indicating the result of the validation (always 0 in this implementation).
-    function _validatePaymasterUserOp(
-        UserOperation calldata userOp,
-        bytes32,
-        uint256 requiredPreFund
-    )
+    function _validatePaymasterUserOp(UserOperation calldata userOp, bytes32, uint256 requiredPreFund)
         internal
         override
         returns (bytes memory context, uint256 validationResult)
@@ -135,22 +111,16 @@ contract PimlicoERC20Paymaster is BasePaymaster {
             uint256 length = userOp.paymasterAndData.length - 20;
             // 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffdf is the mask for the last 6 bits 011111 which mean length should be 100000(32) || 000000(0)
             require(
-                length &
-                    0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffdf ==
-                    0,
+                length & 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffdf == 0,
                 "PP-ERC20 : invalid data length"
             );
             // NOTE: we assumed that nativeAsset's decimals is 18, if there is any nativeAsset with different decimals, need to change the 1e18 to the correct decimals
-            uint256 tokenAmount = ((requiredPreFund +
-                (REFUND_POSTOP_COST) *
-                userOp.maxFeePerGas) *
-                priceMarkup *
-                cachedPrice) / (1e18 * priceDenominator);
+            uint256 tokenAmount = (
+                (requiredPreFund + (REFUND_POSTOP_COST) * userOp.maxFeePerGas) * priceMarkup * cachedPrice
+            ) / (1e18 * priceDenominator);
             if (length == 32) {
                 require(
-                    tokenAmount <=
-                        uint256(bytes32(userOp.paymasterAndData[20:52])),
-                    "PP-ERC20 : token amount too high"
+                    tokenAmount <= uint256(bytes32(userOp.paymasterAndData[20:52])), "PP-ERC20 : token amount too high"
                 );
             }
             token.transferFrom(userOp.sender, address(this), tokenAmount);
@@ -165,11 +135,7 @@ contract PimlicoERC20Paymaster is BasePaymaster {
     /// @param mode The post-operation mode (either successful or reverted).
     /// @param context The context containing the token amount and user sender address.
     /// @param actualGasCost The actual gas cost of the transaction.
-    function _postOp(
-        PostOpMode mode,
-        bytes calldata context,
-        uint256 actualGasCost
-    ) internal override {
+    function _postOp(PostOpMode mode, bytes calldata context, uint256 actualGasCost) internal override {
         if (mode == PostOpMode.postOpReverted) {
             return; // Do nothing here to not revert the whole bundle and harm reputation
         }
@@ -180,34 +146,22 @@ contract PimlicoERC20Paymaster is BasePaymaster {
             uint192 price = (nativeAsset * uint192(tokenDecimals)) / tokenPrice;
             uint256 cachedUpdateThreshold = priceUpdateThreshold;
             if (
-                (uint256(price) * priceDenominator) / cachedPrice >
-                priceDenominator + cachedUpdateThreshold ||
-                (uint256(price) * priceDenominator) / cachedPrice <
-                priceDenominator - cachedUpdateThreshold
+                (uint256(price) * priceDenominator) / cachedPrice > priceDenominator + cachedUpdateThreshold
+                    || (uint256(price) * priceDenominator) / cachedPrice < priceDenominator - cachedUpdateThreshold
             ) {
                 previousPrice = uint192(int192(price));
                 cachedPrice = uint192(int192(price));
             }
             // Refund tokens based on actual gas cost
             // NOTE: we assumed that nativeAsset's decimals is 18, if there is any nativeAsset with different decimals, need to change the 1e18 to the correct decimals
-            uint256 actualTokenNeeded = ((actualGasCost +
-                REFUND_POSTOP_COST *
-                tx.gasprice) *
-                priceMarkup *
-                cachedPrice) / (1e18 * priceDenominator); // We use tx.gasprice here since we don't know the actual gas price used by the user
+            uint256 actualTokenNeeded = ((actualGasCost + REFUND_POSTOP_COST * tx.gasprice) * priceMarkup * cachedPrice)
+                / (1e18 * priceDenominator); // We use tx.gasprice here since we don't know the actual gas price used by the user
             if (uint256(bytes32(context[0:32])) > actualTokenNeeded) {
                 // If the initially provided token amount is greater than the actual amount needed, refund the difference
-                token.transfer(
-                    address(bytes20(context[32:52])),
-                    uint256(bytes32(context[0:32])) - actualTokenNeeded
-                );
+                token.transfer(address(bytes20(context[32:52])), uint256(bytes32(context[0:32])) - actualTokenNeeded);
             } // If the token amount is not greater than the actual amount needed, no refund occurs
 
-            emit UserOperationSponsored(
-                address(bytes20(context[32:52])),
-                actualTokenNeeded,
-                actualGasCost
-            );
+            emit UserOperationSponsored(address(bytes20(context[32:52])), actualTokenNeeded, actualGasCost);
         }
     }
 
@@ -216,19 +170,10 @@ contract PimlicoERC20Paymaster is BasePaymaster {
     /// @param _oracle The Oracle contract to fetch the price from.
     /// @return price The latest price fetched from the Oracle.
     function fetchPrice(IOracle _oracle) internal view returns (uint192 price) {
-        (
-            uint80 roundId,
-            int256 answer,
-            ,
-            uint256 updatedAt,
-            uint80 answeredInRound
-        ) = _oracle.latestRoundData();
+        (uint80 roundId, int256 answer,, uint256 updatedAt, uint80 answeredInRound) = _oracle.latestRoundData();
         require(answer > 0, "PP-ERC20 : Chainlink price <= 0");
         // 2 days old price is considered stale since the price is updated every 24 hours
-        require(
-            updatedAt >= block.timestamp - 60 * 60 * 24 * 2,
-            "PP-ERC20 : Incomplete round"
-        );
+        require(updatedAt >= block.timestamp - 60 * 60 * 24 * 2, "PP-ERC20 : Incomplete round");
         require(answeredInRound >= roundId, "PP-ERC20 : Stale price");
         price = uint192(int192(answer));
     }

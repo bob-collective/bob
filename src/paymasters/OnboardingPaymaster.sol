@@ -21,13 +21,7 @@ contract OnboardingPaymaster is BasePaymaster {
     event PreRelay(address indexed sender);
     event PostRelay(address indexed sender);
 
-    function versionPaymaster()
-        external
-        view
-        virtual
-        override
-        returns (string memory)
-    {
+    function versionPaymaster() external view virtual override returns (string memory) {
         return "3.0.0-beta.10+opengsn.oracle.token.ipaymaster";
     }
 
@@ -35,13 +29,8 @@ contract OnboardingPaymaster is BasePaymaster {
         gasUsedByPost = _gasUsedByPost;
     }
 
-    function _getPaymasterData(
-        bytes memory paymasterData
-    ) private returns (IERC20 token, uint maxTokens) {
-        (address tokenAddress, uint _maxTokens) = abi.decode(
-            paymasterData,
-            (address, uint)
-        );
+    function _getPaymasterData(bytes memory paymasterData) private returns (IERC20 token, uint256 maxTokens) {
+        (address tokenAddress, uint256 _maxTokens) = abi.decode(paymasterData, (address, uint256));
 
         maxTokens = _maxTokens;
         token = IERC20(tokenAddress);
@@ -57,16 +46,8 @@ contract OnboardingPaymaster is BasePaymaster {
         bytes calldata signature,
         bytes calldata approvalData,
         uint256 maxPossibleGas
-    )
-        internal
-        virtual
-        override
-        returns (bytes memory context, bool revertOnRecipientRevert)
-    {
-        require(
-            relayRequest.request.to == whitelistedContract,
-            "Recipient is not whitelisted"
-        );
+    ) internal virtual override returns (bytes memory context, bool revertOnRecipientRevert) {
+        require(relayRequest.request.to == whitelistedContract, "Recipient is not whitelisted");
 
         uint32 selector = getSelector(relayRequest.request.data);
 
