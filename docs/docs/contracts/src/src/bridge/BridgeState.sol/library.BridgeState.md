@@ -1,5 +1,5 @@
 # BridgeState
-[Git Source](https://github.com/bob-collective/bob/blob/b2d54e5c3996ef2181be170d263691c7d860e253/src/bridge/BridgeState.sol)
+[Git Source](https://github.com/bob-collective/bob/blob/9fd4522721442ac5e04e105bccf23b16c8ad31a6/src/bridge/BridgeState.sol)
 
 
 ## Structs
