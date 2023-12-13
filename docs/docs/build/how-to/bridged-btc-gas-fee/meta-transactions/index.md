@@ -54,7 +54,7 @@ Before the first relayed transaction is done, the paymaster smart contract has t
 ### Contract addresses and links
 
 - WBTC contract address: `0x2868d708e442A6a940670d26100036d426F1e16b`
-- Paymaster contract address: `0x777FA19ea9e771018678161ABf2f1E2879D3cA6C`
+- Paymaster contract address: `0x25Aa86d188E37A47dd2011535534E53Cf994559d`
 - OpenGSN relayer: `https://gsn-relay-sepolia.gobob.xyz/`
 
 ### Installing the project
