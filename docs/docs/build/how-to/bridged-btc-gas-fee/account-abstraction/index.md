@@ -32,13 +32,21 @@ Before the first user operation can be made, the paymaster smart contract has to
 
 ### Try it out
 
+#### Connecting MetaMask anf funding your account
+
 1. Go to [demo-acccount-abstraction.gobob.xyz](https://demo-account-abstraction.gobob.xyz/)
-2. Connect with your MetaMask account and get wBTC by clicking on the 'Get Tokens' button in the application header. (You will receive 30,000 wBTC that you can spend.)
-3. Add wBTC to your MetaMask, wBTC address is `0x28A13b11551f91651e8Da8Cd997886aA0B46CD16`
-4. Transfer wBTC to the smart contract account via MetaMask (displayed above the amount field in the form).
-5. Input the amount you wish to send and the recipient's address into the form fields.
-6. Click on 'Transfer'. This will require three interactions with MetaMask: first one will deposit small amount of ETH to the entry point contract so that you can sign the user operation that allows the paymaster contract to spend your wBTC. Then you will sign the approval user operation. Finally, you will sign the transfer user operation.
-7. Wait for the transfer user operation to be executed.
+2. Fund your account with Sepolia ETH from the [Sepolia testnet faucet](https://faucetlink.to/sepolia).
+3. Transfer Sepolia ETH to BOB using [Superbridge](https://puff-bob-jznbxtoq7h.testnets.superbridge.app/).
+4. Connect with your MetaMask account and get wBTC by clicking on the 'Get Tokens' button in the application header. (You will receive 30,000 wBTC that you can spend.)
+
+5. Add wBTC to your MetaMask, wBTC address is `0x28A13b11551f91651e8Da8Cd997886aA0B46CD16`
+6. Transfer wBTC to the smart contract account via MetaMask (displayed above the amount field in the form).
+
+#### Making a transfer
+
+1. Input the amount you wish to send and the recipient's address into the form fields.
+2. Click on 'Transfer'. This will require three interactions with MetaMask: first one will deposit small amount of ETH to the entry point contract so that you can sign the user operation that allows the paymaster contract to spend your wBTC. Then you will sign the approval user operation. Finally, you will sign the transfer user operation.
+3. Wait for the transfer user operation to be executed.
 
 ## Limitations
 
@@ -57,9 +65,9 @@ There are a interesting use cases that account abstraction enables being pushed 
 ### Contract addresses and links
 
 - wBTC contract address: `0x28A13b11551f91651e8Da8Cd997886aA0B46CD16`
-- Entry point contract address: `0x7A660708DB3D56BB0dC3694344777c805716Fca7`
-- wBTC paymaster address: `0xD8Ae58534d5488571E248DdC0A3aD42aD5dBaD26`
-- Bundler (eth-infinitism): `https://bundler-fluffy-bob.gobob.xyz/rpc`
+- Entry point contract address: `0x8b57d6ec08e09078Db50F265729440713E024C6a`
+- wBTC paymaster address: `0x777FA19ea9e771018678161ABf2f1E2879D3cA6C`
+- Bundler (eth-infinitism): `https://bundler-sepolia.gobob.xyz/rpc`
 
 ### Installing the project
 
@@ -86,7 +94,7 @@ To use `AaClient` in your app wrap it in the `AccountAbstractionProvider`:
 Now you can use the `useAccountAbstraction` hook anywhere within the app to get the client and utilize its functionality:
 
 ```typescript
-const { client } = useAccountAbstraction();  
+const { client } = useAccountAbstraction();
 ...
 const userOp = await client.createUserOp({
 address: contract.address,
