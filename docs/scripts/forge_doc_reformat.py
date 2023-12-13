@@ -60,8 +60,11 @@ def process_all_md_files(directory):
                 process_md_file(file_path)
 
 if __name__ == "__main__":
-    # Specify the directory path
-    directory_path = '../docs/contracts/src'
+    # Get the absolute path of the directory containing the script
+    script_directory = os.path.dirname(os.path.abspath(__file__))
+
+    # Specify the directory path relative to the script
+    directory_path = os.path.join(script_directory, '../docs/contracts/src')
 
     # Process all Markdown files in the specified directory and its subdirectories
     process_all_md_files(directory_path)

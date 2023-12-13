@@ -42,8 +42,6 @@ jobs:
       - name: Run Forge docs
         run: |
           forge doc --out docs/docs/contracts
-          cd docs/scripts
-          python3 forge_doc_reformat.py
 
       - name: Commit Forge docs
         uses: stefanzweifel/git-auto-commit-action@v5
