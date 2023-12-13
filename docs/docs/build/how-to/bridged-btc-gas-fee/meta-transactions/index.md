@@ -37,7 +37,7 @@ Before the first relayed transaction is done, the paymaster smart contract has t
 
 #### Connecting MetaMask and funding your account
 
-1. Go to [demo-acccount-abstraction.gobob.xyz](https://demo-account-abstraction.gobob.xyz/)
+1. Go to [demo-meta-transactions.gobob.xyz](https://demo-meta-transactions.gobob.xyz)
 2. Fund your account with Sepolia ETH from the [Sepolia testnet faucet](https://faucetlink.to/sepolia).
 3. Transfer Sepolia ETH to BOB using [Superbridge](https://puff-bob-jznbxtoq7h.testnets.superbridge.app/).
 4. Connect with your MetaMask account and get wBTC by clicking on the 'Get Tokens' button in the application header. (You will receive 30,000 wBTC that you can spend.)
