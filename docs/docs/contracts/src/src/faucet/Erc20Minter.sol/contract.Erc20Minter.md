@@ -1,5 +1,5 @@
 # Erc20Minter
-[Git Source](https://github.com/bob-collective/bob/blob/d9c9196f0c99ad631c4c8411f2d25decea2e634f/src/faucet/Erc20Minter.sol)
+[Git Source](https://github.com/bob-collective/bob/blob/9c01c7cfc14aec17ca362111dc5fef421675ccf1/src/faucet/Erc20Minter.sol)
 
 **Inherits:**
 Ownable
