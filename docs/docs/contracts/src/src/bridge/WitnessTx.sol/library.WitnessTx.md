@@ -1,5 +1,5 @@
 # WitnessTx
-[Git Source](https://github.com/bob-collective/bob/blob/8c3fe55e3293351a02cff493e52a7ca562403658/src/bridge/WitnessTx.sol)
+[Git Source](https://github.com/bob-collective/bob/blob/abb5084b54645fa5dfcdae21ebb12974a2bcbb80/src/bridge/WitnessTx.sol)
 
 
 ## State Variables
