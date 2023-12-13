@@ -61,7 +61,7 @@ def process_all_md_files(directory):
 
 if __name__ == "__main__":
     # Specify the directory path
-    directory_path = '../docs/docs/contracts/src'
+    directory_path = '../docs/contracts/src'
 
     # Process all Markdown files in the specified directory and its subdirectories
     process_all_md_files(directory_path)
