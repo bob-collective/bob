@@ -38,7 +38,6 @@ Before the first user operation can be made, the paymaster smart contract has to
 2. Fund your account with Sepolia ETH from the [Sepolia testnet faucet](https://faucetlink.to/sepolia).
 3. Transfer Sepolia ETH to BOB using [Superbridge](https://puff-bob-jznbxtoq7h.testnets.superbridge.app/).
 4. Connect with your MetaMask account and get wBTC by clicking on the 'Get Tokens' button in the application header. (You will receive 30,000 wBTC that you can spend.)
-
 5. Add wBTC to your MetaMask, wBTC address is `0x28A13b11551f91651e8Da8Cd997886aA0B46CD16`
 6. Transfer wBTC to the smart contract account via MetaMask (displayed above the amount field in the form).
 
