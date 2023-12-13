@@ -63,7 +63,7 @@ There are a interesting use cases that account abstraction enables being pushed 
 
 ### Contract addresses and links
 
-- wBTC contract address: `0x28A13b11551f91651e8Da8Cd997886aA0B46CD16`
+- wBTC contract address: `0x2868d708e442A6a940670d26100036d426F1e16b`
 - Entry point contract address: `0x8b57d6ec08e09078Db50F265729440713E024C6a`
 - wBTC paymaster address: `0x777FA19ea9e771018678161ABf2f1E2879D3cA6C`
 - Bundler (eth-infinitism): `https://bundler-sepolia.gobob.xyz/rpc`
