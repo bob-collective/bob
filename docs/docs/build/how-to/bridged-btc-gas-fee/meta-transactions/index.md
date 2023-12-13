@@ -35,7 +35,7 @@ Before the first relayed transaction is done, the paymaster smart contract has t
 
 ### Try it out
 
-#### Connecting MetaMask anf funding your account
+#### Connecting MetaMask and funding your account
 
 1. Go to [demo-acccount-abstraction.gobob.xyz](https://demo-account-abstraction.gobob.xyz/)
 2. Fund your account with Sepolia ETH from the [Sepolia testnet faucet](https://faucetlink.to/sepolia).
