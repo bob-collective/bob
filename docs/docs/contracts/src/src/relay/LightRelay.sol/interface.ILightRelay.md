@@ -1,8 +1,8 @@
 # ILightRelay
-[Git Source](https://github.com/bob-collective/bob/blob/51411a1dc3e9caf1fbd213b112cb280e5b93e6df/src/relay/LightRelay.sol)
+[Git Source](https://github.com/bob-collective/bob/blob/8c3fe55e3293351a02cff493e52a7ca562403658/src/relay/LightRelay.sol)
 
 **Inherits:**
-[IRelay](../../bridge/IRelay.sol/interface.IRelay.md)
+[IRelay](/src/bridge/IRelay.sol/interface.IRelay.md)
 
 
 ## Functions
