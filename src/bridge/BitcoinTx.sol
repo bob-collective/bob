@@ -293,16 +293,6 @@ library BitcoinTx {
     }
 
     function ensureTxInputSpendsUtxo(bytes memory TxInputVector, BitcoinTx.UTXO memory utxo) internal pure {
-        // To determine the total number of Bitcoin transaction inputs,
-        // we need to parse the compactSize uint (VarInt) the input vector is
-        // prepended by. That compactSize uint encodes the number of vector
-        // elements using the format presented in:
-        // https://developer.bitcoin.org/reference/transactions.html#compactsize-unsigned-integers
-        // We don't need asserting the compactSize uint is parseable since it
-        // was already checked during `validateVin` validation.
-        // See `BitcoinTx.inputVector` docs for more details.
-        (, uint256 inputsCount) = TxInputVector.parseVarInt();
-
         bytes memory input = _extractInput(TxInputVector);
 
         bytes32 outpointTxHash = input.extractInputTxIdLE();
