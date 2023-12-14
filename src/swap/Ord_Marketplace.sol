@@ -89,7 +89,6 @@ contract Ord_Marketplace {
 
     function acceptOrdinalSellOrder(uint256 id, BitcoinAddress calldata bitcoinAddress) public returns (uint256) {
         OrdinalSellOrder storage order = ordinalSellOrders[id];
-        // ToDo: Check if ordinal not already reserve
 
         // "lock" sell token by transferring to contract
         IERC20(order.sellToken).safeTransferFrom(msg.sender, address(this), order.sellAmount);
@@ -117,10 +116,9 @@ contract Ord_Marketplace {
         AcceptedOrdinalSellOrder storage accept = acceptedOrdinalSellOrders[id];
         require(accept.requester == msg.sender);
 
-        (bytes32 txHash) = relay.validateProof(transaction, proof);
-
         OrdinalSellOrder storage order = ordinalSellOrders[accept.orderId];
-        require(txHash == order.utxo.txHash, "TxHash not matching");
+        (bytes32 _outpointTxHash, uint32 _outpointIndex) =
+            BitcoinTx.checkOutboundTxInputsMatchesUtxo(transaction.inputVector, order.utxo);
 
         // check if output to the buyer's address
         _checkBitcoinTxOutput(accept.bitcoinAddress, transaction);
