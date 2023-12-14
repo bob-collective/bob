@@ -10,7 +10,7 @@ import {BridgeState} from "../bridge/BridgeState.sol";
 
 using SafeERC20 for IERC20;
 
-contract Ord_Marketplace {
+contract OrdMarketplace {
     using BitcoinTx for BridgeState.Storage;
 
     mapping(uint256 => OrdinalSellOrder) public ordinalSellOrders;
