@@ -317,7 +317,7 @@ library BitcoinTx {
             require(_len != BTCUtils.ERR_BAD_ARG, "Bad VarInt in scriptSig");
             _offset = _offset + _len;
         }
-        // get input for every index
+        // get input for last index
         bytes memory input = _vin.slice(_offset, _len);
         bytes32 outpointTxHash = input.extractInputTxIdLeAt(_offset);
         uint32 outpointIndex = BTCUtils.reverseUint32(uint32(input.extractTxIndexLeAt(_offset)));
