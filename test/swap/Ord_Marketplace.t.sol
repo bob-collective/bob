@@ -119,7 +119,7 @@ contract OrdMarketPlaceTest is OrdMarketplace, Test {
         testLightRelay.setDifficultyFromHeaders(ordinalsInfo[0].proof.bitcoinHeaders);
     }
 
-    function test_placeOrdinalSellOrder() public {
+    function test_ordinalSellOrderFullFlow() public {
         uint256 nextOrdinalId;
         token1.sudoMint(bob, 200);
 
