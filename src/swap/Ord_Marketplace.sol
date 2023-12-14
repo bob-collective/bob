@@ -60,6 +60,7 @@ contract Ord_Marketplace {
         bytes scriptPubKey;
     }
 
+    // ToDo: split this into txid and index
     struct OrdinalId {
         bytes ordinalID;
     }
@@ -117,8 +118,8 @@ contract Ord_Marketplace {
         require(accept.requester == msg.sender);
 
         OrdinalSellOrder storage order = ordinalSellOrders[accept.orderId];
-        (bytes32 _outpointTxHash, uint32 _outpointIndex) =
-            BitcoinTx.checkOutboundTxInputsMatchesUtxo(transaction.inputVector, order.utxo);
+
+        BitcoinTx.ensureTxInputSpendsUtxo(transaction.inputVector, order.utxo);
 
         // check if output to the buyer's address
         _checkBitcoinTxOutput(accept.bitcoinAddress, transaction);

@@ -138,8 +138,6 @@ library BitcoinTx {
         /// @notice Value of the transaction output.
         uint64 txOutputValue;
     }
-    // This struct doesn't contain `__gap` property as the structure is not
-    // stored, it is used as a function's calldata argument.
 
     /// @notice Validates the SPV proof of the Bitcoin transaction.
     ///         Reverts in case the validation or proof verification fail.
@@ -294,11 +292,7 @@ library BitcoinTx {
         revert("No output found for scriptPubKey");
     }
 
-    function checkOutboundTxInputsMatchesUtxo(bytes memory TxInputVector, BitcoinTx.UTXO memory utxo)
-        internal
-        pure
-        returns (bytes32 outpointTxHash, uint32 outpointIndex)
-    {
+    function ensureTxInputSpendsUtxo(bytes memory TxInputVector, BitcoinTx.UTXO memory utxo) internal pure {
         // To determine the total number of Bitcoin transaction inputs,
         // we need to parse the compactSize uint (VarInt) the input vector is
         // prepended by. That compactSize uint encodes the number of vector
@@ -309,16 +303,35 @@ library BitcoinTx {
         // See `BitcoinTx.inputVector` docs for more details.
         (, uint256 inputsCount) = TxInputVector.parseVarInt();
 
-        for (uint256 inputId = 0; inputId < inputsCount; inputId++) {
-            bytes memory input = TxInputVector.extractInputAtIndex(inputId);
+        bytes memory input = _extractInput(TxInputVector);
 
-            outpointTxHash = input.extractInputTxIdLE();
-            outpointIndex = BTCUtils.reverseUint32(uint32(input.extractTxIndexLE()));
+        bytes32 outpointTxHash = input.extractInputTxIdLE();
+        uint32 outpointIndex = BTCUtils.reverseUint32(uint32(input.extractTxIndexLE()));
 
-            if (utxo.txHash == outpointTxHash && utxo.txOutputIndex == outpointIndex) {
-                return (outpointTxHash, outpointIndex);
-            }
+        if (utxo.txHash == outpointTxHash && utxo.txOutputIndex == outpointIndex) {
+            return;
         }
-        revert("No transaction matching the one mentioned in sell order");
+        revert("No transaction matching sell order");
+    }
+
+    function _extractInput(bytes memory _vin) internal pure returns (bytes memory) {
+        uint256 _varIntDataLen;
+        uint256 _nIns;
+
+        (_varIntDataLen, _nIns) = BTCUtils.parseVarInt(_vin);
+        require(_varIntDataLen != BTCUtils.ERR_BAD_ARG, "Read overrun during VarInt parsing");
+
+        uint256 _len = 0;
+        uint256 _offset = 1 + _varIntDataLen;
+
+        for (uint256 _i = 0; _i < _nIns; _i++) {
+            _len = BTCUtils.determineInputLengthAt(_vin, _offset);
+            require(_len != BTCUtils.ERR_BAD_ARG, "Bad VarInt in scriptSig");
+            _offset = _offset + _len;
+        }
+
+        _len = BTCUtils.determineInputLengthAt(_vin, _offset);
+        require(_len != BTCUtils.ERR_BAD_ARG, "Bad VarInt in scriptSig");
+        return _vin.slice(_offset, _len);
     }
 }
