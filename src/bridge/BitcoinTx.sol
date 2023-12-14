@@ -303,10 +303,8 @@ library BitcoinTx {
         uint256 _offset = 1 + _varIntDataLen;
 
         for (uint256 _i = 0; _i <= _nIns; _i++) {
-            // get input for every index
-            bytes memory input = _vin.slice(_offset, _len);
-            bytes32 outpointTxHash = input.extractInputTxIdLeAt(_offset);
-            uint32 outpointIndex = BTCUtils.reverseUint32(uint32(input.extractTxIndexLeAt(_offset)));
+            bytes32 outpointTxHash = _vin.extractInputTxIdLeAt(_offset);
+            uint32 outpointIndex = BTCUtils.reverseUint32(uint32(_vin.extractTxIndexLeAt(_offset)));
 
             // check if it matches tx
             if (utxo.txHash == outpointTxHash && utxo.txOutputIndex == outpointIndex) {
@@ -316,15 +314,6 @@ library BitcoinTx {
             _len = BTCUtils.determineInputLengthAt(_vin, _offset);
             require(_len != BTCUtils.ERR_BAD_ARG, "Bad VarInt in scriptSig");
             _offset = _offset + _len;
-        }
-        // get input for last index
-        bytes memory input = _vin.slice(_offset, _len);
-        bytes32 outpointTxHash = input.extractInputTxIdLeAt(_offset);
-        uint32 outpointIndex = BTCUtils.reverseUint32(uint32(input.extractTxIndexLeAt(_offset)));
-
-        // check if it matches tx
-        if (utxo.txHash == outpointTxHash && utxo.txOutputIndex == outpointIndex) {
-            return;
         }
 
         revert("No transaction matching sell order");
