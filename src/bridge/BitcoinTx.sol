@@ -302,7 +302,7 @@ library BitcoinTx {
         uint256 _len = 0;
         uint256 _offset = 1 + _varIntDataLen;
 
-        for (uint256 _i = 0; _i <= _nIns; _i++) {
+        for (uint256 _i = 0; _i < _nIns; _i++) {
             bytes32 outpointTxHash = _vin.extractInputTxIdLeAt(_offset);
             uint32 outpointIndex = BTCUtils.reverseUint32(uint32(_vin.extractTxIndexLeAt(_offset)));
 
