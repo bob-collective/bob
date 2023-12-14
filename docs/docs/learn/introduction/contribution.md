@@ -7,5 +7,6 @@ We are just getting started with BOB and there are plenty of new things to be bu
 The best way to get started is to:
 
 - Checkout the GitHub: [bob-collective](https://github.com/bob-collective/bob)
-- Try the early alpha: [builder docs](/docs/build/getting-started/helloworld)
+- Deploy your first contracts on BOB: [Hello World](/docs/build/getting-started/helloworld)
+- Try out the demos: [Demos](/docs/build/getting-started/#examples)
 - Join the [Discord](https://discordapp.com/invite/interlay)
