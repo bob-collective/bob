@@ -292,19 +292,7 @@ library BitcoinTx {
         revert("No output found for scriptPubKey");
     }
 
-    function ensureTxInputSpendsUtxo(bytes memory TxInputVector, BitcoinTx.UTXO memory utxo) internal pure {
-        bytes memory input = _extractInput(TxInputVector);
-
-        bytes32 outpointTxHash = input.extractInputTxIdLE();
-        uint32 outpointIndex = BTCUtils.reverseUint32(uint32(input.extractTxIndexLE()));
-
-        if (utxo.txHash == outpointTxHash && utxo.txOutputIndex == outpointIndex) {
-            return;
-        }
-        revert("No transaction matching sell order");
-    }
-
-    function _extractInput(bytes memory _vin) internal pure returns (bytes memory) {
+    function ensureTxInputSpendsUtxo(bytes memory _vin, BitcoinTx.UTXO memory utxo) internal pure {
         uint256 _varIntDataLen;
         uint256 _nIns;
 
@@ -314,14 +302,21 @@ library BitcoinTx {
         uint256 _len = 0;
         uint256 _offset = 1 + _varIntDataLen;
 
-        for (uint256 _i = 0; _i < _nIns; _i++) {
+        for (uint256 _i = 0; _i <= _nIns; _i++) {
             _len = BTCUtils.determineInputLengthAt(_vin, _offset);
             require(_len != BTCUtils.ERR_BAD_ARG, "Bad VarInt in scriptSig");
             _offset = _offset + _len;
-        }
 
-        _len = BTCUtils.determineInputLengthAt(_vin, _offset);
-        require(_len != BTCUtils.ERR_BAD_ARG, "Bad VarInt in scriptSig");
-        return _vin.slice(_offset, _len);
+            // get input for every index
+            bytes memory input = _vin.slice(_offset, _len);
+            bytes32 outpointTxHash = input.extractInputTxIdLE();
+            uint32 outpointIndex = BTCUtils.reverseUint32(uint32(input.extractTxIndexLE()));
+
+            // check if it matches tx
+            if (utxo.txHash == outpointTxHash && utxo.txOutputIndex == outpointIndex) {
+                return;
+            }
+        }
+        revert("No transaction matching sell order");
     }
 }
