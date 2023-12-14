@@ -30,7 +30,9 @@ contract OrdMarketplace {
         relay.relay = _relay;
     }
 
-    event placeOrdinalSellOrderEvent(uint256 indexed orderId, bytes ordinalID, address sellToken, uint256 sellAmount);
+    event placeOrdinalSellOrderEvent(
+        uint256 indexed orderId, OrdinalId ordinalID, address sellToken, uint256 sellAmount
+    );
     event acceptOrdinalSellOrderEvent(
         uint256 indexed id, uint256 indexed acceptId, BitcoinAddress bitcoinAddress, uint256 ercAmount, address ercToken
     );
@@ -39,7 +41,7 @@ contract OrdMarketplace {
     event cancelAcceptedOrdinalSellOrderEvent(uint256 id);
 
     struct OrdinalSellOrder {
-        bytes ordinalID;
+        OrdinalId ordinalID;
         address sellToken;
         uint256 sellAmount;
         BitcoinTx.UTXO utxo;
@@ -66,14 +68,14 @@ contract OrdMarketplace {
     }
 
     function placeOrdinalSellOrder(
-        bytes calldata ordinalID,
+        OrdinalId calldata ordinalID,
         BitcoinTx.UTXO calldata utxo,
         address sellToken,
         uint256 sellAmount
     ) public {
         require(sellToken != address(0x0), "Invalid buying token");
         require(sellAmount > 0, "Buying amount should be greater than 0");
-        require(ordinalID.length == 64, "Invalid ordinal ID provided");
+        require(ordinalID.ordinalID.length == 64, "Invalid ordinal ID provided");
 
         uint256 id = nextOrdinalId++;
 
