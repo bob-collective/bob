@@ -72,18 +72,27 @@ contract OrdMarketPlaceTest is OrdMarketplace, Test {
     }
 
     function test_placeOrdinalSellOrder() public {
-        token1.sudoMint(bob, 100);
+        token1.sudoMint(bob, 101);
 
         OrdinalId memory ord;
         ord.ordinalID =
             hex"00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff";
         BitcoinTx.UTXO memory utxo;
 
+        // placeOrdinalSellOrder by alice
         vm.startPrank(alice);
         vm.expectEmit();
         emit placeOrdinalSellOrderEvent(0, ord, address(token1), 100);
         this.placeOrdinalSellOrder(ord, utxo, address(token1), 100);
 
+        // acceptOrdinalSellOrder by bob
+        vm.startPrank(bob);
+        token1.approve(address(this), 100);
+
+        vm.expectEmit();
+        emit acceptOrdinalSellOrderEvent(0, 1, dummyBitcoinAddress(), address(token1), 100);
+        uint256 acceptId = this.acceptOrdinalSellOrder(0, dummyBitcoinAddress());
+        assertEq(acceptId, 1);
         vm.stopPrank();
     }
 }
