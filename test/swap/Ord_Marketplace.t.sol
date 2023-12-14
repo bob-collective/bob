@@ -93,6 +93,12 @@ contract OrdMarketPlaceTest is OrdMarketplace, Test {
         emit acceptOrdinalSellOrderEvent(0, 1, dummyBitcoinAddress(), address(token1), 100);
         uint256 acceptId = this.acceptOrdinalSellOrder(0, dummyBitcoinAddress());
         assertEq(acceptId, 1);
+
+        // proofOrdinalSellOrder
+        vm.startPrank(alice);
+        vm.expectEmit();
+        emit proofOrdinalSellOrderEvent(1);
+        this.proofOrdinalSellOrder(1, dummyTransaction(), dummyProof());
         vm.stopPrank();
     }
 }
