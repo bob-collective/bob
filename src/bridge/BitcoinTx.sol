@@ -128,6 +128,19 @@ library BitcoinTx {
         bytes bitcoinHeaders;
     }
 
+    /// @notice Represents info about an unspent transaction output.
+    struct UTXO {
+        /// @notice Hash of the transaction the output belongs to.
+        /// @dev Byte order corresponds to the Bitcoin internal byte order.
+        bytes32 txHash;
+        /// @notice Index of the transaction output (0-indexed).
+        uint32 txOutputIndex;
+        /// @notice Value of the transaction output.
+        uint64 txOutputValue;
+    }
+    // This struct doesn't contain `__gap` property as the structure is not
+    // stored, it is used as a function's calldata argument.
+
     /// @notice Validates the SPV proof of the Bitcoin transaction.
     ///         Reverts in case the validation or proof verification fail.
     /// @param txInfo Bitcoin transaction data.
