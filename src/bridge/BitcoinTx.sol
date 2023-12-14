@@ -294,7 +294,7 @@ library BitcoinTx {
         revert("No output found for scriptPubKey");
     }
 
-    function checkOutboundTxInputsMatchesUtxo(bytes memory TxInputVector, BitcoinTx.UTXO calldata utxo)
+    function checkOutboundTxInputsMatchesUtxo(bytes memory TxInputVector, BitcoinTx.UTXO memory utxo)
         internal
         pure
         returns (bytes32 outpointTxHash, uint32 outpointIndex)
