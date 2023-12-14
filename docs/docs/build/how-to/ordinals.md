@@ -12,11 +12,27 @@ Inscriptions are created using taproot script. That means you have to use a P2TR
 
 ### Wallets that support taproot addresses
 
+#### BOB MetaMask Snap (Browser, MetaMask flask only)
+
+You can use the [BOB MetaMask Snap](https://github.com/bob-collective/btcsnap) with [MetaMask flask](https://metamask.io/flask/).
+
+:::tip Live Demo
+
+Check out the live demo at [ordinals.gobob.xyz](https://ordinals.gobob.xyz/).
+
+:::
+
+:::info Documentation and example code
+
+Check out the [documentation](../examples/metamask-ordinals/), the [BOB MetaMask snap code](https://github.com/bob-collective/btcsnap), and the [demo code](https://github.com/bob-collective/demo-brc20-metamask).
+
+:::
+
+#### Other Wallets
 - [`ord` wallet](https://docs.ordinals.com/guides/inscriptions.html) (Desktop, full Bitcoin node requirement)
 - [Sparrow wallet](https://sparrowwallet.com/) (Desktop)
 - [Xverse](https://www.xverse.app/download) (Browser and mobile)
 - [Unisat](https://unisat.io/download) (Browser)
-- [MetaMask](https://metamask.io/) [btcsnap](https://github.com/bob-collective/btcsnap) (Browser)
 
 ### Inscribing data
 If you're developing an app with Javascript or Typescript you can use the BOB SDK to create the commit and reveal transactions required to inscribe data to an ordinal. Refer to the `inscribeText` function and provide a custom `RemoteSigner` implementation for your wallet. The test in [`sdk/test/ordinals.test.ts`](https://github.com/bob-collective/bob/blob/master/sdk/test/ordinals.test.ts) provides an example implementation using [`bitcoinjs-lib`](https://github.com/bitcoinjs/bitcoinjs-lib) and [`tiny-secp256k1`](https://github.com/bitcoinjs/tiny-secp256k1).
