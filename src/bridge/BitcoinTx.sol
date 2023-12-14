@@ -309,7 +309,7 @@ library BitcoinTx {
 
             // get input for every index
             bytes memory input = _vin.slice(_offset, _len);
-            bytes32 outpointTxHash = input.extractInputTxIdLE();
+            bytes32 outpointTxHash = input.extractInputTxIdLeAt(_offset);
             uint32 outpointIndex = BTCUtils.reverseUint32(uint32(input.extractTxIndexLE()));
 
             // check if it matches tx
