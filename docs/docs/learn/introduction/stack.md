@@ -6,6 +6,8 @@ sidebar_position: 2
 
 BOB is the builder stack for experimentation, real-world impact, and freedom of choice.
 
+![BOB Stack](bob-stack.png)
+
 ## Rollup Layer
 
 As the base layer, BOB can use any EVM rollup or chain. Initially, BOB launches on the [OP stack](https://docs.optimism.io/) including the upcoming ZK improvements by [RiscZero](https://www.risczero.com/) and can be rolled up to [Ethereum](https://www.risczero.com/) for 1-click onboarding of users, assets and liquidity. In addition, BOB can inherit Bitcoin security via a novel [merged mining](https://academy.binance.com/en/glossary/merged-mining) protocol (re-staking for Bitcoin).
@@ -14,7 +16,7 @@ As the base layer, BOB can use any EVM rollup or chain. Initially, BOB launches 
 
 At the core, BOB leverages the [Ethereum Virtual Machine (EVM)](https://ethereum.org/en/developers/docs/evm/) to enable the creation and execution of smart contracts, primarily developed using the [Solidity smart contract programming language](https://soliditylang.org/). The EVM version deployed on BOB will be equivalent to that of Ethereum, ensuring compatibility with existing developer tooling ([Hardhat](https://hardhat.org/), [Foundry](https://getfoundry.sh/), [Remix](https://remix.ethereum.org/), …), wallets ([Metamask](https://metamask.io/), [WalletConnect](https://walletconnect.com/) supported wallets,...), best-in-class multisig ([Safe](https://www.safe.io/)), as well as key infrastructure, including block explorers like [BlockScout](https://www.blockscout.com/) and data analytics ([TheGraph](https://thegraph.com/), [Dune](https://dune.com/), [GoldSky](https://goldsky.com/)).
 
-## BTC Bridges
+## Bitcoin Bridges
 
 BOB provides trustless access to Bitcoin block and transactional data via a [BTC light client](https://blog.threshold.network/blockchain-relays-101/), allowing EVM contracts to process BTC transactions (e.g. P2P BTC swaps, Ordinal auctions, hashrate tokenization,...). BOB also supports a range of Bitcoin bridges, both decentralized and institutional. Through a native ETH L1/L2 bridge, BOB has access to market leader [wBTC](https://wbtc.network/) and the more secure, threshold-based version, [tBTC v2](https://threshold.network/). In the future, BOB will support advanced bridge models including opt-in collateralization (see [iBTC](https://www.interlay.io/)) and ideally a 2-way light-client BTC bridge powered by [BitVM](https://bitvm.org/bitvm.pdf).
 
