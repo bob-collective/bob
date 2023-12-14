@@ -34,7 +34,7 @@ contract OrdMarketplace {
         uint256 indexed orderId, OrdinalId ordinalID, address sellToken, uint256 sellAmount
     );
     event acceptOrdinalSellOrderEvent(
-        uint256 indexed id, uint256 indexed acceptId, BitcoinAddress bitcoinAddress, uint256 ercAmount, address ercToken
+        uint256 indexed id, uint256 indexed acceptId, BitcoinAddress bitcoinAddress, address ercToken, uint256 ercAmount
     );
     event proofOrdinalSellOrderEvent(uint256 id);
     event withdrawOrdinalSellOrderEvent(uint256 id);
@@ -108,7 +108,7 @@ contract OrdMarketplace {
             acceptTime: block.timestamp
         });
 
-        emit acceptOrdinalSellOrderEvent(id, acceptId, bitcoinAddress, order.sellAmount, order.sellToken);
+        emit acceptOrdinalSellOrderEvent(id, acceptId, bitcoinAddress, order.sellToken, order.sellAmount);
 
         return acceptId;
     }
