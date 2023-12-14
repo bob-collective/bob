@@ -293,4 +293,32 @@ library BitcoinTx {
 
         revert("No output found for scriptPubKey");
     }
+
+    function checkOutboundTxInputsMatchesUtxo(bytes memory TxInputVector, BitcoinTx.UTXO calldata utxo)
+        internal
+        pure
+        returns (bytes32 outpointTxHash, uint32 outpointIndex)
+    {
+        // To determine the total number of Bitcoin transaction inputs,
+        // we need to parse the compactSize uint (VarInt) the input vector is
+        // prepended by. That compactSize uint encodes the number of vector
+        // elements using the format presented in:
+        // https://developer.bitcoin.org/reference/transactions.html#compactsize-unsigned-integers
+        // We don't need asserting the compactSize uint is parseable since it
+        // was already checked during `validateVin` validation.
+        // See `BitcoinTx.inputVector` docs for more details.
+        (, uint256 inputsCount) = TxInputVector.parseVarInt();
+
+        for (uint256 inputId = 0; inputId < inputsCount; inputId++) {
+            bytes memory input = TxInputVector.extractInputAtIndex(inputId);
+
+            outpointTxHash = input.extractInputTxIdLE();
+            outpointIndex = BTCUtils.reverseUint32(uint32(input.extractTxIndexLE()));
+
+            if (utxo.txHash == outpointTxHash && utxo.txOutputIndex == outpointIndex) {
+                return (outpointTxHash, outpointIndex);
+            }
+        }
+        revert("No transaction matching the one mentioned in sell order");
+    }
 }
