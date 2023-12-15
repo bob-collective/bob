@@ -2,7 +2,7 @@
 
 The BRC20 Octopus example demonstrates how the BOB SDK can be used to inscribe Ordinals, both text and BRC20s are supported.
 
-The demo uses the [UniSat Wallet](https://docs.unisat.io/dev/unisat-wallet-api) to interact with the Bitcoin network and sign transactions.
+The demo uses the [UniSat Wallet](https://docs.unisat.io/dev/unisat-developer-service/unisat-wallet) to interact with the Bitcoin network and sign transactions.
 
 :::info Example Code
 
