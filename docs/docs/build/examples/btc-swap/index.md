@@ -4,11 +4,18 @@ This example demonstrates how BOB is leveraged to build a peer-to-peer (P2P) swa
 
 :::info Example Code
 
-The code for this example can be [found in the P2P swap demo GitHub repository](https://github.com/bob-collective/demo-p2p-swap)
+You can find the code for this example [in the P2P swap demo GitHub repository](https://github.com/bob-collective/demo-p2p-swap/releases/tag/v0.0.1).
 
 :::
 
 ## Demo
+
+:::info Example Code
+
+This demo is running on our [Alpha network](https://app.conduit.xyz/published/view/fluffy-bob-7mjgi9pmtg).
+
+:::
+
 
 We have created a testnet demo of the P2P swap, allowing anyone to swap BTC for ERC20 tokens, ERC20 tokens for BTC, and exchange one ERC20 token for another. The application currently supports testnet BTC, testnet USDT, and ZBTC (ZBTC is a placeholder for an arbitrary bridged BTC token).
 

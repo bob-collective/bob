@@ -4,7 +4,7 @@ This example demonstrates how users can use a single web wallet to manage assets
 
 :::info Example Code
 
-Find the code for this example on [our GitHub repository](https://github.com/bob-collective/demo-brc20-metamask).
+You can find the code for this example on [our GitHub repository](https://github.com/bob-collective/demo-brc20-metamask).
 
 :::
 
