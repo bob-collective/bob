@@ -1,17 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import {Ownable, Context} from "@openzeppelin/contracts/access/Ownable.sol";
+import {ERC2771Recipient} from "@opengsn/packages/contracts/src/ERC2771Recipient.sol";
 
 interface Erc20Mintable {
     function decimals() external returns (uint256);
+
     function mint(uint256 amount) external;
-    function transfer(address to, uint256 amount) external returns (bool);
-    function approve(address spender, uint256 amount) external;
-    function balanceOf(address account) external view returns (uint256);
+
+    function transfer(address to, uint256 value) external returns (bool);
 }
 
-contract Erc20Minter is Ownable {
+contract Faucet is Ownable, ERC2771Recipient {
     uint256 nextTokenId;
     mapping(uint256 => address) supportedErc20Addresses;
 
@@ -25,7 +26,15 @@ contract Erc20Minter is Ownable {
             Erc20Mintable token = Erc20Mintable(supportedErc20Addresses[id]);
             uint256 amount = 30000 * (10 ** token.decimals());
             token.mint(amount);
-            token.transfer(msg.sender, amount);
+            token.transfer(_msgSender(), amount);
         }
+    }
+
+    function _msgSender() internal view override(Context, ERC2771Recipient) returns (address sender) {
+        sender = ERC2771Recipient._msgSender();
+    }
+
+    function _msgData() internal view override(Context, ERC2771Recipient) returns (bytes calldata) {
+        return ERC2771Recipient._msgData();
     }
 }

@@ -28,7 +28,7 @@ contract MarketPlaceTest is BtcMarketPlace, Test {
     ArbitaryErc20 token1;
     TestLightRelay testLightRelay;
 
-    constructor() BtcMarketPlace(testLightRelay) {}
+    constructor() BtcMarketPlace(testLightRelay, address(0x00)) {}
 
     function setUp() public {
         utils = new Utilities();
