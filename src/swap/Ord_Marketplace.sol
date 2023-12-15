@@ -117,9 +117,11 @@ contract OrdMarketplace {
         public
     {
         AcceptedOrdinalSellOrder storage accept = acceptedOrdinalSellOrders[id];
-        require(accept.requester == msg.sender);
+        require(accept.requester == msg.sender, "Sender not the requester");
 
         OrdinalSellOrder storage order = ordinalSellOrders[accept.orderId];
+
+        relay.validateProof(transaction, proof);
 
         BitcoinTx.ensureTxInputSpendsUtxo(transaction.inputVector, order.utxo);
 
