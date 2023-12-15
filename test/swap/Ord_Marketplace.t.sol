@@ -11,6 +11,7 @@ import {Utilities} from "./Utilities.sol";
 import {BitcoinTx} from "../../src/bridge/BitcoinTx.sol";
 import {TestLightRelay} from "../../src/relay/TestLightRelay.sol";
 import "../../src/swap/Ord_Marketplace.sol";
+import "forge-std/console.sol";
 
 contract ArbitaryErc20 is ERC20, Ownable {
     constructor(string memory name_, string memory symbol_) ERC20(name_, symbol_) {}
@@ -230,5 +231,67 @@ contract OrdMarketPlaceTest is OrdMarketplace, Test {
         vm.expectRevert("Tx merkle proof is not valid for provided header and tx hash");
         this.proofOrdinalSellOrder(1, ordinalsInfo[0].info, ordinalsInfo[1].proof);
         vm.stopPrank();
+    }
+
+    function test_acceptProofOrdinalSellOrderWithInvalidUtxoSpent() public {
+        token1.sudoMint(bob, 200);
+        // placeOrdinalSellOrder by alice
+        vm.startPrank(alice);
+        this.placeOrdinalSellOrder(ordinalsInfo[0].id, ordinalsInfo[1].utxo, address(token1), 100);
+
+        // acceptOrdinalSellOrder by bob
+        vm.startPrank(bob);
+        token1.approve(address(this), 100);
+        this.acceptOrdinalSellOrder(0, ordinalsInfo[0].requester);
+
+        vm.startPrank(alice);
+        vm.expectRevert("No transaction matching sell order");
+        this.proofOrdinalSellOrder(1, ordinalsInfo[0].info, ordinalsInfo[0].proof);
+    }
+
+    function test_withdrawOrdinalSellOrder() public {
+        // placeOrdinalSellOrder by alice
+        vm.startPrank(alice);
+        this.placeOrdinalSellOrder(ordinalsInfo[0].id, ordinalsInfo[1].utxo, address(token1), 100);
+        this.withdrawOrdinalSellOrder(0);
+
+        (OrdinalSellOrder[] memory _ordinalOrders, uint256[] memory ids) = this.getOpenOrdinalSellOrders();
+        // there should be no order ids
+        assertEq(ids.length, 0);
+    }
+
+    function test_withdrawOrdinalSellOrderShouldRevert() public {
+        // placeOrdinalSellOrder by alice
+        vm.startPrank(alice);
+        this.placeOrdinalSellOrder(ordinalsInfo[0].id, ordinalsInfo[1].utxo, address(token1), 100);
+
+        vm.startPrank(bob);
+        vm.expectRevert("Sender not the requester");
+        this.withdrawOrdinalSellOrder(0);
+    }
+
+    function test_cancelAcceptedOrdinalSellOrder() public {
+        setUpForProofOrdinalSellOrder();
+        vm.warp(block.timestamp + REQUEST_EXPIRATION_SECONDS + 1);
+        vm.startPrank(bob);
+        this.cancelAcceptedOrdinalSellOrder(1);
+        (AcceptedOrdinalSellOrder[] memory _ordinalAcceptedOrders, uint256[] memory ids) =
+            this.getOpenAcceptedOrdinalSellOrders();
+        // there should be no order ids
+        assertEq(ids.length, 0);
+    }
+
+    function test_cancelAcceptedOrdinalSellOrderShouldRevert() public {
+        setUpForProofOrdinalSellOrder();
+
+        vm.startPrank(bob);
+        vm.expectRevert("Request still valid");
+        this.cancelAcceptedOrdinalSellOrder(1);
+
+        vm.warp(block.timestamp + REQUEST_EXPIRATION_SECONDS + 1);
+
+        vm.startPrank(alice);
+        vm.expectRevert("Sender not the acceptor");
+        this.cancelAcceptedOrdinalSellOrder(1);
     }
 }

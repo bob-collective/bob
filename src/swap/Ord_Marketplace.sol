@@ -155,7 +155,7 @@ contract OrdMarketplace {
     function withdrawOrdinalSellOrder(uint256 id) public {
         OrdinalSellOrder storage order = ordinalSellOrders[id];
 
-        require(order.requester == msg.sender);
+        require(order.requester == msg.sender, "Sender not the requester");
 
         delete ordinalSellOrders[id];
 
@@ -165,9 +165,9 @@ contract OrdMarketplace {
     function cancelAcceptedOrdinalSellOrder(uint256 id) public {
         AcceptedOrdinalSellOrder storage order = acceptedOrdinalSellOrders[id];
 
-        require(block.timestamp > order.acceptTime + REQUEST_EXPIRATION_SECONDS);
+        require(block.timestamp > order.acceptTime + REQUEST_EXPIRATION_SECONDS, "Request still valid");
 
-        require(order.acceptor == msg.sender);
+        require(order.acceptor == msg.sender, "Sender not the acceptor");
 
         // give acceptor its tokens back
         IERC20(order.ercToken).safeTransfer(msg.sender, order.ercAmount);
