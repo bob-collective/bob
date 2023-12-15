@@ -233,6 +233,20 @@ contract OrdMarketPlaceTest is OrdMarketplace, Test {
         vm.stopPrank();
     }
 
+    function test_acceptProofOrdinalSellOrderWithUtxoSpentOnAnotherAddress() public {
+        setUpForAcceptOrdinalSellOrder();
+
+        // acceptOrdinalSellOrder by bob
+        vm.startPrank(bob);
+        token1.approve(address(this), 100);
+        this.acceptOrdinalSellOrder(0, ordinalsInfo[1].requester);
+
+        vm.startPrank(alice);
+        vm.expectRevert("No output found for scriptPubKey");
+        this.proofOrdinalSellOrder(1, ordinalsInfo[0].info, ordinalsInfo[0].proof);
+        vm.stopPrank();
+    }
+
     function test_acceptProofOrdinalSellOrderWithInvalidUtxoSpent() public {
         token1.sudoMint(bob, 200);
         // placeOrdinalSellOrder by alice
