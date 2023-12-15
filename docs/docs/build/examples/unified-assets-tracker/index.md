@@ -1,6 +1,6 @@
 # Unified EVM and Bitcoin Assets with the MetaMask Bitcoin Snap Extension
 
-This app allows tracking and transfering both EVM and Bitcoin assets in a unified manner using the [Zion MetaMask Bitcoin snap extension](https://snaps.metamask.io/snap/npm/btcsnap/).
+This app allows tracking and transferring both EVM and Bitcoin assets in a unified manner using the [Zion MetaMask Bitcoin snap extension](https://snaps.metamask.io/snap/npm/btcsnap/).
 
 ![image](https://github.com/bob-collective/demo-unified-assets-tracker/assets/47864599/c13783e0-5cbe-4a30-89d7-3c12a39cb408)
 
