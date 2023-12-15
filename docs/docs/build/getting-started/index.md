@@ -26,7 +26,7 @@ This is alpha-stage software. We love to work closely with you to make BOB usefu
 
 ## Examples
 
-- [P2P Swap BTC and ERC20](/docs/build/examples/btc-swap/): Learn how to build a P2P Bitcoin marketplace on BOB using a BTC light client to eliminate trusted thrid parties.
+- [P2P Swap BTC and ERC20](/docs/build/examples/btc-swap/): Learn how to build a P2P Bitcoin marketplace on BOB using a BTC light client to eliminate trusted third parties.
 - [Inscribing Ordinals With Unisat Wallet](/docs/build/examples/brc20-octopus/): Learn how to inscribe Ordinals (text, BRC20s, ...) with the UniSat wallet.
 - [Use MetaMask to Inscribe and Transfer Ordinals](/docs/build/examples/metamask-ordinals/): Learn how to inscribe Ordinals (text, BRC20s, ...) with the UniSat wallet.
 - [Unify BTC and EVM Assets](/docs/build/examples/unified-assets-tracker/): Learn how to unify BTC and EVM assets with a single wallet by using MetaMask snaps.

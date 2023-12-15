@@ -25,7 +25,7 @@
 - Deterministic deployer: `0x250f60877f1397002ae79528b218be925b6b4c79`
 - WBTC Paymaster: `0x777FA19ea9e771018678161ABf2f1E2879D3cA6C`
 
-### Meta Tranactions (OpenGSN)
+### Meta Transactions (OpenGSN)
 
 - RelayHub: `0x7B72bA8c9f3Ba4A94E6d8fA07c822228034d2e61`
 - RelayRegistrar: `0x6Ff484e7530C4ab20aEa1B19E5b33FE7415dB9Fd`
