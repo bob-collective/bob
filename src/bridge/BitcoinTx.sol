@@ -316,6 +316,6 @@ library BitcoinTx {
             _offset = _offset + _len;
         }
 
-        revert("No transaction matching sell order");
+        revert("Transaction does not spend the required utxo");
     }
 }
