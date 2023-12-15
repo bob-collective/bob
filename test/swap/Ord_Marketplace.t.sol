@@ -209,7 +209,7 @@ contract OrdMarketPlaceTest is OrdMarketplace, Test {
         this.acceptOrdinalSellOrder(0, ordinalsInfo[0].requester);
     }
 
-    function test_acceptProofOrdinalSellOrderShouldRevert() public {
+    function test_proofOrdinalSellOrderShouldRevert() public {
         setUpForProofOrdinalSellOrder();
 
         // when sender is not the requester
@@ -245,7 +245,7 @@ contract OrdMarketPlaceTest is OrdMarketplace, Test {
         this.acceptOrdinalSellOrder(0, ordinalsInfo[0].requester);
 
         vm.startPrank(alice);
-        vm.expectRevert("No transaction matching sell order");
+        vm.expectRevert("Transaction does not spend the required utxo");
         this.proofOrdinalSellOrder(1, ordinalsInfo[0].info, ordinalsInfo[0].proof);
     }
 
