@@ -124,6 +124,8 @@ contract OrdMarketPlaceTest is OrdMarketplace, Test {
         token1.sudoMint(bob, 200);
 
         for (uint256 i = 0; i < ordinalsInfo.length; i++) {
+            testLightRelay.setDifficultyFromHeaders(ordinalsInfo[i].proof.bitcoinHeaders);
+
             uint256 expectedPlaceId = nextOrdinalId++;
 
             // placeOrdinalSellOrder by alice
@@ -152,5 +154,81 @@ contract OrdMarketPlaceTest is OrdMarketplace, Test {
             this.proofOrdinalSellOrder(expectedAcceptId, ordinalsInfo[i].info, ordinalsInfo[i].proof);
             vm.stopPrank();
         }
+    }
+
+    function test_placeOrdinalSellOrderShouldRevert() public {
+        token1.sudoMint(bob, 200);
+        // placeOrdinalSellOrder by alice
+        vm.startPrank(alice);
+        vm.expectRevert("Invalid buying token");
+        this.placeOrdinalSellOrder(ordinalsInfo[0].id, ordinalsInfo[0].utxo, address(0x0), 100);
+
+        vm.expectRevert("Buying amount should be greater than 0");
+        this.placeOrdinalSellOrder(ordinalsInfo[0].id, ordinalsInfo[0].utxo, address(token1), 0);
+
+        vm.expectRevert("Invalid ordinal ID provided");
+        ordinalsInfo[0].id.ordinalID = hex"cdff";
+        this.placeOrdinalSellOrder(ordinalsInfo[0].id, ordinalsInfo[0].utxo, address(token1), 100);
+        vm.stopPrank();
+    }
+
+    function setUpForAcceptOrdinalSellOrder() public {
+        token1.sudoMint(bob, 200);
+        // placeOrdinalSellOrder by alice
+        vm.startPrank(alice);
+        this.placeOrdinalSellOrder(ordinalsInfo[0].id, ordinalsInfo[0].utxo, address(token1), 100);
+    }
+
+    function test_acceptOrdinalSellOrderShouldRevert() public {
+        setUpForAcceptOrdinalSellOrder();
+
+        vm.startPrank(bob);
+
+        // allow insufficient tokens
+        token1.approve(address(this), 50);
+        vm.expectRevert("ERC20: insufficient allowance");
+        this.acceptOrdinalSellOrder(0, ordinalsInfo[0].requester);
+
+        // call with wrong id
+        token1.approve(address(this), 100);
+        vm.expectRevert("Address: call to non-contract");
+        this.acceptOrdinalSellOrder(1, ordinalsInfo[0].requester);
+        vm.stopPrank();
+    }
+
+    function setUpForProofOrdinalSellOrder() public {
+        token1.sudoMint(bob, 200);
+        // placeOrdinalSellOrder by alice
+        vm.startPrank(alice);
+        this.placeOrdinalSellOrder(ordinalsInfo[0].id, ordinalsInfo[0].utxo, address(token1), 100);
+
+        // acceptOrdinalSellOrder by bob
+        vm.startPrank(bob);
+        token1.approve(address(this), 100);
+        this.acceptOrdinalSellOrder(0, ordinalsInfo[0].requester);
+    }
+
+    function test_acceptProofOrdinalSellOrderShouldRevert() public {
+        setUpForProofOrdinalSellOrder();
+
+        // when sender is not the requester
+        vm.startPrank(bob);
+        vm.expectRevert("Sender not the requester");
+        this.proofOrdinalSellOrder(1, ordinalsInfo[0].info, ordinalsInfo[0].proof);
+
+        // with invalid id
+        vm.startPrank(alice);
+        vm.expectRevert("Sender not the requester");
+        this.proofOrdinalSellOrder(2, ordinalsInfo[0].info, ordinalsInfo[0].proof);
+        vm.stopPrank();
+    }
+
+    function test_acceptProofOrdinalSellOrderWithInvalidMerkelProof() public {
+        setUpForProofOrdinalSellOrder();
+        // with invalid proof
+        vm.startPrank(alice);
+        vm.expectRevert("Tx merkle proof is not valid for provided header and tx hash");
+        this.proofOrdinalSellOrder(1, ordinalsInfo[0].info, ordinalsInfo[1].proof);
+        vm.stopPrank();
     }
 }
