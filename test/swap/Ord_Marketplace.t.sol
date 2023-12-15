@@ -233,7 +233,7 @@ contract OrdMarketPlaceTest is OrdMarketplace, Test {
         vm.stopPrank();
     }
 
-    function test_acceptProofOrdinalSellOrderWithUtxoSpentOnAnotherAddress() public {
+    function test_acceptProofOrdinalSellOrderWithUtxoSpentOnInCorrectAddress() public {
         setUpForAcceptOrdinalSellOrder();
 
         // acceptOrdinalSellOrder by bob
