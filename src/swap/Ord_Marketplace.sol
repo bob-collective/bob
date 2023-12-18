@@ -46,10 +46,12 @@ contract OrdMarketplace {
         uint256 sellAmount;
         BitcoinTx.UTXO utxo;
         address requester;
+        bool isOrderAccepted;
     }
 
     struct AcceptedOrdinalSellOrder {
         uint256 orderId;
+        OrdinalId ordinalID;
         BitcoinAddress bitcoinAddress;
         address ercToken;
         uint256 ercAmount;
@@ -62,9 +64,9 @@ contract OrdMarketplace {
         bytes scriptPubKey;
     }
 
-    // ToDo: split this into txid and index
     struct OrdinalId {
-        bytes ordinalID;
+        bytes32 txId;
+        uint32 index;
     }
 
     function placeOrdinalSellOrder(
@@ -75,7 +77,6 @@ contract OrdMarketplace {
     ) public {
         require(sellToken != address(0x0), "Invalid buying token");
         require(sellAmount > 0, "Buying amount should be greater than 0");
-        require(ordinalID.ordinalID.length == 64, "Invalid ordinal ID provided");
 
         uint256 id = nextOrdinalId++;
 
@@ -84,7 +85,8 @@ contract OrdMarketplace {
             sellToken: sellToken,
             sellAmount: sellAmount,
             utxo: utxo,
-            requester: msg.sender
+            requester: msg.sender,
+            isOrderAccepted: false
         });
 
         emit placeOrdinalSellOrderEvent(id, ordinalID, sellToken, sellAmount);
@@ -92,7 +94,7 @@ contract OrdMarketplace {
 
     function acceptOrdinalSellOrder(uint256 id, BitcoinAddress calldata bitcoinAddress) public returns (uint256) {
         OrdinalSellOrder storage order = ordinalSellOrders[id];
-
+        require(order.isOrderAccepted == false, "Order Already Accepted");
         // "lock" sell token by transferring to contract
         IERC20(order.sellToken).safeTransferFrom(msg.sender, address(this), order.sellAmount);
 
@@ -100,6 +102,7 @@ contract OrdMarketplace {
 
         acceptedOrdinalSellOrders[acceptId] = AcceptedOrdinalSellOrder({
             orderId: id,
+            ordinalID: order.ordinalID,
             bitcoinAddress: bitcoinAddress,
             ercToken: order.sellToken,
             ercAmount: order.sellAmount,
@@ -107,6 +110,8 @@ contract OrdMarketplace {
             acceptor: msg.sender,
             acceptTime: block.timestamp
         });
+
+        order.isOrderAccepted = true;
 
         emit acceptOrdinalSellOrderEvent(id, acceptId, bitcoinAddress, order.sellToken, order.sellAmount);
 
@@ -128,8 +133,11 @@ contract OrdMarketplace {
         // check if output to the buyer's address
         _checkBitcoinTxOutput(accept.bitcoinAddress, transaction);
 
+        // ToDo: check that the correct satoshi is being spent to the buyer's address
+
         IERC20(accept.ercToken).safeTransfer(accept.requester, accept.ercAmount);
 
+        delete ordinalSellOrders[accept.orderId];
         delete acceptedOrdinalSellOrders[id];
         emit proofOrdinalSellOrderEvent(id);
     }
@@ -156,6 +164,7 @@ contract OrdMarketplace {
         OrdinalSellOrder storage order = ordinalSellOrders[id];
 
         require(order.requester == msg.sender, "Sender not the requester");
+        require(order.isOrderAccepted == false, "Order has already been accepted, cannot withdraw");
 
         delete ordinalSellOrders[id];
 
