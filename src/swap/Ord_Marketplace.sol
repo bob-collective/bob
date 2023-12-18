@@ -51,7 +51,6 @@ contract OrdMarketplace {
 
     struct AcceptedOrdinalSellOrder {
         uint256 orderId;
-        OrdinalId ordinalID;
         BitcoinAddress bitcoinAddress;
         address ercToken;
         uint256 ercAmount;
@@ -102,7 +101,6 @@ contract OrdMarketplace {
 
         acceptedOrdinalSellOrders[acceptId] = AcceptedOrdinalSellOrder({
             orderId: id,
-            ordinalID: order.ordinalID,
             bitcoinAddress: bitcoinAddress,
             ercToken: order.sellToken,
             ercAmount: order.sellAmount,
