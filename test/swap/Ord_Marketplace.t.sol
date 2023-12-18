@@ -67,8 +67,6 @@ contract OrdMarketPlaceTest is OrdMarketplace, Test {
         BitcoinAddress memory requester =
             BitcoinAddress({scriptPubKey: hex"0014e257eccafbc07c381642ce6e7e55120fb077fbed"});
         OrdinalId memory id;
-        id.ordinalID =
-            hex"00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff";
 
         ordinalsInfo[0] = Ordinal({info: info, proof: proof, requester: requester, utxo: utxo, id: id});
 
@@ -98,8 +96,6 @@ contract OrdMarketPlaceTest is OrdMarketplace, Test {
         BitcoinAddress memory requester2 =
             BitcoinAddress({scriptPubKey: hex"5120d45f4cc697b09edb740965749aac06ad9b6e2d3a9d79886e6dfe6d7d57dcec06"});
         OrdinalId memory id2;
-        id2.ordinalID =
-            hex"00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff";
 
         ordinalsInfo[1] = Ordinal({info: info2, proof: proof2, requester: requester2, utxo: utxo2, id: id2});
     }
@@ -167,9 +163,6 @@ contract OrdMarketPlaceTest is OrdMarketplace, Test {
         vm.expectRevert("Buying amount should be greater than 0");
         this.placeOrdinalSellOrder(ordinalsInfo[0].id, ordinalsInfo[0].utxo, address(token1), 0);
 
-        vm.expectRevert("Invalid ordinal ID provided");
-        ordinalsInfo[0].id.ordinalID = hex"cdff";
-        this.placeOrdinalSellOrder(ordinalsInfo[0].id, ordinalsInfo[0].utxo, address(token1), 100);
         vm.stopPrank();
     }
 
@@ -195,6 +188,16 @@ contract OrdMarketPlaceTest is OrdMarketplace, Test {
         vm.expectRevert("Address: call to non-contract");
         this.acceptOrdinalSellOrder(1, ordinalsInfo[0].requester);
         vm.stopPrank();
+    }
+
+    function test_acceptOrdinalSellOrderWhenOrderAlreadyAccepted() public {
+        setUpForProofOrdinalSellOrder();
+
+        // acceptOrdinalSellOrder by bob
+        vm.startPrank(bob);
+        token1.approve(address(this), 100);
+        vm.expectRevert("Order Already Accepted");
+        this.acceptOrdinalSellOrder(0, ordinalsInfo[0].requester);
     }
 
     function setUpForProofOrdinalSellOrder() public {
