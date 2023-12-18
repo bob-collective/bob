@@ -16,7 +16,7 @@ The core things that need building is:
 
 We already have key parts of the runtime built and live:
 
-- Basic DeFi functions with a Uniswap v2, Curve v1, and Compound v2 are natively availabl ein the runtime.
+- Basic DeFi functions with a Uniswap v2, Curve v1, and Compound v2 are natively available in the runtime.
 - Most decentralized Bitcoin bridge is live since August 2022. This includes a Bitcoin light client that is capable of trustless transaction inclusion proofs of Bitcoin transaction.
 - Access to native USDT, USDC (soon), and cross-chain assets via Wormhole (soon).
 - Fully decentralized governance with upgradable runtimes. 
@@ -40,7 +40,7 @@ We already have key parts of the runtime built and live:
   - Hackathon templates
 - OP Stack compatibility
   - Data availability layer support/relayer
-  - Sequencing implmentation
+  - Sequencing implementation
   - Execution layer
   - Settlement layer
 - Bitcoin compatibility

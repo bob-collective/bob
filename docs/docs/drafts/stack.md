@@ -35,7 +35,7 @@ The OP Stack uses a single, centralized sequencer.
 
 OPEN QUESTIONS
 - Should we stick with a PoA-style sequencer as well? We could use AURA for that.
-- Should we keep GRANDPA and BABE consensus style block production and finalization? This will likely require some custom implmenetation on the Settlement layer.
+- Should we keep GRANDPA and BABE consensus style block production and finalization? This will likely require some custom implementation on the Settlement layer.
 
 ## Execution
 
@@ -52,8 +52,8 @@ OP Stack uses a geth fork for its EVM state and state transition functions. Inst
 
 OP Stack settles on Ethereum and uses fraud proofs. While BOB is made for Bitcoin, there are distinct reasons where BOB will initially not roll up against Bitcoin:
 
-1. Bitcoin's consensus only validates BTC as an asset. By rolling up against Ethereum, users can exit Ethereum-native assets (those that are validted by Ethereum consensus). This requires a bridge to Bitcoin, but having a fully collaterlaized Bitcoin bridge offers similar security levels as a *threoretically* possible roll-up to Bitcoin. 
-2. Bitcoin lacks the possibility have its consensus validate a roll-up at the moment. While the BOB project closely follows developments areound adding an `OP_ZKPVERIFY`, it remains quesitonable when such a code will be available.
+1. Bitcoin's consensus only validates BTC as an asset. By rolling up against Ethereum, users can exit Ethereum-native assets (those that are validated by Ethereum consensus). This requires a bridge to Bitcoin, but having a fully collaterlaized Bitcoin bridge offers similar security levels as a *threoretically* possible roll-up to Bitcoin. 
+2. Bitcoin lacks the possibility have its consensus validate a roll-up at the moment. While the BOB project closely follows developments areound adding an `OP_ZKPVERIFY`, it remains questionable when such a code will be available.
 
 In the future, BOB can also expose capabilities to be ZK-compatible where the data structure is rather compatible with Starkware instead of the OP Stack to enable a ZKP roll-up on Bitcoin and ZKP bridges to Ethereum and other EVM networks.
 
