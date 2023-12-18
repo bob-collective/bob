@@ -49,14 +49,14 @@ Before the first user operation can be made, the paymaster smart contract has to
 
 ## Limitations
 
-Given that ERC-4337 is still relatively new, there is not a lot of support for this standard available yet on "traditiona" crypto wallets like MetaMask, Ledger, and others.
+Given that ERC-4337 is still relatively new, there is not a lot of support for this standard available yet on "traditional" crypto wallets like MetaMask, Ledger, and others.
 
 ## Opportunities
 
 There are a interesting use cases that account abstraction enables being pushed by several team. Some places to look for inspiration:
 
 - [Privy](https://docs.privy.io/): Privy allows users to chose from traditional crypto wallets and social logins to create accounts.
-- [Safe](https://docs.safe.global/getting-started/readme): Safe allows complex multi-sig setups, simple authetication, and onramping.
+- [Safe](https://docs.safe.global/getting-started/readme): Safe allows complex multi-sig setups, simple authentication, and onramping.
 - [Pimlico](https://pimlico.notion.site/Product-Directory-5d92fe60243b4c5aac6650de390e7cb3): Pimlico tracks several products around account abstraction and it is worthwhile checking out the rapid and new developments in this space.
 
 ## Local development
