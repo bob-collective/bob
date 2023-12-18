@@ -30,6 +30,8 @@ export interface UTXO {
     txid: string
     vout: number,
     value: number,
+    confirmed: boolean,
+    height?: number
 }
 
 export interface ElectrsClient {
@@ -134,7 +136,7 @@ export interface ElectrsClient {
     /**
      * Get the Unspent Transaction Outputs (UTXOs) for an address.
      *
-     * @param {string} address - The Bitcoin address to checl.
+     * @param {string} address - The Bitcoin address to check.
      * @returns {Promise<Array<UTXO>>} A promise that resolves to an array of UTXOs.
      */
     getAddressUtxos(address: string): Promise<Array<UTXO>>;
@@ -269,7 +271,9 @@ export class DefaultElectrsClient implements ElectrsClient {
                 return {
                     txid: utxo.txid,
                     vout: utxo.vout,
-                    value: utxo.value
+                    value: utxo.value,
+                    confirmed: utxo.status.confirmed,
+                    height: utxo.status.block_height
                 }
             });
     }

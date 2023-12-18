@@ -16,6 +16,6 @@ With the app (and server) running locally you should see the following page:
 
 :::tip BOB SDK
 
-To add this functionality to your app use the `inscribeText` function and provide a custom `RemoteSigner` implementation for your wallet. This needs to be able to send Bitcoin to the commit address and sign the PSBT of the reveal transaction. Check the test in [`sdk/test/ordinals.test.ts`](https://github.com/bob-collective/bob/blob/master/sdk/test/ordinals.test.ts) for an example implementation.
+To add this functionality to your app use the `inscribeData` function and provide a custom `RemoteSigner` implementation for your wallet. This needs to be able to send Bitcoin to the commit address and sign the PSBT of the reveal transaction. Check the test in [`sdk/test/ordinals.test.ts`](https://github.com/bob-collective/bob/blob/master/sdk/test/ordinals.test.ts) for an example implementation.
 
 :::

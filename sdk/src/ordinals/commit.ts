@@ -6,8 +6,7 @@ const encoder = new TextEncoder();
 export const MAX_CHUNK_SIZE = 520;
 
 export interface Inscription {
-    // MIME type
-    contentType: Buffer;
+    contentType: Buffer; // MIME type
     content: Buffer;
 }
 
