@@ -1,7 +1,7 @@
 import { assert } from "chai";
 import { MAINNET_ESPLORA_BASE_PATH } from "../src/electrs";
 import { Block } from "bitcoinjs-lib";
-import {getMerkleProof, reverseEndianness} from "../src/utils";
+import {getMerkleProof} from "../src/utils";
 
 describe("Utils Tests", () => {
     // NOTE: this is a bit flaky due to slow response times from electrs

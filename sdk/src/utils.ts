@@ -175,27 +175,3 @@ export function getMerkleProof(block: Block, txHash: string, forWitness?: boolea
         root: merkleAndRoot.root.toString("hex"),
     };
 }
-
-/**
- * Reverses the endianness of a hexadecimal string.
- *
- * @param {string} input - The input hexadecimal string to reverse.
- * @returns {string} - The reversed hexadecimal string.
-*/
-export function reverseEndianness(input: string): string {
-    // Remove '0x' prefix if present
-    const hexString = input.startsWith('0x') ? input.slice(2) : input;
-
-    // Split the string into pairs of two characters
-    const pairs = hexString.match(/.{1,2}/g) || [];
-
-    // Reverse the order of the pairs
-    const reversedPairs = pairs.reverse();
-
-    // Join the reversed pairs to get the final reversed hex string
-    const reversedHexString = reversedPairs.join('');
-
-    // Add '0x' prefix back, if the original string had it
-    return input.startsWith('0x') ? '0x' + reversedHexString : reversedHexString;
-}
-

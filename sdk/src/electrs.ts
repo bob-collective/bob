@@ -1,5 +1,3 @@
-import {reverseEndianness} from "./utils";
-
 /**
  * Base path for the mainnet Esplora API.
  * @default "https://btc-mainnet.gobob.xyz"
@@ -30,7 +28,6 @@ export interface MerkleProof {
  */
 export interface UTXO {
     txid: string
-    reverseTxid: string
     vout: number,
     value: number,
     confirmed: boolean,
@@ -273,7 +270,6 @@ export class DefaultElectrsClient implements ElectrsClient {
             .map<UTXO>(utxo => {
                 return {
                     txid: utxo.txid,
-                    reverseTxid: reverseEndianness(utxo.txid),
                     vout: utxo.vout,
                     value: utxo.value,
                     confirmed: utxo.status.confirmed,
