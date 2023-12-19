@@ -7,6 +7,7 @@ import {BTCUtils} from "@bob-collective/bitcoin-spv/BTCUtils.sol";
 import {BitcoinTx} from "../bridge/BitcoinTx.sol";
 import {IRelay} from "../bridge/IRelay.sol";
 import {BridgeState} from "../bridge/BridgeState.sol";
+import {TestLightRelay} from "../relay/TestLightRelay.sol";
 import "forge-std/console.sol";
 
 using SafeERC20 for IERC20;
@@ -21,10 +22,12 @@ contract OrdMarketplace {
     uint256 public constant REQUEST_EXPIRATION_SECONDS = 6 hours;
 
     BridgeState.Storage internal relay;
+    TestLightRelay internal testLightRelay;
 
     constructor(IRelay _relay) {
         relay.relay = _relay;
         relay.txProofDifficultyFactor = 1; // will make this an arg later on
+        testLightRelay = TestLightRelay(address(relay.relay));
     }
 
     function setRelay(IRelay _relay) internal {
@@ -125,6 +128,7 @@ contract OrdMarketplace {
 
         OrdinalSellOrder storage order = ordinalSellOrders[accept.orderId];
 
+        testLightRelay.setDifficultyFromHeaders(proof.bitcoinHeaders);
         relay.validateProof(transaction, proof);
 
         BitcoinTx.ensureTxInputSpendsUtxo(transaction.inputVector, order.utxo);

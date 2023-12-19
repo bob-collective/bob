@@ -27,7 +27,6 @@ contract OrdMarketPlaceTest is OrdMarketplace, Test {
     address internal bob;
 
     ArbitaryErc20 token1;
-    TestLightRelay testLightRelay;
 
     struct Ordinal {
         BitcoinTx.Info info;
@@ -144,7 +143,6 @@ contract OrdMarketPlaceTest is OrdMarketplace, Test {
 
         testLightRelay = new TestLightRelay();
         super.setRelay(testLightRelay);
-        testLightRelay.setDifficultyFromHeaders(ordinalsInfo[0].proof.bitcoinHeaders);
     }
 
     function test_ordinalSellOrderFullFlow() public {
@@ -152,8 +150,6 @@ contract OrdMarketPlaceTest is OrdMarketplace, Test {
 
         for (uint256 i = 0; i < ordinalsInfo.length; i++) {
             token1.sudoMint(bob, 100);
-
-            testLightRelay.setDifficultyFromHeaders(ordinalsInfo[i].proof.bitcoinHeaders);
 
             uint256 expectedPlaceId = nextOrdinalId++;
 
