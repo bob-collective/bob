@@ -7,6 +7,7 @@ import {BTCUtils} from "@bob-collective/bitcoin-spv/BTCUtils.sol";
 import {BitcoinTx} from "../bridge/BitcoinTx.sol";
 import {IRelay} from "../bridge/IRelay.sol";
 import {BridgeState} from "../bridge/BridgeState.sol";
+import "forge-std/console.sol";
 
 using SafeERC20 for IERC20;
 
