@@ -25,7 +25,9 @@ If you want to use the testnet to interact with other apps deployed on BOB or de
         - Block Explorer URL (optional): https://testnet-explorer.gobob.xyz/
     6. Click Save.
 3. Get Sepolia ETH from one the faucets: https://faucetlink.to/sepolia
-4. Connect your wallet to the Sepolia BOB bridge and bridge your ETH to the BOB testnet: [Superbridge.app](https://puff-bob-jznbxtoq7h.testnets.superbridge.app/)
+4. Connect your wallet to the Sepolia BOB bridge and bridge your ETH to the BOB testnet:
+    - [BOB Bridge](https://testnet-bridge.gobob.xyz/)
+    - [Superbridge.app](https://puff-bob-jznbxtoq7h.testnets.superbridge.app/)
 5. You are now ready to use the BOB testnet
 
 ## Bitcoin Testnet
