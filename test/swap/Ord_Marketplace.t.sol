@@ -11,7 +11,6 @@ import {Utilities} from "./Utilities.sol";
 import {BitcoinTx} from "../../src/bridge/BitcoinTx.sol";
 import {TestLightRelay} from "../../src/relay/TestLightRelay.sol";
 import "../../src/swap/Ord_Marketplace.sol";
-import "forge-std/console.sol";
 
 contract ArbitaryErc20 is ERC20, Ownable {
     constructor(string memory name_, string memory symbol_) ERC20(name_, symbol_) {}
