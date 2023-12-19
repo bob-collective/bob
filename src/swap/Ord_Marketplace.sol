@@ -22,7 +22,7 @@ contract OrdMarketplace {
     uint256 public constant REQUEST_EXPIRATION_SECONDS = 6 hours;
 
     BridgeState.Storage internal relay;
-    TestLightRelay public testLightRelay;
+    TestLightRelay internal testLightRelay;
 
     constructor(IRelay _relay) {
         relay.relay = _relay;
@@ -123,13 +123,12 @@ contract OrdMarketplace {
     function proofOrdinalSellOrder(uint256 id, BitcoinTx.Info calldata transaction, BitcoinTx.Proof calldata proof)
         public
     {
-        testLightRelay.setDifficultyFromHeaders(proof.bitcoinHeaders);
-
         AcceptedOrdinalSellOrder storage accept = acceptedOrdinalSellOrders[id];
         require(accept.requester == msg.sender, "Sender not the requester");
 
         OrdinalSellOrder storage order = ordinalSellOrders[accept.orderId];
 
+        testLightRelay.setDifficultyFromHeaders(proof.bitcoinHeaders);
         relay.validateProof(transaction, proof);
 
         BitcoinTx.ensureTxInputSpendsUtxo(transaction.inputVector, order.utxo);

@@ -143,7 +143,6 @@ contract OrdMarketPlaceTest is OrdMarketplace, Test {
 
         testLightRelay = new TestLightRelay();
         super.setRelay(testLightRelay);
-        testLightRelay.setDifficultyFromHeaders(ordinalsInfo[0].proof.bitcoinHeaders);
     }
 
     function test_ordinalSellOrderFullFlow() public {
