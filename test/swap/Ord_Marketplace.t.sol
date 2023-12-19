@@ -111,7 +111,6 @@ contract OrdMarketPlaceTest is OrdMarketplace, Test {
         BitcoinTx.Proof memory proof3 = BitcoinTx.Proof({
             merkleProof: hex"b1b47c8e4fcf75b9820ef433d7b5a6fa65d559af35173c600b44e736deb5ffd23a1cebfd570521a1153ef16e9fc4eeb8f80d699fdf113e96e7b5c9dfdaf0db8e166f972b6eff1e8d248d1bc3732dfb4e2aa7a78ca0e6d99c01644ce521c02b2f90c4848b9e60e8d44c764c58affefdc9dd40ce2f4f537b923551676a008f8adea365f60d22ae64f00aa2d981e640ee2f4f0781e4d347ea1d154bbf3c829ab2d02e69bdb26bef5f06781b439b6e65ac701cf458018bfb23304817efb66fabf3ba10317933e969f8bd6e6e3aa48f75b0d7c53adbe80dc9dca82d0e66aef5c592d66e6bdbd0630efb413b54c208c9465cc747701261978de3c8f3c6c33923242c67",
             txIndexInBlock: 72,
-            // need to update header
             bitcoinHeaders: abi.encodePacked(
                 hex"0000002019ecad2d640319bad3cbe99dd2819fdba90023ccd6a479d31400000000000000f308f7de96bab7e11e64fdb06000e57806b7791b923cf0e8382547d3c609f2bf65438165ffff001d84cd32400000e0201a1e9727a2da2e112c761a0d3aa639c52e9b43c1e9d80bb0242632240000000056f577d01fbd2550679ced5da24291ec48bbb96a93f790349ac2f54fa075f90c64448165efdf2819529ec2d8"
                 )
@@ -125,7 +124,6 @@ contract OrdMarketPlaceTest is OrdMarketplace, Test {
         utxo3.txOutputIndex = 0;
         utxo3.txOutputValue = 546;
 
-        // mkHS9ne12qx9pS9VojpwU5xtRd4T7X7ZUt
         // https://btc-testnet.gobob.xyz/tx/591235b1a474ea29e29e2b3aaee45055b43e38cdf38c3700df65509f60ee2d8e
         BitcoinAddress memory requester3 =
             BitcoinAddress({scriptPubKey: hex"76a914344a0f48ca150ec2b903817660b9b68b13a6702688ac"});
