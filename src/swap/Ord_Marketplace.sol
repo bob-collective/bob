@@ -117,20 +117,6 @@ contract OrdMarketplace {
         return acceptId;
     }
 
-    //    function reverseEndianness(bytes32 b) public returns (bytes32 result){
-    ////        bytes32 memory _newValue = new bytes(_b.length);
-    //        bytes memory newValue = new bytes(b.length);
-    //        for (uint i = 0; i < b.length; i++) {
-    //            console.log("i: ",i);
-    //            console.log("b.length: ",i);
-    //            newValue[b.length - i - 1] = b[i];
-    //        }
-    //        // Casting bytes to bytes32
-    //        assembly {
-    //            result := mload(add(newValue, 32))
-    //        }
-    //    }
-
     function proofOrdinalSellOrder(uint256 id, BitcoinTx.Info calldata transaction, BitcoinTx.Proof calldata proof)
         public
     {
@@ -142,37 +128,6 @@ contract OrdMarketplace {
         relay.validateProof(transaction, proof);
 
         BitcoinTx.ensureTxInputSpendsUtxo(transaction.inputVector, order.utxo);
-
-        //        bytes32 expectedTxHash = reverseEndianness(order.utxo.txHash);
-        //
-        //        uint256 _varIntDataLen;
-        //        uint256 _nIns;
-        //        bytes memory _vin = transaction.inputVector;
-        //        BitcoinTx.UTXO memory utxo = order.utxo;
-        //        (_varIntDataLen, _nIns) = BTCUtils.parseVarInt(_vin);
-        //        require(_varIntDataLen != BTCUtils.ERR_BAD_ARG, "Read overrun during VarInt parsing");
-        //
-        //        uint256 _len = 0;
-        //        uint256 _offset = 1 + _varIntDataLen;
-        //
-        //        for (uint256 i = 0; i < _nIns; i++) {
-        //            bytes32 outpointTxHash = BTCUtils.extractInputTxIdLeAt(_vin,_offset);
-        //            uint32 outpointIndex = BTCUtils.reverseUint32(uint32(BTCUtils.extractTxIndexLeAt(_vin,_offset)));
-        //
-        //            console.logBytes32(outpointTxHash);
-        //            console.logBytes32(expectedTxHash);
-        //            console.log(order.utxo.txOutputIndex);
-        //            console.log(outpointIndex);
-        //            // check if it matches tx
-        //            if (expectedTxHash == outpointTxHash && order.utxo.txOutputIndex == outpointIndex) {
-        //                revert(" ---------- Match ----------");
-        //            }
-        //
-        //            _len = BTCUtils.determineInputLengthAt(_vin, _offset);
-        //            require(_len != BTCUtils.ERR_BAD_ARG, "Bad VarInt in scriptSig");
-        //            _offset = _offset + _len;
-        //
-        //        }
 
         // check if output to the buyer's address
         _checkBitcoinTxOutput(accept.bitcoinAddress, transaction);

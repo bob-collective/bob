@@ -1,7 +1,7 @@
 import { assert } from "chai";
 import { MAINNET_ESPLORA_BASE_PATH } from "../src/electrs";
 import { Block } from "bitcoinjs-lib";
-import {getMerkleProof, reverseEndianness} from "../src/utils";
+import { getMerkleProof } from "../src/utils";
 
 describe("Utils Tests", () => {
     // NOTE: this is a bit flaky due to slow response times from electrs
@@ -19,12 +19,4 @@ describe("Utils Tests", () => {
             root: '7cee5e99c8f0fc25fb115b7d7d00befca61f59a8544adaf3980f52132baf61ae'
         });
     }).timeout(20000);
-
-    it.only("reverse the endianness of a hexadecimal", async () => {
-        const input = "453baa13692ec3eac8cc060e658f49a890c3608ef302f84bffc4912e5d927fb0";
-        const reversedInput = "b07f925d2e91c4ff4bf802f38e60c390a8498f650e06ccc8eac32e6913aa3b45";
-        assert.deepEqual(reverseEndianness(input), reversedInput);
-        assert.deepEqual(reverseEndianness(reversedInput), input);
-        console.log(reverseEndianness("76f251d17d821b938e39b508cd3e02233d71d9b9bfe387a42a050023d3788edb"));
-    });
 });
