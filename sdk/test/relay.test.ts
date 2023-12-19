@@ -15,4 +15,12 @@ describe("Relay Tests", () => {
             witnessVector: undefined
         });
     });
+
+    it("should get tx proof", async () => {
+        const client = new DefaultElectrsClient();
+        const txId = "2ef69769cc0ee81141c79552de6b91f372ff886216dbfa84e5497a16b0173e79";
+        const txProof = await getBitcoinTxProof(client, txId, 2);
+        assert.equal(txProof.txIndexInBlock, 1);
+        assert.equal(Buffer.from(txProof.bitcoinHeaders, "hex").byteLength / 80, 2);
+    });
 });
