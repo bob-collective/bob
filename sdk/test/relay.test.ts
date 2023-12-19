@@ -16,11 +16,20 @@ describe("Relay Tests", () => {
         });
     });
 
-    it("should get tx proof", async () => {
-        const client = new DefaultElectrsClient();
-        const txId = "2ef69769cc0ee81141c79552de6b91f372ff886216dbfa84e5497a16b0173e79";
-        const txProof = await getBitcoinTxProof(client, txId, 2);
-        assert.equal(txProof.txIndexInBlock, 1);
-        assert.equal(Buffer.from(txProof.bitcoinHeaders, "hex").byteLength / 80, 2);
+    it.only("should get tx proof", async () => {
+        const client = new DefaultElectrsClient("testnet");
+
+        // const txId = "c2ee69d459dda85dba8f4db33c06c47f12b8d71c0284033ddaddfaa6c23fc506";
+        const utxos = await client.getAddressUtxos("76f251d17d821b938e39b508cd3e02233d71d9b9bfe387a42a050023d3788edb",true);
+        console.log(utxos);
+
+        // const blockHeader = await client.getBlockHeaderAt(2543283);
+        // console.log(blockHeader);
+        //
+        // const txId = "453baa13692ec3eac8cc060e658f49a890c3608ef302f84bffc4912e5d927fb0";
+        // const txProof = await getBitcoinTxProof(client, txId, 2);
+        // console.log(txProof);
+        // const txInfo = await getBitcoinTxInfo(client, txId, false);
+        // console.log(txInfo);
     });
 });

@@ -292,6 +292,16 @@ library BitcoinTx {
         revert("No output found for scriptPubKey");
     }
 
+    function reverseEndianness(bytes32 b) internal pure returns (bytes32 txHash) {
+        bytes memory newValue = new bytes(b.length);
+        for (uint256 i = 0; i < b.length; i++) {
+            newValue[b.length - i - 1] = b[i];
+        }
+        assembly {
+            txHash := mload(add(newValue, 32))
+        }
+    }
+
     function ensureTxInputSpendsUtxo(bytes memory _vin, BitcoinTx.UTXO memory utxo) internal pure {
         uint256 _varIntDataLen;
         uint256 _nIns;
@@ -302,12 +312,14 @@ library BitcoinTx {
         uint256 _len = 0;
         uint256 _offset = 1 + _varIntDataLen;
 
+        bytes32 expectedTxHash = reverseEndianness(utxo.txHash);
+
         for (uint256 _i = 0; _i < _nIns; _i++) {
             bytes32 outpointTxHash = _vin.extractInputTxIdLeAt(_offset);
             uint32 outpointIndex = BTCUtils.reverseUint32(uint32(_vin.extractTxIndexLeAt(_offset)));
 
             // check if it matches tx
-            if (utxo.txHash == outpointTxHash && utxo.txOutputIndex == outpointIndex) {
+            if (expectedTxHash == outpointTxHash && utxo.txOutputIndex == outpointIndex) {
                 return;
             }
 
