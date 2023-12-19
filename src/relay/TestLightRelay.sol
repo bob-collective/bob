@@ -28,8 +28,3 @@ contract TestLightRelay is LightRelay {
         prevEpochDifficulty = firstHeaderDiff;
     }
 }
-
-contract Nakul {
-    using BTCUtils for bytes;
-    using BTCUtils for uint256;
-}
