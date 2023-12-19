@@ -27,7 +27,7 @@ contract OrdMarketPlaceTest is OrdMarketplace, Test {
     address internal bob;
 
     ArbitaryErc20 token1;
-    TestLightRelay testLightRelay;
+    //    TestLightRelay testLightRelay;
 
     struct Ordinal {
         BitcoinTx.Info info;

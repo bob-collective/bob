@@ -21,10 +21,15 @@ contract TestLightRelay is LightRelay {
 
     /// @notice Sets the current and previous difficulty based on the difficulty
     ///         inferred from the provided Bitcoin headers.
-    function setDifficultyFromHeaders(bytes memory bitcoinHeaders) external onlyOwner {
+    function setDifficultyFromHeaders(bytes memory bitcoinHeaders) external {
         uint256 firstHeaderDiff = bitcoinHeaders.extractTarget().calculateDifficulty();
 
         currentEpochDifficulty = firstHeaderDiff;
         prevEpochDifficulty = firstHeaderDiff;
     }
+}
+
+contract Nakul {
+    using BTCUtils for bytes;
+    using BTCUtils for uint256;
 }

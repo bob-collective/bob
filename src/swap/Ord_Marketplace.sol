@@ -7,6 +7,7 @@ import {BTCUtils} from "@bob-collective/bitcoin-spv/BTCUtils.sol";
 import {BitcoinTx} from "../bridge/BitcoinTx.sol";
 import {IRelay} from "../bridge/IRelay.sol";
 import {BridgeState} from "../bridge/BridgeState.sol";
+import {TestLightRelay} from "../relay/TestLightRelay.sol";
 import "forge-std/console.sol";
 
 using SafeERC20 for IERC20;
@@ -21,10 +22,12 @@ contract OrdMarketplace {
     uint256 public constant REQUEST_EXPIRATION_SECONDS = 6 hours;
 
     BridgeState.Storage internal relay;
+    TestLightRelay public testLightRelay;
 
     constructor(IRelay _relay) {
         relay.relay = _relay;
         relay.txProofDifficultyFactor = 1; // will make this an arg later on
+        testLightRelay = TestLightRelay(address(relay.relay));
     }
 
     function setRelay(IRelay _relay) internal {
@@ -120,8 +123,7 @@ contract OrdMarketplace {
     function proofOrdinalSellOrder(uint256 id, BitcoinTx.Info calldata transaction, BitcoinTx.Proof calldata proof)
         public
     {
-        uint256 newDifficulty = BitcoinTx.getDifficulty(proof.bitcoinHeaders);
-        relay.relay.updateDifficulty(newDifficulty);
+        testLightRelay.setDifficultyFromHeaders(proof.bitcoinHeaders);
 
         AcceptedOrdinalSellOrder storage accept = acceptedOrdinalSellOrders[id];
         require(accept.requester == msg.sender, "Sender not the requester");
