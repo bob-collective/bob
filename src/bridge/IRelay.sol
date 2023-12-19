@@ -14,4 +14,6 @@ interface IRelay {
 
     /// @notice Returns the difficulty of the previous epoch.
     function getPrevEpochDifficulty() external view returns (uint256);
+
+    function updateDifficulty(uint256 newDifficulty) external;
 }

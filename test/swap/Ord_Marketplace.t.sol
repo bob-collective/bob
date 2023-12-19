@@ -153,8 +153,6 @@ contract OrdMarketPlaceTest is OrdMarketplace, Test {
         for (uint256 i = 0; i < ordinalsInfo.length; i++) {
             token1.sudoMint(bob, 100);
 
-            testLightRelay.setDifficultyFromHeaders(ordinalsInfo[i].proof.bitcoinHeaders);
-
             uint256 expectedPlaceId = nextOrdinalId++;
 
             // placeOrdinalSellOrder by alice

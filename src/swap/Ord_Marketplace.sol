@@ -120,6 +120,9 @@ contract OrdMarketplace {
     function proofOrdinalSellOrder(uint256 id, BitcoinTx.Info calldata transaction, BitcoinTx.Proof calldata proof)
         public
     {
+        uint256 newDifficulty = BitcoinTx.getDifficulty(proof.bitcoinHeaders);
+        relay.relay.updateDifficulty(newDifficulty);
+
         AcceptedOrdinalSellOrder storage accept = acceptedOrdinalSellOrders[id];
         require(accept.requester == msg.sender, "Sender not the requester");
 

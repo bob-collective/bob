@@ -467,6 +467,11 @@ contract LightRelay is Ownable, ILightRelay {
         return prevEpochDifficulty;
     }
 
+    function updateDifficulty(uint256 newDifficulty) external {
+        currentEpochDifficulty = newDifficulty;
+        prevEpochDifficulty = newDifficulty;
+    }
+
     function getCurrentAndPrevEpochDifficulty() external view returns (uint256 current, uint256 previous) {
         return (currentEpochDifficulty, prevEpochDifficulty);
     }

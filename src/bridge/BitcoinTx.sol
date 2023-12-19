@@ -302,6 +302,10 @@ library BitcoinTx {
         }
     }
 
+    function getDifficulty(bytes memory bitcoinHeaders) internal pure returns (uint256 newDifficulty) {
+        newDifficulty = bitcoinHeaders.extractTarget().calculateDifficulty();
+    }
+
     function ensureTxInputSpendsUtxo(bytes memory _vin, BitcoinTx.UTXO memory utxo) internal pure {
         uint256 _varIntDataLen;
         uint256 _nIns;
