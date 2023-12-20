@@ -6,6 +6,7 @@ import {BTCUtils} from "@bob-collective/bitcoin-spv/BTCUtils.sol";
 import {BitcoinTx} from "../bridge/BitcoinTx.sol";
 import {ERC2771Recipient} from "@opengsn/packages/contracts/src/ERC2771Recipient.sol";
 import {IRelay} from "../bridge/IRelay.sol";
+import {TestLightRelay} from "../relay/TestLightRelay.sol";
 import {BridgeState} from "../bridge/BridgeState.sol";
 
 using SafeERC20 for IERC20;
@@ -22,11 +23,13 @@ contract BtcMarketPlace is ERC2771Recipient {
     uint256 public constant REQUEST_EXPIRATION_SECONDS = 6 hours;
 
     BridgeState.Storage internal relay;
+    TestLightRelay internal testLightRelay;
 
     constructor(IRelay _relay, address erc2771Forwarder) {
         _setTrustedForwarder(erc2771Forwarder);
         relay.relay = _relay;
         relay.txProofDifficultyFactor = 1; // will make this an arg later on
+        testLightRelay = TestLightRelay(address(relay.relay));
     }
 
     function setRelay(IRelay _relay) internal {
@@ -161,6 +164,7 @@ contract BtcMarketPlace is ERC2771Recipient {
 
         require(accept.requester == _msgSender());
 
+        testLightRelay.setDifficultyFromHeaders(proof.bitcoinHeaders);
         relay.validateProof(transaction, proof);
 
         _checkBitcoinTxOutput(accept.amountBtc, accept.bitcoinAddress, transaction);
@@ -257,6 +261,7 @@ contract BtcMarketPlace is ERC2771Recipient {
 
         require(accept.accepter == _msgSender());
 
+        testLightRelay.setDifficultyFromHeaders(proof.bitcoinHeaders);
         relay.validateProof(transaction, proof);
 
         BtcBuyOrder storage order = btcBuyOrders[accept.orderId];
