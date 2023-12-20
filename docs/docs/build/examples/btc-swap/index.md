@@ -97,21 +97,37 @@ You will need to fund your account first before inscribing.
 
 :::
 
-## Creating a Token Order
+## Token Order
 
-At the moment, you are able to create orders for tokens (such as swapping BTC for USDC). In this next section, we will try to walk you through the flow of creating these orders.
+These are the different kinds of token swaps that an user can do:
 
-- Click on the 'Add an order' button.
-  - You should be able to see a 'New Order' modal, where the tabs have 'Token' tab selected by default.
-- Select the tokens you want to offer and receive
-  - If creating an order to swap to BTC, you will need to add a valid Bitcoin testnet address.
-- Click on 'Approve & place order'
-  - The first time you create an order with each token, you will be prompted to approve a spending cap before you can submit the transaction. You will only need to do this once. There is no need to submit the form twice: as soon as the spending cap transaction has completed you'll be prompted to sign the order transaction.
+- ERC20 <-> ERC20: sell ERC20 for ERC20 (swaping ERC20)
+- ERC20 -> BTC: sell ERC20 for BTC (buying BTC)
+- BTC -> ERC20: sell BTC for ERC20 (selling BTC)
 
-You can see all the orders you have placed by clicking on the page 'Sell' tab. Orders listed under the 'Buy' tab are available for you to fulfil.
+The peer-to-peer swap is divided in three steps:
 
-![Add ERC20 Order](add-token-order-form.png)
-![Add BTC Order](add-token-btc-order-form.png)
+- Creating order
+- Filling order
+- Completing order (excluded on ERC20 <-> ERC20 order)
+
+Let's now go through each step for each different swap type.
+
+### ERC20 <-> ERC20 (swaping ERC20)
+
+#### Creating Order
+
+These are the steps to create ERC20 <-> ERC20 order:
+
+- On the top right of the main page, click on the 'Add an order' button.
+- A modal with a 'New Order' title should be visible. Within this modal, you should be on the 'Token' tab.
+- This tab contains two inputs: 'Offer' and 'You will receive'. Please select the ERC20 tokens that you wish to pay with and receive, along with the respective amounts.
+- Once you fill the previous fields, you should now be able to submit:
+  - if you never approved a spending cap for your "Offer" ERC20 token, when clicking the 'Approve & Place Order' button, a transaction will be prompt for you to do so and one last to approve the creation of the order.
+  - if have already approve the spending cap, when clicking 'Place Order' button, a transaction for the creat order approval will be prompted.
+- Once everything is approved, by going to the 'Sell' tab in the main page, you should be able to see your newly created ERC20 <-> ERC20 order.
+
+![add-erc20-swap-order-form](add-erc20-swap-order-form.png)
 
 :::note
 
@@ -119,7 +135,48 @@ Orders are shown with a price per unit even though BTC orders cannot be partiall
 
 :::
 
-## Filling a Token Order
+#### Filling Order
+
+These are the step to fill ERC20 <-> ERC20 order:
+
+- Switch to the account you created for fulfilling orders.
+- In the 'Buy' table find the order you created previously.
+- Click on the 'Fill Order' button, and enter the amount you wish to fill (total or partial).
+- You will be prompted to sign the transaction in your wallet.
+- Once the transaction was successful, the order will disapear because it was completed successfuly. You will notice that the involved accounts balances where affected.
+
+![fill-erc20-swap-order-form](fill-erc20-swap-order-form.png)
+
+### ERC20 -> BTC (buying BTC)
+
+#### Creating Order
+
+These are the steps to create ERC20 -> BTC order:
+
+- On the top right of the main page, click on the 'Add an order' button.
+- A modal with a 'New Order' title should be visible. Within this modal, you should be on the 'Token' tab.
+- This tab contains two inputs: 'Offer' and 'You will receive'. Please select the ERC20 tokens that you wish to pay with and BTC as token to be received, along with the respective amounts.
+- Lastely, you may also fill the "Bitcoin Address" field with a Testnet Bitcoin Wallet address, in which you desire to receive the BTC.
+- Once you fill the previous fields, you should now be able to submit:
+  - if you never approved a spending cap for your "Offer" ERC20 token, when clicking the 'Approve & Place Order' button, a transaction will be prompt for you to do so and one last to approve the creation of the order.
+  - if have already approve the spending cap, when clicking 'Place Order' button, a transaction for the create order approval will be prompted.
+- Once everything is approved, by going to the 'Sell' tab in the main page, you should be able to see your newly created ERC20 -> BTC order.
+
+![add-buy-btc-order-form](add-buy-btc-order-form.png)
+
+#### Filling Order
+
+These are the step to fill ERC20 -> BTC order:
+
+- Switch to the account you created for fulfilling orders.
+- In the 'Buy' table find the order you created previously.
+- Click on the 'Fill Order' button. This will open a modal with the title 'Fill Order'.
+- Orders that involve BTC, are not allowed to be partial filled like ERC20 orders. So you should be able to submit by clicking 'Fill Order'.
+- You will be prompted to sign the transaction in your wallet.
+- Once the transaction was successful, you will be able to see the accepted order under "Accepted BTC Orders" table.
+  - In this table, there is column with a countdown, which shows you how long the other party has to send you ordered BTC amount. Once the timer reaches 0, you will be able to cancel the order. This does not happen automatically: the other party will still be able to send the BTC unless you cancel the order. Let's now look at how the order is completed.
+
+![fill-buy-btc-order-form](fill-buy-btc-order-form.png)
 
 :::note
 
@@ -127,74 +184,64 @@ Partial fulfillment of orders is only available for swaps involving two ERC20 to
 
 :::
 
-:::note
+In the next section we will look at completing this order.
 
-BTC testnet block target times are 20 minutes, so it may take several minutes before you can complete the transaction.
+#### Completing Order
 
-:::
+These are the step to complete ERC20 -> BTC order:
 
-The process for fulfilling an order is slightly different depending on whether you are swapping an ERC20 for another ERC20, or for BTC.
-
-### Filling an ERC20 <-> ERC20 Order
-
-We will be looking at swapping ERC20 tokens:
-
-- Switch to the account you created for fulfilling orders.
-- In the 'Buy' table find the order you created in the previous step
-- Click on the 'Fulfil order' button, and enter the amount you wish to fulfil.
-- You will be prompted to sign the transaction in your wallet.
-
-If you now switch back to the account you used to create the order, you will see that amount available has decreased. If the order has been fulfilled completely, it will no longer be shown under the 'Sell' tab.
-
-![fill-erc-20-order-form](fill-erc20-order-form.png)
-
-### Filling and Completing a ERC20 -> BTC order (i.e., buying BTC)
-
-#### Filling order
-
-- Switch to the account you created for fulfilling orders.
-- In the 'Buy' table find the swap you created with your selling account offering BTC (as the seller) in exchange for an ERC20.
-- Click on 'Fill Order.' The 'Pay with' and 'You will receive' fields are non-editable.
-- Enter a valid testnet BTC address.
-- Submit the form.
-
-![fill-buy-btc-order-form](fill-buy-btc-order-form.png)
-
-After successfully fulfilling the order, you should be able to see your accepted order in the "Accepted BTC Orders" table. In this table, there is column with a countdown, which shows you how long the other party has to send you ordered BTC amount. Once the timer reaches 0, you will be able to cancel the order. This does not happen automatically: the other party will still be able to send the BTC unless you cancel the order. Let's now look at how the order is completed.
-
-#### Complete order
-
-- Switch back to your selling account.
-- Go to the page 'Sell' tab and now you should be able to see the order to be completed under the 'Accepted BTC Orders'.
-- Once you find your order, click on the 'Complete Order' button. A 'Complete Order' modal should be visible.
+- Still in the account used to fill the order, find your order under "Accepted BTC Orders" table.
+- Once you find the order, click on the 'Complete Order' button. This will open a modal with the title 'Complete Order'.
 - Using a BTC wallet connected to the BTC testnet, send the BTC amount to the address shown. You can scan the QR code to use a mobile wallet.
 - You will be able to complete the order as soon as one confirmation has been received.
-  - If you close the modal or navigate away from the app, clicking on the 'Complete Order' button again will show you the current status of the transaction.
+- When completing order, a transaction will be prompted, which is used to submit the proof the BTC was sent successfully.
+- Once completed, in your current account you should be able to see the ERC20 that you receive for your BTC. You shoud eventually receive the BTC in the address that you specified.
 
-![complete-btc-order](complete-btc-order.png)
+![complete-buy-btc-order](complete-buy-btc-order.png)
 
-### Filling and Completing a BTC -> ERC20 order (i.e., selling BTC)
+### BTC -> ERC20 (selling BTC)
 
-#### Filling order
+#### Creating Order
+
+These are the steps to create BTC -> ERC20 order:
+
+- On the top right of the main page, click on the 'Add an order' button.
+- A modal with a 'New Order' title should be visible. Within this modal, you should be on the 'Token' tab.
+- This tab contains two inputs: 'Offer' and 'You will receive'. Please select BTC as "Offer" token and the ERC20 that you wish to receive, along with the respective amounts.
+- Once you fill the previous fields, you should now be able to submit them by clicking 'Place Order' button. This will prompt a transaction that will create the order.
+- Once everything is approved, by going to the 'Sell' tab in the main page, you should be able to see your newly created BTC -> ERC20 order.
+
+![add-sell-btc-order-form](add-sell-btc-order-form.png)
+
+#### Filling Order
+
+These are the step to fill BTC -> ERC20 order:
 
 - Switch to the account you created for fulfilling orders.
-- In the 'Buy' table find the swap you created with your selling account offering an ERC20 token (as the seller) in exchange for BTC.
-- Click on 'Fill Order.' The 'Pay with' and 'You will receive' fields are non-editable.
-- Submit the form.
+- In the 'Buy' table find the order you created previously.
+- Click on the 'Fill Order' button. This will open a modal with the title 'Fill Order'.
+- Orders that involve BTC, are not allowed to be partial filled like ERC20 orders, so you only need to fill "Bitcoin Address" field with a Testnet Bitcoin Wallet address, in which you desire to receive the BTC.
+- Once you fill the previous field, you should now be able to submit:
+  - if you never approved a spending cap for your "Pay with" ERC20 token, when clicking the 'Approve & Place Order' button, a transaction will be prompt for you to do so and one last to approve the creation of the order.
+  - if have already approve the spending cap, when clicking 'Fill Order' button, a transaction for the fill order approval will be prompted.
+- Once the transaction was successful, you will be able to see the accepted order under "Accepted BTC Orders" table.
+  - In this table, there is column with a countdown, which shows you how long the other party has to send you ordered BTC amount. Once the timer reaches 0, you will be able to cancel the order. This does not happen automatically: the other party will still be able to send the BTC unless you cancel the order. Let's now look at how the order is completed.
 
 ![fill-sell-btc-order-form](fill-sell-btc-order-form.png)
 
-After successfully filling the order a 'Complete Order' modal will show automatically. In case you close this modal, you should be able to return to it by going to your order under the 'Accepted BTC Orders' table and clicking the 'Complete Order' button.
+In the next section we will look at completing this order.
 
-#### Complete order
+#### Completing Order
 
+These are the step to complete ERC20 -> BTC order:
+
+- Switch back to the account in which you create the order in.
+- Go to the 'Sell' tab in the main page and find your order under "Accepted BTC Orders" table.
+- Once you find the order, click on the 'Complete Order' button. This will open a modal with the title 'Complete Order'.
 - Using a BTC wallet connected to the BTC testnet, send the BTC amount to the address shown. You can scan the QR code to use a mobile wallet.
 - You will be able to complete the order as soon as one confirmation has been received.
-  - If you close the modal or navigate away from the app, clicking on the 'Complete Order' button again will show you the current status of the transaction.
-
-If you switch back to your selling account before completing the order, you will see the order in the 'Accepted BTC Orders' table under the 'Sell' tab. If the order is not completed by the buyer within the allowed time, you will be able to cancel the order.
-
-![complete-btc-order](complete-btc-order.png)
+- When completing order, a transaction will be prompted, which is used to submit the proof the BTC was sent successfully.
+- Once completed, in your current account you should be able to see the ERC20 that you receive for your BTC. You shoud eventually receive the BTC in the address that you specified.
 
 ## Demo Code
 
