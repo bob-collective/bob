@@ -1,6 +1,6 @@
 # Trustless P2P Swap BTC and ERC20 using a BTC Light Client
 
-This example demonstrates how BOB is leveraged to build a peer-to-peer (P2P) swap application that allows two parties to swap ERC20 tokens and BTC without using a custodian.
+This example demonstrates how BOB is leveraged to build a peer-to-peer (P2P) swap application that allows two parties to swap ERC20 tokens, BTC and Ordinals without using a custodian.
 
 :::info Example Code
 
@@ -16,10 +16,16 @@ This demo is running on our [Alpha network](https://app.conduit.xyz/published/vi
 
 :::
 
+We have created a testnet demo of the P2P swap, allowing anyone to swap BTC for ERC20 tokens, ERC20 tokens for BTC, exchange one ERC20 token for another and swap Ordinals for ERC20 tokens. The application currently supports testnet BTC, testnet USDC, and WBTC (WBTC is a placeholder for an arbitrary bridged BTC token).
 
-We have created a testnet demo of the P2P swap, allowing anyone to swap BTC for ERC20 tokens, ERC20 tokens for BTC, and exchange one ERC20 token for another. The application currently supports testnet BTC, testnet USDT, and ZBTC (ZBTC is a placeholder for an arbitrary bridged BTC token).
+## Connecting Your Wallets
 
-### Connecting Your Wallet
+The dapps supports a dual wallet connect: where you should be able to connect an EVM wallet and a BTC wallet.
+
+- EVM Wallet: it is mandatory to install this type of wallet. Without it you won't be able to use the dapp.
+- BTC Wallet: it is not mandatory, but the UX experience will drastically improve when it comes to swaping ordinals.
+
+### Connecting EVM Wallet
 
 :::note
 
@@ -33,23 +39,33 @@ The UI can sometimes fail to connect if you have multiple wallets installed. If 
 
 :::
 
-- Install one of the supported EVM wallets: MetaMask and Frame. Others will likely work as well but are not tested.
-- Install one of the supported Bitcoin testnet wallets: Electrum. Others will likely work as well but are not tested.
+- Install one of the supported EVM wallets (Metamask, Ledger, WalletConnect or Coinbase Wallet).
 - Go to [demo.gobob.xyz](https://demo.gobob.xyz)
-- Connect to your EVM wallet using the 'Connect Wallet' button at the top right of the UI.
+- Click 'Connect Wallet' button at the top right of the UI.
+- Within the 'EVM Wallet' tab, select one of the available wallets.
 
-![connect](connect-wallet.png)
+![connect-evm](connect-evm-wallet.png)
+
+#### Connecting BTC Wallet
+
+- Install one of the supported BTC wallets (XVerse, Unisat, Leather - coming soon).
+- Go to [demo.gobob.xyz](https://demo.gobob.xyz)
+- Click 'Connect Wallet' button at the top right of the UI.
+- Within the 'BTC Wallet' tab, select one of the available wallets.
+
+![connect-btc](connect-btc-wallet.png)
 
 ### Creating and Funding Test Accounts
 
-You will need two accounts for this demo, so that you can both create and fulfil orders. For each account:
+### Funding EVM Wallet
+
+You will need two accounts for this demo, so you can try the whole flow of creating and fulfilling orders. For each account:
 
 - Click the 'Get Gas' button to fund your account with ETH. This will be needed for transaction fees.
 - After the ETH tokens have arrived in your wallet, click on the 'Get Tokens' button to fund your account with ERC20 tokens to used when adding an order.
 - Import the ERC20 tokens from the following contract addresses:
-  - ZBTC: `0x4f01078121e90915F9f1448DE4b3C2515B5e2F3B`
-  - USDT: `0x3c252953224948E441aAfdE7b391685201ccd3bC`
-- You will also need some test BTC from the [Bitcoin testnet faucet](https://bitcoinfaucet.uo1.net/).
+  - WBTC: `0x2868d708e442A6a940670d26100036d426F1e16b`
+  - USDC: `0x27c3321E40f039d10D5FF831F528C9CEAE601B1d`
 
 :::note
 
@@ -62,25 +78,48 @@ The faucet is configured to mint 30,000 tokens for each currency. If you want to
 - If you have connected your wallet to an earlier version of the application, you may see an error (`No chain was provided to the request`). If this happen you should disconnect and then reconnect your wallet.
 - ETH tokens need to be minted first, as ETH is required to pay the transaction fees for minting ERC20s.
 
-### Creating an Order
+### Funding BTC Wallet
+
+#### Testnet BTC
+
+For orders where BTC is being swapped, you will need first to fund you wallet and you can do so by using [Bitcoin testnet faucet](https://bitcoinfaucet.uo1.net/).
+
+#### Testnet Ordinals
+
+If you want to try swapping ordinals, you will need to inscribe them first. There are many ways to do so, such as:
+
+- [Metamask Ordinals Demo](https://ordinals.gobob.xyz/): in-house developed demo which uses metamask snap to inscribe ordinals.
+- [Testnet Unisat](https://testnet.unisat.io/inscribe): to use this dapp you will need unisat wallet.
 
 :::note
 
-Orders are shown with a price per unit even though BTC orders cannot be partially filled. That means that if you offer 1 BTC in exchange for 25,000 USDT, you will see a price per unit of 0.00004 in 'Sell' table
+You will need to fund your account first before inscribing.
 
 :::
 
+## Creating a Token Order
+
+At the moment, you are able to create orders for tokens (such as swapping BTC for USDC). In this next section, we will try to walk you through the flow of creating these orders.
+
 - Click on the 'Add an order' button.
+  - You should be able to see a 'New Order' modal, where the tabs have 'Token' tab selected by default.
 - Select the tokens you want to offer and receive
   - If creating an order to swap to BTC, you will need to add a valid Bitcoin testnet address.
 - Click on 'Approve & place order'
   - The first time you create an order with each token, you will be prompted to approve a spending cap before you can submit the transaction. You will only need to do this once. There is no need to submit the form twice: as soon as the spending cap transaction has completed you'll be prompted to sign the order transaction.
 
-You can see all the orders you have placed by clicking on the 'Sell' tab. Orders listed under the 'Buy' tab are available for you to fulfil.
+You can see all the orders you have placed by clicking on the page 'Sell' tab. Orders listed under the 'Buy' tab are available for you to fulfil.
 
-![add-order-form](add-order-form.png)
+![Add ERC20 Order](add-token-order-form.png)
+![Add BTC Order](add-token-btc-order-form.png)
 
-### Fulfilling an Order
+:::note
+
+Orders are shown with a price per unit even though BTC orders cannot be partially filled. That means that if you offer 1 BTC in exchange for 25,000 USDC, you will see a price per unit of 0.00004 in 'Sell' table
+
+:::
+
+## Filling a Token Order
 
 :::note
 
@@ -96,7 +135,9 @@ BTC testnet block target times are 20 minutes, so it may take several minutes be
 
 The process for fulfilling an order is slightly different depending on whether you are swapping an ERC20 for another ERC20, or for BTC.
 
-#### Fulfilling an ERC20 <-> ERC20 Order
+### Filling an ERC20 <-> ERC20 Order
+
+We will be looking at swapping ERC20 tokens:
 
 - Switch to the account you created for fulfilling orders.
 - In the 'Buy' table find the order you created in the previous step
@@ -105,9 +146,11 @@ The process for fulfilling an order is slightly different depending on whether y
 
 If you now switch back to the account you used to create the order, you will see that amount available has decreased. If the order has been fulfilled completely, it will no longer be shown under the 'Sell' tab.
 
-![fill-order-form](fill-order-form.png)
+![fill-erc-20-order-form](fill-erc20-order-form.png)
 
-#### Fulfilling an ERC20 -> BTC order (i.e., buying BTC)
+### Filling and Completing a ERC20 -> BTC order (i.e., buying BTC)
+
+#### Filling order
 
 - Switch to the account you created for fulfilling orders.
 - In the 'Buy' table find the swap you created with your selling account offering BTC (as the seller) in exchange for an ERC20.
@@ -115,32 +158,43 @@ If you now switch back to the account you used to create the order, you will see
 - Enter a valid testnet BTC address.
 - Submit the form.
 
-The 'Fulfil order' button will now be disabled, and you will see a countdown next to it. This is how long the other party in the swap has to send you the BTC. Once the timer reaches 0, you will be able to cancel the order. This does not happen automatically: the other party will still be able to send the BTC unless you cancel the order.
+![fill-buy-btc-order-form](fill-buy-btc-order-form.png)
+
+After successfully fulfilling the order, you should be able to see your accepted order in the "Accepted BTC Orders" table. In this table, there is column with a countdown, which shows you how long the other party has to send you ordered BTC amount. Once the timer reaches 0, you will be able to cancel the order. This does not happen automatically: the other party will still be able to send the BTC unless you cancel the order. Let's now look at how the order is completed.
+
+#### Complete order
 
 - Switch back to your selling account.
-- You will now see an 'Accepted BTC Orders' table under the 'Sell' tab.
-- Find the order you created in this table, and click on the 'Complete order' button.
+- Go to the page 'Sell' tab and now you should be able to see the order to be completed under the 'Accepted BTC Orders'.
+- Once you find your order, click on the 'Complete Order' button. A 'Complete Order' modal should be visible.
 - Using a BTC wallet connected to the BTC testnet, send the BTC amount to the address shown. You can scan the QR code to use a mobile wallet.
 - You will be able to complete the order as soon as one confirmation has been received.
   - If you close the modal or navigate away from the app, clicking on the 'Complete Order' button again will show you the current status of the transaction.
 
-#### Fulfilling a BTC -> ERC20 order (i.e., selling BTC)
+![complete-btc-order](complete-btc-order.png)
+
+### Filling and Completing a BTC -> ERC20 order (i.e., selling BTC)
+
+#### Filling order
 
 - Switch to the account you created for fulfilling orders.
 - In the 'Buy' table find the swap you created with your selling account offering an ERC20 token (as the seller) in exchange for BTC.
 - Click on 'Fill Order.' The 'Pay with' and 'You will receive' fields are non-editable.
 - Submit the form.
 
-You will now see an 'Accepted BTC Orders' table under the buy tab.
+![fill-sell-btc-order-form](fill-sell-btc-order-form.png)
 
-- Find the order in the table, and click on the 'Complete Order' button.
+After successfully filling the order a 'Complete Order' modal will show automatically. In case you close this modal, you should be able to return to it by going to your order under the 'Accepted BTC Orders' table and clicking the 'Complete Order' button.
+
+#### Complete order
+
 - Using a BTC wallet connected to the BTC testnet, send the BTC amount to the address shown. You can scan the QR code to use a mobile wallet.
 - You will be able to complete the order as soon as one confirmation has been received.
   - If you close the modal or navigate away from the app, clicking on the 'Complete Order' button again will show you the current status of the transaction.
 
 If you switch back to your selling account before completing the order, you will see the order in the 'Accepted BTC Orders' table under the 'Sell' tab. If the order is not completed by the buyer within the allowed time, you will be able to cancel the order.
 
-![complete-order](complete-order.png)
+![complete-btc-order](complete-btc-order.png)
 
 ## Demo Code
 
