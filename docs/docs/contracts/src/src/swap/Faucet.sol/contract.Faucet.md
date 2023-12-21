@@ -1,5 +1,5 @@
 # Faucet
-[Git Source](https://github.com/bob-collective/bob/blob/a2d50b71441518de135cd83845410eb07966908d/src/swap/Faucet.sol)
+[Git Source](https://github.com/bob-collective/bob/blob/master/src/swap/Faucet.sol)
 
 **Inherits:**
 Ownable, ERC2771Recipient

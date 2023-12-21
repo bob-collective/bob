@@ -1,5 +1,5 @@
 # DummyOracle
-[Git Source](https://github.com/bob-collective/bob/blob/a2d50b71441518de135cd83845410eb07966908d/src/paymasters/Oracle.sol)
+[Git Source](https://github.com/bob-collective/bob/blob/master/src/paymasters/Oracle.sol)
 
 **Inherits:**
 [IOracle](../../paymasters/Oracle.sol/interface.IOracle.md)
