@@ -1,5 +1,5 @@
 # TestingErc20
-[Git Source](https://github.com/bob-collective/bob/blob/a2d50b71441518de135cd83845410eb07966908d/src/TestingErc20.sol)
+[Git Source](https://github.com/bob-collective/bob/blob/master/src/TestingErc20.sol)
 
 **Inherits:**
 ERC20, ERC20Burnable, Ownable, ERC2771Recipient
