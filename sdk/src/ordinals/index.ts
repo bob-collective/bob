@@ -1,10 +1,10 @@
 import * as bitcoin from "bitcoinjs-lib";
 
 import { DummySigner, RemoteSigner } from "./signer";
-import { CommitTxData, createCommitTxData, createTextInscription } from "./commit";
+import { CommitTxData, Inscription, createCommitTxData, createInscription, createTextInscription } from "./commit";
 import { createRevealTx, customFinalizer, signRevealTx } from "./reveal";
 
-export { RemoteSigner };
+export { RemoteSigner, createInscription, createTextInscription, Inscription };
 
 /**
  * Estimate the virtual size of a 1 input 1 output reveal tx.
@@ -42,26 +42,25 @@ function estimateTxSize(
 }
 
 /**
- * Inscribe some text data on Bitcoin using the remote signer.
+ * Inscribe some data on Bitcoin using the remote signer.
  *
  * @param signer - Implementation to interact with Bitcoin and sign the PSBT.
  * @param toAddress - The address to receive the inscription.
  * @param feeRate - Fee rate of the Bitcoin network (satoshi / byte).
- * @param text - Data to inscribe in the witness of the reveal transaction.
+ * @param inscription - Data to inscribe in the witness of the reveal transaction.
  * @param postage - Amount of postage to include in the inscription.
  * @returns Promise which resolves to the reveal transaction.
  */
-export async function inscribeText(
+export async function inscribeData(
   signer: RemoteSigner,
   toAddress: string,
   feeRate: number,
-  text: string,
+  inscription: Inscription,
   postage = 10000,
 ) {
   const bitcoinNetwork = await signer.getNetwork();
   const publicKey = Buffer.from(await signer.getPublicKey(), "hex");
 
-  const inscription = createTextInscription(text);
   const commitTxData = createCommitTxData(bitcoinNetwork, publicKey, inscription);
 
   const revealTxSize = estimateTxSize(bitcoinNetwork, publicKey, commitTxData, toAddress, postage);

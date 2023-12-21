@@ -1,6 +1,6 @@
 ---
 sidebar_position: 1
-sidebar_label: Ideal Bitcoin L2
+sidebar_label: Scaling Bitcoin
 ---
 
 # The Ideal Bitcoin L2

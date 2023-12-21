@@ -35,7 +35,7 @@ Check out the [documentation](../examples/metamask-ordinals/), the [BOB MetaMask
 - [Unisat](https://unisat.io/download) (Browser)
 
 ### Inscribing data
-If you're developing an app with Javascript or Typescript you can use the BOB SDK to create the commit and reveal transactions required to inscribe data to an ordinal. Refer to the `inscribeText` function and provide a custom `RemoteSigner` implementation for your wallet. The test in [`sdk/test/ordinals.test.ts`](https://github.com/bob-collective/bob/blob/master/sdk/test/ordinals.test.ts) provides an example implementation using [`bitcoinjs-lib`](https://github.com/bitcoinjs/bitcoinjs-lib) and [`tiny-secp256k1`](https://github.com/bitcoinjs/tiny-secp256k1).
+If you're developing an app with Javascript or Typescript you can use the BOB SDK to create the commit and reveal transactions required to inscribe data to an ordinal. Refer to the `inscribeData` function and provide a custom `RemoteSigner` implementation for your wallet. The test in [`sdk/test/ordinals.test.ts`](https://github.com/bob-collective/bob/blob/master/sdk/test/ordinals.test.ts) provides an example implementation using [`bitcoinjs-lib`](https://github.com/bitcoinjs/bitcoinjs-lib) and [`tiny-secp256k1`](https://github.com/bitcoinjs/tiny-secp256k1).
 
 #### Using an external service
 There are other ways to create inscriptions, the following two are advised:

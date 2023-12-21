@@ -11,7 +11,6 @@ import {Utilities} from "./Utilities.sol";
 import {BitcoinTx} from "../../src/bridge/BitcoinTx.sol";
 import {TestLightRelay} from "../../src/relay/TestLightRelay.sol";
 import "../../src/swap/Ord_Marketplace.sol";
-import "forge-std/console.sol";
 
 contract ArbitaryErc20 is ERC20, Ownable {
     constructor(string memory name_, string memory symbol_) ERC20(name_, symbol_) {}
@@ -28,7 +27,6 @@ contract OrdMarketPlaceTest is OrdMarketplace, Test {
     address internal bob;
 
     ArbitaryErc20 token1;
-    TestLightRelay testLightRelay;
 
     struct Ordinal {
         BitcoinTx.Info info;
@@ -38,7 +36,7 @@ contract OrdMarketPlaceTest is OrdMarketplace, Test {
         OrdinalId id;
     }
 
-    Ordinal[2] ordinalsInfo;
+    Ordinal[3] ordinalsInfo;
 
     constructor() OrdMarketplace(testLightRelay) {
         // data from testnet
@@ -59,7 +57,7 @@ contract OrdMarketPlaceTest is OrdMarketplace, Test {
         });
 
         BitcoinTx.UTXO memory utxo;
-        utxo.txHash = hex"76f251d17d821b938e39b508cd3e02233d71d9b9bfe387a42a050023d3788edb";
+        utxo.txHash = hex"db8e78d32300052aa487e3bfb9d9713d23023ecd08b5398e931b827dd151f276";
         utxo.txOutputIndex = 1;
         utxo.txOutputValue = 0;
 
@@ -67,8 +65,6 @@ contract OrdMarketPlaceTest is OrdMarketplace, Test {
         BitcoinAddress memory requester =
             BitcoinAddress({scriptPubKey: hex"0014e257eccafbc07c381642ce6e7e55120fb077fbed"});
         OrdinalId memory id;
-        id.ordinalID =
-            hex"00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff";
 
         ordinalsInfo[0] = Ordinal({info: info, proof: proof, requester: requester, utxo: utxo, id: id});
 
@@ -90,7 +86,7 @@ contract OrdMarketPlaceTest is OrdMarketplace, Test {
         });
 
         BitcoinTx.UTXO memory utxo2;
-        utxo2.txHash = hex"f00c97eb214c453a7f51b55182d448cd410dc937dbfd967135548a8a2a1f7ade";
+        utxo2.txHash = hex"de7a1f2a8a8a54357196fddb37c90d41cd48d48251b5517f3a454c21eb970cf0";
         utxo2.txOutputIndex = 0;
         utxo2.txOutputValue = 0;
 
@@ -98,10 +94,40 @@ contract OrdMarketPlaceTest is OrdMarketplace, Test {
         BitcoinAddress memory requester2 =
             BitcoinAddress({scriptPubKey: hex"5120d45f4cc697b09edb740965749aac06ad9b6e2d3a9d79886e6dfe6d7d57dcec06"});
         OrdinalId memory id2;
-        id2.ordinalID =
-            hex"00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff";
 
         ordinalsInfo[1] = Ordinal({info: info2, proof: proof2, requester: requester2, utxo: utxo2, id: id2});
+
+        // data from testnet
+        // get data from sdk txid: 591235b1a474ea29e29e2b3aaee45055b43e38cdf38c3700df65509f60ee2d8e
+        BitcoinTx.Info memory info3 = BitcoinTx.Info({
+            version: hex"02000000",
+            inputVector: hex"022c73deced32f831ee0c7f9cda848b11ed1f284e6b3251814ca3b6c028d80216e0000000000ffffffffb07f925d2e91c4ff4bf802f38e60c390a8498f650e06ccc8eac32e6913aa3b450100000000ffffffff",
+            outputVector: hex"0222020000000000001976a914344a0f48ca150ec2b903817660b9b68b13a6702688ac178e07000000000022512025f4ee2e73ace3ed0e5ec4472541db5755b52cb8823e8ce14b6052dedfe3b33d",
+            locktime: hex"00000000"
+        });
+
+        BitcoinTx.Proof memory proof3 = BitcoinTx.Proof({
+            merkleProof: hex"b1b47c8e4fcf75b9820ef433d7b5a6fa65d559af35173c600b44e736deb5ffd23a1cebfd570521a1153ef16e9fc4eeb8f80d699fdf113e96e7b5c9dfdaf0db8e166f972b6eff1e8d248d1bc3732dfb4e2aa7a78ca0e6d99c01644ce521c02b2f90c4848b9e60e8d44c764c58affefdc9dd40ce2f4f537b923551676a008f8adea365f60d22ae64f00aa2d981e640ee2f4f0781e4d347ea1d154bbf3c829ab2d02e69bdb26bef5f06781b439b6e65ac701cf458018bfb23304817efb66fabf3ba10317933e969f8bd6e6e3aa48f75b0d7c53adbe80dc9dca82d0e66aef5c592d66e6bdbd0630efb413b54c208c9465cc747701261978de3c8f3c6c33923242c67",
+            txIndexInBlock: 72,
+            bitcoinHeaders: abi.encodePacked(
+                hex"0000002019ecad2d640319bad3cbe99dd2819fdba90023ccd6a479d31400000000000000f308f7de96bab7e11e64fdb06000e57806b7791b923cf0e8382547d3c609f2bf65438165ffff001d84cd32400000e0201a1e9727a2da2e112c761a0d3aa639c52e9b43c1e9d80bb0242632240000000056f577d01fbd2550679ced5da24291ec48bbb96a93f790349ac2f54fa075f90c64448165efdf2819529ec2d8"
+                )
+        });
+
+        // https://mempool.space/testnet/tx/6e21808d026c3bca141825b3e684f2d11eb148a8cdf9c7e01e832fd3cede732c
+        // ordinal inscription: https://ordinals-testnet.gamma.io/inscription/6e21808d026c3bca141825b3e684f2d11eb148a8cdf9c7e01e832fd3cede732ci0
+        // ordinal tx: https://ordinals-testnet.gamma.io/tx/591235b1a474ea29e29e2b3aaee45055b43e38cdf38c3700df65509f60ee2d8e
+        BitcoinTx.UTXO memory utxo3;
+        utxo3.txHash = hex"6e21808d026c3bca141825b3e684f2d11eb148a8cdf9c7e01e832fd3cede732c";
+        utxo3.txOutputIndex = 0;
+        utxo3.txOutputValue = 546;
+
+        // https://btc-testnet.gobob.xyz/tx/591235b1a474ea29e29e2b3aaee45055b43e38cdf38c3700df65509f60ee2d8e
+        BitcoinAddress memory requester3 =
+            BitcoinAddress({scriptPubKey: hex"76a914344a0f48ca150ec2b903817660b9b68b13a6702688ac"});
+        OrdinalId memory id3;
+
+        ordinalsInfo[2] = Ordinal({info: info3, proof: proof3, requester: requester3, utxo: utxo3, id: id3});
     }
 
     function setUp() public {
@@ -117,15 +143,13 @@ contract OrdMarketPlaceTest is OrdMarketplace, Test {
 
         testLightRelay = new TestLightRelay();
         super.setRelay(testLightRelay);
-        testLightRelay.setDifficultyFromHeaders(ordinalsInfo[0].proof.bitcoinHeaders);
     }
 
     function test_ordinalSellOrderFullFlow() public {
         uint256 nextOrdinalId;
-        token1.sudoMint(bob, 200);
 
         for (uint256 i = 0; i < ordinalsInfo.length; i++) {
-            testLightRelay.setDifficultyFromHeaders(ordinalsInfo[i].proof.bitcoinHeaders);
+            token1.sudoMint(bob, 100);
 
             uint256 expectedPlaceId = nextOrdinalId++;
 
@@ -167,9 +191,6 @@ contract OrdMarketPlaceTest is OrdMarketplace, Test {
         vm.expectRevert("Buying amount should be greater than 0");
         this.placeOrdinalSellOrder(ordinalsInfo[0].id, ordinalsInfo[0].utxo, address(token1), 0);
 
-        vm.expectRevert("Invalid ordinal ID provided");
-        ordinalsInfo[0].id.ordinalID = hex"cdff";
-        this.placeOrdinalSellOrder(ordinalsInfo[0].id, ordinalsInfo[0].utxo, address(token1), 100);
         vm.stopPrank();
     }
 
@@ -195,6 +216,16 @@ contract OrdMarketPlaceTest is OrdMarketplace, Test {
         vm.expectRevert("Address: call to non-contract");
         this.acceptOrdinalSellOrder(1, ordinalsInfo[0].requester);
         vm.stopPrank();
+    }
+
+    function test_acceptOrdinalSellOrderWhenOrderAlreadyAccepted() public {
+        setUpForProofOrdinalSellOrder();
+
+        // acceptOrdinalSellOrder by bob
+        vm.startPrank(bob);
+        token1.approve(address(this), 100);
+        vm.expectRevert("Order Already Accepted");
+        this.acceptOrdinalSellOrder(0, ordinalsInfo[0].requester);
     }
 
     function setUpForProofOrdinalSellOrder() public {
