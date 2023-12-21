@@ -1,5 +1,5 @@
 # BitcoinTx
-[Git Source](https://github.com/bob-collective/bob/blob/6feef4b26921a0e62c67cac7076c04271613ba33/src/bridge/BitcoinTx.sol)
+[Git Source](https://github.com/bob-collective/bob/blob/9dd94230dd2abcab7dfb659e986743be10093c68/src/bridge/BitcoinTx.sol)
 
 Allows to reference Bitcoin raw transaction in Solidity.
 
@@ -95,6 +95,20 @@ function getTxOutputValue(
 |`processInfo`|`TxOutputsProcessingInfo`|TxOutputsProcessingInfo identifying output starting index and the number of outputs.|
 
 
+### reverseEndianness
+
+
+```solidity
+function reverseEndianness(bytes32 b) internal pure returns (bytes32 txHash);
+```
+
+### ensureTxInputSpendsUtxo
+
+
+```solidity
+function ensureTxInputSpendsUtxo(bytes memory _vin, BitcoinTx.UTXO memory utxo) internal pure;
+```
+
 ## Structs
 ### Info
 Represents Bitcoin transaction data.
@@ -118,6 +132,18 @@ struct Proof {
     bytes merkleProof;
     uint256 txIndexInBlock;
     bytes bitcoinHeaders;
+}
+```
+
+### UTXO
+Represents info about an unspent transaction output.
+
+
+```solidity
+struct UTXO {
+    bytes32 txHash;
+    uint32 txOutputIndex;
+    uint64 txOutputValue;
 }
 ```
 

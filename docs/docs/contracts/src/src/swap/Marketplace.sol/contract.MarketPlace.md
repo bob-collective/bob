@@ -1,5 +1,8 @@
 # MarketPlace
-[Git Source](https://github.com/bob-collective/bob/blob/6feef4b26921a0e62c67cac7076c04271613ba33/src/swap/Marketplace.sol)
+[Git Source](https://github.com/bob-collective/bob/blob/9dd94230dd2abcab7dfb659e986743be10093c68/src/swap/Marketplace.sol)
+
+**Inherits:**
+ERC2771Recipient
 
 
 ## State Variables
@@ -18,6 +21,13 @@ uint256 public nextOrderId;
 
 
 ## Functions
+### constructor
+
+
+```solidity
+constructor(address erc2771Forwarder);
+```
+
 ### placeErcErcOrder
 
 
@@ -43,7 +53,7 @@ function withdrawErcErcOrder(uint256 id) public;
 
 
 ```solidity
-function getOpenOrders() external view returns (Order[] memory);
+function getOpenOrders() external view returns (Order[] memory, uint256[] memory);
 ```
 
 ## Events
