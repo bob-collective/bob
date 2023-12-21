@@ -1,5 +1,5 @@
 # BitcoinTx
-[Git Source](https://github.com/bob-collective/bob/blob/98d6776243fd4555508637d4cff8243488a356a2/src/bridge/BitcoinTx.sol)
+[Git Source](https://github.com/bob-collective/bob/blob/a2d50b71441518de135cd83845410eb07966908d/src/bridge/BitcoinTx.sol)
 
 Allows to reference Bitcoin raw transaction in Solidity.
 

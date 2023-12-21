@@ -1,5 +1,5 @@
 # Erc20Mintable
-[Git Source](https://github.com/bob-collective/bob/blob/98d6776243fd4555508637d4cff8243488a356a2/src/faucet/Erc20Minter.sol)
+[Git Source](https://github.com/bob-collective/bob/blob/a2d50b71441518de135cd83845410eb07966908d/src/faucet/Erc20Minter.sol)
 
 
 ## Functions
