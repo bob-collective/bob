@@ -34,7 +34,6 @@ def replace_paths_with_empty_brackets(line):
         path = default_path + match.group(0)[1:-1]  # Remove parentheses
         start = "docs/docs/src/src/X/X/"
         relative_path = os.path.relpath(path, start)
-        print(f"Original Path: {relative_path}")
         return '(' + relative_path + ')'
     return re.sub(r'\([^)]+\)', replace_path, line)
 
@@ -57,13 +56,10 @@ def process_md_file(file_path):
     with open(file_path, 'w') as file:
         file.write(md_content)
 
-    print(f"File modified: {file_path}")
-
     # Check if the file name is README.md or SUMMARY.md and delete it
     file_name = os.path.basename(file_path)
     if file_name.lower() in ['readme.md', 'summary.md']:
         os.remove(file_path)
-        print(f"Deleted file: {file_path}")
 
 # Main function to process all Markdown files in a directory and its subdirectories
 def process_all_md_files(directory):
