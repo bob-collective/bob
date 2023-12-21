@@ -101,6 +101,12 @@ const config = {
             label: "API",
           },
           {
+            type: "docSidebar",
+            sidebarId: "contractSidebar",
+            position: "left",
+            label: "Contracts",
+          },
+          {
             href: DISCORD,
             label: "Discord",
             position: "right",
