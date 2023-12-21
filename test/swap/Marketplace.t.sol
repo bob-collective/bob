@@ -26,7 +26,7 @@ contract MarketPlaceTest is MarketPlace, Test {
     ArbitaryErc20 token1;
     ArbitaryErc20 token2;
 
-    constructor() MarketPlace() {}
+    constructor() MarketPlace(address(0x00)) {}
 
     function setUp() public {
         utils = new Utilities();

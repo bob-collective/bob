@@ -9,6 +9,8 @@ const LANDING_PAGE = "https://gobob.xyz";
 const DOCS_PAGE = "https://docs.gobob.xyz";
 const DISCORD = "https://discordapp.com/invite/interlay";
 const TWITTER = "https://twitter.com/build_on_bob";
+const TELEGRAM = "https://t.me/+CyIcLW2nfaFlNDc1";
+const FORUM = "https://forum.gobob.xyz";
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
@@ -130,14 +132,31 @@ const config = {
                 label: "Twitter",
                 href: TWITTER,
               },
+              {
+                label: "Forum",
+                href: FORUM,
+              },
+            ],
+          },
+          {
+            title: "Builders",
+            items: [
+              {
+                label: "Telegram (Dev)",
+                href: TELEGRAM,
+              },
+              {
+                label: "GitHub",
+                href: GITHUB_LINK,
+              },
             ],
           },
           {
             title: "More",
             items: [
               {
-                label: "GitHub",
-                href: GITHUB_LINK,
+                label: "BOB Homepage",
+                href: LANDING_PAGE,
               },
             ],
           },

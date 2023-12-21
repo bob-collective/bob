@@ -26,9 +26,8 @@ contract MarketPlaceTest is BtcMarketPlace, Test {
     address internal bob;
 
     ArbitaryErc20 token1;
-    TestLightRelay testLightRelay;
 
-    constructor() BtcMarketPlace(testLightRelay) {}
+    constructor() BtcMarketPlace(testLightRelay, address(0x00)) {}
 
     function setUp() public {
         utils = new Utilities();
@@ -43,7 +42,6 @@ contract MarketPlaceTest is BtcMarketPlace, Test {
 
         testLightRelay = new TestLightRelay();
         super.setRelay(testLightRelay);
-        testLightRelay.setDifficultyFromHeaders(dummyProof().bitcoinHeaders);
     }
 
     function dummyTransaction() public view returns (BitcoinTx.Info memory) {

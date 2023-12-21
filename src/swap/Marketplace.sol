@@ -2,10 +2,11 @@ pragma solidity ^0.8.13;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {ERC2771Recipient} from "@opengsn/packages/contracts/src/ERC2771Recipient.sol";
 
 using SafeERC20 for IERC20;
 
-contract MarketPlace {
+contract MarketPlace is ERC2771Recipient {
     mapping(uint256 => Order) public ercErcOrders; // cant have struct as key, nor tupple
 
     event placeOrder(
@@ -29,6 +30,10 @@ contract MarketPlace {
         address requesterAddress;
     }
 
+    constructor(address erc2771Forwarder) {
+        _setTrustedForwarder(erc2771Forwarder);
+    }
+
     function placeErcErcOrder(address sellingToken, uint256 saleAmount, address buyingToken, uint256 buyAmount)
         public
     {
@@ -36,7 +41,7 @@ contract MarketPlace {
         require(buyingToken != address(0x0));
 
         // "lock" selling token by transferring to contract
-        IERC20(sellingToken).safeTransferFrom(msg.sender, address(this), saleAmount);
+        IERC20(sellingToken).safeTransferFrom(_msgSender(), address(this), saleAmount);
 
         uint256 id = nextOrderId++;
         Order memory order = Order({
@@ -44,7 +49,7 @@ contract MarketPlace {
             offeringToken: sellingToken,
             askingAmount: buyAmount,
             askingToken: buyingToken,
-            requesterAddress: msg.sender
+            requesterAddress: _msgSender()
         });
 
         ercErcOrders[id] = order;
@@ -71,24 +76,24 @@ contract MarketPlace {
         ercErcOrders[id].offeringAmount -= buyAmount;
         ercErcOrders[id].askingAmount -= saleAmount;
 
-        IERC20(order.askingToken).safeTransferFrom(msg.sender, order.requesterAddress, saleAmount);
-        IERC20(order.offeringToken).safeTransfer(msg.sender, buyAmount);
+        IERC20(order.askingToken).safeTransferFrom(_msgSender(), order.requesterAddress, saleAmount);
+        IERC20(order.offeringToken).safeTransfer(_msgSender(), buyAmount);
 
-        emit acceptOrder(id, msg.sender, buyAmount, saleAmount);
+        emit acceptOrder(id, _msgSender(), buyAmount, saleAmount);
     }
 
     function withdrawErcErcOrder(uint256 id) public {
         Order memory order = ercErcOrders[id];
-        require(order.requesterAddress == msg.sender);
+        require(order.requesterAddress == _msgSender());
 
-        IERC20(order.offeringToken).safeTransfer(msg.sender, order.offeringAmount);
+        IERC20(order.offeringToken).safeTransfer(_msgSender(), order.offeringAmount);
 
         delete ercErcOrders[id];
 
         emit withdrawOrder(id);
     }
 
-    function getOpenOrders() external view returns (Order[] memory) {
+    function getOpenOrders() external view returns (Order[] memory, uint256[] memory) {
         uint256 numOpenOrders = 0;
         for (uint256 i = 0; i < nextOrderId; i++) {
             if (ercErcOrders[i].offeringAmount > 0) {
@@ -96,13 +101,15 @@ contract MarketPlace {
             }
         }
         Order[] memory ret = new Order[](numOpenOrders);
+        uint256[] memory identifiers = new uint256[](numOpenOrders);
         uint256 numPushed = 0;
         for (uint256 i = 0; i < nextOrderId; i++) {
             if (ercErcOrders[i].offeringAmount > 0) {
                 ret[numPushed] = ercErcOrders[i];
+                identifiers[numPushed] = i;
                 numPushed++;
             }
         }
-        return ret;
+        return (ret, identifiers);
     }
 }

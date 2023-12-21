@@ -126,6 +126,17 @@ library BitcoinTx {
         bytes bitcoinHeaders;
     }
 
+    /// @notice Represents info about an unspent transaction output.
+    struct UTXO {
+        /// @notice Hash of the transaction the output belongs to.
+        /// @dev Byte order corresponds to the Bitcoin internal byte order.
+        bytes32 txHash;
+        /// @notice Index of the transaction output (0-indexed).
+        uint32 txOutputIndex;
+        /// @notice Value of the transaction output.
+        uint64 txOutputValue;
+    }
+
     /// @notice Validates the SPV proof of the Bitcoin transaction.
     ///         Reverts in case the validation or proof verification fail.
     /// @param txInfo Bitcoin transaction data.
@@ -277,5 +288,44 @@ library BitcoinTx {
         }
 
         revert("No output found for scriptPubKey");
+    }
+
+    function reverseEndianness(bytes32 b) internal pure returns (bytes32 txHash) {
+        bytes memory newValue = new bytes(b.length);
+        for (uint256 i = 0; i < b.length; i++) {
+            newValue[b.length - i - 1] = b[i];
+        }
+        assembly {
+            txHash := mload(add(newValue, 32))
+        }
+    }
+
+    function ensureTxInputSpendsUtxo(bytes memory _vin, BitcoinTx.UTXO memory utxo) internal pure {
+        uint256 _varIntDataLen;
+        uint256 _nIns;
+
+        (_varIntDataLen, _nIns) = BTCUtils.parseVarInt(_vin);
+        require(_varIntDataLen != BTCUtils.ERR_BAD_ARG, "Read overrun during VarInt parsing");
+
+        uint256 _len = 0;
+        uint256 _offset = 1 + _varIntDataLen;
+
+        bytes32 expectedTxHash = reverseEndianness(utxo.txHash);
+
+        for (uint256 _i = 0; _i < _nIns; _i++) {
+            bytes32 outpointTxHash = _vin.extractInputTxIdLeAt(_offset);
+            uint32 outpointIndex = BTCUtils.reverseUint32(uint32(_vin.extractTxIndexLeAt(_offset)));
+
+            // check if it matches tx
+            if (expectedTxHash == outpointTxHash && utxo.txOutputIndex == outpointIndex) {
+                return;
+            }
+
+            _len = BTCUtils.determineInputLengthAt(_vin, _offset);
+            require(_len != BTCUtils.ERR_BAD_ARG, "Bad VarInt in scriptSig");
+            _offset = _offset + _len;
+        }
+
+        revert("Transaction does not spend the required utxo");
     }
 }
