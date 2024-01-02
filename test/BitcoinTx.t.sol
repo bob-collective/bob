@@ -118,6 +118,24 @@ contract BitcoinTxTest is Test {
         assertEq(value, 1473990);
     }
 
+    function test_getTxOutputValueSingleOutputTransaction() public {
+        // tx api: https://btc-testnet.gobob.xyz/tx/b0fe4bd36b17be89f131c2e652578def3cc0c3d5aa9e7a3f972365a8dc46dba8
+        uint64 value = BitcoinTx.getTxOutputValue(
+            keccak256(hex"160014d127b24a7e2aad2ddf21d4d940f6202158aa507d"),
+            hex"01ab9ab90800000000160014d127b24a7e2aad2ddf21d4d940f6202158aa507d"
+        );
+        assertEq(value, 146381483);
+    }
+
+    function test_getTxOutputValueMaxTransactionValue() public {
+        // tx api: https://api.blockcypher.com/v1/btc/main/txs/d486aeb0e59181fd1addb4aa69ce04d638188fc1125c424899267e8ed6a8af24?limit=50&includeHex=true/
+        uint64 value = BitcoinTx.getTxOutputValue(
+            keccak256(hex"17a914ed498d84acb4532656fcf6947d0ceab6c77188bc87"),
+            hex"0260536280ed03000017a9148e097444bb754122652208bf00f71a87b177b700874b5a115e2704000017a914ed498d84acb4532656fcf6947d0ceab6c77188bc87"
+        );
+        assertEq(value, 4567128431179);
+    }
+
     function test_getTxOutputValueWithInvalidPubkey() public {
         vm.expectRevert("No output found for scriptPubKey");
         BitcoinTx.getTxOutputValue(
