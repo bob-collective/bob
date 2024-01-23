@@ -435,6 +435,35 @@ contract HelloBitcoin {
 }
 
 ```
+
+Also create a `TestLightRelay.sol` file for deploying your own bitcoin relay.
+```solidity
+pragma solidity 0.8.17;
+
+import {BTCUtils} from "@bob-collective/bitcoin-spv/BTCUtils.sol";
+import "@bob-collective/bob/relay/LightRelay.sol";
+
+/**
+* @title HelloBitcoin
+* @dev contract allows swapping between BTC->USDT and Ordinal->USDT using the BTC relay on testnet.
+* @custom:dev-run-script ./scripts/deploy_relay.ts
+*/
+contract TestLightRelay is LightRelay {
+    using BTCUtils for bytes;
+    using BTCUtils for uint256;
+
+      /// @notice Sets the current and previous difficulty based on the difficulty
+      ///         inferred from the provided Bitcoin headers.
+    function setDifficultyFromHeaders(bytes memory bitcoinHeaders) external {
+        uint256 firstHeaderDiff = bitcoinHeaders.extractTarget().calculateDifficulty();
+
+        currentEpochDifficulty = firstHeaderDiff;
+        prevEpochDifficulty = firstHeaderDiff;
+    }
+}
+
+```
+
   </TabItem>
   <TabItem value="foundry" label="Foundry">
 
@@ -463,6 +492,7 @@ In `Advanced Configurations` section of Solidity Compiler switch from `Compiler 
 
 To compile the contract, go to the `Solidity Compiler` section of the IDE, select and compile the `HelloBitcoin` smart contract.
 You can also directly compile the `HelloBitcoin` smart contract by right-clicking on the `HelloBitcoin.sol` file and select compile.
+In the same way `TestLightRelay.sol` contract should also be compiled.
 
   </TabItem>
   <TabItem value="foundry" label="Foundry">
@@ -485,9 +515,15 @@ To deploy the compiled coin smart contract first open the MetaMask extension and
 
 Choose the Remix `ENVIRONMENT` and `Injected Provider - MetaMask`. Remix will deploy contract to connected network, i.e., BOB.
 
+Select contract as `TestLightRelay`. Click `Deploy` and sign the transaction pop up message.
+
+![Remix IDE image](test_light_relay.png)
+
+Copy the `TestLightRelay` contract address from the terminal this will be used as a constructor argument for `HelloBitcoin` contract.
+
 Select contract as `HelloBitcoin`
 
-Add the `_RELAY` ie BitcoinRelay and `_USDTCONTRACTADDRESS` address as parameter.
+Add the `_RELAY` ie `TestLightRelay` address and `_USDTCONTRACTADDRESS` address as `0xF58de5056b7057D74f957e75bFfe865F571c3fB6`.
 
 Click `Deploy` and sign the transaction pop up message.
 
