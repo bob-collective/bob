@@ -11,7 +11,7 @@ This guide provides step-by-step instructions on how to deploy smart contracts o
 
 We will provide instructions for using Remix and Foundry.
 
-- [Developer Starters Kit](https://github.com/bob-collective/StarterKit) the kit serves as the foundation to develop on BOB.
+- [Developer Starter Kit](https://github.com/bob-collective/StarterKit) the kit serves as the foundation to develop on BOB.
 - [Remix](https://remix.ethereum.org/) is a web-based IDE for writing smart contracts. This is a great option if you do not want to install any software on your computer.
 - [Foundry](https://book.getfoundry.sh/) is a Rust-based development environment for writing smart contracts. This is a great option if you want to use a local development environment.
 
@@ -83,7 +83,9 @@ Add the following remappings in `compiler_config.json` under `settings`
   }
 }
 ```
-Enter the below code in `HelloBitcoin.sol` file. To learn more about the contract [checkout the Solidity tutorial guide](https://docs.soliditylang.org/en/v0.8.21/introduction-to-smart-contracts.html#subcurrency-example).
+Enter the below code in `HelloBitcoin.sol` file.
+
+To learn more about the Solidity contracts in general [checkout the Solidity tutorial guide](https://docs.soliditylang.org/en/v0.8.21/introduction-to-smart-contracts.html#subcurrency-example).
 
 ```solidity
 // SPDX-License-Identifier: UNLICENSED
@@ -521,9 +523,16 @@ Select contract as `TestLightRelay`. Click `Deploy` and sign the transaction pop
 
 Copy the `TestLightRelay` contract address from the terminal this will be used as a constructor argument for `HelloBitcoin` contract.
 
-Select contract as `HelloBitcoin`
+Select contract as `HelloBitcoin`.
 
-Add the `_RELAY` ie `TestLightRelay` address and `_USDTCONTRACTADDRESS` address as `0xF58de5056b7057D74f957e75bFfe865F571c3fB6`.
+Add the `_RELAY` ie `TestLightRelay` address copied above. 
+
+Add the `_USDTCONTRACTADDRESS` address as `0xF58de5056b7057D74f957e75bFfe865F571c3fB6`. 
+
+
+:::tip
+If you want, you can also modify the contract at a later stage and use [other ERC20 contracts already deployed on BOB testnet](/docs/build/contracts/).
+:::
 
 Click `Deploy` and sign the transaction pop up message.
 
