@@ -1,9 +1,9 @@
 ---
 sidebar_position: 6
-sidebar_label: Using the BOB BTC Snap MetaMask Snap in your app
+sidebar_label: Using the BOB BTC MetaMask Snap in your app
 ---
 
-# BOB BTC Snap MetaMask Snap
+# BOB BTC MetaMask Snap
 
 :::info MetaMask Flask
 
@@ -13,7 +13,7 @@ Unlisted [MetaMask Snaps](https://metamask.io/snaps/) can only be used with [Met
 
 :::tip
 
-Take a look at [our MetaMask Snap demo application](../examples/metamask-ordinals/).
+Take a look at the [BTC Snap source code](https://github.com/bob-collective/btcsnap) and [our MetaMask Snap demo application](../examples/metamask-ordinals/)
 
 :::
 
@@ -21,7 +21,7 @@ Take a look at [our MetaMask Snap demo application](../examples/metamask-ordinal
 
 You will need to create a new browser profile to use with the MetaMask Flask extension, as having MetaMask and MetaMask Flask installed in the same browser profile can cause issues.
 
-## Using the BOB BTC snap in your application
+## Using the BOB BTC Snap in your application
 
 ### Connecting to the BOB BTC Snap
 
