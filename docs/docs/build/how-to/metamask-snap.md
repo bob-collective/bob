@@ -70,7 +70,7 @@ export async function connect(cb: (connected: boolean) => void) {
 
 :::tip
 
-Examples for connecting to the BTC Snap and calling the methods can be found in the [utils.ts](https://github.com/bob-collective/demo-unified-assets-tracker/blob/1475ef915518d45103cd4581c3901ede216a6197/ui/src/utils/btcsnap.ts) file in the demo app.
+To see how to connect to the BTC Snap and call the available methods, take a look at the [utils.ts](https://github.com/bob-collective/demo-unified-assets-tracker/blob/1475ef915518d45103cd4581c3901ede216a6197/ui/src/utils/btcsnap.ts) file in our demo app.
 
 :::
 
