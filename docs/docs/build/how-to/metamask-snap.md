@@ -1,9 +1,9 @@
 ---
 sidebar_position: 6
-sidebar_label: Use MetaMask Snap in your dAPP
+sidebar_label: Using the BOB BTC Snap MetaMask Snap in your app
 ---
 
-# MetaMask Snap
+# BOB BTC Snap MetaMask Snap
 
 :::info MetaMask Flask
 
@@ -21,9 +21,9 @@ Take a look at [our MetaMask Snap demo application](../examples/metamask-ordinal
 
 You will need to create a new browser profile to use with the MetaMask Flask extension, as having MetaMask and MetaMask Flask installed in the same browser profile can cause issues.
 
-## Using BOB BTC snap in your application
+## Using the BOB BTC snap in your application
 
-### Connecting to BOB BTC Snap
+### Connecting to the BOB BTC Snap
 
 ```typescript
 import { MetaMaskInpageProvider } from "@metamask/providers";
@@ -70,7 +70,7 @@ export async function connect(cb: (connected: boolean) => void) {
 
 :::tip
 
-To see how to connect to the BTC Snap and call the available methods, take a look at the [utils.ts](https://github.com/bob-collective/demo-unified-assets-tracker/blob/1475ef915518d45103cd4581c3901ede216a6197/ui/src/utils/btcsnap.ts) file in our demo app.
+To see how to connect to the BOB BTC Snap and call the available methods, take a look at the [utils.ts](https://github.com/bob-collective/demo-unified-assets-tracker/blob/1475ef915518d45103cd4581c3901ede216a6197/ui/src/utils/btcsnap.ts) file in our demo app.
 
 :::
 
@@ -121,7 +121,7 @@ export async function getExtendedPublicKey(
 }
 ```
 
-### Using BOB BTC Snap in a React application
+### Using the BOB BTC Snap in a React application
 
 :::tip
 
