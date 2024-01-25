@@ -25,6 +25,12 @@ You will need to create a new browser profile to use with the MetaMask Flask ext
 
 ### Connecting to the BOB BTC Snap
 
+:::tip
+
+To see how to connect to the BOB BTC Snap and call the available methods, take a look at the [utils.ts](https://github.com/bob-collective/demo-unified-assets-tracker/blob/1475ef915518d45103cd4581c3901ede216a6197/ui/src/utils/btcsnap.ts) file in our demo app.
+
+:::
+
 ```typescript
 import { MetaMaskInpageProvider } from "@metamask/providers";
 
@@ -67,12 +73,6 @@ export async function connect(cb: (connected: boolean) => void) {
 ```
 
 ### Getting the extended public key
-
-:::tip
-
-To see how to connect to the BOB BTC Snap and call the available methods, take a look at the [utils.ts](https://github.com/bob-collective/demo-unified-assets-tracker/blob/1475ef915518d45103cd4581c3901ede216a6197/ui/src/utils/btcsnap.ts) file in our demo app.
-
-:::
 
 ```typescript
 export enum BitcoinNetwork {
