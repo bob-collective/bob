@@ -22,7 +22,7 @@ contract LightRelayTest is Test {
     Header[4] retargetHeaders;
     Header[2] proofHeaders;
 
-    constructor() public {
+    constructor() {
         genesisHeader = Header({
             data: hex"04000000473ed7b7ef2fce828c318fd5e5868344a5356c9e93b6040400000000000000004409cae5b7b2f8f18ea55f558c9bfa7c5f4778a1a53172a48fc57e172d0ed3d264c5eb56c3a40618af9bc1c7",
             height: 403200
@@ -76,7 +76,7 @@ contract LightRelayTest is Test {
         assertEq(relay.getCurrentEpochDifficulty(), 166851513282);
     }
 
-    function test_ValidateProof() public {
+    function test_ValidateProof() public view {
         // 2ef69769cc0ee81141c79552de6b91f372ff886216dbfa84e5497a16b0173e79
         state.validateProof(
             BitcoinTx.Info({

@@ -29,14 +29,14 @@ contract OnboardingPaymaster is BasePaymaster {
         gasUsedByPost = _gasUsedByPost;
     }
 
-    function _getPaymasterData(bytes memory paymasterData) private returns (IERC20 token, uint256 maxTokens) {
+    function _getPaymasterData(bytes memory paymasterData) private pure returns (IERC20 token, uint256 maxTokens) {
         (address tokenAddress, uint256 _maxTokens) = abi.decode(paymasterData, (address, uint256));
 
         maxTokens = _maxTokens;
         token = IERC20(tokenAddress);
     }
 
-    function getSelector(bytes calldata call) public view returns (uint32) {
+    function getSelector(bytes calldata call) public pure returns (uint32) {
         uint32 ret = uint32(bytes4(call[0:4]));
         return ret;
     }

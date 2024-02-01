@@ -97,7 +97,7 @@ function getPayer(GsnTypes.RelayRequest calldata relayRequest) public view virtu
 
 
 ```solidity
-function _getPaymasterData(bytes memory paymasterData) private returns (IERC20 token, uint256 maxTokens);
+function _getPaymasterData(bytes memory paymasterData) private pure returns (IERC20 token, uint256 maxTokens);
 ```
 
 ### _calculatePreCharge
@@ -106,6 +106,7 @@ function _getPaymasterData(bytes memory paymasterData) private returns (IERC20 t
 ```solidity
 function _calculatePreCharge(IERC20 token, GsnTypes.RelayRequest calldata relayRequest, uint256 maxPossibleGas)
     internal
+    view
     returns (address payer, uint256 ethPrecharge, uint256 tokenPreCharge);
 ```
 

@@ -53,14 +53,14 @@ function setPostGasUsage(uint256 _gasUsedByPost) external onlyOwner;
 
 
 ```solidity
-function _getPaymasterData(bytes memory paymasterData) private returns (IERC20 token, uint256 maxTokens);
+function _getPaymasterData(bytes memory paymasterData) private pure returns (IERC20 token, uint256 maxTokens);
 ```
 
 ### getSelector
 
 
 ```solidity
-function getSelector(bytes calldata call) public view returns (uint32);
+function getSelector(bytes calldata call) public pure returns (uint32);
 ```
 
 ### _preRelayedCall
