@@ -126,7 +126,7 @@ function __preRelayedCall(
     bytes calldata signature,
     bytes calldata approvalData,
     uint256 maxPossibleGas
-) public returns (bytes memory context, bool revertOnRecipientRevert);
+) public;
 ```
 
 ### _preRelayedCall
@@ -135,8 +135,8 @@ function __preRelayedCall(
 ```solidity
 function _preRelayedCall(
     GsnTypes.RelayRequest calldata relayRequest,
-    bytes calldata signature,
-    bytes calldata approvalData,
+    bytes calldata,
+    bytes calldata,
     uint256 maxPossibleGas
 ) internal virtual override returns (bytes memory context, bool revertOnRecipientRevert);
 ```

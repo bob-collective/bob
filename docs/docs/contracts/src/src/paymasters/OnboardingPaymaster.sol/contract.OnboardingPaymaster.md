@@ -67,24 +67,21 @@ function getSelector(bytes calldata call) public pure returns (uint32);
 
 
 ```solidity
-function _preRelayedCall(
-    GsnTypes.RelayRequest calldata relayRequest,
-    bytes calldata signature,
-    bytes calldata approvalData,
-    uint256 maxPossibleGas
-) internal virtual override returns (bytes memory context, bool revertOnRecipientRevert);
+function _preRelayedCall(GsnTypes.RelayRequest calldata relayRequest, bytes calldata, bytes calldata, uint256)
+    internal
+    virtual
+    override
+    returns (bytes memory context, bool revertOnRecipientRevert);
 ```
 
 ### _postRelayedCall
 
 
 ```solidity
-function _postRelayedCall(
-    bytes calldata context,
-    bool,
-    uint256 gasUseWithoutPost,
-    GsnTypes.RelayData calldata relayData
-) internal virtual override;
+function _postRelayedCall(bytes calldata context, bool, uint256, GsnTypes.RelayData calldata)
+    internal
+    virtual
+    override;
 ```
 
 ## Events
