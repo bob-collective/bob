@@ -114,14 +114,14 @@ contract OracleTokenPaymaster is BasePaymaster {
         bytes calldata signature,
         bytes calldata approvalData,
         uint256 maxPossibleGas
-    ) public returns (bytes memory context, bool revertOnRecipientRevert) {
+    ) public {
         _preRelayedCall(relayRequest, signature, approvalData, maxPossibleGas);
     }
 
     function _preRelayedCall(
         GsnTypes.RelayRequest calldata relayRequest,
-        bytes calldata signature,
-        bytes calldata approvalData,
+        bytes calldata, /* signature */
+        bytes calldata, /* approvalData */
         uint256 maxPossibleGas
     ) internal virtual override returns (bytes memory context, bool revertOnRecipientRevert) {
         (IERC20 token, uint256 maxTokens) = _getPaymasterData(relayRequest.relayData.paymasterData);

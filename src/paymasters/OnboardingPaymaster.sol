@@ -43,9 +43,9 @@ contract OnboardingPaymaster is BasePaymaster {
 
     function _preRelayedCall(
         GsnTypes.RelayRequest calldata relayRequest,
-        bytes calldata signature,
-        bytes calldata approvalData,
-        uint256 maxPossibleGas
+        bytes calldata, /* signature*/
+        bytes calldata, /* approvalData*/
+        uint256 /* maxPossibleGas */
     ) internal virtual override returns (bytes memory context, bool revertOnRecipientRevert) {
         require(relayRequest.request.to == whitelistedContract, "Recipient is not whitelisted");
 
@@ -61,8 +61,8 @@ contract OnboardingPaymaster is BasePaymaster {
     function _postRelayedCall(
         bytes calldata context,
         bool,
-        uint256 gasUseWithoutPost,
-        GsnTypes.RelayData calldata relayData
+        uint256, /* gasUseWithoutPost */
+        GsnTypes.RelayData calldata /* relayData */
     ) internal virtual override {
         address from = abi.decode(context, (address));
         emit PostRelay(from);
