@@ -75,8 +75,7 @@ Add the following remappings in `compiler_config.json` under `settings`
         }
     },
     "remappings":[
-      "@openzeppelin/contracts/access/Ownable.sol=https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v4.5.0/contracts/access/Ownable.sol",
-      "@openzeppelin/contracts/token/ERC20/=https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v4.5.0/contracts/token/ERC20/",
+      "@openzeppelin/contracts/=https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v4.5.0/contracts/",
       "@bob-collective/bitcoin-spv/=https://github.com/bob-collective/bitcoin-spv/blob/master/src/",
       "@bob-collective/bob/=https://github.com/bob-collective/bob/blob/master/src/"
     ]
@@ -491,6 +490,8 @@ touch src/<Contract_Name>.sol
   <TabItem value="remix" label="Remix">
 
 In `Advanced Configurations` section of Solidity Compiler switch from `Compiler configuration` to `Use configuration file`.
+
+![Advance remix configuration image](advance_remix_configuration.png)
 
 To compile the contract, go to the `Solidity Compiler` section of the IDE, select and compile the `HelloBitcoin` smart contract.
 You can also directly compile the `HelloBitcoin` smart contract by right-clicking on the `HelloBitcoin.sol` file and select compile.
