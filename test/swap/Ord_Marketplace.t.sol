@@ -145,7 +145,7 @@ contract OrdMarketPlaceTest is OrdMarketplace, Test {
         super.setRelay(testLightRelay);
     }
 
-    function test_ordinalSellOrderFullFlow() public {
+    function test_OrdinalSellOrderFullFlow() public {
         uint256 nextOrdinalId;
 
         for (uint256 i = 0; i < ordinalsInfo.length; i++) {
@@ -181,7 +181,7 @@ contract OrdMarketPlaceTest is OrdMarketplace, Test {
         }
     }
 
-    function test_placeOrdinalSellOrderShouldRevert() public {
+    function test_PlaceOrdinalSellOrderShouldRevert() public {
         token1.sudoMint(bob, 200);
         // placeOrdinalSellOrder by alice
         vm.startPrank(alice);
@@ -201,7 +201,7 @@ contract OrdMarketPlaceTest is OrdMarketplace, Test {
         this.placeOrdinalSellOrder(ordinalsInfo[0].id, ordinalsInfo[0].utxo, address(token1), 100);
     }
 
-    function test_acceptOrdinalSellOrderShouldRevert() public {
+    function test_AcceptOrdinalSellOrderShouldRevert() public {
         setUpForAcceptOrdinalSellOrder();
 
         vm.startPrank(bob);
@@ -218,7 +218,7 @@ contract OrdMarketPlaceTest is OrdMarketplace, Test {
         vm.stopPrank();
     }
 
-    function test_acceptOrdinalSellOrderWhenOrderAlreadyAccepted() public {
+    function test_AcceptOrdinalSellOrderWhenOrderAlreadyAccepted() public {
         setUpForProofOrdinalSellOrder();
 
         // acceptOrdinalSellOrder by bob
@@ -240,7 +240,7 @@ contract OrdMarketPlaceTest is OrdMarketplace, Test {
         this.acceptOrdinalSellOrder(0, ordinalsInfo[0].requester);
     }
 
-    function test_proofOrdinalSellOrderShouldRevert() public {
+    function test_ProofOrdinalSellOrderShouldRevert() public {
         setUpForProofOrdinalSellOrder();
 
         // when sender is not the requester
@@ -264,7 +264,7 @@ contract OrdMarketPlaceTest is OrdMarketplace, Test {
         vm.stopPrank();
     }
 
-    function test_acceptProofOrdinalSellOrderWithUtxoSpentOnInCorrectAddress() public {
+    function test_AcceptProofOrdinalSellOrderWithUtxoSpentOnInCorrectAddress() public {
         setUpForAcceptOrdinalSellOrder();
 
         // acceptOrdinalSellOrder by bob
@@ -278,7 +278,7 @@ contract OrdMarketPlaceTest is OrdMarketplace, Test {
         vm.stopPrank();
     }
 
-    function test_acceptProofOrdinalSellOrderWithInvalidUtxoSpent() public {
+    function test_AcceptProofOrdinalSellOrderWithInvalidUtxoSpent() public {
         token1.sudoMint(bob, 200);
         // placeOrdinalSellOrder by alice
         vm.startPrank(alice);
@@ -294,7 +294,7 @@ contract OrdMarketPlaceTest is OrdMarketplace, Test {
         this.proofOrdinalSellOrder(1, ordinalsInfo[0].info, ordinalsInfo[0].proof);
     }
 
-    function test_withdrawOrdinalSellOrder() public {
+    function test_WithdrawOrdinalSellOrder() public {
         // placeOrdinalSellOrder by alice
         vm.startPrank(alice);
         this.placeOrdinalSellOrder(ordinalsInfo[0].id, ordinalsInfo[1].utxo, address(token1), 100);
@@ -306,7 +306,25 @@ contract OrdMarketPlaceTest is OrdMarketplace, Test {
         assertEq(ids.length, 0);
     }
 
-    function test_withdrawOrdinalSellOrderShouldRevert() public {
+    function test_AcceptOrdinalSellOrderWhenOrderIsAlreadyWithdrawnShouldRevert() public {
+        token1.sudoMint(bob, 100);
+
+        // placeOrdinalSellOrder by alice
+        setUpForAcceptOrdinalSellOrder();
+
+        // withdraw sell order
+        this.withdrawOrdinalSellOrder(0);
+
+        // try accepting withdraw order
+        vm.startPrank(bob);
+        token1.approve(address(this), 100);
+        // since order is withdrawn it will try to send tokens to default address
+        vm.expectRevert("Address: call to non-contract");
+        this.acceptOrdinalSellOrder(0, ordinalsInfo[0].requester);
+        vm.stopPrank();
+    }
+
+    function test_WithdrawOrdinalSellOrderShouldRevert() public {
         // placeOrdinalSellOrder by alice
         vm.startPrank(alice);
         this.placeOrdinalSellOrder(ordinalsInfo[0].id, ordinalsInfo[1].utxo, address(token1), 100);
@@ -316,7 +334,7 @@ contract OrdMarketPlaceTest is OrdMarketplace, Test {
         this.withdrawOrdinalSellOrder(0);
     }
 
-    function test_cancelAcceptedOrdinalSellOrder() public {
+    function test_CancelAcceptedOrdinalSellOrder() public {
         setUpForProofOrdinalSellOrder();
         vm.warp(block.timestamp + REQUEST_EXPIRATION_SECONDS + 1);
         vm.startPrank(bob);
@@ -326,7 +344,22 @@ contract OrdMarketPlaceTest is OrdMarketplace, Test {
         assertEq(ids.length, 0);
     }
 
-    function test_cancelAcceptedOrdinalSellOrderShouldRevert() public {
+    function test_ProofOrdinalSellOrderWhenOrderIsAlreadyCancelledShouldRevert() public {
+        setUpForProofOrdinalSellOrder();
+
+        vm.startPrank(bob);
+        vm.warp(block.timestamp + REQUEST_EXPIRATION_SECONDS + 1);
+        this.cancelAcceptedOrdinalSellOrder(1);
+
+        // proofOrdinalSellOrder when order cancelled
+        vm.startPrank(alice);
+        // since order is cancelled it will give a default value for the address which is not match alice address
+        vm.expectRevert("Sender not the requester");
+        this.proofOrdinalSellOrder(1, ordinalsInfo[0].info, ordinalsInfo[0].proof);
+        vm.stopPrank();
+    }
+
+    function test_CancelAcceptedOrdinalSellOrderShouldRevert() public {
         setUpForProofOrdinalSellOrder();
 
         vm.startPrank(bob);
