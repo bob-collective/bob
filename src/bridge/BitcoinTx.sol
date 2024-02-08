@@ -13,71 +13,69 @@ import "./BridgeState.sol";
 /// @title Bitcoin transaction
 /// @notice Allows to reference Bitcoin raw transaction in Solidity.
 /// @dev See https://developer.bitcoin.org/reference/transactions.html#raw-transaction-format
-///
-///      Raw Bitcoin transaction data:
-///
-///      | Bytes  |     Name     |        BTC type        |        Description        |
-///      |--------|--------------|------------------------|---------------------------|
-///      | 4      | version      | int32_t (LE)           | TX version number         |
-///      | varies | tx_in_count  | compactSize uint (LE)  | Number of TX inputs       |
-///      | varies | tx_in        | txIn[]                 | TX inputs                 |
-///      | varies | tx_out_count | compactSize uint (LE)  | Number of TX outputs      |
-///      | varies | tx_out       | txOut[]                | TX outputs                |
-///      | 4      | lock_time    | uint32_t (LE)          | Unix time or block number |
-///
+// Raw Bitcoin transaction data:
+//      | Bytes  |     Name     |        BTC type        |        Description        |
+//      |--------|--------------|------------------------|---------------------------|
+//      | 4      | version      | int32_t (LE)           | TX version number         |
+//      | varies | tx_in_count  | compactSize uint (LE)  | Number of TX inputs       |
+//      | varies | tx_in        | txIn[]                 | TX inputs                 |
+//      | varies | tx_out_count | compactSize uint (LE)  | Number of TX outputs      |
+//      | varies | tx_out       | txOut[]                | TX outputs                |
+//      | 4      | lock_time    | uint32_t (LE)          | Unix time or block number |
 //
-///      Non-coinbase transaction input (txIn):
-///
-///      | Bytes  |       Name       |        BTC type        |                 Description                 |
-///      |--------|------------------|------------------------|---------------------------------------------|
-///      | 36     | previous_output  | outpoint               | The previous outpoint being spent           |
-///      | varies | script_bytes     | compactSize uint (LE)  | The number of bytes in the signature script |
-///      | varies | signature_script | char[]                 | The signature script, empty for P2WSH       |
-///      | 4      | sequence         | uint32_t (LE)          | Sequence number                             |
-///
-///
-///      The reference to transaction being spent (outpoint):
-///
-///      | Bytes | Name  |   BTC type    |               Description                |
-///      |-------|-------|---------------|------------------------------------------|
-///      |    32 | hash  | char[32]      | Hash of the transaction to spend         |
-///      |    4  | index | uint32_t (LE) | Index of the specific output from the TX |
-///
-///
-///      Transaction output (txOut):
-///
-///      | Bytes  |      Name       |     BTC type          |             Description              |
-///      |--------|-----------------|-----------------------|--------------------------------------|
-///      | 8      | value           | int64_t (LE)          | Number of satoshis to spend          |
-///      | 1+     | pk_script_bytes | compactSize uint (LE) | Number of bytes in the pubkey script |
-///      | varies | pk_script       | char[]                | Pubkey script                        |
-///
-///      compactSize uint format:
-///
-///      |                  Value                  | Bytes |                    Format                    |
-///      |-----------------------------------------|-------|----------------------------------------------|
-///      | >= 0 && <= 252                          | 1     | uint8_t                                      |
-///      | >= 253 && <= 0xffff                     | 3     | 0xfd followed by the number as uint16_t (LE) |
-///      | >= 0x10000 && <= 0xffffffff             | 5     | 0xfe followed by the number as uint32_t (LE) |
-///      | >= 0x100000000 && <= 0xffffffffffffffff | 9     | 0xff followed by the number as uint64_t (LE) |
-///
-///      (*) compactSize uint is often references as VarInt)
-///
-///      Coinbase transaction input (txIn):
-///
-///      | Bytes  |       Name       |        BTC type        |                 Description                 |
-///      |--------|------------------|------------------------|---------------------------------------------|
-///      | 32     | hash             | char[32]               | A 32-byte 0x0  null (no previous_outpoint)  |
-///      | 4      | index            | uint32_t (LE)          | 0xffffffff (no previous_outpoint)           |
-///      | varies | script_bytes     | compactSize uint (LE)  | The number of bytes in the coinbase script  |
-///      | varies | height           | char[]                 | The block height of this block (BIP34) (*)  |
-///      | varies | coinbase_script  | none                   |  Arbitrary data, max 100 bytes              |
-///      | 4      | sequence         | uint32_t (LE)          | Sequence number
-///
-///      (*)  Uses script language: starts with a data-pushing opcode that indicates how many bytes to push to
-///           the stack followed by the block height as a little-endian unsigned integer. This script must be as
-///           short as possible, otherwise it may be rejected. The data-pushing opcode will be 0x03 and the total
-///           size four bytes until block 16,777,216 about 300 years from now.
+//      Non-coinbase transaction input (txIn):
+//
+//      | Bytes  |       Name       |        BTC type        |                 Description                 |
+//      |--------|------------------|------------------------|---------------------------------------------|
+//      | 36     | previous_output  | outpoint               | The previous outpoint being spent           |
+//      | varies | script_bytes     | compactSize uint (LE)  | The number of bytes in the signature script |
+//      | varies | signature_script | char[]                 | The signature script, empty for P2WSH       |
+//      | 4      | sequence         | uint32_t (LE)          | Sequence number                             |
+//
+//
+//      The reference to transaction being spent (outpoint):
+//
+//      | Bytes | Name  |   BTC type    |               Description                |
+//      |-------|-------|---------------|------------------------------------------|
+//      |    32 | hash  | char[32]      | Hash of the transaction to spend         |
+//      |    4  | index | uint32_t (LE) | Index of the specific output from the TX |
+//
+//
+//      Transaction output (txOut):
+//
+//      | Bytes  |      Name       |     BTC type          |             Description              |
+//      |--------|-----------------|-----------------------|--------------------------------------|
+//      | 8      | value           | int64_t (LE)          | Number of satoshis to spend          |
+//      | 1+     | pk_script_bytes | compactSize uint (LE) | Number of bytes in the pubkey script |
+//      | varies | pk_script       | char[]                | Pubkey script                        |
+//
+//      compactSize uint format:
+//
+//      |                  Value                  | Bytes |                    Format                    |
+//      |-----------------------------------------|-------|----------------------------------------------|
+//      | >= 0 && <= 252                          | 1     | uint8_t                                      |
+//      | >= 253 && <= 0xffff                     | 3     | 0xfd followed by the number as uint16_t (LE) |
+//      | >= 0x10000 && <= 0xffffffff             | 5     | 0xfe followed by the number as uint32_t (LE) |
+//      | >= 0x100000000 && <= 0xffffffffffffffff | 9     | 0xff followed by the number as uint64_t (LE) |
+//
+//      (*) compactSize uint is often references as VarInt)
+//
+//      Coinbase transaction input (txIn):
+//
+//      | Bytes  |       Name       |        BTC type        |                 Description                 |
+//      |--------|------------------|------------------------|---------------------------------------------|
+//      | 32     | hash             | char[32]               | A 32-byte 0x0  null (no previous_outpoint)  |
+//      | 4      | index            | uint32_t (LE)          | 0xffffffff (no previous_outpoint)           |
+//      | varies | script_bytes     | compactSize uint (LE)  | The number of bytes in the coinbase script  |
+//      | varies | height           | char[]                 | The block height of this block (BIP34) (*)  |
+//      | varies | coinbase_script  | none                   |  Arbitrary data, max 100 bytes              |
+//      | 4      | sequence         | uint32_t (LE)          | Sequence number
+//
+//      (*)  Uses script language: starts with a data-pushing opcode that indicates how many bytes to push to
+//           the stack followed by the block height as a little-endian unsigned integer. This script must be as
+//           short as possible, otherwise it may be rejected. The data-pushing opcode will be 0x03 and the total
+//           size four bytes until block 16,777,216 about 300 years from now.
+
 library BitcoinTx {
     using BTCUtils for bytes;
     using BTCUtils for uint256;
@@ -126,6 +124,17 @@ library BitcoinTx {
         /// @notice Single byte-string of 80-byte bitcoin headers,
         ///         lowest height first.
         bytes bitcoinHeaders;
+    }
+
+    /// @notice Represents info about an unspent transaction output.
+    struct UTXO {
+        /// @notice Hash of the transaction the output belongs to.
+        /// @dev Byte order corresponds to the Bitcoin internal byte order.
+        bytes32 txHash;
+        /// @notice Index of the transaction output (0-indexed).
+        uint32 txOutputIndex;
+        /// @notice Value of the transaction output.
+        uint64 txOutputValue;
     }
 
     /// @notice Validates the SPV proof of the Bitcoin transaction.
@@ -206,7 +215,11 @@ library BitcoinTx {
     ///        must be validated using e.g. `BTCUtils.validateVout` function
     ///        before it is passed here.
     /// @return value Outcomes of the processing.
-    function getTxOutputValue(bytes32 scriptPubKeyHash, bytes memory txOutputVector) internal returns (uint64 value) {
+    function getTxOutputValue(bytes32 scriptPubKeyHash, bytes memory txOutputVector)
+        internal
+        pure
+        returns (uint64 value)
+    {
         // Determining the total number of transaction outputs in the same way as
         // for number of inputs. See `BitcoinTx.outputVector` docs for more details.
         (uint256 outputsCompactSizeUintLength, uint256 outputsCount) = txOutputVector.parseVarInt();
@@ -244,7 +257,7 @@ library BitcoinTx {
         bytes32 scriptPubKeyHash,
         bytes memory txOutputVector,
         TxOutputsProcessingInfo memory processInfo
-    ) internal returns (uint64 value) {
+    ) internal pure returns (uint64 value) {
         // Outputs processing loop.
         for (uint256 i = 0; i < processInfo.outputsCount; i++) {
             uint256 outputLength = txOutputVector.determineOutputLengthAt(processInfo.outputStartingIndex);
@@ -279,5 +292,44 @@ library BitcoinTx {
         }
 
         revert("No output found for scriptPubKey");
+    }
+
+    function reverseEndianness(bytes32 b) internal pure returns (bytes32 txHash) {
+        bytes memory newValue = new bytes(b.length);
+        for (uint256 i = 0; i < b.length; i++) {
+            newValue[b.length - i - 1] = b[i];
+        }
+        assembly {
+            txHash := mload(add(newValue, 32))
+        }
+    }
+
+    function ensureTxInputSpendsUtxo(bytes memory _vin, BitcoinTx.UTXO memory utxo) internal pure {
+        uint256 _varIntDataLen;
+        uint256 _nIns;
+
+        (_varIntDataLen, _nIns) = BTCUtils.parseVarInt(_vin);
+        require(_varIntDataLen != BTCUtils.ERR_BAD_ARG, "Read overrun during VarInt parsing");
+
+        uint256 _len = 0;
+        uint256 _offset = 1 + _varIntDataLen;
+
+        bytes32 expectedTxHash = reverseEndianness(utxo.txHash);
+
+        for (uint256 _i = 0; _i < _nIns; _i++) {
+            bytes32 outpointTxHash = _vin.extractInputTxIdLeAt(_offset);
+            uint32 outpointIndex = BTCUtils.reverseUint32(uint32(_vin.extractTxIndexLeAt(_offset)));
+
+            // check if it matches tx
+            if (expectedTxHash == outpointTxHash && utxo.txOutputIndex == outpointIndex) {
+                return;
+            }
+
+            _len = BTCUtils.determineInputLengthAt(_vin, _offset);
+            require(_len != BTCUtils.ERR_BAD_ARG, "Bad VarInt in scriptSig");
+            _offset = _offset + _len;
+        }
+
+        revert("Transaction does not spend the required utxo");
     }
 }

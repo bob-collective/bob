@@ -79,7 +79,7 @@ This approach is still experimental and not yet fully supported by the SDK. To c
 
 ### Checking Output Amounts
 
-To extract the output amount `BitcoinTx.getTxOutputValue` can be be used to extract the amount transfered to a specific address. See [`test/BitcoinTx.t.sol`](https://github.com/bob-collective/bob/blob/master/test/BitcoinTx.t.sol) for an example. The address is the `keccak256` hash of the expected `scriptPubKey`.
+To extract the output amount `BitcoinTx.getTxOutputValue` can be be used to extract the amount transferred to a specific address. See [`test/BitcoinTx.t.sol`](https://github.com/bob-collective/bob/blob/master/test/BitcoinTx.t.sol) for an example. The address is the `keccak256` hash of the expected `scriptPubKey`.
 
 :::tip BOB SDK
 
