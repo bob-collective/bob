@@ -37,7 +37,7 @@ We will share a technical paper on optimistic sequenced merged mining detailing 
 :::
 
 :::note BOB Launch PLan
-BOB launches as an [optimistic rollup using the OP Stack](/docs/learn/networks/op-stack.md) which may seem counterintuitive to the above goal of eventually being a ZK rollup. However, we see having full EVM compatibility and tooling a worthwhile trade-off to adopting zkEVM rollups. Moreover, we see promising progress around abstracting the entire EVM execution into higher level zkVM like Risc Zero. Executing entire rollup blocks in a zkVM requires no changes to the EVM while still allowing validity proof production that then can eventually be used for a Bitcoin-verified ZK rollup.
+BOB launches as an optimistic rollup using the OP Stack which may seem counterintuitive to the above goal of eventually being a ZK rollup. However, we see having full EVM compatibility and tooling a worthwhile trade-off to adopting zkEVM rollups. Moreover, we see promising progress around abstracting the entire EVM execution into higher level zkVM like Risc Zero. Executing entire rollup blocks in a zkVM requires no changes to the EVM while still allowing validity proof production that then can eventually be used for a Bitcoin-verified ZK rollup.
 
 We further will launch the merged mining option shortly after BOB will go live in the stage 1 option described above.
 :::
