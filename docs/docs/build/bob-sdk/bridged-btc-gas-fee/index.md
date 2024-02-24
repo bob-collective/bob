@@ -1,6 +1,6 @@
-# Using Bridged BTC as Gas Token on Ethereum Rollups
+# wBTC, tBTC, and other ERC-20 as Gas Token
 
-On Ethereum rollups, gas fees need to be paid in ETH as the base currency. While a rollup can in theory chose to use their own gas token, part of the gas fees on the rollup are used on Ethereum to pay for data availability.
+On Ethereum rollups, gas fees need to be paid in ETH as the base currency. While a rollup can in theory choose to use their gas token, part of the gas fees on the rollup are used on Ethereum to pay for data availability.
 
 In many cases, it is desirable to pay gas fees in other tokens. In particular, on BOB, we want to allow users to pay gas fees in bridged BTC to create a seamless experience for Bitcoin users.
 
