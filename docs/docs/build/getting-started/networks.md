@@ -2,24 +2,31 @@
 sidebar_position: 2
 ---
 
-# Networks
+# Connect to BOB
 
-## Start Building
+## Mainnet
 
-BOB is fully EVM compatible so you can use any tools you are used to from Ethereum.
+Coming soon!
 
 ## BOB Testnet (Sepolia)
 
-- Name: BOB Testnet
-- Description: Official public BOB testnet
+BOB Testnet
+
 - Chain ID: 111
+- Gas Token: Sepolia ETH
 - RPC URL (BOB): https://testnet.rpc.gobob.xyz/
 - Explorer (BOB): https://testnet-explorer.gobob.xyz/
-- Bridge (BOB - Sepolia): https://puff-bob-jznbxtoq7h.testnets.superbridge.app/
+- Bridge (BOB - Sepolia): https://app.gobob.xyz/
+- ERC-4337 bundler: https://bundler-sepolia.gobob.xyz/
+- GSN relayer: https://gsn-relay-sepolia.gobob.xyz/ 
+
+Ethereum Sepolia
+
 - RPC URL (Ethereum Sepolia): https://chainlist.org/chain/11155111
 - Explorer (Ethereum Sepolia): https://sepolia.etherscan.io/
 - Faucet (Ethereum Sepolia): https://faucetlink.to/sepolia
+
+Bitcoin testnet
+
 - Ordinals API (Bitcoin testnet): https://ord-testnet.gobob.xyz/docs/
 - Explorer (Bitcoin testnet): https://blockstream.info/testnet/
-- ERC-4337 bundler: https://bundler-sepolia.gobob.xyz/
-- GSN relayer: https://gsn-relay-sepolia.gobob.xyz/ 

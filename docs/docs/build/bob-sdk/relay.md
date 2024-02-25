@@ -1,15 +1,20 @@
 ---
 sidebar_position: 2
-sidebar_label: Use the Bitcoin Light Client 
+sidebar_label: Interact with Bitcoin from BOB Smart Contracts
 ---
 
 # Bitcoin Light Client
 
-We have chosen to use the production ready [**tBTC-v2**](https://github.com/keep-network/tbtc-v2/blob/main/solidity/contracts/relay/LightRelay.sol) (summa / keep-network) relay contracts and supporting libraries to support the initial development of the BOB stack. The contracts are already well-optimized for gas consumption and have been used on mainnet Ethereum for quite some time.
+We have chosen to use the production-ready [**tBTC-v2**](https://github.com/keep-network/tbtc-v2/blob/main/solidity/contracts/relay/LightRelay.sol) (summa / keep-network) relay contracts and supporting libraries to support the initial development of the BOB stack. The contracts are already well-optimized for gas consumption and have been used on mainnet Ethereum for quite some time.
 
 A specific advantage of using the Simple Payment Verification (SPV) "Light Relay" developed for tBTC is that we do not need to store all block headers from the genesis / initialization height. It uses stateless SPV proofs and provides some recency guarantee using Bitcoin's difficulty adjustment based on the latest retarget.
 
-## How does it work?
+## Features
+
+- Proof that a Bitcoin transaction happened on Bitcoin to a smart contract on BOB
+- Verify Bitcoin block headers from smart contracts on BOB
+
+## How Does it Work?
 
 - The light relay is initialized to the beginning of a difficulty period (epoch)
 - A "maintainer" submits `proofLength` block headers before and after the retarget
@@ -17,10 +22,6 @@ A specific advantage of using the Simple Payment Verification (SPV) "Light Relay
 - A user can then submit a transaction proof in that or the last period
   - Requires header chain of at least `txProofDifficultyFactor`
   
-## Notes
-
-There was only one issue highlighted in the Least Authority audit related to the SPV client which was also identified in the interBTC (Substrate / Polkadot) code [here](https://github.com/interlay/interbtc/issues/1073). We can solve this issue by checking the coinbase proof as was implemented there. Since BOB will be deployed as a rollup we can make some tradeoffs with regard to gas consumption.
-
 ## Using The Relay
 
 The code for the light relay is in [`src/relay/LightRelay.sol`](https://github.com/bob-collective/bob/blob/master/src/relay/LightRelay.sol) which stores the difficulty for the current and previous epoch. To update this it is possible to use `retarget(headers)` with `proofLength * 2` block headers from Bitcoin (before and after the retarget) serialized sequentially. 
