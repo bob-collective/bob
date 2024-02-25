@@ -1,4 +1,4 @@
-# Contract Addresses
+# Contracts
 
 ## L1 Contract Addresses
 
