@@ -7,36 +7,48 @@ import TabItem from "@theme/TabItem";
 
 # Hello Bitcoin
 
-This guide provides step-by-step instructions on how to deploy smart contracts on BOB.
+This guide provides step-by-step instructions on how to deploy a smart contract on BOB that interacts with Bitcoin.
 
+BOB is EVM-based and we recommend using the [Solidity](https://docs.soliditylang.org/en/v0.8.24/) language to write your smart contracts. The base currency on BOB is ETH. Since BOB is a rollup on Ethereum, you can bridge over ETH from Ethereum to pay for transactions.
+
+:::tip
+
+If you are new to Solidity, we recommend checking out the [Solidity getting started guide](https://docs.soliditylang.org/en/v0.8.24/introduction-to-smart-contracts.html#subcurrency-example) to get a better understanding of the language.
+
+:::
+
+Developing Solidity contracts is made a lot easier using a development toolchain. Two of the most popular ones are [Remix](https://remix.ethereum.org/) and [Foundry](https://book.getfoundry.sh/). We will use these tools to develop and deploy our smart contract.
 We will provide instructions for using Remix and Foundry.
 
-- [Developer Starter Kit](https://github.com/bob-collective/StarterKit) the kit serves as the foundation to develop on BOB.
 - [Remix](https://remix.ethereum.org/) is a web-based IDE for writing smart contracts. This is a great option if you do not want to install any software on your computer.
 - [Foundry](https://book.getfoundry.sh/) is a Rust-based development environment for writing smart contracts. This is a great option if you want to use a local development environment.
+
+
+Solidity and a toolchain are sufficient to get you started deploying contracts on BOB. However, since BOB's purpose is to make it easy to interact with Bitcoin, we will also add parts of the BOB SDK as part of the starter kit.
+
+- [BOB Starter Kit](https://github.com/bob-collective/bob-starter-kit): The kit serves as a quick start way to develop on BOB using the BOB SDK. Note: you can deploy any EVM contract on BOB without having to use the BOB SDK contracts. They are primarily a helper when you want to interact with Bitcoin from your smart contracts.
 
 ## HelloBitcoin Contract
 
 ### Overview of the contract
 
-- The contract integrates the [BTC relay](/docs/contracts/src/src/relay/LightRelay.sol/contract.LightRelay) to enable seamless communication between the Bitcoin blockchain and the BOB testnet.
-- The contract allows swapping between BTC->USDT and Ordinal->USDT using the BTC relay on testnet.
-
+- The contract allows swapping between BTC->USDT and Ordinal->USDT using the BTC relay on testnet without requiring the BTC or ordinals to be bridged to BOB.
+- The contract integrates the [BTC relay](/docs/contracts/src/src/relay/LightRelay.sol/contract.LightRelay) to enable trustless communication between the Bitcoin blockchain and the BOB testnet.
 
 ### Objectives
 
 - **Set up a development environment**: Learn how to set up a development environment for your BOB smart contract development.
 - **Create a Smart Contract for BOB**: We will use [HelloBitcoin smart contract](https://github.com/bob-collective/StarterKit/blob/main/src/HelloBitcoin.sol) present in the developer kit.
 - **Compile a Smart Contract for BOB**: Compile your HelloBitcoin smart contract using the development environment.
-- **Deploy a Smart Contract to BOB**: Deploy your compiled smart contract to the BOB platform.
-- **Interact with a Smart Contract Deployed on BOB**: Learn how to interact with the smart contract you've deployed on the BOB platform.
+- **Deploy a Smart Contract to BOB**: Deploy your compiled smart contract to the BOB testnet.
+- **Interact with a Smart Contract Deployed on BOB**: Learn how to interact with the smart contract you've deployed on the BOB testnet.
 
 ### Prerequisites
 
-Before you can deploy smart contracts on BOB, ensure you have the following prerequisites:
+We start with installing the prerequisites for the development environment.
 
 - Get Sepolia ETH and bridge them to BOB. [Check the guide](/docs/learn/guides/#bob-testnet).
-- Setup either Remix or Foundry as your development environment.
+- Setup either Remix or Foundry as your development environment. If you want to get started without having to install software, use Remix. If you are planning to develop more complex contracts, use Foundry.
 
 <Tabs groupId="dev-env">
   <TabItem value="foundry" label="Foundry">
@@ -62,14 +74,30 @@ Open the [Remix IDE](https://remix.ethereum.org/) in your browser.
 Clone the starter toolkit provided.
 
 ```shell
-git clone https://github.com/bob-collective/StarterKit.git
-cd StarterKit
+git clone https://github.com/bob-collective/bob-starter-kit.git
+cd bob-starter-kit
 ```
 
-The `HelloBitcoin` contract should already be present inside the src directory. To create a new contract:
+The `HelloBitcoin` contract should already be present inside the src directory.
+
+Checkout the contract by opening it in your favorite editor or IDE.
+
+:::tip
+
+If you are using [VSCode](https://code.visualstudio.com/), use the [Solidity plugin](https://marketplace.visualstudio.com/items?itemName=NomicFoundation.hardhat-solidity) to get syntax highlighting and other features.
+
+:::
+
+:::tip
+
+It's not required to create a new contract, but if you want to create a new contract, you can do so by creating a new file in the `src` directory.
+
 ```shell
 touch src/<Contract_Name>.sol
 ```
+
+:::
+
 
   </TabItem>
 
@@ -100,6 +128,7 @@ touch src/<Contract_Name>.sol
   }
 }
 ```
+
 Enter the below code in `HelloBitcoin.sol` file.
 
 To learn more about the Solidity contracts in general [checkout the Solidity tutorial guide](https://docs.soliditylang.org/en/v0.8.21/introduction-to-smart-contracts.html#subcurrency-example).
@@ -456,6 +485,7 @@ contract HelloBitcoin {
 ```
 
 Also create a `TestLightRelay.sol` file for deploying your own bitcoin relay.
+
 ```solidity
 pragma solidity 0.8.17;
 
@@ -517,13 +547,16 @@ In the same way `TestLightRelay.sol` contract should also be compiled.
 <Tabs groupId="dev-env">
   <TabItem value="foundry" label="Foundry">
 
-To deploy the contract via the terminal, you'll need your private key. If you're using MetaMask, be cautious when exporting your private key as it can be risky. Checkout [this article](https://support.metamask.io/hc/en-us/articles/360015289632-How-to-export-an-account-s-private-key) to get your private key from MetaMask.
+To deploy the contract via the terminal, you'll need your private key. We recommend generating a separate key for development purposes.
 
-To deploy the compiled smart contract on testnet will use the `HelloBitcoin` script present under `scripts/HelloBitcoin.sol`:
+:::tip
 
-`Note`: [Guide](https://support.metamask.io/hc/en-us/articles/360015289632-How-to-export-an-account-s-private-key) to export private key. The script also verifies the contract.
+If you are using MetaMask, use this [guide](https://support.metamask.io/hc/en-us/articles/360015289632-How-to-export-an-account-s-private-key) to export your private key.
 
-Run the following command
+:::
+
+To deploy the compiled smart contract on testnet we will use the `HelloBitcoin` script present under `scripts/HelloBitcoin.sol`:
+
 ```shell
 export PRIVATE_KEY=0x<your-private-key>
 export USDT_ADDRESS=0xF58de5056b7057D74f957e75bFfe865F571c3fB6
@@ -552,7 +585,7 @@ Paid: 0.0082765501379425 ETH (2758850 gas * 3.00000005 gwei)
   </TabItem>
   <TabItem value="remix" label="Remix">
 
-To deploy the compiled coin smart contract first open the MetaMask extension and make sure the wallet is connected to the BOB network.
+To deploy the compiled HelloBitcoin smart contract first open the MetaMask extension and make sure the wallet is connected to the BOB network.
 
 Choose the Remix `ENVIRONMENT` and `Injected Provider - MetaMask`. Remix will deploy contract to connected network, i.e., BOB.
 
@@ -567,7 +600,6 @@ Select contract as `HelloBitcoin`.
 Add the `_RELAY` ie `TestLightRelay` address copied above.
 
 Add the `_USDTCONTRACTADDRESS` address as `0xF58de5056b7057D74f957e75bFfe865F571c3fB6`.
-
 
 :::tip
 If you want, you can also modify the contract at a later stage and use [other ERC20 contracts already deployed on BOB testnet](/docs/build/contracts/).
@@ -606,13 +638,9 @@ Get the [ABI](https://docs.soliditylang.org/en/latest/abi-spec.html) of Coin con
   </TabItem>
 </Tabs>
 
-### Finished
-
-:::tip Congratulations!
+### Congratulations! You are done!
 
 Congratulations! You have successfully deployed your first smart contract on BOB.
-
-:::
 
 ### Extra: Publish and verify the HelloBitcoin Contract
 
