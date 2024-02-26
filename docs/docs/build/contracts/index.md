@@ -1,29 +1,7 @@
 # Contracts
 
-## L1 Contract Addresses
+## BOB Testnet (Sepolia)
 
-### Ethereum Testnet (Sepolia)
-- OptimismMintableERC20FactoryProxy: [0xB537040F40c8DE24f51a1262e0D4Ab7531cA26A5](https://sepolia.etherscan.io/address/0xB537040F40c8DE24f51a1262e0D4Ab7531cA26A5)
-- OptimismMintableERC20FactoryProxy: [`0xB537040F40c8DE24f51a1262e0D4Ab7531cA26A5`](https://sepolia.etherscan.io/address/0xB537040F40c8DE24f51a1262e0D4Ab7531cA26A5)
-- SystemConfig: [`0x4b68D13a028448281Cf8A2DFc7015cDCCf3Be5B6`](https://sepolia.etherscan.io/address/0x4b68D13a028448281Cf8A2DFc7015cDCCf3Be5B6)
-- SystemConfigProxy: [`0x06Daa7563d2e71FbE269665501Ee02287f699728`](https://sepolia.etherscan.io/address/0x06Daa7563d2e71FbE269665501Ee02287f699728)
-- L1ERC721BridgeProxy: [`0x33C199528a36ACD636Fc7B65FAdc192b0E5ECFc1`](https://sepolia.etherscan.io/address/0x33C199528a36ACD636Fc7B65FAdc192b0E5ECFc1)
-- L2OutputOracle: [`0x19DC3265Fa8ED9CD1a9D077126AFFa6bfF1F09a7`](https://sepolia.etherscan.io/address/0x19DC3265Fa8ED9CD1a9D077126AFFa6bfF1F09a7)
-- L1CrossDomainMessenger: [`0x7B2D8D4602FCE5A75BCe7974d84F9F783EeAF0A2`](https://sepolia.etherscan.io/address/0x7B2D8D4602FCE5A75BCe7974d84F9F783EeAF0A2)
-- OptimismPortalProxy: [`0x867B1Aa872b9C8cB5E9F7755feDC45BB24Ad0ae4`](https://sepolia.etherscan.io/address/0x867B1Aa872b9C8cB5E9F7755feDC45BB24Ad0ae4)
-- L1CrossDomainMessengerProxy: [`0xcd5989E230D97FFE8C3C5217DEdCaC64Fa5fCeb3`](https://sepolia.etherscan.io/address/0xcd5989E230D97FFE8C3C5217DEdCaC64Fa5fCeb3)
-- OptimismPortal: [`0x52A130424d7a0bA0ad728b80826Ed61E254FB4f8`](https://sepolia.etherscan.io/address/0x52A130424d7a0bA0ad728b80826Ed61E254FB4f8)
-- L2OutputOracleProxy: [`0x14D0069452b4AE2b250B395b8adAb771E4267d2f`](https://sepolia.etherscan.io/address/0x14D0069452b4AE2b250B395b8adAb771E4267d2f)
-- ProxyAdmin: [`0x87E6fF1526F2d52633dF4cDEF44992c530D5dae9`](https://sepolia.etherscan.io/address/0x87E6fF1526F2d52633dF4cDEF44992c530D5dae9)
-- L1ERC721Bridge: [`0x064b680148E4B8d74910D6bd557b87f144954906`](https://sepolia.etherscan.io/address/0x064b680148E4B8d74910D6bd557b87f144954906)
-- L1StandardBridge: [`0x6559D3482f59E8B81074a29d4CeA02521Fb48272`](https://sepolia.etherscan.io/address/0x6559D3482f59E8B81074a29d4CeA02521Fb48272)
-- AddressManager: [`0x92B5c849AE767d2D64E9460dD15cC7d19D70084C`](https://sepolia.etherscan.io/address/0x92B5c849AE767d2D64E9460dD15cC7d19D70084C)
-- L1StandardBridgeProxy: [`0x5545B0C1C3706Ad1b428352402C3a4f0FfC84CBa`](https://sepolia.etherscan.io/address/0x5545B0C1C3706Ad1b428352402C3a4f0FfC84CBa)
-
-
-## L2 Contract Addresses
-
-### BOB Testnet (Sepolia)
 - WETH9: [`0x4200000000000000000000000000000000000006`](https://testnet-explorer.gobob.xyz/address/0x4200000000000000000000000000000000000006)
 - L2CrossDomainMessenger: [`0x4200000000000000000000000000000000000007`](https://testnet-explorer.gobob.xyz/address/0x4200000000000000000000000000000000000007)
 - L2StandardBridge: [`0x4200000000000000000000000000000000000010`](https://testnet-explorer.gobob.xyz/address/0x4200000000000000000000000000000000000010)
@@ -72,3 +50,21 @@
 - Forwarder: [`0xFd0042D3d05c82acb937aC86F23247a2D77785f2`](https://testnet-explorer.gobob.xyz/address/0xFd0042D3d05c82acb937aC86F23247a2D77785f2)
 - TestToken (test only): [`0x14d8b98c9f685FB3e13F5BB24B8016BD709A5446`](https://testnet-explorer.gobob.xyz/address/0x14d8b98c9f685FB3e13F5BB24B8016BD709A5446)
 - ERC20 Paymaster: [`0x25Aa86d188E37A47dd2011535534E53Cf994559d`](https://testnet-explorer.gobob.xyz/address/0x25Aa86d188E37A47dd2011535534E53Cf994559d)
+
+### Ethereum Testnet (Sepolia)
+- OptimismMintableERC20FactoryProxy: [0xB537040F40c8DE24f51a1262e0D4Ab7531cA26A5](https://sepolia.etherscan.io/address/0xB537040F40c8DE24f51a1262e0D4Ab7531cA26A5)
+- OptimismMintableERC20FactoryProxy: [`0xB537040F40c8DE24f51a1262e0D4Ab7531cA26A5`](https://sepolia.etherscan.io/address/0xB537040F40c8DE24f51a1262e0D4Ab7531cA26A5)
+- SystemConfig: [`0x4b68D13a028448281Cf8A2DFc7015cDCCf3Be5B6`](https://sepolia.etherscan.io/address/0x4b68D13a028448281Cf8A2DFc7015cDCCf3Be5B6)
+- SystemConfigProxy: [`0x06Daa7563d2e71FbE269665501Ee02287f699728`](https://sepolia.etherscan.io/address/0x06Daa7563d2e71FbE269665501Ee02287f699728)
+- L1ERC721BridgeProxy: [`0x33C199528a36ACD636Fc7B65FAdc192b0E5ECFc1`](https://sepolia.etherscan.io/address/0x33C199528a36ACD636Fc7B65FAdc192b0E5ECFc1)
+- L2OutputOracle: [`0x19DC3265Fa8ED9CD1a9D077126AFFa6bfF1F09a7`](https://sepolia.etherscan.io/address/0x19DC3265Fa8ED9CD1a9D077126AFFa6bfF1F09a7)
+- L1CrossDomainMessenger: [`0x7B2D8D4602FCE5A75BCe7974d84F9F783EeAF0A2`](https://sepolia.etherscan.io/address/0x7B2D8D4602FCE5A75BCe7974d84F9F783EeAF0A2)
+- OptimismPortalProxy: [`0x867B1Aa872b9C8cB5E9F7755feDC45BB24Ad0ae4`](https://sepolia.etherscan.io/address/0x867B1Aa872b9C8cB5E9F7755feDC45BB24Ad0ae4)
+- L1CrossDomainMessengerProxy: [`0xcd5989E230D97FFE8C3C5217DEdCaC64Fa5fCeb3`](https://sepolia.etherscan.io/address/0xcd5989E230D97FFE8C3C5217DEdCaC64Fa5fCeb3)
+- OptimismPortal: [`0x52A130424d7a0bA0ad728b80826Ed61E254FB4f8`](https://sepolia.etherscan.io/address/0x52A130424d7a0bA0ad728b80826Ed61E254FB4f8)
+- L2OutputOracleProxy: [`0x14D0069452b4AE2b250B395b8adAb771E4267d2f`](https://sepolia.etherscan.io/address/0x14D0069452b4AE2b250B395b8adAb771E4267d2f)
+- ProxyAdmin: [`0x87E6fF1526F2d52633dF4cDEF44992c530D5dae9`](https://sepolia.etherscan.io/address/0x87E6fF1526F2d52633dF4cDEF44992c530D5dae9)
+- L1ERC721Bridge: [`0x064b680148E4B8d74910D6bd557b87f144954906`](https://sepolia.etherscan.io/address/0x064b680148E4B8d74910D6bd557b87f144954906)
+- L1StandardBridge: [`0x6559D3482f59E8B81074a29d4CeA02521Fb48272`](https://sepolia.etherscan.io/address/0x6559D3482f59E8B81074a29d4CeA02521Fb48272)
+- AddressManager: [`0x92B5c849AE767d2D64E9460dD15cC7d19D70084C`](https://sepolia.etherscan.io/address/0x92B5c849AE767d2D64E9460dD15cC7d19D70084C)
+- L1StandardBridgeProxy: [`0x5545B0C1C3706Ad1b428352402C3a4f0FfC84CBa`](https://sepolia.etherscan.io/address/0x5545B0C1C3706Ad1b428352402C3a4f0FfC84CBa)
