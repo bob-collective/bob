@@ -31,10 +31,10 @@ uint256 public constant REQUEST_EXPIRATION_SECONDS = 6 hours;
 ```
 
 
-### relay
+### systemState
 
 ```solidity
-BridgeState.Storage internal relay;
+SystemState.Storage internal systemState;
 ```
 
 

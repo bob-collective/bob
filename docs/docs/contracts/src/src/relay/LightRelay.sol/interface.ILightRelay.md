@@ -2,7 +2,7 @@
 [Git Source](https://github.com/bob-collective/bob/blob/master/src/relay/LightRelay.sol)
 
 **Inherits:**
-[IRelay](../../bridge/IRelay.sol/interface.IRelay.md)
+[IRelay](../../relay/IRelay.sol/interface.IRelay.md)
 
 
 ## Functions
