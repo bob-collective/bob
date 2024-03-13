@@ -8,7 +8,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {stdStorage, StdStorage, Test, console} from "forge-std/Test.sol";
 import {BtcMarketPlace} from "../../src/swap/Btc_Marketplace.sol";
 import {Utilities} from "./Utilities.sol";
-import {BitcoinTx} from "../../src/bridge/BitcoinTx.sol";
+import {BitcoinTx} from "../../src/utils/BitcoinTx.sol";
 import {TestLightRelay} from "../../src/relay/TestLightRelay.sol";
 import "../../src/swap/Ord_Marketplace.sol";
 

@@ -8,7 +8,8 @@ import {BTCUtils} from "@bob-collective/bitcoin-spv/BTCUtils.sol";
 import {BytesLib} from "@bob-collective/bitcoin-spv/BytesLib.sol";
 import {ValidateSPV} from "@bob-collective/bitcoin-spv/ValidateSPV.sol";
 
-import "./BridgeState.sol";
+import {SystemState} from "../SystemState.sol";
+import {IRelay} from "../relay/IRelay.sol";
 
 /// @title Bitcoin transaction
 /// @notice Allows to reference Bitcoin raw transaction in Solidity.
@@ -98,8 +99,8 @@ library BitcoinTx {
         ///
         ///      Note that some popular block explorers reverse the order of
         ///      bytes from `outpoint`'s `hash` and display it as big-endian.
-        ///      Solidity code of Bridge expects hashes in little-endian, just
-        ///      like they are represented in a raw Bitcoin transaction.
+        ///      Solidity code expects hashes in little-endian, just like
+        ///      they are represented in a raw Bitcoin transaction.
         bytes inputVector;
         /// @notice All Bitcoin transaction outputs prepended by the number of
         ///         transaction outputs.
@@ -142,7 +143,7 @@ library BitcoinTx {
     /// @param txInfo Bitcoin transaction data.
     /// @param proof Bitcoin proof data.
     /// @return txHash Proven 32-byte transaction hash.
-    function validateProof(BridgeState.Storage storage self, Info memory txInfo, Proof memory proof)
+    function validateProof(SystemState.Storage storage self, Info memory txInfo, Proof memory proof)
         internal
         view
         returns (bytes32 txHash)
@@ -168,7 +169,7 @@ library BitcoinTx {
     ///         Reverts in case the evaluation fails.
     /// @param bitcoinHeaders Bitcoin headers chain being part of the SPV
     ///        proof. Used to extract the observed proof difficulty.
-    function evaluateProofDifficulty(BridgeState.Storage storage self, bytes memory bitcoinHeaders) internal view {
+    function evaluateProofDifficulty(SystemState.Storage storage self, bytes memory bitcoinHeaders) internal view {
         IRelay relay = self.relay;
 
         uint256 currentEpochDifficulty = relay.getCurrentEpochDifficulty();

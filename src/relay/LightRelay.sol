@@ -10,7 +10,7 @@ import {BytesLib} from "@bob-collective/bitcoin-spv/BytesLib.sol";
 import {BTCUtils} from "@bob-collective/bitcoin-spv/BTCUtils.sol";
 import {ValidateSPV} from "@bob-collective/bitcoin-spv/ValidateSPV.sol";
 
-import "../bridge/IRelay.sol";
+import "./IRelay.sol";
 
 struct Epoch {
     uint32 timestamp;
