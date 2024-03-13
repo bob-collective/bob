@@ -6,46 +6,57 @@ env:
   FOUNDRY_PROFILE: ci
 
 jobs:
-  check:
-    name: Foundry
+  contracts:
+    name: Contracts
     runs-on: ubuntu-latest
-
     permissions:
       contents: write
-
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-
-      - name: Install Foundry
+      - name: Install foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
           version: nightly
-
-      - name: Run Forge fmt
+      - name: Run forge fmt
         run: |
           forge --version
           forge fmt --check
         id: fmt
-
-      - name: Run Forge build
+      - name: Run forge build
         run: |
           forge build --sizes --deny-warnings
         id: build
-
-      - name: Run Forge tests
+      - name: Run forge tests
         run: |
           forge test -vvv --deny-warnings
         id: test
-
-      - name: Run Forge docs
+      - name: Run forge docs
         run: |
           forge doc --out docs/docs/contracts
           python3 docs/scripts/forge_doc_reformat.py
-
-      - name: Commit Forge docs
+      - name: Commit forge docs
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore: Generate Foundry docs"
           file_pattern: "./docs/"
+
+  sdk:
+    name: SDK
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./sdk
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+          always-auth: true
+      - name: Install deps
+        run: npm ci
+      - name: Run tests
+        run: npm test

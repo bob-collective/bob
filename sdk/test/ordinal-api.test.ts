@@ -5,9 +5,10 @@ import {
     InscriptionId,
     SatPoint,
 } from '../src/ordinal-api';
-import { assert } from "chai";
+import { assert, describe, it } from "vitest";
 
 describe("Ordinal API Tests", () => {
+    // TODO: change to use ordi
     it("should get inscription from id", async () => {
         const client = new DefaultOrdinalsClient("testnet");
         const inscriptionJson = await client.getInscriptionFromId({
@@ -16,7 +17,7 @@ describe("Ordinal API Tests", () => {
         });
 
         const expectedInscriptionJson: InscriptionJson<InscriptionId, SatPoint> = {
-            address: 'tb1pn2ujghy4l0la62c0e2n9q7s8a2yc4nx3kszdtdphwrsyap46ln4q3aveda',
+            address: 'tb1qn50zg73kl8f8wkn8358n4z2drvwraxhl7zdzly',
             children: [],
             content_length: 868,
             content_type: 'text/javascript',
@@ -25,12 +26,12 @@ describe("Ordinal API Tests", () => {
             inscription_id: InscriptionId.fromString('74c86592f75716a14a534898913e6077fb5d7650cfc17600868964bbe2b7e512i0'),
             inscription_number: 560474,
             next: InscriptionId.fromString('dd90d8222da2a6f3260109b1e4d1a2c341d999fce4707b1d77e49956a51a0305i0'),
-            output_value: 730,
+            output_value: 268048971,
             parent: null,
             previous: InscriptionId.fromString('332d3fae125de51de29e97cd9e80aab7c63025d5094944a3dceb117c556c41cci0'),
             rune: null,
             sat: null,
-            satpoint: SatPoint.fromString('2523f1ac7594c1f45e9156588d78caa445e2dcacf5e80fdd3d5d74fa02e1c30a:171:584'),
+            satpoint: SatPoint.fromString('3b509ea77e4809a6014110d20fd66dda26ebc6da26f291951c2aa292f5adfe54:0:207518859'),
             timestamp: 1699246476
         };
 

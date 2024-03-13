@@ -1,8 +1,8 @@
 import * as bitcoin from "bitcoinjs-lib";
 import { DefaultElectrsClient } from "../src/electrs";
 import { PROTOCOL_ID, getContentEncoding, getContentType, parseInscriptions } from "../src/inscription";
-import { assert } from "chai";
 import { createInscriptionScript, createTextInscription } from "../src/ordinals/commit";
+import { assert, describe, it } from "vitest";
 
 const encoder = new TextEncoder();
 
