@@ -5,16 +5,16 @@ import {Test, console2} from "forge-std/Test.sol";
 
 import {LightRelay} from "../src/relay/LightRelay.sol";
 import {ILightRelay} from "../src/relay/LightRelay.sol";
-import {BitcoinTx} from "../src/bridge/BitcoinTx.sol";
-import {BridgeState} from "../src/bridge/BridgeState.sol";
+import {BitcoinTx} from "../src/utils/BitcoinTx.sol";
+import {SystemState} from "../src/SystemState.sol";
 
 // Light relay test cases imported from: https://github.com/keep-network/tbtc-v2/blob/cadead9ecd6005325ace4d64288c20733b058352/solidity/test/relay/LightRelay.test.ts
 
 contract LightRelayTest is Test {
-    using BitcoinTx for BridgeState.Storage;
+    using BitcoinTx for SystemState.Storage;
 
     LightRelay public relay;
-    BridgeState.Storage internal state;
+    SystemState.Storage internal state;
 
     struct Header {
         bytes data;
@@ -23,10 +23,8 @@ contract LightRelayTest is Test {
 
     Header nextStartHeader;
     Header genesisHeader;
-    Header retargetWrongHeader;
-    Header[1] proofHeaders;
+    Header proofHeader;
     Header[15] retargetHeaders;
-    Header orphan437478;
     Header[8] postRetargetChain;
 
     uint256 genesisDifficulty;
@@ -43,9 +41,19 @@ contract LightRelayTest is Test {
         genesisDifficulty = 5646403851534;
         nextDifficulty = 5106422924659;
 
-        orphan437478 = Header({
-            data: hex"00000020e156ef206dc738dbe7b7bd449f90b65771292f146213fb000000000000000000c52c39a4e31158ff7c34417c9750038b27c9a94dc08210e53ba624667c9310973d161e5874510418a9f7e0d0",
-            height: 437478
+        nextStartHeader = Header({
+            data: hex"00004020d3b2d7d61ad2d95ffbd556d9e00f07877423600a8da015000000000000000000d192743a2c190a7421f92fefe92505579d7b8eda568cacee13b25751ac704c669d83195cf41e371721bae3e7",
+            height: 554400
+        });
+
+        genesisHeader = Header({
+            data: hex"00000020e2acb3e71e4e443af48e81d381dea7d35e2e8d5e69fe150000000000000000007f2ada224dc4afba6ca37010b099c02322cb5df24fcedb0ff5b87fb3ca64eeaea01a055c7cd9311771f2861e",
+            height: 552384
+        });
+
+        proofHeader = Header({
+            data: hex"000000208e3d25087f0c1dc73fb5698fb3a21fc27ab5c09a51a4030000000000000000002fe4c18dc554ac199203ac26358814752bc0db76ed72d2673d3d4f6b20d66760737f195c7cd931171e60b26b",
+            height: 554396
         });
 
         postRetargetChain[0] = Header({
@@ -81,99 +89,65 @@ contract LightRelayTest is Test {
             height: 437479
         });
 
-        nextStartHeader = Header({
-            data: hex"00004020d3b2d7d61ad2d95ffbd556d9e00f07877423600a8da015000000000000000000d192743a2c190a7421f92fefe92505579d7b8eda568cacee13b25751ac704c669d83195cf41e371721bae3e7",
-            height: 554400
-        });
-
-        genesisHeader = Header({
-            data: hex"00000020e2acb3e71e4e443af48e81d381dea7d35e2e8d5e69fe150000000000000000007f2ada224dc4afba6ca37010b099c02322cb5df24fcedb0ff5b87fb3ca64eeaea01a055c7cd9311771f2861e",
-            height: 552384
-        });
-
         retargetHeaders[0] = Header({
             data: hex"000040201d375a8534ecd6be1ee481de9391188c9bf0c4fe39050b00000000000000000027852cd901347135f77edb0efdae704aeba4414ff6a25ac3ac1a8f2991e13f632d71195c7cd931174c4002c1",
             height: 554390
         });
-
         retargetHeaders[1] = Header({
             data: hex"000040209e312154da6d21142bb26b962849db1e4e6294b227c11b00000000000000000033d1d6c65cbfbc8f040e42b0a78047e6553633a0d9fe6cf794f8c93326361b7d7471195c7cd9311715368c2d",
             height: 554391
         });
-
         retargetHeaders[2] = Header({
             data: hex"000000205e61189112f4ee7ecbb6dc9fecc6c0010b4b817c2a720100000000000000000002b04e0b564fc59be33622435b2049bae3dd0c932cf2798bd5d3450324307616d371195c7cd9311796441d48",
             height: 554392
         });
-
         retargetHeaders[3] = Header({
             data: hex"00000020e0affbfe12f2eef906436c82d565adb5f1003efd5deb0f00000000000000000051adeb94fc008a292e0c8774161f6b5a43fe4c68d440829118cbd74010d019449774195c7cd93117a27cc4a6",
             height: 554393
         });
-
         retargetHeaders[4] = Header({
             data: hex"0000002041c5c326d22ca678c79e348628d740847ad1a54efdbc2a000000000000000000ee64ff84da2777ec09aaf34d6f9fad9b445853aeb7421ece6b200a102c7f1726ca76195c7cd93117301e0ab3",
             height: 554394
         });
-
         retargetHeaders[5] = Header({
             data: hex"0000002088900d4f10be130308e0e3499bf24efb294a6278d8ee070000000000000000007e9746daba41c5604e8708db20a07493aaa5a26c583dd4025d68f56e14536773ca7e195c7cd93117ae46eb69",
             height: 554395
         });
-
         retargetHeaders[6] = Header({
             data: hex"000000208e3d25087f0c1dc73fb5698fb3a21fc27ab5c09a51a4030000000000000000002fe4c18dc554ac199203ac26358814752bc0db76ed72d2673d3d4f6b20d66760737f195c7cd931171e60b26b",
             height: 554396
         });
-
         retargetHeaders[7] = Header({
             data: hex"00000020b84058dc5f40275d4c880f9cb63ec5e572524518ce180e0000000000000000008a9ec4242c4003dde9ae9ac167dd36614ee00c56b8ffdf63abf1d0dbdcdcb24fc27f195c7cd931173f2077a9",
             height: 554397
         });
-
         retargetHeaders[8] = Header({
             data: hex"000000203633c1376556de44ddd528d0a6c27244ee5798bdd4e7110000000000000000008a5a4c9ebf9b6b77e3f63e1f4ddbbe1aeec4b7592554cb3c003068f849647b147180195c7cd93117b8c8e83f",
             height: 554398
         });
-
         retargetHeaders[9] = Header({
             data: hex"000000202da0c39c117f882d54d03df822915a8a6373be4cfa1a01000000000000000000dd6f24bd263432435f0954c59c022cfd8e5190f4615fc2c249815244a3fe09b34683195c7cd931170f68c64a",
             height: 554399
         });
-
         retargetHeaders[10] = Header({
             data: hex"00004020d3b2d7d61ad2d95ffbd556d9e00f07877423600a8da015000000000000000000d192743a2c190a7421f92fefe92505579d7b8eda568cacee13b25751ac704c669d83195cf41e371721bae3e7",
             height: 554400
         });
-
         retargetHeaders[11] = Header({
             data: hex"00000020ae67207125404fa8786acaeb7cff69156fe0a01b0b3c04000000000000000000b668f999166662460c4a9717d3c8e72e3b0c24863fccdd90295dfb0b047aa1f3f484195cf41e37176b176d83",
             height: 554401
         });
-
         retargetHeaders[12] = Header({
             data: hex"00008020f1b333748571d00f25c262706b03313443f1a4424be70f0000000000000000004d7b233c0f561f7e5d57fb1d9bae5c72576787da5c13ec792d1d87eb1a62795eba85195cf41e3717d904e9c3",
             height: 554402
         });
-
         retargetHeaders[13] = Header({
             data: hex"00000020b12386369f49f8800f47ab7813e3420b511fd4e2de8907000000000000000000026069ddf2c58926646215a8434823226646051ebcb77b6644d9791732763da8c585195cf41e3717689570ae",
             height: 554403
         });
-
         retargetHeaders[14] = Header({
             data: hex"00000020e9d169fb84334272f1c3e52748980e54fdbc5b21b16b1d0000000000000000006a504c582c322e88b8478b199536df2ad4b052ffe065975bb8e74321c09e117ef486195cf41e37176b029121",
             height: 554404
-        });
-
-        retargetWrongHeader = Header({
-            data: hex"1000003007fc81082e2d4d3b44e6ee00ad53a9d926213aee7394960600000000000000003a810e13e6253dd483a95f55cfc3adbc60e112f0d485832ea1d482661487e9dc411cfe56f496061837c4a22f",
-            height: 405217
-        });
-
-        proofHeaders[0] = Header({
-            data: hex"000000208e3d25087f0c1dc73fb5698fb3a21fc27ab5c09a51a4030000000000000000002fe4c18dc554ac199203ac26358814752bc0db76ed72d2673d3d4f6b20d66760737f195c7cd931171e60b26b",
-            height: 554396
         });
     }
 
@@ -182,15 +156,16 @@ contract LightRelayTest is Test {
         relay.genesis(genesisHeader.data, genesisHeader.height, 4);
         vm.warp(14594924750);
         relay.retarget(
-            abi.encodePacked(
-                retargetHeaders[6].data,
-                retargetHeaders[7].data,
-                retargetHeaders[8].data,
-                retargetHeaders[9].data,
-                retargetHeaders[10].data,
-                retargetHeaders[11].data,
-                retargetHeaders[12].data,
-                retargetHeaders[13].data
+            bytes.concat(
+                abi.encodePacked(
+                    retargetHeaders[6].data, retargetHeaders[7].data, retargetHeaders[8].data, retargetHeaders[9].data
+                ),
+                abi.encodePacked(
+                    retargetHeaders[10].data,
+                    retargetHeaders[11].data,
+                    retargetHeaders[12].data,
+                    retargetHeaders[13].data
+                )
             )
         );
     }
@@ -363,15 +338,16 @@ contract LightRelayTest is Test {
         emit Retarget(genesisDifficulty, nextDifficulty);
 
         relay.retarget(
-            abi.encodePacked(
-                retargetHeaders[6].data,
-                retargetHeaders[7].data,
-                retargetHeaders[8].data,
-                retargetHeaders[9].data,
-                retargetHeaders[10].data,
-                retargetHeaders[11].data,
-                retargetHeaders[12].data,
-                retargetHeaders[13].data
+            bytes.concat(
+                abi.encodePacked(
+                    retargetHeaders[6].data, retargetHeaders[7].data, retargetHeaders[8].data, retargetHeaders[9].data
+                ),
+                abi.encodePacked(
+                    retargetHeaders[10].data,
+                    retargetHeaders[11].data,
+                    retargetHeaders[12].data,
+                    retargetHeaders[13].data
+                )
             )
         );
 
@@ -397,15 +373,16 @@ contract LightRelayTest is Test {
 
         vm.expectRevert("Invalid target in pre-retarget headers");
         relay.retarget(
-            abi.encodePacked(
-                retargetHeaders[7].data,
-                retargetHeaders[8].data,
-                retargetHeaders[9].data,
-                retargetHeaders[10].data,
-                retargetHeaders[11].data,
-                retargetHeaders[12].data,
-                retargetHeaders[13].data,
-                retargetHeaders[14].data
+            bytes.concat(
+                abi.encodePacked(
+                    retargetHeaders[7].data, retargetHeaders[8].data, retargetHeaders[9].data, retargetHeaders[10].data
+                ),
+                abi.encodePacked(
+                    retargetHeaders[11].data,
+                    retargetHeaders[12].data,
+                    retargetHeaders[13].data,
+                    retargetHeaders[14].data
+                )
             )
         );
         vm.stopPrank();
@@ -419,15 +396,16 @@ contract LightRelayTest is Test {
 
         vm.expectRevert("Invalid target in new epoch");
         relay.retarget(
-            abi.encodePacked(
-                retargetHeaders[5].data,
-                retargetHeaders[6].data,
-                retargetHeaders[7].data,
-                retargetHeaders[8].data,
-                retargetHeaders[9].data,
-                retargetHeaders[10].data,
-                retargetHeaders[11].data,
-                retargetHeaders[12].data
+            bytes.concat(
+                abi.encodePacked(
+                    retargetHeaders[5].data, retargetHeaders[6].data, retargetHeaders[7].data, retargetHeaders[8].data
+                ),
+                abi.encodePacked(
+                    retargetHeaders[9].data,
+                    retargetHeaders[10].data,
+                    retargetHeaders[11].data,
+                    retargetHeaders[12].data
+                )
             )
         );
         vm.stopPrank();
@@ -461,16 +439,17 @@ contract LightRelayTest is Test {
 
     function test_ValidateLongHeaderChainsEpoch274() public {
         (, uint256 headerCount) = relay.validateChain(
-            abi.encodePacked(
-                retargetHeaders[1].data,
-                retargetHeaders[2].data,
-                retargetHeaders[3].data,
-                retargetHeaders[4].data,
-                retargetHeaders[5].data,
-                retargetHeaders[6].data,
-                retargetHeaders[7].data,
-                retargetHeaders[8].data,
-                retargetHeaders[9].data
+            bytes.concat(
+                abi.encodePacked(
+                    retargetHeaders[1].data, retargetHeaders[2].data, retargetHeaders[3].data, retargetHeaders[4].data
+                ),
+                abi.encodePacked(
+                    retargetHeaders[5].data,
+                    retargetHeaders[6].data,
+                    retargetHeaders[7].data,
+                    retargetHeaders[8].data,
+                    retargetHeaders[9].data
+                )
             )
         );
         assertEq(headerCount, 9);
@@ -543,15 +522,16 @@ contract LightRelayTest is Test {
         setUpGenesis();
         vm.warp(14594924750);
         relay.retarget(
-            abi.encodePacked(
-                retargetHeaders[6].data,
-                retargetHeaders[7].data,
-                retargetHeaders[8].data,
-                retargetHeaders[9].data,
-                retargetHeaders[10].data,
-                retargetHeaders[11].data,
-                retargetHeaders[12].data,
-                retargetHeaders[13].data
+            bytes.concat(
+                abi.encodePacked(
+                    retargetHeaders[6].data, retargetHeaders[7].data, retargetHeaders[8].data, retargetHeaders[9].data
+                ),
+                abi.encodePacked(
+                    retargetHeaders[10].data,
+                    retargetHeaders[11].data,
+                    retargetHeaders[12].data,
+                    retargetHeaders[13].data
+                )
             )
         );
 
@@ -567,15 +547,16 @@ contract LightRelayTest is Test {
         setUpGenesis();
         vm.warp(14594924750);
         relay.retarget(
-            abi.encodePacked(
-                retargetHeaders[6].data,
-                retargetHeaders[7].data,
-                retargetHeaders[8].data,
-                retargetHeaders[9].data,
-                retargetHeaders[10].data,
-                retargetHeaders[11].data,
-                retargetHeaders[12].data,
-                retargetHeaders[13].data
+            bytes.concat(
+                abi.encodePacked(
+                    retargetHeaders[6].data, retargetHeaders[7].data, retargetHeaders[8].data, retargetHeaders[9].data
+                ),
+                abi.encodePacked(
+                    retargetHeaders[10].data,
+                    retargetHeaders[11].data,
+                    retargetHeaders[12].data,
+                    retargetHeaders[13].data
+                )
             )
         );
 
@@ -591,15 +572,16 @@ contract LightRelayTest is Test {
         setUpGenesis();
         vm.warp(14594924750);
         relay.retarget(
-            abi.encodePacked(
-                retargetHeaders[6].data,
-                retargetHeaders[7].data,
-                retargetHeaders[8].data,
-                retargetHeaders[9].data,
-                retargetHeaders[10].data,
-                retargetHeaders[11].data,
-                retargetHeaders[12].data,
-                retargetHeaders[13].data
+            bytes.concat(
+                abi.encodePacked(
+                    retargetHeaders[6].data, retargetHeaders[7].data, retargetHeaders[8].data, retargetHeaders[9].data
+                ),
+                abi.encodePacked(
+                    retargetHeaders[10].data,
+                    retargetHeaders[11].data,
+                    retargetHeaders[12].data,
+                    retargetHeaders[13].data
+                )
             )
         );
 
@@ -616,15 +598,19 @@ contract LightRelayTest is Test {
         relay.genesis(postRetargetChain[0].data, postRetargetChain[0].height, 8);
 
         (, uint256 headerCount) = relay.validateChain(
-            abi.encodePacked(
-                postRetargetChain[0].data,
-                postRetargetChain[1].data,
-                postRetargetChain[2].data,
-                postRetargetChain[3].data,
-                postRetargetChain[4].data,
-                postRetargetChain[5].data,
-                postRetargetChain[6].data,
-                postRetargetChain[7].data
+            bytes.concat(
+                abi.encodePacked(
+                    postRetargetChain[0].data,
+                    postRetargetChain[1].data,
+                    postRetargetChain[2].data,
+                    postRetargetChain[3].data
+                ),
+                abi.encodePacked(
+                    postRetargetChain[4].data,
+                    postRetargetChain[5].data,
+                    postRetargetChain[6].data,
+                    postRetargetChain[7].data
+                )
             )
         );
         assertEq(headerCount, 8);
@@ -635,16 +621,22 @@ contract LightRelayTest is Test {
         relay.genesis(postRetargetChain[0].data, postRetargetChain[0].height, 8);
         vm.expectRevert("Invalid chain");
 
+        Header memory orphan437478 = Header({
+            data: hex"00000020e156ef206dc738dbe7b7bd449f90b65771292f146213fb000000000000000000c52c39a4e31158ff7c34417c9750038b27c9a94dc08210e53ba624667c9310973d161e5874510418a9f7e0d0",
+            height: 437478
+        });
+
         relay.validateChain(
-            abi.encodePacked(
-                postRetargetChain[1].data,
-                postRetargetChain[2].data,
-                postRetargetChain[3].data,
-                postRetargetChain[4].data,
-                postRetargetChain[5].data,
-                postRetargetChain[6].data,
-                orphan437478.data,
-                postRetargetChain[7].data
+            bytes.concat(
+                abi.encodePacked(
+                    postRetargetChain[1].data,
+                    postRetargetChain[2].data,
+                    postRetargetChain[3].data,
+                    postRetargetChain[4].data
+                ),
+                abi.encodePacked(
+                    postRetargetChain[5].data, postRetargetChain[6].data, orphan437478.data, postRetargetChain[7].data
+                )
             )
         );
     }
@@ -677,15 +669,16 @@ contract LightRelayTest is Test {
 
         vm.warp(14594924750);
         relay.retarget(
-            abi.encodePacked(
-                retargetHeaders[6].data,
-                retargetHeaders[7].data,
-                retargetHeaders[8].data,
-                retargetHeaders[9].data,
-                retargetHeaders[10].data,
-                retargetHeaders[11].data,
-                retargetHeaders[12].data,
-                retargetHeaders[13].data
+            bytes.concat(
+                abi.encodePacked(
+                    retargetHeaders[6].data, retargetHeaders[7].data, retargetHeaders[8].data, retargetHeaders[9].data
+                ),
+                abi.encodePacked(
+                    retargetHeaders[10].data,
+                    retargetHeaders[11].data,
+                    retargetHeaders[12].data,
+                    retargetHeaders[13].data
+                )
             )
         );
 
@@ -833,7 +826,7 @@ contract LightRelayTest is Test {
             BitcoinTx.Proof({
                 merkleProof: hex"180011aff0b64a62d2587d6d1b47d4049b77940222084640d71e3af330f1ed7a463219df439dadf415f9e9e0c3887bf25658ccdd75df8226affdb9e85708c6220f043131ee89dc6b9a2791827a62132348204b681e5801c85ffc5bf8857f1ae481210664933aeb429aeaef433148b9c8deb20ff31189ffcf10e940788897fa2ff4ebf1173c5b7eff6b3cf10e0b55bd59e8375ac1717eb2dc5c0eda687f4d4e3db16ec84a99bbda99dd161e44f8830944e052832d8adc56b73bad0ba280b07d491bf705b5562190e01e49f7dcbe40b35d1f0780f10bd69d5c7b6d5739f46ae6302e37fbe381a82a5a11c5436e6432554b46b93fee53da85109f062fa6e07e070bc2bce25a294949d50baccb0fb46b822d4d203e6784065b233e81f3c52e4ca9a538180159cc5864497e9b2ef9a7412e49d6fb724e13d709b50c1fd97306e255296e77523b15bfd67423e801fb428d40597bbeffda818d15759c9dd89b4bac4e87438fff12f1390e675092e1c8a446347c06026ee2b35f5b140b40b8acbb88ee7d",
                 txIndexInBlock: 1,
-                bitcoinHeaders: abi.encodePacked(proofHeaders[0].data)
+                bitcoinHeaders: abi.encodePacked(proofHeader.data)
             })
         );
     }
@@ -854,7 +847,7 @@ contract LightRelayTest is Test {
             BitcoinTx.Proof({
                 merkleProof: hex"180011aff0b64a62d2587d6d1b47d4049b77940222084640d71e3af330f1ed7a463219df439dadf415f9e9e0c3887bf25658ccdd75df8226affdb9e85708c6220f043131ee89dc6b9a2791827a62132348204b681e5801c85ffc5bf8857f1ae481210664933aeb429aeaef433148b9c8deb20ff31189ffcf10e940788897fa2ff4ebf1173c5b7eff6b3cf10e0b55bd59e8375ac1717eb2dc5c0eda687f4d4e3db16ec84a99bbda99dd161e44f8830944e052832d8adc56b73bad0ba280b07d491bf705b5562190e01e49f7dcbe40b35d1f0780f10bd69d5c7b6d5739f46ae6302e37fbe381a82a5a11c5436e6432554b46b93fee53da85109f062fa6e07e070bc2bce25a294949d50baccb0fb46b822d4d203e6784065b233e81f3c52e4ca9a538180159cc5864497e9b2ef9a7412e49d6fb724e13d709b50c1fd97306e255296e77523b15bfd67423e801fb428d40597bbeffda818d15759c9dd89b4bac4e87438fff12f1390e675092e1c8a446347c06026ee2b35f5b140b40b8acbb88ee7d",
                 txIndexInBlock: 1,
-                bitcoinHeaders: abi.encodePacked(proofHeaders[0].data)
+                bitcoinHeaders: abi.encodePacked(proofHeader.data)
             })
         );
 
@@ -871,14 +864,14 @@ contract LightRelayTest is Test {
             BitcoinTx.Proof({
                 merkleProof: hex"180011aff0b64a62d2587d6d1b47d4049b77940222084640d71e3af330f1ed7a463219df439dadf415f9e9e0c3887bf25658ccdd75df8226affdb9e85708c6220f043131ee89dc6b9a2791827a62132348204b681e5801c85ffc5bf8857f1ae481210664933aeb429aeaef433148b9c8deb20ff31189ffcf10e940788897fa2ff4ebf1173c5b7eff6b3cf10e0b55bd59e8375ac1717eb2dc5c0eda687f4d4e3db16ec84a99bbda99dd161e44f8830944e052832d8adc56b73bad0ba280b07d491bf705b5562190e01e49f7dcbe40b35d1f0780f10bd69d5c7b6d5739f46ae6302e37fbe381a82a5a11c5436e6432554b46b93fee53da85109f062fa6e07e070bc2bce25a294949d50baccb0fb46b822d4d203e6784065b233e81f3c52e4ca9a538180159cc5864497e9b2ef9a7412e49d6fb724e13d709b50c1fd97306e255296e77523b15bfd67423e801fb428d40597bbeffda818d15759c9dd89b4bac4e87438fff12f1390e675092e1c8a446347c06026ee2b35f5b140b40b8acbb88ee7d",
                 txIndexInBlock: 1,
-                bitcoinHeaders: abi.encodePacked(proofHeaders[0].data)
+                bitcoinHeaders: abi.encodePacked(proofHeader.data)
             })
         );
 
         vm.expectRevert("Insufficient accumulated difficulty in header chain");
         state.evaluateProofDifficulty(
             // header difficult is 1 but expected difficult is 2
-            abi.encodePacked(proofHeaders[0].data)
+            abi.encodePacked(proofHeader.data)
         );
     }
 
@@ -886,6 +879,6 @@ contract LightRelayTest is Test {
         state.relay = relay;
         state.txProofDifficultyFactor = 1;
 
-        state.evaluateProofDifficulty(abi.encodePacked(proofHeaders[0].data));
+        state.evaluateProofDifficulty(abi.encodePacked(proofHeader.data));
     }
 }

@@ -68,7 +68,7 @@ async function main(): Promise<void> {
             break;
     }
 
-    exec(`GENESIS_HEIGHT=${initHeight} GENESIS_HEADER=${genesis} RETARGET_HEADERS=${beforeRetarget}${afterRetarget} PRIVATE_KEY=${privateKey} forge script ../script/Bridge.s.sol:BridgeScript --rpc-url '${rpcUrl}' --chain 901 ${verifyOpts} --broadcast`,
+    exec(`GENESIS_HEIGHT=${initHeight} GENESIS_HEADER=${genesis} RETARGET_HEADERS=${beforeRetarget}${afterRetarget} PRIVATE_KEY=${privateKey} forge script ../script/Relay.s.sol:RelayScript --rpc-url '${rpcUrl}' --chain 901 ${verifyOpts} --broadcast`,
         (err: any, stdout: any, stderr: any) => {
             if (err) {
                 throw new Error(`Failed to run command: ${err}`);

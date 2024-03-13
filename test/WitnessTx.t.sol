@@ -6,8 +6,8 @@ import {ValidateSPV} from "@bob-collective/bitcoin-spv/ValidateSPV.sol";
 
 import {Test, console2} from "forge-std/Test.sol";
 
-import {BitcoinTx} from "../src/bridge/BitcoinTx.sol";
-import {WitnessTx} from "../src/bridge/WitnessTx.sol";
+import {BitcoinTx} from "../src/utils/BitcoinTx.sol";
+import {WitnessTx} from "../src/utils/WitnessTx.sol";
 
 contract WitnessTxTest is Test {
     using BTCUtils for bytes;

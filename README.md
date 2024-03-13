@@ -18,19 +18,22 @@ We use foundry extensively for maintaining and testing this contract suite:
 ### Build
 
 ```shell
-$ forge build
+forge build
+
+# production
+FOUNDRY_PROFILE=optimized forge build
 ```
 
 ### Test
 
 ```shell
-$ forge test
+forge test
 ```
 
 ### Format
 
 ```shell
-$ forge fmt
+forge fmt
 ```
 
 ## Local Testnet

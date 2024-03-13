@@ -4,16 +4,15 @@ pragma solidity ^0.8.13;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {BTCUtils} from "@bob-collective/bitcoin-spv/BTCUtils.sol";
-import {BitcoinTx} from "../bridge/BitcoinTx.sol";
-import {IRelay} from "../bridge/IRelay.sol";
-import {BridgeState} from "../bridge/BridgeState.sol";
+import {BitcoinTx} from "../utils/BitcoinTx.sol";
+import {IRelay} from "../relay/IRelay.sol";
 import {TestLightRelay} from "../relay/TestLightRelay.sol";
-import "forge-std/console.sol";
+import {SystemState} from "../SystemState.sol";
 
 using SafeERC20 for IERC20;
 
 contract OrdMarketplace {
-    using BitcoinTx for BridgeState.Storage;
+    using BitcoinTx for SystemState.Storage;
 
     mapping(uint256 => OrdinalSellOrder) public ordinalSellOrders;
     mapping(uint256 => AcceptedOrdinalSellOrder) public acceptedOrdinalSellOrders;
@@ -21,17 +20,17 @@ contract OrdMarketplace {
     uint256 nextOrdinalId;
     uint256 public constant REQUEST_EXPIRATION_SECONDS = 6 hours;
 
-    BridgeState.Storage internal relay;
+    SystemState.Storage internal systemState;
     TestLightRelay internal testLightRelay;
 
     constructor(IRelay _relay) {
-        relay.relay = _relay;
-        relay.txProofDifficultyFactor = 1; // will make this an arg later on
-        testLightRelay = TestLightRelay(address(relay.relay));
+        systemState.relay = _relay;
+        systemState.txProofDifficultyFactor = 1; // will make this an arg later on
+        testLightRelay = TestLightRelay(address(systemState.relay));
     }
 
     function setRelay(IRelay _relay) internal {
-        relay.relay = _relay;
+        systemState.relay = _relay;
     }
 
     event placeOrdinalSellOrderEvent(
@@ -129,7 +128,7 @@ contract OrdMarketplace {
         OrdinalSellOrder storage order = ordinalSellOrders[accept.orderId];
 
         testLightRelay.setDifficultyFromHeaders(proof.bitcoinHeaders);
-        relay.validateProof(transaction, proof);
+        systemState.validateProof(transaction, proof);
 
         BitcoinTx.ensureTxInputSpendsUtxo(transaction.inputVector, order.utxo);
 

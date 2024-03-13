@@ -4,14 +4,14 @@
 
 pragma solidity 0.8.17;
 
-import "./IRelay.sol";
+import {IRelay} from "./relay/IRelay.sol";
 
-library BridgeState {
+library SystemState {
     struct Storage {
         // Bitcoin relay providing the current Bitcoin network difficulty.
         IRelay relay;
         // The number of confirmations on the Bitcoin chain required to
         // successfully evaluate an SPV proof.
-        uint96 txProofDifficultyFactor;
+        uint256 txProofDifficultyFactor;
     }
 }
