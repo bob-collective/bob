@@ -1,10 +1,11 @@
 import * as bitcoin from "bitcoinjs-lib";
 
 import { DummySigner, RemoteSigner } from "./signer";
-import { CommitTxData, Inscription, createCommitTxData, createInscription, createTextInscription } from "./commit";
+import { CommitTxData, createCommitTxData } from "./commit";
 import { createRevealTx, customFinalizer, signRevealTx } from "./reveal";
+import { Inscription } from "../inscription";
 
-export { RemoteSigner, createInscription, createTextInscription, Inscription };
+export { RemoteSigner };
 
 /**
  * Estimate the virtual size of a 1 input 1 output reveal tx.

@@ -1,7 +1,6 @@
 import * as bitcoin from "bitcoinjs-lib";
 import { DefaultElectrsClient } from "../src/electrs";
-import { PROTOCOL_ID, getContentEncoding, getContentType, parseInscriptions } from "../src/inscription";
-import { createInscriptionScript, createTextInscription } from "../src/ordinals/commit";
+import { Inscription, PROTOCOL_ID, parseInscriptions } from "../src/inscription";
 import { assert, describe, it } from "vitest";
 
 const encoder = new TextEncoder();
@@ -32,10 +31,10 @@ describe("Inscription Tests", () => {
         const inscriptions = parseInscriptions(tx);
         assert(inscriptions.length == 1, "Inscription not found");
 
-        const contentType = getContentType(inscriptions[0]);
+        const contentType = inscriptions[0].getContentType();
         assert.equal(contentType, "text/plain;charset=utf-8");
 
-        const content = Buffer.concat(inscriptions[0].body);
+        const content = inscriptions[0].body;
         assert.deepStrictEqual(
             JSON.parse(content.toString('utf-8')),
             {
@@ -57,23 +56,19 @@ describe("Inscription Tests", () => {
         const inscriptions = parseInscriptions(tx);
         assert(inscriptions.length == 1, "Inscription not found");
 
-        const contentType = getContentType(inscriptions[0]);
+        const contentType = inscriptions[0].getContentType();
         assert.equal(contentType, "image/webp");
     });
 
     it("should parse custom text inscription", async () => {
         const textContent = "Hello World";
-        const script = createInscriptionScript(
-            Buffer.alloc(32, 0),
-            createTextInscription(textContent)
-        );
+        const script = Inscription.createTextInscription(textContent).toScript(Buffer.alloc(32, 0));
         const outputScript = bitcoin.script.compile(script);
         const tx = createOrdinalTransaction(outputScript);
 
         const inscriptions = parseInscriptions(tx);
         assert.equal(inscriptions.length, 1, "Inscription not found");
-        assert.equal(inscriptions[0].body.length, 1);
-        assert.equal(inscriptions[0].body[0].toString("utf-8"), textContent);
+        assert.equal(inscriptions[0].body.toString("utf-8"), textContent);
     });
 
     it("should parse custom inscription without content type", async () => {
@@ -91,8 +86,7 @@ describe("Inscription Tests", () => {
 
         const inscriptions = parseInscriptions(tx);
         assert.equal(inscriptions.length, 1, "Inscription not found");
-        assert.equal(inscriptions[0].body.length, 1);
-        assert.equal(inscriptions[0].body[0].length, 520);
+        assert.equal(inscriptions[0].body.length, 520);
     });
 
     it("should parse custom inscription with content encoding", async () => {
@@ -113,9 +107,8 @@ describe("Inscription Tests", () => {
 
         const inscriptions = parseInscriptions(tx);
         assert.equal(inscriptions.length, 1, "Inscription not found");
-        assert.equal(inscriptions[0].body.length, 2);
 
-        const contentEncoding = getContentEncoding(inscriptions[0]);
+        const contentEncoding = inscriptions[0].getContentEncoding();
         assert.equal(contentEncoding, "gzip");
     });
 });
