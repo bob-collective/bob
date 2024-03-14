@@ -19,8 +19,6 @@ jobs:
           registry-url: "https://registry.npmjs.org"
           always-auth: true
       - run: npm ci
-      - run: npm test
-        continue-on-error: true
       - run: npm run build
       - run: npm publish --access public
         env:
