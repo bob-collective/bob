@@ -1,9 +1,7 @@
-/* eslint @typescript-eslint/no-var-requires: "off" */
-
 import { DefaultElectrsClient } from "../src/electrs";
-const yargs = require("yargs/yargs");
-const { hideBin } = require("yargs/helpers");
-const { exec } = require('child_process');
+import yargs from "yargs";
+import { hideBin } from "yargs/helpers";
+import { exec } from "child_process";
 
 const args = yargs(hideBin(process.argv))
     .option("init-height", {
@@ -14,7 +12,6 @@ const args = yargs(hideBin(process.argv))
     .option("private-key", {
         description: "Private key to submit with",
         type: "string",
-        demandOption: true,
     })
     .option("dev", {
         description: "Deploy the contracts locally",
@@ -59,22 +56,22 @@ async function main(): Promise<void> {
     }
 
     let privateKey: string;
-    switch (args["private-key"]) {
-        case "dev-0":
-            privateKey = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
-            break;
-        default:
-            privateKey = args["private-key"];
-            break;
+    if (args["private-key"]) {
+        privateKey = args["private-key"];
+    } else if (args["dev"]) {
+        privateKey = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
+    } else {
+        throw new Error("No private key");
     }
 
-    exec(`GENESIS_HEIGHT=${initHeight} GENESIS_HEADER=${genesis} RETARGET_HEADERS=${beforeRetarget}${afterRetarget} PRIVATE_KEY=${privateKey} forge script ../script/Relay.s.sol:RelayScript --rpc-url '${rpcUrl}' --chain 901 ${verifyOpts} --broadcast`,
-        (err: any, stdout: any, stderr: any) => {
+    exec(`GENESIS_HEIGHT=${initHeight} GENESIS_HEADER=${genesis} RETARGET_HEADERS=${beforeRetarget}${afterRetarget} PRIVATE_KEY=${privateKey} forge script ../script/RelayGenesis.s.sol:RelayGenesisScript --rpc-url '${rpcUrl}' --chain 901 ${verifyOpts} --broadcast`,
+        (err: any, stdout: string, stderr: string) => {
             if (err) {
                 throw new Error(`Failed to run command: ${err}`);
             }
 
             // the *entire* stdout and stderr (buffered)
             console.log(`stdout: ${stdout}`);
+            console.log(`stderr: ${stderr}`);
         });
 }
