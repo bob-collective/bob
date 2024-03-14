@@ -18,21 +18,22 @@ describe("Ordinal API Tests", () => {
 
         const expectedInscriptionJson: InscriptionJson<InscriptionId, SatPoint> = {
             address: 'tb1qn50zg73kl8f8wkn8358n4z2drvwraxhl7zdzly',
+            charms: [],
             children: [],
             content_length: 868,
             content_type: 'text/javascript',
-            genesis_fee: 395,
-            genesis_height: 2537128,
-            inscription_id: InscriptionId.fromString('74c86592f75716a14a534898913e6077fb5d7650cfc17600868964bbe2b7e512i0'),
-            inscription_number: 560474,
+            fee: 395,
+            height: 2537128,
+            id: InscriptionId.fromString('74c86592f75716a14a534898913e6077fb5d7650cfc17600868964bbe2b7e512i0'),
+            number: 560474,
             next: InscriptionId.fromString('dd90d8222da2a6f3260109b1e4d1a2c341d999fce4707b1d77e49956a51a0305i0'),
-            output_value: 268048971,
             parent: null,
             previous: InscriptionId.fromString('332d3fae125de51de29e97cd9e80aab7c63025d5094944a3dceb117c556c41cci0'),
             rune: null,
             sat: null,
             satpoint: SatPoint.fromString('3b509ea77e4809a6014110d20fd66dda26ebc6da26f291951c2aa292f5adfe54:0:207518859'),
-            timestamp: 1699246476
+            timestamp: 1699246476,
+            value: 268048971,
         };
 
         assert.deepStrictEqual(expectedInscriptionJson, inscriptionJson);
@@ -51,14 +52,12 @@ describe("Ordinal API Tests", () => {
         const block: number = 2537133;
         const inscriptionsJson = await client.getInscriptionsFromBlock(block);
         const expectedInscriptionsJson = {
-            inscriptions: [
+            ids: [
                 InscriptionId.fromString('4d8e7ad2b410eaa79e3aa703bbe5a314cc89be9a07532bfab09f3c5dffac6348i0'),
                 InscriptionId.fromString('d370be1b6bf74677c82226d7a0d65743cbe3846b9216e0ad207a7b03a5230ec3i0')
             ],
-            prev: null,
-            next: null,
-            lowest: null,
-            highest: null,
+            more: false,
+            page_index: 0,
         };
         assert.deepStrictEqual(expectedInscriptionsJson, inscriptionsJson);
     });
@@ -76,7 +75,9 @@ describe("Ordinal API Tests", () => {
             transaction: 'd370be1b6bf74677c82226d7a0d65743cbe3846b9216e0ad207a7b03a5230ec3',
             sat_ranges: null,
             inscriptions: [],
-            runes: {}
+            runes: [],
+            indexed: false,
+            spent: true
         };
         assert.deepStrictEqual(expectedOutputJson, outputJson);
     });

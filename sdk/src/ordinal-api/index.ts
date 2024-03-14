@@ -85,63 +85,38 @@ export module SatPoint {
 /**
  * @ignore
  */
-// https://github.com/ordinals/ord/blob/e39031a46531696e5dd0c853146f8bfab5b7582c/src/templates/inscriptions.rs#L11-L17
+// https://github.com/ordinals/ord/blob/2badb82a8f4b2bb23a90b88a6d711b3475eb6c92/src/api.rs#L117-L121
 export interface InscriptionsJson<InscriptionId> {
     /**
      * An array of inscription ids.
      */
-    inscriptions: InscriptionId[];
+    ids: InscriptionId[];
 
     /**
-     * The previous entry.
+     * If there are more to return.
      */
-    prev: number | null;
+    more: boolean;
 
     /**
-     * The next entry.
+     * The current page index.
      */
-    next: number | null;
-
-    /**
-     * The lowest value.
-     */
-    lowest: number | null;
-
-    /**
-     * The highest value.
-     */
-    highest: number | null;
+    page_index: number;
 }
 
 /**
  * @ignore
  */
-// https://github.com/ordinals/ord/blob/e39031a46531696e5dd0c853146f8bfab5b7582c/src/templates/output.rs#L14-L22
+// https://github.com/ordinals/ord/blob/2badb82a8f4b2bb23a90b88a6d711b3475eb6c92/src/api.rs#L124-L134
 export interface OutputJson {
-    /**
-     * The value of the UTXO.
-     */
-    value: number;
-
-    /**
-     * The scriptPubKey associated with the UTXO.
-     */
-    script_pubkey: string;
-
     /**
      * The address associated with the UTXO.
      */
     address: string | null;
 
     /**
-     * The transaction related to the UTXO.
+     * The indexed value of the output.
      */
-    transaction: string;
-
-    /**
-     * The SAT ranges.
-     */
-    sat_ranges: string | null;
+    indexed: boolean;
 
     /**
      * An array of inscription ids.
@@ -151,13 +126,38 @@ export interface OutputJson {
     /**
      * A map of runes.
      */
-    runes: Record<string, number>;
+    runes: [string, number][];
+
+    /**
+     * The SAT ranges.
+     */
+    sat_ranges: string | null;
+
+    /**
+     * The scriptPubKey associated with the UTXO.
+     */
+    script_pubkey: string;
+
+    /**
+     * The spent value of the output.
+     */
+    spent: boolean;
+
+    /**
+     * The transaction related to the UTXO.
+     */
+    transaction: string;
+
+    /**
+     * The value of the UTXO.
+     */
+    value: number;
 }
 
 /**
  * @ignore
  */
-// https://github.com/ordinals/ord/blob/e39031a46531696e5dd0c853146f8bfab5b7582c/src/templates/sat.rs#L12-L27
+// https://github.com/ordinals/ord/blob/4d29e078535bb8e630133a17cd3e9af22c631ebd/src/api.rs#L165-L180
 export interface SatJson<InscriptionId> {
     /**
      * The number of the ordinal.
@@ -233,12 +233,14 @@ export interface SatJson<InscriptionId> {
 /**
  * @ignore
  */
-// https://github.com/ordinals/ord/blob/e39031a46531696e5dd0c853146f8bfab5b7582c/src/templates/inscription.rs#L23-L40
+// https://github.com/ordinals/ord/blob/2badb82a8f4b2bb23a90b88a6d711b3475eb6c92/src/api.rs#L80-L98
 export interface InscriptionJson<InscriptionId, SatPoint> {
     /**
      * The address associated with the inscription.
      */
     address: string | null;
+
+    charms: string[],
 
     /**
      * An array of child IDs.
@@ -258,22 +260,17 @@ export interface InscriptionJson<InscriptionId, SatPoint> {
     /**
      * The genesis fee of the inscription.
      */
-    genesis_fee: number;
+    fee: number;
 
     /**
      * The genesis height of the inscription.
      */
-    genesis_height: number;
+    height: number;
 
     /**
      * The ID of the inscription.
      */
-    inscription_id: InscriptionId;
-
-    /**
-     * The number of the inscription.
-     */
-    inscription_number: number;
+    id: InscriptionId;
 
     /**
      * The next inscription ID.
@@ -281,9 +278,9 @@ export interface InscriptionJson<InscriptionId, SatPoint> {
     next: InscriptionId | null;
 
     /**
-     * The output value of the inscription.
+     * The number of the inscription.
      */
-    output_value: number | null;
+    number: number;
 
     /**
      * The parent inscription ID.
@@ -314,6 +311,11 @@ export interface InscriptionJson<InscriptionId, SatPoint> {
      * The timestamp of the inscription.
      */
     timestamp: number;
+
+    /**
+     * The output value of the inscription.
+     */
+    value: number | null;
 }
 
 
@@ -435,7 +437,7 @@ export class DefaultOrdinalsClient implements OrdinalsClient {
         return {
             ...inscriptionJson,
             children: inscriptionJson.children.map(InscriptionId.fromString),
-            inscription_id: InscriptionId.fromString(inscriptionJson.inscription_id),
+            id: InscriptionId.fromString(inscriptionJson.id),
             next: (inscriptionJson.next != null) ? InscriptionId.fromString(inscriptionJson.next) : null,
             parent: (inscriptionJson.parent != null) ? InscriptionId.fromString(inscriptionJson.parent) : null,
             previous: (inscriptionJson.previous != null) ? InscriptionId.fromString(inscriptionJson.previous) : null,
@@ -505,10 +507,10 @@ export class DefaultOrdinalsClient implements OrdinalsClient {
      * @ignore
      */
     parseInscriptionsJson(inscriptionsJson: InscriptionsJson<string>): InscriptionsJson<InscriptionId> {
-        const ids = inscriptionsJson.inscriptions.map(id => InscriptionId.fromString(id));
+        const ids = inscriptionsJson.ids.map(id => InscriptionId.fromString(id));
         return {
             ...inscriptionsJson,
-            inscriptions: ids,
+            ids,
         };
     }
 }

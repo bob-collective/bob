@@ -3,8 +3,9 @@ import * as ECPairFactory from "ecpair";
 import { RemoteSigner, inscribeData } from "../src/ordinals";
 import { Network, Psbt, Transaction, address, initEccLib } from "bitcoinjs-lib";
 import { bitcoin } from "bitcoinjs-lib/src/networks";
-import { chunkContent, createTextInscription, MAX_CHUNK_SIZE } from "../src/ordinals/commit";
+import { chunkContent, MAX_CHUNK_SIZE } from "../src/inscription";
 import { assert, describe, it } from "vitest";
+import { Inscription } from "../src/inscription";
 
 const ECPair = ECPairFactory.default(ecc);
 initEccLib(ecc);
@@ -51,7 +52,7 @@ describe("Ordinal Tests", () => {
         const secret = "fc7458de3d5616e7803fdc81d688b9642641be32fee74c4558ce680cac3d4111";
         const signer = new StaticSigner(secret);
         const toAddress = "bc1pxaneaf3w4d27hl2y93fuft2xk6m4u3wc4rafevc6slgd7f5tq2dqyfgy06";
-        const tx = await inscribeData(signer, toAddress, 1, createTextInscription("Hello World!"), 546);
+        const tx = await inscribeData(signer, toAddress, 1, Inscription.createTextInscription("Hello World!"), 546);
         assert(tx.getId() == "9312bc8a9541dd3e4b22993740ff96449a52dbca00b8be22b2979bb25053f7d6");
     });
 
