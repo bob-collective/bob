@@ -2,14 +2,21 @@
 sidebar_position: 2
 ---
 
-import Tabs from "@theme/Tabs";
-import TabItem from "@theme/TabItem";
+import Tabs from '@theme/Tabs'
+import TabItem from '@theme/TabItem'
 
 # Hello Bitcoin
 
 This guide provides step-by-step instructions on how to deploy a smart contract on BOB that interacts with Bitcoin.
 
 BOB is EVM-based and we recommend using the [Solidity](https://docs.soliditylang.org/en/v0.8.24/) language to write your smart contracts. The base currency on BOB is ETH. Since BOB is a rollup on Ethereum, you can bridge over ETH from Ethereum to pay for transactions.
+
+:::warning Old Testnet
+
+This page refers to our **old testnet**.  
+If you are trying to connect to our **new testnet**, see the [Connect to BOB](/docs/build/getting-started/networks/) page.
+
+:::
 
 :::tip
 
@@ -22,7 +29,6 @@ We will provide instructions for using Remix and Foundry.
 
 - [Remix](https://remix.ethereum.org/) is a web-based IDE for writing smart contracts. This is a great option if you do not want to install any software on your computer.
 - [Foundry](https://book.getfoundry.sh/) is a Rust-based development environment for writing smart contracts. This is a great option if you want to use a local development environment.
-
 
 Solidity and a toolchain are sufficient to get you started deploying contracts on BOB. However, since BOB's purpose is to make it easy to interact with Bitcoin, we will also add parts of the BOB SDK as part of the starter kit.
 
@@ -98,29 +104,40 @@ touch src/<Contract_Name>.sol
 
 :::
 
-
   </TabItem>
 
   <TabItem value="remix" label="Remix">
   Create a new project with Remix. Under `contracts` folder create a new file `HelloBitcoin.sol`.
 
-  Add the following remappings in `compiler_config.json` under `settings`
+Add the following remappings in `compiler_config.json` under `settings`
 
 ```json
 {
   "language": "Solidity",
   "settings": {
-      "optimizer": {
-          "enabled": true,
-          "runs": 200
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
     },
     "outputSelection": {
-          "*": {
-          "": ["ast"],
-          "*": ["abi", "metadata", "devdoc", "userdoc", "storageLayout", "evm.legacyAssembly", "evm.bytecode", "evm.deployedBytecode", "evm.methodIdentifiers", "evm.gasEstimates", "evm.assembly"]
-        }
+      "*": {
+        "": ["ast"],
+        "*": [
+          "abi",
+          "metadata",
+          "devdoc",
+          "userdoc",
+          "storageLayout",
+          "evm.legacyAssembly",
+          "evm.bytecode",
+          "evm.deployedBytecode",
+          "evm.methodIdentifiers",
+          "evm.gasEstimates",
+          "evm.assembly"
+        ]
+      }
     },
-    "remappings":[
+    "remappings": [
       "@openzeppelin/contracts/=https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v4.5.0/contracts/",
       "@bob-collective/bitcoin-spv/=https://github.com/bob-collective/bitcoin-spv/blob/master/src/",
       "@bob-collective/bob/=https://github.com/bob-collective/bob/blob/master/src/"
@@ -512,9 +529,9 @@ contract TestLightRelay is LightRelay {
 }
 
 ```
+
   </TabItem>
 </Tabs>
-
 
 ### Compile the Contract
 
@@ -537,7 +554,6 @@ In `Advanced Configurations` section of Solidity Compiler switch from `Compiler 
 To compile the contract, go to the `Solidity Compiler` section of the IDE, select and compile the `HelloBitcoin` smart contract.
 You can also directly compile the `HelloBitcoin` smart contract by right-clicking on the `HelloBitcoin.sol` file and select compile.
 In the same way `TestLightRelay.sol` contract should also be compiled.
-
 
   </TabItem>
 </Tabs>
@@ -630,6 +646,7 @@ Get the [ABI](https://docs.soliditylang.org/en/latest/abi-spec.html) of HelloBit
 ```shell
 forge build --silent && jq '.abi' ./out/HelloBitcoin.sol/HelloBitcoin.json > hello_bitcoin_contract_abi.json
 ```
+
   </TabItem>
   <TabItem value="remix" label="Remix">
 
@@ -658,51 +675,27 @@ You can find the contract source code in the "Code" tab, along with new "Read Co
 
 At this point, your smart contract is ready to be used, but we can go a step further to verify and publish the smart contract in the explorer. By doing this you will be able to interact with any existing read or write calls in the contract right on the explorer. To do so follow these steps:
 
-
-
 1. Go to the Remix IDE. Check if the contract imports other contracts. If it does, check step 2. If it doesn't, simply copy the contract code into your clipboard and jump to step 3.
-
-
 
 2. In case your contract imports other contract, you need to flatten your contract. To do that you just need right click your contract file in Remix IDE file explorer and copy the flattened code into your clipboard.
 
-
-
 ![Flatten contract on Remix IDE](remix_ide_flatten.png)
-
-
 
 3. Head over to the [testnet explorer](https://testnet-explorer.gobob.xyz/) and search for your published contract page.
 
-
-
 4. Click on the "Contract" tab and click on "Verify & Publish" button.
-
-
 
 ![Explore Tab on the chain explorer](explorer_code_tab.png)
 
-
-
 5. Click on the "Code" tab and click on "Verify & Publish" button.
-
-
 
 6. Now you should be presented we a set of possilities for verifying you published contract, but we will proceed with "Via flattened source code".
 
-
-
 7. Fill the form with the specific information about the contract and how it was deployed. Make sure every field is correctly populated before submitting. Any incorrect field will lead to a failed verification. After submitting, the verification might take a couple of minutes.
-
-
 
 ![Verifying the coin contract on the chain explorer](verifying_contract_explorer.png)
 
-
-
 8. Once submitted correctly, the contract source code should be visible in the "Code" tab, alongside with new "Read Contract" and "Write Contract". You are now ready to interact with the contract right on the explorer.
-
-
 
 ![Verified coin contract on the chain explorer](verified_contract_explorer.png)
 

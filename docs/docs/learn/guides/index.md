@@ -7,6 +7,13 @@ The P2P swap demo shows how BOB enables swaps without bridging between BTC, ordi
 - [P2P Swap Demo](https://demo.gobob.xyz/)
 - [User Guide](/docs/build/examples/btc-swap/#demo)
 
+:::warning Old Testnet
+
+This demo app is deployed on our **old testnet**.  
+If you are trying to connect to our **new testnet**, see the [Connect to BOB](/docs/build/getting-started/networks/) page.
+
+:::
+
 ## BOB Testnet
 
 If you want to use the testnet to interact with other apps deployed on BOB or deploy your own contracts, please follow the following steps:
@@ -29,15 +36,14 @@ If you want to use the testnet to interact with other apps deployed on BOB or de
 
 3. Get Sepolia ETH from one the faucets: https://faucetlink.to/sepolia
 4. Connect your wallet to the Sepolia BOB bridge and bridge your ETH to the BOB testnet:
-   - [BOB Bridge](https://testnet-bridge.gobob.xyz/)
-   - [Superbridge.app](https://puff-bob-jznbxtoq7h.testnets.superbridge.app/)
+   - [BOB Bridge](https://app.gobob.xyz/)
 5. You are now ready to use the BOB testnet
 
 ![BOB Bridge](bridge.png)
 
 ## Using the faucet and importing tokens
 
-1. Click the Get Tokens button on the the [P2P swap UI](https://demo.gobob.xyz/). This will fund your account with testnet WBTC and USDC.
+1. Click the Get Tokens button on the the [P2P swap UI](https://app.gobob.xyz/demo/p2p-swap). This will fund your account with testnet WBTC and USDC.
 2. Import the ERC20 tokens from the following contract addresses:
    - WBTC: `0x2868d708e442A6a940670d26100036d426F1e16b`
    - USDC: `0x27c3321E40f039d10D5FF831F528C9CEAE601B1d`

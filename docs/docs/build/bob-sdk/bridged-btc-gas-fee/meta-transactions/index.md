@@ -1,5 +1,12 @@
 # Gas Fee Payment in wBTC using Meta Transactions (OpenGSN & ERC-2771)
 
+:::warning Old Testnet
+
+This example refers to our **old testnet**.  
+If you are trying to connect to our **new testnet**, see the [Connect to BOB](/docs/build/getting-started/networks/) page.
+
+:::
+
 In this example, we will show how wBTC can be used for gas fee payments using the OpenGSN and [ERC-2771 standard](https://eips.ethereum.org/EIPS/eip-2771) on the BOB testnet. This enables users to transact without the necessity to own ETH.
 
 :::tip Live Demo
@@ -39,7 +46,7 @@ Before the first relayed transaction is done, the paymaster smart contract has t
 
 1. Go to [demo-meta-transactions.gobob.xyz](https://demo-meta-transactions.gobob.xyz)
 2. Fund your account with Sepolia ETH from the [Sepolia testnet faucet](https://faucetlink.to/sepolia).
-3. Transfer Sepolia ETH to BOB using [Superbridge](https://puff-bob-jznbxtoq7h.testnets.superbridge.app/).
+3. Transfer Sepolia ETH to BOB using [our Bridge](https://app.gobob.xyz/).
 4. Connect with your MetaMask account and get wBTC by clicking on the 'Get Tokens' button in the application header. (You will receive 30,000 wBTC that you can spend.)
 5. Add wBTC to your MetaMask, wBTC address is `0x2868d708e442A6a940670d26100036d426F1e16b`
 

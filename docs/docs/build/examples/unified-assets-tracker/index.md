@@ -8,6 +8,13 @@ This demo uses [MetaMask Snaps](https://metamask.io/snaps/) and can only be used
 
 This app allows tracking and transferring both EVM and Bitcoin assets in a unified manner using the [BOB MetaMask snap extension](https://github.com/bob-collective/btcsnap).
 
+:::warning Old Testnet
+
+This page refers to our **old testnet**.  
+If you are trying to connect to our **new testnet**, see the [Connect to BOB](/docs/build/getting-started/networks/) page.
+
+:::
+
 ![image](https://github.com/bob-collective/demo-unified-assets-tracker/assets/47864599/c13783e0-5cbe-4a30-89d7-3c12a39cb408)
 
 This project consists of two components: UI and API. To run it successfully, both have to be running at the same time. For those purposes, there are two dependencies:
