@@ -2,6 +2,13 @@
 
 This example demonstrates how users can use a single web wallet to manage assets on both Bitcoin and BOB. The BOB MetaMask Snap can be used to inscribe and transfer ordinals, and transfer BTC, using only MetaMask as well as access any other EVM functions on BOB.
 
+:::warning Old Testnet
+
+This page refers to our **old testnet**.  
+If you are trying to connect to our **new testnet**, see the [Connect to BOB](/docs/build/getting-started/networks/) page.
+
+:::
+
 :::info Example Code
 
 You can find the code for this example on [our GitHub repository](https://github.com/bob-collective/demo-brc20-metamask).

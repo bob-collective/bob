@@ -1,5 +1,12 @@
 # Gas Fee Payment in wBTC using Account Abstraction (ERC-4337)
 
+:::warning Old Testnet
+
+This example refers to our **old testnet**.  
+If you are trying to connect to our **new testnet**, see the [Connect to BOB](/docs/build/getting-started/networks/) page.
+
+:::
+
 In this example, we will show how wBTC can be used for gas fee payment using the [ERC-4337 account abstraction standard](https://eips.ethereum.org/EIPS/eip-4337) on the BOB testnet. This enables users to use smart contract wallets and transact without the need to own ETH.
 
 :::tip Live Demo
@@ -36,7 +43,7 @@ Before the first user operation can be made, the paymaster smart contract has to
 
 1. Go to [demo-acccount-abstraction.gobob.xyz](https://demo-account-abstraction.gobob.xyz/)
 2. Fund your account with Sepolia ETH from the [Sepolia testnet faucet](https://faucetlink.to/sepolia).
-3. Transfer Sepolia ETH to BOB using [Superbridge](https://puff-bob-jznbxtoq7h.testnets.superbridge.app/).
+3. Transfer Sepolia ETH to BOB using [our Bridge](https://app.gobob.xyz/).
 4. Connect with your MetaMask account and get wBTC by clicking on the 'Get Tokens' button in the application header. (You will receive 30,000 wBTC that you can spend.)
 5. Add wBTC to your MetaMask, wBTC address is `0x2868d708e442A6a940670d26100036d426F1e16b`
 6. Transfer wBTC to the smart contract account via MetaMask (displayed above the amount field in the form).

@@ -5,7 +5,7 @@ sidebar_label: BOB Bitcoin MetaMask Snap
 
 # BOB Bitcoin MetaMask Snap
 
-MetaMask Snaps allows to add features and functionality to the standard MetaMask wallet. 
+MetaMask Snaps allow us to add features and functionality to the standard MetaMask wallet. 
 The BOB Bitcoin Snap is a MetaMask Snap that allows you to use MetaMask to interact with Bitcoin on the BOB network.
 
 ## Features

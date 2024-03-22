@@ -1,5 +1,13 @@
 # Contracts
 
+:::warning Old Testnet
+
+These contract addresses refer to our **old testnet**.  
+If you are trying to connect to our **new testnet**, see the [Connect to BOB](/docs/build/getting-started/networks/) page.  
+Note that we are still in the process of redeploying these contracts to our new testnet as of March 21st, 2024.
+
+:::
+
 ## BOB Testnet (Sepolia)
 
 - WETH9: [`0x4200000000000000000000000000000000000006`](https://testnet-explorer.gobob.xyz/address/0x4200000000000000000000000000000000000006)
@@ -52,6 +60,7 @@
 - ERC20 Paymaster: [`0x25Aa86d188E37A47dd2011535534E53Cf994559d`](https://testnet-explorer.gobob.xyz/address/0x25Aa86d188E37A47dd2011535534E53Cf994559d)
 
 ### Ethereum Testnet (Sepolia)
+
 - OptimismMintableERC20FactoryProxy: [0xB537040F40c8DE24f51a1262e0D4Ab7531cA26A5](https://sepolia.etherscan.io/address/0xB537040F40c8DE24f51a1262e0D4Ab7531cA26A5)
 - OptimismMintableERC20FactoryProxy: [`0xB537040F40c8DE24f51a1262e0D4Ab7531cA26A5`](https://sepolia.etherscan.io/address/0xB537040F40c8DE24f51a1262e0D4Ab7531cA26A5)
 - SystemConfig: [`0x4b68D13a028448281Cf8A2DFc7015cDCCf3Be5B6`](https://sepolia.etherscan.io/address/0x4b68D13a028448281Cf8A2DFc7015cDCCf3Be5B6)
