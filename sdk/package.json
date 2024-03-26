@@ -5,7 +5,7 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "test": "vitest run test/*.ts",
-    "deploy-relay": "ts-node scripts/init-bridge.ts",
+    "deploy-relay": "ts-node scripts/relay-genesis.ts",
     "build": "tsc -p tsconfig.json"
   },
   "files": [
