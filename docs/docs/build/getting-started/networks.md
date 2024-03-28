@@ -23,7 +23,8 @@ BOB Testnet (New)
 - Chain ID: 606808
 - Gas Token: ETH
 - RPC URL (BOB): https://sepolia-dencun.rpc.gobob.xyz/
-- Explorer (BOB): https://sepolia-dencun.explorer.gobob.xyz/
+- Websocket RPC URL (BOB): wss://sepolia-dencun.rpc.gobob.xyz/wss
+- Block Explorer (BOB): https://sepolia-dencun.explorer.gobob.xyz/
 - Bridge (BOB - Sepolia): https://bob-testnet.bridge.caldera.xyz/
 
 BOB Testnet (Old)
