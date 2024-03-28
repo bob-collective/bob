@@ -14,7 +14,7 @@ Reverts in case the validation or proof verification fail.
 
 
 ```solidity
-function validateProof(SystemState.Storage storage self, Info memory txInfo, Proof memory proof)
+function validateProof(IRelay relay, uint256 txProofDifficultyFactor, Info memory txInfo, Proof memory proof)
     internal
     view
     returns (bytes32 txHash);
@@ -23,7 +23,8 @@ function validateProof(SystemState.Storage storage self, Info memory txInfo, Pro
 
 |Name|Type|Description|
 |----|----|-----------|
-|`self`|`SystemState.Storage`||
+|`relay`|`IRelay`|Bitcoin relay providing the current Bitcoin network difficulty.|
+|`txProofDifficultyFactor`|`uint256`|The number of confirmations required on the Bitcoin chain.|
 |`txInfo`|`Info`|Bitcoin transaction data.|
 |`proof`|`Proof`|Bitcoin proof data.|
 
@@ -42,13 +43,16 @@ Reverts in case the evaluation fails.
 
 
 ```solidity
-function evaluateProofDifficulty(SystemState.Storage storage self, bytes memory bitcoinHeaders) internal view;
+function evaluateProofDifficulty(IRelay relay, uint256 txProofDifficultyFactor, bytes memory bitcoinHeaders)
+    internal
+    view;
 ```
 **Parameters**
 
 |Name|Type|Description|
 |----|----|-----------|
-|`self`|`SystemState.Storage`||
+|`relay`|`IRelay`|Bitcoin relay providing the current Bitcoin network difficulty.|
+|`txProofDifficultyFactor`|`uint256`|The number of confirmations required on the Bitcoin chain.|
 |`bitcoinHeaders`|`bytes`|Bitcoin headers chain being part of the SPV proof. Used to extract the observed proof difficulty.|
 
 
