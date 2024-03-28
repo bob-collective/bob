@@ -5,16 +5,15 @@ import {Test, console2} from "forge-std/Test.sol";
 
 import {LightRelay} from "../src/relay/LightRelay.sol";
 import {ILightRelay} from "../src/relay/LightRelay.sol";
+import {IRelay} from "../src/relay/IRelay.sol";
 import {BitcoinTx} from "../src/utils/BitcoinTx.sol";
-import {SystemState} from "../src/SystemState.sol";
 
 // Light relay test cases imported from: https://github.com/keep-network/tbtc-v2/blob/cadead9ecd6005325ace4d64288c20733b058352/solidity/test/relay/LightRelay.test.ts
 
 contract LightRelayTest is Test {
-    using BitcoinTx for SystemState.Storage;
+    using BitcoinTx for LightRelay;
 
     LightRelay public relay;
-    SystemState.Storage internal state;
 
     struct Header {
         bytes data;
@@ -811,12 +810,12 @@ contract LightRelayTest is Test {
         assertEq(previous, genesisDifficulty);
     }
 
-    function test_ValidateProof() public {
-        state.relay = relay;
-        state.txProofDifficultyFactor = 1;
+    function test_ValidateProof() public view {
+        uint256 txProofDifficultyFactor = 1;
 
         // txId = 15afe550f468cf0134557533e7f0bd6f210c1a2791d75a8ea57f17c4209448f9
-        state.validateProof(
+        relay.validateProof(
+            txProofDifficultyFactor,
             BitcoinTx.Info({
                 version: hex"02000000",
                 inputVector: hex"01123c43f161517343e93191e838b2f04356665ff526bf95cfe6c9986de7a10a3e010000001716001402c8f68bb02b257de42f5ca11b525bd3b47a0369feffffff",
@@ -832,11 +831,12 @@ contract LightRelayTest is Test {
     }
 
     function test_ValidateProofWithInvalidData() public {
-        state.relay = relay;
-        state.txProofDifficultyFactor = 1;
+        uint256 txProofDifficultyFactor = 1;
+
         // txId = 15afe550f468cf0134557533e7f0bd6f210c1a2791d75a8ea57f17c4209448f9
         vm.expectRevert("Invalid input vector provided");
-        state.validateProof(
+        relay.validateProof(
+            txProofDifficultyFactor,
             BitcoinTx.Info({
                 version: hex"02000000",
                 // invalid input
@@ -853,7 +853,8 @@ contract LightRelayTest is Test {
 
         // Invalid output vector provided ()
         vm.expectRevert("Invalid output vector provided");
-        state.validateProof(
+        relay.validateProof(
+            txProofDifficultyFactor,
             BitcoinTx.Info({
                 version: hex"02000000",
                 inputVector: hex"01123c43f161517343e93191e838b2f04356665ff526bf95cfe6c9986de7a10a3e010000001716001402c8f68bb02b257de42f5ca11b525bd3b47a0369feffffff",
@@ -869,16 +870,16 @@ contract LightRelayTest is Test {
         );
 
         vm.expectRevert("Insufficient accumulated difficulty in header chain");
-        state.evaluateProofDifficulty(
+        relay.evaluateProofDifficulty(
+            txProofDifficultyFactor,
             // header difficult is 1 but expected difficult is 2
             abi.encodePacked(proofHeader.data)
         );
     }
 
-    function test_EvaluateProofDifficulty() public {
-        state.relay = relay;
-        state.txProofDifficultyFactor = 1;
+    function test_EvaluateProofDifficulty() public view {
+        uint256 txProofDifficultyFactor = 1;
 
-        state.evaluateProofDifficulty(abi.encodePacked(proofHeader.data));
+        relay.evaluateProofDifficulty(txProofDifficultyFactor, abi.encodePacked(proofHeader.data));
     }
 }

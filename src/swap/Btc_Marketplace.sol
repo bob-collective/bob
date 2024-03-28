@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -5,14 +6,12 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {BTCUtils} from "@bob-collective/bitcoin-spv/BTCUtils.sol";
 import {BitcoinTx} from "../utils/BitcoinTx.sol";
 import {ERC2771Recipient} from "@opengsn/packages/contracts/src/ERC2771Recipient.sol";
-import {IRelay} from "../relay/IRelay.sol";
 import {TestLightRelay} from "../relay/TestLightRelay.sol";
-import {SystemState} from "../SystemState.sol";
 
 using SafeERC20 for IERC20;
 
 contract BtcMarketPlace is ERC2771Recipient {
-    using BitcoinTx for SystemState.Storage;
+    using BitcoinTx for TestLightRelay;
 
     mapping(uint256 => BtcBuyOrder) public btcBuyOrders;
     mapping(uint256 => AcceptedBtcBuyOrder) public acceptedBtcBuyOrders;
@@ -22,18 +21,17 @@ contract BtcMarketPlace is ERC2771Recipient {
     uint256 nextOrderId;
     uint256 public constant REQUEST_EXPIRATION_SECONDS = 6 hours;
 
-    SystemState.Storage internal systemState;
     TestLightRelay internal testLightRelay;
+    uint256 internal txProofDifficultyFactor;
 
-    constructor(IRelay _relay, address erc2771Forwarder) {
+    constructor(TestLightRelay _relay, address erc2771Forwarder) {
         _setTrustedForwarder(erc2771Forwarder);
-        systemState.relay = _relay;
-        systemState.txProofDifficultyFactor = 1;
-        testLightRelay = TestLightRelay(address(systemState.relay));
+        setRelay(_relay);
+        txProofDifficultyFactor = 1;
     }
 
-    function setRelay(IRelay _relay) internal {
-        systemState.relay = _relay;
+    function setRelay(TestLightRelay _relay) internal {
+        testLightRelay = _relay;
     }
 
     // TODO: should we merge buy&sell structs? They're structurally identical except for the
@@ -165,7 +163,7 @@ contract BtcMarketPlace is ERC2771Recipient {
         require(accept.requester == _msgSender());
 
         testLightRelay.setDifficultyFromHeaders(proof.bitcoinHeaders);
-        systemState.validateProof(transaction, proof);
+        testLightRelay.validateProof(txProofDifficultyFactor, transaction, proof);
 
         _checkBitcoinTxOutput(accept.amountBtc, accept.bitcoinAddress, transaction);
 
@@ -262,7 +260,7 @@ contract BtcMarketPlace is ERC2771Recipient {
         require(accept.accepter == _msgSender());
 
         testLightRelay.setDifficultyFromHeaders(proof.bitcoinHeaders);
-        systemState.validateProof(transaction, proof);
+        testLightRelay.validateProof(txProofDifficultyFactor, transaction, proof);
 
         BtcBuyOrder storage order = btcBuyOrders[accept.orderId];
         _checkBitcoinTxOutput(order.amountBtc, order.bitcoinAddress, transaction);
