@@ -2,6 +2,7 @@
 sidebar_position: 3
 sidebar_label: Optimistic BOB
 ---
+
 # Optimistic BOB (BOB + OP Stack)
 
 The first deployment of BOB will be using the [OP Stack](https://stack.optimism.io), benefiting from infrastructure, marketing, and BD support. Eventually, The BOB OP-Stack deployment can be [Superchain-compatible](https://www.optimism.io/superchain) making it easy for users to move seamlessly between different Superchain rollups.
@@ -24,7 +25,7 @@ BOB is adopting several changes compared to the standard OP Stack:
 
 BOB will have its own governance to reach community decisions and enact changes.
 
-If the BOB Rollup chooses to be comptabile with the Superchain, then parts of BOB will be subject to OP governance with the Superchain upgrade. An OP Security Council will be capable of enacting security upgrades of the OP chain and L1 and L2 bridge contracts.
+If the BOB Rollup chooses to be compatible with the Superchain, then parts of BOB will be subject to OP governance with the Superchain upgrade. An OP Security Council will be capable of enacting security upgrades of the OP chain and L1 and L2 bridge contracts.
 
 ### Data Availability
 
