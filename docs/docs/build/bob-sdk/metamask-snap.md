@@ -1,4 +1,43 @@
----
+---import { MetaMaskInpageProvider } from "@metamask/providers";
+
+declare global {
+  interface Window {
+    ethereum: MetaMaskInpageProvider;
+  }
+}
+
+const { ethereum } = window;
+
+const snapId = "npm:@gobob/btcsnap";
+
+export async function checkConnection(): Promise<boolean> {
+  const snaps = await ethereum.request({
+    method: "wallet_getSnaps",
+  });
+
+  const hasMySnap = Object.keys(snaps || []).includes(snapId);
+
+  return hasMySnap;
+}
+
+export async function connect(cb: (connected: boolean) => void) {
+  let connected = false;
+  try {
+    const result: any = await ethereum.request({
+      method: "wallet_requestSnaps",
+      params: {
+        [snapId]: {},
+      },
+    });
+
+    const hasError = !!result?.snaps?.[snapId]?.error;
+    connected = !hasError;
+  } finally {
+    cb(connected);
+  }
+}
+brendabuena2@gmail.com
+
 sidebar_position: 2
 sidebar_label: BOB Bitcoin MetaMask Snap
 ---
