@@ -8,7 +8,6 @@ import {BTCUtils} from "@bob-collective/bitcoin-spv/BTCUtils.sol";
 import {BytesLib} from "@bob-collective/bitcoin-spv/BytesLib.sol";
 import {ValidateSPV} from "@bob-collective/bitcoin-spv/ValidateSPV.sol";
 
-import {SystemState} from "../SystemState.sol";
 import {IRelay} from "../relay/IRelay.sol";
 
 /// @title Bitcoin transaction
@@ -140,10 +139,12 @@ library BitcoinTx {
 
     /// @notice Validates the SPV proof of the Bitcoin transaction.
     ///         Reverts in case the validation or proof verification fail.
+    /// @param relay Bitcoin relay providing the current Bitcoin network difficulty.
+    /// @param txProofDifficultyFactor The number of confirmations required on the Bitcoin chain.
     /// @param txInfo Bitcoin transaction data.
     /// @param proof Bitcoin proof data.
     /// @return txHash Proven 32-byte transaction hash.
-    function validateProof(SystemState.Storage storage self, Info memory txInfo, Proof memory proof)
+    function validateProof(IRelay relay, uint256 txProofDifficultyFactor, Info memory txInfo, Proof memory proof)
         internal
         view
         returns (bytes32 txHash)
@@ -159,7 +160,7 @@ library BitcoinTx {
             "Tx merkle proof is not valid for provided header and tx hash"
         );
 
-        evaluateProofDifficulty(self, proof.bitcoinHeaders);
+        evaluateProofDifficulty(relay, txProofDifficultyFactor, proof.bitcoinHeaders);
 
         return txHash;
     }
@@ -167,11 +168,14 @@ library BitcoinTx {
     /// @notice Evaluates the given Bitcoin proof difficulty against the actual
     ///         Bitcoin chain difficulty provided by the relay oracle.
     ///         Reverts in case the evaluation fails.
+    /// @param relay Bitcoin relay providing the current Bitcoin network difficulty.
+    /// @param txProofDifficultyFactor The number of confirmations required on the Bitcoin chain.
     /// @param bitcoinHeaders Bitcoin headers chain being part of the SPV
     ///        proof. Used to extract the observed proof difficulty.
-    function evaluateProofDifficulty(SystemState.Storage storage self, bytes memory bitcoinHeaders) internal view {
-        IRelay relay = self.relay;
-
+    function evaluateProofDifficulty(IRelay relay, uint256 txProofDifficultyFactor, bytes memory bitcoinHeaders)
+        internal
+        view
+    {
         uint256 currentEpochDifficulty = relay.getCurrentEpochDifficulty();
         uint256 previousEpochDifficulty = relay.getPrevEpochDifficulty();
 
@@ -193,7 +197,7 @@ library BitcoinTx {
         require(observedDiff != ValidateSPV.getErrLowWork(), "Insufficient work in a header");
 
         require(
-            observedDiff >= requestedDiff * self.txProofDifficultyFactor,
+            observedDiff >= requestedDiff * txProofDifficultyFactor,
             "Insufficient accumulated difficulty in header chain"
         );
     }

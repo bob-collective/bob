@@ -8,7 +8,7 @@ import {SegWitUtils} from "@bob-collective/bitcoin-spv/SegWitUtils.sol";
 import {ValidateSPV} from "@bob-collective/bitcoin-spv/ValidateSPV.sol";
 
 import {BitcoinTx} from "./BitcoinTx.sol";
-import {SystemState} from "../SystemState.sol";
+import {IRelay} from "../relay/IRelay.sol";
 
 library WitnessTx {
     using BTCUtils for bytes;
@@ -101,15 +101,18 @@ library WitnessTx {
     }
 
     /// @notice Validates the witness SPV proof using the relay.
+    /// @param relay Bitcoin relay providing the current Bitcoin network difficulty.
+    /// @param txProofDifficultyFactor The number of confirmations required on the Bitcoin chain.
     /// @param txInfo Bitcoin transaction data.
     /// @param proof Bitcoin proof data.
     /// @return wTxHash Proven 32-byte transaction hash.
     function validateWitnessProofAndDifficulty(
-        SystemState.Storage storage self,
+        IRelay relay,
+        uint256 txProofDifficultyFactor,
         WitnessInfo memory txInfo,
         WitnessProof memory proof
     ) internal view returns (bytes32 wTxHash) {
         wTxHash = validateWitnessProof(txInfo, proof);
-        BitcoinTx.evaluateProofDifficulty(self, proof.coinbaseProof.bitcoinHeaders);
+        BitcoinTx.evaluateProofDifficulty(relay, txProofDifficultyFactor, proof.coinbaseProof.bitcoinHeaders);
     }
 }

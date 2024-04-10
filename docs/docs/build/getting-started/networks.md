@@ -20,11 +20,12 @@ Our demo apps are still deployed on the old testnet. Bridge your SepETH accordin
 
 BOB Testnet (New)
 
-- Chain ID: 9900367
+- Chain ID: 606808
 - Gas Token: ETH
-- RPC URL (BOB): https://sepolia.rpc.gobob.xyz/
-- Explorer (BOB): https://sepolia.explorer.gobob.xyz/
-- Bridge (BOB - Sepolia): https://bob-sepolia.bridge.caldera.xyz/
+- RPC URL (BOB): https://sepolia-dencun.rpc.gobob.xyz/
+- Websocket RPC URL (BOB): wss://sepolia-dencun.rpc.gobob.xyz/wss
+- Block Explorer (BOB): https://sepolia-dencun.explorer.gobob.xyz/
+- Bridge (BOB - Sepolia): https://bob-testnet.bridge.caldera.xyz/
 
 BOB Testnet (Old)
 

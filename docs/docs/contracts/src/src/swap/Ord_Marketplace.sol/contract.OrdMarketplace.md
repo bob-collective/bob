@@ -31,17 +31,17 @@ uint256 public constant REQUEST_EXPIRATION_SECONDS = 6 hours;
 ```
 
 
-### systemState
-
-```solidity
-SystemState.Storage internal systemState;
-```
-
-
 ### testLightRelay
 
 ```solidity
 TestLightRelay internal testLightRelay;
+```
+
+
+### txProofDifficultyFactor
+
+```solidity
+uint256 internal txProofDifficultyFactor;
 ```
 
 
@@ -50,14 +50,14 @@ TestLightRelay internal testLightRelay;
 
 
 ```solidity
-constructor(IRelay _relay);
+constructor(TestLightRelay _relay);
 ```
 
 ### setRelay
 
 
 ```solidity
-function setRelay(IRelay _relay) internal;
+function setRelay(TestLightRelay _relay) internal;
 ```
 
 ### placeOrdinalSellOrder
