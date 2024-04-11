@@ -6,7 +6,7 @@ We are just getting started with BOB and there are plenty of new things to be bu
 
 If you want to engage with the community and learn how you can contribute, here are some resources:
 
-- Join the [Discord](https://discordapp.com/invite/interlay)
+- Join the [Discord](https://discord.gg/gobob)
 - Follow us on [Twitter](https://twitter.com/build_on_bob)
 - Join the [forum](https://forum.gobob.xyz/) to discuss ideas and share feedback
 - Try out the [P2P Swap](https://demo.gobob.xyz/) to see BOB in action
