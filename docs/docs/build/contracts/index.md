@@ -1,13 +1,5 @@
 # Contracts
 
-:::warning Old Testnet
-
-These contract addresses refer to our **old testnet**.  
-If you are trying to connect to our **new testnet**, see the [Connect to BOB](/docs/build/getting-started/networks/) page.  
-Note that we are still in the process of redeploying these contracts to our new testnet as of March 21st, 2024.
-
-:::
-
 ## BOB Testnet (Sepolia)
 
 - WETH9: [`0x4200000000000000000000000000000000000006`](https://testnet-explorer.gobob.xyz/address/0x4200000000000000000000000000000000000006)

@@ -1,19 +1,12 @@
-import Tabs from "@theme/Tabs";
-import TabItem from "@theme/TabItem";
-import SellOrdinalConnectedImageUrl from "./add-sell-ordinal-connected-order-form.png";
-import SellOrdinalDisconnectedImageUrl from "./add-sell-ordinal-disconnected-order-form.png";
+import Tabs from '@theme/Tabs'
+import TabItem from '@theme/TabItem'
+import SellOrdinalConnectedImageUrl from './add-sell-ordinal-connected-order-form.png'
+import SellOrdinalDisconnectedImageUrl from './add-sell-ordinal-disconnected-order-form.png'
 
 # Trustless P2P Swap BTC and ERC20 using a BTC Light Client
 
 This example demonstrates how BOB is leveraged to build a peer-to-peer (P2P) swap application that allows two parties to swap ERC20 tokens, BTC and Ordinals without using a custodian.
 The application currently supports testnet BTC, testnet USDC, and WBTC (WBTC is a placeholder for an arbitrary bridged BTC token).
-
-:::warning Old Testnet
-
-This page refers to our **old testnet**.  
-If you are trying to connect to our **new testnet**, see the [Connect to BOB](/docs/build/getting-started/networks/) page.
-
-:::
 
 ![demo-overview](demo-overview.png)
 
@@ -90,7 +83,7 @@ Make sure that at this point you already have funded your account with Sepolia E
   - WBTC: `0x2868d708e442A6a940670d26100036d426F1e16b`
   - USDC: `0x27c3321E40f039d10D5FF831F528C9CEAE601B1d`
 
-:::tip  
+:::tip
 
 The faucet is configured to mint 30,000 tokens for each currency. If you want to create orders for more than this amount, the faucet can be called multiple times.
 
@@ -410,30 +403,30 @@ This can be done using the faucet buttons as described in the [Creating and Fund
 This is done using a React hook which extends Viem's `getContract` method. This allows contract member types to be inferred, rather than respecified in the application.
 
 ```ts
-import { getContract } from "viem";
-import { usePublicClient, useWalletClient } from "wagmi";
-import { contracts, ContractType } from "../constants";
-import { useMemo } from "react";
+import { getContract } from 'viem'
+import { usePublicClient, useWalletClient } from 'wagmi'
+import { contracts, ContractType } from '../constants'
+import { useMemo } from 'react'
 
 // Wrapper around ethers Contract to automatically get contract types
 // with read and write objects automatically constructed from provider and signer.
 const useContract = (contractType: ContractType) => {
-  const publicClient = usePublicClient();
-  const { data: walletClient } = useWalletClient();
+  const publicClient = usePublicClient()
+  const { data: walletClient } = useWalletClient()
 
   return useMemo(() => {
-    const { address, abi } = contracts[contractType];
+    const { address, abi } = contracts[contractType]
 
     return getContract({
       address,
       abi,
       publicClient,
       walletClient: walletClient ?? undefined,
-    });
-  }, [walletClient, publicClient, contractType]);
-};
+    })
+  }, [walletClient, publicClient, contractType])
+}
 
-export { useContract };
+export { useContract }
 ```
 
 This can then be called in the application:
@@ -442,13 +435,13 @@ This can then be called in the application:
 // contracts/config.ts
 const contracts = {
   [ContractType.BTC_MARKETPLACE]: {
-    address: "0x3336ff156B91B35E520741a660B9717C50c84c86",
+    address: '0x3336ff156B91B35E520741a660B9717C50c84c86',
     abi: BtcMarketplaceAbi,
   },
-} as const;
+} as const
 
 // App.tsx
 const { read: readBtcMarketplace, write: writeBtcMarketplace } = useContract(
   ContractType.BTC_MARKETPLACE
-);
+)
 ```

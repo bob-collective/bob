@@ -7,13 +7,6 @@ The P2P swap demo shows how BOB enables swaps without bridging between BTC, ordi
 - [P2P Swap Demo](https://demo.gobob.xyz/)
 - [User Guide](/docs/build/examples/btc-swap/#demo)
 
-:::warning Old Testnet
-
-This demo app is deployed on our **old testnet**.  
-If you are trying to connect to our **new testnet**, see the [Connect to BOB](/docs/build/getting-started/networks/) page.
-
-:::
-
 ## BOB Testnet
 
 If you want to use the testnet to interact with other apps deployed on BOB or deploy your own contracts, please follow the following steps:

@@ -1,12 +1,5 @@
 # Gas Fee Payment in wBTC using Account Abstraction (ERC-4337)
 
-:::warning Old Testnet
-
-This example refers to our **old testnet**.  
-If you are trying to connect to our **new testnet**, see the [Connect to BOB](/docs/build/getting-started/networks/) page.
-
-:::
-
 In this example, we will show how wBTC can be used for gas fee payment using the [ERC-4337 account abstraction standard](https://eips.ethereum.org/EIPS/eip-4337) on the BOB testnet. This enables users to use smart contract wallets and transact without the need to own ETH.
 
 :::tip Live Demo
