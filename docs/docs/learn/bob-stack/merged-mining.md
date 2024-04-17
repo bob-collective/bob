@@ -1,10 +1,11 @@
 ---
-sidebar_position: 1
+sidebar_position: 4
+sidebar_label: 'Phase 2: Optimistic Merged Mining'
 ---
 
-# Optimistic Merged Mining
+# Phase 2: Optimistic Merged Mining
 
-BOB uses the [OptiMine](https://gobob.xyz/optimine) optimistic merged mining protocol.
+BOB will be the first to implement the [OptiMine](https://gobob.xyz/optimine) optimistic merged mining protocol.
 OptiMine extends [traditional merged mining](https://bitcoin.stackexchange.com/questions/273/how-does-merged-mining-work) to separate block production from Proof-of-Work (PoW) finalization, following the hybrid consensus model. In a nutshell, blocks are produced optimistically while PoW eventually finalizes batches of blocks. BOB inherits security from Bitcoin miners, offsets the reliance on centralized sequencers, and retains fast block times.
 
 ## Benefits
@@ -40,14 +41,14 @@ If no valid PoW mined blocks are generated for a pre-defined timeout period, the
 
 **Actors**
 
-- *Sequencer:* a block producer subject to the rollup rules. The sequencer is responsible for creating and signing blocks.
-- *Miners:* Bitcoin miners that participate in merged mining the BOB L2. Miners are assumed to run a BOB full node.
+- _Sequencer:_ a block producer subject to the rollup rules. The sequencer is responsible for creating and signing blocks.
+- _Miners:_ Bitcoin miners that participate in merged mining the BOB L2. Miners are assumed to run a BOB full node.
 
 **Notation**
 
-- *Signed blocks*: Blocks proposed and signed by the sequencer.
-- *Mined blocks*: Blocks created by miners (have PoW) that commit to a set of existing signed blocks.
-- *Block bundle*: A block bundle refers to a set `N` of signed blocks that are not yet merged mined. For data efficiency, the block bundle is a single hash derived from a vector of `N` signed block hashes that are not yet merged mined. Note that we use a vector instead of a Merkle tree or similar since the BOB rollup full nodes operated both by the miners and the sequencer(s) need to validate that all signed block hashes are correctly included in the block bundle.
+- _Signed blocks_: Blocks proposed and signed by the sequencer.
+- _Mined blocks_: Blocks created by miners (have PoW) that commit to a set of existing signed blocks.
+- _Block bundle_: A block bundle refers to a set `N` of signed blocks that are not yet merged mined. For data efficiency, the block bundle is a single hash derived from a vector of `N` signed block hashes that are not yet merged mined. Note that we use a vector instead of a Merkle tree or similar since the BOB rollup full nodes operated both by the miners and the sequencer(s) need to validate that all signed block hashes are correctly included in the block bundle.
 
 ![Optimistic Merged Mining](merged-mining-checkpoints.png)
 

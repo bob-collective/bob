@@ -1,8 +1,9 @@
 ---
 sidebar_position: 3
-sidebar_label: Optimistic BOB
+sidebar_label: 'Phase 1: Optimistic BOB'
 ---
-# Optimistic BOB (BOB + OP Stack)
+
+# Phase 1: Optimistic BOB
 
 The first deployment of BOB will be using the [OP Stack](https://stack.optimism.io), benefiting from infrastructure, marketing, and BD support. Eventually, The BOB OP-Stack deployment can be [Superchain-compatible](https://www.optimism.io/superchain) making it easy for users to move seamlessly between different Superchain rollups.
 
