@@ -1,12 +1,12 @@
 ---
-sidebar_position: 4
+sidebar_position: 5
 ---
 
 # Privileged Roles in BOB Mainnet
 
 BOB uses the [OP Stack](https://docs.optimism.io/stack/getting-started), just like Optimism Mainnet and Base. As a result, BOB is on the same [Pragmatic Path to Decentralization](https://medium.com/ethereum-optimism/our-pragmatic-path-to-decentralization-cb5805ca43c1).
 
-For now, OP Stack chains still include a few "privileged" roles that allow certain addresses to carry out specific actions. Read this page to understand these roles, why they exist, and what risks they pose.
+For now, OP Stack chains still include a "privileged" roles that allow certain addresses to carry out specific actions. Read this page to understand these roles, why they exist, and what risks they pose.
 
 ## L1 Proxy Admin
 
@@ -148,3 +148,25 @@ The Guardian role cannot pause specific withdrawals and can only pause all withd
 ### Address
 
 - **Ethereum**: [`0xC91482A96e9c2A104d9298D1980eCCf8C4dc764E`](https://etherscan.io/address/0xC91482A96e9c2A104d9298D1980eCCf8C4dc764E#readProxyContract)
+
+## ERC20 Contract Upgrade Proxy
+
+### Description
+
+The ERC20 Contract Upgrade Proxy is an address that can be used to upgrade four ERC20 contracts on BOB to new versions: USDC, tBTC, wstETH, and STONE. This is a temporary measure:
+
+- USDC: The ERC20 is upgradable to allow Circle to take over the contract to enable native minting and redeeming on BOB.
+- tBTC: The ERC20 is upgradable to allow Threshold governance to take over the contract to enable native minting and redeeming on BOB.
+- wstETH: The ERC20 is upgradable to allow Lido governance to take over the contract to control the contract from the Ethereum side.
+- STONE: The ERC20 is upgradable to allow the Stone team to take over the contract and replace the OP standard bridge contracts with LayerZero.
+
+All other ERC20 contracts on BOB are not upgradable by this proxy.
+
+### Risks
+
+- Compromised ERC20 Contract Upgrade Proxy could upgrade contracts to malicious versions.
+
+### Mitigations
+
+- USDC, wstETH, STONE Contract Upgrade Proxy is a 3-of-5 [multisig](https://explorer.gobob.xyz/address/0xAE554F69fEd747006BF48481A6629921c3cD2Ba5).
+- tBTC Contract Upgrade Proxy is a 3-of-5 [multisig](https://explorer.gobob.xyz/address/0x694DeC29F197c76eb13d4Cc549cE38A1e06Cd24C).
