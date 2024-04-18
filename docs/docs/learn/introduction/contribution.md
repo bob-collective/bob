@@ -1,4 +1,9 @@
-# Contribute to BOB
+---
+sidebar_position: 4
+sidebar_label: 'How Can I Contribute?'
+---
+
+# How Can I Contribute?
 
 We are just getting started with BOB and there are plenty of new things to be built, researched, and experimented with. The BOB collective is strengthened by each contributor.
 
@@ -6,18 +11,19 @@ We are just getting started with BOB and there are plenty of new things to be bu
 
 If you want to engage with the community and learn how you can contribute, here are some resources:
 
-- Join the [Discord](https://discord.gg/gobob)
+- Join our [Discord](https://discord.gg/gobob)
+- Join our [Telegram](https://t.me/+CyIcLW2nfaFlNDc1)
 - Follow us on [Twitter](https://twitter.com/build_on_bob)
-- Join the [forum](https://forum.gobob.xyz/) to discuss ideas and share feedback
-- Try out the [P2P Swap](https://demo.gobob.xyz/) to see BOB in action
+<!-- - Join the [forum](https://forum.gobob.xyz/) to discuss ideas and share feedback -->
+- Play with the testnet [P2P Swap](https://demo.gobob.xyz/) to see BOB in action
 - Keep an eye on the growing [Ecosystem](https://www.gobob.xyz/)
 
 ## Builders
 
 If you are keen to build on BOB or contribute to BOB itself:
 
-- Discuss ideas and share feedback on the [forum](https://forum.gobob.xyz/)
-- Join the [Dev Telegram](https://t.me/+CyIcLW2nfaFlNDc1)
+<!-- - Discuss ideas and share feedback on the [forum](https://forum.gobob.xyz/) -->
+
 - Checkout the [bob-collective GitHub](https://github.com/bob-collective/bob)
-- Deploy your first contracts on BOB: [Hello World](/docs/build/getting-started/helloworld)
-- Try out the demos: [Demos](/docs/build/getting-started/#examples)
+- Deploy your first "[Hello Bitcoin](/docs/build/getting-started/helloworld)" contracts on BOB.
+- Try out our [Demos](/docs/build/getting-started/#examples)

@@ -1,9 +1,11 @@
 ---
 sidebar_position: 3
-sidebar_label: Use Case Ideas
+sidebar_label: What Can I Build on BOB?
 ---
 
-# Use Case Ideas
+# What Can I Build on BOB?
+
+## Use Case Ideas
 
 - Decentralized Bitcoin interest (convert staking rewards of other tokens to Bitcoin)
 - Zap money (fast, micro-transfers)
