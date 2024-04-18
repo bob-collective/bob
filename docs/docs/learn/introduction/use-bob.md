@@ -1,4 +1,9 @@
-# Using BOB
+---
+sidebar_position: 2
+sidebar_label: 'How Do I Use BOB?'
+---
+
+# How Do I Use BOB?
 
 ## P2P Swap Demo
 
