@@ -6,7 +6,7 @@ sidebar_position: 5
 
 BOB uses the [OP Stack](https://docs.optimism.io/stack/getting-started), just like Optimism Mainnet and Base. As a result, BOB is on the same [Pragmatic Path to Decentralization](https://medium.com/ethereum-optimism/our-pragmatic-path-to-decentralization-cb5805ca43c1).
 
-For now, OP Stack chains still include a "privileged" roles that allow certain addresses to carry out specific actions. Read this page to understand these roles, why they exist, and what risks they pose.
+For now, OP Stack chains still include "privileged" roles that allow certain addresses to carry out specific actions. Read this page to understand these roles, why they exist, and what risks they pose.
 
 ## L1 Proxy Admin
 
@@ -38,7 +38,7 @@ The L2 Proxy Admin is an address that can be used to upgrade most BOB system con
 
 ### Mitigations
 
-- L2 Proxy Admin is a [hardware wallet](https://explorer.gobob.xyz/address/0xefCf0c8faFB425997870f845e26fC6cA6EE6dD5C).
+- L2 Proxy Admin is a 4-of-6 [multisig](https://explorer.gobob.xyz/address/0x432c1fe0a868c8eeec2c73f59743f88fb07b561b).
 
 ### Address
 
