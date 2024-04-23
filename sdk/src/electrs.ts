@@ -36,6 +36,13 @@ export interface UTXO {
 
 export interface ElectrsClient {
     /**
+     * Get the latest block height of the Bitcoin chain.
+     *
+     * @returns {Promise<number>} A promise that resolves to the latest block number.
+     */
+    getLatestHeight(): Promise<number>;
+
+    /**
      * Get the block hash of the Bitcoin block at a specific height.
      *
      * This function retrieves the block hash for the Bitcoin block at the given height.
@@ -195,6 +202,10 @@ export class DefaultElectrsClient implements ElectrsClient {
             default:
                 this.basePath = networkOrUrl;
         }
+    }
+
+    async getLatestHeight(): Promise<number> {
+        return parseInt(await this.getText(`${this.basePath}/blocks/tip/height`), 10);
     }
 
     /**

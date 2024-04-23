@@ -53,7 +53,7 @@ contract OrdMarketPlaceTest is OrdMarketplace, Test {
             txIndexInBlock: 4,
             bitcoinHeaders: abi.encodePacked(
                 hex"00a00020a672b6254445e7b2dd6e5433f52ea9596e6ce51776fa6ea66d0200000000000013d7683b2bfc7d7cde91c6792f62e6b9453ca2f1e72cdbf106ecabf767dd2ac5bcf98f628886021ac954f84d"
-                )
+            )
         });
 
         BitcoinTx.UTXO memory utxo;
@@ -82,7 +82,7 @@ contract OrdMarketPlaceTest is OrdMarketplace, Test {
             txIndexInBlock: 25,
             bitcoinHeaders: abi.encodePacked(
                 hex"00200020b70169ce36e45282d9e32c6b3cf815c4580872c94d7801000000000000000000a9bb880a70ef5e045fa684064c5229fb1c540a799e2bdb71efde06304a26de4dc2c77a65952e0417d2418bf4"
-                )
+            )
         });
 
         BitcoinTx.UTXO memory utxo2;
@@ -111,7 +111,7 @@ contract OrdMarketPlaceTest is OrdMarketplace, Test {
             txIndexInBlock: 72,
             bitcoinHeaders: abi.encodePacked(
                 hex"0000002019ecad2d640319bad3cbe99dd2819fdba90023ccd6a479d31400000000000000f308f7de96bab7e11e64fdb06000e57806b7791b923cf0e8382547d3c609f2bf65438165ffff001d84cd32400000e0201a1e9727a2da2e112c761a0d3aa639c52e9b43c1e9d80bb0242632240000000056f577d01fbd2550679ced5da24291ec48bbb96a93f790349ac2f54fa075f90c64448165efdf2819529ec2d8"
-                )
+            )
         });
 
         // https://mempool.space/testnet/tx/6e21808d026c3bca141825b3e684f2d11eb148a8cdf9c7e01e832fd3cede732c

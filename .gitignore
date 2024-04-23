@@ -26,6 +26,7 @@ yarn-error.log*
 # Compiler files
 cache/
 out/
+optimized-out/
 
 # Ignores development broadcast logs
 !/broadcast
