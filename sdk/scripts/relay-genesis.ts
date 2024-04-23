@@ -6,7 +6,6 @@ import { exec } from "child_process";
 const args = yargs(hideBin(process.argv))
     .option("init-height", {
         description: "Height of the bitcoin chain to initialize the relay at",
-        type: "number",
         demandOption: true,
     })
     .option("private-key", {
@@ -17,42 +16,77 @@ const args = yargs(hideBin(process.argv))
         description: "Deploy the contracts locally",
         type: "boolean",
     })
+    .option("testnet", {
+        description: "Use the testnet relay contract which can override the difficulty",
+        type: "boolean",
+    })
+    .option("proof-length", {
+        description: "The default proof length for retargets",
+        type: "number",
+        default: 1,
+    })
     .option("network", {
         description: "Bitcoin network to use",
         type: "string",
         demandOption: true,
+    })
+    .option("rpc-url", {
+        description: "ETH RPC URL",
+        type: "string",
+    })
+    .option("verifier-url", {
+        description: "Verifier URL",
+        type: "string",
     })
     .argv;
 
 main().catch((err) => {
     console.log("Error thrown by script:");
     console.log(err);
+    process.exit(1);
 });
+
+function range(size: number, startAt = 0) {
+    return [...Array(size).keys()].map(i => i + startAt);
+}
+
+async function getRetargetHeaders(electrs: DefaultElectrsClient, nextRetargetHeight: number, proofLength: number) {
+    const beforeRetarget = await Promise.all(range(proofLength, nextRetargetHeight - proofLength).map(height => electrs.getBlockHeaderAt(height)));
+    const afterRetarget = await Promise.all(range(proofLength, nextRetargetHeight).map(height => electrs.getBlockHeaderAt(height)));
+    return beforeRetarget.concat(afterRetarget).join("");
+}
 
 async function main(): Promise<void> {
     const electrs = new DefaultElectrsClient(args["network"]);
 
-    const initHeight = args["init-height"];
+    let initHeight = args["init-height"];
+    if (initHeight == "latest") {
+        const currentHeight = await electrs.getLatestHeight();
+        initHeight = currentHeight - (currentHeight % 2016) - 2016;
+        console.log(`Using block ${initHeight}`)
+    }
     if ((initHeight % 2016) != 0) {
         throw new Error("Invalid genesis height: must be multiple of 2016");
     }
 
     const genesis = await electrs.getBlockHeaderAt(initHeight);
 
-    const beforeRetarget = await electrs.getBlockHeaderAt(initHeight + 2015);
-    const afterRetarget = await electrs.getBlockHeaderAt(initHeight + 2016);
+    const proofLength = args["proof-length"];
+    const nextRetargetHeight = initHeight + 2016;
+    console.log(`Next retarget height: ${nextRetargetHeight}`);
 
-    console.log(`Genesis: ${genesis}`);
-    console.log(`beforeRetarget: ${beforeRetarget}`);
-    console.log(`afterRetarget: ${afterRetarget}`);
+    const retargetHeaders = await getRetargetHeaders(electrs, nextRetargetHeight, proofLength);
 
     let rpcUrl: string;
     let verifyOpts: string | undefined;
     if (args["dev"]) {
         rpcUrl = "http://localhost:8545";
+    } else if (args["rpc-url"] == "testnet") {
+        rpcUrl = "https://testnet.rpc.gobob.xyz/";
+        verifyOpts = "--verify --verifier blockscout --verifier-url 'https://testnet-explorer.gobob.xyz/api'";
     } else {
-        rpcUrl = "http://l2-fluffy-bob-7mjgi9pmtg.t.conduit.xyz";
-        verifyOpts = "--verify --verifier blockscout --verifier-url 'https://explorerl2-fluffy-bob-7mjgi9pmtg.t.conduit.xyz/api?'";
+        rpcUrl = args["rpc-url"];
+        verifyOpts = `--verify --verifier blockscout --verifier-url ${args["verifier-url"]}`;
     }
 
     let privateKey: string;
@@ -64,7 +98,20 @@ async function main(): Promise<void> {
         throw new Error("No private key");
     }
 
-    exec(`GENESIS_HEIGHT=${initHeight} GENESIS_HEADER=${genesis} RETARGET_HEADERS=${beforeRetarget}${afterRetarget} PRIVATE_KEY=${privateKey} forge script ../script/RelayGenesis.s.sol:RelayGenesisScript --rpc-url '${rpcUrl}' --chain 901 ${verifyOpts} --broadcast`,
+    let env = [
+        `GENESIS_PROOF_LENGTH=${proofLength}`,
+        `GENESIS_HEIGHT=${initHeight}`,
+        `GENESIS_HEADER=${genesis}`,
+        `RETARGET_HEADERS=${retargetHeaders}`,
+        `PRIVATE_KEY=${privateKey}`,
+    ];
+
+    if (args["testnet"]) {
+        env.push("TESTNET=true");
+    }
+
+    exec(`${env.join(" ")} forge script ../script/RelayGenesis.s.sol:RelayGenesisScript --rpc-url '${rpcUrl}' ${verifyOpts} --broadcast --priority-gas-price 1`,
+        { maxBuffer: 1024 * 5000 },
         (err: any, stdout: string, stderr: string) => {
             if (err) {
                 throw new Error(`Failed to run command: ${err}`);

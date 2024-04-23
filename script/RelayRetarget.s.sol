@@ -2,7 +2,7 @@
 pragma solidity ^0.8.13;
 
 import {Script, console2} from "forge-std/Script.sol";
-import {LightRelay} from "../src/relay/LightRelay.sol";
+import {ILightRelay} from "../src/relay/LightRelay.sol";
 
 contract RelayRetargetScript is Script {
     function setUp() public {}
@@ -14,7 +14,7 @@ contract RelayRetargetScript is Script {
         bytes memory retargetHeaders = vm.envBytes("RETARGET_HEADERS");
 
         vm.startBroadcast(deployerPrivateKey);
-        LightRelay relay = LightRelay(relayAddress);
+        ILightRelay relay = ILightRelay(relayAddress);
 
         // submit retarget
         relay.retarget(retargetHeaders);
