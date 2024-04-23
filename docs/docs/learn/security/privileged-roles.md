@@ -158,7 +158,6 @@ The ERC20 Contract Upgrade Proxy is an address that can be used to upgrade four 
 - USDC: The ERC20 is upgradable to allow Circle to take over the contract to enable native minting and redeeming on BOB.
 - tBTC: The ERC20 is upgradable to allow Threshold governance to take over the contract to enable native minting and redeeming on BOB.
 - wstETH: The ERC20 is upgradable to allow Lido governance to take over the contract to control the contract from the Ethereum side.
-- STONE: The ERC20 is upgradable to allow the Stone team to take over the contract and replace the OP standard bridge contracts with LayerZero.
 
 All other ERC20 contracts on BOB are not upgradable by this proxy.
 
@@ -168,5 +167,5 @@ All other ERC20 contracts on BOB are not upgradable by this proxy.
 
 ### Mitigations
 
-- USDC, wstETH, STONE Contract Upgrade Proxy is a 3-of-5 [multisig](https://explorer.gobob.xyz/address/0xAE554F69fEd747006BF48481A6629921c3cD2Ba5).
+- USDC and wstETH Contract Upgrade Proxy is a 3-of-5 [multisig](https://explorer.gobob.xyz/address/0xAE554F69fEd747006BF48481A6629921c3cD2Ba5).
 - tBTC Contract Upgrade Proxy is a 3-of-5 [multisig](https://explorer.gobob.xyz/address/0x694DeC29F197c76eb13d4Cc549cE38A1e06Cd24C).
