@@ -17,7 +17,7 @@ const FORUM = "https://forum.gobob.xyz";
 const config = {
   title: "BOB - Build on Bitcoin",
   tagline:
-    "A layer 2 stack empowering everyone to build and innovate on Bitcoin.",
+    "A hybrid layer-2 powered by Bitcoin and Ethereum.",
   favicon: "img/favicon.ico",
   url: DOCS_PAGE,
   baseUrl: "/",
