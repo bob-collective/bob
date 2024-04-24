@@ -38,6 +38,12 @@ MetaMask is a browser extension that allows you to interact with EVM-compatible 
 - Features: Bitcoin, Ordinals, BRC20, EVM
 - Networks: Any EVM network, Bitcoin Mainnet
 
+###[Pontem Wallet](https://pontemwallet.xyz/)
+
+- Type: Browser, Android, iOS,
+- Features: Bitcoin, Ordinals, BRC20, EVM
+- Networks: Any EVM network, Bitcoin Testnet, Mainnet
+
 ## Bitcoin
 
 Wallets that only support Bitcoin.
