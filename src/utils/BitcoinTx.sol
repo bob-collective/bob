@@ -263,6 +263,10 @@ library BitcoinTx {
         bytes memory txOutputVector,
         TxOutputsProcessingInfo memory processInfo
     ) internal pure returns (uint64 value) {
+        // Helper flag indicating whether there was at least one
+        // output present
+        bool outputPresent = false;
+
         // Outputs processing loop.
         for (uint256 i = 0; i < processInfo.outputsCount; i++) {
             uint256 outputLength = txOutputVector.determineOutputLengthAt(processInfo.outputStartingIndex);
@@ -288,7 +292,10 @@ library BitcoinTx {
             }
 
             if (scriptPubKeyHash == outputScriptHash) {
-                return outputValue;
+                outputPresent = true;
+                // Accumulate the total in case there are multiple
+                // payments to the same output
+                value += outputValue;
             }
 
             // Make the `outputStartingIndex` pointing to the next output by
@@ -296,7 +303,7 @@ library BitcoinTx {
             processInfo.outputStartingIndex += outputLength;
         }
 
-        revert("No output found for scriptPubKey");
+        require(outputPresent, "No output found for scriptPubKey");
     }
 
     function reverseEndianness(bytes32 b) internal pure returns (bytes32 txHash) {
