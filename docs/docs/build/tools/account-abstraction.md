@@ -1,8 +1,8 @@
 # Account Abstraction
 
-## Safe{Wallet}
+## Safe Wallet
 
-[Safe{Wallet}](https://safe.gobob.xyz/welcome) (formerly known as Gnosis Safe multisig) is a smart contract wallet. Featuring 130+ ecosystem apps and the ability to create your own modules and guard, Safe is the most trusted decentralized custody protocol and collective asset management platform.
+[Safe Wallet](https://safe.gobob.xyz/welcome) (formerly known as Gnosis Safe multisig) is a smart contract wallet. Featuring 130+ ecosystem apps and the ability to create your own modules and guard, Safe is the most trusted decentralized custody protocol and collective asset management platform.
 
 **Supported Networks**
 
