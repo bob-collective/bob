@@ -213,17 +213,26 @@ library BitcoinTx {
         uint256 outputsCount;
     }
 
+    /// @notice Represents an outcome of the Bitcoin transaction
+    ///         outputs processing.
+    struct TxOutputsInfo {
+        // Sum of all outputs values spending to the output.
+        uint64 value;
+        // Optional EVM address specified in OP_RETURN.
+        address evmAddress;
+    }
+
     /// @notice Processes the Bitcoin transaction output vector.
-    /// @param scriptPubKeyHash Expected Bitcoin scriptPubKey keccak256 hash.
     /// @param txOutputVector Bitcoin transaction output vector.
     ///        This function assumes vector's structure is valid so it
     ///        must be validated using e.g. `BTCUtils.validateVout` function
     ///        before it is passed here.
-    /// @return value Outcomes of the processing.
-    function getTxOutputValue(bytes32 scriptPubKeyHash, bytes memory txOutputVector)
+    /// @param scriptPubKeyHash Expected Bitcoin scriptPubKey keccak256 hash.
+    /// @return resultInfo Outcomes of the processing.
+    function processTxOutputs(bytes memory txOutputVector, bytes32 scriptPubKeyHash)
         internal
         pure
-        returns (uint64 value)
+        returns (TxOutputsInfo memory resultInfo)
     {
         // Determining the total number of transaction outputs in the same way as
         // for number of inputs. See `BitcoinTx.outputVector` docs for more details.
@@ -246,23 +255,23 @@ library BitcoinTx {
         // docs in `BitcoinTx` library for more details.
         uint256 outputStartingIndex = 1 + outputsCompactSizeUintLength;
 
-        return getTxOutputValue(
-            scriptPubKeyHash, txOutputVector, TxOutputsProcessingInfo(outputStartingIndex, outputsCount)
+        return processTxOutputs(
+            txOutputVector, scriptPubKeyHash, TxOutputsProcessingInfo(outputStartingIndex, outputsCount)
         );
     }
 
     /// @notice Processes all outputs from the transaction.
-    /// @param scriptPubKeyHash Expected Bitcoin scriptPubKey keccak256 hash.
     /// @param txOutputVector Bitcoin transaction output vector. This function
     ///        assumes vector's structure is valid so it must be validated using
     ///        e.g. `BTCUtils.validateVout` function before it is passed here.
+    /// @param scriptPubKeyHash Expected Bitcoin scriptPubKey keccak256 hash.
     /// @param processInfo TxOutputsProcessingInfo identifying output
     ///        starting index and the number of outputs.
-    function getTxOutputValue(
-        bytes32 scriptPubKeyHash,
+    function processTxOutputs(
         bytes memory txOutputVector,
+        bytes32 scriptPubKeyHash,
         TxOutputsProcessingInfo memory processInfo
-    ) internal pure returns (uint64 value) {
+    ) internal pure returns (TxOutputsInfo memory resultInfo) {
         // Helper flag indicating whether there was at least one
         // output present
         bool outputPresent = false;
@@ -295,7 +304,13 @@ library BitcoinTx {
                 outputPresent = true;
                 // Accumulate the total in case there are multiple
                 // payments to the same output
-                value += outputValue;
+                resultInfo.value += outputValue;
+            } else {
+                address outputEvmAddress = extractEvmAddressFromOutput(txOutputVector, processInfo.outputStartingIndex);
+                if (outputEvmAddress != address(0)) {
+                    // NOTE: this will overwrite if there are multiple OP_RETURN outputs
+                    resultInfo.evmAddress = outputEvmAddress;
+                }
             }
 
             // Make the `outputStartingIndex` pointing to the next output by
@@ -304,6 +319,24 @@ library BitcoinTx {
         }
 
         require(outputPresent, "No output found for scriptPubKey");
+    }
+
+    function extractEvmAddressFromOutput(bytes memory _output, uint256 _at)
+        internal
+        pure
+        returns (address evmAddress)
+    {
+        // OP_RETURN
+        if (_output[_at + 9] != hex"6a") {
+            return address(0);
+        }
+        bytes1 _dataLen = _output[_at + 10];
+        if (uint256(uint8(_dataLen)) == 20) {
+            uint256 opReturnStart = _at + 11;
+            assembly {
+                evmAddress := mload(add(_output, add(opReturnStart, 20)))
+            }
+        }
     }
 
     function reverseEndianness(bytes32 b) internal pure returns (bytes32 txHash) {

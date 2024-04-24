@@ -157,7 +157,7 @@ contract OrdMarketplace {
             keccak256(abi.encodePacked(uint8(bitcoinAddress.scriptPubKey.length), bitcoinAddress.scriptPubKey));
 
         // it will revert if no match for scriptPubKeyHash found in any outputScriptHash
-        BitcoinTx.getTxOutputValue(scriptPubKeyHash, transaction.outputVector);
+        BitcoinTx.processTxOutputs(transaction.outputVector, scriptPubKeyHash);
     }
 
     function withdrawOrdinalSellOrder(uint256 id) public {

@@ -96,63 +96,72 @@ contract BitcoinTxTest is Test {
         assertFalse(success);
     }
 
-    function test_GetTxOutputValue() public {
+    function test_ProcessTxOutputs() public {
         // b1273a6c00eba20ee8837e445599d1362e005f6e1a8525802ba57bc515461a3a
-        uint64 value = BitcoinTx.getTxOutputValue(
-            keccak256(hex"16001493adab0a7a8cb7675db135c9c97e81942025c2c9"),
-            hex"02c67d16000000000016001493adab0a7a8cb7675db135c9c97e81942025c2c9aea79b4200000000160014f60834ef165253c571b11ce9fa74e46692fc5ec1"
-        );
+        uint64 value = BitcoinTx.processTxOutputs(
+            hex"02c67d16000000000016001493adab0a7a8cb7675db135c9c97e81942025c2c9aea79b4200000000160014f60834ef165253c571b11ce9fa74e46692fc5ec1",
+            keccak256(hex"16001493adab0a7a8cb7675db135c9c97e81942025c2c9")
+        ).value;
         assertEq(value, 1473990);
     }
 
-    function test_GetTxOutputValueSingleOutputTransaction() public {
+    function test_ProcessTxOutputsSingleOutputTransaction() public {
         // tx api: https://btc-testnet.gobob.xyz/tx/b0fe4bd36b17be89f131c2e652578def3cc0c3d5aa9e7a3f972365a8dc46dba8
-        uint64 value = BitcoinTx.getTxOutputValue(
-            keccak256(hex"160014d127b24a7e2aad2ddf21d4d940f6202158aa507d"),
-            hex"01ab9ab90800000000160014d127b24a7e2aad2ddf21d4d940f6202158aa507d"
-        );
+        uint64 value = BitcoinTx.processTxOutputs(
+            hex"01ab9ab90800000000160014d127b24a7e2aad2ddf21d4d940f6202158aa507d",
+            keccak256(hex"160014d127b24a7e2aad2ddf21d4d940f6202158aa507d")
+        ).value;
         assertEq(value, 146381483);
     }
 
-    function test_GetTxOutputValueMaxTransactionValue() public {
+    function test_ProcessTxOutputsMaxTransactionValue() public {
         // tx api: https://api.blockcypher.com/v1/btc/main/txs/d486aeb0e59181fd1addb4aa69ce04d638188fc1125c424899267e8ed6a8af24?limit=50&includeHex=true/
-        uint64 value = BitcoinTx.getTxOutputValue(
-            keccak256(hex"17a914ed498d84acb4532656fcf6947d0ceab6c77188bc87"),
-            hex"0260536280ed03000017a9148e097444bb754122652208bf00f71a87b177b700874b5a115e2704000017a914ed498d84acb4532656fcf6947d0ceab6c77188bc87"
-        );
+        uint64 value = BitcoinTx.processTxOutputs(
+            hex"0260536280ed03000017a9148e097444bb754122652208bf00f71a87b177b700874b5a115e2704000017a914ed498d84acb4532656fcf6947d0ceab6c77188bc87",
+            keccak256(hex"17a914ed498d84acb4532656fcf6947d0ceab6c77188bc87")
+        ).value;
         assertEq(value, 4567128431179);
     }
 
-    function test_GetTxOutputValueWithInvalidPubkey() public {
+    function test_ProcessTxOutputsWithInvalidPubkey() public {
         vm.expectRevert("No output found for scriptPubKey");
-        BitcoinTx.getTxOutputValue(
-            keccak256(hex"000000000000000000000000000000000000000000000000"),
-            hex"02c67d16000000000016001493adab0a7a8cb7675db135c9c97e81942025c2c9aea79b4200000000160014f60834ef165253c571b11ce9fa74e46692fc5ec1"
+        BitcoinTx.processTxOutputs(
+            hex"02c67d16000000000016001493adab0a7a8cb7675db135c9c97e81942025c2c9aea79b4200000000160014f60834ef165253c571b11ce9fa74e46692fc5ec1",
+            keccak256(hex"000000000000000000000000000000000000000000000000")
         );
     }
 
-    function test_GetTxOutputValueEmptyBytes() public {
+    function test_ProcessTxOutputsEmptyBytes() public {
         bytes memory emptyBytes = new bytes(0);
         (bool success,) = address(this).call(
             abi.encodeWithSignature(
-                "getTxOutputValue(bytes32,bytes memory)",
-                keccak256(hex"16001493adab0a7a8cb7675db135c9c97e81942025c2c9"),
-                emptyBytes
+                "processTxOutputs(bytes memory,bytes32)",
+                emptyBytes,
+                keccak256(hex"16001493adab0a7a8cb7675db135c9c97e81942025c2c9")
             )
         );
         // Reason: panic: array out-of-bounds access (0x32)
         assertFalse(success);
     }
 
-    function test_GetTxOutputValueWithInvalidInput() public {
+    function test_ProcessTxOutputsWithInvalidInput() public {
         (bool success,) = address(this).call(
             abi.encodeWithSignature(
-                "getTxOutputValue(bytes32,bytes memory)",
-                keccak256(hex"16001493adab0a7a8cb7675db135c9c97e81942025c2c9"),
-                hex"16001493adab0a7a8cb7675db135c9c97e81942025c2c9"
+                "processTxOutputs(bytes memory,bytes32)",
+                hex"16001493adab0a7a8cb7675db135c9c97e81942025c2c9",
+                keccak256(hex"16001493adab0a7a8cb7675db135c9c97e81942025c2c9")
             )
         );
         // [FAIL. Reason: EvmError: OutOfGas] (gas: 9223372036854754743)
         assertFalse(success);
+    }
+
+    function test_ProcessTxOutputsWithOpReturn() public {
+        BitcoinTx.TxOutputsInfo memory resultInfo = BitcoinTx.processTxOutputs(
+            hex"02983a000000000000146142b39c0073672dc382b89a42b29e06368bcabd0000000000000000166a14675ca18a04027fd50c88ccd03939e0e5c97b795f",
+            keccak256(hex"146142b39c0073672dc382b89a42b29e06368bcabd")
+        );
+        assertEq(resultInfo.value, 15000);
+        assertEq(resultInfo.evmAddress, 0x675Ca18A04027fd50C88CcD03939E0e5C97b795f);
     }
 }
