@@ -404,7 +404,7 @@ contract BtcMarketPlace is ERC2771Recipient {
         bytes32 scriptPubKeyHash =
             keccak256(abi.encodePacked(uint8(bitcoinAddress.scriptPubKey.length), bitcoinAddress.scriptPubKey));
 
-        uint256 txOutputValue = BitcoinTx.getTxOutputValue(scriptPubKeyHash, transaction.outputVector);
+        uint256 txOutputValue = BitcoinTx.processTxOutputs(transaction.outputVector, scriptPubKeyHash).value;
 
         require(txOutputValue >= expectedBtcAmount, "Bitcoin transaction amount is lower than in accepted order.");
     }

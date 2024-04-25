@@ -56,48 +56,58 @@ function evaluateProofDifficulty(IRelay relay, uint256 txProofDifficultyFactor, 
 |`bitcoinHeaders`|`bytes`|Bitcoin headers chain being part of the SPV proof. Used to extract the observed proof difficulty.|
 
 
-### getTxOutputValue
+### processTxOutputs
 
 Processes the Bitcoin transaction output vector.
 
 
 ```solidity
-function getTxOutputValue(bytes32 scriptPubKeyHash, bytes memory txOutputVector) internal pure returns (uint64 value);
+function processTxOutputs(bytes memory txOutputVector, bytes32 scriptPubKeyHash)
+    internal
+    pure
+    returns (TxOutputsInfo memory resultInfo);
 ```
 **Parameters**
 
 |Name|Type|Description|
 |----|----|-----------|
-|`scriptPubKeyHash`|`bytes32`|Expected Bitcoin scriptPubKey keccak256 hash.|
 |`txOutputVector`|`bytes`|Bitcoin transaction output vector. This function assumes vector's structure is valid so it must be validated using e.g. `BTCUtils.validateVout` function before it is passed here.|
+|`scriptPubKeyHash`|`bytes32`|Expected Bitcoin scriptPubKey keccak256 hash.|
 
 **Returns**
 
 |Name|Type|Description|
 |----|----|-----------|
-|`value`|`uint64`|Outcomes of the processing.|
+|`resultInfo`|`TxOutputsInfo`|Outcomes of the processing.|
 
 
-### getTxOutputValue
+### processTxOutputs
 
 Processes all outputs from the transaction.
 
 
 ```solidity
-function getTxOutputValue(
-    bytes32 scriptPubKeyHash,
+function processTxOutputs(
     bytes memory txOutputVector,
+    bytes32 scriptPubKeyHash,
     TxOutputsProcessingInfo memory processInfo
-) internal pure returns (uint64 value);
+) internal pure returns (TxOutputsInfo memory resultInfo);
 ```
 **Parameters**
 
 |Name|Type|Description|
 |----|----|-----------|
-|`scriptPubKeyHash`|`bytes32`|Expected Bitcoin scriptPubKey keccak256 hash.|
 |`txOutputVector`|`bytes`|Bitcoin transaction output vector. This function assumes vector's structure is valid so it must be validated using e.g. `BTCUtils.validateVout` function before it is passed here.|
+|`scriptPubKeyHash`|`bytes32`|Expected Bitcoin scriptPubKey keccak256 hash.|
 |`processInfo`|`TxOutputsProcessingInfo`|TxOutputsProcessingInfo identifying output starting index and the number of outputs.|
 
+
+### extractEvmAddressFromOutput
+
+
+```solidity
+function extractEvmAddressFromOutput(bytes memory _output, uint256 _at) internal pure returns (address evmAddress);
+```
 
 ### reverseEndianness
 
@@ -163,6 +173,18 @@ and should not be exported outside of the transaction processing code.
 struct TxOutputsProcessingInfo {
     uint256 outputStartingIndex;
     uint256 outputsCount;
+}
+```
+
+### TxOutputsInfo
+Represents an outcome of the Bitcoin transaction
+outputs processing.
+
+
+```solidity
+struct TxOutputsInfo {
+    uint64 value;
+    address evmAddress;
 }
 ```
 
