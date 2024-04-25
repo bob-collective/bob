@@ -28,7 +28,6 @@ API3 is live with:
 <!-- TODO: Verify API3 on test/mainnet -->
 
 - BOB Mainnet
-- BOB Sepolia (Testnet)
 
 ## RedStone
 
@@ -41,7 +40,6 @@ See [this guide](https://docs.redstone.finance/) to learn how to use RedStone pr
 <!-- TODO: Verify RedStone on test/mainnet -->
 
 - BOB Mainnet
-- BOB Sepolia (Testnet)
 
 ## DIA
 
@@ -53,5 +51,4 @@ See [this guide](https://docs.diadata.org/introduction/intro-to-dia-oracles/acce
 
 <!-- TODO: Verify DIA on test/mainnet -->
 
-- BOB Mainnet
-- BOB Sepolia (Testnet)
+- BOB Mainnet: 0x4d24e7c1cf0ed63bc8c6cb5a795af31fd8127c6b
