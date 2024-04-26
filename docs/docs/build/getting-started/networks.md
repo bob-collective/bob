@@ -32,7 +32,7 @@ sidebar_position: 2
 - Gas Token: ETH
 - RPC URL: https://testnet.rpc.gobob.xyz/
 - Explorer: https://testnet-explorer.gobob.xyz/
-- Bridge (BOB Testnet - Sepolia): https://app.gobob.xyz/
+- Bridge (BOB Testnet - Sepolia): https://testnet.gobob.xyz/
 
 ## Ethereum Sepolia
 
