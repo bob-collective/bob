@@ -31,9 +31,9 @@ describe("Ordinal API Tests", () => {
             previous: InscriptionId.fromString('332d3fae125de51de29e97cd9e80aab7c63025d5094944a3dceb117c556c41cci0'),
             rune: null,
             sat: null,
-            satpoint: SatPoint.fromString('3b509ea77e4809a6014110d20fd66dda26ebc6da26f291951c2aa292f5adfe54:0:207518859'),
+            satpoint: SatPoint.fromString('a4f11b32041419829b56fe456a976efef0c3ba557cf6041918e81e5d3265b884:2:96181932'),
             timestamp: 1699246476,
-            value: 268048971,
+            value: 156405502,
         };
 
         assert.deepStrictEqual(expectedInscriptionJson, inscriptionJson);

@@ -49,24 +49,24 @@ export interface Transaction {
         vout: number
         is_coinbase: boolean
         scriptsig: string
-        srciptsig_asm: string
-        inner_redeemscript_asm: string
-        inner_witnessscript_asm: string
-        sequence: number
-        witness: string[]
+        scriptsig_asm: string
+        inner_redeemscript_asm?: string
+        inner_witnessscript_asm?: string
+        sequence?: number
+        witness?: string[]
         prevout: {
             scriptpubkey: string
             scriptpubkey_asm: string
             scriptpubkey_type: string
             scriptpubkey_address: string
             value: number
-        }
+        } | null
     }>
     vout: Array<{
         scriptpubkey: string
-        scriptpubkey_asm: string
-        scriptpubkey_type: string
-        scriptpubkey_address: string
+        scriptpubkey_asm?: string
+        scriptpubkey_type?: string
+        scriptpubkey_address?: string 
         value: number
     }>
     status: {
@@ -92,7 +92,7 @@ export interface Block {
     tx_count: number
     size: number
     weight: number
-    previousblockhash: string
+    previousblockhash: string | null
     mediantime: number
 }
 
@@ -109,6 +109,28 @@ export interface ElectrsClient {
      * @returns {Promise<number>} A promise that resolves to the latest block number.
      */
     getLatestHeight(): Promise<number>;
+
+    /**
+     * Get the complete block data for a Bitcoin block with a given hash.
+     *
+     * @param {string} hash - The hash of the Bitcoin block.
+     * @returns {Promise<Block>} A promise that resolves to the block data.
+     * 
+     * @example
+     * ```typescript
+     * const BITCOIN_NETWORK = "regtest";
+     * const electrsClient = new DefaultElectrsClient(BITCOIN_NETWORK);
+     * const blockHash = 'your_block_hash_here';
+     * electrsClient.getBlock(blockHash)
+     *  .then((block) => {
+     *  console.log(`Block data for block with hash ${blockHash}: ${JSON.stringify(block)}`);
+     * })
+     * .catch((error) => {
+     * console.error(`Error: ${error}`);
+     * });
+     * ```
+     */
+    getBlock(hash: string): Promise<Block>;
 
     /**
      * Get the block hash of the Bitcoin block at a specific height.
@@ -155,6 +177,28 @@ export interface ElectrsClient {
      * ```
      */
     getBlockHeader(hash: string): Promise<string>;
+
+    /**
+     * Get the complete transaction data for a Bitcoin transaction with a given ID (txId).
+     * 
+     * @param txId {string} - The ID of a Bitcoin transaction.
+     * @returns {Promise<Transaction>} A promise that resolves to the transaction data.
+     * 
+     * @example
+     * ```typescript
+     * const BITCOIN_NETWORK = "regtest";
+     * const electrsClient = new DefaultElectrsClient(BITCOIN_NETWORK);
+     * const transactionId = 'your_transaction_id_here';
+     * electrsClient.getTransaction(transactionId)
+     *  .then((transaction) => {
+     *   console.log(`Transaction data for transaction with ID ${transactionId}: ${JSON.stringify(transaction)}`);
+     * })
+     * .catch((error) => {
+     *  console.error(`Error: ${error}`);
+     * });
+     * ```
+     */
+    getTransaction(txId: string): Promise<Transaction>;
 
     /**
      * Get the transaction data, represented as a hex string, for a Bitcoin transaction with a given ID (txId).
