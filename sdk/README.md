@@ -1,6 +1,6 @@
 # BOB SDK
 
-The BOB SDK helps you interact with BOB and Bitcoin including ORdinals, EBRC20, Runes, and more.
+The BOB SDK helps you interact with BOB and Bitcoin, including Ordinals, BRC20, Runes, and more.
 
 ## Learn more
 
