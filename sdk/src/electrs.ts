@@ -19,8 +19,8 @@ export const REGTEST_ESPLORA_BASE_PATH = "http://localhost:3003";
  */
 export interface MerkleProof {
     blockHeight: number
-    merkle: string,
-    pos: number,
+    merkle: string
+    pos: number
 }
 
 /**
@@ -28,12 +28,80 @@ export interface MerkleProof {
  */
 export interface UTXO {
     txid: string
-    vout: number,
-    value: number,
-    confirmed: boolean,
+    vout: number
+    value: number
+    confirmed: boolean
     height?: number
 }
 
+/**
+ * @ignore
+ */
+export interface Transaction {
+    txid: string
+    version: number
+    locktime: number
+    size: number
+    weight: number
+    fee: number
+    vin: Array<{
+        txid: string
+        vout: number
+        is_coinbase: boolean
+        scriptsig: string
+        srciptsig_asm: string
+        inner_redeemscript_asm: string
+        inner_witnessscript_asm: string
+        sequence: number
+        witness: string[]
+        prevout: {
+            scriptpubkey: string
+            scriptpubkey_asm: string
+            scriptpubkey_type: string
+            scriptpubkey_address: string
+            value: number
+        }
+    }>
+    vout: Array<{
+        scriptpubkey: string
+        scriptpubkey_asm: string
+        scriptpubkey_type: string
+        scriptpubkey_address: string
+        value: number
+    }>
+    status: {
+        confirmed: boolean
+        block_height: number
+        block_hash: string
+        block_time: number
+    }
+}
+
+/**
+ * @ignore
+ */
+export interface Block {
+    id: string
+    height: number
+    version: number
+    timestamp: number
+    bits: number
+    nonce: number
+    difficulty: number
+    merkle_root: string
+    tx_count: number
+    size: number
+    weight: number
+    previousblockhash: string
+    mediantime: number
+}
+
+/**
+ * 
+ * The `ElectrsClient` interface provides a set of methods for interacting with an Esplora API
+ * for Bitcoin network data retrieval.
+ * See https://github.com/blockstream/esplora/blob/master/API.md for more information.
+ */
 export interface ElectrsClient {
     /**
      * Get the latest block height of the Bitcoin chain.
@@ -211,6 +279,13 @@ export class DefaultElectrsClient implements ElectrsClient {
     /**
      * @ignore
      */
+    async getBlock(blockHash: string): Promise<Block> {
+        return this.getJson(`${this.basePath}/block/${blockHash}`);
+    }
+
+    /**
+     * @ignore
+     */
     async getBlockHash(height: number): Promise<string> {
         return this.getText(`${this.basePath}/block-height/${height}`);
     }
@@ -228,6 +303,13 @@ export class DefaultElectrsClient implements ElectrsClient {
     async getBlockHeaderAt(height: number): Promise<string> {
         const blockHash = await this.getBlockHash(height);
         return await this.getBlockHeader(blockHash);
+    }
+
+    /**
+     * @ignore
+     */
+    async getTransaction(txId: string): Promise<Transaction> {
+        return this.getJson(`${this.basePath}/tx/${txId}`);
     }
 
     /**
