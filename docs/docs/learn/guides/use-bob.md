@@ -1,13 +1,13 @@
 ---
-sidebar_position: 2
-sidebar_label: 'How Do I Use BOB?'
+sidebar_position: 5
+sidebar_label: "Testing BOB"
 ---
 
-# How Do I Use BOB?
+# Testing BOB
 
 ## P2P Swap Demo
 
-The P2P swap demo shows how BOB enables swaps without bridging between BTC, ordinals, and ERC20 assets.
+The P2P swap demo shows how BOB enables swaps between BTC, ordinals, and ERC20 assets **without bridging**.
 
 - [P2P Swap Demo](https://demo.gobob.xyz/)
 - [User Guide](/docs/build/examples/btc-swap/)
