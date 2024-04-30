@@ -19,8 +19,8 @@ export const REGTEST_ESPLORA_BASE_PATH = "http://localhost:3003";
  */
 export interface MerkleProof {
     blockHeight: number
-    merkle: string,
-    pos: number,
+    merkle: string
+    pos: number
 }
 
 /**
@@ -28,12 +28,80 @@ export interface MerkleProof {
  */
 export interface UTXO {
     txid: string
-    vout: number,
-    value: number,
-    confirmed: boolean,
+    vout: number
+    value: number
+    confirmed: boolean
     height?: number
 }
 
+/**
+ * @ignore
+ */
+export interface Transaction {
+    txid: string
+    version: number
+    locktime: number
+    size: number
+    weight: number
+    fee: number
+    vin: Array<{
+        txid: string
+        vout: number
+        is_coinbase: boolean
+        scriptsig: string
+        scriptsig_asm: string
+        inner_redeemscript_asm?: string
+        inner_witnessscript_asm?: string
+        sequence?: number
+        witness?: string[]
+        prevout: {
+            scriptpubkey: string
+            scriptpubkey_asm: string
+            scriptpubkey_type: string
+            scriptpubkey_address: string
+            value: number
+        } | null
+    }>
+    vout: Array<{
+        scriptpubkey: string
+        scriptpubkey_asm?: string
+        scriptpubkey_type?: string
+        scriptpubkey_address?: string 
+        value: number
+    }>
+    status: {
+        confirmed: boolean
+        block_height: number
+        block_hash: string
+        block_time: number
+    }
+}
+
+/**
+ * @ignore
+ */
+export interface Block {
+    id: string
+    height: number
+    version: number
+    timestamp: number
+    bits: number
+    nonce: number
+    difficulty: number
+    merkle_root: string
+    tx_count: number
+    size: number
+    weight: number
+    previousblockhash: string | null
+    mediantime: number
+}
+
+/**
+ * 
+ * The `ElectrsClient` interface provides a set of methods for interacting with an Esplora API
+ * for Bitcoin network data retrieval.
+ * See https://github.com/blockstream/esplora/blob/master/API.md for more information.
+ */
 export interface ElectrsClient {
     /**
      * Get the latest block height of the Bitcoin chain.
@@ -41,6 +109,28 @@ export interface ElectrsClient {
      * @returns {Promise<number>} A promise that resolves to the latest block number.
      */
     getLatestHeight(): Promise<number>;
+
+    /**
+     * Get the complete block data for a Bitcoin block with a given hash.
+     *
+     * @param {string} hash - The hash of the Bitcoin block.
+     * @returns {Promise<Block>} A promise that resolves to the block data.
+     * 
+     * @example
+     * ```typescript
+     * const BITCOIN_NETWORK = "regtest";
+     * const electrsClient = new DefaultElectrsClient(BITCOIN_NETWORK);
+     * const blockHash = 'your_block_hash_here';
+     * electrsClient.getBlock(blockHash)
+     *  .then((block) => {
+     *  console.log(`Block data for block with hash ${blockHash}: ${JSON.stringify(block)}`);
+     * })
+     * .catch((error) => {
+     * console.error(`Error: ${error}`);
+     * });
+     * ```
+     */
+    getBlock(hash: string): Promise<Block>;
 
     /**
      * Get the block hash of the Bitcoin block at a specific height.
@@ -87,6 +177,28 @@ export interface ElectrsClient {
      * ```
      */
     getBlockHeader(hash: string): Promise<string>;
+
+    /**
+     * Get the complete transaction data for a Bitcoin transaction with a given ID (txId).
+     * 
+     * @param txId {string} - The ID of a Bitcoin transaction.
+     * @returns {Promise<Transaction>} A promise that resolves to the transaction data.
+     * 
+     * @example
+     * ```typescript
+     * const BITCOIN_NETWORK = "regtest";
+     * const electrsClient = new DefaultElectrsClient(BITCOIN_NETWORK);
+     * const transactionId = 'your_transaction_id_here';
+     * electrsClient.getTransaction(transactionId)
+     *  .then((transaction) => {
+     *   console.log(`Transaction data for transaction with ID ${transactionId}: ${JSON.stringify(transaction)}`);
+     * })
+     * .catch((error) => {
+     *  console.error(`Error: ${error}`);
+     * });
+     * ```
+     */
+    getTransaction(txId: string): Promise<Transaction>;
 
     /**
      * Get the transaction data, represented as a hex string, for a Bitcoin transaction with a given ID (txId).
@@ -211,6 +323,13 @@ export class DefaultElectrsClient implements ElectrsClient {
     /**
      * @ignore
      */
+    async getBlock(blockHash: string): Promise<Block> {
+        return this.getJson(`${this.basePath}/block/${blockHash}`);
+    }
+
+    /**
+     * @ignore
+     */
     async getBlockHash(height: number): Promise<string> {
         return this.getText(`${this.basePath}/block-height/${height}`);
     }
@@ -228,6 +347,13 @@ export class DefaultElectrsClient implements ElectrsClient {
     async getBlockHeaderAt(height: number): Promise<string> {
         const blockHash = await this.getBlockHash(height);
         return await this.getBlockHeader(blockHash);
+    }
+
+    /**
+     * @ignore
+     */
+    async getTransaction(txId: string): Promise<Transaction> {
+        return this.getJson(`${this.basePath}/tx/${txId}`);
     }
 
     /**

@@ -12,9 +12,9 @@ Inscriptions are created using taproot script. That means you have to use a P2TR
 
 ### Wallets that support taproot addresses
 
-#### BOB MetaMask Snap (Browser, MetaMask flask only)
+#### BOB MetaMask Snap (Browser only)
 
-You can use the [BOB MetaMask Snap](https://github.com/bob-collective/btcsnap) with [MetaMask flask](https://metamask.io/flask/).
+You can use the [BOB MetaMask Snap](https://github.com/bob-collective/btcsnap) with [MetaMask](https://metamask.io/).
 
 :::tip Live Demo
 

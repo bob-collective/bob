@@ -36,16 +36,6 @@ const config = {
     locales: ["en"],
   },
 
-  plugins: [
-    [
-      "docusaurus-plugin-typedoc",
-      {
-        entryPoints: ["../sdk/src/*"],
-        out: "api/ts-sdk",
-        tsconfig: "tsconfig.json",
-      },
-    ],
-  ],
   presets: [
     [
       "classic",
@@ -53,8 +43,6 @@ const config = {
       ({
         docs: {
           sidebarPath: require.resolve("./sidebars.js"),
-          // Please change this to your repo.
-          // Remove this to remove the "edit this page" links.
           editUrl: `${GITHUB_LINK}/tree/master/docs/`,
         },
         theme: {
@@ -95,12 +83,12 @@ const config = {
             position: "left",
             label: "Build",
           },
-          {
-            type: "docSidebar",
-            sidebarId: "apiSidebar",
-            position: "left",
-            label: "API",
-          },
+          // {
+          //   type: "docSidebar",
+          //   sidebarId: "apiSidebar",
+          //   position: "left",
+          //   label: "API",
+          // },
           {
             type: "docSidebar",
             sidebarId: "contractSidebar",
