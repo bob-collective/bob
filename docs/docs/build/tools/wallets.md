@@ -10,11 +10,7 @@ Wallets that can be used for both Bitcoin and BOB.
 
 ### MetaMask with Snaps
 
-#### [MetaMask with BOB Bitcoin Snap](https://snaps.metamask.io/snap/npm/bobflask/)
-
-:::info MetaMask Flask
-This wallet requires [MetaMask Flask](https://metamask.io/flask/).
-:::
+#### [MetaMask with BOB Bitcoin Snap](https://snaps.metamask.io/snap/npm/gobob/bob-snap/)
 
 - Type: Browser
 - Features: Bitcoin, Ordinals, EVM

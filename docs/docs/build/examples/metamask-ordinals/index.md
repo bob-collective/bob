@@ -12,23 +12,21 @@ You can find the code for this example on [our GitHub repository](https://github
 
 We have created a testnet demo of the application at [https://ordinals.gobob.xyz](https://ordinals.gobob.xyz), allowing anyone to inscribe, view and transfer ordinals, and transfer BTC.
 
-:::info MetaMask Flask
+:::info MetaMask Snap
 
-This demo uses [MetaMask Snaps](https://metamask.io/snaps/) and can only be used with [MetaMask Flask](https://metamask.io/flask/). MetaMask Snaps are not currently supported on mobile wallets, so this demo will only run in the desktop version of Chrome or Firefox.
+This demo uses [MetaMask Snaps](https://metamask.io/snaps/). MetaMask Snaps are not currently supported on mobile wallets, so this demo will only run in the desktop version of Chrome or Firefox.
 
 :::
 
 ### Creating a test profile
 
-To use this demo, you will need to create a new browser profile to use with the MetaMask Flask extension, as having MetaMask and MetaMask Flask installed in the same browser profile can cause issues.
-
 We recommend creating two test profiles so that you can test transferring Ordinals and BTC between two accounts.
 
 ### Installing the MetaMask Snap
 
-Once you have installed MetaMask Flask, click the 'Connect Wallet' button on [https://ordinals.gobob.xyz](https://ordinals.gobob.xyz). MetaMask will prompt you to install the Snap, and give it permissions.
+Click the 'Connect Wallet' button on [https://ordinals.gobob.xyz](https://ordinals.gobob.xyz). MetaMask will prompt you to install the Snap, and give it permissions.
 
-Take note that your BTC wallet in the Snap derives its private keys from the MetaMask's seed phrase.
+Take note that your BTC wallet in the Snap derives its private keys from your MetaMask wallet's seed phrase.
 
 ### Funding your account
 
