@@ -5,8 +5,9 @@
   "scripts": {
     "docusaurus": "docusaurus",
     "install:sdk": "cd ../sdk && yarn install",
-    "start": "docusaurus start",
-    "build:docs": "docusaurus build",
+    "typedoc:sdk": "npx typedoc --tsconfig ../sdk/tsconfig.json --out docs/api/ts-sdk ../sdk/src/*",
+    "start": "yarn typedoc:sdk && docusaurus start",
+    "build:docs": "yarn typedoc:sdk && docusaurus build",
     "build": "yarn install:sdk && yarn build:docs",
     "swizzle": "docusaurus swizzle",
     "deploy": "docusaurus deploy",
@@ -32,8 +33,7 @@
     "@docusaurus/module-type-aliases": "3.2.1",
     "@docusaurus/types": "3.2.1",
     "@tsconfig/docusaurus": "^2.0.0",
-    "docusaurus-plugin-typedoc": "^0.20.2",
-    "typedoc": "^0.25.2",
+    "typedoc": "^0.25.13",
     "typedoc-plugin-markdown": "^3.16.0",
     "typescript": "^5.1.6"
   },
