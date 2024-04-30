@@ -1,4 +1,4 @@
-pragma solidity 0.8.17;
+pragma solidity ^0.8.17;
 
 // Forked from https://github.com/keep-network/tbtc-v2
 
