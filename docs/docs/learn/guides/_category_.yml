@@ -1,4 +1,4 @@
 position: 2
-label: 'Using BOB'
+label: "Using BOB"
 collapsible: true
-collapsed: true
+collapsed: false
