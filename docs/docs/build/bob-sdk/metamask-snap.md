@@ -5,7 +5,7 @@ sidebar_label: BOB Bitcoin MetaMask Snap
 
 # BOB Bitcoin MetaMask Snap
 
-MetaMask Snaps allow us to add features and functionality to the standard MetaMask wallet. 
+MetaMask Snaps allow us to add features and functionality to the standard MetaMask wallet.
 The BOB Bitcoin Snap is a MetaMask Snap that allows you to use MetaMask to interact with Bitcoin on the BOB network.
 
 ## Features
@@ -24,21 +24,6 @@ Use MetaMask to:
 Take a look at the [BTC Snap source code](https://github.com/bob-collective/btcsnap) and [our MetaMask Snap demo application](../examples/metamask-ordinals/)
 
 :::
-
-## MetaMask Flask
-
-:::info MetaMask Flask
-
-The BOB MetaMask Snap is currently under review for official listing by MetaMask. Until then, the Snap is available as an unlisted Snap.
-
-Unlisted [MetaMask Snaps](https://metamask.io/snaps/) can only be used with [MetaMask Flask](https://metamask.io/flask/). MetaMask Snaps are not currently supported on mobile wallets, and will only run in the desktop version of Chrome or Firefox.
-
-:::
-
-
-## Create a Test Profile
-
-You will need to create a new browser profile to use with the MetaMask Flask extension, as having MetaMask and MetaMask Flask installed in the same browser profile can cause issues.
 
 ## Usage
 

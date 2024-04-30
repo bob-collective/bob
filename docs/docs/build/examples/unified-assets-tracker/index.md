@@ -1,8 +1,8 @@
 # Unified EVM and Bitcoin Assets with the MetaMask Bitcoin Snap Extension
 
-:::info MetaMask Flask
+:::info MetaMask Snap
 
-This demo uses [MetaMask Snaps](https://metamask.io/snaps/) and can only be used with [MetaMask Flask](https://metamask.io/flask/). MetaMask Snaps are not currently supported on mobile wallets, so this demo will only run in the desktop version of Chrome or Firefox.
+This demo uses [MetaMask Snaps](https://metamask.io/snaps/). MetaMask Snaps are not currently supported on mobile wallets, so this demo will only run in the desktop version of Chrome or Firefox.
 
 :::
 
