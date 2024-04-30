@@ -2,7 +2,7 @@
 
 // Forked from https://github.com/keep-network/tbtc-v2
 
-pragma solidity 0.8.17;
+pragma solidity ^0.8.17;
 
 import {BTCUtils} from "@bob-collective/bitcoin-spv/BTCUtils.sol";
 import {BytesLib} from "@bob-collective/bitcoin-spv/BytesLib.sol";
