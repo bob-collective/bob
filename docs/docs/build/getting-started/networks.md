@@ -10,7 +10,7 @@ sidebar_position: 2
 - Gas Token: ETH
 - RPC URL: https://rpc.gobob.xyz/
 - Explorer: https://explorer.gobob.xyz/
-- Bridge (BOB - Ethereum): https://app.gobob.xyz/
+- Bridge (BOB - Ethereum): https://app.gobob.xyz/bridge
 
 ## Ethereum Mainnet
 
