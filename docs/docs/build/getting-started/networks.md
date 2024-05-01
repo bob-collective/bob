@@ -4,27 +4,45 @@ sidebar_position: 2
 
 # Connect to BOB
 
-## Mainnet
+## BOB Mainnet
 
-Coming soon!
+- Chain ID: 60808
+- Gas Token: ETH
+- RPC URL: https://rpc.gobob.xyz/
+- Explorer: https://explorer.gobob.xyz/
+- Bridge (BOB - Ethereum): https://app.gobob.xyz/
 
-## Testnet
+## Ethereum Mainnet
 
-### BOB Testnet (Sepolia)
+- Chain ID: 1
+- Gas Token: ETH
+- RPC URL: [wss://ethereum-rpc.publicnode.com](wss://ethereum-rpc.publicnode.com)
+- Explorer: https://etherscan.io/
+
+## Bitcoin Mainnet
+
+- Ordinals API: https://ord-mainnet.gobob.xyz/docs/
+- Explorer: https://blockstream.info/
+
+# Testnet Information
+
+## BOB Testnet (Sepolia)
 
 - Chain ID: 111
 - Gas Token: ETH
-- RPC URL (BOB): https://testnet.rpc.gobob.xyz/
-- Explorer (BOB): https://testnet-explorer.gobob.xyz/
-- Bridge (BOB - Sepolia): https://app.gobob.xyz/
+- RPC URL: https://testnet.rpc.gobob.xyz/
+- Explorer: https://testnet-explorer.gobob.xyz/
+- Bridge (BOB Testnet - Sepolia): https://testnet.gobob.xyz/
 
-### Ethereum Sepolia
+## Ethereum Sepolia
 
-- RPC URL (Ethereum Sepolia): https://chainlist.org/chain/11155111
-- Explorer (Ethereum Sepolia): https://sepolia.etherscan.io/
-- Faucet (Ethereum Sepolia): https://faucetlink.to/sepolia
+- Chain ID: 11155111
+- Gas Token: ETH
+- RPC URL: [wss://ethereum-sepolia-rpc.publicnode.com/](wss://ethereum-sepolia-rpc.publicnode.com/)
+- Explorer: https://sepolia.etherscan.io/
+- Faucet: https://faucetlink.to/sepolia
 
-### Bitcoin Testnet
+## Bitcoin Testnet
 
-- Ordinals API (Bitcoin testnet): https://ord-testnet.gobob.xyz/docs/
-- Explorer (Bitcoin testnet): https://blockstream.info/testnet/
+- Ordinals API: https://ord-testnet.gobob.xyz/docs/
+- Explorer: https://blockstream.info/testnet/
