@@ -46,7 +46,7 @@ We love to work closely with you to make BOB useful to your use-case and ideas. 
 
 - [Wallets](/docs/build/tools/wallets): Learn how to use wallets on BOB.
 - [APIs](/docs/build/tools/api): Learn how to use APIs on BOB.
-- [Rust zkVM](/docs/build/tools/bonsai): Learn how to write Rust off-chain code that can be verified on-chain on BOB.
+- [Rust zkVM](/docs/build/tools/rust-zkvm): Learn how to write Rust off-chain code that can be verified on-chain on BOB.
 - [Oracles](/docs/build/tools/oracles): Learn how to use oracles on BOB.
 
 ## Contracts
