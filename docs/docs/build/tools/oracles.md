@@ -6,28 +6,17 @@
 
 Acurast provides [Chainlink-compatible Price Feeds](https://docs.acurast.com/integrations/evm/#chainlink-compatible-price-feeds) on BOB. See their guide on how to integrate with Acurast and the deployed price feeds.
 
-**Supported Networks**
-
-<!-- TODO: Verify Acurast on test/mainnet -->
-
-- BOB Mainnet
-- BOB Sepolia (Testnet)
-
 ## API3
 
 [API3](https://api3.org/) is building secure first-party oracles for BOB.
 
-API3 is live with:
+Once API3 is live on BOB, they will offer:
 
 - [dAPIs](https://docs.api3.org/guides/dapis/subscribing-managed-dapis/): First-party aggregated data feeds sourced directly from the data providers.
 - [Airnode](https://docs.api3.org/guides/airnode/calling-an-airnode/): The first-party serverless Oracle solution to bring any REST API onchain.
 - [QRNG](https://docs.api3.org/guides/qrng/): Quantum Random Number Generator for verifiable quantum RNG onchain.
 
-**Supported Networks**
-
-<!-- TODO: Verify API3 on test/mainnet -->
-
-- BOB Mainnet
+<!-- TODO: Add addresses after API3 deploys -->
 
 ## RedStone
 
@@ -35,11 +24,7 @@ API3 is live with:
 
 See [this guide](https://docs.redstone.finance/) to learn how to use RedStone price feeds.
 
-**Supported Networks**
-
-<!-- TODO: Verify RedStone on test/mainnet -->
-
-- BOB Mainnet
+<!-- TODO: Add RedStone addresses -->
 
 ## DIA
 
