@@ -10,4 +10,4 @@
 
 ## BTC Connect
 
-Made by [Particle Network](https://particle.network/), BTC Connect enables users to control ERC-4337 smart accounts (i.e. smart contract wallets) on EVM-chains with their native Bitcoin wallets (e.g. UniSat). Interactions with products deployed on BOB can be conducted via Bitcoin wallet signatures using their pre-built modal. Learn more in their [docs](https://docs.particle.network/developers/btc-connect) or in their [repo](<[docs](https://docs.particle.network/developers/btc-connect)>).
+Made by [Particle Network](https://particle.network/), BTC Connect enables users to control ERC-4337 smart accounts (i.e. smart contract wallets) on EVM-chains with their native Bitcoin wallets (e.g. UniSat). Interactions with products deployed on BOB can be conducted via Bitcoin wallet signatures using their pre-built modal. Learn more in their [docs](https://docs.particle.network/developers/btc-connect) or in their [docs](https://docs.particle.network/developers/btc-connect).

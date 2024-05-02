@@ -164,7 +164,7 @@ Get started: https://docs.unisat.io/dev/unisat-developer-service
 
 - [Wallets](/docs/build/tools/wallets)
 - [APIs](/docs/build/tools/api)
-- [Rust zkVM](/docs/build/tools/bonsai)
+- [Rust zkVM](/docs/build/tools/rust-zkvm)
 - [Oracles](/docs/build/tools/oracles)
 
 ### Collection of Bitcoin Tools
