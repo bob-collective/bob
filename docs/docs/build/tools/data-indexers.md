@@ -10,7 +10,5 @@ Their [subgraphs](https://goldsky.com/products/subgraphs) are fully spec-complia
 
 **Supported Networks**
 
-<!-- TODO: Verify Goldsky on test/mainnet -->
-
 - BOB Mainnet
 - BOB Sepolia (Testnet)
