@@ -1,7 +1,3 @@
----
-sidebar_position: 1
----
-
 # Wallets
 
 ## Bitcoin and BOB
@@ -33,8 +29,20 @@ MetaMask is a browser extension that allows you to interact with EVM-compatible 
 ### [OKX Wallet](https://www.okx.com/web3)
 
 - Type: Browser, Android, iOS, Desktop
-- Features: Bitcoin, Ordinals, EVM
+- Features: Bitcoin, Ordinals, BRC20, EVM
 - Networks: Any EVM network, Bitcoin Mainnet
+
+### [FoxWallet](https://foxwallet.com/)
+
+- Type: Android, iOS
+- Features: Bitcoin, Ordinals, BRC20, EVM
+- Networks: Any EVM network, Bitcoin Mainnet
+
+### [Pontem Wallet](https://pontemwallet.xyz/)
+
+- Type: Browser, Android, iOS,
+- Features: Bitcoin, Ordinals, BRC20, EVM
+- Networks: Any EVM network, Bitcoin Testnet, Mainnet
 
 ## Bitcoin
 
@@ -44,7 +52,7 @@ Wallets that only support Bitcoin.
 
 Open Source Chrome Extension for Bitcoin, Ordinals, and BRC20. Integration can be achieved through the [Wallet API](https://docs.unisat.io/dev/unisat-wallet-api).
 
-- Type: Browser 
+- Type: Browser
 - Features: Bitcoin, Ordinals, BRC20
 - Networks: Bitcoin Testnet, Mainnet
 
