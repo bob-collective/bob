@@ -1,4 +1,4 @@
 position: 2
-label: 'BOB SDK'
+label: "BOB SDK"
 collapsible: true
-collapsed: false
+collapsed: true
