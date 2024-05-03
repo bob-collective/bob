@@ -150,15 +150,13 @@ pragma solidity ^0.8.13;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {BTCUtils} from "@bob-collective/bitcoin-spv/BTCUtils.sol";
-import {BitcoinTx} from "@bob-collective/bob/bridge/BitcoinTx.sol";
-import {IRelay} from "@bob-collective/bob/bridge/IRelay.sol";
+import {BitcoinTx} from "@bob-collective/bob/utils/BitcoinTx.sol";
+import {IRelay} from "@bob-collective/bob/relay/IRelay.sol";
 import {TestLightRelay} from "@bob-collective/bob/relay/TestLightRelay.sol";
-import {BridgeState} from "@bob-collective/bob/bridge/BridgeState.sol";
 
 using SafeERC20 for IERC20;
 
 contract HelloBitcoin {
-    using BitcoinTx for BridgeState.Storage;
 
     /**
      * @dev Mapping to store BTC to USDT (or other ERC20) swap orders based on their unique identifiers.
@@ -238,7 +236,7 @@ contract HelloBitcoin {
     event ordinalSellOrderBtcSellOrderAccepted(uint256 indexed id, BitcoinAddress bitcoinAddress);
     event ordinalSuccessfullySendtoDestination(uint256 id);
 
-    BridgeState.Storage internal relay;
+    IRelay internal relay;
     TestLightRelay internal testLightRelay;
 
     /**
@@ -250,9 +248,8 @@ contract HelloBitcoin {
      * https://docs.gobob.xyz/docs/contracts/src/src/relay/LightRelay.sol/contract.LightRelay
      */
     constructor(IRelay _relay, address _usdtContractAddress) {
-        relay.relay = _relay;
-        relay.txProofDifficultyFactor = 1;
-        testLightRelay = TestLightRelay(address(relay.relay));
+        relay = _relay;
+        testLightRelay = TestLightRelay(address(relay));
         usdtContractAddress = IERC20(_usdtContractAddress);
     }
 
@@ -261,7 +258,7 @@ contract HelloBitcoin {
      * @param _relay The relay contract implementing the IRelay interface.
      */
     function setRelay(IRelay _relay) internal {
-        relay.relay = _relay;
+        relay = _relay;
     }
 
     /**
@@ -343,8 +340,8 @@ contract HelloBitcoin {
         // Set the difficulty of the relay based on the Bitcoin headers in the proof
         testLightRelay.setDifficultyFromHeaders(proof.bitcoinHeaders);
 
-        // Validate the BTC transaction proof using the relay
-        relay.validateProof(transaction, proof);
+        // Validate the BTC transaction proof using the relay, in production a higher than 1 block confirmation should be used
+        BitcoinTx.validateProof(relay, 1, transaction, proof);
 
         // Check if the BTC transaction output matches the expected amount and recipient
         _checkBitcoinTxOutput(acceptedOrder.sellAmountBtc, acceptedOrder.btcBuyer, transaction);
@@ -448,8 +445,8 @@ contract HelloBitcoin {
         // Set the relay difficulty based on the Bitcoin headers in the proof
         testLightRelay.setDifficultyFromHeaders(proof.bitcoinHeaders);
 
-        // Validate the BTC transaction proof using the relay
-        relay.validateProof(transaction, proof);
+        // Validate the BTC transaction proof using the relay, in production a higher than 1 block confirmation shoul be used
+        BitcoinTx.validateProof(relay, 1, transaction, proof);
 
         // Ensure that the BTC transaction input spends the specified UTXO associated with the ordinal sell order
         BitcoinTx.ensureTxInputSpendsUtxo(transaction.inputVector, acceptedOrder.utxo);
@@ -487,7 +484,9 @@ contract HelloBitcoin {
         bytes32 scriptPubKeyHash =
             keccak256(abi.encodePacked(uint8(bitcoinAddress.scriptPubKey.length), bitcoinAddress.scriptPubKey));
 
-        uint256 txOutputValue = BitcoinTx.getTxOutputValue(scriptPubKeyHash, transaction.outputVector);
+        uint256 txOutputValue = BitcoinTx
+            .processTxOutputs(transaction.outputVector, scriptPubKeyHash)
+            .value;
 
         require(txOutputValue >= expectedBtcAmount, "Bitcoin transaction amount is lower than in accepted order.");
     }
