@@ -34,6 +34,5 @@ See [this guide](https://docs.diadata.org/introduction/intro-to-dia-oracles/acce
 
 **Supported Networks**
 
-<!-- TODO: Verify DIA on test/mainnet -->
-
-- BOB Mainnet: 0x4d24e7c1cf0ed63bc8c6cb5a795af31fd8127c6b
+- BOB Mainnet: [0x4d24e7c1cf0ed63bc8c6cb5a795af31fd8127c6b](https://explorer.gobob.xyz/address/0x4d24E7c1cF0ed63bc8c6cB5a795af31FD8127C6B)
+- BOB Testnet: [0xe5c6f823a73c7839f0d4cbc9cf2a6a220953bbe4](https://testnet-explorer.gobob.xyz/address/0xE5c6f823A73c7839F0D4CBc9Cf2A6A220953bBE4)
