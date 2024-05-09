@@ -9,6 +9,7 @@ sidebar_position: 2
 - Chain ID: 60808
 - Gas Token: ETH
 - RPC URL: https://rpc.gobob.xyz/
+- WS URL: wss://rpc.gobob.xyz
 - Explorer: https://explorer.gobob.xyz/
 - Bridge (BOB - Ethereum): https://app.gobob.xyz/bridge
 
