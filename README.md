@@ -65,3 +65,30 @@ Proof length is the number of headers needed before and after a retarget to upda
 |-------------|----------------|-------------------------------------------------------------------------------------------------------------------------------------|
 | BOB Sepolia | TestLightRelay | [0x4c51bc419ead57da0d825afae3090f2f76e5892d](https://testnet-explorer.gobob.xyz/address/0x4c51bc419ead57da0d825afae3090f2f76e5892d) |
 | BOB Mainnet | LightRelay     | []() |
+
+## Security
+
+Let's review the calculation given in the [Bitcoin Wiki](https://en.bitcoin.it/wiki/Difficulty) to compute the hashrate: 
+
+```
+hashrate = difficulty * 2**32 / 600 (60 * 10 = 10 minutes)
+hashrate = ~157 (GH/s) = (22012.4941572 * 2**32 / 600) / 10**9 (example)
+hashrate = ~595 (EH/s) (83148355189239.77 * 2**32 / 600) / 10**18 (current)
+```
+
+The `LightRelay` requires that the proof is included at the *current* or *previous* difficulty so we can assume the attacker has 2016 * 2 blocks to brute-force a valid chain of `proofLength`.
+This is possible since due to SPV assumptions we can not verify the transactions references by the block header are valid, only that sufficient PoW has accumulated on the chain.
+
+Let's assume the attacker can generate 6 blocks (with some invalid transactions) within two difficulty adjustment period, 2016 * 2 blocks (four weeks).
+
+```
+hashrate * 6/(2016*2)
+595 * 6/(2016*2) = 0.885 EH/s (~885712 TH/s)
+```
+
+So we need ~0.148% of the current hashrate to build six blocks in two weeks.
+
+If we estimate it would cost $11 per TH/s (excluding electricity and other setup costs) then the total cost of that hashrate would be $9,742,832.
+This excludes the opportunity cost from actually mining on Bitcoin mainnet, receiving fees and block rewards.
+
+Therefore, provided the value protected by the relay is less than $10m protocols secured by the relay are "economically safe".
