@@ -5,6 +5,12 @@ sidebar_label: What Can I Build on BOB?
 
 # What Can I Build on BOB?
 
+:::tip Add your project to BOB Fusion
+
+If you're interested in building any of these ideas, [contact us](https://forms.gle/EKYmrAhPsyiQ3ua57) to join the BOB Fusion campaign.
+
+:::
+
 ## Use Case Ideas
 
 - Decentralized Bitcoin interest (convert staking rewards of other tokens to Bitcoin)
