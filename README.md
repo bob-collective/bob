@@ -52,7 +52,8 @@ npm run update-relay -- --dev --network=mainnet --relay-address=0x<relay-address
 FOUNDRY_PROFILE=optimized npm run deploy-relay -- --init-height=latest --network=testnet --proof-length=20 --testnet --rpc-url=testnet --private-key=0x<exported-privatekey>
 
 # mainnet
-FOUNDRY_PROFILE=optimized npm run deploy-relay -- --init-height=latest --network=mainnet --proof-length=20 --private-key=0x<exported-privatekey>
+FOUNDRY_PROFILE=optimized npm run deploy-relay -- --init-height=latest --network=mainnet --proof-length=20 --rpc-url=mainnet --private-key=0x<exported-privatekey>
+FOUNDRY_PROFILE=optimized forge verify-contract --verifier blockscout --verifier-url https://explorer.gobob.xyz/api 0x9fe7ef727da3d79e0308ff43f31ea1d077ee9f41 src/relay/LightRelay.sol:LightRelay
 ```
 
 The initialization height should be a multiple of 2016 with at least one subsequent retarget (i.e. if using 2016 as the starting height, blocks 4031-4032 must exist).
@@ -64,7 +65,7 @@ Proof length is the number of headers needed before and after a retarget to upda
 | Network     | Name           | Address                                                                                                                             |
 |-------------|----------------|-------------------------------------------------------------------------------------------------------------------------------------|
 | BOB Sepolia | TestLightRelay | [0x4c51bc419ead57da0d825afae3090f2f76e5892d](https://testnet-explorer.gobob.xyz/address/0x4c51bc419ead57da0d825afae3090f2f76e5892d) |
-| BOB Mainnet | LightRelay     | []() |
+| BOB Mainnet | LightRelay     | [0x9fe7ef727da3d79e0308ff43f31ea1d077ee9f41](https://explorer.gobob.xyz/address/0x9fe7ef727da3d79e0308ff43f31ea1d077ee9f41) |
 
 ## Security
 
