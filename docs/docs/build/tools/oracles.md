@@ -20,9 +20,11 @@ Once API3 is live on BOB, they will offer:
 
 ## RedStone
 
-[RedStone](https://redstone.finance/) provides 800+ [price feeds](https://app.redstone.finance/) for BOB.
+[RedStone](https://redstone.finance/) is a modular Oracle providing Pull & Push model on BOB.
 
-See [this guide](https://docs.redstone.finance/) to learn how to use RedStone price feeds.
+1. You can use multiple Push (RedStone Classic) feeds including BTC, ETH, STONE, USDT, USDC, wstETH following the [addresses in the Docs](https://docs.redstone.finance/docs/smart-contract-devs/price-feeds).
+
+2. Integrate versitile Pull (RedStone Core) feeds with low-latency and innovative design of attaching signed data packages in transaction call-data by [following these steps](https://docs.redstone.finance/docs/smart-contract-devs/get-started/redstone-core).
 
 <!-- TODO: Add RedStone addresses -->
 
