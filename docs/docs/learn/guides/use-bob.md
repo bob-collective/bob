@@ -9,7 +9,7 @@ sidebar_label: "Testing BOB"
 
 The P2P swap demo shows how BOB enables swaps between BTC, ordinals, and ERC20 assets **without bridging**.
 
-- [P2P Swap Demo](https://demo.gobob.xyz/)
+- [P2P Swap Demo](https://testnet.gobob.xyz/)
 - [User Guide](/docs/build/examples/btc-swap/)
 
 ## BOB Testnet

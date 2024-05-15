@@ -15,7 +15,7 @@ If you want to engage with the community and learn how you can contribute, here 
 - Join our [Telegram](https://t.me/+CyIcLW2nfaFlNDc1)
 - Follow us on [Twitter](https://twitter.com/build_on_bob)
 <!-- - Join the [forum](https://forum.gobob.xyz/) to discuss ideas and share feedback -->
-- Play with the testnet [P2P Swap](https://demo.gobob.xyz/) to see BOB in action
+- Play with the testnet [P2P Swap](https://testnet.gobob.xyz/) to see BOB in action
 - Keep an eye on the growing [Ecosystem](https://www.gobob.xyz/)
 
 ## Builders
