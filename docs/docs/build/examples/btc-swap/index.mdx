@@ -1,7 +1,7 @@
-import Tabs from "@theme/Tabs";
-import TabItem from "@theme/TabItem";
-import SellOrdinalConnectedImageUrl from "./add-sell-ordinal-connected-order-form.png";
-import SellOrdinalDisconnectedImageUrl from "./add-sell-ordinal-disconnected-order-form.png";
+import Tabs from '@theme/Tabs'
+import TabItem from '@theme/TabItem'
+import SellOrdinalConnectedImageUrl from './add-sell-ordinal-connected-order-form.png'
+import SellOrdinalDisconnectedImageUrl from './add-sell-ordinal-disconnected-order-form.png'
 
 # Trustless P2P Swap BTC and ERC20 using a BTC Light Client
 
@@ -12,7 +12,7 @@ The application currently supports testnet BTC, testnet USDC, and WBTC (WBTC is 
 
 :::tip App
 
-You can try the demo at [https://testnet.gobob.xyz](https://testnet.gobob.xyz/).
+You can try the demo at [https://demo.gobob.xyz](https://demo.gobob.xyz/).
 
 :::
 
@@ -38,7 +38,7 @@ When connecting to our test network the gas token ticker may be shown as somethi
 :::
 
 - Install one of the supported EVM wallets (Metamask, Ledger, WalletConnect or Coinbase Wallet).
-- Go to [testnet.gobob.xyz](https://testnet.gobob.xyz)
+- Go to [demo.gobob.xyz](https://demo.gobob.xyz)
 - Click 'Connect Wallet' button at the top right of the UI.
 - Within the 'EVM Wallet' tab, select one of the available wallets.
 
@@ -53,7 +53,7 @@ The UI can sometimes fail to connect if you have multiple wallets installed. If 
 ### Connecting BTC Wallet
 
 - Install one of the supported BTC wallets (XVerse, Unisat, Leather - coming soon).
-- Go to [testnet.gobob.xyz](https://testnet.gobob.xyz)
+- Go to [demo.gobob.xyz](https://demo.gobob.xyz)
 - Click 'Connect Wallet' button at the top right of the UI.
 - Within the 'BTC Wallet' tab, select one of the available wallets.
 
@@ -403,30 +403,30 @@ This can be done using the faucet buttons as described in the [Creating and Fund
 This is done using a React hook which extends Viem's `getContract` method. This allows contract member types to be inferred, rather than respecified in the application.
 
 ```ts
-import { getContract } from "viem";
-import { usePublicClient, useWalletClient } from "wagmi";
-import { contracts, ContractType } from "../constants";
-import { useMemo } from "react";
+import { getContract } from 'viem'
+import { usePublicClient, useWalletClient } from 'wagmi'
+import { contracts, ContractType } from '../constants'
+import { useMemo } from 'react'
 
 // Wrapper around ethers Contract to automatically get contract types
 // with read and write objects automatically constructed from provider and signer.
 const useContract = (contractType: ContractType) => {
-  const publicClient = usePublicClient();
-  const { data: walletClient } = useWalletClient();
+  const publicClient = usePublicClient()
+  const { data: walletClient } = useWalletClient()
 
   return useMemo(() => {
-    const { address, abi } = contracts[contractType];
+    const { address, abi } = contracts[contractType]
 
     return getContract({
       address,
       abi,
       publicClient,
       walletClient: walletClient ?? undefined,
-    });
-  }, [walletClient, publicClient, contractType]);
-};
+    })
+  }, [walletClient, publicClient, contractType])
+}
 
-export { useContract };
+export { useContract }
 ```
 
 This can then be called in the application:
@@ -435,13 +435,13 @@ This can then be called in the application:
 // contracts/config.ts
 const contracts = {
   [ContractType.BTC_MARKETPLACE]: {
-    address: "0x3336ff156B91B35E520741a660B9717C50c84c86",
+    address: '0x3336ff156B91B35E520741a660B9717C50c84c86',
     abi: BtcMarketplaceAbi,
   },
-} as const;
+} as const
 
 // App.tsx
 const { read: readBtcMarketplace, write: writeBtcMarketplace } = useContract(
   ContractType.BTC_MARKETPLACE
-);
+)
 ```
