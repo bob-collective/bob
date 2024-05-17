@@ -9,6 +9,12 @@ sidebar_label: BOB Fusion
 
 BOB Fusion is the official points program of BOB, where users can harvest BOB Spice (points) based on their on-chain activity on the BOB mainnet. BOB Spice (points) represent your contribution to the BOB ecosystem - today and in the future.
 
+:::tip Add your project to Fusion
+
+Building on BOB? [Contact us](https://forms.gle/EKYmrAhPsyiQ3ua57) to join the Fusion campaign after you deploy on BOB.
+
+:::
+
 ## Season 1
 
 Season 1 started on 27/03/2024 and ended with the BOB mainnet launch on 1st May 2024.
