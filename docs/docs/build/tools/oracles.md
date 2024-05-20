@@ -20,13 +20,14 @@ Once API3 is live on BOB, they will offer:
 
 ## RedStone
 
-[RedStone](https://redstone.finance/) is a modular Oracle providing Pull & Push model on BOB.
+[RedStone](https://redstone.finance/) is a modular Oracle providing Pull and Push model on BOB.
 
-1. You can use multiple Push (RedStone Classic) feeds including BTC, ETH, STONE, USDT, USDC, wstETH following the [addresses in the Docs](https://docs.redstone.finance/docs/smart-contract-devs/price-feeds).
+1. You can use multiple Push (RedStone Classic) feeds including BTC, ETH, STONE, USDT, USDC, wstETH following the [addresses in the docs](https://docs.redstone.finance/docs/smart-contract-devs/price-feeds).
+2. Integrate versatile Pull (RedStone Core) feeds with low-latency and innovative design of attaching signed data packages in transaction call-data by [following these steps](https://docs.redstone.finance/docs/smart-contract-devs/get-started/redstone-core).
 
-2. Integrate versitile Pull (RedStone Core) feeds with low-latency and innovative design of attaching signed data packages in transaction call-data by [following these steps](https://docs.redstone.finance/docs/smart-contract-devs/get-started/redstone-core).
+**Assets (BOB Mainnet)**
 
-<!-- TODO: Add RedStone addresses -->
+- STONE, USDC, USDT, BTC, ETH, wstETH multi-price feed [0x2d484E029b8Ae5cA6335DAe11fC726B232bE87D1](https://explorer.gobob.xyz/address/0x2d484E029b8Ae5cA6335DAe11fC726B232bE87D1)
 
 ## DIA
 
@@ -34,7 +35,31 @@ Once API3 is live on BOB, they will offer:
 
 See [this guide](https://docs.diadata.org/introduction/intro-to-dia-oracles/access-the-oracle) to learn how to use DIA price feeds.
 
+**Assets (BOB Mainnet)**
+
+- WBTC/USD: [0x6Ae049df8FC215aC1A5f5226B220E51301FE7e3D](https://explorer.gobob.xyz/address/0x6Ae049df8FC215aC1A5f5226B220E51301FE7e3D)
+- tBTC/USD: [0x7F1AD8fBb80A262cE5987439d2F4B52f1a426f55](https://explorer.gobob.xyz/address/0x7F1AD8fBb80A262cE5987439d2F4B52f1a426f55)
+- USDC/USD: [0x13B6052B34c6A9Fe0419E5154826a1CB858f3181](https://explorer.gobob.xyz/address/0x13B6052B34c6A9Fe0419E5154826a1CB858f3181)
+- USDT/USD: [0xF67Ce8007810e8e87B3871B104366b105a71bB55](https://explorer.gobob.xyz/address/0xF67Ce8007810e8e87B3871B104366b105a71bB55)
+- ETH/USD: [0x27abC874f709fbc7b2af4153e875cf52C701725E](https://explorer.gobob.xyz/address/0x27abC874f709fbc7b2af4153e875cf52C701725E)
+- wstETH/USD: [0xa6aEdd027Bc91569617c26EEB6146A2b9148788a](https://explorer.gobob.xyz/address/0xa6aEdd027Bc91569617c26EEB6146A2b9148788a)
+- eSOV/USD: [0x3844E091e4058c7B8D96b3eCb676d0B40d1941d2](https://explorer.gobob.xyz/address/0x3844E091e4058c7B8D96b3eCb676d0B40d1941d2)
+
 **Supported Networks**
 
 - BOB Mainnet: [0x4d24e7c1cf0ed63bc8c6cb5a795af31fd8127c6b](https://explorer.gobob.xyz/address/0x4d24E7c1cF0ed63bc8c6cB5a795af31FD8127C6B)
 - BOB Testnet: [0xe5c6f823a73c7839f0d4cbc9cf2a6a220953bbe4](https://testnet-explorer.gobob.xyz/address/0xE5c6f823A73c7839F0D4CBc9Cf2A6A220953bBE4)
+
+## Tellor
+
+[Tellor](https://tellor.io/) is a decentralized oracle network on BOB.
+
+Tellor provides [price feeds](https://tellor.readthedocs.io/en/latest/PriceFeed/) for BOB. See their guide on how to use Tellor price feeds.
+
+**Assets (BOB Mainnet)**
+
+- Oracle: [0x896419Ed2E0dC848a1f7d2814F4e5Df4b9B9bFcc](https://explorer.gobob.xyz/address/0x896419Ed2E0dC848a1f7d2814F4e5Df4b9B9bFcc)
+
+**Assets (BOB Testnet)**
+
+- Oracle: [0xC866DB9021fe81856fF6c5B3E3514BF9D1593D81](https://testnet-explorer.gobob.xyz/address/0xC866DB9021fe81856fF6c5B3E3514BF9D1593D81)
