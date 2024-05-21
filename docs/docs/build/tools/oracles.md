@@ -52,7 +52,7 @@ See [this guide](https://docs.diadata.org/introduction/intro-to-dia-oracles/acce
 
 ## Tellor
 
-[Tellor](https://tellor.io/) is a versitile oracle protocol that can provide any data type permissionlessly, with crypto-economic liveness and security. 
+[Tellor](https://tellor.io/) is a versatile oracle protocol that can provide any data type permissionlessly, with crypto-economic liveness and security. 
 
 To use Tellor data see their [integration guide](https://docs.tellor.io/tellor/getting-data/solidity-integration) and BOB related [contracts](https://docs.tellor.io/tellor/the-basics/contracts-reference#bob).
 
