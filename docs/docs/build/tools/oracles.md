@@ -52,9 +52,9 @@ See [this guide](https://docs.diadata.org/introduction/intro-to-dia-oracles/acce
 
 ## Tellor
 
-[Tellor](https://tellor.io/) is a decentralized oracle network on BOB.
+[Tellor](https://tellor.io/) is a versitile oracle protocol that can provide any data type permissionlessly, with crypto-economic liveness and security. 
 
-Tellor provides [price feeds](https://tellor.readthedocs.io/en/latest/PriceFeed/) for BOB. See their guide on how to use Tellor price feeds.
+To use Tellor data see their [integration guide](https://docs.tellor.io/tellor/getting-data/solidity-integration) and BOB related [contracts](https://docs.tellor.io/tellor/the-basics/contracts-reference#bob).
 
 **Assets (BOB Mainnet)**
 
