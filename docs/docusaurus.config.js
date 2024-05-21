@@ -12,6 +12,9 @@ const DISCORD = "https://discord.gg/gobob";
 const TWITTER = "https://twitter.com/build_on_bob";
 const TELEGRAM = "https://t.me/+CyIcLW2nfaFlNDc1";
 const FORUM = "https://forum.gobob.xyz";
+const PRESS_KIT = "https://build-on-bitcoin.notion.site/BOB-Press-Kit-1be66c38713d480eab01000bdd164206";
+const BRAND_KIT = "https://drive.google.com/drive/u/0/folders/1c30QDkyWgaV8xSEpCXFWJj1WQyUjSm7N";
+const ONE_PAGER = "https://build-on-bitcoin.notion.site/BOB-Summary-23fad2d446ff467d8551b924eb3338fc";
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
@@ -121,6 +124,10 @@ const config = {
                 label: "Twitter",
                 href: TWITTER,
               },
+              {
+                label: "Telegram",
+                href: TELEGRAM,
+              },
               // {
               //   label: "Forum",
               //   href: FORUM,
@@ -130,10 +137,6 @@ const config = {
           {
             title: "Builders",
             items: [
-              {
-                label: "Telegram",
-                href: TELEGRAM,
-              },
               {
                 label: "GitHub",
                 href: GITHUB_LINK,
@@ -146,6 +149,18 @@ const config = {
               {
                 label: "BOB Homepage",
                 href: LANDING_PAGE,
+              },
+              {
+                label: "Press Kit",
+                href: PRESS_KIT,
+              },
+              {
+                label: "Brand Kit",
+                href: BRAND_KIT,
+              },
+              {
+                label: "One Pager",
+                href: ONE_PAGER,
               },
             ],
           },
