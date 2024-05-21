@@ -12,7 +12,7 @@ const DISCORD = "https://discord.gg/gobob";
 const TWITTER = "https://twitter.com/build_on_bob";
 const TELEGRAM = "https://t.me/+CyIcLW2nfaFlNDc1";
 const FORUM = "https://forum.gobob.xyz";
-const PRESS_KIT = "https://www.notion.so/build-on-bitcoin/BOB-Press-Kit-1be66c38713d480eab01000bdd164206#0ea814f8b593432ca6f3699fc3886948";
+const PRESS_KIT = "https://build-on-bitcoin.notion.site/BOB-Press-Kit-1be66c38713d480eab01000bdd164206";
 const BRAND_KIT = "https://drive.google.com/drive/u/0/folders/1c30QDkyWgaV8xSEpCXFWJj1WQyUjSm7N";
 const ONE_PAGER = "https://build-on-bitcoin.notion.site/BOB-Summary-23fad2d446ff467d8551b924eb3338fc";
 
