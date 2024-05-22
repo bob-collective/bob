@@ -38,7 +38,7 @@ forge fmt
 
 ## Local Testnet
 
-To deploy the relay contract to a local environment for testing use our convenience script [here](https://github.com/bob-collective/bob/blob/master/sdk/scripts/init-bridge.ts):
+To deploy the relay contract to a local environment for testing use our convenience script [here](https://github.com/bob-collective/bob/blob/master/sdk/scripts/relay-retarget.ts):
 
 ```shell
 # start local ethereum testnet node
