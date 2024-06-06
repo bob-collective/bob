@@ -37,3 +37,23 @@ You can reduce the gas fees by following [the steps from the MetaMask documentat
 :::tip
 Gas fees change based on the BOB network utilization. If you consistently face issues with MetaMask, you might want to consider switching to other wallets such as Rainbow or Rabby.
 :::
+
+## I can't connect to the BOB network. How can I change the RPC node?
+
+If you are unable to connect to the BOB network, you can try changing the RPC node in your wallet. Here is an example how to change the RPC node in MetaMask:
+
+1. Open the wallet settings.
+
+![Settings](./metamask-settings.png)
+
+2. Go to the "Networks" tab and select the BOB Network to change RPC nodes.
+
+We recommend using the following network settings:
+
+- **Network Name**: BOB Mainnet
+- **New RPC URL**: https://bob-mainnet.public.blastapi.io
+- **Chain ID**: 60808
+- **Symbol**: ETH
+- **Block Explorer URL**: https://explorer.gobob.xyz 
+
+![Networks](./metamask-network.png)
