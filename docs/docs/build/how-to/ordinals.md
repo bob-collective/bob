@@ -18,7 +18,7 @@ You can use the [BOB MetaMask Snap](https://github.com/bob-collective/btcsnap) w
 
 :::tip Live Demo
 
-Check out the live demo at [ordinals.gobob.xyz](https://ordinals.gobob.xyz/).
+Check out the live demo at [testnet.gobob.xyz/demo/ordinals](https://testnet.gobob.xyz/demo/ordinals).
 
 :::
 
