@@ -9,9 +9,14 @@ sidebar_position: 2
 - Chain ID: 60808
 - Gas Token: ETH
 - RPC URL: https://rpc.gobob.xyz/
-- WS URL: wss://rpc.gobob.xyz
+- WS URL: [wss://rpc.gobob.xyz](wss://rpc.gobob.xyz)
 - Explorer: https://explorer.gobob.xyz/
 - Bridge (BOB - Ethereum): https://app.gobob.xyz/bridge
+
+If you are having issues with your RPC connection, try [BlastAPI's public endpoints for BOB](https://blastapi.io/public-api/bob).
+
+- RPC URL: https://bob-mainnet.public.blastapi.io
+- WS URL: [wss://bob-mainnet.public.blastapi.io](wss://bob-mainnet.public.blastapi.io)
 
 ## Ethereum Mainnet
 
