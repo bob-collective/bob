@@ -41,7 +41,7 @@ If you want to use the testnet to interact with other apps deployed on BOB or de
 
 ## Using the faucet and importing tokens
 
-1. Click the Get Tokens button on the the [P2P swap UI](https://app.gobob.xyz/demo/p2p-swap). This will fund your account with testnet WBTC and USDC.
+1. Click the Get Tokens button on the the [P2P swap UI](https://testnet.gobob.xyz/demo/p2p-swap). This will fund your account with testnet WBTC and USDC.
 2. Import the ERC20 tokens from the following contract addresses:
    - WBTC: `0x2868d708e442A6a940670d26100036d426F1e16b`
    - USDC: `0x27c3321E40f039d10D5FF831F528C9CEAE601B1d`
