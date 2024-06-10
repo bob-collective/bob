@@ -9,6 +9,17 @@ sidebar_label: Onboarding to BOB
 
 There are several ways to bridge tokens to and from BOB, depending on which network and token you're interested in moving. Here is an overview of your options.
 
+| Where Your Tokens Are                                    | How to Move Your Tokens to BOB                      |
+| -------------------------------------------------------- | --------------------------------------------------- |
+| Centralized Exchanges (e.g. Coinbase, Binance, OKX)      | Bridge to Base, then [Link to Base > BOB guide]     |
+| Bitcoin                                                  | Link to BOB Onramp                                  |
+| Bitcoin Layer 2s                                         | Link to Fusion (pending them added to the list)     |
+| Ethereum                                                 | Link to Fusion                                      |
+| Ethereum Layer 2s                                        | Link to Fusion                                      |
+| Other EVM-compatible Networks                            | Link to Fusion                                      |
+| Solana                                                   | Link to Fusion (pending it being added to the list) |
+| Non-EVM-compatible Networks (Tron, Starknet, Aptos, Sui) | Link to Fusion (pending it being added to the list) |
+
 | Bridge Name                                                                                                                                            | Supported Networks                                                                                                                                                                                           | Supported Tokens                                                         |
 | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
 | [BOB Bridge](https://app.gobob.xyz/bridge)<br/> ([OP Standard Bridge docs](https://docs.optimism.io/builders/app-developers/bridging/standard-bridge)) | Ethereum                                                                                                                                                                                                     | WBTC, tBTC, rETH, wstETH, STONE, USDT, USDC, DAI, eDLLR, ETH, eSOV, ALEX |
