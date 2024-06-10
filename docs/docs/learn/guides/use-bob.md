@@ -12,18 +12,18 @@ The P2P swap demo shows how BOB enables swaps between BTC, ordinals, and ERC20 a
 - [P2P Swap Demo](https://testnet.gobob.xyz/)
 - [User Guide](/docs/build/examples/btc-swap/)
 
-## BOB Testnet
+## BOB Sepolia (Testnet)
 
 If you want to use the testnet to interact with other apps deployed on BOB or deploy your own contracts, please follow the following steps:
 
 1. Install an EVM wallet such as [Metamask](https://metamask.io/).
-2. Add the BOB testnet to MetaMask or other wallet:
+2. Add the BOB Sepolia (Testnet) network to MetaMask or other wallet:
    1. Open the MetaMask browser extension.
    2. Open the network selection dropdown menu by clicking the dropdown button at the top of the extension.
    3. Click the Add network button.
    4. Click Add a network manually.
    5. In the Add a network manually dialog that appears, enter the following information:
-      - Network Name: BOB Testnet
+      - Network Name: BOB Sepolia (Testnet)
       - New RPC URL: https://testnet.rpc.gobob.xyz
       - Chain ID: 111
       - Currency Symbol (optional): ETH
@@ -33,9 +33,9 @@ If you want to use the testnet to interact with other apps deployed on BOB or de
 ![MetaMask](add-to-wallet.png)
 
 3. Get Sepolia ETH from one the faucets: https://faucetlink.to/sepolia
-4. Connect your wallet to the Sepolia BOB bridge and bridge your ETH to the BOB testnet:
+4. Connect your wallet to the Sepolia BOB bridge and bridge your ETH to the BOB Sepolia (Testnet):
    - [BOB Bridge](https://app.gobob.xyz/)
-5. You are now ready to use the BOB testnet
+5. You are now ready to use the BOB Sepolia (Testnet)
 
 ![BOB Bridge](bridge.png)
 

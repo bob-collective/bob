@@ -2,8 +2,8 @@
 sidebar_position: 2
 ---
 
-import Tabs from '@theme/Tabs'
-import TabItem from '@theme/TabItem'
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
 
 # Hello Bitcoin
 
@@ -32,15 +32,15 @@ Solidity and a toolchain are sufficient to get you started deploying contracts o
 ### Overview of the contract
 
 - The contract allows swapping between BTC->USDT and Ordinal->USDT using the BTC relay on testnet without requiring the BTC or ordinals to be bridged to BOB.
-- The contract integrates the [BTC relay](/docs/contracts/src/src/relay/LightRelay.sol/contract.LightRelay) to enable trustless communication between the Bitcoin blockchain and the BOB testnet.
+- The contract integrates the [BTC relay](/docs/contracts/src/src/relay/LightRelay.sol/contract.LightRelay) to enable trustless communication between the Bitcoin blockchain and BOB Sepolia (Testnet).
 
 ### Objectives
 
 - **Set up a development environment**: Learn how to set up a development environment for your BOB smart contract development.
 - **Create a Smart Contract for BOB**: We will use [HelloBitcoin smart contract](https://github.com/bob-collective/StarterKit/blob/main/src/HelloBitcoin.sol) present in the developer kit.
 - **Compile a Smart Contract for BOB**: Compile your HelloBitcoin smart contract using the development environment.
-- **Deploy a Smart Contract to BOB**: Deploy your compiled smart contract to the BOB testnet.
-- **Interact with a Smart Contract Deployed on BOB**: Learn how to interact with the smart contract you've deployed on the BOB testnet.
+- **Deploy a Smart Contract to BOB**: Deploy your compiled smart contract to BOB Sepolia (Testnet).
+- **Interact with a Smart Contract Deployed on BOB**: Learn how to interact with the smart contract you've deployed on BOB Sepolia (Testnet).
 
 ### Prerequisites
 
@@ -613,7 +613,7 @@ Add the `_RELAY` ie `TestLightRelay` address copied above.
 Add the `_USDTCONTRACTADDRESS` address as `0xF58de5056b7057D74f957e75bFfe865F571c3fB6`.
 
 :::tip
-If you want, you can also modify the contract at a later stage and use [other ERC20 contracts already deployed on BOB testnet](/docs/build/contracts/).
+If you want, you can also modify the contract at a later stage and use [other ERC20 contracts already deployed on BOB Sepolia (Testnet)](/docs/build/contracts/).
 :::
 
 Click `Deploy` and sign the transaction pop up message.
@@ -716,4 +716,4 @@ We recommend taking a look at our [Trustless P2P Swap](https://docs.gobob.xyz/do
 - [HelloBitcoin contract code](https://github.com/bob-collective/StarterKit/blob/main/src/HelloBitcoin.sol)
 - [Remix](https://remix.ethereum.org/)
 - [Foundry](https://book.getfoundry.sh/)
-- [BOB testnet](networks)
+- [BOB Sepolia (Testnet)](networks)
