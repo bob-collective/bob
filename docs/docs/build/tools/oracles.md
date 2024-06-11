@@ -8,13 +8,15 @@ Acurast provides [Chainlink-compatible Price Feeds](https://docs.acurast.com/int
 
 ## API3
 
-[API3](https://api3.org/) is building secure first-party oracles for BOB.
+The [API3 Market](https://market.api3.org/bob) provides access to 200+ price feeds on [BOB Mainnet](https://market.api3.org/bob) and [Testnet](https://market.api3.org/bob-sepolia-testnet). The price feeds operate as a native push oracle and can be activated instantly via the Market UI.
 
-Once API3 is live on BOB, they will offer:
+The price feeds are delivered by an aggregate of [first-party oracles](https://docs.api3.org/explore/airnode/why-first-party-oracles.html) using signed data and support [OEV recapture](https://docs.api3.org/explore/introduction/oracle-extractable-value.html).
 
-- [dAPIs](https://docs.api3.org/guides/dapis/subscribing-managed-dapis/): First-party aggregated data feeds sourced directly from the data providers.
-- [Airnode](https://docs.api3.org/guides/airnode/calling-an-airnode/): The first-party serverless Oracle solution to bring any REST API onchain.
-- [QRNG](https://docs.api3.org/guides/qrng/): Quantum Random Number Generator for verifiable quantum RNG onchain.
+Unlike traditional data feeds, reading [API3 price feeds](https://docs.api3.org/guides/dapis/) enables dApps to auction off the right to update the price feeds to searcher bots which facilitates more efficient liquidation processes for users and LPs of DeFi money markets. The OEV recaptured is returned to the dApp.
+
+Check out these guides on how to:
+- [Use dAPIs on the Market](https://docs.api3.org/guides/dapis/subscribing-to-dapis/)
+- [Read a dAPI](https://docs.api3.org/guides/dapis/read-a-dapi/)
 
 <!-- TODO: Add addresses after API3 deploys -->
 
