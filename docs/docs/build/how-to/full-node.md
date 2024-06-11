@@ -1,6 +1,6 @@
 ---
 sidebar_position: 5
-sidebar_label: Run a full none
+sidebar_label: Run a Full Node
 ---
 
 # How to run a self-hosted full node for BOB
