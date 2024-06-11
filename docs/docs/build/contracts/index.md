@@ -1,6 +1,6 @@
 # Contracts
 
-## BOB Testnet (Sepolia)
+## BOB Sepolia (Testnet)
 
 - WETH9: [`0x4200000000000000000000000000000000000006`](https://testnet-explorer.gobob.xyz/address/0x4200000000000000000000000000000000000006)
 - L2CrossDomainMessenger: [`0x4200000000000000000000000000000000000007`](https://testnet-explorer.gobob.xyz/address/0x4200000000000000000000000000000000000007)

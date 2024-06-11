@@ -1,6 +1,6 @@
 # Gas Fee Payment in wBTC using Meta Transactions (OpenGSN & ERC-2771)
 
-In this example, we will show how wBTC can be used for gas fee payments using the OpenGSN and [ERC-2771 standard](https://eips.ethereum.org/EIPS/eip-2771) on the BOB testnet. This enables users to transact without the necessity to own ETH.
+In this example, we will show how wBTC can be used for gas fee payments using the OpenGSN and [ERC-2771 standard](https://eips.ethereum.org/EIPS/eip-2771) on BOB Sepolia (Testnet). This enables users to transact without the necessity to own ETH.
 
 :::tip Live Demo
 

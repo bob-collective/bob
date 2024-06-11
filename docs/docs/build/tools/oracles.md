@@ -61,7 +61,7 @@ DIA has [oracle integration samples](https://docs.diadata.org/products/token-pri
 **Supported Networks**
 
 - BOB Mainnet: [0x4d24e7c1cf0ed63bc8c6cb5a795af31fd8127c6b](https://explorer.gobob.xyz/address/0x4d24E7c1cF0ed63bc8c6cB5a795af31FD8127C6B)
-- BOB Testnet: [0xe5c6f823a73c7839f0d4cbc9cf2a6a220953bbe4](https://testnet-explorer.gobob.xyz/address/0xE5c6f823A73c7839F0D4CBc9Cf2A6A220953bBE4)
+- BOB Sepolia (Testnet): [0xe5c6f823a73c7839f0d4cbc9cf2a6a220953bbe4](https://testnet-explorer.gobob.xyz/address/0xE5c6f823A73c7839F0D4CBc9Cf2A6A220953bBE4)
 
 ## Tellor
 
@@ -72,4 +72,4 @@ To use Tellor data see their [integration guide](https://docs.tellor.io/tellor/g
 **Supported Networks**
 
 - BOB Mainnet: [0x896419Ed2E0dC848a1f7d2814F4e5Df4b9B9bFcc](https://explorer.gobob.xyz/address/0x896419Ed2E0dC848a1f7d2814F4e5Df4b9B9bFcc)
-- BOB Testnet: [0xC866DB9021fe81856fF6c5B3E3514BF9D1593D81](https://testnet-explorer.gobob.xyz/address/0xC866DB9021fe81856fF6c5B3E3514BF9D1593D81)
+- BOB Sepolia (Testnet): [0xC866DB9021fe81856fF6c5B3E3514BF9D1593D81](https://testnet-explorer.gobob.xyz/address/0xC866DB9021fe81856fF6c5B3E3514BF9D1593D81)
