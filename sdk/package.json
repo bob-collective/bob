@@ -29,6 +29,6 @@
     "yargs": "^17.5.1"
   },
   "dependencies": {
-    "bitcoinjs-lib": "^6.1.5"
+    "bitcoinjs-lib": "^6.1.6"
   }
 }
