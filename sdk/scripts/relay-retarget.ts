@@ -17,6 +17,10 @@ const args = yargs(hideBin(process.argv))
         type: "string",
         demandOption: true,
     })
+    .option("rpc-url", {
+        description: "ETH RPC URL",
+        type: "string",
+    })
     .option("relay-address", {
         description: "Relay address",
         type: "string",
@@ -103,7 +107,7 @@ async function main(): Promise<void> {
         `PRIVATE_KEY=${privateKey}`,
     ];
 
-    exec(`${env.join(" ")} forge script ../script/RelayRetarget.s.sol:RelayRetargetScript --rpc-url '${rpcUrl}' --broadcast`,
+    exec(`${env.join(" ")} forge script ../script/RelayRetarget.s.sol:RelayRetargetScript --rpc-url '${rpcUrl}' --broadcast --priority-gas-price 1`,
         (err: any, stdout: string, stderr: string) => {
             if (err) {
                 throw new Error(`Failed to run command: ${err}`);

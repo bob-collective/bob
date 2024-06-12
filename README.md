@@ -49,11 +49,12 @@ npm run deploy-relay -- --init-height=latest --dev --network=mainnet --testnet
 npm run update-relay -- --dev --network=mainnet --relay-address=0x<relay-address>
 
 # sepolia
-FOUNDRY_PROFILE=optimized npm run deploy-relay -- --init-height=latest --network=testnet --proof-length=20 --testnet --rpc-url=testnet --private-key=0x<exported-privatekey>
+FOUNDRY_PROFILE=optimized npm run deploy-relay -- --network=testnet --testnet --rpc-url=testnet --init-height=latest --proof-length=20 --private-key=0x<exported-privatekey>
 
 # mainnet
-FOUNDRY_PROFILE=optimized npm run deploy-relay -- --init-height=latest --network=mainnet --proof-length=20 --rpc-url=mainnet --private-key=0x<exported-privatekey>
+FOUNDRY_PROFILE=optimized npm run deploy-relay -- --network=mainnet --rpc-url=mainnet --init-height=latest --proof-length=20 --private-key=0x<exported-privatekey>
 FOUNDRY_PROFILE=optimized forge verify-contract --verifier blockscout --verifier-url https://explorer.gobob.xyz/api 0x9fe7ef727da3d79e0308ff43f31ea1d077ee9f41 src/relay/LightRelay.sol:LightRelay
+FOUNDRY_PROFILE=optimized npm run update-relay -- --network=mainnet --rpc-url=mainnet --relay-address 0x9fe7ef727da3d79e0308ff43f31ea1d077ee9f41 --private-key=0x<exported-privatekey>
 ```
 
 The initialization height should be a multiple of 2016 with at least one subsequent retarget (i.e. if using 2016 as the starting height, blocks 4031-4032 must exist).
