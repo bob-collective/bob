@@ -12,7 +12,7 @@ There are several ways to bridge tokens to and from BOB, depending on which netw
 | Where Your Tokens Are                                    | How to Move Your Tokens to BOB                      |
 | -------------------------------------------------------- | --------------------------------------------------- |
 | Centralized Exchanges (e.g. Coinbase, Binance, OKX)      | Bridge to Base, then [Link to Base > BOB guide]     |
-| Bitcoin                                                  | Link to BOB Onramp                                  |
+| Bitcoin                                                  | Link to BOB Gateway                                  |
 | Bitcoin Layer 2s                                         | Link to Fusion (pending them added to the list)     |
 | Ethereum                                                 | Link to Fusion                                      |
 | Ethereum Layer 2s                                        | Link to Fusion                                      |
