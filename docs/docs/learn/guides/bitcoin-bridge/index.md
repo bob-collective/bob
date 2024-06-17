@@ -9,6 +9,10 @@ sidebar_label: Bridge from Bitcoin to BOB
 
 The [BOB Gateway](https://app.gobob.xyz) allows you to move your BTC from Bitcoin mainnet to BOB. All you need is a Bitcoin wallet with some BTC to send and an EVM-compatible wallet to receive your wrapped Bitcoin on BOB. We'll even send you some ETH to cover the fees of your first few transactions on BOB.
 
+:::tip Interested in being an LP?
+If you are interested in providing liquidity for the BOB Gateway bridge, please send us an email at `gateway [ at ] gobob.xyz`.
+:::
+
 ## Video Tutorial
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/83-_wMB55cE" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
@@ -33,7 +37,7 @@ The [BOB Gateway](https://app.gobob.xyz) allows you to move your BTC from Bitcoi
 
 ![Select EVM Wallet](./bitcoin-bridge-04.png)
 
-:::tip
+:::tip Choosing your EVM address
 You will receive your wrapped Bitcoin at the EVM address you connect at this step.
 :::
 
