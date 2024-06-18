@@ -1,5 +1,5 @@
 ---
-position: 5
+position: 6
 label: "FAQs"
 ---
 
@@ -54,6 +54,6 @@ We recommend using the following network settings:
 - **New RPC URL**: https://bob-mainnet.public.blastapi.io
 - **Chain ID**: 60808
 - **Symbol**: ETH
-- **Block Explorer URL**: https://explorer.gobob.xyz 
+- **Block Explorer URL**: https://explorer.gobob.xyz
 
 ![Networks](./metamask-network.png)
