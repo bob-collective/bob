@@ -1,9 +1,10 @@
-import { DefaultElectrsClient } from "../src/electrs";
+import { DefaultElectrsClient } from "../electrs";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
-import { exec } from "child_process";
+import { exec } from "node:child_process";
 
 const args = yargs(hideBin(process.argv))
+    .env('RELAY')
     .option("private-key", {
         description: "Private key to submit with",
         type: "string",
