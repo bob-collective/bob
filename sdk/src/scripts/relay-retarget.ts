@@ -4,6 +4,7 @@ import { hideBin } from "yargs/helpers";
 import { exec } from "node:child_process";
 
 const args = yargs(hideBin(process.argv))
+    .env('RELAY')
     .option("private-key", {
         description: "Private key to submit with",
         type: "string",
