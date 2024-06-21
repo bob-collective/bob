@@ -1,21 +1,21 @@
 ---
-sidebar_position: 3
+sidebar_position: 4
 sidebar_label: Bridge from Ethereum to BOB
 ---
 
 # Bridge from Ethereum to BOB
 
-The [BOB Bridge](https://app.gobob.xyz) allows you to move ETH between Ethereum and BOB.
+The [BOB Bridge](https://app.gobob.xyz/bridge) allows you to move ETH between Ethereum and BOB.
 
 ## Step-by-step Guide
 
-1. Open the [BOB Bridge website](https://bob-fusion-git-feat-external-bridges-interlay.vercel.app/bridge?type=deposit)
+1. Open the [BOB Bridge website](https://app.gobob.xyz/bridge).
 
-2. Click `Connect Wallet` in the top-right corner
+2. Click `Connect Wallet` in the top-right corner.
 
 ![Click Connect Wallet](./ethereum-bridge/eth-bridge-01.png)
 
-3. Click `Connect your EVM Wallet (Mandatory)`
+3. Click `Connect your EVM Wallet (Mandatory)`.
 
 ![Click Connect your EVM Wallet](./ethereum-bridge/eth-bridge-02.png)
 
@@ -50,3 +50,5 @@ You may choose to use a “3rd Party” bridge. Each of these buttons will direc
 10. That’s it! After ~3 minutes your tokens will be bridged to BOB. You can verify the bridging is complete with the Activity section on the right or by clicking “Withdraw” and seeing that your token balance on BOB has increased.
 
 ![Bridge in process](./ethereum-bridge/eth-bridge-09.png)
+
+If you have any questions, please reach out to us on [Discord](https://discord.gg/gobob) or [Telegram](https://t.me/+CyIcLW2nfaFlNDc1). Welcome to BOB!
