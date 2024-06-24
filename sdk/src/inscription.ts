@@ -1,5 +1,5 @@
 import * as bitcoin from "bitcoinjs-lib";
-import { ElectrsClient } from "./electrs";
+import { EsploraClient } from "./esplora";
 import { InscriptionId } from "./ordinal-api";
 
 const textEncoder = new TextEncoder();
@@ -84,7 +84,7 @@ export class Inscription {
             PROTOCOL_ID,
             ...this.getTags().map(([key, value]) => [
                 1,
-                key, 
+                key,
                 value,
             ]).flat(),
             bitcoin.opcodes.OP_0,
@@ -101,8 +101,8 @@ export module Inscription {
     export function createTextInscription(text: string): Inscription {
         return Inscription.createInscription(
             "text/plain;charset=utf-8",
-            Buffer.from(textEncoder.encode(text)
-        ));
+            Buffer.from(textEncoder.encode(text))
+        );
     }
 
     /**
@@ -111,7 +111,7 @@ export module Inscription {
     export function createInscription(contentType: string, content: Buffer): Inscription {
         const inscription = new Inscription;
         // e.g. `image/png`
-        inscription.setContentType(contentType),
+        inscription.setContentType(contentType);
         inscription.body = content;
         return inscription;
     }
@@ -187,14 +187,14 @@ export function parseInscriptions(tx: bitcoin.Transaction) {
     return inscriptions;
 }
 
-export async function getTxInscriptions(electrsClient: ElectrsClient, txid: string) {
-    const txHex = await electrsClient.getTransactionHex(txid);
+export async function getTxInscriptions(esploraClient: EsploraClient, txid: string) {
+    const txHex = await esploraClient.getTransactionHex(txid);
     const tx = bitcoin.Transaction.fromHex(txHex);
     return parseInscriptions(tx);
 }
 
-export async function getInscriptionFromId(electrsClient: ElectrsClient, inscriptionId: string) {
+export async function getInscriptionFromId(esploraClient: EsploraClient, inscriptionId: string) {
     const { txid, index } = InscriptionId.fromString(inscriptionId);
-    const inscriptions = await getTxInscriptions(electrsClient, txid);
+    const inscriptions = await getTxInscriptions(esploraClient, txid);
     return inscriptions[index];
 }

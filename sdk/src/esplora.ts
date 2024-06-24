@@ -66,7 +66,7 @@ export interface Transaction {
         scriptpubkey: string
         scriptpubkey_asm?: string
         scriptpubkey_type?: string
-        scriptpubkey_address?: string 
+        scriptpubkey_address?: string
         value: number
     }>
     status: {
@@ -98,11 +98,11 @@ export interface Block {
 
 /**
  * 
- * The `ElectrsClient` interface provides a set of methods for interacting with an Esplora API
+ * The `EsploraClient` interface provides a set of methods for interacting with an Esplora API
  * for Bitcoin network data retrieval.
  * See https://github.com/blockstream/esplora/blob/master/API.md for more information.
  */
-export interface ElectrsClient {
+export interface EsploraClient {
     /**
      * Get the latest block height of the Bitcoin chain.
      *
@@ -119,9 +119,9 @@ export interface ElectrsClient {
      * @example
      * ```typescript
      * const BITCOIN_NETWORK = "regtest";
-     * const electrsClient = new DefaultElectrsClient(BITCOIN_NETWORK);
+     * const esploraClient = new DefaultEsploraClient(BITCOIN_NETWORK);
      * const blockHash = 'your_block_hash_here';
-     * electrsClient.getBlock(blockHash)
+     * esploraClient.getBlock(blockHash)
      *  .then((block) => {
      *  console.log(`Block data for block with hash ${blockHash}: ${JSON.stringify(block)}`);
      * })
@@ -143,9 +143,9 @@ export interface ElectrsClient {
      * @example
      * ```typescript
      * const BITCOIN_NETWORK = "regtest";
-     * const electrsClient = new DefaultElectrsClient(BITCOIN_NETWORK);
+     * const esploraClient = new DefaultEsploraClient(BITCOIN_NETWORK);
      * const blockHeight = 123456;
-     * electrsClient.getBlockHash(blockHeight)
+     * esploraClient.getBlockHash(blockHeight)
      *   .then((blockHash) => {
      *     console.log(`Block hash at height ${blockHeight}: ${blockHash}`);
      *   })
@@ -165,9 +165,9 @@ export interface ElectrsClient {
      * @example
      * ```typescript
      * const BITCOIN_NETWORK = "regtest";
-     * const electrsClient = new DefaultElectrsClient(BITCOIN_NETWORK);
+     * const esploraClient = new DefaultEsploraClient(BITCOIN_NETWORK);
      * const blockHash = 'your_block_hash_here';
-     * electrsClient.getBlockHeader(blockHash)
+     * esploraClient.getBlockHeader(blockHash)
      *   .then((blockHeader) => {
      *     console.log(`Raw block header for block with hash ${blockHash}: ${blockHeader}`);
      *   })
@@ -187,9 +187,9 @@ export interface ElectrsClient {
      * @example
      * ```typescript
      * const BITCOIN_NETWORK = "regtest";
-     * const electrsClient = new DefaultElectrsClient(BITCOIN_NETWORK);
+     * const esploraClient = new DefaultEsploraClient(BITCOIN_NETWORK);
      * const transactionId = 'your_transaction_id_here';
-     * electrsClient.getTransaction(transactionId)
+     * esploraClient.getTransaction(transactionId)
      *  .then((transaction) => {
      *   console.log(`Transaction data for transaction with ID ${transactionId}: ${JSON.stringify(transaction)}`);
      * })
@@ -209,9 +209,9 @@ export interface ElectrsClient {
      * @example
      * ```typescript
      * const BITCOIN_NETWORK = "regtest";
-     * const electrsClient = new DefaultElectrsClient(BITCOIN_NETWORK);
+     * const esploraClient = new DefaultEsploraClient(BITCOIN_NETWORK);
      * const transactionId = 'your_transaction_id_here';
-     * electrsClient.getTransactionHex(transactionId)
+     * esploraClient.getTransactionHex(transactionId)
      *   .then((transactionHex) => {
      *     console.log(`Transaction hex for transaction with ID ${transactionId}: ${transactionHex}`);
      *   })
@@ -231,9 +231,9 @@ export interface ElectrsClient {
      * @example
      * ```typescript
      * const BITCOIN_NETWORK = "regtest";
-     * const electrsClient = new DefaultElectrsClient(BITCOIN_NETWORK);
+     * const esploraClient = new DefaultEsploraClient(BITCOIN_NETWORK);
      * const transactionId = 'your_transaction_id_here';
-     * electrsClient.getMerkleProof(transactionId)
+     * esploraClient.getMerkleProof(transactionId)
      *   .then((merkleProof) => {
      *     console.log(`Merkle inclusion proof for transaction with ID ${transactionId}: ${merkleProof}`);
      *   })
@@ -272,33 +272,33 @@ export interface ElectrsClient {
 /**
 * @ignore
 */
-function encodeElectrsMerkleProof(merkle: string[]): string {
+function encodeEsploraMerkleProof(merkle: string[]): string {
     // convert to little-endian
     return merkle.map(item => Buffer.from(item, "hex").reverse().toString("hex")).join('');
 }
 
 /**
- * The `DefaultElectrsClient` class provides a client for interacting with an Esplora API
+ * The `DefaultEsploraClient` class provides a client for interacting with an Esplora API
  * for Bitcoin network data retrieval.
  */
-export class DefaultElectrsClient implements ElectrsClient {
+export class DefaultEsploraClient implements EsploraClient {
     private basePath: string;
 
     /**
-         * Create an instance of the `DefaultElectrsClient` with the specified network or URL.
+         * Create an instance of the `DefaultEsploraClient` with the specified network or URL.
          * If the `networkOrUrl` parameter is omitted, it defaults to "mainnet."
          *
          * @param networkOrUrl The Bitcoin network (e.g., "mainnet," "testnet," "regtest") 
          * 
-         * @returns An instance of the `DefaultElectrsClient` configured for the specified network or URL.
+         * @returns An instance of the `DefaultEsploraClient` configured for the specified network or URL.
          *
          * @example
          * const BITCOIN_NETWORK = "regtest";
-         * const electrsClient = new DefaultElectrsClient(BITCOIN_NETWORK);
+         * const esploraClient = new DefaultEsploraClient(BITCOIN_NETWORK);
          *
          * @example
          * // Create a client for the mainnet using the default URL.
-         * const electrsClientMainnet = new DefaultElectrsClient();
+         * const esploraClientMainnet = new DefaultEsploraClient();
     */
     constructor(networkOrUrl: string = "mainnet") {
         switch (networkOrUrl) {
@@ -374,7 +374,7 @@ export class DefaultElectrsClient implements ElectrsClient {
         }>(`${this.basePath}/tx/${txId}/merkle-proof`);
         return {
             blockHeight: response.block_height,
-            merkle: encodeElectrsMerkleProof(response.merkle),
+            merkle: encodeEsploraMerkleProof(response.merkle),
             pos: response.pos,
         };
     }

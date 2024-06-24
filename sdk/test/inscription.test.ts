@@ -1,5 +1,5 @@
 import * as bitcoin from "bitcoinjs-lib";
-import { DefaultElectrsClient } from "../src/electrs";
+import { DefaultEsploraClient } from "../src/esplora";
 import { Inscription, PROTOCOL_ID, parseInscriptions } from "../src/inscription";
 import { assert, describe, it } from "vitest";
 
@@ -23,9 +23,9 @@ function createOrdinalTransaction(outputScript: Buffer) {
 
 describe("Inscription Tests", () => {
     it("should parse text inscription", async () => {
-        const electrsClient = new DefaultElectrsClient("mainnet");
+        const esploraClient = new DefaultEsploraClient("mainnet");
 
-        const txHex = await electrsClient.getTransactionHex("b61b0172d95e266c18aea0c624db987e971a5d6d4ebc2aaed85da4642d635735");
+        const txHex = await esploraClient.getTransactionHex("b61b0172d95e266c18aea0c624db987e971a5d6d4ebc2aaed85da4642d635735");
         const tx = bitcoin.Transaction.fromHex(txHex);
 
         const inscriptions = parseInscriptions(tx);
@@ -48,9 +48,9 @@ describe("Inscription Tests", () => {
     });
 
     it("should parse image inscription", async () => {
-        const electrsClient = new DefaultElectrsClient("mainnet");
+        const esploraClient = new DefaultEsploraClient("mainnet");
 
-        const txHex = await electrsClient.getTransactionHex("79ddcce9b4aaa4d2c3ba512a1dfd9bf2dd1f840eab98101c41bf8b801bcb3e0c");
+        const txHex = await esploraClient.getTransactionHex("79ddcce9b4aaa4d2c3ba512a1dfd9bf2dd1f840eab98101c41bf8b801bcb3e0c");
         const tx = bitcoin.Transaction.fromHex(txHex);
 
         const inscriptions = parseInscriptions(tx);

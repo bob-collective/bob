@@ -7,7 +7,7 @@ import { Transaction } from "bitcoinjs-lib";
 /**
  * @ignore
  */
-import { ElectrsClient } from "./electrs";
+import { EsploraClient } from "./esplora";
 /**
  * @ignore
  */
@@ -42,23 +42,23 @@ export interface BitcoinTxInfo {
 /**
  * Retrieves information about a Bitcoin transaction, such as version, input vector, output vector, and locktime.
  *
- * @param electrsClient - An ElectrsClient instance for interacting with the Electrum server.
+ * @param esploraClient - The EsploraClient instance for interacting with the Esplora server.
  * @param txId - The ID of the Bitcoin transaction.
  * @returns A promise that resolves to a BitcoinTxInfo object.
  * @example
  * ```typescript
  * const BITCOIN_NETWORK = "regtest";
- * const electrsClient = new DefaultElectrsClient(BITCOIN_NETWORK);
+ * const esploraClient = new DefaultEsploraClient(BITCOIN_NETWORK);
  * const txId = "279121610d9575d132c95312c032116d6b8a58a3a31f69adf9736b493de96a16"; //enter the transaction id here
- * const info = await getBitcoinTxInfo(electrsClient, txId);
+ * const info = await getBitcoinTxInfo(esploraClient, txId);
  * ```
  */
 export async function getBitcoinTxInfo(
-    electrsClient: ElectrsClient,
+    esploraClient: EsploraClient,
     txId: string,
     forWitness?: boolean,
 ): Promise<BitcoinTxInfo> {
-    const txHex = await electrsClient.getTransactionHex(txId);
+    const txHex = await esploraClient.getTransactionHex(txId);
     const tx = Transaction.fromHex(txHex);
 
     const versionBuffer = Buffer.allocUnsafe(4);
@@ -98,25 +98,25 @@ export interface BitcoinTxProof {
 /**
  * Retrieves a proof for a Bitcoin transaction, including the merkle proof, transaction index in the block, and Bitcoin headers.
  *
- * @param electrsClient - An ElectrsClient instance for interacting with the Electrum server.
+ * @param esploraClient - The EsploraClient instance for interacting with the Esplora server.
  * @param txId - The ID of the Bitcoin transaction.
  * @param txProofDifficultyFactor - The number of block headers to retrieve for proof verification.
  * @example
  * ```typescript
  * const BITCOIN_NETWORK = "regtest";
- * const electrsClient = new DefaultElectrsClient(BITCOIN_NETWORK);
+ * const esploraClient = new DefaultEsploraClient(BITCOIN_NETWORK);
  * const txId = "279121610d9575d132c95312c032116d6b8a58a3a31f69adf9736b493de96a16";//enter the transaction id here
  * const txProofDifficultyFactor = "1";//enter the difficulty factor
- * const info = await getBitcoinTxProof(electrsClient, txId, txProofDifficultyFactor);
+ * const info = await getBitcoinTxProof(esploraClient, txId, txProofDifficultyFactor);
  * ```
  */
 export async function getBitcoinTxProof(
-    electrsClient: ElectrsClient,
+    esploraClient: EsploraClient,
     txId: string,
     txProofDifficultyFactor: number,
 ): Promise<BitcoinTxProof> {
-    const merkleProof = await electrsClient.getMerkleProof(txId);
-    const bitcoinHeaders = await getBitcoinHeaders(electrsClient, merkleProof.blockHeight, txProofDifficultyFactor);
+    const merkleProof = await esploraClient.getMerkleProof(txId);
+    const bitcoinHeaders = await getBitcoinHeaders(esploraClient, merkleProof.blockHeight, txProofDifficultyFactor);
 
     return {
         merkleProof: merkleProof.merkle,
@@ -126,9 +126,9 @@ export async function getBitcoinTxProof(
 }
 
 /**
- * Retrieves Bitcoin block headers using an Electrs client.
+ * Retrieves Bitcoin block headers using the Esplora client.
  *
- * @param electrsClient - The ElectrsClient instance used to interact with the Esplora API.
+ * @param esploraClient - The EsploraClient instance used to interact with the Esplora API.
  * @param startHeight - The starting block height from which to fetch headers.
  * @param numBlocks - The number of consecutive block headers to retrieve.
  * @returns A Promise that resolves to a concatenated string of Bitcoin block headers.
@@ -137,11 +137,11 @@ export async function getBitcoinTxProof(
  *
  * @example
  * const BITCOIN_NETWORK = "regtest";
- * const electrsClient = new DefaultElectrsClient(BITCOIN_NETWORK);
+ * const esploraClient = new DefaultEsploraClient(BITCOIN_NETWORK);
  * const startHeight = 0;
  * const numBlocks = 10;
  *
- * getBitcoinHeaders(electrsClient, startHeight, numBlocks)
+ * getBitcoinHeaders(esploraClient, startHeight, numBlocks)
  *   .then(headers => {
  *     console.log(headers); // Concatenated block headers as a string.
  *   })
@@ -150,7 +150,7 @@ export async function getBitcoinTxProof(
  *   });
  */
 export async function getBitcoinHeaders(
-    electrsClient: ElectrsClient,
+    esploraClient: EsploraClient,
     startHeight: number,
     numBlocks: number,
 ): Promise<string> {
@@ -158,8 +158,8 @@ export async function getBitcoinHeaders(
     const blockHeights = range(startHeight, startHeight + numBlocks);
 
     const bitcoinHeaders = await Promise.all(blockHeights.map(async height => {
-        const hash = await electrsClient.getBlockHash(height);
-        return electrsClient.getBlockHeader(hash);
+        const hash = await esploraClient.getBlockHash(height);
+        return esploraClient.getBlockHeader(hash);
     }));
 
     return bitcoinHeaders.join('');

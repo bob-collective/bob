@@ -18,6 +18,11 @@ import { hash256 } from "bitcoinjs-lib/src/crypto";
  * @ignore
  */
 import { Output, Transaction } from "bitcoinjs-lib/src/transaction";
+//@ts-nocheck
+/**
+ * @ignore
+ */
+import * as bitcoin from "bitcoinjs-lib";
 
 /**
  * @ignore
@@ -174,4 +179,47 @@ export function getMerkleProof(block: Block, txHash: string, forWitness?: boolea
         proof: merkleAndRoot.merkle.map(value => value.toString("hex")).join(''),
         root: merkleAndRoot.root.toString("hex"),
     };
+}
+
+export function estimateTxFee(feeRate: number, numInputs: number = 1) {
+    const tx = new bitcoin.Transaction();
+    for (let i = 0; i < numInputs; i++) {
+        tx.addInput(Buffer.alloc(32, 0), 0, 0xfffffffd, Buffer.alloc(0));
+    }
+    // https://github.com/interlay/interbtc-clients/blob/6bd3e81d695b93180c5aeae4f33910ad4395ff1a/bitcoin/src/light/wallet.rs#L80
+    tx.ins.map(tx_input => (tx_input.witness = [Buffer.alloc(33 + 32 + 7, 0), Buffer.alloc(33, 0)]));
+    tx.addOutput(Buffer.alloc(22, 0), 1000); // P2WPKH
+    tx.addOutput(Buffer.alloc(22, 0), 1000); // P2WPKH (change)
+    tx.addOutput(bitcoin.script.compile([bitcoin.opcodes.OP_RETURN, Buffer.alloc(20, 0)]), 0);
+    const vsize = tx.virtualSize();
+    const satoshis = feeRate * vsize;
+    return satoshis;
+}
+
+export function estimateTxFeeConst(feeRate: number, numInputs: number = 1) {
+    // hash (32 bytes)
+    // + index (4 bytes)
+    // + [scriptsig] length (1 byte)
+    // + sequence (4 bytes)
+    // + [witness] item count (1 byte)
+    // + [witness] signature length (1 byte)
+    // + [witness] signature (71 or 72 bytes)
+    // + [witness] pubkey length (1 byte)
+    // + [witness] pubkey (33 bytes)
+    const inputSize = 32 + 4 + 1 + 4 + (1 + 1 + 72 + 1 + 33) / 4;
+    // nValue (8 bytes)
+    // + scriptPubKey length (...)
+    // + scriptPubKey (P2WPKH = 22 bytes)
+    const outputSize = 8 + 1 + 22;
+    const opReturnSize = 8 + 1 + 1 + 20;
+    // nVersion (4 bytes)
+    // + input count (1 byte)
+    // + input(s)
+    // + output count (1 byte)
+    // + output(s)
+    // + nLockTime (4 bytes)
+    // + segwit marker & segwit flag (1 byte)
+    const vsize = 4 + 1 + inputSize * numInputs + 1 + outputSize + outputSize + opReturnSize + 4 + 1;
+    const satoshis = feeRate * vsize;
+    return satoshis;
 }

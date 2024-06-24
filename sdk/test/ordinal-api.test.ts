@@ -22,21 +22,23 @@ describe("Ordinal API Tests", () => {
             children: [],
             content_length: 868,
             content_type: 'text/javascript',
+            effective_content_type: "text/javascript",
             fee: 395,
             height: 2537128,
             id: InscriptionId.fromString('74c86592f75716a14a534898913e6077fb5d7650cfc17600868964bbe2b7e512i0'),
             number: 560474,
             next: InscriptionId.fromString('dd90d8222da2a6f3260109b1e4d1a2c341d999fce4707b1d77e49956a51a0305i0'),
             parent: null,
+            parents: [],
             previous: InscriptionId.fromString('332d3fae125de51de29e97cd9e80aab7c63025d5094944a3dceb117c556c41cci0'),
             rune: null,
             sat: null,
-            satpoint: SatPoint.fromString('a4f11b32041419829b56fe456a976efef0c3ba557cf6041918e81e5d3265b884:2:96181932'),
+            satpoint: SatPoint.fromString('cdd084e3427c52b5e3777979521bb9030e680d521f267aedb6aef9d95e9e37b1:2:56181932'),
             timestamp: 1699246476,
-            value: 156405502,
+            value: 116364085,
         };
 
-        assert.deepStrictEqual(expectedInscriptionJson, inscriptionJson);
+        assert.deepStrictEqual(inscriptionJson, expectedInscriptionJson);
     });
 
     it("should get inscriptions", async () => {
@@ -59,7 +61,7 @@ describe("Ordinal API Tests", () => {
             more: false,
             page_index: 0,
         };
-        assert.deepStrictEqual(expectedInscriptionsJson, inscriptionsJson);
+        assert.deepStrictEqual(inscriptionsJson, expectedInscriptionsJson);
     });
 
     it("should get inscriptions from UTXO", async () => {
@@ -75,11 +77,11 @@ describe("Ordinal API Tests", () => {
             transaction: 'd370be1b6bf74677c82226d7a0d65743cbe3846b9216e0ad207a7b03a5230ec3',
             sat_ranges: null,
             inscriptions: [],
-            runes: [],
+            runes: {},
             indexed: false,
             spent: true
         };
-        assert.deepStrictEqual(expectedOutputJson, outputJson);
+        assert.deepStrictEqual(outputJson, expectedOutputJson);
     });
 
     it("should get inscriptions from Sat", async () => {
@@ -92,6 +94,7 @@ describe("Ordinal API Tests", () => {
             degree: '0°0′0″100‴',
             name: 'nvtdijuwxht',
             block: 0,
+            charms: [],
             cycle: 0,
             epoch: 0,
             period: 0,
@@ -102,7 +105,7 @@ describe("Ordinal API Tests", () => {
             timestamp: 1296688602,
             inscriptions: []
         };
-        assert.deepStrictEqual(expectedSatJson, satJson);
+        assert.deepStrictEqual(satJson, expectedSatJson);
     });
 
     it("should get inscriptions from start block", async () => {

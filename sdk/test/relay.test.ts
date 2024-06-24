@@ -1,5 +1,5 @@
 import { assert, describe, it } from "vitest";
-import { DefaultElectrsClient } from "../src/electrs";
+import { DefaultEsploraClient } from "../src/esplora";
 import { getBitcoinTxInfo, getBitcoinTxProof } from "../src/relay";
 import * as bitcoin from "bitcoinjs-lib";
 import { encodeRawOutput } from "../src/utils";
@@ -19,7 +19,7 @@ describe("Relay Tests", () => {
     });
 
     it("should get tx info", async () => {
-        const client = new DefaultElectrsClient();
+        const client = new DefaultEsploraClient();
         const txId = "2ef69769cc0ee81141c79552de6b91f372ff886216dbfa84e5497a16b0173e79";
         const txInfo = await getBitcoinTxInfo(client, txId);
         assert.deepEqual(txInfo, {
@@ -32,7 +32,7 @@ describe("Relay Tests", () => {
     });
 
     it("should get tx proof", async () => {
-        const client = new DefaultElectrsClient();
+        const client = new DefaultEsploraClient();
         const txId = "2ef69769cc0ee81141c79552de6b91f372ff886216dbfa84e5497a16b0173e79";
         const txProof = await getBitcoinTxProof(client, txId, 2);
         assert.equal(txProof.txIndexInBlock, 1);
