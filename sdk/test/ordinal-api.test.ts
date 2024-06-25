@@ -8,40 +8,40 @@ import {
 import { assert, describe, it } from "vitest";
 
 describe("Ordinal API Tests", () => {
-    // TODO: change to use ordi
     it("should get inscription from id", async () => {
-        const client = new DefaultOrdinalsClient("testnet");
+        const client = new DefaultOrdinalsClient("mainnet");
+        // Deploy ORDI - BRC20
         const inscriptionJson = await client.getInscriptionFromId({
-            txid: "74c86592f75716a14a534898913e6077fb5d7650cfc17600868964bbe2b7e512",
+            txid: "b61b0172d95e266c18aea0c624db987e971a5d6d4ebc2aaed85da4642d635735",
             index: 0,
         });
 
         const expectedInscriptionJson: InscriptionJson<InscriptionId, SatPoint> = {
-            address: 'tb1qn50zg73kl8f8wkn8358n4z2drvwraxhl7zdzly',
+            address: 'bc1pxaneaf3w4d27hl2y93fuft2xk6m4u3wc4rafevc6slgd7f5tq2dqyfgy06',
             charms: [],
             children: [],
-            content_length: 868,
-            content_type: 'text/javascript',
-            effective_content_type: "text/javascript",
-            fee: 395,
-            height: 2537128,
-            id: InscriptionId.fromString('74c86592f75716a14a534898913e6077fb5d7650cfc17600868964bbe2b7e512i0'),
-            number: 560474,
-            next: InscriptionId.fromString('dd90d8222da2a6f3260109b1e4d1a2c341d999fce4707b1d77e49956a51a0305i0'),
+            content_length: 94,
+            content_type: 'text/plain;charset=utf-8',
+            effective_content_type: "text/plain;charset=utf-8",
+            fee: 4830,
+            height: 779832,
+            id: InscriptionId.fromString('b61b0172d95e266c18aea0c624db987e971a5d6d4ebc2aaed85da4642d635735i0'),
+            number: 348020,
+            next: InscriptionId.fromString('693bd98380ad6e58f83de6068c236c6eb9d629c825cc3342c2d93f24c6762c6di0'),
             parent: null,
             parents: [],
-            previous: InscriptionId.fromString('332d3fae125de51de29e97cd9e80aab7c63025d5094944a3dceb117c556c41cci0'),
+            previous: InscriptionId.fromString('4f0ff6259efa9d56b16664e6c5c9755c148818dc6bbca98f7f9166b277e4b7c0i0'),
             rune: null,
             sat: null,
-            satpoint: SatPoint.fromString('cdd084e3427c52b5e3777979521bb9030e680d521f267aedb6aef9d95e9e37b1:2:56181932'),
-            timestamp: 1699246476,
-            value: 116364085,
+            satpoint: SatPoint.fromString('b61b0172d95e266c18aea0c624db987e971a5d6d4ebc2aaed85da4642d635735:0:0'),
+            timestamp: 1678248991,
+            value: 10000,
         };
 
         assert.deepStrictEqual(inscriptionJson, expectedInscriptionJson);
     });
 
-    it("should get inscriptions", async () => {
+    it("should get inscriptions", { timeout: 10000 }, async () => {
         const client = new DefaultOrdinalsClient("testnet");
         const inscriptionsJson = await client.getInscriptions();
         // assert that inscriptionsJson is not null, undefined or empty
@@ -108,7 +108,7 @@ describe("Ordinal API Tests", () => {
         assert.deepStrictEqual(satJson, expectedSatJson);
     });
 
-    it("should get inscriptions from start block", async () => {
+    it("should get inscriptions from start block", { timeout: 10000 }, async () => {
         const client = new DefaultOrdinalsClient("testnet");
         const startBlock: number = 2537138;
         const inscriptions = await client.getInscriptionsFromStartBlock(startBlock);

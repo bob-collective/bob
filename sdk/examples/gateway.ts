@@ -40,7 +40,7 @@ async function createTxWithOpReturn(fromAddress: string, toAddress: string, amou
         }
     }
 
-    const unsignedTransaction = await createTransfer(
+    const unsignedTx = await createTransfer(
         'mainnet',
         addressType,
         fromAddress,
@@ -50,19 +50,13 @@ async function createTxWithOpReturn(fromAddress: string, toAddress: string, amou
         opReturn,
     );
 
-    // Determine how many inputs to sign
-    const inputLength = unsignedTransaction.inputsLength;
-    const _inputsToSign = Array.from({ length: inputLength }, (_, i) => i);
+    const psbt = unsignedTx.toPSBT(0);
+    const psbtHex = hex.encode(psbt);
 
-    // Sign all inputs
-    const psbt = unsignedTransaction.toPSBT(0);
-    const _psbtHex = hex.encode(psbt);
-
-    // Sign all inputs with the payment address
-    const signedPsbtHex = ""; // TODO: sign PSBT
+    // TODO: sign PSBT
+    const signedPsbtHex = psbtHex;
 
     const signedTx = SigTx.fromPSBT(bitcoin.Psbt.fromHex(signedPsbtHex).toBuffer());
-
     signedTx.finalize();
 
     return bitcoin.Transaction.fromBuffer(Buffer.from(signedTx.extract()));
