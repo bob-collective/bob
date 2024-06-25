@@ -18,6 +18,11 @@ import { hash256 } from "bitcoinjs-lib/src/crypto";
  * @ignore
  */
 import { Output, Transaction } from "bitcoinjs-lib/src/transaction";
+//@ts-nocheck
+/**
+ * @ignore
+ */
+import * as bitcoin from "bitcoinjs-lib";
 
 /**
  * @ignore
@@ -174,4 +179,26 @@ export function getMerkleProof(block: Block, txHash: string, forWitness?: boolea
         proof: merkleAndRoot.merkle.map(value => value.toString("hex")).join(''),
         root: merkleAndRoot.root.toString("hex"),
     };
+}
+
+/**
+ * Estimate the tx inclusion fee for N P2WPKH inputs and 3 P2WPKH outputs.
+ *
+ * @param feeRate - The current rate for inclusion, satoshi per byte.
+ * @param numInputs - The number of inputs to estimate for.
+ * @returns The estimated fee for transaction inclusion.
+ */
+export function estimateTxFee(feeRate: number, numInputs: number = 1) {
+    const tx = new bitcoin.Transaction();
+    for (let i = 0; i < numInputs; i++) {
+        tx.addInput(Buffer.alloc(32, 0), 0, 0xfffffffd, Buffer.alloc(0));
+    }
+    // https://github.com/interlay/interbtc-clients/blob/6bd3e81d695b93180c5aeae4f33910ad4395ff1a/bitcoin/src/light/wallet.rs#L80
+    tx.ins.map(tx_input => (tx_input.witness = [Buffer.alloc(33 + 32 + 7, 0), Buffer.alloc(33, 0)]));
+    tx.addOutput(Buffer.alloc(22, 0), 1000); // P2WPKH
+    tx.addOutput(Buffer.alloc(22, 0), 1000); // P2WPKH (change)
+    tx.addOutput(bitcoin.script.compile([bitcoin.opcodes.OP_RETURN, Buffer.alloc(20, 0)]), 0);
+    const vsize = tx.virtualSize();
+    const satoshis = feeRate * vsize;
+    return satoshis;
 }

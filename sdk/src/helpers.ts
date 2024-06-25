@@ -1,11 +1,11 @@
-import { ElectrsClient, UTXO } from "./electrs";
+import { EsploraClient, UTXO } from "./esplora";
 import { parseInscriptions } from "./inscription";
 import { InscriptionId, OrdinalsClient } from "./ordinal-api";
 import * as bitcoin from "bitcoinjs-lib";
 
 // Get the (encoded) inscription IDs for the address
-export async function getInscriptionIds(electrsClient: ElectrsClient, ordinalsClient: OrdinalsClient, bitcoinAddress: string) {
-    const utxos = await electrsClient.getAddressUtxos(bitcoinAddress);
+export async function getInscriptionIds(esploraClient: EsploraClient, ordinalsClient: OrdinalsClient, bitcoinAddress: string) {
+    const utxos = await esploraClient.getAddressUtxos(bitcoinAddress);
     const inscriptionIds = await Promise.all(
         utxos.sort((a, b) => {
             // force large number if height is not available (as expected for unconfirmed utxo)
@@ -13,20 +13,20 @@ export async function getInscriptionIds(electrsClient: ElectrsClient, ordinalsCl
             const heightB = b.height || Number.MAX_SAFE_INTEGER;
 
             return heightA - heightB;
-        }).map(utxo => getInscriptionIdsForUtxo(electrsClient, ordinalsClient, utxo))
+        }).map(utxo => getInscriptionIdsForUtxo(esploraClient, ordinalsClient, utxo))
     );
     return inscriptionIds.flat();
 }
 
 // Get the (encoded) inscription IDs for the UTXO
-async function getInscriptionIdsForUtxo(electrsClient: ElectrsClient, ordinalsClient: OrdinalsClient, utxo: UTXO) {
+async function getInscriptionIdsForUtxo(esploraClient: EsploraClient, ordinalsClient: OrdinalsClient, utxo: UTXO) {
     if (utxo.confirmed) {
         // use ord api if the tx has been included in a block
         const outputJson = await ordinalsClient.getInscriptionsFromOutPoint(utxo);
         return outputJson.inscriptions;
     }
 
-    const txHex = await electrsClient.getTransactionHex(utxo.txid);
+    const txHex = await esploraClient.getTransactionHex(utxo.txid);
     const tx = bitcoin.Transaction.fromHex(txHex);
 
     // FIXME: assumes inscriptions are always sent to the first output

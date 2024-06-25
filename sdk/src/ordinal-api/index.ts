@@ -85,7 +85,7 @@ export module SatPoint {
 /**
  * @ignore
  */
-// https://github.com/ordinals/ord/blob/2badb82a8f4b2bb23a90b88a6d711b3475eb6c92/src/api.rs#L117-L121
+// https://github.com/ordinals/ord/blob/0.18.5/src/api.rs#L117-L121
 export interface InscriptionsJson<InscriptionId> {
     /**
      * An array of inscription ids.
@@ -106,7 +106,7 @@ export interface InscriptionsJson<InscriptionId> {
 /**
  * @ignore
  */
-// https://github.com/ordinals/ord/blob/2badb82a8f4b2bb23a90b88a6d711b3475eb6c92/src/api.rs#L124-L134
+// https://github.com/ordinals/ord/blob/0.18.5/src/api.rs#L124-L134
 export interface OutputJson {
     /**
      * The address associated with the UTXO.
@@ -126,7 +126,13 @@ export interface OutputJson {
     /**
      * A map of runes.
      */
-    runes: [string, number][];
+    runes: {
+        [key: string]: {
+            amount: number,
+            divisibility: number,
+            symbol: string | null,
+        }
+    };
 
     /**
      * The SAT ranges.
@@ -157,7 +163,7 @@ export interface OutputJson {
 /**
  * @ignore
  */
-// https://github.com/ordinals/ord/blob/4d29e078535bb8e630133a17cd3e9af22c631ebd/src/api.rs#L165-L180
+// https://github.com/ordinals/ord/blob/0.18.5/src/api.rs#L165-L180
 export interface SatJson<InscriptionId> {
     /**
      * The number of the ordinal.
@@ -183,6 +189,8 @@ export interface SatJson<InscriptionId> {
      * The block associated with the ordinal.
      */
     block: number;
+
+    charms: number[],
 
     /**
      * The cycle associated with the ordinal.
@@ -233,7 +241,7 @@ export interface SatJson<InscriptionId> {
 /**
  * @ignore
  */
-// https://github.com/ordinals/ord/blob/2badb82a8f4b2bb23a90b88a6d711b3475eb6c92/src/api.rs#L80-L98
+// https://github.com/ordinals/ord/blob/0.18.5/src/api.rs#L80-L99
 export interface InscriptionJson<InscriptionId, SatPoint> {
     /**
      * The address associated with the inscription.
@@ -256,6 +264,8 @@ export interface InscriptionJson<InscriptionId, SatPoint> {
      * The content type of the inscription.
      */
     content_type: string | null;
+
+    effective_content_type: String | null,
 
     /**
      * The genesis fee of the inscription.
@@ -283,9 +293,14 @@ export interface InscriptionJson<InscriptionId, SatPoint> {
     number: number;
 
     /**
-     * The parent inscription ID.
+     * The parent inscription IDs.
      */
     parent: InscriptionId | null;
+
+    /**
+     * The parent inscription IDs.
+     */
+    parents: string[];
 
     /**
      * The previous inscription ID.
@@ -433,6 +448,7 @@ export class DefaultOrdinalsClient implements OrdinalsClient {
      * @ignore
      */
     async getInscriptionFromId(id: InscriptionId): Promise<InscriptionJson<InscriptionId, SatPoint>> {
+        console.log(`${this.basePath}/inscription/${InscriptionId.toString(id)}`)
         const inscriptionJson = await this.getJson<InscriptionJson<string, string>>(`${this.basePath}/inscription/${InscriptionId.toString(id)}`);
         return {
             ...inscriptionJson,
