@@ -21,7 +21,7 @@
     "@types/node": "^20.14.8",
     "@types/yargs": "^17.0.32",
     "ecpair": "^2.1.0",
-    "mocha": "^10.3.0",
+    "mocha": "^10.5.2",
     "tiny-secp256k1": "^2.2.3",
     "ts-node": "^10.0.0",
     "typescript": "^5.4.2",
