@@ -1,14 +1,18 @@
 ---
-sidebar_position: 4
+sidebar_position: 1
 ---
 
-# sats-wagmi Bitcoin Wallet React Hooks
+# BOB Gateway
 
-sats-wagmi is a library with a handful of BTC wallet connectors, leaving aside the need of the developer to integrate each one individually. The library also exports useful React hooks that mimic the standard followed in the EVM [wagmi](https://wagmi.sh/react/getting-started) library.
+## What is BOB Gateway?
+
+[BOB Gateway](https://docs.gobob.xyz/docs/learn/guides/bitcoin-bridge/) is a trustless, P2P bridge that enables users to bridge their BTC from Bitcoin mainnet to BOB.
+
+You can use our SDK to build this UX directly into your app, bringing your app's functionality (lending, swapping, restaking, etc.) directly to Bitcoin hodlers.
 
 ## Features
 
-- BTC Wallet connectors:
+<!-- - BTC Wallet connectors:
   - Metamask Snap
   - Unisat
   - Leather
@@ -19,7 +23,7 @@ sats-wagmi is a library with a handful of BTC wallet connectors, leaving aside t
   - inscribe (text and images)
   - send inscription
   - sign input (psbt)
-- React hooks
+- React hooks -->
 
 ## Installation
 
