@@ -16,7 +16,7 @@ You can use our SDK to add this UX directly into your app, bringing your app's f
 2. A user submits a transaction to the Bitcoin network that sends BTC to the liquidity provider's Bitcoin address and publishes the user's EVM wallet address in the `OP_RETURN` of the transaction.
 3. BOB's relayer server calls an on-chain [Light Client](../examples/btc-swap/index.mdx) to trustlessly verify the Bitcoin transaction and transfer the LP's wrapped Bitcoin to the user's EVM address, including a "gratuity" amount of ETH for transaction fees on BOB.
 
-This SDK makes it possible to do steps 2 and 3 in your application's front-end.
+This SDK makes it possible to do steps 2 and 3 in your application's front end.
 
 ## Step-by-Step Integration Guide
 
