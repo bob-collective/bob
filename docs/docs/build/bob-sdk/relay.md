@@ -1,5 +1,5 @@
 ---
-sidebar_position: 2
+sidebar_position: 3
 sidebar_label: Interact with Bitcoin from BOB Smart Contracts
 ---
 
@@ -21,14 +21,14 @@ A specific advantage of using the Simple Payment Verification (SPV) "Light Relay
 - The relay validates the chain and updates the expected difficulty for blocks in that epoch
 - A user can then submit a transaction proof in that or the last period
   - Requires header chain of at least `txProofDifficultyFactor`
-  
+
 ## Using The Relay
 
-The code for the light relay is in [`src/relay/LightRelay.sol`](https://github.com/bob-collective/bob/blob/master/src/relay/LightRelay.sol) which stores the difficulty for the current and previous epoch. To update this it is possible to use `retarget(headers)` with `proofLength * 2` block headers from Bitcoin (before and after the retarget) serialized sequentially. 
+The code for the light relay is in [`src/relay/LightRelay.sol`](https://github.com/bob-collective/bob/blob/master/src/relay/LightRelay.sol) which stores the difficulty for the current and previous epoch. To update this it is possible to use `retarget(headers)` with `proofLength * 2` block headers from Bitcoin (before and after the retarget) serialized sequentially.
 
 ### Adding BOB contracts as dependency
 
-To add the BOB contracts to your own projects, if your project is using Foundry, you can simply run `forge install bob-collective/bob` to add BOB contracts as a dependency to your project.  
+To add the BOB contracts to your own projects, if your project is using Foundry, you can simply run `forge install bob-collective/bob` to add BOB contracts as a dependency to your project.
 
 ### Build the code
 

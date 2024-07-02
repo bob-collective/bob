@@ -1,5 +1,5 @@
 ---
-sidebar_position: 1
+sidebar_position: 4
 ---
 
 # sats-wagmi Bitcoin Wallet React Hooks
@@ -45,7 +45,7 @@ $ bun add @gobob/sats-wagmi
 ### Connector
 
 ```ts
-import { MMSnapConnector } from './connectors';
+import { MMSnapConnector } from "./connectors";
 
 const mmSnap = new MMSnapConnector(network);
 
@@ -57,25 +57,25 @@ mmSnap.connect();
 1. Wrap your application with the `SatsWagmiConfig` provided by **@gobob/sats-wagmi**.
 
 ```tsx
-import { SatsWagmiConfig } from '@gobob/sats-wagmi';
+import { SatsWagmiConfig } from "@gobob/sats-wagmi";
 
 // Do this at the root of your application
 function App({ children }) {
-  return <SatsWagmiConfig network='testnet'>{children}</SatsWagmiConfig>;
+  return <SatsWagmiConfig network="testnet">{children}</SatsWagmiConfig>;
 }
 ```
 
 2. Now start by connecting:
 
 ```tsx
-import { useConnect, SatsConnector } from '@gobob/sats-wagmi';
+import { useConnect, SatsConnector } from "@gobob/sats-wagmi";
 
 function Example() {
   const { connectors, connect } = useConnect();
 
   const handleConnect = (connector: SatsConnector) => {
     connect({
-      connector
+      connector,
     });
   };
 
@@ -94,13 +94,16 @@ function Example() {
 3. Once connected, you should be able to use the connector utility and have access to the connected BTC account:
 
 ```tsx
-import { useConnect, SatsConnector } from '@gobob/sats-wagmi';
+import { useConnect, SatsConnector } from "@gobob/sats-wagmi";
 
 function Example() {
   const { address, connector } = useSatsAccount();
 
   const handleTransfer = () => {
-    connector?.sendToAddress('tb1p9gl248kp19jgennea98e2tv8acfrvfv0yws2tc5j6u72e84caapsh2hexs', 100000000);
+    connector?.sendToAddress(
+      "tb1p9gl248kp19jgennea98e2tv8acfrvfv0yws2tc5j6u72e84caapsh2hexs",
+      100000000
+    );
   };
 
   return (
