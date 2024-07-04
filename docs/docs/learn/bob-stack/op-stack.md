@@ -55,8 +55,10 @@ Instead of changing the execution client, necessary features including proving B
 
 ### Settlement
 
-The OP Stack settles on Ethereum. Currently, the OP Stack is lacking fraud proofs which is a major downside of using OP Stack as users cannot prove fraudulent behavior by the sequencer.
+The OP Stack settles on Ethereum. Initially, the OP Stack lacked fraud proofs which was a major downside of using OP Stack as users could not prove fraudulent behavior by the sequencer. On July 10th 2024, the OP-stack used by the BOB chain switches to a full fraud-proof enabled implementation, thus ensuring honest sequencer operation.
 
-However, OP Stack has a [candidate for fraud proofs in testing](https://blog.oplabs.co/open-source-and-feature-complete-fault-proofs-bring-permissionless-validation-to-the-op-sepolia-testnet/) and is actively working on increasing the efficiency of fraud proofs using ZK.
+:::info Reproving Withdrawals
+All withdrawals from BOB to Ethereum that have not been finalized when fraud-proofs are enabled on July 10th 2024 will have to be reproven. After reproving, the challenge period of 7 days is reset. It is recommended not to make new withdrawals in the 7 days leading up to July 10th since such withdrawals can not be finalized before the change. For further information, please refer to the [OP stack documentation](https://docs.optimism.io/builders/notices/fp-changes).
+:::
 
 We are working towards an approach to add merged mining security to the rollup by making a PoW part of state transition. Consequently, a lack of PoW constitutes a fault by the sequencer. Thereby, Bitcoin miners validate the rollup to offset the trust in the sequencer (in both the centralized and decentralized sequencer case).
