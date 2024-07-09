@@ -1,9 +1,10 @@
-import { DefaultEsploraClient } from "../src/esplora";
+import { DefaultEsploraClient } from "../esplora";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
-import { exec } from "child_process";
+import { exec } from "node:child_process";
 
 const args = yargs(hideBin(process.argv))
+    .env('RELAY')
     .option("private-key", {
         description: "Private key to submit with",
         type: "string",
@@ -96,7 +97,8 @@ async function main(): Promise<void> {
     try {
         await esploraClient.getBlockHash(nextRetargetHeight + proofLength);
     } catch (e) {
-        throw new Error(`Cannot retarget without ${proofLength} headers after ${nextRetargetHeight}`);
+        console.log(`Cannot retarget without ${proofLength} headers after ${nextRetargetHeight}. Exiting.`);
+        return;
     }
 
     const retargetHeaders = await getRetargetHeaders(esploraClient, nextRetargetHeight, proofLength);

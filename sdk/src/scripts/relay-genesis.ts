@@ -1,7 +1,7 @@
-import { DefaultEsploraClient } from "../src/esplora";
+import { DefaultEsploraClient } from "../esplora";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
-import { exec } from "child_process";
+import { exec } from "node:child_process";
 
 const args = yargs(hideBin(process.argv))
     .option("init-height", {
