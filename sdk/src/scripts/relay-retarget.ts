@@ -97,7 +97,8 @@ async function main(): Promise<void> {
     try {
         await electrs.getBlockHash(nextRetargetHeight + proofLength);
     } catch (e) {
-        throw new Error(`Cannot retarget without ${proofLength} headers after ${nextRetargetHeight}`);
+        console.log(`Cannot retarget without ${proofLength} headers after ${nextRetargetHeight}. Exiting.`);
+        return;
     }
 
     const retargetHeaders = await getRetargetHeaders(electrs, nextRetargetHeight, proofLength);
