@@ -1,4 +1,4 @@
-import { DefaultElectrsClient } from "../electrs";
+import { DefaultEsploraClient } from "../esplora";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import { exec } from "node:child_process";
@@ -39,14 +39,14 @@ function range(size: number, startAt = 0) {
     return [...Array(size).keys()].map(i => i + startAt);
 }
 
-async function getRetargetHeaders(electrs: DefaultElectrsClient, nextRetargetHeight: number, proofLength: number) {
-    const beforeRetarget = await Promise.all(range(proofLength, nextRetargetHeight - proofLength).map(height => electrs.getBlockHeaderAt(height)));
-    const afterRetarget = await Promise.all(range(proofLength, nextRetargetHeight).map(height => electrs.getBlockHeaderAt(height)));
+async function getRetargetHeaders(esploraClient: DefaultEsploraClient, nextRetargetHeight: number, proofLength: number) {
+    const beforeRetarget = await Promise.all(range(proofLength, nextRetargetHeight - proofLength).map(height => esploraClient.getBlockHeaderAt(height)));
+    const afterRetarget = await Promise.all(range(proofLength, nextRetargetHeight).map(height => esploraClient.getBlockHeaderAt(height)));
     return beforeRetarget.concat(afterRetarget).join("");
 }
 
 async function main(): Promise<void> {
-    const electrs = new DefaultElectrsClient(args["network"]);
+    const esploraClient = new DefaultEsploraClient(args["network"]);
 
     let privateKey: string;
     if (args["private-key"]) {
@@ -95,13 +95,13 @@ async function main(): Promise<void> {
     console.log(`Next retarget height: ${nextRetargetHeight}`);
 
     try {
-        await electrs.getBlockHash(nextRetargetHeight + proofLength);
+        await esploraClient.getBlockHash(nextRetargetHeight + proofLength);
     } catch (e) {
         console.log(`Cannot retarget without ${proofLength} headers after ${nextRetargetHeight}. Exiting.`);
         return;
     }
 
-    const retargetHeaders = await getRetargetHeaders(electrs, nextRetargetHeight, proofLength);
+    const retargetHeaders = await getRetargetHeaders(esploraClient, nextRetargetHeight, proofLength);
 
     let env = [
         `RELAY_ADDRESS=${relayAddress}`,
