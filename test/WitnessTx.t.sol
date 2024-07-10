@@ -36,7 +36,6 @@ contract WitnessTxTest is Test {
             txInfo.info.locktime
         ).hash256View();
 
-        console2.logBytes32(wTxHash);
         assertEq(wTxId, wTxHash);
     }
 
