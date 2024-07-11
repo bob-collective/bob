@@ -445,7 +445,7 @@ contract HelloBitcoin {
         // Set the relay difficulty based on the Bitcoin headers in the proof
         testLightRelay.setDifficultyFromHeaders(proof.bitcoinHeaders);
 
-        // Validate the BTC transaction proof using the relay, in production a higher than 1 block confirmation shoul be used
+        // Validate the BTC transaction proof using the relay, in production a higher than 1 block confirmation should be used
         BitcoinTx.validateProof(relay, 1, transaction, proof);
 
         // Ensure that the BTC transaction input spends the specified UTXO associated with the ordinal sell order
