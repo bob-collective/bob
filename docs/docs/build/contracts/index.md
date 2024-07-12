@@ -94,15 +94,6 @@
 
 - tBTC Relay: [`0x4c51bc419ead57da0d825afae3090f2f76e5892d`](https://testnet-explorer.gobob.xyz/address/0x4c51bc419ead57da0d825afae3090f2f76e5892d)
 
-### Tokens (ERC20) (L2)
-
-- Erc20Minter (faucet): [`0x7884560F14c62E0a83420F17832988cC1a775df1`](https://testnet-explorer.gobob.xyz/address/0x7884560F14c62E0a83420F17832988cC1a775df1)
-- TBTC: [`0xf87766ab34f863503d36394b624a436f436daf87`](https://testnet-explorer.gobob.xyz/address/0xf87766ab34f863503d36394b624a436f436daf87)
-- USDC: [`0x27c3321E40f039d10D5FF831F528C9CEAE601B1d`](https://testnet-explorer.gobob.xyz/address/0x27c3321E40f039d10D5FF831F528C9CEAE601B1d)
-- USDT: [`0xF58de5056b7057D74f957e75bFfe865F571c3fB6`](https://testnet-explorer.gobob.xyz/address/0xF58de5056b7057D74f957e75bFfe865F571c3fB6)
-- WBTC: [`0x2868d708e442A6a940670d26100036d426F1e16b`](https://testnet-explorer.gobob.xyz/address/0x2868d708e442A6a940670d26100036d426F1e16b)
-- WBTC Oracle: [`0x9AfBdFF0434acD4F325e3c35b739a62365099BCE`](https://testnet-explorer.gobob.xyz/address/0x9AfBdFF0434acD4F325e3c35b739a62365099BCE)
-
 ### Account Abstraction (ERC-4337) (L2)
 
 - Entrypoint: [`0x8b57d6ec08e09078Db50F265729440713E024C6a`](https://testnet-explorer.gobob.xyz/address/0x8b57d6ec08e09078Db50F265729440713E024C6a)
