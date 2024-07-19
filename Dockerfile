@@ -5,9 +5,12 @@ RUN apt-get update \
     && apt-get install --no-install-recommends -y tini curl ca-certificates git \
     && rm -rf /var/lib/apt/lists/*
 
-RUN mkdir -p /home/node/app/node_modules && chown -R node:node /home/node/app
 WORKDIR /home/node/app
-COPY . ./
+COPY ./sdk ./sdk
+COPY --chown=node:node ./script ./sdk/script
+
+WORKDIR /home/node/app/sdk
+
 RUN corepack enable \
     && corepack prepare pnpm@latest-9 --activate \
     && npm ci \
@@ -20,7 +23,6 @@ RUN curl -L https://foundry.paradigm.xyz | bash && \
 
 USER node
 RUN mkdir /home/node/.npm/
-COPY --chown=node:node . .
 
-WORKDIR /home/node/app/dist/
+WORKDIR /home/node/app/sdk/dist/
 ENTRYPOINT [ "tini", "--", "node" ]
