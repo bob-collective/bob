@@ -103,13 +103,14 @@ async function main(): Promise<void> {
 
     const retargetHeaders = await getRetargetHeaders(esploraClient, nextRetargetHeight, proofLength);
 
-    let env = [
-        `RELAY_ADDRESS=${relayAddress}`,
-        `RETARGET_HEADERS=${retargetHeaders}`,
-        `PRIVATE_KEY=${privateKey}`,
-    ];
+    let env = {
+        'RELAY_ADDRESS': relayAddress,
+        'RETARGET_HEADERS': retargetHeaders,
+        'PRIVATE_KEY': privateKey,
+    };
 
-    exec(`${env.join(" ")} forge script ../script/RelayRetarget.s.sol:RelayRetargetScript --rpc-url '${rpcUrl}' --broadcast --priority-gas-price 1`,
+    exec(`forge script ../script/RelayRetarget.s.sol:RelayRetargetScript --rpc-url '${rpcUrl}' --broadcast --priority-gas-price 1`,
+        { env: { ...process.env, ...env } },
         (err: any, stdout: string, stderr: string) => {
             if (err) {
                 throw new Error(`Failed to run command: ${err}`);
