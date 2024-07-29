@@ -18,7 +18,7 @@
     "README.md"
   ],
   "devDependencies": {
-    "@types/node": "^20.14.10",
+    "@types/node": "^22.0.0",
     "@types/yargs": "^17.0.32",
     "ecpair": "^2.1.0",
     "mocha": "^10.6.0",
