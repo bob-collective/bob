@@ -32,7 +32,16 @@ If you are having issues with your RPC connection, try [BlastAPI's public endpoi
 
 # Testnet Information
 
-## BOB Sepolia (Testnet)
+## BOB Sepolia (Testnet) **NEW**
+
+- Chain ID: 808813
+- Gas Token: ETH
+- RPC URL: https://bob-sepolia.rpc.gobob.xyz/
+- WS URL: [wss://bob-sepolia.rpc.gobob.xyz](wss://bob-sepolia.rpc.gobob.xyz)
+- Explorer: https://bob-sepolia.explorer.gobob.xyz/
+- Bridge: https://bob-sepolia.gobob.xyz/
+
+## BOB Sepolia (Testnet) **OLD**
 
 - Chain ID: 111
 - Gas Token: ETH

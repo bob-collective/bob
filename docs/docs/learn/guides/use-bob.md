@@ -24,10 +24,10 @@ If you want to use the testnet to interact with other apps deployed on BOB or de
    4. Click Add a network manually.
    5. In the Add a network manually dialog that appears, enter the following information:
       - Network Name: BOB Sepolia (Testnet)
-      - New RPC URL: https://testnet.rpc.gobob.xyz
+      - New RPC URL: https://bob-sepolia.rpc.gobob.xyz
       - Chain ID: 111
       - Currency Symbol (optional): ETH
-      - Block Explorer URL (optional): https://testnet-explorer.gobob.xyz/
+      - Block Explorer URL (optional): https://bob-sepolia.explorer.gobob.xyz/
    6. Click Save.
 
 ![MetaMask](add-to-wallet.png)
