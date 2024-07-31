@@ -35,7 +35,7 @@ The presence of a token on this page does not imply any endorsement of the token
 | Wrapped BTC                     | WBTC    | [0x2260fac5e5542a773aa44fbcfedf7c193bc2c599](https://etherscan.io/address/0x2260fac5e5542a773aa44fbcfedf7c193bc2c599) | [0x03c7054bcb39f7b2e5b2c7acb37583e32d70cfa3](https://explorer.gobob.xyz/address/0x03c7054bcb39f7b2e5b2c7acb37583e32d70cfa3) |
 | Wrapped liquid staked Ether 2.0 | wstETH  | [0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0](https://etherscan.io/address/0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0) | [0x85008aE6198BC91aC0735CB5497CF125ddAAc528](https://explorer.gobob.xyz/address/0x85008aE6198BC91aC0735CB5497CF125ddAAc528) |
 
-## BOB Sepolia (Testnet)
+## BOB Sepolia (Testnet) **OLD**
 
 | Name              | Symbol | L1 Token                                                                                                                      | L2 Token                                                                                                                            |
 | ----------------- | ------ | ----------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
