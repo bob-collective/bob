@@ -58,7 +58,7 @@ function evaluateProofDifficulty(IRelay relay, uint256 txProofDifficultyFactor, 
 
 ### processTxOutputs
 
-Processes the Bitcoin transaction output vector.
+Processes all outputs from the transaction.
 
 
 ```solidity
@@ -74,39 +74,19 @@ function processTxOutputs(bytes memory txOutputVector, bytes32 scriptPubKeyHash)
 |`txOutputVector`|`bytes`|Bitcoin transaction output vector. This function assumes vector's structure is valid so it must be validated using e.g. `BTCUtils.validateVout` function before it is passed here.|
 |`scriptPubKeyHash`|`bytes32`|Expected Bitcoin scriptPubKey keccak256 hash.|
 
-**Returns**
-
-|Name|Type|Description|
-|----|----|-----------|
-|`resultInfo`|`TxOutputsInfo`|Outcomes of the processing.|
-
-
-### processTxOutputs
-
-Processes all outputs from the transaction.
-
-
-```solidity
-function processTxOutputs(
-    bytes memory txOutputVector,
-    bytes32 scriptPubKeyHash,
-    TxOutputsProcessingInfo memory processInfo
-) internal pure returns (TxOutputsInfo memory resultInfo);
-```
-**Parameters**
-
-|Name|Type|Description|
-|----|----|-----------|
-|`txOutputVector`|`bytes`|Bitcoin transaction output vector. This function assumes vector's structure is valid so it must be validated using e.g. `BTCUtils.validateVout` function before it is passed here.|
-|`scriptPubKeyHash`|`bytes32`|Expected Bitcoin scriptPubKey keccak256 hash.|
-|`processInfo`|`TxOutputsProcessingInfo`|TxOutputsProcessingInfo identifying output starting index and the number of outputs.|
-
 
 ### extractEvmAddressFromOutput
 
 
 ```solidity
 function extractEvmAddressFromOutput(bytes memory _output, uint256 _at) internal pure returns (address evmAddress);
+```
+
+### extractHashFromOutput
+
+
+```solidity
+function extractHashFromOutput(bytes memory _output, uint256 _at) internal pure returns (bytes32 outputHash);
 ```
 
 ### reverseEndianness
@@ -185,6 +165,7 @@ outputs processing.
 struct TxOutputsInfo {
     uint64 value;
     address evmAddress;
+    bytes32 hash;
 }
 ```
 

@@ -156,12 +156,21 @@ contract BitcoinTxTest is Test {
         assertFalse(success);
     }
 
-    function test_ProcessTxOutputsWithOpReturn() public {
+    function test_ProcessTxOutputsWithOpReturnAddress() public {
         BitcoinTx.TxOutputsInfo memory resultInfo = BitcoinTx.processTxOutputs(
             hex"02983a000000000000146142b39c0073672dc382b89a42b29e06368bcabd0000000000000000166a14675ca18a04027fd50c88ccd03939e0e5c97b795f",
             keccak256(hex"146142b39c0073672dc382b89a42b29e06368bcabd")
         );
         assertEq(resultInfo.value, 15000);
         assertEq(resultInfo.evmAddress, 0x675Ca18A04027fd50C88CcD03939E0e5C97b795f);
+    }
+
+    function test_ProcessTxOutputsWithOpReturnBytes32() public {
+        BitcoinTx.TxOutputsInfo memory resultInfo = BitcoinTx.processTxOutputs(
+            hex"02983a000000000000146142b39c0073672dc382b89a42b29e06368bcabd0000000000000000166a2000112233445566778899001122334455667788990011",
+            keccak256(hex"146142b39c0073672dc382b89a42b29e06368bcabd")
+        );
+        assertEq(resultInfo.value, 15000);
+        assertEq(resultInfo.hash, hex"00112233445566778899001122334455667788990011");
     }
 }

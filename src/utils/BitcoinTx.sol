@@ -220,23 +220,26 @@ library BitcoinTx {
         uint64 value;
         // Optional EVM address specified in OP_RETURN.
         address evmAddress;
+        // Optional hash specified in OP_RETURN.
+        bytes32 hash;
     }
 
-    /// @notice Processes the Bitcoin transaction output vector.
-    /// @param txOutputVector Bitcoin transaction output vector.
-    ///        This function assumes vector's structure is valid so it
-    ///        must be validated using e.g. `BTCUtils.validateVout` function
-    ///        before it is passed here.
+    /// @notice Processes all outputs from the transaction.
+    /// @param txOutputVector Bitcoin transaction output vector. This function
+    ///        assumes vector's structure is valid so it must be validated using
+    ///        e.g. `BTCUtils.validateVout` function before it is passed here.
     /// @param scriptPubKeyHash Expected Bitcoin scriptPubKey keccak256 hash.
-    /// @return resultInfo Outcomes of the processing.
     function processTxOutputs(bytes memory txOutputVector, bytes32 scriptPubKeyHash)
         internal
         pure
         returns (TxOutputsInfo memory resultInfo)
     {
+        // needed to avoid stack too deep errors
+        TxOutputsProcessingInfo memory processInfo;
+
         // Determining the total number of transaction outputs in the same way as
         // for number of inputs. See `BitcoinTx.outputVector` docs for more details.
-        (uint256 outputsCompactSizeUintLength, uint256 outputsCount) = txOutputVector.parseVarInt();
+        (processInfo.outputStartingIndex, processInfo.outputsCount) = txOutputVector.parseVarInt();
 
         // To determine the first output starting index, we must jump over
         // the compactSize uint which prepends the output vector. One byte
@@ -253,25 +256,8 @@ library BitcoinTx {
         //
         // Please refer `BTCUtils` library and compactSize uint
         // docs in `BitcoinTx` library for more details.
-        uint256 outputStartingIndex = 1 + outputsCompactSizeUintLength;
+        processInfo.outputStartingIndex++;
 
-        return processTxOutputs(
-            txOutputVector, scriptPubKeyHash, TxOutputsProcessingInfo(outputStartingIndex, outputsCount)
-        );
-    }
-
-    /// @notice Processes all outputs from the transaction.
-    /// @param txOutputVector Bitcoin transaction output vector. This function
-    ///        assumes vector's structure is valid so it must be validated using
-    ///        e.g. `BTCUtils.validateVout` function before it is passed here.
-    /// @param scriptPubKeyHash Expected Bitcoin scriptPubKey keccak256 hash.
-    /// @param processInfo TxOutputsProcessingInfo identifying output
-    ///        starting index and the number of outputs.
-    function processTxOutputs(
-        bytes memory txOutputVector,
-        bytes32 scriptPubKeyHash,
-        TxOutputsProcessingInfo memory processInfo
-    ) internal pure returns (TxOutputsInfo memory resultInfo) {
         // Helper flag indicating whether there was at least one
         // output present
         bool outputPresent = false;
@@ -311,6 +297,12 @@ library BitcoinTx {
                     // NOTE: this will overwrite if there are multiple OP_RETURN outputs
                     resultInfo.evmAddress = outputEvmAddress;
                 }
+
+                bytes32 outputHash = extractHashFromOutput(txOutputVector, processInfo.outputStartingIndex);
+                if (outputHash != 0) {
+                    // NOTE: this will overwrite if there are multiple OP_RETURN outputs
+                    resultInfo.hash = outputHash;
+                }
             }
 
             // Make the `outputStartingIndex` pointing to the next output by
@@ -335,6 +327,20 @@ library BitcoinTx {
             uint256 opReturnStart = _at + 11;
             assembly {
                 evmAddress := mload(add(_output, add(opReturnStart, 20)))
+            }
+        }
+    }
+
+    function extractHashFromOutput(bytes memory _output, uint256 _at) internal pure returns (bytes32 outputHash) {
+        // OP_RETURN
+        if (_output[_at + 9] != hex"6a") {
+            return 0;
+        }
+        bytes1 _dataLen = _output[_at + 10];
+        if (uint256(uint8(_dataLen)) == 32) {
+            uint256 opReturnStart = _at + 11;
+            assembly {
+                outputHash := mload(add(_output, add(opReturnStart, 32)))
             }
         }
     }
