@@ -82,8 +82,8 @@ async function main(): Promise<void> {
     if (args["dev"]) {
         rpcUrl = "http://localhost:8545";
     } else if (args["rpc-url"] == "testnet") {
-        rpcUrl = "https://testnet.rpc.gobob.xyz/";
-        verifyOpts = "--verify --verifier blockscout --verifier-url 'https://testnet-explorer.gobob.xyz/api'";
+        rpcUrl = "https://bob-sepolia.rpc.gobob.xyz/";
+        verifyOpts = "--verify --verifier blockscout --verifier-url 'https://bob-sepolia.explorer.gobob.xyz/api'";
     } else if (args["rpc-url"] == "mainnet") {
         rpcUrl = "https://rpc.gobob.xyz/";
         verifyOpts = "--verify --verifier blockscout --verifier-url 'https://explorer.gobob.xyz/api'";
