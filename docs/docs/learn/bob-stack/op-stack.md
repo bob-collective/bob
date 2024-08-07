@@ -1,6 +1,6 @@
 ---
 sidebar_position: 3
-sidebar_label: 'Phase 1: Optimistic BOB'
+sidebar_label: "Phase 1: Optimistic BOB"
 ---
 
 # Phase 1: Optimistic BOB
@@ -55,10 +55,6 @@ Instead of changing the execution client, necessary features including proving B
 
 ### Settlement
 
-The OP Stack settles on Ethereum. Initially, the OP Stack lacked fraud proofs which was a major downside of using OP Stack as users could not prove fraudulent behavior by the sequencer. On July 10th 2024, the OP-stack used by the BOB chain switches to a full fraud-proof enabled implementation, thus ensuring honest sequencer operation.
+The OP Stack settles on Ethereum. Initially, the OP Stack lacked fraud proofs which was a major downside of using OP Stack as users could not prove fraudulent behavior by the sequencer. On July 10th 2024, the OP-stack used by the BOB chain switched to a full fraud-proof enabled implementation, thus ensuring honest sequencer operation. For further information, please refer to the [OP stack documentation](https://docs.optimism.io/builders/notices/fp-changes).
 
-:::info Reproving Withdrawals
-All withdrawals from BOB to Ethereum that have not been finalized when fraud-proofs are enabled on July 10th 2024 will have to be reproven. After reproving, the challenge period of 7 days is reset. It is recommended not to make new withdrawals in the 7 days leading up to July 10th since such withdrawals can not be finalized before the change. For further information, please refer to the [OP stack documentation](https://docs.optimism.io/builders/notices/fp-changes).
-:::
-
-We are working towards an approach to add merged mining security to the rollup by making a PoW part of state transition. Consequently, a lack of PoW constitutes a fault by the sequencer. Thereby, Bitcoin miners validate the rollup to offset the trust in the sequencer (in both the centralized and decentralized sequencer case).
+We are working towards an approach to [add merged mining security to the rollup](./merged-mining.md) by making a PoW part of state transition. Consequently, a lack of PoW constitutes a fault by the sequencer. Thereby, Bitcoin miners validate the rollup to offset the trust in the sequencer (in both the centralized and decentralized sequencer case).
