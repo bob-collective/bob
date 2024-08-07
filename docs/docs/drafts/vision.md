@@ -5,7 +5,7 @@ sidebar_position: 1
 
 We see BOB as a collective undertaking to scale Bitcoin the right way: inheriting security from Bitcoin while providing usable decentralization for builders today without waiting for hard forks.
 
-The technical vision outlines the endgame for BOB and describes how it differs from the first deployments. The discrepancy between endgame and current state forms opportunities to contribute and push the BOB stack further.
+The technical vision outlines the endgame for BOB and describes how it differs from the first deployments. The discrepancy between the endgame and current state forms opportunities to contribute and push the BOB stack further.
 
 ## Bringing Bitcoin Security to Rollups
 

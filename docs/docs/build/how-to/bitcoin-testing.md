@@ -34,7 +34,7 @@ bitcoin-cli -regtest stop
 
 ### Using Nigiri Bitcoin
 
-For an alterantive development environment check out [Nigiri Bitcoin](https://github.com/vulpemventures/nigiri/) which also packages a Liquid daemon and an Electrum server.
+For an alternative development environment check out [Nigiri Bitcoin](https://github.com/vulpemventures/nigiri/) which also packages a Liquid daemon and an Electrum server.
 
 ## Funding a Wallet
 
