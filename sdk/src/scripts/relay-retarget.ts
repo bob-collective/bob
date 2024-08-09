@@ -63,7 +63,7 @@ async function main(): Promise<void> {
     if (args["dev"]) {
         rpcUrl = "http://localhost:8545";
     } else if (args["rpc-url"] == "testnet") {
-        rpcUrl = "https://testnet.rpc.gobob.xyz/";
+        rpcUrl = "https://bob-sepolia.rpc.gobob.xyz/";
     } else if (args["rpc-url"] == "mainnet") {
         rpcUrl = "https://rpc.gobob.xyz/";
     } else {
