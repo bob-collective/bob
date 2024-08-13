@@ -1,8 +1,7 @@
 import { GatewayApiClient } from "../src/gateway";
-import * as bitcoin from "@scure/btc-signer";
 import { AddressType, getAddressInfo } from "bitcoin-address-validation";
 import { createTransfer } from "../src/wallet/utxo";
-import { hex } from '@scure/base';
+import { hex, base64 } from '@scure/base';
 import { Transaction as SigTx } from '@scure/btc-signer';
 
 const BOB_TBTC_V2_TOKEN_ADDRESS = "0xBBa2eF945D523C4e2608C9E1214C2Cc64D4fc2e2";
@@ -25,7 +24,7 @@ export async function swapBtcForToken(evmAddress: string) {
 
 }
 
-async function createTxWithOpReturn(fromAddress: string, toAddress: string, amount: number, opReturn: string, fromPubKey?: string): Promise<bitcoin.Transaction> {
+async function createTxWithOpReturn(fromAddress: string, toAddress: string, amount: number, opReturn: string, fromPubKey?: string): Promise<base64> {
     const addressType = getAddressInfo(fromAddress).type;
 
     // Ensure this is not the P2TR address for ordinals (we don't want to spend from it)
@@ -52,5 +51,5 @@ async function createTxWithOpReturn(fromAddress: string, toAddress: string, amou
 
     const psbt = unsignedTx.toPSBT(0);
 
-    return bitcoin.Transaction.fromPSBT(psbt);
+    return base64.encode(psbt)
 }
