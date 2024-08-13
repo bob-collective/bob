@@ -94,8 +94,7 @@ We recommend using our [sats-wagmi](./sats-wagmi.md) package to query your user'
 ```ts title="/src/utils/gateway.ts"
 import { createTransfer } from "@gobob/bob-sdk";
 import { AddressType, getAddressInfo } from "bitcoin-address-validation";
-import { hex, base64 } from "@scure/base";
-import { Transaction as SigTx } from "@scure/btc-signer";
+import { Transaction } from '@scure/btc-signer';
 
 const tx = await createTxWithOpReturn(
   fromAddress,
@@ -110,7 +109,7 @@ async function createTxWithOpReturn(
   amount: number,
   opReturn: string,
   fromPubKey?: string
-): Promise<base64> {
+): Promise<Buffer> {
   const addressType = getAddressInfo(fromAddress).type;
 
   // Ensure this is not the P2TR address for ordinals (we don't want to spend from it)
@@ -139,7 +138,10 @@ async function createTxWithOpReturn(
     opReturn
   );
   const psbt = unsignedTx.toPSBT(0);
-  return base64.encode(psbt)
+
+  const signedTx = Transaction.fromPSBT(psbt);
+
+  return Buffer.from(signedTx.extract())
 }
 ```
 
