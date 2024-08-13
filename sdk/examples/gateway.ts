@@ -1,5 +1,5 @@
 import { GatewayApiClient } from "../src/gateway";
-import * as bitcoin from "bitcoinjs-lib";
+import * as bitcoin from "@scure/btc-signer";
 import { AddressType, getAddressInfo } from "bitcoin-address-validation";
 import { createTransfer } from "../src/wallet/utxo";
 import { hex } from '@scure/base';
@@ -51,13 +51,6 @@ async function createTxWithOpReturn(fromAddress: string, toAddress: string, amou
     );
 
     const psbt = unsignedTx.toPSBT(0);
-    const psbtHex = hex.encode(psbt);
 
-    // TODO: sign PSBT
-    const signedPsbtHex = psbtHex;
-
-    const signedTx = SigTx.fromPSBT(bitcoin.Psbt.fromHex(signedPsbtHex).toBuffer());
-    signedTx.finalize();
-
-    return bitcoin.Transaction.fromBuffer(Buffer.from(signedTx.extract()));
+    return bitcoin.Transaction.fromPSBT(psbt);
 }

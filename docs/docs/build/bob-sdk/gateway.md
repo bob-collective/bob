@@ -93,7 +93,7 @@ We recommend using our [sats-wagmi](./sats-wagmi.md) package to query your user'
 
 ```ts title="/src/utils/gateway.ts"
 import { createTransfer } from "@gobob/bob-sdk";
-import * as bitcoin from "bitcoinjs-lib";
+import * as bitcoin from "@scure/btc-signer";
 import { AddressType, getAddressInfo } from "bitcoin-address-validation";
 import { hex } from "@scure/base";
 import { Transaction as SigTx } from "@scure/btc-signer";
@@ -140,15 +140,7 @@ async function createTxWithOpReturn(
     opReturn
   );
   const psbt = unsignedTx.toPSBT(0);
-  const psbtHex = hex.encode(psbt);
-  const signedPsbtHex = psbtHex;
-  const signedTx = SigTx.fromPSBT(
-    bitcoin.Psbt.fromHex(signedPsbtHex).toBuffer()
-  );
-  signedTx.finalize();
-  const tx = bitcoin.Transaction.fromBuffer(Buffer.from(signedTx.extract()));
-
-  return tx;
+  return bitcoin.Transaction.fromPSBT(psbt);
 }
 ```
 
