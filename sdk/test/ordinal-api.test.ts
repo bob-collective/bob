@@ -42,74 +42,79 @@ describe("Ordinal API Tests", () => {
     });
 
     it("should get inscriptions", { timeout: 10000 }, async () => {
-        const client = new DefaultOrdinalsClient("testnet");
+        const client = new DefaultOrdinalsClient("mainnet");
         const inscriptionsJson = await client.getInscriptions();
         // assert that inscriptionsJson is not null, undefined or empty
         assert.isNotNull(inscriptionsJson);
         assert.isNotEmpty(inscriptionsJson);
     });
 
-    it("should get inscriptions from block", async () => {
-        const client = new DefaultOrdinalsClient("testnet");
-        const block: number = 2537133;
+    it("should get inscriptions from block", { timeout: 10000 }, async () => {
+        const client = new DefaultOrdinalsClient("mainnet");
+        const block: number = 804691;
         const inscriptionsJson = await client.getInscriptionsFromBlock(block);
         const expectedInscriptionsJson = {
             ids: [
-                InscriptionId.fromString('4d8e7ad2b410eaa79e3aa703bbe5a314cc89be9a07532bfab09f3c5dffac6348i0'),
-                InscriptionId.fromString('d370be1b6bf74677c82226d7a0d65743cbe3846b9216e0ad207a7b03a5230ec3i0')
+                { txid: 'a1d4de525915eb5bff293f21e266ef760e274f8454add9731c9d298d031b024c', index: 0 },
+                { txid: 'dfe942a58b7e29a3952d8d1ed6608086c66475d20bc7bdbc3d784d616f9a6a7a', index: 0 },
+                { txid: '3b161db6bcde6c6a5da98bfdbca465d23c80ffd71097c2b74da46c824c441fab', index: 0 },
+                { txid: 'f9cb2752c20957df62d3a743e6242758c9770f3870ecea159fb76852f55ce71f', index: 0 },
+                { txid: '46ff2e2a6dd22cbe7eb38016ce71559e406f8bda35de421ae902e7472ca940f5', index: 0 },
+                { txid: 'e2ae28b5c589c3799de31e83fe95351a81591c6eb231602ed112b8b4c928e820', index: 0 },
+                { txid: '7dd18fc67ea45d96d2b3e5151f4461bdb029bb8488fad29e2c191470dda3f929', index: 0 }
             ],
             more: false,
-            page_index: 0,
+            page_index: 0
         };
         assert.deepStrictEqual(inscriptionsJson, expectedInscriptionsJson);
     });
 
-    it("should get inscriptions from UTXO", async () => {
-        const client = new DefaultOrdinalsClient("testnet");
+    it("should get inscriptions from UTXO", { timeout: 10000 }, async () => {
+        const client = new DefaultOrdinalsClient("mainnet");
         const outputJson = await client.getInscriptionsFromOutPoint({
-            txid: "d370be1b6bf74677c82226d7a0d65743cbe3846b9216e0ad207a7b03a5230ec3",
+            txid: "dfe942a58b7e29a3952d8d1ed6608086c66475d20bc7bdbc3d784d616f9a6a7a",
             vout: 0
         });
         const expectedOutputJson: OutputJson = {
-            value: 1967,
-            script_pubkey: 'OP_PUSHNUM_1 OP_PUSHBYTES_32 24ad201633789999cbe4251018e796acb22ec5d1a6f8a1873adc6363e04d7e7d',
-            address: 'tb1pyjkjq93n0zvenjlyy5gp3euk4jeza3w35mu2rpe6m33k8czd0e7s3ha8st',
-            transaction: 'd370be1b6bf74677c82226d7a0d65743cbe3846b9216e0ad207a7b03a5230ec3',
+            value: 10737,
+            script_pubkey: 'OP_PUSHNUM_1 OP_PUSHBYTES_32 e18a5367c5d11ee31d10bf4c53e743a7479c70e3336e70dbdea1fd927305c022',
+            address: 'bc1pux99xe796y0wx8gshax98e6r5arecu8rxdh8pk77587eyuc9cq3q2e3nng',
+            transaction: 'dfe942a58b7e29a3952d8d1ed6608086c66475d20bc7bdbc3d784d616f9a6a7a',
             sat_ranges: null,
-            inscriptions: [],
+            inscriptions: ['dfe942a58b7e29a3952d8d1ed6608086c66475d20bc7bdbc3d784d616f9a6a7ai0'],
             runes: {},
-            indexed: false,
-            spent: true
+            indexed: true,
+            spent: false
         };
         assert.deepStrictEqual(outputJson, expectedOutputJson);
     });
 
-    it("should get inscriptions from Sat", async () => {
-        const client = new DefaultOrdinalsClient("testnet");
+    it("should get inscriptions from Sat", { timeout: 10000 }, async () => {
+        const client = new DefaultOrdinalsClient("mainnet");
         const sat: number = 100;
         const satJson = await client.getInscriptionsFromSat(sat);
         const expectedSatJson = {
-            number: 100,
-            decimal: '0.100',
-            degree: '0°0′0″100‴',
-            name: 'nvtdijuwxht',
             block: 0,
             charms: [],
             cycle: 0,
+            decimal: '0.100',
+            degree: '0°0′0″100‴',
             epoch: 0,
-            period: 0,
+            inscriptions: [],
+            name: 'nvtdijuwxht',
+            number: 100,
             offset: 100,
-            rarity: 'common',
             percentile: '0.0000000000047619047671428594%',
+            period: 0,
+            rarity: 'common',
             satpoint: null,
-            timestamp: 1296688602,
-            inscriptions: []
+            timestamp: 1231006505
         };
         assert.deepStrictEqual(satJson, expectedSatJson);
     });
 
     it("should get inscriptions from start block", { timeout: 10000 }, async () => {
-        const client = new DefaultOrdinalsClient("testnet");
+        const client = new DefaultOrdinalsClient("mainnet");
         const startBlock: number = 2537138;
         const inscriptions = await client.getInscriptionsFromStartBlock(startBlock);
         // assert that inscriptions is not null or undefined
