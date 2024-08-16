@@ -49,6 +49,7 @@ async function createTxWithOpReturn(fromAddress: string, toAddress: string, amou
     );
 
     const psbt = unsignedTx.toPSBT(0);
+    // TODO: sign PSBT
 
     const signedTx = Transaction.fromPSBT(psbt);
 
