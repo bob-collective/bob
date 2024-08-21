@@ -9,7 +9,7 @@ import { TransactionOutput } from '@scure/btc-signer/psbt';
 // TODO: Add more tests using https://github.com/paulmillr/scure-btc-signer/tree/5ead71ea9a873d8ba1882a9cd6aa561ad410d0d1/test/bitcoinjs-test/fixtures/bitcoinjs
 // TODO: Ensure that the paymentAddresses have sufficient funds to create the transaction
 describe('UTXO Tests', () => {
-  it('should spend from address to create a transaction with an OP return output', { timeout: 10000 }, async () => {
+  it('should spend from address to create a transaction with an OP return output', { timeout: 50000 }, async () => {
     const network = 'mainnet';
     // Addresses where randomly picked from blockstream.info
     const paymentAddresses = [
