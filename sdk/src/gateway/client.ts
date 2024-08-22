@@ -1,6 +1,6 @@
 import { ethers, AbiCoder } from "ethers";
 import { GatewayQuoteParams } from "./types";
-import { TOKENS } from "./tokens";
+import { TOKENS_INFO, ADDRESS_LOOKUP, Token as TokenInfo } from "./tokens";
 
 type EvmAddress = string;
 
@@ -81,8 +81,8 @@ export class GatewayApiClient {
         let outputToken = "";
         if (params.toToken.startsWith("0x")) {
             outputToken = params.toToken;
-        } else if (params.toToken in TOKENS) {
-            outputToken = isMainnet ? TOKENS[params.toToken].bob : TOKENS[params.toToken].bob_sepolia;
+        } else if (params.toToken in TOKENS_INFO) {
+            outputToken = isMainnet ? TOKENS_INFO[params.toToken].bob : TOKENS_INFO[params.toToken].bobSepolia;
         } else {
             throw new Error('Unknown output token');
         }
@@ -176,6 +176,14 @@ export class GatewayApiClient {
 
         return response.json();
     }
+
+    async getTokensInfo(): Promise<TokenInfo[]> {
+        const tokens = await this.getTokens();
+        return tokens
+            .map(token => ADDRESS_LOOKUP[token])
+            .filter(token => token !== undefined);;
+    }
+
 }
 
 function calculateOpReturnHash(req: GatewayCreateOrderRequest) {
