@@ -3,15 +3,15 @@ type TokenSymbol = string;
 
 export interface GatewayQuoteParams {
     /** @description Source chain slug or ID */
-    fromChain: ChainSlug;
+    fromChain?: ChainSlug;
     /** @description Destination chain slug or ID */
     toChain: ChainSlug;
     /** @description Token symbol or address on source chain */
-    fromToken: TokenSymbol;
+    fromToken?: TokenSymbol;
     /** @description Token symbol or address on destination chain */
     toToken: TokenSymbol;
     /** @description Wallet address on source chain */
-    fromUserAddress: string;
+    fromUserAddress?: string;
     /** @description Wallet address on destination chain */
     toUserAddress: string;
     /** @description Amount of tokens to send from the source chain */

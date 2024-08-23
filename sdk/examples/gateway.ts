@@ -1,4 +1,4 @@
-import { GatewayApiClient } from "../src/gateway";
+import { GatewayQuoteParams, GatewaySDK } from "../src/gateway";
 import { AddressType, getAddressInfo } from "bitcoin-address-validation";
 import { createTransfer } from "../src/wallet/utxo";
 import { Transaction } from '@scure/btc-signer';
@@ -6,21 +6,24 @@ import { Transaction } from '@scure/btc-signer';
 const BOB_TBTC_V2_TOKEN_ADDRESS = "0xBBa2eF945D523C4e2608C9E1214C2Cc64D4fc2e2";
 
 export async function swapBtcForToken(evmAddress: string) {
-    const gatewayClient = new GatewayApiClient("https://onramp-api-mainnet.gobob.xyz");
+    const gatewaySDK = new GatewaySDK("bob"); // or "mainnet"
 
-    const amount = 10000; // 0.0001 BTC
-    const { fee: _fee, onramp_address: onrampAddress, bitcoin_address: bitcoinAddress, gratuity: _gratuity } = await gatewayClient.getQuote(
-        BOB_TBTC_V2_TOKEN_ADDRESS,
-        amount
-    );
+    const quoteParams: GatewayQuoteParams = {
+        toChain: "bob",
+        toUserAddress: evmAddress,
+        toToken: BOB_TBTC_V2_TOKEN_ADDRESS, // or "tBTC"
+        amount: 10000000, // 0.1 BTC
+        gasRefill: 10000, // 0.0001 BTC
+    };
+    const quote = await gatewaySDK.getQuote(quoteParams);
+    const { bitcoinAddress, satoshis } = quote;
 
-    const orderId = await gatewayClient.createOrder(onrampAddress, evmAddress, amount);
+    const { uuid, opReturnHash } = await gatewaySDK.startOrder(quote, quoteParams);
 
-    const tx = await createTxWithOpReturn("bc1qafk4yhqvj4wep57m62dgrmutldusqde8adh20d", bitcoinAddress, amount, evmAddress);
+    const tx = await createTxWithOpReturn("bc1qafk4yhqvj4wep57m62dgrmutldusqde8adh20d", bitcoinAddress, satoshis, opReturnHash);
 
     // NOTE: relayer should broadcast the tx
-    await gatewayClient.updateOrder(orderId, tx.toHex());
-
+    await gatewaySDK.finalizeOrder(uuid, tx.toString("hex"));
 }
 
 async function createTxWithOpReturn(fromAddress: string, toAddress: string, amount: number, opReturn: string, fromPubKey?: string): Promise<Buffer> {
@@ -50,7 +53,6 @@ async function createTxWithOpReturn(fromAddress: string, toAddress: string, amou
 
     const psbt = unsignedTx.toPSBT(0);
     // TODO: sign PSBT
-
     const signedTx = Transaction.fromPSBT(psbt);
 
     return Buffer.from(signedTx.extract())
