@@ -50,6 +50,7 @@ const TOKENS: { [key: string]: Token } = {
     }
 };
 
+/** @description Tokens supported on BOB and BOB Sepolia */
 export const TOKENS_INFO: { [key: string]: Token } = {};
 export const ADDRESS_LOOKUP: { [address: string]: Token } = {};
 
