@@ -1,6 +1,14 @@
 import { ethers, AbiCoder } from "ethers";
 import { GatewayQuoteParams } from "./types";
 import { TOKENS_INFO, ADDRESS_LOOKUP, Token as TokenInfo } from "./tokens";
+import { createBitcoinPsbt } from "../wallet";
+
+export enum Chains {
+    // NOTE: we also support Bitcoin testnet
+    bitcoin = "bitcoin",
+    bob = "bob",
+    bobSepolia = "bobSepolia",
+};
 
 type EvmAddress = string;
 
@@ -72,6 +80,7 @@ type GatewayCreateOrderResponse = {
 type GatewayStartOrderResult = GatewayCreateOrderResponse & {
     bitcoinAddress: string,
     satoshis: number;
+    psbtBase64?: string;
 };
 
 /**
@@ -123,8 +132,8 @@ export class GatewayApiClient {
      * @param params The parameters for the quote.
      */
     async getQuote(params: GatewayQuoteParams): Promise<GatewayQuote> {
-        const isMainnet = params.toChain == "bob" || params.toChain == 60808;
-        const isTestnet = params.toChain == "bobSepolia" || params.toChain == 808813;
+        const isMainnet = params.toChain === 60808 || typeof params.toChain === "string" && params.toChain.toLowerCase() === Chains.bob;
+        const isTestnet = params.toChain === 808813 || typeof params.toChain === "string" && params.toChain.toLowerCase() === Chains.bobSepolia;
 
         let outputToken = "";
         if (params.toToken.startsWith("0x")) {
@@ -191,11 +200,24 @@ export class GatewayApiClient {
             throw new Error('Invalid OP_RETURN hash');
         }
 
+        let psbtBase64: string;
+        if (params.fromUserAddress && typeof params.fromChain === "string" && params.fromChain.toLowerCase() === Chains.bitcoin) {
+            psbtBase64 = await createBitcoinPsbt(
+                params.fromUserAddress,
+                params.toUserAddress,
+                gatewayQuote.satoshis,
+                params.fromUserPublicKey,
+                data.opReturnHash,
+                gatewayQuote.txProofDifficultyFactor
+            );
+        }
+
         return {
             uuid: data.uuid,
             opReturnHash: data.opReturnHash,
             bitcoinAddress: gatewayQuote.bitcoinAddress,
             satoshis: gatewayQuote.satoshis,
+            psbtBase64,
         }
     }
 

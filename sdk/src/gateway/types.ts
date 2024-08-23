@@ -12,6 +12,8 @@ export interface GatewayQuoteParams {
     toToken: TokenSymbol;
     /** @description Wallet address on source chain */
     fromUserAddress?: string;
+    /** @description Wallet public key on source chain */
+    fromUserPublicKey?: string;
     /** @description Wallet address on destination chain */
     toUserAddress: string;
     /** @description Amount of tokens to send from the source chain */
