@@ -54,7 +54,7 @@ const TOKENS: { [key: string]: Token } = {
 export const TOKENS_INFO: { [key: string]: Token } = {};
 export const ADDRESS_LOOKUP: { [address: string]: Token } = {};
 
-for (const key in TOKENS_INFO) {
+for (const key in TOKENS) {
     const token = TOKENS[key];
 
     const lowerBob = token.bob.toLowerCase();
@@ -67,7 +67,7 @@ for (const key in TOKENS_INFO) {
         bobSepolia: lowerBobSepolia,
     };
 
-    TOKENS_INFO[key] = lowercasedToken;
+    TOKENS_INFO[key.toLowerCase()] = lowercasedToken;
     ADDRESS_LOOKUP[lowerBob] = lowercasedToken;
     ADDRESS_LOOKUP[lowerBobSepolia] = lowercasedToken;
 }

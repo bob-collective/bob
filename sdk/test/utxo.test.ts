@@ -9,7 +9,6 @@ import { TransactionOutput } from '@scure/btc-signer/psbt';
 // TODO: Ensure that the paymentAddresses have sufficient funds to create the transaction
 describe('UTXO Tests', () => {
   it('should spend from address to create a transaction with an OP return output', { timeout: 50000 }, async () => {
-    const network = 'mainnet';
     // Addresses where randomly picked from blockstream.info
     const paymentAddresses = [
       // P2WPKH: https://blockstream.info/address/bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq

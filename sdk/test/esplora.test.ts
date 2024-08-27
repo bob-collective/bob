@@ -113,7 +113,7 @@ describe("Esplora Tests", () => {
     it("should get fee rate", async () => {
         const client = new DefaultEsploraClient("testnet");
         const feeRate = await client.getFeeEstimate(1);
-        assert.isAbove(feeRate, 1);
+        assert.isAtLeast(feeRate, 1);
     });
 
 

@@ -5,9 +5,9 @@ import { createBitcoinPsbt } from "../wallet";
 
 export enum Chains {
     // NOTE: we also support Bitcoin testnet
-    bitcoin = "bitcoin",
-    bob = "bob",
-    bobSepolia = "bobSepolia",
+    Bitcoin = "bitcoin",
+    BOB = "bob",
+    BOBSepolia = "bobsepolia",
 };
 
 type EvmAddress = string;
@@ -26,17 +26,17 @@ type GatewayQuote = {
     /** @description The number of confirmations required to confirm the Bitcoin tx */
     txProofDifficultyFactor: number;
     /** @description The optional strategy address */
-    strategyAddress: EvmAddress | null,
+    strategyAddress?: EvmAddress,
 };
 
 /** @dev Internal request type used to call the Gateway API */
 type GatewayCreateOrderRequest = {
     gatewayAddress: EvmAddress,
-    strategyAddress: EvmAddress | null,
+    strategyAddress?: EvmAddress,
     satsToConvertToEth: number,
     userAddress: EvmAddress,
-    gatewayExtraData: string | null,
-    strategyExtraData: string | null,
+    gatewayExtraData?: string,
+    strategyExtraData?: string,
     satoshis: number,
 };
 
@@ -60,7 +60,7 @@ type GatewayOrderResponse = {
     /** @description The number of confirmations required to confirm the Bitcoin tx */
     txProofDifficultyFactor: number;
     /** @description The optional strategy address */
-    strategyAddress: EvmAddress | null,
+    strategyAddress?: EvmAddress,
     /** @description The gas refill in satoshis */
     satsToConvertToEth: number,
 };
@@ -113,11 +113,13 @@ export class GatewayApiClient {
      */
     constructor(networkOrUrl: string = "mainnet") {
         switch (networkOrUrl) {
-            case "mainnet" || "bob":
+            case "mainnet":
+            case "bob":
                 this.network = Network.Mainnet;
                 this.baseUrl = MAINNET_GATEWAY_BASE_URL;
                 break;
-            case "testnet" || "bobSepolia":
+            case "testnet":
+            case "bobSepolia":
                 this.network = Network.Testnet;
                 this.baseUrl = TESTNET_GATEWAY_BASE_URL;
                 break;
@@ -132,17 +134,18 @@ export class GatewayApiClient {
      * @param params The parameters for the quote.
      */
     async getQuote(params: GatewayQuoteParams): Promise<GatewayQuote> {
-        const isMainnet = params.toChain === 60808 || typeof params.toChain === "string" && params.toChain.toLowerCase() === Chains.bob;
-        const isTestnet = params.toChain === 808813 || typeof params.toChain === "string" && params.toChain.toLowerCase() === Chains.bobSepolia;
+        const isMainnet = params.toChain === 60808 || typeof params.toChain === "string" && params.toChain.toLowerCase() === Chains.BOB;
+        const isTestnet = params.toChain === 808813 || typeof params.toChain === "string" && params.toChain.toLowerCase() === Chains.BOBSepolia;
 
+        const toToken = params.toToken.toLowerCase();
         let outputToken = "";
-        if (params.toToken.startsWith("0x")) {
-            outputToken = params.toToken;
-        } else if (params.toToken in TOKENS_INFO) {
+        if (toToken.startsWith("0x")) {
+            outputToken = toToken;
+        } else if (toToken in TOKENS_INFO) {
             if (isMainnet && this.network === Network.Mainnet) {
-                outputToken = TOKENS_INFO[params.toToken].bob;
+                outputToken = TOKENS_INFO[toToken].bob;
             } else if (isTestnet && this.network === Network.Testnet) {
-                outputToken = TOKENS_INFO[params.toToken].bobSepolia;
+                outputToken = TOKENS_INFO[toToken].bobSepolia;
             } else {
                 throw new Error('Unknown network');
             }
@@ -173,11 +176,11 @@ export class GatewayApiClient {
         const request: GatewayCreateOrderRequest = {
             gatewayAddress: gatewayQuote.gatewayAddress,
             strategyAddress: gatewayQuote.strategyAddress,
-            satsToConvertToEth: params.gasRefill,
+            satsToConvertToEth: params.gasRefill || 0,
             userAddress: params.toUserAddress,
             // TODO: figure out how to get extra data
-            gatewayExtraData: null,
-            strategyExtraData: null,
+            gatewayExtraData: undefined,
+            strategyExtraData: undefined,
             satoshis: gatewayQuote.satoshis,
         };
 
@@ -201,10 +204,10 @@ export class GatewayApiClient {
         }
 
         let psbtBase64: string;
-        if (params.fromUserAddress && typeof params.fromChain === "string" && params.fromChain.toLowerCase() === Chains.bitcoin) {
+        if (params.fromUserAddress && typeof params.fromChain === "string" && params.fromChain.toLowerCase() === Chains.Bitcoin) {
             psbtBase64 = await createBitcoinPsbt(
                 params.fromUserAddress,
-                params.toUserAddress,
+                gatewayQuote.bitcoinAddress,
                 gatewayQuote.satoshis,
                 params.fromUserPublicKey,
                 data.opReturnHash,
@@ -306,8 +309,8 @@ function calculateOpReturnHash(req: GatewayCreateOrderRequest) {
             req.strategyAddress || ethers.ZeroAddress,
             req.satsToConvertToEth,
             req.userAddress,
-            req.gatewayExtraData,
-            req.strategyExtraData
+            req.gatewayExtraData || "0x",
+            req.strategyExtraData || "0x"
         ]
     ))
 }
