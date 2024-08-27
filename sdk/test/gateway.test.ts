@@ -1,7 +1,7 @@
 import { assert, describe, it } from "vitest";
 import { GatewaySDK } from "../src/gateway";
 import { MAINNET_GATEWAY_BASE_URL } from "../src/gateway/client";
-import { TOKENS_INFO } from "../src/gateway/tokens";
+import { SYMBOL_LOOKUP } from "../src/gateway/tokens";
 import { ZeroAddress } from "ethers";
 import nock from "nock";
 import * as bitcoin from "bitcoinjs-lib";
@@ -21,7 +21,7 @@ describe("Gateway Tests", () => {
         };
 
         nock(`${MAINNET_GATEWAY_BASE_URL}`)
-            .get(`/quote/${TOKENS_INFO["tbtc"].bob}/1000`)
+            .get(`/quote/${SYMBOL_LOOKUP["tbtc"].bob}/1000`)
             .times(4)
             .reply(200, mockQuote);
 
@@ -45,7 +45,7 @@ describe("Gateway Tests", () => {
         }), mockQuote);
         assert.deepEqual(await gatewaySDK.getQuote({
             toChain: "BOB",
-            toToken: TOKENS_INFO["tbtc"].bob,
+            toToken: SYMBOL_LOOKUP["tbtc"].bob,
             toUserAddress: ZeroAddress,
             amount: 1000,
         }), mockQuote);

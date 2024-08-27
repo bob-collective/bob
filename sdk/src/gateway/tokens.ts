@@ -51,7 +51,7 @@ const TOKENS: { [key: string]: Token } = {
 };
 
 /** @description Tokens supported on BOB and BOB Sepolia */
-export const TOKENS_INFO: { [key: string]: Token } = {};
+export const SYMBOL_LOOKUP: { [key: string]: Token } = {};
 export const ADDRESS_LOOKUP: { [address: string]: Token } = {};
 
 for (const key in TOKENS) {
@@ -67,7 +67,7 @@ for (const key in TOKENS) {
         bobSepolia: lowerBobSepolia,
     };
 
-    TOKENS_INFO[key.toLowerCase()] = lowercasedToken;
+    SYMBOL_LOOKUP[key.toLowerCase()] = lowercasedToken;
     ADDRESS_LOOKUP[lowerBob] = lowercasedToken;
     ADDRESS_LOOKUP[lowerBobSepolia] = lowercasedToken;
 }

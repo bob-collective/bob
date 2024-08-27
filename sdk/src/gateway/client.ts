@@ -1,6 +1,6 @@
 import { ethers, AbiCoder } from "ethers";
 import { GatewayQuoteParams } from "./types";
-import { TOKENS_INFO, ADDRESS_LOOKUP, Token as TokenInfo } from "./tokens";
+import { SYMBOL_LOOKUP, ADDRESS_LOOKUP, Token as TokenInfo } from "./tokens";
 import { createBitcoinPsbt } from "../wallet";
 
 export enum Chains {
@@ -141,11 +141,11 @@ export class GatewayApiClient {
         let outputToken = "";
         if (toToken.startsWith("0x")) {
             outputToken = toToken;
-        } else if (toToken in TOKENS_INFO) {
+        } else if (toToken in SYMBOL_LOOKUP) {
             if (isMainnet && this.network === Network.Mainnet) {
-                outputToken = TOKENS_INFO[toToken].bob;
+                outputToken = SYMBOL_LOOKUP[toToken].bob;
             } else if (isTestnet && this.network === Network.Testnet) {
-                outputToken = TOKENS_INFO[toToken].bobSepolia;
+                outputToken = SYMBOL_LOOKUP[toToken].bobSepolia;
             } else {
                 throw new Error('Unknown network');
             }
