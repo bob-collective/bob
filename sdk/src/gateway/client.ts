@@ -83,6 +83,8 @@ type GatewayStartOrderResult = GatewayCreateOrderResponse & {
     psbtBase64?: string;
 };
 
+type Optional<T, K extends keyof T> = Omit<T, K> & Partial<T>;
+
 /**
  * Base url for the mainnet Gateway API.
  * @default "https://gateway-api-mainnet.gobob.xyz"
@@ -133,7 +135,7 @@ export class GatewayApiClient {
      * 
      * @param params The parameters for the quote.
      */
-    async getQuote(params: GatewayQuoteParams): Promise<GatewayQuote> {
+    async getQuote(params: Optional<GatewayQuoteParams, "amount" | "toUserAddress">): Promise<GatewayQuote> {
         const isMainnet = params.toChain === 60808 || typeof params.toChain === "string" && params.toChain.toLowerCase() === Chains.BOB;
         const isTestnet = params.toChain === 808813 || typeof params.toChain === "string" && params.toChain.toLowerCase() === Chains.BOBSepolia;
 

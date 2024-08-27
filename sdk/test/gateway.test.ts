@@ -49,6 +49,16 @@ describe("Gateway Tests", () => {
             toUserAddress: ZeroAddress,
             amount: 1000,
         }), mockQuote);
+
+        // get the total available without amount
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
+            .get(`/quote/${SYMBOL_LOOKUP["tbtc"].bob}/`)
+            .reply(200, mockQuote);
+        assert.deepEqual(await gatewaySDK.getQuote({
+            toChain: "BOB",
+            toToken: SYMBOL_LOOKUP["tbtc"].bob,
+            toUserAddress: ZeroAddress,
+        }), mockQuote);
     });
 
     it("should start order", async () => {
