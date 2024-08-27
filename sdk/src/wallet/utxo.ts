@@ -1,10 +1,9 @@
 import { Transaction, Script, selectUTXO, TEST_NETWORK, NETWORK, p2wpkh, p2sh } from '@scure/btc-signer';
-import { hex } from "@scure/base";
-import { AddressType } from 'bitcoin-address-validation';
-
+import { hex, base64 } from "@scure/base";
+import { AddressType, getAddressInfo, Network } from 'bitcoin-address-validation';
 import { DefaultEsploraClient, UTXO } from '../esplora';
 
-export type BitcoinNetworkName = 'mainnet' | 'testnet';
+export type BitcoinNetworkName = Exclude<Network, "regtest">;
 
 const bitcoinNetworks: Record<BitcoinNetworkName, typeof NETWORK> = {
   mainnet: NETWORK,
@@ -29,17 +28,41 @@ export interface Input {
   nonWitnessUtxo?: Uint8Array;
 }
 
-export async function createTransfer(
-  network: BitcoinNetworkName,
-  addressType: AddressType,
+/**
+ * Create a PSBT with an output `toAddress` and an optional OP_RETURN output.
+ * May add an additional change output. This returns an **unsigned** PSBT encoded
+ * as a Base64 string.
+ * 
+ * @param fromAddress The Bitcoin address which is sending to the `toAddress`.
+ * @param toAddress The Bitcoin address which is receiving the BTC.
+ * @param amount The amount of BTC (as satoshis) to send.
+ * @param publicKey Optional public key needed if using P2SH-P2WPKH.
+ * @param opReturnData Optional OP_RETURN data to include in an output.
+ * @param confirmationTarget The number of blocks to include this tx (for fee estimation).
+ * @returns {Promise<string>} The Base64 encoded PSBT.
+ */
+export async function createBitcoinPsbt(
   fromAddress: string,
   toAddress: string,
   amount: number,
   publicKey?: string,
   opReturnData?: string,
   confirmationTarget: number = 3,
-): Promise<Transaction> {
-  const esploraClient = new DefaultEsploraClient(network);
+): Promise<string> {
+  const addressInfo = getAddressInfo(fromAddress);
+  const network = addressInfo.network;
+  if (network === "regtest") {
+    throw new Error("Bitcoin regtest not supported");
+  }
+
+  // We need the public key to generate the redeem and witness script to spend the scripts
+  if (addressInfo.type === (AddressType.p2sh || AddressType.p2wsh)) {
+    if (!publicKey) {
+      throw new Error('Public key is required to spend from the selected address type');
+    }
+  }
+
+  const esploraClient = new DefaultEsploraClient(addressInfo.network);
 
   // NOTE: esplora only returns the 25 most recent UTXOs
   // TODO: change this to use the pagination API and return all UTXOs
@@ -58,11 +81,8 @@ export async function createTransfer(
   await Promise.all(
     confirmedUtxos.map(async (utxo) => {
       const hex = await esploraClient.getTransactionHex(utxo.txid);
-
       const transaction = Transaction.fromRaw(Buffer.from(hex, 'hex'), { allowUnknownOutputs: true });
-
-      const input = getInputFromUtxoAndTx(network, utxo, transaction, addressType, publicKey);
-
+      const input = getInputFromUtxoAndTx(network, utxo, transaction, addressInfo.type, publicKey);
       possibleInputs.push(input);
     })
   );
@@ -104,7 +124,7 @@ export async function createTransfer(
     throw new Error('Failed to create transaction. Do you have enough funds?');
   }
 
-  return transaction.tx;
+  return base64.encode(transaction.tx.toPSBT(0));
 }
 
 // Using the UTXO and the transaction, we can construct the input for the transaction
@@ -113,7 +133,7 @@ export function getInputFromUtxoAndTx(
   utxo: UTXO,
   transaction: Transaction,
   addressType: AddressType,
-  pubKey?: string
+  publicKey?: string
 ): Input {
   // The output containts the necessary details to spend the UTXO based on the script type
   // Under the hood, @scure/btc-signer parses the output and extracts the script and amount
@@ -126,7 +146,10 @@ export function getInputFromUtxoAndTx(
   let redeemScript = {};
 
   if (addressType === AddressType.p2sh) {
-    const inner = p2wpkh(Buffer.from(pubKey!, 'hex'), getBtcNetwork(network));
+    if (!publicKey) {
+      throw new Error("Bitcoin P2SH not supported without public key");
+    }
+    const inner = p2wpkh(Buffer.from(publicKey!, 'hex'), getBtcNetwork(network));
     redeemScript = p2sh(inner);
   }
 

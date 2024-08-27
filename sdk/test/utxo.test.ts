@@ -1,16 +1,14 @@
 import { describe, it, assert } from 'vitest';
-import { AddressType, getAddressInfo } from 'bitcoin-address-validation';
+import { AddressType, getAddressInfo, Network } from 'bitcoin-address-validation';
 import { Address, NETWORK, OutScript, Script, Transaction } from '@scure/btc-signer';
-import { hex } from '@scure/base';
-
-import { createTransfer, getInputFromUtxoAndTx } from '../src/wallet/utxo';
+import { hex, base64 } from '@scure/base';
+import { createBitcoinPsbt, getInputFromUtxoAndTx } from '../src/wallet/utxo';
 import { TransactionOutput } from '@scure/btc-signer/psbt';
 
 // TODO: Add more tests using https://github.com/paulmillr/scure-btc-signer/tree/5ead71ea9a873d8ba1882a9cd6aa561ad410d0d1/test/bitcoinjs-test/fixtures/bitcoinjs
 // TODO: Ensure that the paymentAddresses have sufficient funds to create the transaction
 describe('UTXO Tests', () => {
   it('should spend from address to create a transaction with an OP return output', { timeout: 50000 }, async () => {
-    const network = 'mainnet';
     // Addresses where randomly picked from blockstream.info
     const paymentAddresses = [
       // P2WPKH: https://blockstream.info/address/bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq
@@ -51,15 +49,14 @@ describe('UTXO Tests', () => {
               // Use a random public key for P2SH-P2WPKH
               pubkey = '03b366c69e8237d9be7c4f1ac2a7abc6a79932fbf3de4e2f6c04797d7ef27abfe1';
             }
-            const transaction = await createTransfer(
-              network,
-              paymentAddressType,
+            const psbtBase64 = await createBitcoinPsbt(
               paymentAddress,
               toAddress,
               amount,
               pubkey,
               opReturn,
             );
+            const transaction = Transaction.fromPSBT(base64.decode(psbtBase64));
 
             assert(transaction);
 
@@ -179,7 +176,7 @@ describe('UTXO Tests', () => {
 
     for (const test of testset) {
       const input = getInputFromUtxoAndTx(
-        'testnet',
+        Network.testnet,
         test.utxo,
         test.transaction,
         test.addressType,
