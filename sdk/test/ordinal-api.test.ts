@@ -1,5 +1,5 @@
 import {
-    DefaultOrdinalsClient,
+    OrdinalsClient,
     InscriptionJson,
     OutputJson,
     InscriptionId,
@@ -9,7 +9,7 @@ import { assert, describe, it } from "vitest";
 
 describe("Ordinal API Tests", () => {
     it("should get inscription from id", async () => {
-        const client = new DefaultOrdinalsClient("mainnet");
+        const client = new OrdinalsClient("mainnet");
         // Deploy ORDI - BRC20
         const inscriptionJson = await client.getInscriptionFromId({
             txid: "b61b0172d95e266c18aea0c624db987e971a5d6d4ebc2aaed85da4642d635735",
@@ -42,7 +42,7 @@ describe("Ordinal API Tests", () => {
     });
 
     it("should get inscriptions", { timeout: 10000 }, async () => {
-        const client = new DefaultOrdinalsClient("mainnet");
+        const client = new OrdinalsClient("mainnet");
         const inscriptionsJson = await client.getInscriptions();
         // assert that inscriptionsJson is not null, undefined or empty
         assert.isNotNull(inscriptionsJson);
@@ -50,7 +50,7 @@ describe("Ordinal API Tests", () => {
     });
 
     it("should get inscriptions from block", { timeout: 10000 }, async () => {
-        const client = new DefaultOrdinalsClient("mainnet");
+        const client = new OrdinalsClient("mainnet");
         const block: number = 804691;
         const inscriptionsJson = await client.getInscriptionsFromBlock(block);
         const expectedInscriptionsJson = {
@@ -70,7 +70,7 @@ describe("Ordinal API Tests", () => {
     });
 
     it("should get inscriptions from UTXO", { timeout: 10000 }, async () => {
-        const client = new DefaultOrdinalsClient("mainnet");
+        const client = new OrdinalsClient("mainnet");
         const outputJson = await client.getInscriptionsFromOutPoint({
             txid: "dfe942a58b7e29a3952d8d1ed6608086c66475d20bc7bdbc3d784d616f9a6a7a",
             vout: 0
@@ -90,7 +90,7 @@ describe("Ordinal API Tests", () => {
     });
 
     it("should get inscriptions from Sat", { timeout: 10000 }, async () => {
-        const client = new DefaultOrdinalsClient("mainnet");
+        const client = new OrdinalsClient("mainnet");
         const sat: number = 100;
         const satJson = await client.getInscriptionsFromSat(sat);
         const expectedSatJson = {
@@ -114,7 +114,7 @@ describe("Ordinal API Tests", () => {
     });
 
     it("should get inscriptions from start block", { timeout: 10000 }, async () => {
-        const client = new DefaultOrdinalsClient("mainnet");
+        const client = new OrdinalsClient("mainnet");
         const startBlock: number = 2537138;
         const inscriptions = await client.getInscriptionsFromStartBlock(startBlock);
         // assert that inscriptions is not null or undefined

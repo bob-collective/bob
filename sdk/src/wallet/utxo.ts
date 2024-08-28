@@ -1,7 +1,7 @@
 import { Transaction, Script, selectUTXO, TEST_NETWORK, NETWORK, p2wpkh, p2sh } from '@scure/btc-signer';
 import { hex, base64 } from "@scure/base";
 import { AddressType, getAddressInfo, Network } from 'bitcoin-address-validation';
-import { DefaultEsploraClient, UTXO } from '../esplora';
+import { EsploraClient, UTXO } from '../esplora';
 
 export type BitcoinNetworkName = Exclude<Network, "regtest">;
 
@@ -62,7 +62,7 @@ export async function createBitcoinPsbt(
     }
   }
 
-  const esploraClient = new DefaultEsploraClient(addressInfo.network);
+  const esploraClient = new EsploraClient(addressInfo.network);
 
   // NOTE: esplora only returns the 25 most recent UTXOs
   // TODO: change this to use the pagination API and return all UTXOs

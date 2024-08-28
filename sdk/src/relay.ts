@@ -48,7 +48,7 @@ export interface BitcoinTxInfo {
  * @example
  * ```typescript
  * const BITCOIN_NETWORK = "regtest";
- * const esploraClient = new DefaultEsploraClient(BITCOIN_NETWORK);
+ * const esploraClient = new EsploraClient(BITCOIN_NETWORK);
  * const txId = "279121610d9575d132c95312c032116d6b8a58a3a31f69adf9736b493de96a16"; //enter the transaction id here
  * const info = await getBitcoinTxInfo(esploraClient, txId);
  * ```
@@ -104,7 +104,7 @@ export interface BitcoinTxProof {
  * @example
  * ```typescript
  * const BITCOIN_NETWORK = "regtest";
- * const esploraClient = new DefaultEsploraClient(BITCOIN_NETWORK);
+ * const esploraClient = new EsploraClient(BITCOIN_NETWORK);
  * const txId = "279121610d9575d132c95312c032116d6b8a58a3a31f69adf9736b493de96a16";//enter the transaction id here
  * const txProofDifficultyFactor = "1";//enter the difficulty factor
  * const info = await getBitcoinTxProof(esploraClient, txId, txProofDifficultyFactor);
@@ -137,7 +137,7 @@ export async function getBitcoinTxProof(
  *
  * @example
  * const BITCOIN_NETWORK = "regtest";
- * const esploraClient = new DefaultEsploraClient(BITCOIN_NETWORK);
+ * const esploraClient = new EsploraClient(BITCOIN_NETWORK);
  * const startHeight = 0;
  * const numBlocks = 10;
  *

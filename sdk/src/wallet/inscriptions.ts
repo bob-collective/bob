@@ -1,6 +1,6 @@
 import { EsploraClient, UTXO } from "../esplora";
 import { getTxInscriptions } from "../inscription";
-import { DefaultOrdinalsClient, InscriptionId, OrdinalsClient } from "../ordinal-api";
+import { OrdinalsClient, InscriptionId } from "../ordinal-api";
 
 export async function findUtxoForInscriptionId(
     esploraClient: EsploraClient,
@@ -31,7 +31,7 @@ export async function findUtxoForInscriptionId(
 }
 
 export async function findUtxosWithoutInscriptions(network: string, utxos: UTXO[]): Promise<UTXO[]> {
-    const ordinalsClient = new DefaultOrdinalsClient(network);
+    const ordinalsClient = new OrdinalsClient(network);
 
     const safeUtxos: UTXO[] = [];
 

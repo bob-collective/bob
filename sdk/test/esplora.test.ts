@@ -1,15 +1,15 @@
 import { assert, describe, it } from "vitest";
-import { DefaultEsploraClient, Transaction, Block } from "../src/esplora";
+import { EsploraClient, Transaction, Block } from "../src/esplora";
 
 describe("Esplora Tests", () => {
     it("should get block height", async () => {
-        const client = new DefaultEsploraClient("testnet");
+        const client = new EsploraClient("testnet");
         const height = await client.getLatestHeight();
         assert(height > 0);
     });
 
     it("should get block", async () => {
-        const client = new DefaultEsploraClient("testnet");
+        const client = new EsploraClient("testnet");
         const block = await client.getBlock("000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943");
         const expectedBlock: Block = {
             id: '000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943',
@@ -33,25 +33,25 @@ describe("Esplora Tests", () => {
     });
 
     it("should get block hash", async () => {
-        const client = new DefaultEsploraClient("testnet");
+        const client = new EsploraClient("testnet");
         const blockHash = await client.getBlockHash(0);
         assert.equal(blockHash, "000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943");
     });
 
     it("should get block header", async () => {
-        const client = new DefaultEsploraClient("testnet");
+        const client = new EsploraClient("testnet");
         const blockHeader = await client.getBlockHeader("000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943");
         assert.equal(blockHeader, "0100000000000000000000000000000000000000000000000000000000000000000000003ba3edfd7a7b12b27ac72c3e67768f617fc81bc3888a51323a9fb8aa4b1e5e4adae5494dffff001d1aa4ae18");
     });
 
     it("should get block header at certain height", async () => {
-        const client = new DefaultEsploraClient("testnet");
+        const client = new EsploraClient("testnet");
         const blockHeader = await client.getBlockHeaderAt(10);
         assert.equal(blockHeader, "010000001e93aa99c8ff9749037d74a2207f299502fa81d56a4ea2ad5330ff50000000002ec2266c3249ce2e079059e0aec01a2d8d8306a468ad3f18f06051f2c3b1645435e9494dffff001d008918cf");
     });
 
     it("should get transaction", async () => {
-        const client = new DefaultEsploraClient("testnet");
+        const client = new EsploraClient("testnet");
         const tx = await client.getTransaction("4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b");
         const expectedTransaction: Transaction = {
             txid: '4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b',
@@ -90,14 +90,14 @@ describe("Esplora Tests", () => {
     });
 
     it("should get tx hex", async () => {
-        const client = new DefaultEsploraClient("testnet");
+        const client = new EsploraClient("testnet");
         const txHex = await client.getTransactionHex("4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b");
         assert.equal(txHex, "01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff4d04ffff001d0104455468652054696d65732030332f4a616e2f32303039204368616e63656c6c6f72206f6e206272696e6b206f66207365636f6e64206261696c6f757420666f722062616e6b73ffffffff0100f2052a01000000434104678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5fac00000000");
     });
 
 
     it("should serialize merkle proof", async () => {
-        const client = new DefaultEsploraClient();
+        const client = new EsploraClient();
         const proof = await client.getMerkleProof("b61b0172d95e266c18aea0c624db987e971a5d6d4ebc2aaed85da4642d635735");
 
         assert.equal(proof.merkle, "ace8423f874c95f5f9042d7cda6b9f0727251f3059ef827f373a56831cc621a371db6dfce8daed1d809275" +
@@ -111,7 +111,7 @@ describe("Esplora Tests", () => {
     });
 
     it("should get fee rate", async () => {
-        const client = new DefaultEsploraClient("testnet");
+        const client = new EsploraClient("testnet");
         const feeRate = await client.getFeeEstimate(1);
         assert.isAtLeast(feeRate, 1);
     });
