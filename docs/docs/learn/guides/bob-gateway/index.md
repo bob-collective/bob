@@ -15,7 +15,7 @@ It's built on a trustless, RFQ-based cross-chain [swap protocol](../../../build/
 If you are interested in being an LP for the BOB Gateway bridge, please send us an email at `gateway [ at ] gobob.xyz`.
 :::
 
-All you need is a Bitcoin wallet with some BTC to send and an EVM-compatible wallet to receive your Bitcoin LST/LRT on BOB. We'll even send you some ETH to cover the fees of your first few transactions on BOB.
+All you need is a Bitcoin wallet with some BTC to send and an EVM-compatible wallet to receive your Bitcoin LST/LRT or wrapped Bitcoin on BOB. We'll even send you some ETH to cover the fees of your first few transactions on BOB.
 
 :::tip Want to add BOB Gateway to your dapp?
 Check out our guide to see how you can [integrate BOB Gateway into your dapp](../../../build/bob-sdk/gateway.md).
