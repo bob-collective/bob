@@ -1,7 +1,7 @@
 // @ts-check
 // Note: type annotations allow type checking and IDEs autocompletion
 
-const {themes} = require('prism-react-renderer');
+const { themes } = require("prism-react-renderer");
 const lightCodeTheme = themes.github;
 const darkCodeTheme = themes.dracula;
 
@@ -12,15 +12,17 @@ const DISCORD = "https://discord.gg/gobob";
 const TWITTER = "https://twitter.com/build_on_bob";
 const TELEGRAM = "https://t.me/+CyIcLW2nfaFlNDc1";
 const FORUM = "https://forum.gobob.xyz";
-const PRESS_KIT = "https://build-on-bitcoin.notion.site/BOB-Press-Kit-1be66c38713d480eab01000bdd164206";
-const BRAND_KIT = "https://drive.google.com/drive/u/0/folders/1c30QDkyWgaV8xSEpCXFWJj1WQyUjSm7N";
-const ONE_PAGER = "https://build-on-bitcoin.notion.site/BOB-Summary-23fad2d446ff467d8551b924eb3338fc";
+const PRESS_KIT =
+  "https://build-on-bitcoin.notion.site/BOB-Press-Kit-1be66c38713d480eab01000bdd164206";
+const BRAND_KIT =
+  "https://drive.google.com/drive/u/0/folders/1c30QDkyWgaV8xSEpCXFWJj1WQyUjSm7N";
+const ONE_PAGER =
+  "https://build-on-bitcoin.notion.site/BOB-Summary-23fad2d446ff467d8551b924eb3338fc";
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   title: "BOB - Build on Bitcoin",
-  tagline:
-    "A hybrid layer-2 powered by Bitcoin and Ethereum.",
+  tagline: "A hybrid layer-2 powered by Bitcoin and Ethereum.",
   favicon: "img/favicon.ico",
   url: DOCS_PAGE,
   baseUrl: "/",
@@ -49,6 +51,9 @@ const config = {
         docs: {
           sidebarPath: require.resolve("./sidebars.js"),
           editUrl: `${GITHUB_LINK}/tree/master/docs/`,
+          remarkPlugins: [
+            [require("@docusaurus/remark-plugin-npm2yarn"), { sync: true }],
+          ],
         },
         theme: {
           customCss: require.resolve("./src/css/custom.css"),
@@ -172,7 +177,7 @@ const config = {
       prism: {
         theme: lightCodeTheme,
         darkTheme: darkCodeTheme,
-        additionalLanguages: ['solidity'],
+        additionalLanguages: ["solidity"],
       },
       colorMode: {
         defaultMode: "dark",
