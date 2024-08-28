@@ -19,7 +19,7 @@ Our SDK makes it possible for you to bring this UX directly into your app.
 
 This SDK makes it possible to do steps 2, 3, and 4 in your application's front end.
 
-## Step-by-Step Guide
+## Step-by-Step Integration Guide
 
 This is an example implementation of our SDK. You will need to decide how you handle asking your user to sign a partially-signed Bitcoin transaction (PSBT). We recommend using our [sats-wagmi](./sats-wagmi.md) package to connect to your users' wallets.
 

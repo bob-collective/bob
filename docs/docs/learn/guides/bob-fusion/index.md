@@ -1,3 +1,8 @@
+---
+sidebar_position: 2
+sidebar_label: BOB Fusion
+---
+
 import styles from './bob-fusion.module.css';
 
 # BOB Fusion
@@ -27,7 +32,7 @@ DApps can use the BOB Fusion system to bootstrap their launch on BOB.
 Checkout the information on the official [BOB Fusion page](https://app.gobob.xyz/fusion?tab=info) for more details.
 :::
 
-:::tip Running a Project on BOB? 
+:::tip Running a Project on BOB?
 Reach out to the team on [Telegram](https://t.me/gobobxyz) to learn more about the opportunities for builders to grow their projects with our BOB Fusion campaign or read our [project checklist](https://build-on-bitcoin.notion.site/BOB-Launch-Partner-Checklist-12b6da11f607438c82494be34c0f0c58) that includes information about how to whitelist your dApp or add custom assets to the BOB Fusion campaign.
 :::
 
@@ -48,12 +53,12 @@ Thus users who get spice via gas fees are essentially paying for that spice, whi
 
 Please note some dApps plan to distribute spice retroactively at some point in the future, so if you have used the dApp during that snapshot time, you will get your spice, albeit the distribution timelines depend on the dApps.
 
-If you are unhappy about a dApp’s Spice distribution, your best options are to either voice your concerns to that dApp or look for other opportunities in the BOB Fusion campaign. 
+If you are unhappy about a dApp’s Spice distribution, your best options are to either voice your concerns to that dApp or look for other opportunities in the BOB Fusion campaign.
 
 ### Inflation of Spice from Season 1 to Season 2
 
 Season 2 inherently requires more effort, research, smart contract interactions, and gas fees than Season 1. (IL risk, protocol risk, smart contract risk, capital deployments, minting, trading, lending, etc.)
-By actively engaging with the ecosystem in Season 2, you climb the ranks against users who just deployed capital in Season 1 and did not contribute to Season 2. 
+By actively engaging with the ecosystem in Season 2, you climb the ranks against users who just deployed capital in Season 1 and did not contribute to Season 2.
 We believe this is a fair outcome as the main mission behind BOB Fusion is to track active participation across the BOB ecosystem.
 
 ### What’s the maximum amount of Spice for the Fusion campaign?

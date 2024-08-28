@@ -52,10 +52,7 @@ const config = {
           sidebarPath: require.resolve("./sidebars.js"),
           editUrl: `${GITHUB_LINK}/tree/master/docs/`,
           remarkPlugins: [
-            [
-              require("@docusaurus/remark-plugin-npm2yarn"),
-              { sync: true, converters: ["yarn", "npm", "pnpm", "bun"] },
-            ],
+            [require("@docusaurus/remark-plugin-npm2yarn"), { sync: true }],
           ],
         },
         theme: {
