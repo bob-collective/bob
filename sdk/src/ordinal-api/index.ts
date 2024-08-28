@@ -333,99 +333,7 @@ export interface InscriptionJson<InscriptionId, SatPoint> {
     value: number | null;
 }
 
-
-export interface OrdinalsClient {
-    /**
-     * Retrieves an inscription based on its ID.
-     * @param {string} id - The ID of the inscription to retrieve.
-     * @returns {Promise<InscriptionDataFromId>} A Promise that resolves to the inscription data.
-     *
-     * @example
-     * ```typescript
-     * const client = new DefaultOrdinalsClient("regtest");
-     * let inscriptionId = InscriptionId.fromString("enter_your_inscription_id_here");
-     * const inscription = await client.getInscriptionFromId(inscriptionId);
-     * console.log("Inscription:", inscription);
-     * ```
-     */
-    getInscriptionFromId(id: InscriptionId): Promise<InscriptionJson<InscriptionId, SatPoint>>;
-
-    /**
-     * Retrieves a list of inscriptions.
-     * @returns {Promise<InscriptionsJson<InscriptionId>>} A Promise that resolves to a inscriptions data.
-     *
-     * @example
-     * ```typescript
-     * const client = new DefaultOrdinalsClient("regtest");
-     * const inscriptions = await client.getInscriptions();
-     * console.log("Inscriptions:", inscriptions);
-     * ```
-     */
-    getInscriptions(): Promise<InscriptionsJson<InscriptionId>>;
-
-    /**
-     * Retrieves an inscription based on its block height.
-     * @param {number} height - The block height of the inscription to retrieve.
-     * @returns {Promise<InscriptionsJson<InscriptionId>>} A Promise that resolves to the inscription data.
-     *
-     * @example
-     * ```typescript
-     * const client = new DefaultOrdinalsClient("regtest");
-     * let block: number = "enter_your_block_number_here";
-     * const inscriptions = await client.getInscriptionsFromBlock(block);
-     * console.log("Inscriptions:", inscriptions);
-     * ```
-     */
-    getInscriptionsFromBlock(height: number): Promise<InscriptionsJson<InscriptionId>>;
-
-    /**
-     * Retrieves inscriptions based on the UTXO (Unspent Transaction Output).
-     * @param {OutPoint} outPoint - The ID and output index of the UTXO.
-     * @returns {Promise<OutputJson>} A Promise that resolves to the inscription data.
-     *
-     * @example
-     * ```typescript
-     * const client = new DefaultOrdinalsClient("regtest");
-     * let txid: string = "enter_your_utxo_txid_here";
-     * let vout = 0; // enter the UTXO index here
-     * const output = await client.getInscriptionsFromOutPoint({ txid, vout });
-     * console.log("Output:", output);
-     * ```
-     */
-    getInscriptionsFromOutPoint(outPoint: OutPoint): Promise<OutputJson>;
-
-    /**
-     * Retrieves an inscription based on its sat (something specific to your use case).
-     * @param {number} sat - The sat of the inscription to retrieve.
-     * @returns {Promise<SatJson<InscriptionId>>} A Promise that resolves to the SatJson data type.
-     *
-     * @example
-     * ```typescript
-     * const client = new DefaultOrdinalsClient("regtest");
-     * let sat: number = 0 // enter the sat number here
-     * const inscriptions = await client.getInscriptionsFromSat(sat);
-     * console.log("Inscriptions:", inscriptions);
-     * ```
-     */
-    getInscriptionsFromSat(sat: number): Promise<SatJson<InscriptionId>>;
-
-    /**
-     * Retrieves a list of inscriptions starting from a specified block and moving forward.
-     * @param {number} startHeight - The start block height.
-     * @returns {Promise<InscriptionsJson<InscriptionId>>} A Promise that resolves to the inscription data.
-     *
-     * @example
-     * ```typescript
-     * const client = new DefaultOrdinalsClient("regtest");
-     * let startBlock: number = "enter_your_block_number_here";
-     * const inscriptions = await client.getInscriptionsFromStartBlock(block);
-     * console.log("Inscriptions:", inscriptions);
-     * ```
-     */
-    getInscriptionsFromStartBlock(startHeight: number): Promise<InscriptionsJson<InscriptionId>>;
-}
-
-export class DefaultOrdinalsClient implements OrdinalsClient {
+export class OrdinalsClient {
     private basePath: string;
 
     constructor(networkOrUrl: string = "mainnet") {
@@ -445,7 +353,17 @@ export class DefaultOrdinalsClient implements OrdinalsClient {
     }
 
     /**
-     * @ignore
+     * Retrieves an inscription based on its ID.
+     * @param {string} id - The ID of the inscription to retrieve.
+     * @returns {Promise<InscriptionDataFromId>} A Promise that resolves to the inscription data.
+     *
+     * @example
+     * ```typescript
+     * const client = new OrdinalsClient("regtest");
+     * let inscriptionId = InscriptionId.fromString("enter_your_inscription_id_here");
+     * const inscription = await client.getInscriptionFromId(inscriptionId);
+     * console.log("Inscription:", inscription);
+     * ```
      */
     async getInscriptionFromId(id: InscriptionId): Promise<InscriptionJson<InscriptionId, SatPoint>> {
         console.log(`${this.basePath}/inscription/${InscriptionId.toString(id)}`)
@@ -462,7 +380,15 @@ export class DefaultOrdinalsClient implements OrdinalsClient {
     }
 
     /**
-     * @ignore
+     * Retrieves a list of inscriptions.
+     * @returns {Promise<InscriptionsJson<InscriptionId>>} A Promise that resolves to a inscriptions data.
+     *
+     * @example
+     * ```typescript
+     * const client = new OrdinalsClient("regtest");
+     * const inscriptions = await client.getInscriptions();
+     * console.log("Inscriptions:", inscriptions);
+     * ```
      */
     async getInscriptions(): Promise<InscriptionsJson<InscriptionId>> {
         // TODO: add filtering, sorting and pagination based on different parameters
@@ -471,7 +397,17 @@ export class DefaultOrdinalsClient implements OrdinalsClient {
     }
 
     /**
-     * @ignore
+     * Retrieves an inscription based on its block height.
+     * @param {number} height - The block height of the inscription to retrieve.
+     * @returns {Promise<InscriptionsJson<InscriptionId>>} A Promise that resolves to the inscription data.
+     *
+     * @example
+     * ```typescript
+     * const client = new OrdinalsClient("regtest");
+     * let block: number = "enter_your_block_number_here";
+     * const inscriptions = await client.getInscriptionsFromBlock(block);
+     * console.log("Inscriptions:", inscriptions);
+     * ```
      */
     async getInscriptionsFromBlock(height: number): Promise<InscriptionsJson<InscriptionId>> {
         const inscriptionsJson = await this.getJson<InscriptionsJson<string>>(`${this.basePath}/inscriptions/block/${height}`);
@@ -479,14 +415,35 @@ export class DefaultOrdinalsClient implements OrdinalsClient {
     }
 
     /**
-     * @ignore
+     * Retrieves inscriptions based on the UTXO (Unspent Transaction Output).
+     * @param {OutPoint} outPoint - The ID and output index of the UTXO.
+     * @returns {Promise<OutputJson>} A Promise that resolves to the inscription data.
+     *
+     * @example
+     * ```typescript
+     * const client = new OrdinalsClient("regtest");
+     * let txid: string = "enter_your_utxo_txid_here";
+     * let vout = 0; // enter the UTXO index here
+     * const output = await client.getInscriptionsFromOutPoint({ txid, vout });
+     * console.log("Output:", output);
+     * ```
      */
     async getInscriptionsFromOutPoint(outPoint: OutPoint): Promise<OutputJson> {
         return await this.getJson<OutputJson>(`${this.basePath}/output/${OutPoint.toString(outPoint)}`);
     }
 
     /**
-     * @ignore
+     * Retrieves an inscription based on its sat (something specific to your use case).
+     * @param {number} sat - The sat of the inscription to retrieve.
+     * @returns {Promise<SatJson<InscriptionId>>} A Promise that resolves to the SatJson data type.
+     *
+     * @example
+     * ```typescript
+     * const client = new OrdinalsClient("regtest");
+     * let sat: number = 0 // enter the sat number here
+     * const inscriptions = await client.getInscriptionsFromSat(sat);
+     * console.log("Inscriptions:", inscriptions);
+     * ```
      */
     async getInscriptionsFromSat(sat: number): Promise<SatJson<InscriptionId>> {
         const satJson = await this.getJson<SatJson<string>>(`${this.basePath}/sat/${sat}`);
@@ -497,7 +454,17 @@ export class DefaultOrdinalsClient implements OrdinalsClient {
     }
 
     /**
-     * @ignore
+     * Retrieves a list of inscriptions starting from a specified block and moving forward.
+     * @param {number} startHeight - The start block height.
+     * @returns {Promise<InscriptionsJson<InscriptionId>>} A Promise that resolves to the inscription data.
+     *
+     * @example
+     * ```typescript
+     * const client = new OrdinalsClient("regtest");
+     * let startBlock: number = "enter_your_block_number_here";
+     * const inscriptions = await client.getInscriptionsFromStartBlock(block);
+     * console.log("Inscriptions:", inscriptions);
+     * ```
      */
     async getInscriptionsFromStartBlock(startHeight: number): Promise<InscriptionsJson<InscriptionId>> {
         const inscriptionsJson = await this.getJson<InscriptionsJson<string>>(`${this.basePath}/inscriptions/${startHeight}`);
@@ -507,7 +474,7 @@ export class DefaultOrdinalsClient implements OrdinalsClient {
     /**
      * @ignore
      */
-    async getJson<T>(url: string): Promise<T> {
+    private async getJson<T>(url: string): Promise<T> {
         const response = await fetch(url, {
             headers: {
                 'Accept': 'application/json',
@@ -522,7 +489,7 @@ export class DefaultOrdinalsClient implements OrdinalsClient {
     /**
      * @ignore
      */
-    parseInscriptionsJson(inscriptionsJson: InscriptionsJson<string>): InscriptionsJson<InscriptionId> {
+    private parseInscriptionsJson(inscriptionsJson: InscriptionsJson<string>): InscriptionsJson<InscriptionId> {
         const ids = inscriptionsJson.ids.map(id => InscriptionId.fromString(id));
         return {
             ...inscriptionsJson,

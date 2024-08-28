@@ -1,4 +1,4 @@
-import { DefaultEsploraClient } from "../esplora";
+import { EsploraClient } from "../esplora";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import { exec } from "node:child_process";
@@ -39,14 +39,14 @@ function range(size: number, startAt = 0) {
     return [...Array(size).keys()].map(i => i + startAt);
 }
 
-async function getRetargetHeaders(esploraClient: DefaultEsploraClient, nextRetargetHeight: number, proofLength: number) {
+async function getRetargetHeaders(esploraClient: EsploraClient, nextRetargetHeight: number, proofLength: number) {
     const beforeRetarget = await Promise.all(range(proofLength, nextRetargetHeight - proofLength).map(height => esploraClient.getBlockHeaderAt(height)));
     const afterRetarget = await Promise.all(range(proofLength, nextRetargetHeight).map(height => esploraClient.getBlockHeaderAt(height)));
     return beforeRetarget.concat(afterRetarget).join("");
 }
 
 async function main(): Promise<void> {
-    const esploraClient = new DefaultEsploraClient(args["network"]);
+    const esploraClient = new EsploraClient(args["network"]);
 
     let privateKey: string;
     if (args["private-key"]) {

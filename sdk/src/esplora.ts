@@ -97,179 +97,6 @@ export interface Block {
 }
 
 /**
- * 
- * The `EsploraClient` interface provides a set of methods for interacting with an Esplora API
- * for Bitcoin network data retrieval.
- * See https://github.com/blockstream/esplora/blob/master/API.md for more information.
- */
-export interface EsploraClient {
-    /**
-     * Get the latest block height of the Bitcoin chain.
-     *
-     * @returns {Promise<number>} A promise that resolves to the latest block number.
-     */
-    getLatestHeight(): Promise<number>;
-
-    /**
-     * Get the complete block data for a Bitcoin block with a given hash.
-     *
-     * @param {string} hash - The hash of the Bitcoin block.
-     * @returns {Promise<Block>} A promise that resolves to the block data.
-     * 
-     * @example
-     * ```typescript
-     * const BITCOIN_NETWORK = "regtest";
-     * const esploraClient = new DefaultEsploraClient(BITCOIN_NETWORK);
-     * const blockHash = 'your_block_hash_here';
-     * esploraClient.getBlock(blockHash)
-     *  .then((block) => {
-     *  console.log(`Block data for block with hash ${blockHash}: ${JSON.stringify(block)}`);
-     * })
-     * .catch((error) => {
-     * console.error(`Error: ${error}`);
-     * });
-     * ```
-     */
-    getBlock(hash: string): Promise<Block>;
-
-    /**
-     * Get the block hash of the Bitcoin block at a specific height.
-     *
-     * This function retrieves the block hash for the Bitcoin block at the given height.
-     *
-     * @param {number} height - The height of the Bitcoin block.
-     * @returns {Promise<string>} A promise that resolves to the block hash of the Bitcoin block.
-     *
-     * @example
-     * ```typescript
-     * const BITCOIN_NETWORK = "regtest";
-     * const esploraClient = new DefaultEsploraClient(BITCOIN_NETWORK);
-     * const blockHeight = 123456;
-     * esploraClient.getBlockHash(blockHeight)
-     *   .then((blockHash) => {
-     *     console.log(`Block hash at height ${blockHeight}: ${blockHash}`);
-     *   })
-     *   .catch((error) => {
-     *     console.error(`Error: ${error}`);
-     *   });
-     * ```
-     */
-    getBlockHash(height: number): Promise<string>;
-
-    /**
-     * Get the raw block header, represented as a hex string, for a Bitcoin block with a given hash.
-     *
-     * @param {string} hash - The hash of the Bitcoin block.
-     * @returns {Promise<string>} A promise that resolves to the raw block header as a hex string.
-     *
-     * @example
-     * ```typescript
-     * const BITCOIN_NETWORK = "regtest";
-     * const esploraClient = new DefaultEsploraClient(BITCOIN_NETWORK);
-     * const blockHash = 'your_block_hash_here';
-     * esploraClient.getBlockHeader(blockHash)
-     *   .then((blockHeader) => {
-     *     console.log(`Raw block header for block with hash ${blockHash}: ${blockHeader}`);
-     *   })
-     *   .catch((error) => {
-     *     console.error(`Error: ${error}`);
-     *   });
-     * ```
-     */
-    getBlockHeader(hash: string): Promise<string>;
-
-    /**
-     * Get the complete transaction data for a Bitcoin transaction with a given ID (txId).
-     * 
-     * @param txId {string} - The ID of a Bitcoin transaction.
-     * @returns {Promise<Transaction>} A promise that resolves to the transaction data.
-     * 
-     * @example
-     * ```typescript
-     * const BITCOIN_NETWORK = "regtest";
-     * const esploraClient = new DefaultEsploraClient(BITCOIN_NETWORK);
-     * const transactionId = 'your_transaction_id_here';
-     * esploraClient.getTransaction(transactionId)
-     *  .then((transaction) => {
-     *   console.log(`Transaction data for transaction with ID ${transactionId}: ${JSON.stringify(transaction)}`);
-     * })
-     * .catch((error) => {
-     *  console.error(`Error: ${error}`);
-     * });
-     * ```
-     */
-    getTransaction(txId: string): Promise<Transaction>;
-
-    /**
-     * Get the transaction data, represented as a hex string, for a Bitcoin transaction with a given ID (txId).
-     *
-     * @param {string} txId - The ID of a Bitcoin transaction.
-     * @returns {Promise<string>} A promise that resolves to the transaction data as a hex string.
-     *
-     * @example
-     * ```typescript
-     * const BITCOIN_NETWORK = "regtest";
-     * const esploraClient = new DefaultEsploraClient(BITCOIN_NETWORK);
-     * const transactionId = 'your_transaction_id_here';
-     * esploraClient.getTransactionHex(transactionId)
-     *   .then((transactionHex) => {
-     *     console.log(`Transaction hex for transaction with ID ${transactionId}: ${transactionHex}`);
-     *   })
-     *   .catch((error) => {
-     *     console.error(`Error: ${error}`);
-     *   });
-     * ```
-     */
-    getTransactionHex(txId: string): Promise<string>;
-
-    /**
-     * Get the encoded merkle inclusion proof for a Bitcoin transaction with a given ID (txId).
-     *
-     * @param {string} txId - The ID of a Bitcoin transaction.
-     * @returns {Promise<MerkleProof>} A promise that resolves to the encoded merkle inclusion proof.
-     *
-     * @example
-     * ```typescript
-     * const BITCOIN_NETWORK = "regtest";
-     * const esploraClient = new DefaultEsploraClient(BITCOIN_NETWORK);
-     * const transactionId = 'your_transaction_id_here';
-     * esploraClient.getMerkleProof(transactionId)
-     *   .then((merkleProof) => {
-     *     console.log(`Merkle inclusion proof for transaction with ID ${transactionId}: ${merkleProof}`);
-     *   })
-     *   .catch((error) => {
-     *     console.error(`Error: ${error}`);
-     *   });
-     * ```
-     */
-    getMerkleProof(txId: string): Promise<MerkleProof>;
-
-    /**
-     * Get the fee estimate (in sat/vB) for the given confirmation target.
-     *
-     * @param {number} confirmationTarget - The number of blocks to be included in.
-     * @returns {Promise<number>} A promise that resolves to the fee rate.
-     */
-    getFeeEstimate(confirmationTarget: number): Promise<number>;
-
-    /**
-     * Get the Unspent Transaction Outputs (UTXOs) for an address.
-     *
-     * @param {string} address - The Bitcoin address to check.
-     * @returns {Promise<Array<UTXO>>} A promise that resolves to an array of UTXOs.
-     */
-    getAddressUtxos(address: string): Promise<Array<UTXO>>;
-
-    /**
-     * Broadcast a raw transaction to the network.
-     *
-     * @param {string} txHex - The hex encoded transaction.
-     * @returns {Promise<string>} A promise that resolves to the txid.
-     */
-    broadcastTx(txHex: string): Promise<string>;
-}
-
-/**
 * @ignore
 */
 function encodeEsploraMerkleProof(merkle: string[]): string {
@@ -278,27 +105,28 @@ function encodeEsploraMerkleProof(merkle: string[]): string {
 }
 
 /**
- * The `DefaultEsploraClient` class provides a client for interacting with an Esplora API
+ * The `EsploraClient` interface provides a set of methods for interacting with an Esplora API
  * for Bitcoin network data retrieval.
+ * See https://github.com/blockstream/esplora/blob/master/API.md for more information.
  */
-export class DefaultEsploraClient implements EsploraClient {
+export class EsploraClient {
     private basePath: string;
 
     /**
-         * Create an instance of the `DefaultEsploraClient` with the specified network or URL.
-         * If the `networkOrUrl` parameter is omitted, it defaults to "mainnet."
-         *
-         * @param networkOrUrl The Bitcoin network (e.g., "mainnet," "testnet," "regtest") 
-         * 
-         * @returns An instance of the `DefaultEsploraClient` configured for the specified network or URL.
-         *
-         * @example
-         * const BITCOIN_NETWORK = "regtest";
-         * const esploraClient = new DefaultEsploraClient(BITCOIN_NETWORK);
-         *
-         * @example
-         * // Create a client for the mainnet using the default URL.
-         * const esploraClientMainnet = new DefaultEsploraClient();
+     * Create an instance of the `EsploraClient` with the specified network or URL.
+     * If the `networkOrUrl` parameter is omitted, it defaults to "mainnet."
+     *
+     * @param networkOrUrl The Bitcoin network (e.g., "mainnet," "testnet," "regtest") 
+     * 
+     * @returns An instance of the `EsploraClient` configured for the specified network or URL.
+     *
+     * @example
+     * const BITCOIN_NETWORK = "regtest";
+     * const esploraClient = new EsploraClient(BITCOIN_NETWORK);
+     *
+     * @example
+     * // Create a client for the mainnet using the default URL.
+     * const esploraClientMainnet = new EsploraClient();
     */
     constructor(networkOrUrl: string = "mainnet") {
         switch (networkOrUrl) {
@@ -316,26 +144,84 @@ export class DefaultEsploraClient implements EsploraClient {
         }
     }
 
+    /**
+     * Get the latest block height of the Bitcoin chain.
+     *
+     * @returns {Promise<number>} A promise that resolves to the latest block number.
+     */
     async getLatestHeight(): Promise<number> {
         return parseInt(await this.getText(`${this.basePath}/blocks/tip/height`), 10);
     }
 
     /**
-     * @ignore
+     * Get the complete block data for a Bitcoin block with a given hash.
+     *
+     * @param {string} hash - The hash of the Bitcoin block.
+     * @returns {Promise<Block>} A promise that resolves to the block data.
+     * 
+     * @example
+     * ```typescript
+     * const BITCOIN_NETWORK = "regtest";
+     * const esploraClient = new EsploraClient(BITCOIN_NETWORK);
+     * const blockHash = 'your_block_hash_here';
+     * esploraClient.getBlock(blockHash)
+     *  .then((block) => {
+     *  console.log(`Block data for block with hash ${blockHash}: ${JSON.stringify(block)}`);
+     * })
+     * .catch((error) => {
+     * console.error(`Error: ${error}`);
+     * });
+     * ```
      */
     async getBlock(blockHash: string): Promise<Block> {
         return this.getJson(`${this.basePath}/block/${blockHash}`);
     }
 
     /**
-     * @ignore
+     * Get the block hash of the Bitcoin block at a specific height.
+     *
+     * This function retrieves the block hash for the Bitcoin block at the given height.
+     *
+     * @param {number} height - The height of the Bitcoin block.
+     * @returns {Promise<string>} A promise that resolves to the block hash of the Bitcoin block.
+     *
+     * @example
+     * ```typescript
+     * const BITCOIN_NETWORK = "regtest";
+     * const esploraClient = new EsploraClient(BITCOIN_NETWORK);
+     * const blockHeight = 123456;
+     * esploraClient.getBlockHash(blockHeight)
+     *   .then((blockHash) => {
+     *     console.log(`Block hash at height ${blockHeight}: ${blockHash}`);
+     *   })
+     *   .catch((error) => {
+     *     console.error(`Error: ${error}`);
+     *   });
+     * ```
      */
     async getBlockHash(height: number): Promise<string> {
         return this.getText(`${this.basePath}/block-height/${height}`);
     }
 
     /**
-     * @ignore
+     * Get the raw block header, represented as a hex string, for a Bitcoin block with a given hash.
+     *
+     * @param {string} hash - The hash of the Bitcoin block.
+     * @returns {Promise<string>} A promise that resolves to the raw block header as a hex string.
+     *
+     * @example
+     * ```typescript
+     * const BITCOIN_NETWORK = "regtest";
+     * const esploraClient = new EsploraClient(BITCOIN_NETWORK);
+     * const blockHash = 'your_block_hash_here';
+     * esploraClient.getBlockHeader(blockHash)
+     *   .then((blockHeader) => {
+     *     console.log(`Raw block header for block with hash ${blockHash}: ${blockHeader}`);
+     *   })
+     *   .catch((error) => {
+     *     console.error(`Error: ${error}`);
+     *   });
+     * ```
      */
     async getBlockHeader(hash: string): Promise<string> {
         return this.getText(`${this.basePath}/block/${hash}/header`);
@@ -350,21 +236,72 @@ export class DefaultEsploraClient implements EsploraClient {
     }
 
     /**
-     * @ignore
+     * Get the complete transaction data for a Bitcoin transaction with a given ID (txId).
+     * 
+     * @param txId {string} - The ID of a Bitcoin transaction.
+     * @returns {Promise<Transaction>} A promise that resolves to the transaction data.
+     * 
+     * @example
+     * ```typescript
+     * const BITCOIN_NETWORK = "regtest";
+     * const esploraClient = new EsploraClient(BITCOIN_NETWORK);
+     * const transactionId = 'your_transaction_id_here';
+     * esploraClient.getTransaction(transactionId)
+     *  .then((transaction) => {
+     *   console.log(`Transaction data for transaction with ID ${transactionId}: ${JSON.stringify(transaction)}`);
+     * })
+     * .catch((error) => {
+     *  console.error(`Error: ${error}`);
+     * });
+     * ```
      */
     async getTransaction(txId: string): Promise<Transaction> {
         return this.getJson(`${this.basePath}/tx/${txId}`);
     }
 
     /**
-     * @ignore
+     * Get the transaction data, represented as a hex string, for a Bitcoin transaction with a given ID (txId).
+     *
+     * @param {string} txId - The ID of a Bitcoin transaction.
+     * @returns {Promise<string>} A promise that resolves to the transaction data as a hex string.
+     *
+     * @example
+     * ```typescript
+     * const BITCOIN_NETWORK = "regtest";
+     * const esploraClient = new EsploraClient(BITCOIN_NETWORK);
+     * const transactionId = 'your_transaction_id_here';
+     * esploraClient.getTransactionHex(transactionId)
+     *   .then((transactionHex) => {
+     *     console.log(`Transaction hex for transaction with ID ${transactionId}: ${transactionHex}`);
+     *   })
+     *   .catch((error) => {
+     *     console.error(`Error: ${error}`);
+     *   });
+     * ```
      */
     async getTransactionHex(txId: string): Promise<string> {
         return this.getText(`${this.basePath}/tx/${txId}/hex`);
     }
 
     /**
-     * @ignore
+     * Get the encoded merkle inclusion proof for a Bitcoin transaction with a given ID (txId).
+     *
+     * @param {string} txId - The ID of a Bitcoin transaction.
+     * @returns {Promise<MerkleProof>} A promise that resolves to the encoded merkle inclusion proof.
+     *
+     * @example
+     * ```typescript
+     * const BITCOIN_NETWORK = "regtest";
+     * const esploraClient = new EsploraClient(BITCOIN_NETWORK);
+     * const transactionId = 'your_transaction_id_here';
+     * esploraClient.getMerkleProof(transactionId)
+     *   .then((merkleProof) => {
+     *     console.log(`Merkle inclusion proof for transaction with ID ${transactionId}: ${merkleProof}`);
+     *   })
+     *   .catch((error) => {
+     *     console.error(`Error: ${error}`);
+     *   });
+     * ```
      */
     async getMerkleProof(txId: string): Promise<MerkleProof> {
         const response = await this.getJson<{
@@ -380,7 +317,10 @@ export class DefaultEsploraClient implements EsploraClient {
     }
 
     /**
-     * @ignore
+     * Get the fee estimate (in sat/vB) for the given confirmation target.
+     *
+     * @param {number} confirmationTarget - The number of blocks to be included in.
+     * @returns {Promise<number>} A promise that resolves to the fee rate.
      */
     async getFeeEstimate(confirmationTarget: number): Promise<number> {
         const response = await this.getJson<any>(`${this.basePath}/fee-estimates`);
@@ -388,7 +328,10 @@ export class DefaultEsploraClient implements EsploraClient {
     }
 
     /**
-     * @ignore
+     * Get the Unspent Transaction Outputs (UTXOs) for an address.
+     *
+     * @param {string} address - The Bitcoin address to check.
+     * @returns {Promise<Array<UTXO>>} A promise that resolves to an array of UTXOs.
      */
     async getAddressUtxos(address: string, confirmed?: boolean): Promise<Array<UTXO>> {
         const response = await this.getJson<Array<{
@@ -416,7 +359,10 @@ export class DefaultEsploraClient implements EsploraClient {
     }
 
     /**
-     * @ignore
+     * Broadcast a raw transaction to the network.
+     *
+     * @param {string} txHex - The hex encoded transaction.
+     * @returns {Promise<string>} A promise that resolves to the txid.
      */
     async broadcastTx(txHex: string): Promise<string> {
         const res = await fetch(`${this.basePath}/tx`, {
@@ -429,7 +375,7 @@ export class DefaultEsploraClient implements EsploraClient {
     /**
      * @ignore
      */
-    async getJson<T>(url: string): Promise<T> {
+    private async getJson<T>(url: string): Promise<T> {
         const response = await fetch(url);
         if (!response.ok) {
             throw new Error(response.statusText);
@@ -440,7 +386,7 @@ export class DefaultEsploraClient implements EsploraClient {
     /**
      * @ignore
      */
-    async getText(url: string): Promise<string> {
+    private async getText(url: string): Promise<string> {
         const response = await fetch(url);
         if (!response.ok) {
             throw new Error(response.statusText);
