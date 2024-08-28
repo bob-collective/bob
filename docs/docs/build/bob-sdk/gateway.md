@@ -23,6 +23,10 @@ This SDK makes it possible to do steps 2, 3, and 4 in your application's front e
 
 This is an example implementation of our SDK. You will need to decide how you handle asking your user to sign a partially-signed Bitcoin transaction (PSBT). We recommend using our [sats-wagmi](./sats-wagmi.md) package to connect to your users' wallets.
 
+:::warning Staking only on testnet
+BOB Gateway's newest functionality (i.e. staking for LSTs) is only available on testnet. We will update this page once mainnet is upgraded.
+:::
+
 ### Install the BOB SDK
 
 Add `@gobob/bob-sdk` to your project using your preferred package manager.
