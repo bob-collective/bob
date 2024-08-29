@@ -1,14 +1,7 @@
 import { ethers, AbiCoder } from "ethers";
-import { GatewayQuoteParams } from "./types";
-import { SYMBOL_LOOKUP, ADDRESS_LOOKUP, Token as TokenInfo } from "./tokens";
+import { GatewayQuoteParams, Chain, ChainId, Token, GatewayStrategyContract } from "./types";
+import { SYMBOL_LOOKUP, ADDRESS_LOOKUP } from "./tokens";
 import { createBitcoinPsbt } from "../wallet";
-
-export enum Chains {
-    // NOTE: we also support Bitcoin testnet
-    Bitcoin = "bitcoin",
-    BOB = "bob",
-    BOBSepolia = "bobsepolia",
-};
 
 type EvmAddress = string;
 
@@ -83,6 +76,14 @@ type GatewayStartOrderResult = GatewayCreateOrderResponse & {
     psbtBase64?: string;
 };
 
+interface GatewayStrategy {
+    strategyAddress: string,
+    strategyName: string,
+    strategyType: "staking" | "lending",
+    inputTokenAddress: string,
+    outputTokenAddress?: string,
+}
+
 type Optional<T, K extends keyof T> = Omit<T, K> & Partial<T>;
 
 /**
@@ -97,37 +98,41 @@ export const MAINNET_GATEWAY_BASE_URL = "https://gateway-api-mainnet.gobob.xyz";
  */
 export const TESTNET_GATEWAY_BASE_URL = "https://gateway-api-testnet.gobob.xyz";
 
-enum Network {
-    Mainnet,
-    Testnet,
-}
-
 /**
  * Gateway REST HTTP API client 
  */
 export class GatewayApiClient {
-    private network: Network;
+    private chain: Chain.BOB | Chain.BOB_SEPOLIA;
     private baseUrl: string;
 
     /**
      * @constructor
-     * @param networkOrUrl The network ID or Gateway API URL.
+     * @param chainName The chain name.
      */
-    constructor(networkOrUrl: string = "mainnet") {
-        switch (networkOrUrl) {
+    constructor(chainName: string) {
+        switch (chainName) {
             case "mainnet":
-            case "bob":
-                this.network = Network.Mainnet;
+            case Chain.BOB:
+                this.chain = Chain.BOB;
                 this.baseUrl = MAINNET_GATEWAY_BASE_URL;
                 break;
             case "testnet":
-            case "bobSepolia":
-                this.network = Network.Testnet;
+            case Chain.BOB_SEPOLIA:
+                this.chain = Chain.BOB_SEPOLIA;
                 this.baseUrl = TESTNET_GATEWAY_BASE_URL;
                 break;
             default:
-                this.baseUrl = networkOrUrl;
+                throw new Error("Invalid chain");
         }
+    }
+
+    /**
+     * Returns all chains supported by the SDK.
+     * 
+     * @returns {string[]} The array of chain names.
+     */
+    getChains(): string[] {
+        return Object.values(Chain);
     }
 
     /**
@@ -135,22 +140,28 @@ export class GatewayApiClient {
      * 
      * @param params The parameters for the quote.
      */
-    async getQuote(params: Optional<GatewayQuoteParams, "amount" | "toUserAddress">): Promise<GatewayQuote> {
-        const isMainnet = params.toChain === 60808 || typeof params.toChain === "string" && params.toChain.toLowerCase() === Chains.BOB;
-        const isTestnet = params.toChain === 808813 || typeof params.toChain === "string" && params.toChain.toLowerCase() === Chains.BOBSepolia;
+    async getQuote(params: Optional<GatewayQuoteParams, "amount" | "fromChain" | "fromToken" | "fromUserAddress" | "toUserAddress">): Promise<GatewayQuote> {
+        const isMainnet = params.toChain === ChainId.BOB || typeof params.toChain === "string" && params.toChain.toLowerCase() === Chain.BOB;
+        const isTestnet = params.toChain === ChainId.BOB_SEPOLIA || typeof params.toChain === "string" && params.toChain.toLowerCase() === Chain.BOB_SEPOLIA;
+
+        const isInvalidNetwork = (!isMainnet && !isTestnet);
+        const isMismatchMainnet = (isMainnet && this.chain !== Chain.BOB);
+        const isMismatchTestnet = (isTestnet && this.chain !== Chain.BOB_SEPOLIA);
+
+        // TODO: switch URL if `toChain` is different chain
+        if (isInvalidNetwork || isMismatchMainnet || isMismatchTestnet) {
+            throw new Error('Invalid output chain');
+        }
 
         const toToken = params.toToken.toLowerCase();
         let outputToken = "";
         if (toToken.startsWith("0x")) {
+            // NOTE: this can also be the strategy address
             outputToken = toToken;
-        } else if (toToken in SYMBOL_LOOKUP) {
-            if (isMainnet && this.network === Network.Mainnet) {
-                outputToken = SYMBOL_LOOKUP[toToken].bob;
-            } else if (isTestnet && this.network === Network.Testnet) {
-                outputToken = SYMBOL_LOOKUP[toToken].bobSepolia;
-            } else {
-                throw new Error('Unknown network');
-            }
+        } else if (isMainnet && this.chain === Chain.BOB && SYMBOL_LOOKUP[ChainId.BOB][toToken]) {
+            outputToken = SYMBOL_LOOKUP[ChainId.BOB][toToken].address;
+        } else if (isTestnet && this.chain === Chain.BOB_SEPOLIA && SYMBOL_LOOKUP[ChainId.BOB_SEPOLIA][toToken]) {
+            outputToken = SYMBOL_LOOKUP[ChainId.BOB_SEPOLIA][toToken].address;
         } else {
             throw new Error('Unknown output token');
         }
@@ -206,7 +217,7 @@ export class GatewayApiClient {
         }
 
         let psbtBase64: string;
-        if (params.fromUserAddress && typeof params.fromChain === "string" && params.fromChain.toLowerCase() === Chains.Bitcoin) {
+        if (params.fromUserAddress && typeof params.fromChain === "string" && params.fromChain.toLowerCase() === Chain.BITCOIN) {
             psbtBase64 = await createBitcoinPsbt(
                 params.fromUserAddress,
                 gatewayQuote.bitcoinAddress,
@@ -269,11 +280,76 @@ export class GatewayApiClient {
     }
 
     /**
+     * Returns all strategies supported by the Gateway API.
+     * 
+     * @returns {Promise<GatewayStrategyContract[]>} The array of strategies.
+     */
+    async getStrategies(): Promise<GatewayStrategyContract[]> {
+        const response = await fetch(`${this.baseUrl}/strategies`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                Accept: 'application/json'
+            }
+        });
+
+        const chainName = (this.chain === Chain.BOB ? Chain.BOB : Chain.BOB_SEPOLIA).toString();
+        const chainId = this.chain === Chain.BOB ? ChainId.BOB : ChainId.BOB_SEPOLIA;
+
+        const strategies: GatewayStrategy[] = await response.json();
+        return strategies.map(strategy => {
+            const inputToken = ADDRESS_LOOKUP[strategy.inputTokenAddress];
+            const outputToken = strategy.outputTokenAddress
+                ? ADDRESS_LOOKUP[strategy.outputTokenAddress]
+                : undefined;
+            return {
+                id: "",
+                type: "deposit",
+                address: strategy.strategyAddress,
+                method: "",
+                chain: {
+                    id: "", // TODO
+                    chainId: chainId,
+                    slug: chainName,
+                    name: chainName,
+                    logo: "", // TODO
+                    type: "evm",
+                    singleChainSwap: true,
+                    singleChainStaking: true,
+                },
+                integration: {
+                    type: strategy.strategyType,
+                    slug: strategy.strategyName,
+                    name: strategy.strategyName,
+                    logo: "", // TODO
+                    monetization: false,
+                },
+                inputToken: {
+                    symbol: inputToken.symbol,
+                    address: inputToken.address,
+                    logo: inputToken.logoURI,
+                    decimals: inputToken.decimals,
+                    chain: chainName,
+                },
+                outputToken: outputToken
+                    ? {
+                        symbol: outputToken.symbol,
+                        address: outputToken.address,
+                        logo: outputToken.logoURI,
+                        decimals: outputToken.decimals,
+                        chain: chainName,
+                    }
+                    : null,
+            }
+        });
+    }
+
+    /**
      * Returns all tokens (and strategy tokens) supported by the Gateway API.
      * 
      * @returns {Promise<EvmAddress[]>} The array of token addresses.
      */
-    async getTokens(): Promise<EvmAddress[]> {
+    async getTokenAddresses(): Promise<EvmAddress[]> {
         const response = await fetch(`${this.baseUrl}/tokens`, {
             method: 'GET',
             headers: {
@@ -286,15 +362,16 @@ export class GatewayApiClient {
     }
 
     /**
-     * Same as {@link getTokens} but with additional info.
+     * Same as {@link getTokenAddresses} but with additional info.
      * 
-     * @returns {Promise<EvmAddress[]>} The array of tokens.
+     * @returns {Promise<Token[]>} The array of tokens.
      */
-    async getTokensInfo(): Promise<TokenInfo[]> {
-        const tokens = await this.getTokens();
+    async getTokens(): Promise<Token[]> {
+        // https://github.com/ethereum-optimism/ecosystem/blob/c6faa01455f9e846f31c0343a0be4c03cbeb2a6d/packages/op-app/src/hooks/useOPTokens.ts#L10
+        const tokens = await this.getTokenAddresses();
         return tokens
             .map(token => ADDRESS_LOOKUP[token])
-            .filter(token => token !== undefined);;
+            .filter(token => token !== undefined);
     }
 }
 

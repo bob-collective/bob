@@ -9,6 +9,7 @@ export async function swapBtcForToken(evmAddress: string) {
 
     const quoteParams: GatewayQuoteParams = {
         fromChain: "Bitcoin",
+        fromToken: "BTC",
         fromUserAddress: "bc1qafk4yhqvj4wep57m62dgrmutldusqde8adh20d",
         toChain: "BOB",
         toUserAddress: evmAddress,
