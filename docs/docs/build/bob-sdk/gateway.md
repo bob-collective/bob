@@ -134,6 +134,8 @@ The protocol requires zero trust between the market makers and users because it 
 
 Furthermore, infrastructure run by the BOB team never has access to the market markers' tBTC, wBTC, or ETH funds stored in their smart contracts. The user interface and server manage order flow to prevent liquidity sniping and user errors (e.g. sending BTC without sufficient liquidity being available), but neither the front end or back end ever have access to users' or market makers' funds.
 
+The code has been [audited by Pachov and Common Prefix](https://docs.gobob.xyz/docs/build/bob-sdk/gateway#security-and-trust-assumptions)
+
 ## Code References
 
 - `bob/sdk/src/gateway/client.ts`: API client code ([GitHub](https://github.com/bob-collective/bob/blob/master/sdk/src/gateway/client.ts))
