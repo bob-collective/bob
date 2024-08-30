@@ -14,15 +14,11 @@ If you want to engage with the community and learn how you can contribute, here 
 - Join our [Discord](https://discord.gg/gobob)
 - Join our [Telegram](https://t.me/+CyIcLW2nfaFlNDc1)
 - Follow us on [Twitter](https://twitter.com/build_on_bob)
-- Play with the testnet [P2P Swap](https://testnet.gobob.xyz/) to see BOB in action
 - Keep an eye on the growing [Ecosystem](https://www.gobob.xyz/ecosystem)
-<!-- - Join the [forum](https://forum.gobob.xyz/) to discuss ideas and share feedback -->
 
 ## Builders
 
 If you are keen to build on BOB or contribute to BOB itself:
-
-<!-- - Discuss ideas and share feedback on the [forum](https://forum.gobob.xyz/) -->
 
 - Join the [BOB Fusion campaign](https://forms.gle/EKYmrAhPsyiQ3ua57) after you deploy on BOB.
 - Checkout the [bob-collective GitHub](https://github.com/bob-collective/bob)

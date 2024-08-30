@@ -4,7 +4,9 @@ sidebar_position: 2
 
 # Connect to BOB
 
-## BOB Mainnet
+## Mainnet Information
+
+### BOB Mainnet
 
 - Chain ID: 60808
 - Gas Token: ETH
@@ -18,21 +20,21 @@ If you are having issues with your RPC connection, try [BlastAPI's public endpoi
 - RPC URL: https://bob-mainnet.public.blastapi.io
 - WS URL: [wss://bob-mainnet.public.blastapi.io](wss://bob-mainnet.public.blastapi.io)
 
-## Ethereum Mainnet
+### Ethereum Mainnet
 
 - Chain ID: 1
 - Gas Token: ETH
 - RPC URL: [wss://ethereum-rpc.publicnode.com](wss://ethereum-rpc.publicnode.com)
 - Explorer: https://etherscan.io/
 
-## Bitcoin Mainnet
+### Bitcoin Mainnet
 
 - Ordinals API: https://ord-mainnet.gobob.xyz/docs/
 - Explorer: https://blockstream.info/
 
-# Testnet Information
+## Testnet Information
 
-## BOB Sepolia (Testnet) **NEW**
+### BOB Sepolia (Testnet)
 
 - Chain ID: 808813
 - Gas Token: ETH
@@ -41,15 +43,7 @@ If you are having issues with your RPC connection, try [BlastAPI's public endpoi
 - Explorer: https://bob-sepolia.explorer.gobob.xyz/
 - Bridge: https://bob-sepolia.gobob.xyz/
 
-## BOB Sepolia (Testnet) **OLD**
-
-- Chain ID: 111
-- Gas Token: ETH
-- RPC URL: https://testnet.rpc.gobob.xyz/
-- Explorer: https://testnet-explorer.gobob.xyz/
-- Bridge: https://testnet.gobob.xyz/
-
-## Ethereum Sepolia
+### Ethereum Sepolia (Testnet)
 
 - Chain ID: 11155111
 - Gas Token: ETH
@@ -57,7 +51,7 @@ If you are having issues with your RPC connection, try [BlastAPI's public endpoi
 - Explorer: https://sepolia.etherscan.io/
 - Faucet: https://faucetlink.to/sepolia
 
-## Bitcoin Testnet
+### Bitcoin Testnet
 
 - Ordinals API: https://ord-testnet.gobob.xyz/docs/
 - Explorer: https://blockstream.info/testnet/
