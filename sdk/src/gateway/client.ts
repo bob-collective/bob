@@ -1,88 +1,21 @@
 import { ethers, AbiCoder } from "ethers";
-import { GatewayQuoteParams, Chain, ChainId, Token, GatewayStrategyContract } from "./types";
+import {
+    GatewayQuoteParams,
+    GatewayQuote,
+    Chain,
+    ChainId,
+    Token,
+    GatewayStrategyContract,
+    GatewayCreateOrderRequest,
+    GatewayCreateOrderResponse,
+    GatewayOrder,
+    GatewayOrderResponse,
+    GatewayStartOrder,
+    GatewayStrategy,
+    EvmAddress,
+} from "./types";
 import { SYMBOL_LOOKUP, ADDRESS_LOOKUP } from "./tokens";
 import { createBitcoinPsbt } from "../wallet";
-
-type EvmAddress = string;
-
-type GatewayQuote = {
-    /** @description The gateway address */
-    gatewayAddress: EvmAddress;
-    /** @description The minimum amount of Bitcoin to send */
-    dustThreshold: number;
-    /** @description The satoshi output amount */
-    satoshis: number;
-    /** @description The fee paid in satoshis (includes gas refill) */
-    fee: number;
-    /** @description The Bitcoin address to send BTC */
-    bitcoinAddress: string;
-    /** @description The number of confirmations required to confirm the Bitcoin tx */
-    txProofDifficultyFactor: number;
-    /** @description The optional strategy address */
-    strategyAddress?: EvmAddress,
-};
-
-/** @dev Internal request type used to call the Gateway API */
-type GatewayCreateOrderRequest = {
-    gatewayAddress: EvmAddress,
-    strategyAddress?: EvmAddress,
-    satsToConvertToEth: number,
-    userAddress: EvmAddress,
-    gatewayExtraData?: string,
-    strategyExtraData?: string,
-    satoshis: number,
-};
-
-type GatewayOrderResponse = {
-    /** @description The gateway address */
-    gatewayAddress: EvmAddress;
-    /** @description The token address */
-    tokenAddress: EvmAddress;
-    /** @description The Bitcoin txid */
-    txid: string;
-    /** @description True when the order was executed on BOB */
-    status: boolean;
-    /** @description When the order was created */
-    timestamp: number;
-    /** @description The converted satoshi amount */
-    tokens: string;
-    /** @description The satoshi output amount */
-    satoshis: number;
-    /** @description The fee paid in satoshis (includes gas refill) */
-    fee: number;
-    /** @description The number of confirmations required to confirm the Bitcoin tx */
-    txProofDifficultyFactor: number;
-    /** @description The optional strategy address */
-    strategyAddress?: EvmAddress,
-    /** @description The gas refill in satoshis */
-    satsToConvertToEth: number,
-};
-
-/** Order given by the Gateway API once the bitcoin tx is submitted */
-type GatewayOrder = Omit<GatewayOrderResponse & {
-    /** @description The gas refill in satoshis */
-    gasRefill: number,
-}, "satsToConvertToEth">;
-
-type GatewayCreateOrderResponse = {
-    uuid: string,
-    opReturnHash: string,
-};
-
-/** @dev The success type on create order */
-type GatewayStartOrderResult = GatewayCreateOrderResponse & {
-    bitcoinAddress: string,
-    satoshis: number;
-    psbtBase64?: string;
-};
-
-interface GatewayStrategy {
-    strategyAddress: string,
-    strategyName: string,
-    strategyType: "staking" | "lending",
-    inputTokenAddress: string,
-    outputTokenAddress?: string,
-}
 
 type Optional<T, K extends keyof T> = Omit<T, K> & Partial<T>;
 
@@ -99,7 +32,7 @@ export const MAINNET_GATEWAY_BASE_URL = "https://gateway-api-mainnet.gobob.xyz";
 export const TESTNET_GATEWAY_BASE_URL = "https://gateway-api-testnet.gobob.xyz";
 
 /**
- * Gateway REST HTTP API client 
+ * Gateway REST HTTP API client
  */
 export class GatewayApiClient {
     private chain: Chain.BOB | Chain.BOB_SEPOLIA;
@@ -128,7 +61,7 @@ export class GatewayApiClient {
 
     /**
      * Returns all chains supported by the SDK.
-     * 
+     *
      * @returns {string[]} The array of chain names.
      */
     getChains(): string[] {
@@ -137,20 +70,29 @@ export class GatewayApiClient {
 
     /**
      * Get a quote from the Gateway API for swapping or staking BTC.
-     * 
+     *
      * @param params The parameters for the quote.
      */
-    async getQuote(params: Optional<GatewayQuoteParams, "amount" | "fromChain" | "fromToken" | "fromUserAddress" | "toUserAddress">): Promise<GatewayQuote> {
-        const isMainnet = params.toChain === ChainId.BOB || typeof params.toChain === "string" && params.toChain.toLowerCase() === Chain.BOB;
-        const isTestnet = params.toChain === ChainId.BOB_SEPOLIA || typeof params.toChain === "string" && params.toChain.toLowerCase() === Chain.BOB_SEPOLIA;
+    async getQuote(
+        params: Optional<
+            GatewayQuoteParams,
+            "amount" | "fromChain" | "fromToken" | "fromUserAddress" | "toUserAddress"
+        >,
+    ): Promise<GatewayQuote> {
+        const isMainnet =
+            params.toChain === ChainId.BOB ||
+            (typeof params.toChain === "string" && params.toChain.toLowerCase() === Chain.BOB);
+        const isTestnet =
+            params.toChain === ChainId.BOB_SEPOLIA ||
+            (typeof params.toChain === "string" && params.toChain.toLowerCase() === Chain.BOB_SEPOLIA);
 
-        const isInvalidNetwork = (!isMainnet && !isTestnet);
-        const isMismatchMainnet = (isMainnet && this.chain !== Chain.BOB);
-        const isMismatchTestnet = (isTestnet && this.chain !== Chain.BOB_SEPOLIA);
+        const isInvalidNetwork = !isMainnet && !isTestnet;
+        const isMismatchMainnet = isMainnet && this.chain !== Chain.BOB;
+        const isMismatchTestnet = isTestnet && this.chain !== Chain.BOB_SEPOLIA;
 
         // TODO: switch URL if `toChain` is different chain?
         if (isInvalidNetwork || isMismatchMainnet || isMismatchTestnet) {
-            throw new Error('Invalid output chain');
+            throw new Error("Invalid output chain");
         }
 
         let outputToken = "";
@@ -168,7 +110,7 @@ export class GatewayApiClient {
         } else if (isTestnet && this.chain === Chain.BOB_SEPOLIA && SYMBOL_LOOKUP[ChainId.BOB_SEPOLIA][toToken]) {
             outputToken = SYMBOL_LOOKUP[ChainId.BOB_SEPOLIA][toToken].address;
         } else {
-            throw new Error('Unknown output token');
+            throw new Error("Unknown output token");
         }
 
         var url = new URL(`${this.baseUrl}/quote/${outputToken}`);
@@ -182,9 +124,9 @@ export class GatewayApiClient {
 
         const response = await fetch(url, {
             headers: {
-                'Content-Type': 'application/json',
-                Accept: 'application/json'
-            }
+                "Content-Type": "application/json",
+                Accept: "application/json",
+            },
         });
 
         return await response.json();
@@ -193,12 +135,15 @@ export class GatewayApiClient {
     // TODO: add error handling
     /**
      * Start an order via the Gateway API to reserve liquidity. This is step 1 of 2, see the {@link finalizeOrder} method.
-     * 
+     *
      * @param gatewayQuote The quote given by the {@link getQuote} method.
      * @param params The parameters for the quote, same as before.
-     * @returns {Promise<GatewayStartOrderResult>} The success object.
+     * @returns {Promise<GatewayStartOrder>} The success object.
      */
-    async startOrder(gatewayQuote: GatewayQuote, params: GatewayQuoteParams): Promise<GatewayStartOrderResult> {
+    async startOrder(
+        gatewayQuote: GatewayQuote,
+        params: Optional<GatewayQuoteParams, "toToken" | "amount">,
+    ): Promise<GatewayStartOrder> {
         const request: GatewayCreateOrderRequest = {
             gatewayAddress: gatewayQuote.gatewayAddress,
             strategyAddress: gatewayQuote.strategyAddress,
@@ -211,33 +156,37 @@ export class GatewayApiClient {
         };
 
         const response = await fetch(`${this.baseUrl}/order`, {
-            method: 'POST',
+            method: "POST",
             headers: {
-                'Content-Type': 'application/json',
-                Accept: 'application/json'
+                "Content-Type": "application/json",
+                Accept: "application/json",
             },
-            body: JSON.stringify(request)
+            body: JSON.stringify(request),
         });
 
         if (!response.ok) {
-            throw new Error('Failed to create order');
+            throw new Error("Failed to create order");
         }
 
         const data: GatewayCreateOrderResponse = await response.json();
         // NOTE: could remove this check but good for sanity
         if (data.opReturnHash != calculateOpReturnHash(request)) {
-            throw new Error('Invalid OP_RETURN hash');
+            throw new Error("Invalid OP_RETURN hash");
         }
 
         let psbtBase64: string;
-        if (params.fromUserAddress && typeof params.fromChain === "string" && params.fromChain.toLowerCase() === Chain.BITCOIN) {
+        if (
+            params.fromUserAddress &&
+            typeof params.fromChain === "string" &&
+            params.fromChain.toLowerCase() === Chain.BITCOIN
+        ) {
             psbtBase64 = await createBitcoinPsbt(
                 params.fromUserAddress,
                 gatewayQuote.bitcoinAddress,
                 gatewayQuote.satoshis,
                 params.fromUserPublicKey,
                 data.opReturnHash,
-                gatewayQuote.txProofDifficultyFactor
+                gatewayQuote.txProofDifficultyFactor,
             );
         }
 
@@ -247,47 +196,49 @@ export class GatewayApiClient {
             bitcoinAddress: gatewayQuote.bitcoinAddress,
             satoshis: gatewayQuote.satoshis,
             psbtBase64,
-        }
+        };
     }
 
     /**
      * Finalize an order via the Gateway API by providing the Bitcoin transaction. The tx will
      * be validated for correctness and forwarded to the mempool so there is no need to separately
      * broadcast the transaction. This is step 2 of 2, see the {@link startOrder} method.
-     * 
+     *
      * @param uuid The id given by the {@link startOrder} method.
      * @param bitcoinTxHex The hex encoded Bitcoin transaction.
      */
     async finalizeOrder(uuid: string, bitcoinTxHex: string) {
         const response = await fetch(`${this.baseUrl}/order/${uuid}`, {
-            method: 'PATCH',
+            method: "PATCH",
             headers: {
-                'Content-Type': 'application/json',
-                Accept: 'application/json'
+                "Content-Type": "application/json",
+                Accept: "application/json",
             },
-            body: JSON.stringify({ bitcoinTx: bitcoinTxHex })
+            body: JSON.stringify({ bitcoinTx: bitcoinTxHex }),
         });
 
         if (!response.ok) {
-            throw new Error('Failed to update order');
+            throw new Error("Failed to update order");
         }
     }
 
     /**
      * Returns all pending and completed orders for this account.
-     * 
+     *
      * @param userAddress The user's EVM address.
      * @returns {Promise<GatewayOrder[]>} The array of account orders.
      */
     async getOrders(userAddress: EvmAddress): Promise<GatewayOrder[]> {
         const response = await this.fetchGet(`${this.baseUrl}/orders/${userAddress}`);
         const orders: GatewayOrderResponse[] = await response.json();
-        return orders.map(order => { return { gasRefill: order.satsToConvertToEth, ...order } });
+        return orders.map((order) => {
+            return { gasRefill: order.satsToConvertToEth, ...order };
+        });
     }
 
     /**
      * Returns all strategies supported by the Gateway API.
-     * 
+     *
      * @returns {Promise<GatewayStrategyContract[]>} The array of strategies.
      */
     async getStrategies(): Promise<GatewayStrategyContract[]> {
@@ -297,11 +248,9 @@ export class GatewayApiClient {
         const chainId = this.chain === Chain.BOB ? ChainId.BOB : ChainId.BOB_SEPOLIA;
 
         const strategies: GatewayStrategy[] = await response.json();
-        return strategies.map(strategy => {
+        return strategies.map((strategy) => {
             const inputToken = ADDRESS_LOOKUP[strategy.inputTokenAddress];
-            const outputToken = strategy.outputTokenAddress
-                ? ADDRESS_LOOKUP[strategy.outputTokenAddress]
-                : undefined;
+            const outputToken = strategy.outputTokenAddress ? ADDRESS_LOOKUP[strategy.outputTokenAddress] : undefined;
             return {
                 id: "",
                 type: "deposit",
@@ -340,13 +289,13 @@ export class GatewayApiClient {
                         chain: chainName,
                     }
                     : null,
-            }
+            };
         });
     }
 
     /**
      * Returns all tokens supported by the Gateway API.
-     * 
+     *
      * @param includeStrategies Also include output tokens via strategies (e.g. staking or lending).
      * @returns {Promise<EvmAddress[]>} The array of token addresses.
      */
@@ -357,25 +306,23 @@ export class GatewayApiClient {
 
     /**
      * Same as {@link getTokenAddresses} but with additional info.
-     * 
+     *
      * @param includeStrategies Also include output tokens via strategies (e.g. staking or lending).
      * @returns {Promise<Token[]>} The array of tokens.
      */
     async getTokens(includeStrategies: boolean = true): Promise<Token[]> {
         // https://github.com/ethereum-optimism/ecosystem/blob/c6faa01455f9e846f31c0343a0be4c03cbeb2a6d/packages/op-app/src/hooks/useOPTokens.ts#L10
         const tokens = await this.getTokenAddresses(includeStrategies);
-        return tokens
-            .map(token => ADDRESS_LOOKUP[token])
-            .filter(token => token !== undefined);
+        return tokens.map((token) => ADDRESS_LOOKUP[token]).filter((token) => token !== undefined);
     }
 
     private async fetchGet(url: string) {
         return await fetch(url, {
-            method: 'GET',
+            method: "GET",
             headers: {
-                'Content-Type': 'application/json',
-                Accept: 'application/json'
-            }
+                "Content-Type": "application/json",
+                Accept: "application/json",
+            },
         });
     }
 }
@@ -386,15 +333,17 @@ export class GatewayApiClient {
  */
 function calculateOpReturnHash(req: GatewayCreateOrderRequest) {
     const abiCoder = new AbiCoder();
-    return ethers.keccak256(abiCoder.encode(
-        ["address", "address", "uint256", "address", "bytes", "bytes"],
-        [
-            req.gatewayAddress,
-            req.strategyAddress || ethers.ZeroAddress,
-            req.satsToConvertToEth,
-            req.userAddress,
-            req.gatewayExtraData || "0x",
-            req.strategyExtraData || "0x"
-        ]
-    ))
+    return ethers.keccak256(
+        abiCoder.encode(
+            ["address", "address", "uint256", "address", "bytes", "bytes"],
+            [
+                req.gatewayAddress,
+                req.strategyAddress || ethers.ZeroAddress,
+                req.satsToConvertToEth,
+                req.userAddress,
+                req.gatewayExtraData || "0x",
+                req.strategyExtraData || "0x",
+            ],
+        ),
+    );
 }

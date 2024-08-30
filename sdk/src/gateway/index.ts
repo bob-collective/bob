@@ -1,2 +1,2 @@
 export { GatewayApiClient as GatewaySDK } from "./client";
-export { GatewayQuoteParams, GatewayStrategyContract } from "./types";
+export { GatewayQuoteParams, GatewayQuote, GatewayOrder, GatewayStrategyContract } from "./types";
