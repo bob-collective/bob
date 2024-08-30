@@ -1,38 +1,38 @@
-import { Transaction, Script, selectUTXO, TEST_NETWORK, NETWORK, p2wpkh, p2sh } from '@scure/btc-signer';
+import { Transaction, Script, selectUTXO, TEST_NETWORK, NETWORK, p2wpkh, p2sh } from "@scure/btc-signer";
 import { hex, base64 } from "@scure/base";
-import { AddressType, getAddressInfo, Network } from 'bitcoin-address-validation';
-import { EsploraClient, UTXO } from '../esplora';
+import { AddressType, getAddressInfo, Network } from "bitcoin-address-validation";
+import { EsploraClient, UTXO } from "../esplora";
 
 export type BitcoinNetworkName = Exclude<Network, "regtest">;
 
 const bitcoinNetworks: Record<BitcoinNetworkName, typeof NETWORK> = {
-  mainnet: NETWORK,
-  testnet: TEST_NETWORK
+    mainnet: NETWORK,
+    testnet: TEST_NETWORK,
 };
 
 export const getBtcNetwork = (name: BitcoinNetworkName) => {
-  return bitcoinNetworks[name];
+    return bitcoinNetworks[name];
 };
 
 type Output = { address: string; amount: bigint } | { script: Uint8Array; amount: bigint };
 
 export interface Input {
-  txid: string;
-  index: number;
-  witness_script?: Uint8Array;
-  redeemScript?: Uint8Array;
-  witnessUtxo?: {
-    script: Uint8Array;
-    amount: bigint;
-  };
-  nonWitnessUtxo?: Uint8Array;
+    txid: string;
+    index: number;
+    witness_script?: Uint8Array;
+    redeemScript?: Uint8Array;
+    witnessUtxo?: {
+        script: Uint8Array;
+        amount: bigint;
+    };
+    nonWitnessUtxo?: Uint8Array;
 }
 
 /**
  * Create a PSBT with an output `toAddress` and an optional OP_RETURN output.
  * May add an additional change output. This returns an **unsigned** PSBT encoded
  * as a Base64 string.
- * 
+ *
  * @param fromAddress The Bitcoin address which is sending to the `toAddress`.
  * @param toAddress The Bitcoin address which is receiving the BTC.
  * @param amount The amount of BTC (as satoshis) to send.
@@ -42,141 +42,140 @@ export interface Input {
  * @returns {Promise<string>} The Base64 encoded PSBT.
  */
 export async function createBitcoinPsbt(
-  fromAddress: string,
-  toAddress: string,
-  amount: number,
-  publicKey?: string,
-  opReturnData?: string,
-  confirmationTarget: number = 3,
+    fromAddress: string,
+    toAddress: string,
+    amount: number,
+    publicKey?: string,
+    opReturnData?: string,
+    confirmationTarget: number = 3,
 ): Promise<string> {
-  const addressInfo = getAddressInfo(fromAddress);
-  const network = addressInfo.network;
-  if (network === "regtest") {
-    throw new Error("Bitcoin regtest not supported");
-  }
-
-  // We need the public key to generate the redeem and witness script to spend the scripts
-  if (addressInfo.type === (AddressType.p2sh || AddressType.p2wsh)) {
-    if (!publicKey) {
-      throw new Error('Public key is required to spend from the selected address type');
+    const addressInfo = getAddressInfo(fromAddress);
+    const network = addressInfo.network;
+    if (network === "regtest") {
+        throw new Error("Bitcoin regtest not supported");
     }
-  }
 
-  const esploraClient = new EsploraClient(addressInfo.network);
-
-  // NOTE: esplora only returns the 25 most recent UTXOs
-  // TODO: change this to use the pagination API and return all UTXOs
-  const [confirmedUtxos, feeRate] = await Promise.all([
-    esploraClient.getAddressUtxos(fromAddress),
-    esploraClient.getFeeEstimate(confirmationTarget)
-  ]);
-
-  if (confirmedUtxos.length === 0) {
-    throw new Error('No confirmed UTXOs');
-  }
-
-  // To construct the spending transaction and estimate the fee, we need the transactions for the UTXOs
-  let possibleInputs: Input[] = [];
-
-  await Promise.all(
-    confirmedUtxos.map(async (utxo) => {
-      const hex = await esploraClient.getTransactionHex(utxo.txid);
-      const transaction = Transaction.fromRaw(Buffer.from(hex, 'hex'), { allowUnknownOutputs: true });
-      const input = getInputFromUtxoAndTx(network, utxo, transaction, addressInfo.type, publicKey);
-      possibleInputs.push(input);
-    })
-  );
-
-  const outputs: Output[] = [
-    {
-      address: toAddress,
-      amount: BigInt(amount)
+    // We need the public key to generate the redeem and witness script to spend the scripts
+    if (addressInfo.type === (AddressType.p2sh || AddressType.p2wsh)) {
+        if (!publicKey) {
+            throw new Error("Public key is required to spend from the selected address type");
+        }
     }
-  ];
 
-  if (opReturnData) {
-    // Strip 0x prefix from opReturn
-    if (opReturnData.startsWith('0x')) {
-      opReturnData = opReturnData.slice(2);
+    const esploraClient = new EsploraClient(addressInfo.network);
+
+    // NOTE: esplora only returns the 25 most recent UTXOs
+    // TODO: change this to use the pagination API and return all UTXOs
+    const [confirmedUtxos, feeRate] = await Promise.all([
+        esploraClient.getAddressUtxos(fromAddress),
+        esploraClient.getFeeEstimate(confirmationTarget),
+    ]);
+
+    if (confirmedUtxos.length === 0) {
+        throw new Error("No confirmed UTXOs");
     }
-    outputs.push({
-      // OP_RETURN https://github.com/paulmillr/scure-btc-signer/issues/26
-      script: Script.encode(['RETURN', hex.decode(opReturnData)]),
-      amount: BigInt(0)
-    })
-  }
 
-  // Outsource UTXO selection to btc-signer
-  // https://github.com/paulmillr/scure-btc-signer?tab=readme-ov-file#utxo-selection
-  // default = exactBiggest/accumBiggest creates tx with smallest fees, but it breaks
-  // big outputs to small ones, which in the end will create a lot of outputs close to dust.
-  const transaction = selectUTXO(possibleInputs, outputs, 'default', {
-    changeAddress: fromAddress, // Refund surplus to the payment address
-    feePerByte: BigInt(Math.ceil(feeRate)), // round up to the nearest integer
-    bip69: true, // Sort inputs and outputs according to BIP69
-    createTx: true, // Create the transaction
-    network: getBtcNetwork(network),
-    allowUnknownOutputs: true, // Required for OP_RETURN
-    allowLegacyWitnessUtxo: true // Required for P2SH-P2WPKH
-  });
+    // To construct the spending transaction and estimate the fee, we need the transactions for the UTXOs
+    let possibleInputs: Input[] = [];
 
-  if (!transaction || !transaction.tx) {
-    throw new Error('Failed to create transaction. Do you have enough funds?');
-  }
+    await Promise.all(
+        confirmedUtxos.map(async (utxo) => {
+            const hex = await esploraClient.getTransactionHex(utxo.txid);
+            const transaction = Transaction.fromRaw(Buffer.from(hex, "hex"), { allowUnknownOutputs: true });
+            const input = getInputFromUtxoAndTx(network, utxo, transaction, addressInfo.type, publicKey);
+            possibleInputs.push(input);
+        }),
+    );
 
-  return base64.encode(transaction.tx.toPSBT(0));
+    const outputs: Output[] = [
+        {
+            address: toAddress,
+            amount: BigInt(amount),
+        },
+    ];
+
+    if (opReturnData) {
+        // Strip 0x prefix from opReturn
+        if (opReturnData.startsWith("0x")) {
+            opReturnData = opReturnData.slice(2);
+        }
+        outputs.push({
+            // OP_RETURN https://github.com/paulmillr/scure-btc-signer/issues/26
+            script: Script.encode(["RETURN", hex.decode(opReturnData)]),
+            amount: BigInt(0),
+        });
+    }
+
+    // Outsource UTXO selection to btc-signer
+    // https://github.com/paulmillr/scure-btc-signer?tab=readme-ov-file#utxo-selection
+    // default = exactBiggest/accumBiggest creates tx with smallest fees, but it breaks
+    // big outputs to small ones, which in the end will create a lot of outputs close to dust.
+    const transaction = selectUTXO(possibleInputs, outputs, "default", {
+        changeAddress: fromAddress, // Refund surplus to the payment address
+        feePerByte: BigInt(Math.ceil(feeRate)), // round up to the nearest integer
+        bip69: true, // Sort inputs and outputs according to BIP69
+        createTx: true, // Create the transaction
+        network: getBtcNetwork(network),
+        allowUnknownOutputs: true, // Required for OP_RETURN
+        allowLegacyWitnessUtxo: true, // Required for P2SH-P2WPKH
+    });
+
+    if (!transaction || !transaction.tx) {
+        throw new Error("Failed to create transaction. Do you have enough funds?");
+    }
+
+    return base64.encode(transaction.tx.toPSBT(0));
 }
 
 // Using the UTXO and the transaction, we can construct the input for the transaction
 export function getInputFromUtxoAndTx(
-  network: BitcoinNetworkName,
-  utxo: UTXO,
-  transaction: Transaction,
-  addressType: AddressType,
-  publicKey?: string
+    network: BitcoinNetworkName,
+    utxo: UTXO,
+    transaction: Transaction,
+    addressType: AddressType,
+    publicKey?: string,
 ): Input {
-  // The output containts the necessary details to spend the UTXO based on the script type
-  // Under the hood, @scure/btc-signer parses the output and extracts the script and amount
-  const output = transaction.getOutput(utxo.vout);
+    // The output containts the necessary details to spend the UTXO based on the script type
+    // Under the hood, @scure/btc-signer parses the output and extracts the script and amount
+    const output = transaction.getOutput(utxo.vout);
 
-  // For p2sh, we additionally need the redeem script. This cannot be extracted from the transaction itself
-  // We only support P2SH-P2WPKH
-  // TODO: add support for P2WSH
-  // TODO: add support for P2SH-P2PKH
-  let redeemScript = {};
+    // For p2sh, we additionally need the redeem script. This cannot be extracted from the transaction itself
+    // We only support P2SH-P2WPKH
+    // TODO: add support for P2WSH
+    // TODO: add support for P2SH-P2PKH
+    let redeemScript = {};
 
-  if (addressType === AddressType.p2sh) {
-    if (!publicKey) {
-      throw new Error("Bitcoin P2SH not supported without public key");
+    if (addressType === AddressType.p2sh) {
+        if (!publicKey) {
+            throw new Error("Bitcoin P2SH not supported without public key");
+        }
+        const inner = p2wpkh(Buffer.from(publicKey!, "hex"), getBtcNetwork(network));
+        redeemScript = p2sh(inner);
     }
-    const inner = p2wpkh(Buffer.from(publicKey!, 'hex'), getBtcNetwork(network));
-    redeemScript = p2sh(inner);
-  }
 
-  // For the redeem and witness script, we need to construct the script mixin
-  const scriptMixin = {
-    ...redeemScript
-  };
+    // For the redeem and witness script, we need to construct the script mixin
+    const scriptMixin = {
+        ...redeemScript,
+    };
 
+    const nonWitnessUtxo = {
+        nonWitnessUtxo: Buffer.from(transaction.hex, "hex"),
+    };
+    const witnessUtxo = {
+        witnessUtxo: {
+            script: output.script!,
+            amount: output.amount!,
+        },
+    };
+    const witnessMixin = transaction.hasWitnesses ? witnessUtxo : nonWitnessUtxo;
 
-  const nonWitnessUtxo = {
-    nonWitnessUtxo: Buffer.from(transaction.hex, 'hex')
-  };
-  const witnessUtxo = {
-    witnessUtxo: {
-      script: output.script!,
-      amount: output.amount!
-    }
-  };
-  const witnessMixin = transaction.hasWitnesses ? witnessUtxo : nonWitnessUtxo;
+    // Construct inputs based on the script type
+    const input = {
+        txid: utxo.txid,
+        index: utxo.vout,
+        ...scriptMixin, // Maybe adds the redeemScript and/or witnessScript
+        ...witnessMixin, // Adds the witnessUtxo or nonWitnessUtxo
+    };
 
-  // Construct inputs based on the script type
-  const input = {
-    txid: utxo.txid,
-    index: utxo.vout,
-    ...scriptMixin, // Maybe adds the redeemScript and/or witnessScript
-    ...witnessMixin // Adds the witnessUtxo or nonWitnessUtxo
-  };
-
-  return input;
+    return input;
 }

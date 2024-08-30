@@ -282,12 +282,12 @@ export class GatewayApiClient {
                 },
                 outputToken: outputToken
                     ? {
-                        symbol: outputToken.symbol,
-                        address: outputToken.address,
-                        logo: outputToken.logoURI,
-                        decimals: outputToken.decimals,
-                        chain: chainName,
-                    }
+                          symbol: outputToken.symbol,
+                          address: outputToken.address,
+                          logo: outputToken.logoURI,
+                          decimals: outputToken.decimals,
+                          chain: chainName,
+                      }
                     : null,
             };
         });

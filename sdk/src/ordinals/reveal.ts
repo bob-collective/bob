@@ -57,13 +57,9 @@ export const customFinalizer = (commitTxData: CommitTxData) => {
             finalScriptWitness: witnessStackToScriptWitness(witness),
         };
     };
-}
+};
 
-export async function signRevealTx(
-    signer: RemoteSigner,
-    commitTxData: CommitTxData,
-    psbt: bitcoin.Psbt
-) {
+export async function signRevealTx(signer: RemoteSigner, commitTxData: CommitTxData, psbt: bitcoin.Psbt) {
     // reveal should only have one input
     psbt = await signer.signInput(0, psbt);
 

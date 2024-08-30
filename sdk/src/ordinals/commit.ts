@@ -7,7 +7,7 @@ export interface CommitTxData {
         leafVersion: number;
         script: Buffer;
         controlBlock: Buffer;
-    }
+    };
 }
 
 function toXOnly(pubkey: Buffer) {
@@ -21,7 +21,7 @@ function toXOnly(pubkey: Buffer) {
 export function createCommitTxData(
     network: bitcoin.Network,
     publicKey: Buffer,
-    inscription: Inscription
+    inscription: Inscription,
 ): CommitTxData {
     const xOnlyPublicKey = toXOnly(publicKey);
     const script = inscription.toScript(xOnlyPublicKey);
@@ -53,4 +53,3 @@ export function createCommitTxData(
         tapLeafScript,
     };
 }
-

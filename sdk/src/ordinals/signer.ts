@@ -54,4 +54,4 @@ export interface RemoteSigner {
      * @returns {Promise<Psbt>} A promise that resolves to the signed PSBT.
      */
     signInput(inputIndex: number, psbt: Psbt): Promise<Psbt>;
-};
+}
