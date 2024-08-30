@@ -61,6 +61,8 @@ export interface GatewayQuoteParams {
     gasRefill?: number;
     /** @description Wallet public key on source chain */
     fromUserPublicKey?: string;
+    /** @description Strategy address */
+    strategyAddress?: string;
 }
 
 /**

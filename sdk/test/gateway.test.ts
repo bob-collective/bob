@@ -33,7 +33,7 @@ describe("Gateway Tests", () => {
         };
 
         nock(`${MAINNET_GATEWAY_BASE_URL}`)
-            .get(`/quote/${SYMBOL_LOOKUP[ChainId.BOB]["tbtc"].address}/1000`)
+            .get(`/quote/${SYMBOL_LOOKUP[ChainId.BOB]["tbtc"].address}?satoshis=1000`)
             .times(4)
             .reply(200, mockQuote);
 
@@ -64,7 +64,7 @@ describe("Gateway Tests", () => {
 
         // get the total available without amount
         nock(`${MAINNET_GATEWAY_BASE_URL}`)
-            .get(`/quote/${SYMBOL_LOOKUP[ChainId.BOB]["tbtc"].address}/`)
+            .get(`/quote/${SYMBOL_LOOKUP[ChainId.BOB]["tbtc"].address}`)
             .reply(200, mockQuote);
         assert.deepEqual(await gatewaySDK.getQuote({
             toChain: "BOB",
@@ -148,8 +148,6 @@ describe("Gateway Tests", () => {
     });
 
     it("should get strategies", async () => {
-        const gatewaySDK = new GatewaySDK("bob");
-
         nock(`${MAINNET_GATEWAY_BASE_URL}`)
             .get(`/strategies`)
             .reply(200, [{
@@ -159,11 +157,43 @@ describe("Gateway Tests", () => {
                 slug: "",
                 type: "staking"
             }]);
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
+            .get(`/quote/${SYMBOL_LOOKUP[ChainId.BOB]["tbtc"].address}?satoshis=1000&strategy=${ZeroAddress}`)
+            .times(4)
+            .reply(200, {
+                gatewayAddress: ZeroAddress,
+                dustThreshold: 1000,
+                satoshis: 1000,
+                fee: 10,
+                bitcoinAddress: "",
+                txProofDifficultyFactor: 3,
+                strategyAddress: ZeroAddress,
+            });
 
+        const gatewaySDK = new GatewaySDK("bob");
         const strategies = await gatewaySDK.getStrategies();
 
         assert.lengthOf(strategies, 1);
         assert.isDefined(strategies[0].inputToken);
         assert.isNull(strategies[0].outputToken);
+
+        const strategy = strategies[0];
+        await gatewaySDK.getQuote({
+            toUserAddress: ZeroAddress,
+            amount: 1000,
+
+            toChain: strategy.chain.chainId,
+            toToken: strategy.inputToken.symbol,
+            strategyAddress: strategy.address,
+        });
+    });
+
+    it("should get tokens", async () => {
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
+            .get(`/tokens?includeStrategies=false`)
+            .reply(200, [ZeroAddress]);
+
+        const gatewaySDK = new GatewaySDK("bob");
+        assert.deepEqual(await gatewaySDK.getTokenAddresses(), [ZeroAddress]);
     });
 });

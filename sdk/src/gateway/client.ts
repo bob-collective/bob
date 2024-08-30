@@ -148,15 +148,20 @@ export class GatewayApiClient {
         const isMismatchMainnet = (isMainnet && this.chain !== Chain.BOB);
         const isMismatchTestnet = (isTestnet && this.chain !== Chain.BOB_SEPOLIA);
 
-        // TODO: switch URL if `toChain` is different chain
+        // TODO: switch URL if `toChain` is different chain?
         if (isInvalidNetwork || isMismatchMainnet || isMismatchTestnet) {
             throw new Error('Invalid output chain');
         }
 
-        const toToken = params.toToken.toLowerCase();
         let outputToken = "";
+        let strategyAddress: string | undefined;
+
+        const toToken = params.toToken.toLowerCase();
+        if (params.strategyAddress?.startsWith("0x")) {
+            strategyAddress = params.strategyAddress;
+        }
+
         if (toToken.startsWith("0x")) {
-            // NOTE: this can also be the strategy address
             outputToken = toToken;
         } else if (isMainnet && this.chain === Chain.BOB && SYMBOL_LOOKUP[ChainId.BOB][toToken]) {
             outputToken = SYMBOL_LOOKUP[ChainId.BOB][toToken].address;
@@ -166,8 +171,16 @@ export class GatewayApiClient {
             throw new Error('Unknown output token');
         }
 
+        var url = new URL(`${this.baseUrl}/quote/${outputToken}`);
+        if (strategyAddress) {
+            url.searchParams.append("strategy", `${strategyAddress}`);
+        }
         const atomicAmount = params.amount;
-        const response = await fetch(`${this.baseUrl}/quote/${outputToken}/${atomicAmount || ''}`, {
+        if (atomicAmount) {
+            url.searchParams.append("satoshis", `${atomicAmount}`);
+        }
+
+        const response = await fetch(url, {
             headers: {
                 'Content-Type': 'application/json',
                 Accept: 'application/json'
@@ -267,14 +280,7 @@ export class GatewayApiClient {
      * @returns {Promise<GatewayOrder[]>} The array of account orders.
      */
     async getOrders(userAddress: EvmAddress): Promise<GatewayOrder[]> {
-        const response = await fetch(`${this.baseUrl}/orders/${userAddress}`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                Accept: 'application/json'
-            }
-        });
-
+        const response = await this.fetchGet(`${this.baseUrl}/orders/${userAddress}`);
         const orders: GatewayOrderResponse[] = await response.json();
         return orders.map(order => { return { gasRefill: order.satsToConvertToEth, ...order } });
     }
@@ -285,13 +291,7 @@ export class GatewayApiClient {
      * @returns {Promise<GatewayStrategyContract[]>} The array of strategies.
      */
     async getStrategies(): Promise<GatewayStrategyContract[]> {
-        const response = await fetch(`${this.baseUrl}/strategies`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                Accept: 'application/json'
-            }
-        });
+        const response = await this.fetchGet(`${this.baseUrl}/strategies`);
 
         const chainName = (this.chain === Chain.BOB ? Chain.BOB : Chain.BOB_SEPOLIA).toString();
         const chainId = this.chain === Chain.BOB ? ChainId.BOB : ChainId.BOB_SEPOLIA;
@@ -345,33 +345,38 @@ export class GatewayApiClient {
     }
 
     /**
-     * Returns all tokens (and strategy tokens) supported by the Gateway API.
+     * Returns all tokens supported by the Gateway API.
      * 
+     * @param includeStrategies Also include output tokens via strategies (e.g. staking or lending).
      * @returns {Promise<EvmAddress[]>} The array of token addresses.
      */
-    async getTokenAddresses(): Promise<EvmAddress[]> {
-        const response = await fetch(`${this.baseUrl}/tokens`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                Accept: 'application/json'
-            }
-        });
-
+    async getTokenAddresses(includeStrategies: boolean = false): Promise<EvmAddress[]> {
+        const response = await this.fetchGet(`${this.baseUrl}/tokens?includeStrategies=${includeStrategies}`);
         return response.json();
     }
 
     /**
      * Same as {@link getTokenAddresses} but with additional info.
      * 
+     * @param includeStrategies Also include output tokens via strategies (e.g. staking or lending).
      * @returns {Promise<Token[]>} The array of tokens.
      */
-    async getTokens(): Promise<Token[]> {
+    async getTokens(includeStrategies: boolean = false): Promise<Token[]> {
         // https://github.com/ethereum-optimism/ecosystem/blob/c6faa01455f9e846f31c0343a0be4c03cbeb2a6d/packages/op-app/src/hooks/useOPTokens.ts#L10
-        const tokens = await this.getTokenAddresses();
+        const tokens = await this.getTokenAddresses(includeStrategies);
         return tokens
             .map(token => ADDRESS_LOOKUP[token])
             .filter(token => token !== undefined);
+    }
+
+    private async fetchGet(url: string) {
+        return await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                Accept: 'application/json'
+            }
+        });
     }
 }
 
