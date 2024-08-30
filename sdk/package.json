@@ -4,6 +4,8 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
+    "format:check": "prettier --check src/**/*.ts",
+    "format:write": "prettier --write src/**/*.ts",
     "test": "vitest run test/*.ts",
     "deploy-relay": "ts-node src/scripts/relay-genesis.ts",
     "update-relay": "ts-node src/scripts/relay-retarget.ts",
@@ -23,6 +25,7 @@
     "ecpair": "^2.1.0",
     "mocha": "^10.7.3",
     "nock": "^14.0.0-beta.11",
+    "prettier": "3.3.3",
     "tiny-secp256k1": "^2.2.3",
     "ts-node": "^10.0.0",
     "typescript": "^5.5.4",

@@ -41,7 +41,7 @@ export module InscriptionId {
 export type OutPoint = {
     txid: string;
     vout: number;
-}
+};
 
 export module OutPoint {
     export function toString(id: OutPoint): string {
@@ -62,7 +62,7 @@ export module OutPoint {
 export type SatPoint = {
     outpoint: OutPoint;
     offset: number;
-}
+};
 
 export module SatPoint {
     export function toString(id: SatPoint): string {
@@ -128,10 +128,10 @@ export interface OutputJson {
      */
     runes: {
         [key: string]: {
-            amount: number,
-            divisibility: number,
-            symbol: string | null,
-        }
+            amount: number;
+            divisibility: number;
+            symbol: string | null;
+        };
     };
 
     /**
@@ -190,7 +190,7 @@ export interface SatJson<InscriptionId> {
      */
     block: number;
 
-    charms: number[],
+    charms: number[];
 
     /**
      * The cycle associated with the ordinal.
@@ -248,7 +248,7 @@ export interface InscriptionJson<InscriptionId, SatPoint> {
      */
     address: string | null;
 
-    charms: string[],
+    charms: string[];
 
     /**
      * An array of child IDs.
@@ -265,7 +265,7 @@ export interface InscriptionJson<InscriptionId, SatPoint> {
      */
     content_type: string | null;
 
-    effective_content_type: String | null,
+    effective_content_type: String | null;
 
     /**
      * The genesis fee of the inscription.
@@ -366,15 +366,17 @@ export class OrdinalsClient {
      * ```
      */
     async getInscriptionFromId(id: InscriptionId): Promise<InscriptionJson<InscriptionId, SatPoint>> {
-        console.log(`${this.basePath}/inscription/${InscriptionId.toString(id)}`)
-        const inscriptionJson = await this.getJson<InscriptionJson<string, string>>(`${this.basePath}/inscription/${InscriptionId.toString(id)}`);
+        console.log(`${this.basePath}/inscription/${InscriptionId.toString(id)}`);
+        const inscriptionJson = await this.getJson<InscriptionJson<string, string>>(
+            `${this.basePath}/inscription/${InscriptionId.toString(id)}`,
+        );
         return {
             ...inscriptionJson,
             children: inscriptionJson.children.map(InscriptionId.fromString),
             id: InscriptionId.fromString(inscriptionJson.id),
-            next: (inscriptionJson.next != null) ? InscriptionId.fromString(inscriptionJson.next) : null,
-            parent: (inscriptionJson.parent != null) ? InscriptionId.fromString(inscriptionJson.parent) : null,
-            previous: (inscriptionJson.previous != null) ? InscriptionId.fromString(inscriptionJson.previous) : null,
+            next: inscriptionJson.next != null ? InscriptionId.fromString(inscriptionJson.next) : null,
+            parent: inscriptionJson.parent != null ? InscriptionId.fromString(inscriptionJson.parent) : null,
+            previous: inscriptionJson.previous != null ? InscriptionId.fromString(inscriptionJson.previous) : null,
             satpoint: SatPoint.fromString(inscriptionJson.satpoint),
         };
     }
@@ -410,7 +412,9 @@ export class OrdinalsClient {
      * ```
      */
     async getInscriptionsFromBlock(height: number): Promise<InscriptionsJson<InscriptionId>> {
-        const inscriptionsJson = await this.getJson<InscriptionsJson<string>>(`${this.basePath}/inscriptions/block/${height}`);
+        const inscriptionsJson = await this.getJson<InscriptionsJson<string>>(
+            `${this.basePath}/inscriptions/block/${height}`,
+        );
         return this.parseInscriptionsJson(inscriptionsJson);
     }
 
@@ -449,7 +453,7 @@ export class OrdinalsClient {
         const satJson = await this.getJson<SatJson<string>>(`${this.basePath}/sat/${sat}`);
         return {
             ...satJson,
-            inscriptions: satJson.inscriptions.map(id => InscriptionId.fromString(id)),
+            inscriptions: satJson.inscriptions.map((id) => InscriptionId.fromString(id)),
         };
     }
 
@@ -467,7 +471,9 @@ export class OrdinalsClient {
      * ```
      */
     async getInscriptionsFromStartBlock(startHeight: number): Promise<InscriptionsJson<InscriptionId>> {
-        const inscriptionsJson = await this.getJson<InscriptionsJson<string>>(`${this.basePath}/inscriptions/${startHeight}`);
+        const inscriptionsJson = await this.getJson<InscriptionsJson<string>>(
+            `${this.basePath}/inscriptions/${startHeight}`,
+        );
         return this.parseInscriptionsJson(inscriptionsJson);
     }
 
@@ -477,20 +483,20 @@ export class OrdinalsClient {
     private async getJson<T>(url: string): Promise<T> {
         const response = await fetch(url, {
             headers: {
-                'Accept': 'application/json',
+                Accept: "application/json",
             },
         });
         if (!response.ok) {
             throw new Error(response.statusText);
         }
-        return await response.json() as Promise<T>;
+        return (await response.json()) as Promise<T>;
     }
 
     /**
      * @ignore
      */
     private parseInscriptionsJson(inscriptionsJson: InscriptionsJson<string>): InscriptionsJson<InscriptionId> {
-        const ids = inscriptionsJson.ids.map(id => InscriptionId.fromString(id));
+        const ids = inscriptionsJson.ids.map((id) => InscriptionId.fromString(id));
         return {
             ...inscriptionsJson,
             ids,

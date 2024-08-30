@@ -37,8 +37,7 @@ const args = yargs(hideBin(process.argv))
     .option("verifier-url", {
         description: "Verifier URL",
         type: "string",
-    })
-    .argv;
+    }).argv;
 
 main().catch((err) => {
     console.log("Error thrown by script:");
@@ -47,12 +46,16 @@ main().catch((err) => {
 });
 
 function range(size: number, startAt = 0) {
-    return [...Array(size).keys()].map(i => i + startAt);
+    return [...Array(size).keys()].map((i) => i + startAt);
 }
 
 async function getRetargetHeaders(esploraClient: EsploraClient, nextRetargetHeight: number, proofLength: number) {
-    const beforeRetarget = await Promise.all(range(proofLength, nextRetargetHeight - proofLength).map(height => esploraClient.getBlockHeaderAt(height)));
-    const afterRetarget = await Promise.all(range(proofLength, nextRetargetHeight).map(height => esploraClient.getBlockHeaderAt(height)));
+    const beforeRetarget = await Promise.all(
+        range(proofLength, nextRetargetHeight - proofLength).map((height) => esploraClient.getBlockHeaderAt(height)),
+    );
+    const afterRetarget = await Promise.all(
+        range(proofLength, nextRetargetHeight).map((height) => esploraClient.getBlockHeaderAt(height)),
+    );
     return beforeRetarget.concat(afterRetarget).join("");
 }
 
@@ -63,9 +66,9 @@ async function main(): Promise<void> {
     if (initHeight == "latest") {
         const currentHeight = await esploraClient.getLatestHeight();
         initHeight = currentHeight - (currentHeight % 2016) - 2016;
-        console.log(`Using block ${initHeight}`)
+        console.log(`Using block ${initHeight}`);
     }
-    if ((initHeight % 2016) != 0) {
+    if (initHeight % 2016 != 0) {
         throw new Error("Invalid genesis height: must be multiple of 2016");
     }
 
@@ -113,7 +116,8 @@ async function main(): Promise<void> {
         env.push("TESTNET=true");
     }
 
-    exec(`${env.join(" ")} forge script ../script/RelayGenesis.s.sol:RelayGenesisScript --rpc-url '${rpcUrl}' ${verifyOpts} --broadcast --priority-gas-price 1`,
+    exec(
+        `${env.join(" ")} forge script ../script/RelayGenesis.s.sol:RelayGenesisScript --rpc-url '${rpcUrl}' ${verifyOpts} --broadcast --priority-gas-price 1`,
         { maxBuffer: 1024 * 5000 },
         (err: any, stdout: string, stderr: string) => {
             if (err) {
@@ -123,5 +127,6 @@ async function main(): Promise<void> {
             // the *entire* stdout and stderr (buffered)
             console.log(`stdout: ${stdout}`);
             console.log(`stderr: ${stderr}`);
-        });
+        },
+    );
 }

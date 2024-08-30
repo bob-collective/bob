@@ -11,35 +11,35 @@ export { RemoteSigner };
  * Estimate the virtual size of a 1 input 1 output reveal tx.
  */
 function estimateTxSize(
-  network: bitcoin.Network,
-  publicKey: Buffer,
-  commitTxData: CommitTxData,
-  toAddress: string,
-  amount: number,
+    network: bitcoin.Network,
+    publicKey: Buffer,
+    commitTxData: CommitTxData,
+    toAddress: string,
+    amount: number,
 ) {
-  const psbt = new bitcoin.Psbt({ network });
+    const psbt = new bitcoin.Psbt({ network });
 
-  const { scriptTaproot, tapLeafScript } = commitTxData;
-  psbt.addInput({
-    hash: Buffer.alloc(32, 0),
-    index: 0,
-    witnessUtxo: {
-      value: amount,
-      script: scriptTaproot.output!,
-    },
-    tapLeafScript: [tapLeafScript],
-  });
+    const { scriptTaproot, tapLeafScript } = commitTxData;
+    psbt.addInput({
+        hash: Buffer.alloc(32, 0),
+        index: 0,
+        witnessUtxo: {
+            value: amount,
+            script: scriptTaproot.output!,
+        },
+        tapLeafScript: [tapLeafScript],
+    });
 
-  psbt.addOutput({
-    value: amount,
-    address: toAddress,
-  });
+    psbt.addOutput({
+        value: amount,
+        address: toAddress,
+    });
 
-  psbt.signInput(0, new DummySigner(publicKey));
-  psbt.finalizeInput(0, customFinalizer(commitTxData));
+    psbt.signInput(0, new DummySigner(publicKey));
+    psbt.finalizeInput(0, customFinalizer(commitTxData));
 
-  const tx = psbt.extractTransaction();
-  return tx.virtualSize();
+    const tx = psbt.extractTransaction();
+    return tx.virtualSize();
 }
 
 /**
@@ -53,50 +53,40 @@ function estimateTxSize(
  * @returns Promise which resolves to the reveal transaction.
  */
 export async function inscribeData(
-  signer: RemoteSigner,
-  toAddress: string,
-  feeRate: number,
-  inscription: Inscription,
-  postage = 10000,
+    signer: RemoteSigner,
+    toAddress: string,
+    feeRate: number,
+    inscription: Inscription,
+    postage = 10000,
 ) {
-  const bitcoinNetwork = await signer.getNetwork();
-  const publicKey = Buffer.from(await signer.getPublicKey(), "hex");
+    const bitcoinNetwork = await signer.getNetwork();
+    const publicKey = Buffer.from(await signer.getPublicKey(), "hex");
 
-  const commitTxData = createCommitTxData(bitcoinNetwork, publicKey, inscription);
+    const commitTxData = createCommitTxData(bitcoinNetwork, publicKey, inscription);
 
-  const revealTxSize = estimateTxSize(bitcoinNetwork, publicKey, commitTxData, toAddress, postage);
+    const revealTxSize = estimateTxSize(bitcoinNetwork, publicKey, commitTxData, toAddress, postage);
 
-  // https://github.com/ordinals/ord/blob/ea1c7c8f73e1c30df547000ac7ccd82051cb60af/src/subcommand/wallet/inscribe/batch.rs#L501
-  const revealFee = revealTxSize * feeRate;
-  // https://github.com/ordinals/ord/blob/ea1c7c8f73e1c30df547000ac7ccd82051cb60af/src/subcommand/wallet/inscribe/batch.rs#L327
-  const commitTxAmount = revealFee + postage;
+    // https://github.com/ordinals/ord/blob/ea1c7c8f73e1c30df547000ac7ccd82051cb60af/src/subcommand/wallet/inscribe/batch.rs#L501
+    const revealFee = revealTxSize * feeRate;
+    // https://github.com/ordinals/ord/blob/ea1c7c8f73e1c30df547000ac7ccd82051cb60af/src/subcommand/wallet/inscribe/batch.rs#L327
+    const commitTxAmount = revealFee + postage;
 
-  const commitAddress = commitTxData.scriptTaproot.address!;
-  const commitTxId = await signer.sendToAddress(commitAddress, commitTxAmount);
-  const commitTx = await signer.getTransaction(commitTxId);
+    const commitAddress = commitTxData.scriptTaproot.address!;
+    const commitTxId = await signer.sendToAddress(commitAddress, commitTxAmount);
+    const commitTx = await signer.getTransaction(commitTxId);
 
-  const scriptPubKey = bitcoin.address.toOutputScript(commitAddress, bitcoinNetwork);
-  const commitUtxoIndex = commitTx.outs.findIndex(out => out.script.equals(scriptPubKey));
+    const scriptPubKey = bitcoin.address.toOutputScript(commitAddress, bitcoinNetwork);
+    const commitUtxoIndex = commitTx.outs.findIndex((out) => out.script.equals(scriptPubKey));
 
-  const commitTxResult = {
-    tx: commitTx,
-    outputIndex: commitUtxoIndex,
-    outputAmount: commitTxAmount,
-  };
+    const commitTxResult = {
+        tx: commitTx,
+        outputIndex: commitUtxoIndex,
+        outputAmount: commitTxAmount,
+    };
 
-  const revealPsbt = createRevealTx(
-    bitcoinNetwork,
-    commitTxData,
-    commitTxResult,
-    toAddress,
-    postage,
-  );
+    const revealPsbt = createRevealTx(bitcoinNetwork, commitTxData, commitTxResult, toAddress, postage);
 
-  const revealTx = await signRevealTx(
-    signer,
-    commitTxData,
-    revealPsbt
-  );
+    const revealTx = await signRevealTx(signer, commitTxData, revealPsbt);
 
-  return revealTx;
+    return revealTx;
 }

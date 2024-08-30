@@ -42,7 +42,7 @@ Import the `GatewaySDK` class from `@gobob/bob-sdk` and create an instance of it
 ```ts title="/src/utils/gateway.ts"
 import { GatewayQuoteParams, GatewaySDK } from "@gobob/bob-sdk";
 
-const gatewaySDK = new GatewaySDK("bob"); // or "mainnet"
+const gatewaySDK = new GatewaySDK("bob"); // or "bob-sepolia"
 ```
 
 ### Get Available Tokens
@@ -50,7 +50,7 @@ const gatewaySDK = new GatewaySDK("bob"); // or "mainnet"
 Returns an array of available output tokens for you to offer the user. Typically rendered as a drop-down menu. See [our SDK's source code](https://github.com/bob-collective/bob/blob/9c52341033af1ccbe388e64ef97a23bf6c07ccc7/sdk/src/gateway/tokens.ts#L8) for type information.
 
 ```ts
-const outputTokensWithInfo = await gatewaySDK.getTokensInfo();
+const outputTokens = await gatewaySDK.getTokens();
 ```
 
 ### Get a Quote
@@ -63,16 +63,32 @@ We recommend rendering `quote.fee` and [its other fields](https://github.com/bob
 
 ```ts
 const quoteParams: GatewayQuoteParams = {
+  fromToken: "BTC",
   fromChain: "Bitcoin",
   fromUserAddress: "bc1qafk4yhqvj4wep57m62dgrmutldusqde8adh20d",
   toChain: "BOB",
   toUserAddress: "0x2D2E86236a5bC1c8a5e5499C517E17Fb88Dbc18c",
-  toToken: "tBTC",
+  toToken: "tBTC", // or e.g. "SolvBTC"
   amount: 10000000, // 0.1 BTC
   gasRefill: 10000, // 0.0001 BTC. The amount of BTC to swap for ETH for tx fees.
 };
 
 const quote = await gatewaySDK.getQuote(quoteParams);
+```
+
+#### Get available staking or lending contracts
+
+The SDK will handle automatically when the `toToken` has a fungible ERC20 token, but sometimes there is no representation. In that case we can list the available integrations and specify that in the quote.
+
+```ts
+const strategies = await gatewaySDK.getStrategies();
+const strategy = strategies.find(contract => contract.integration.name === "pell-wbtc")!;
+const quoteParamsStaking: GatewayQuoteParams = {
+  ...quoteParams,
+  toChain: strategy.chain.chainId,
+  toToken: strategy.inputToken.symbol, // "wbtc"
+  strategyAddress: strategy.address,
+};
 ```
 
 ### Start the Order
@@ -97,7 +113,7 @@ We recommend using our [sats-wagmi](./sats-wagmi.md) package to interact with yo
 import { base64 } from "@scure/base";
 import { Transaction } from "@scure/btc-signer";
 
-// NOTE: It is up to your implementation to sign the PSBT here!
+// SIGN THIS!
 const tx = Transaction.fromPSBT(base64.decode(psbtBase64!));
 ```
 
