@@ -350,7 +350,7 @@ export class GatewayApiClient {
      * @param includeStrategies Also include output tokens via strategies (e.g. staking or lending).
      * @returns {Promise<EvmAddress[]>} The array of token addresses.
      */
-    async getTokenAddresses(includeStrategies: boolean = false): Promise<EvmAddress[]> {
+    async getTokenAddresses(includeStrategies: boolean = true): Promise<EvmAddress[]> {
         const response = await this.fetchGet(`${this.baseUrl}/tokens?includeStrategies=${includeStrategies}`);
         return response.json();
     }
@@ -361,7 +361,7 @@ export class GatewayApiClient {
      * @param includeStrategies Also include output tokens via strategies (e.g. staking or lending).
      * @returns {Promise<Token[]>} The array of tokens.
      */
-    async getTokens(includeStrategies: boolean = false): Promise<Token[]> {
+    async getTokens(includeStrategies: boolean = true): Promise<Token[]> {
         // https://github.com/ethereum-optimism/ecosystem/blob/c6faa01455f9e846f31c0343a0be4c03cbeb2a6d/packages/op-app/src/hooks/useOPTokens.ts#L10
         const tokens = await this.getTokenAddresses(includeStrategies);
         return tokens

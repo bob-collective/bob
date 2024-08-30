@@ -194,6 +194,6 @@ describe("Gateway Tests", () => {
             .reply(200, [ZeroAddress]);
 
         const gatewaySDK = new GatewaySDK("bob");
-        assert.deepEqual(await gatewaySDK.getTokenAddresses(), [ZeroAddress]);
+        assert.deepEqual(await gatewaySDK.getTokenAddresses(false), [ZeroAddress]);
     });
 });

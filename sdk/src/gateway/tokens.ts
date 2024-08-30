@@ -49,7 +49,21 @@ const TOKENS = [
         decimals: 18,
         bob: "",
         bobSepolia: "0xc4229678b65e2D9384FDf96F2E5D512d6eeC0C77",
-    }
+    },
+    {
+        name: "Solv BTC",
+        symbol: "SolvBTC",
+        decimals: 18,
+        bob: "0x541FD749419CA806a8bc7da8ac23D346f2dF8B77",
+        bobSepolia: "",
+    },
+    {
+        name: "uniBTC",
+        symbol: "uniBTC",
+        decimals: 8,
+        bob: "0x236f8c0a61dA474dB21B693fB2ea7AAB0c803894",
+        bobSepolia: "",
+    },
 ];
 
 /** @description Tokens supported on BOB and BOB Sepolia */
