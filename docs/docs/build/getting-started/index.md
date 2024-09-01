@@ -23,6 +23,7 @@ We love to work closely with you to make BOB useful to your use-case and ideas. 
 
 ## BOB SDK
 
+- [BOB Gateway](/docs/build/bob-sdk/gateway/): Learn how to help your users bridge **BTC** on Bitcoin to **staked BTC LSTs** with a single Bitcoin transaction.
 - [sats-wagmi](/docs/build/bob-sdk/sats-wagmi): Learn how to use the sats-wagmi React hooks library to connect your app with Bitcoin wallets like UniSat, Leather, Xverse, and MetaMask.
 - [Bitcoin Light Client](/docs/build/bob-sdk/relay): Learn how to interact with Bitcoin by proving transaction inclusion on BOB.
 - [Use MetaMask for Bitcoin](/docs/build/bob-sdk/metamask-snap): Learn how to use MetaMask for Bitcoin on BOB.
