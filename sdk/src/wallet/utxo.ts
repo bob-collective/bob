@@ -167,14 +167,14 @@ export function getInputFromUtxoAndTx(
             amount: output.amount!,
         },
     };
-    const witnessMixin = transaction.hasWitnesses ? witnessUtxo : nonWitnessUtxo;
+    const witnessMixin = transaction.hasWitnesses ? { ...witnessUtxo, ...nonWitnessUtxo } : nonWitnessUtxo;
 
     // Construct inputs based on the script type
     const input = {
         txid: utxo.txid,
         index: utxo.vout,
         ...scriptMixin, // Maybe adds the redeemScript and/or witnessScript
-        ...witnessMixin, // Adds the witnessUtxo or nonWitnessUtxo
+        ...witnessMixin, // Adds the witnessUtxo and/or nonWitnessUtxo
     };
 
     return input;

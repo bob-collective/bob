@@ -206,8 +206,9 @@ export class GatewayApiClient {
      *
      * @param uuid The id given by the {@link startOrder} method.
      * @param bitcoinTxHex The hex encoded Bitcoin transaction.
+     * @returns {Promise<string>} The Bitcoin txid.
      */
-    async finalizeOrder(uuid: string, bitcoinTxHex: string) {
+    async finalizeOrder(uuid: string, bitcoinTxHex: string): Promise<string> {
         const response = await fetch(`${this.baseUrl}/order/${uuid}`, {
             method: "PATCH",
             headers: {
@@ -220,6 +221,8 @@ export class GatewayApiClient {
         if (!response.ok) {
             throw new Error("Failed to update order");
         }
+
+        return await response.json();
     }
 
     /**
