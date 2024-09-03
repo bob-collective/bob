@@ -132,7 +132,7 @@ export class GatewayApiClient {
         const quote: GatewayQuote = await response.json();
         return {
             ...quote,
-            fee: Math.max(0, quote.fee - (params.gasRefill || 0)),
+            fee: quote.fee + (params.gasRefill || 0),
         };
     }
 
