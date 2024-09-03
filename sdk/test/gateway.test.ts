@@ -34,7 +34,7 @@ describe("Gateway Tests", () => {
 
         nock(`${MAINNET_GATEWAY_BASE_URL}`)
             .get(`/quote/${SYMBOL_LOOKUP[ChainId.BOB]["tbtc"].address}?satoshis=1000`)
-            .times(4)
+            .times(6)
             .reply(200, mockQuote);
 
         assert.deepEqual(await gatewaySDK.getQuote({
@@ -61,6 +61,20 @@ describe("Gateway Tests", () => {
             toUserAddress: ZeroAddress,
             amount: 1000,
         }), mockQuote);
+        assert.deepEqual(await gatewaySDK.getQuote({
+            toChain: "BOB",
+            toToken: "tBTC",
+            toUserAddress: ZeroAddress,
+            amount: 1000,
+            gasRefill: 5,
+        }), { ...mockQuote, fee: 5 });
+        assert.deepEqual(await gatewaySDK.getQuote({
+            toChain: "BOB",
+            toToken: "tBTC",
+            toUserAddress: ZeroAddress,
+            amount: 1000,
+            gasRefill: 1000,
+        }), { ...mockQuote, fee: 0 });
 
         // get the total available without amount
         nock(`${MAINNET_GATEWAY_BASE_URL}`)
