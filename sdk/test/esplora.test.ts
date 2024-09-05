@@ -116,5 +116,9 @@ describe("Esplora Tests", () => {
         assert.isAtLeast(feeRate, 1);
     });
 
-
+    it("should get balance", async () => {
+        const client = new EsploraClient("testnet");
+        const balance = await client.getBalance("tb1qjhekcm565spvr0epqu5nvd9mhgwaafg6d0n2yw");
+        assert.equal(balance, 727499862);
+    });
 });

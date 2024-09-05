@@ -64,8 +64,6 @@ export async function createBitcoinPsbt(
 
     const esploraClient = new EsploraClient(addressInfo.network);
 
-    // NOTE: esplora only returns the 25 most recent UTXOs
-    // TODO: change this to use the pagination API and return all UTXOs
     const [confirmedUtxos, feeRate] = await Promise.all([
         esploraClient.getAddressUtxos(fromAddress),
         esploraClient.getFeeEstimate(confirmationTarget),
