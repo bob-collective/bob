@@ -2,7 +2,7 @@
 sidebar_position: 4
 ---
 
-# sats-wagmi Bitcoin Wallet React Hooks
+# sats-wagmi - Reactive primitives for Bitcoin apps
 
 sats-wagmi is a library with a handful of BTC wallet connectors, leaving aside the need of the developer to integrate each one individually. The library also exports useful React hooks that mimic the standard followed in the EVM [wagmi](https://wagmi.sh/react/getting-started) library.
 
@@ -13,91 +13,99 @@ sats-wagmi is a library with a handful of BTC wallet connectors, leaving aside t
   - Unisat
   - Leather
   - Xverse
-  - Bitget (soon)
+  - Bitget
+  - OKX Wallet
 - BTC functionality:
-  - send bitcoin
-  - inscribe (text and images)
-  - send inscription
-  - sign input (psbt)
+  - send BTC
+  - sign PSBTs
 - React hooks
 
 ## Installation
 
-To use sats-wagmi, all you need to do is install the
-`@gobob/sats-wagmi`:
+To use sats-wagmi, all you need to do is install `@gobob/sats-wagmi`:
 
-```sh
-# with Yarn
-$ yarn add @gobob/sats-wagmi
-
-# with npm
-$ npm i @gobob/sats-wagmi
-
-# with pnpm
-$ pnpm add @gobob/sats-wagmi
-
-# with Bun
-$ bun add @gobob/sats-wagmi
+```bash npm2yarn
+npm install @gobob/sats-wagmi
 ```
 
-## Usage
+## Connect Wallet
 
-### Connector
+### 1. Wrap App in Context Provider
 
-```ts
-import { MMSnapConnector } from "./connectors";
-
-const mmSnap = new MMSnapConnector(network);
-
-mmSnap.connect();
-```
-
-### React Hooks
-
-1. Wrap your application with the `SatsWagmiConfig` provided by **@gobob/sats-wagmi**.
+To start, we will need to wrap our React App with Context so that our application is aware of sats-wagmi & React Query's reactive state and in-memory caching:
 
 ```tsx
+ // 1. Import modules
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { SatsWagmiConfig } from "@gobob/sats-wagmi";
 
-// Do this at the root of your application
-function App({ children }) {
-  return <SatsWagmiConfig network="testnet">{children}</SatsWagmiConfig>;
+// 2. Set up a React Query client.
+const queryClient = new QueryClient()
+
+function App() {
+  // 3. Wrap app with sats-wagmi and React Query context.
+  return (
+    <QueryClientProvider client={queryClient}>
+      <SatsWagmiConfig network="testnet" queryClient={queryClient}>
+        {/** ... */} 
+      </SatsWagmiConfig>
+    </QueryClientProvider> 
+  )
 }
 ```
 
-2. Now start by connecting:
+### 2. Display Wallet Options
+
+After that, we will create a `WalletOptions` component that will display our connectors. This will allow users to select a wallet and connect.
+
+Below, we are rendering a list of `connectors` retrieved from `useConnect`. When the user clicks on a connector, the `connect` function will connect the users' wallet.
 
 ```tsx
+import * as React from 'react'
 import { useConnect, SatsConnector } from "@gobob/sats-wagmi";
 
-function Example() {
-  const { connectors, connect } = useConnect();
+export function WalletOptions() {
+  const { connectors, connect } = useConnect()
 
-  const handleConnect = (connector: SatsConnector) => {
-    connect({
-      connector,
-    });
-  };
+  return connectors.map((connector) => (
+    <button key={connector.name} onClick={() => connect({ connector })}>
+      {connector.name}
+    </button>
+  ))
+}
+```
+
+### 3. Display Connected Account
+
+Lastly, if an account is connected, we want to show the connected address.
+
+We are utilizing `useAccount` to extract the account and `useDisconnect` to show a "Disconnect" button so a user can disconnect their wallet.
+
+```tsx
+import { useAccount, useDisconnect } from "@gobob/sats-wagmi";
+
+function Account() {
+  const { address } = useAccount()
+  const { disconnect } = useDisconnect()
 
   return (
     <div>
-      {connectors.map((connector) => (
-        <button key={connector.name} onClick={() => handleConnect(connector)}>
-          {connector.name}
-        </button>
-      ))}
+      <p>Address: {address}</p>
+      <button onClick={() => disconnect()}>Disconnect</button>
     </div>
   );
 }
 ```
 
-3. Once connected, you should be able to use the connector utility and have access to the connected BTC account:
+## Send Transaction
+
+Create your `SendTransaction` component that will contain the send transaction logic.
 
 ```tsx
-import { useConnect, SatsConnector } from "@gobob/sats-wagmi";
+import { useAccount } from "@gobob/sats-wagmi";
 
-function Example() {
-  const { address, connector } = useSatsAccount();
+function SendTransaction() {
+  const { address, connector } = useAccount()
 
   const handleTransfer = () => {
     connector?.sendToAddress(
