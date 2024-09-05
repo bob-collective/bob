@@ -330,10 +330,14 @@ export class EsploraClient {
     /**
      * Get the Unspent Transaction Outputs (UTXOs) for an address.
      *
+     * @dev Should return up to 500 UTXOs - depending on the configured limit.
      * @param {string} address - The Bitcoin address to check.
      * @returns {Promise<Array<UTXO>>} A promise that resolves to an array of UTXOs.
      */
     async getAddressUtxos(address: string, confirmed?: boolean): Promise<Array<UTXO>> {
+        // https://github.com/Blockstream/electrs/blob/306f66acf2ab10bcd99b8012e95a0de30b2cc012/src/rest.rs#L860
+        // https://github.com/Blockstream/electrs/blob/306f66acf2ab10bcd99b8012e95a0de30b2cc012/src/new_index/query.rs#L82
+        // https://github.com/Blockstream/electrs/blob/306f66acf2ab10bcd99b8012e95a0de30b2cc012/src/config.rs#L177
         const response = await this.getJson<Array<{
             txid: string,
             vout: number,
@@ -370,6 +374,36 @@ export class EsploraClient {
             body: txHex
         });
         return await res.text();
+    }
+
+    /**
+     * Get the balance for an account / address.
+     *
+     * @param {string} address - The Bitcoin address to check.
+     * @returns {Promise<number>} A promise that resolves to the balance.
+     */
+    async getBalance(address: string): Promise<number> {
+        const response = await this.getJson<{
+            address: string,
+            chain_stats: {
+                funded_txo_count: number,
+                funded_txo_sum: number,
+                spent_txo_count: number,
+                spent_txo_sum: number,
+                tx_count: number
+            },
+            mempool_stats: {
+                funded_txo_count: number,
+                funded_txo_sum: number,
+                spent_txo_count: number,
+                spent_txo_sum: number,
+                tx_count: number
+            }
+        }>(`${this.basePath}/address/${address}`);
+
+        const chainBalance = response.chain_stats.funded_txo_sum - response.chain_stats.spent_txo_sum;
+        const mempoolBalance = response.mempool_stats.funded_txo_sum - response.mempool_stats.spent_txo_sum;
+        return chainBalance + mempoolBalance;
     }
 
     /**
