@@ -65,6 +65,13 @@ const config = {
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
+      codeblock: {
+        showGithubLink: true,
+        githubLinkLabel: 'View on GitHub',
+        showRunmeLink: false,
+        runmeLinkLabel: 'Checkout via Runme'
+      },
+
       image: "img/bob-social-card.png",
       metadata: [
         {
@@ -210,6 +217,7 @@ const config = {
         language: ["en"],
       },
     ],
+    'docusaurus-theme-github-codeblock',
   ],
   scripts: [
     {

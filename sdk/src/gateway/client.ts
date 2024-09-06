@@ -16,6 +16,8 @@ import {
 } from "./types";
 import { SYMBOL_LOOKUP, ADDRESS_LOOKUP } from "./tokens";
 import { createBitcoinPsbt } from "../wallet";
+import { Network } from "bitcoin-address-validation";
+import { EsploraClient } from "../esplora";
 
 type Optional<T, K extends keyof T> = Omit<T, K> & Partial<T>;
 
@@ -148,6 +150,10 @@ export class GatewayApiClient {
         gatewayQuote: GatewayQuote,
         params: Optional<GatewayQuoteParams, "toToken" | "amount">,
     ): Promise<GatewayStartOrder> {
+        if (!params.toUserAddress.startsWith("0x") || !ethers.isAddress(params.toUserAddress)) {
+            throw new Error("Invalid user address");
+        }
+
         const request: GatewayCreateOrderRequest = {
             gatewayAddress: gatewayQuote.gatewayAddress,
             strategyAddress: gatewayQuote.strategyAddress,
@@ -209,10 +215,20 @@ export class GatewayApiClient {
      * broadcast the transaction. This is step 2 of 2, see the {@link startOrder} method.
      *
      * @param uuid The id given by the {@link startOrder} method.
-     * @param bitcoinTxHex The hex encoded Bitcoin transaction.
+     * @param bitcoinTxOrId The hex encoded Bitcoin transaction or txid.
      * @returns {Promise<string>} The Bitcoin txid.
      */
-    async finalizeOrder(uuid: string, bitcoinTxHex: string): Promise<string> {
+    async finalizeOrder(uuid: string, bitcoinTxOrId: string): Promise<string> {
+        bitcoinTxOrId = stripHexPrefix(bitcoinTxOrId);
+
+        let bitcoinTxHex: string;
+        if (bitcoinTxOrId.length === 64) {
+            const esploraClient = new EsploraClient(this.chain === Chain.BOB ? Network.mainnet : Network.testnet);
+            bitcoinTxHex = await esploraClient.getTransactionHex(bitcoinTxOrId);
+        } else {
+            bitcoinTxHex = bitcoinTxOrId;
+        }
+
         const response = await fetch(`${this.baseUrl}/order/${uuid}`, {
             method: "PATCH",
             headers: {
@@ -353,4 +369,12 @@ function calculateOpReturnHash(req: GatewayCreateOrderRequest) {
             ],
         ),
     );
+}
+
+function isHexPrefixed(str: string): boolean {
+    return str.slice(0, 2) === "0x";
+}
+
+function stripHexPrefix(str: string): string {
+    return isHexPrefixed(str) ? str.slice(2) : str;
 }

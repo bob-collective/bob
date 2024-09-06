@@ -133,6 +133,18 @@ describe("Gateway Tests", () => {
                 opReturnHash: "0x10e69ac36b8d7ae8eb1dca7fe368da3d27d159259f48d345ff687ef0fcbdedcd",
             });
 
+        await expect(async () => {
+            await gatewaySDK.startOrder(mockQuote, {
+                toChain: "BOB",
+                toToken: "tBTC",
+                toUserAddress: "2N8DbeaBdjkktkRzaKL1tHj9FQELV7jA8Re",
+                amount: 1000,
+                fromChain: "Bitcoin",
+                fromToken: "BTC",
+                fromUserAddress: "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq",
+            });
+        }).rejects.toThrowError("Invalid user address");
+
         const result = await gatewaySDK.startOrder(mockQuote, {
             toChain: "BOB",
             toToken: "tBTC",
