@@ -102,22 +102,41 @@ function Account() {
 Create your `SendTransaction` component that will contain the send transaction logic.
 
 ```tsx
-import { useAccount } from "@gobob/sats-wagmi";
+import type { FormEvent } from 'react';
+import { type Hex, parseUnits } from 'viem';
+import { useSendTransaction } from "@gobob/sats-wagmi";
 
 function SendTransaction() {
-  const { address, connector } = useAccount()
+  const { data: hash, error, isPending, sendTransaction } = useSendTransaction();
 
-  const handleTransfer = () => {
-    connector?.sendToAddress(
-      "tb1p9gl248kp19jgennea98e2tv8acfrvfv0yws2tc5j6u72e84caapsh2hexs",
-      100000000
-    );
-  };
+  async function submit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const formData = new FormData(e.target as HTMLFormElement);
+    const to = formData.get('address') as Hex;
+    const value = formData.get('value') as string;
+
+    sendTransaction({ to, value: parseUnits(value, 8) });
+  }
+
+  const { isLoading: isConfirming, isSuccess: isConfirmed } =
+    useWaitForTransactionReceipt({
+      hash,
+    })
 
   return (
     <div>
-      <p>Address: {address}</p>
-      <button onClick={handleTransfer}>Transfer 1 BTC</button>
+      <h2>Send Transaction</h2>
+      <form onSubmit={submit}>
+        <input required name='address' placeholder='Address' />
+        <input required name='value' placeholder='Amount (BTC)' step='0.00000001' type='number' />
+        <button disabled={isPending} type='submit'>
+          {isPending ? 'Confirming...' : 'Send'}
+        </button>
+      </form>
+      {hash && <div>Transaction Hash: {hash}</div>}
+      {isConfirming && 'Waiting for confirmation...'}
+      {isConfirmed && 'Transaction confirmed.'}
+      {error && <div>Error: {error.message}</div>}
     </div>
   );
 }

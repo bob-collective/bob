@@ -105,17 +105,45 @@ const { uuid, psbtBase64 } = await gatewaySDK.startOrder(quote, quoteParams);
 
 Create a Bitcoin transaction that sends the quoted `amount` of BTC to the LP's `bitcoinAddress`. This also publishes a hash of the order's parameters in the `OP_RETURN` of the transaction so the Gateway can trustlessly verify the order on BOB.
 
-:::tip Connecting to Bitcoin wallets
-We recommend using our [sats-wagmi](./sats-wagmi.md) package to interact with your user's Bitcoin wallet.
-:::
+<Tabs>
+<TabItem value="sats-wagmi" label="sats-wagmi (Recommended)">
+
+Please follow the [guide here](./sats-wagmi.md) to install and use sats-wagmi. In this example, we sign the `psbtBase64` using sats-wagmi which abstracts the complex wallet logic for multiple connectors (including OKX, UniSat and Xverse).
+It is also possible to directly use the `useSendGatewayTransaction` hook, example below.
+
+```tsx
+const { uuid, psbtBase64 } = await gatewaySDK.startOrder(quote, quoteParams);
+const bitcoinTxHex = await connector.signAllInputs(psbtBase64!);
+await gatewaySDK.finalizeOrder(uuid, bitcoinTxHex);
+```
+
+</TabItem>
+<TabItem value="send-okx" label="Send (OKX)">
+
+Please refer to the [OKX docs](https://www.okx.com/web3/build/docs/sdks/chains/bitcoin/introduce) for more information.
+In this example, instead of signing the `psbtBase64` we instead use the in-built wallet methods to directly send the BTC.
 
 ```ts
-import { base64 } from "@scure/base";
-import { Transaction } from "@scure/btc-signer";
-
-// SIGN THIS!
-const tx = Transaction.fromPSBT(base64.decode(psbtBase64!));
+const { uuid, bitcoinAddress, satoshis, opReturnHash } = await gatewaySDK.startOrder(quote, quoteParams);
+const { txhash } = await window.okxwallet.bitcoin.send({ from: quoteParams.fromUserAddress, to: bitcoinAddress, value: satoshis.toString(), memo: opReturnHash })
+await gatewaySDK.finalizeOrder(uuid, txhash);
 ```
+
+</TabItem>
+
+<TabItem value="dynamic" label="Dynamic">
+
+Please refer to the Dynamic guide on [PSBT signing](https://docs.dynamic.xyz/wallets/using-wallets/bitcoin/sign-a-psbt).
+
+</TabItem>
+
+<TabItem value="particle" label="Particle">
+
+Please refer to the Particle guide on [BTC Connect](https://developers.particle.network/guides/integrations/partners/bob#connecting-bitcoin-wallets-to-bob-using-btc-connect).
+
+</TabItem>
+
+</Tabs>
 
 ### Finalize the Order
 
@@ -135,6 +163,25 @@ Get an array of pending and completed orders for a specific EVM address. Typical
 ```ts
 const orders = await gatewaySDK.getOrders(userAddress);
 ```
+
+### Example - sats-wagmi
+
+<Tabs>
+<TabItem value="sats-wagmi-app" label="Gateway.tsx">
+
+```js reference title="Gateway.tsx"
+https://github.com/bob-collective/sats-wagmi/blob/ae876d96bb2e54e5a24e0f3e1aaa6799565169e4/playgrounds/vite-react/src/Gateway.tsx#L1-L37
+```
+
+</TabItem>
+<TabItem value="sats-wagmi-hook" label="useSendGatewayTransaction.tsx">
+
+```js reference title="useSendGatewayTransaction.tsx"
+https://github.com/bob-collective/sats-wagmi/blob/ae876d96bb2e54e5a24e0f3e1aaa6799565169e4/packages/sats-wagmi/src/hooks/useSendGatewayTransaction.tsx#L28-L69
+```
+
+</TabItem>
+</Tabs>
 
 ## Conclusion
 
