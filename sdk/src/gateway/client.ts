@@ -272,10 +272,11 @@ export class GatewayApiClient {
 
         const strategies: GatewayStrategy[] = await response.json();
         return strategies.map((strategy) => {
+            const strategySlug = slugify(strategy.strategyName);
             const inputToken = ADDRESS_LOOKUP[strategy.inputTokenAddress];
             const outputToken = strategy.outputTokenAddress ? ADDRESS_LOOKUP[strategy.outputTokenAddress] : undefined;
             return {
-                id: "",
+                id: strategySlug,
                 type: "deposit",
                 address: strategy.strategyAddress,
                 method: "",
@@ -291,9 +292,9 @@ export class GatewayApiClient {
                 },
                 integration: {
                     type: strategy.strategyType,
-                    slug: strategy.strategyName,
+                    slug: strategySlug,
                     name: strategy.strategyName,
-                    logo: "", // TODO
+                    logo: strategy.projectLogo || outputToken?.logoURI || "",
                     monetization: false,
                 },
                 inputToken: {
@@ -377,4 +378,11 @@ function isHexPrefixed(str: string): boolean {
 
 function stripHexPrefix(str: string): string {
     return isHexPrefixed(str) ? str.slice(2) : str;
+}
+
+function slugify(str: string): string {
+    return str
+        .toLowerCase()
+        .replace(/ /g, "-")
+        .replace(/[^\w-]+/g, "");
 }

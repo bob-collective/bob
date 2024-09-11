@@ -75,9 +75,9 @@ type GatewayIntegrationType = "bridge" | "dex" | "staking" | "lending";
 
 interface GatewayIntegration {
     type: GatewayIntegrationType;
-    /** @example rocketpool */
+    /** @example pell-network-wbtc */
     slug: string;
-    /** @example RocketPool */
+    /** @example Pell Network (wBTC) */
     name: string;
     /** Format: uri */
     logo: string;
@@ -237,6 +237,8 @@ export interface GatewayStrategy {
     strategyAddress: string;
     strategyName: string;
     strategyType: "staking" | "lending";
+    projectName: string;
+    projectLogo?: string;
     inputTokenAddress: string;
     outputTokenAddress?: string;
 }
