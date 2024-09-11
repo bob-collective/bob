@@ -130,7 +130,7 @@ describe("Gateway Tests", () => {
             .post(`/order`)
             .reply(201, {
                 uuid: "00000000-0000-0000-0000-000000000000",
-                opReturnHash: "0x10e69ac36b8d7ae8eb1dca7fe368da3d27d159259f48d345ff687ef0fcbdedcd",
+                opReturnHash: "0x8d0fd89210149d4219c87fa814a4bcde0c6a36b8fe2dff52b1d3eaa9e7cf0a9a",
             });
 
         await expect(async () => {

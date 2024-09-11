@@ -154,14 +154,15 @@ export class GatewayApiClient {
             throw new Error("Invalid user address");
         }
 
+        const abiCoder = new AbiCoder();
         const request: GatewayCreateOrderRequest = {
             gatewayAddress: gatewayQuote.gatewayAddress,
             strategyAddress: gatewayQuote.strategyAddress,
             satsToConvertToEth: params.gasRefill || 0,
             userAddress: params.toUserAddress,
-            // TODO: figure out how to get extra data
             gatewayExtraData: undefined,
-            strategyExtraData: undefined,
+            // TODO: update strategy data
+            strategyExtraData: abiCoder.encode(["uint256"], [0]),
             satoshis: gatewayQuote.satoshis,
         };
 
