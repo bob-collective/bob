@@ -172,9 +172,8 @@ describe("Gateway Tests", () => {
             .reply(200, [{
                 strategyAddress: ZeroAddress,
                 inputTokenAddress: SYMBOL_LOOKUP[ChainId.BOB]["tbtc"].address,
-                name: "",
-                slug: "",
-                type: "staking"
+                strategyName: "Pell Network (tBTC)",
+                strategyType: "staking"
             }]);
         nock(`${MAINNET_GATEWAY_BASE_URL}`)
             .get(`/quote/${SYMBOL_LOOKUP[ChainId.BOB]["tbtc"].address}?satoshis=1000&strategy=${ZeroAddress}`)
@@ -195,6 +194,7 @@ describe("Gateway Tests", () => {
         assert.lengthOf(strategies, 1);
         assert.isDefined(strategies[0].inputToken);
         assert.isNull(strategies[0].outputToken);
+        assert.equal(strategies[0].integration.slug, "pell-network-tbtc");
 
         const strategy = strategies[0];
         await gatewaySDK.getQuote({
