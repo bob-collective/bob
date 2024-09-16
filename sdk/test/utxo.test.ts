@@ -1,6 +1,6 @@
 import { describe, it, assert } from 'vitest';
 import { AddressType, getAddressInfo, Network } from 'bitcoin-address-validation';
-import { Address, NETWORK, OutScript, Script, Transaction } from '@scure/btc-signer';
+import { Address, NETWORK, OutScript, Script, Transaction, p2sh, p2wpkh, selectUTXO } from '@scure/btc-signer';
 import { hex, base64 } from '@scure/base';
 import { createBitcoinPsbt, getInputFromUtxoAndTx } from '../src/wallet/utxo';
 import { TransactionOutput } from '@scure/btc-signer/psbt';
@@ -185,5 +185,75 @@ describe('UTXO Tests', () => {
 
       assert(input);
     }
+  });
+
+  // custom test using partially real data that would otherwise produce an invalid output
+  // below the dust limit if we did not manually configure that to the correct value of 546
+  it('should not output too small change', async () => {
+    const inputScript = Buffer.from("a9147ecd91afdcadf6f1b9e8e026a312e4cce61e63ea87", "hex");
+    const outputOpReturn = Buffer.from("6a200000000000000000000000000000000000000000000000000000000000000000", "hex");
+
+    const publicKey = '03b366c69e8237d9be7c4f1ac2a7abc6a79932fbf3de4e2f6c04797d7ef27abfe1';
+    const inner = p2wpkh(Buffer.from(publicKey, "hex"), NETWORK);
+    const redeemScript = p2sh(inner);
+
+    const transaction = selectUTXO([
+      {
+        txid: Buffer.alloc(32, 0).toString("hex"),
+        index: 0,
+        ...redeemScript,
+        witnessUtxo: {
+          script: inputScript,
+          amount: BigInt(23328) // 0.00023328
+        },
+      },
+      {
+        txid: Buffer.alloc(32, 0).toString("hex"),
+        index: 0,
+        ...redeemScript,
+        witnessUtxo: {
+          script: inputScript,
+          amount: BigInt(14476) // 0.00014476
+        },
+      },
+      {
+        txid: Buffer.alloc(32, 0).toString("hex"),
+        index: 0,
+        ...redeemScript,
+        witnessUtxo: {
+          script: inputScript,
+          amount: BigInt(4389) // 0.00004389
+        },
+      },
+      {
+        txid: Buffer.alloc(32, 0).toString("hex"),
+        index: 0,
+        ...redeemScript,
+        witnessUtxo: {
+          script: inputScript,
+          amount: BigInt(60037) // 0.00060037
+        },
+      }
+    ], [
+      {
+        script: outputOpReturn,
+        amount: BigInt(0)
+      },
+      {
+        address: "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq",
+        amount: BigInt(100000) // 0.001 BTC
+      }
+    ], "default", {
+      changeAddress: "3DFVKuT9Ft4rWpysAZ1bHpg55EBy1HVPcr",
+      feePerByte: BigInt(Math.ceil(4)),
+      bip69: true,
+      createTx: true,
+      network: NETWORK,
+      allowUnknownOutputs: true,
+      allowLegacyWitnessUtxo: true,
+      dust: BigInt(546) as any,
+    });
+
+    assert.isDefined(transaction);
   });
 });
