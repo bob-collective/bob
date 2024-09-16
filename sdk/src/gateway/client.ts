@@ -13,7 +13,7 @@ import {
     GatewayStartOrder,
     GatewayStrategy,
     EvmAddress,
-    GatewayTokensData,
+    GatewayTokensInfo,
 } from "./types";
 import { SYMBOL_LOOKUP, ADDRESS_LOOKUP } from "./tokens";
 import { createBitcoinPsbt } from "../wallet";
@@ -81,7 +81,7 @@ export class GatewayApiClient {
             GatewayQuoteParams,
             "amount" | "fromChain" | "fromToken" | "fromUserAddress" | "toUserAddress"
         >,
-    ): Promise<GatewayQuote & GatewayTokensData> {
+    ): Promise<GatewayQuote & GatewayTokensInfo> {
         const isMainnet =
             params.toChain === ChainId.BOB ||
             (typeof params.toChain === "string" && params.toChain.toLowerCase() === Chain.BOB);
@@ -255,7 +255,7 @@ export class GatewayApiClient {
      * @param userAddress The user's EVM address.
      * @returns {Promise<GatewayOrder[]>} The array of account orders.
      */
-    async getOrders(userAddress: EvmAddress): Promise<(GatewayOrder & Optional<GatewayTokensData, "outputToken">)[]> {
+    async getOrders(userAddress: EvmAddress): Promise<(GatewayOrder & Optional<GatewayTokensInfo, "outputToken">)[]> {
         const response = await this.fetchGet(`${this.baseUrl}/orders/${userAddress}`);
         const orders: GatewayOrderResponse[] = await response.json();
         return orders.map((order) => {

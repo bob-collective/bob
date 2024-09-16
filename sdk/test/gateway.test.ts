@@ -240,9 +240,9 @@ describe("Gateway Tests", () => {
                 txProofDifficultyFactor: 0,
                 strategyAddress: "",
                 satsToConvertToEth: 0,
-                outputEthAmount: 0,
+                outputEthAmount: "0",
                 outputTokenAddress: SOLVBTC_ADDRESS,
-                outputTokenAmount: 0,
+                outputTokenAmount: "0",
             }]);
 
         const gatewaySDK = new GatewaySDK("bob");
