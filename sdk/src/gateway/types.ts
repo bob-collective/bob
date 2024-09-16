@@ -160,6 +160,8 @@ export interface GatewayStrategyContract {
 export type GatewayQuote = {
     /** @description The gateway address */
     gatewayAddress: EvmAddress;
+    /** @description The base token address (e.g. wBTC or tBTC) */
+    baseTokenAddress: EvmAddress;
     /** @description The minimum amount of Bitcoin to send */
     dustThreshold: number;
     /** @description The satoshi output amount */
@@ -188,8 +190,8 @@ export type GatewayCreateOrderRequest = {
 export type GatewayOrderResponse = {
     /** @description The gateway address */
     gatewayAddress: EvmAddress;
-    /** @description The token address */
-    tokenAddress: EvmAddress;
+    /** @description The base token address (e.g. wBTC or tBTC) */
+    baseTokenAddress: EvmAddress;
     /** @description The Bitcoin txid */
     txid: string;
     /** @description True when the order was executed on BOB */
@@ -208,6 +210,12 @@ export type GatewayOrderResponse = {
     strategyAddress?: EvmAddress;
     /** @description The gas refill in satoshis */
     satsToConvertToEth: number;
+    /** @description The amount of ETH received */
+    outputEthAmount?: number;
+    /** @description The output token (from strategies) */
+    outputTokenAddress?: EvmAddress;
+    /** @description The output amount (from strategies) */
+    outputTokenAmount?: number;
 };
 
 /** Order given by the Gateway API once the bitcoin tx is submitted */
@@ -218,6 +226,11 @@ export type GatewayOrder = Omit<
     },
     "satsToConvertToEth"
 >;
+
+export type GatewayTokensData = {
+    baseToken: Token,
+    outputToken: Token,
+};
 
 /** @dev Internal */
 export type GatewayCreateOrderResponse = {

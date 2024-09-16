@@ -13,6 +13,7 @@ import {
     GatewayStartOrder,
     GatewayStrategy,
     EvmAddress,
+    GatewayTokensData,
 } from "./types";
 import { SYMBOL_LOOKUP, ADDRESS_LOOKUP } from "./tokens";
 import { createBitcoinPsbt } from "../wallet";
@@ -80,7 +81,7 @@ export class GatewayApiClient {
             GatewayQuoteParams,
             "amount" | "fromChain" | "fromToken" | "fromUserAddress" | "toUserAddress"
         >,
-    ): Promise<GatewayQuote> {
+    ): Promise<GatewayQuote & GatewayTokensData> {
         const isMainnet =
             params.toChain === ChainId.BOB ||
             (typeof params.toChain === "string" && params.toChain.toLowerCase() === Chain.BOB);
@@ -97,7 +98,7 @@ export class GatewayApiClient {
             throw new Error("Invalid output chain");
         }
 
-        let outputToken = "";
+        let outputTokenAddress = "";
         let strategyAddress: string | undefined;
 
         const toToken = params.toToken.toLowerCase();
@@ -106,16 +107,16 @@ export class GatewayApiClient {
         }
 
         if (toToken.startsWith("0x")) {
-            outputToken = toToken;
+            outputTokenAddress = toToken;
         } else if (isMainnet && this.chain === Chain.BOB && SYMBOL_LOOKUP[ChainId.BOB][toToken]) {
-            outputToken = SYMBOL_LOOKUP[ChainId.BOB][toToken].address;
+            outputTokenAddress = SYMBOL_LOOKUP[ChainId.BOB][toToken].address;
         } else if (isTestnet && this.chain === Chain.BOB_SEPOLIA && SYMBOL_LOOKUP[ChainId.BOB_SEPOLIA][toToken]) {
-            outputToken = SYMBOL_LOOKUP[ChainId.BOB_SEPOLIA][toToken].address;
+            outputTokenAddress = SYMBOL_LOOKUP[ChainId.BOB_SEPOLIA][toToken].address;
         } else {
             throw new Error("Unknown output token");
         }
 
-        var url = new URL(`${this.baseUrl}/quote/${outputToken}`);
+        var url = new URL(`${this.baseUrl}/quote/${outputTokenAddress}`);
         if (strategyAddress) {
             url.searchParams.append("strategy", `${strategyAddress}`);
         }
@@ -135,6 +136,8 @@ export class GatewayApiClient {
         return {
             ...quote,
             fee: quote.fee + (params.gasRefill || 0),
+            baseToken: ADDRESS_LOOKUP[quote.baseTokenAddress],
+            outputToken: ADDRESS_LOOKUP[outputTokenAddress],
         };
     }
 
@@ -252,11 +255,16 @@ export class GatewayApiClient {
      * @param userAddress The user's EVM address.
      * @returns {Promise<GatewayOrder[]>} The array of account orders.
      */
-    async getOrders(userAddress: EvmAddress): Promise<GatewayOrder[]> {
+    async getOrders(userAddress: EvmAddress): Promise<(GatewayOrder & Optional<GatewayTokensData, "outputToken">)[]> {
         const response = await this.fetchGet(`${this.baseUrl}/orders/${userAddress}`);
         const orders: GatewayOrderResponse[] = await response.json();
         return orders.map((order) => {
-            return { gasRefill: order.satsToConvertToEth, ...order };
+            return {
+                gasRefill: order.satsToConvertToEth,
+                ...order,
+                baseToken: ADDRESS_LOOKUP[order.baseTokenAddress],
+                outputToken: ADDRESS_LOOKUP[order.outputTokenAddress]
+            };
         });
     }
 
