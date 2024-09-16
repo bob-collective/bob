@@ -1,3 +1,5 @@
+import type { EsploraClient } from "../esplora";
+
 type ChainSlug = string | number;
 type TokenSymbol = string;
 
@@ -187,7 +189,7 @@ export type GatewayCreateOrderRequest = {
     satoshis: number;
 };
 
-export type GatewayOrderResponse = {
+export interface GatewayOrderResponse {
     /** @description The gateway address */
     gatewayAddress: EvmAddress;
     /** @description The base token address (e.g. wBTC or tBTC) */
@@ -216,6 +218,14 @@ export type GatewayOrderResponse = {
     outputTokenAddress?: EvmAddress;
     /** @description The output amount (from strategies) */
     outputTokenAmount?: string;
+    /** @description Get the actual token address received */
+    getTokenAddress(): string | undefined;
+    /** @description Get the actual token received */
+    getToken(): Token | undefined;
+    /** @description Get the actual amount received of the token */
+    getAmount(): string | number | undefined;
+    /** @description Get the number of confirmations */
+    getConfirmations(esploraClient: EsploraClient, latestHeight?: number): Promise<number>;
 };
 
 /** Order given by the Gateway API once the bitcoin tx is submitted */
