@@ -211,11 +211,11 @@ export type GatewayOrderResponse = {
     /** @description The gas refill in satoshis */
     satsToConvertToEth: number;
     /** @description The amount of ETH received */
-    outputEthAmount?: number;
+    outputEthAmount?: string;
     /** @description The output token (from strategies) */
     outputTokenAddress?: EvmAddress;
     /** @description The output amount (from strategies) */
-    outputTokenAmount?: number;
+    outputTokenAmount?: string;
 };
 
 /** Order given by the Gateway API once the bitcoin tx is submitted */
@@ -227,7 +227,7 @@ export type GatewayOrder = Omit<
     "satsToConvertToEth"
 >;
 
-export type GatewayTokensData = {
+export type GatewayTokensInfo = {
     baseToken: Token,
     outputToken: Token,
 };
