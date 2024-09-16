@@ -69,12 +69,17 @@ export interface Transaction {
         scriptpubkey_address?: string
         value: number
     }>
-    status: {
-        confirmed: boolean
-        block_height?: number
-        block_hash?: string
-        block_time?: number
-    }
+    status: TransactionStatus
+}
+
+/**
+ * @ignore
+ */
+export interface TransactionStatus {
+    confirmed: boolean
+    block_height?: number
+    block_hash?: string
+    block_time?: number
 }
 
 /**
@@ -257,6 +262,10 @@ export class EsploraClient {
      */
     async getTransaction(txId: string): Promise<Transaction> {
         return this.getJson(`${this.basePath}/tx/${txId}`);
+    }
+
+    async getTransactionStatus(txId: string): Promise<TransactionStatus> {
+        return this.getJson(`${this.basePath}/tx/${txId}/status`);
     }
 
     /**

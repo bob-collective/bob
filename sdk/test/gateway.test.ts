@@ -226,27 +226,72 @@ describe("Gateway Tests", () => {
     });
 
     it("should get orders", async () => {
+        const mockOrder = {
+            gatewayAddress: ZeroAddress,
+            baseTokenAddress: TBTC_ADDRESS,
+            txid: "",
+            status: false,
+            timestamp: 0,
+            tokens: "0",
+            satoshis: 0,
+            fee: 0,
+            txProofDifficultyFactor: 0,
+            satsToConvertToEth: 0,
+        };
         nock(`${MAINNET_GATEWAY_BASE_URL}`)
             .get(`/orders/${ZeroAddress}`)
-            .reply(200, [{
-                gatewayAddress: ZeroAddress,
-                baseTokenAddress: TBTC_ADDRESS,
-                txid: "",
-                status: true,
-                timestamp: 0,
-                tokens: "",
-                satoshis: 0,
-                fee: 0,
-                txProofDifficultyFactor: 0,
-                strategyAddress: "",
-                satsToConvertToEth: 0,
-                outputEthAmount: "0",
-                outputTokenAddress: SOLVBTC_ADDRESS,
-                outputTokenAmount: "0",
-            }]);
+            .reply(200, [
+                // staking - success
+                {
+                    ...mockOrder,
+                    satoshis: 1000,
+                    fee: 0,
+                    status: true,
+                    strategyAddress: ZeroAddress,
+                    outputTokenAmount: "2000",
+                    outputTokenAddress: SOLVBTC_ADDRESS,
+                },
+                // staking - pending
+                {
+                    ...mockOrder,
+                    satoshis: 1000,
+                    fee: 0,
+                    strategyAddress: ZeroAddress,
+                },
+                // staking - failed
+                {
+                    ...mockOrder,
+                    satoshis: 1000,
+                    fee: 0,
+                    status: true,
+                    strategyAddress: ZeroAddress,
+                },
+                // swapping - pending
+                {
+                    ...mockOrder,
+                    satoshis: 1000,
+                    fee: 0,
+                },
+                // swapping - success
+                {
+                    ...mockOrder,
+                    satoshis: 1000,
+                    fee: 0,
+                    status: true
+                },
+            ]);
 
         const gatewaySDK = new GatewaySDK("bob");
         const orders = await gatewaySDK.getOrders(ZeroAddress);
-        assert.lengthOf(orders, 1);
+        assert.lengthOf(orders, 5);
+
+        assert.strictEqual(orders[0].getAmount(), "2000");
+        assert.strictEqual(orders[1].getAmount(), undefined);
+        assert.strictEqual(orders[2].getAmount(), 1000);
+        assert.strictEqual(orders[3].getAmount(), 1000);
+        assert.strictEqual(orders[4].getAmount(), 1000);
+
+        assert.strictEqual(orders[0].getToken()!.address, SOLVBTC_ADDRESS);
+        assert.strictEqual(orders[1].getToken(), undefined);
     });
 });

@@ -259,11 +259,41 @@ export class GatewayApiClient {
         const response = await this.fetchGet(`${this.baseUrl}/orders/${userAddress}`);
         const orders: GatewayOrderResponse[] = await response.json();
         return orders.map((order) => {
+            function getFinal<L, R>(base?: L, output?: R) {
+                return order.status
+                    ? order.strategyAddress
+                        ? output
+                            ? output // success
+                            : base // failed
+                        : base // success
+                    : order.strategyAddress // pending
+                        ? output
+                        : base;
+            }
+            const getTokenAddress = (): string | undefined => {
+                return getFinal(order.baseTokenAddress, order.outputTokenAddress);
+            }
             return {
                 gasRefill: order.satsToConvertToEth,
                 ...order,
                 baseToken: ADDRESS_LOOKUP[order.baseTokenAddress],
-                outputToken: ADDRESS_LOOKUP[order.outputTokenAddress]
+                outputToken: ADDRESS_LOOKUP[order.outputTokenAddress],
+                getTokenAddress,
+                getToken() {
+                    return ADDRESS_LOOKUP[getTokenAddress()];
+                },
+                getAmount(): string | number | undefined {
+                    const baseAmount = order.satoshis - order.fee;
+                    return getFinal(baseAmount, order.outputTokenAmount);
+                },
+                async getConfirmations(esploraClient: EsploraClient, latestHeight?: number): Promise<number> {
+                    const txStatus = await esploraClient.getTransactionStatus(order.txid);
+                    if (!latestHeight) {
+                        latestHeight = await esploraClient.getLatestHeight();
+                    }
+
+                    return txStatus.confirmed ? latestHeight - txStatus.block_height! + 1 : 0;
+                }
             };
         });
     }
