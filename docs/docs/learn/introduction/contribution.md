@@ -27,6 +27,6 @@ If you are keen to build on BOB or contribute to BOB itself:
 
 ## More
 
-- Liquidity providers: If you are interested in being an LP for the BOB Gateway bridge, please send us an email at `gateway [ at ] gobob.xyz`.
+- Liquidity providers: If you are interested in being an LP for the BOB Gateway bridge, please send us an email at `gateway@gobob.xyz`.
 - Press kit: [BOB Press Kit](https://build-on-bitcoin.notion.site/BOB-Press-Kit-1be66c38713d480eab01000bdd164206)
 - Brand assets: [BOB Brand Assets](https://drive.google.com/drive/u/0/folders/1c30QDkyWgaV8xSEpCXFWJj1WQyUjSm7N)
