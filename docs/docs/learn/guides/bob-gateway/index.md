@@ -12,7 +12,7 @@ sidebar_label: BOB Gateway
 It's built on a trustless, RFQ-based cross-chain [swap protocol](../../../build/examples/btc-swap/) that connects professional LPs with users through a seamless swapping experience. Essentially, LPs handle the complexities of bridging and staking on behalf of users in exchange for a fee.
 
 :::tip Interested in providing liquidity?
-If you are interested in being an LP for the BOB Gateway bridge, please send us an email at `gateway [ at ] gobob.xyz`.
+If you are interested in being an LP for the BOB Gateway bridge, please send us an email at `gateway@gobob.xyz`.
 :::
 
 All you need is a Bitcoin wallet with some BTC to send and an EVM-compatible wallet to receive your Bitcoin LST/LRT or wrapped Bitcoin on BOB. We'll even send you some ETH to cover the fees of your first few transactions on BOB.

@@ -116,6 +116,7 @@ export async function createBitcoinPsbt(
         network: getBtcNetwork(network),
         allowUnknownOutputs: true, // Required for OP_RETURN
         allowLegacyWitnessUtxo: true, // Required for P2SH-P2WPKH
+        dust: BigInt(546) as any, // TODO: update scure-btc-signer
     });
 
     if (!transaction || !transaction.tx) {

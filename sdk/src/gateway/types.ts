@@ -1,3 +1,5 @@
+import type { EsploraClient } from "../esplora";
+
 type ChainSlug = string | number;
 type TokenSymbol = string;
 
@@ -160,6 +162,8 @@ export interface GatewayStrategyContract {
 export type GatewayQuote = {
     /** @description The gateway address */
     gatewayAddress: EvmAddress;
+    /** @description The base token address (e.g. wBTC or tBTC) */
+    baseTokenAddress: EvmAddress;
     /** @description The minimum amount of Bitcoin to send */
     dustThreshold: number;
     /** @description The satoshi output amount */
@@ -185,11 +189,27 @@ export type GatewayCreateOrderRequest = {
     satoshis: number;
 };
 
-export type GatewayOrderResponse = {
+export type OrderStatusData = {
+    confirmations: number;
+    confirmed: boolean;
+};
+
+export enum OrderStatusType {
+    Success = "Success",
+    Failed = "Failed",
+    Pending = "Pending",
+}
+
+export type OrderStatus =
+    | { status: OrderStatusType.Success; data: OrderStatusData }
+    | { status: OrderStatusType.Failed; data: OrderStatusData }
+    | { status: OrderStatusType.Pending; data: OrderStatusData };
+
+export interface GatewayOrderResponse {
     /** @description The gateway address */
     gatewayAddress: EvmAddress;
-    /** @description The token address */
-    tokenAddress: EvmAddress;
+    /** @description The base token address (e.g. wBTC or tBTC) */
+    baseTokenAddress: EvmAddress;
     /** @description The Bitcoin txid */
     txid: string;
     /** @description True when the order was executed on BOB */
@@ -208,6 +228,24 @@ export type GatewayOrderResponse = {
     strategyAddress?: EvmAddress;
     /** @description The gas refill in satoshis */
     satsToConvertToEth: number;
+    /** @description The amount of ETH received */
+    outputEthAmount?: string;
+    /** @description The output token (from strategies) */
+    outputTokenAddress?: EvmAddress;
+    /** @description The output amount (from strategies) */
+    outputTokenAmount?: string;
+    /** @description The tx hash on the EVM chain */
+    txHash?: string;
+    /** @description Get the actual token address received */
+    getTokenAddress(): string | undefined;
+    /** @description Get the actual token received */
+    getToken(): Token | undefined;
+    /** @description Get the actual amount received of the token */
+    getAmount(): string | number | undefined;
+    /** @description Get the number of confirmations */
+    getConfirmations(esploraClient: EsploraClient, latestHeight?: number): Promise<number>;
+    /** @description Get the actual order status */
+    getStatus(esploraClient: EsploraClient, latestHeight?: number): Promise<OrderStatus>;
 };
 
 /** Order given by the Gateway API once the bitcoin tx is submitted */
@@ -218,6 +256,13 @@ export type GatewayOrder = Omit<
     },
     "satsToConvertToEth"
 >;
+
+export type GatewayTokensInfo = {
+    /** @description The base token (e.g. wBTC or tBTC) */
+    baseToken: Token,
+    /** @description The output token (e.g. uniBTC or SolvBTC.BBN) */
+    outputToken?: Token,
+};
 
 /** @dev Internal */
 export type GatewayCreateOrderResponse = {

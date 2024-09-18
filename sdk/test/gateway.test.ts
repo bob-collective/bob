@@ -7,6 +7,11 @@ import { ZeroAddress } from "ethers";
 import nock from "nock";
 import * as bitcoin from "bitcoinjs-lib";
 
+const TBTC = SYMBOL_LOOKUP[ChainId.BOB]["tbtc"];
+const TBTC_ADDRESS = TBTC.address;
+const SOLVBTC = SYMBOL_LOOKUP[ChainId.BOB]["solvbtc"];
+const SOLVBTC_ADDRESS = SOLVBTC.address;
+
 describe("Gateway Tests", () => {
     it("should get chains", async () => {
         const gatewaySDK = new GatewaySDK("bob");
@@ -24,16 +29,19 @@ describe("Gateway Tests", () => {
 
         const mockQuote = {
             gatewayAddress: ZeroAddress,
+            baseTokenAddress: TBTC_ADDRESS,
             dustThreshold: 1000,
             satoshis: 1000,
             fee: 10,
             bitcoinAddress: "",
             txProofDifficultyFactor: 3,
             strategyAddress: ZeroAddress,
+            baseToken: TBTC,
+            outputToken: TBTC,
         };
 
         nock(`${MAINNET_GATEWAY_BASE_URL}`)
-            .get(`/quote/${SYMBOL_LOOKUP[ChainId.BOB]["tbtc"].address}?satoshis=1000`)
+            .get(`/quote/${TBTC_ADDRESS}?satoshis=1000`)
             .times(5)
             .reply(200, mockQuote);
 
@@ -57,7 +65,7 @@ describe("Gateway Tests", () => {
         }), mockQuote);
         assert.deepEqual(await gatewaySDK.getQuote({
             toChain: "BOB",
-            toToken: SYMBOL_LOOKUP[ChainId.BOB]["tbtc"].address,
+            toToken: TBTC_ADDRESS,
             toUserAddress: ZeroAddress,
             amount: 1000,
         }), mockQuote);
@@ -71,11 +79,11 @@ describe("Gateway Tests", () => {
 
         // get the total available without amount
         nock(`${MAINNET_GATEWAY_BASE_URL}`)
-            .get(`/quote/${SYMBOL_LOOKUP[ChainId.BOB]["tbtc"].address}`)
+            .get(`/quote/${TBTC_ADDRESS}`)
             .reply(200, mockQuote);
         assert.deepEqual(await gatewaySDK.getQuote({
             toChain: "BOB",
-            toToken: SYMBOL_LOOKUP[ChainId.BOB]["tbtc"].address,
+            toToken: TBTC_ADDRESS,
             toUserAddress: ZeroAddress,
         }), mockQuote);
     });
@@ -118,6 +126,7 @@ describe("Gateway Tests", () => {
 
         const mockQuote = {
             gatewayAddress: ZeroAddress,
+            baseTokenAddress: TBTC_ADDRESS,
             dustThreshold: 1000,
             satoshis: 1000,
             fee: 10,
@@ -171,12 +180,12 @@ describe("Gateway Tests", () => {
             .get(`/strategies`)
             .reply(200, [{
                 strategyAddress: ZeroAddress,
-                inputTokenAddress: SYMBOL_LOOKUP[ChainId.BOB]["tbtc"].address,
+                inputTokenAddress: TBTC_ADDRESS,
                 strategyName: "Pell Network (tBTC)",
                 strategyType: "staking"
             }]);
         nock(`${MAINNET_GATEWAY_BASE_URL}`)
-            .get(`/quote/${SYMBOL_LOOKUP[ChainId.BOB]["tbtc"].address}?satoshis=1000&strategy=${ZeroAddress}`)
+            .get(`/quote/${TBTC_ADDRESS}?satoshis=1000&strategy=${ZeroAddress}`)
             .times(4)
             .reply(200, {
                 gatewayAddress: ZeroAddress,
@@ -214,5 +223,75 @@ describe("Gateway Tests", () => {
 
         const gatewaySDK = new GatewaySDK("bob");
         assert.deepEqual(await gatewaySDK.getTokenAddresses(false), [ZeroAddress]);
+    });
+
+    it("should get orders", async () => {
+        const mockOrder = {
+            gatewayAddress: ZeroAddress,
+            baseTokenAddress: TBTC_ADDRESS,
+            txid: "",
+            status: false,
+            timestamp: 0,
+            tokens: "0",
+            satoshis: 0,
+            fee: 0,
+            txProofDifficultyFactor: 0,
+            satsToConvertToEth: 0,
+        };
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
+            .get(`/orders/${ZeroAddress}`)
+            .reply(200, [
+                // staking - success
+                {
+                    ...mockOrder,
+                    satoshis: 1000,
+                    fee: 0,
+                    status: true,
+                    strategyAddress: ZeroAddress,
+                    outputTokenAmount: "2000",
+                    outputTokenAddress: SOLVBTC_ADDRESS,
+                },
+                // staking - pending
+                {
+                    ...mockOrder,
+                    satoshis: 1000,
+                    fee: 0,
+                    strategyAddress: ZeroAddress,
+                },
+                // staking - failed
+                {
+                    ...mockOrder,
+                    satoshis: 1000,
+                    fee: 0,
+                    status: true,
+                    strategyAddress: ZeroAddress,
+                },
+                // swapping - pending
+                {
+                    ...mockOrder,
+                    satoshis: 1000,
+                    fee: 0,
+                },
+                // swapping - success
+                {
+                    ...mockOrder,
+                    satoshis: 1000,
+                    fee: 0,
+                    status: true
+                },
+            ]);
+
+        const gatewaySDK = new GatewaySDK("bob");
+        const orders = await gatewaySDK.getOrders(ZeroAddress);
+        assert.lengthOf(orders, 5);
+
+        assert.strictEqual(orders[0].getAmount(), "2000");
+        assert.strictEqual(orders[1].getAmount(), undefined);
+        assert.strictEqual(orders[2].getAmount(), 1000);
+        assert.strictEqual(orders[3].getAmount(), 1000);
+        assert.strictEqual(orders[4].getAmount(), 1000);
+
+        assert.strictEqual(orders[0].getToken()!.address, SOLVBTC_ADDRESS);
+        assert.strictEqual(orders[1].getToken(), undefined);
     });
 });

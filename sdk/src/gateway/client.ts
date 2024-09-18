@@ -13,6 +13,9 @@ import {
     GatewayStartOrder,
     GatewayStrategy,
     EvmAddress,
+    GatewayTokensInfo,
+    OrderStatus,
+    OrderStatusType,
 } from "./types";
 import { SYMBOL_LOOKUP, ADDRESS_LOOKUP } from "./tokens";
 import { createBitcoinPsbt } from "../wallet";
@@ -80,7 +83,7 @@ export class GatewayApiClient {
             GatewayQuoteParams,
             "amount" | "fromChain" | "fromToken" | "fromUserAddress" | "toUserAddress"
         >,
-    ): Promise<GatewayQuote> {
+    ): Promise<GatewayQuote & GatewayTokensInfo> {
         const isMainnet =
             params.toChain === ChainId.BOB ||
             (typeof params.toChain === "string" && params.toChain.toLowerCase() === Chain.BOB);
@@ -97,7 +100,7 @@ export class GatewayApiClient {
             throw new Error("Invalid output chain");
         }
 
-        let outputToken = "";
+        let outputTokenAddress = "";
         let strategyAddress: string | undefined;
 
         const toToken = params.toToken.toLowerCase();
@@ -106,16 +109,16 @@ export class GatewayApiClient {
         }
 
         if (toToken.startsWith("0x")) {
-            outputToken = toToken;
+            outputTokenAddress = toToken;
         } else if (isMainnet && this.chain === Chain.BOB && SYMBOL_LOOKUP[ChainId.BOB][toToken]) {
-            outputToken = SYMBOL_LOOKUP[ChainId.BOB][toToken].address;
+            outputTokenAddress = SYMBOL_LOOKUP[ChainId.BOB][toToken].address;
         } else if (isTestnet && this.chain === Chain.BOB_SEPOLIA && SYMBOL_LOOKUP[ChainId.BOB_SEPOLIA][toToken]) {
-            outputToken = SYMBOL_LOOKUP[ChainId.BOB_SEPOLIA][toToken].address;
+            outputTokenAddress = SYMBOL_LOOKUP[ChainId.BOB_SEPOLIA][toToken].address;
         } else {
             throw new Error("Unknown output token");
         }
 
-        var url = new URL(`${this.baseUrl}/quote/${outputToken}`);
+        var url = new URL(`${this.baseUrl}/quote/${outputTokenAddress}`);
         if (strategyAddress) {
             url.searchParams.append("strategy", `${strategyAddress}`);
         }
@@ -135,6 +138,8 @@ export class GatewayApiClient {
         return {
             ...quote,
             fee: quote.fee + (params.gasRefill || 0),
+            baseToken: ADDRESS_LOOKUP[quote.baseTokenAddress],
+            outputToken: quote.strategyAddress ? ADDRESS_LOOKUP[outputTokenAddress] : undefined,
         };
     }
 
@@ -252,11 +257,61 @@ export class GatewayApiClient {
      * @param userAddress The user's EVM address.
      * @returns {Promise<GatewayOrder[]>} The array of account orders.
      */
-    async getOrders(userAddress: EvmAddress): Promise<GatewayOrder[]> {
+    async getOrders(userAddress: EvmAddress): Promise<(GatewayOrder & GatewayTokensInfo)[]> {
         const response = await this.fetchGet(`${this.baseUrl}/orders/${userAddress}`);
         const orders: GatewayOrderResponse[] = await response.json();
         return orders.map((order) => {
-            return { gasRefill: order.satsToConvertToEth, ...order };
+            function getFinal<L, R>(base?: L, output?: R) {
+                return order.status
+                    ? order.strategyAddress
+                        ? output
+                            ? output // success
+                            : base // failed
+                        : base // success
+                    : order.strategyAddress // pending
+                        ? output
+                        : base;
+            }
+            const getTokenAddress = (): string | undefined => {
+                return getFinal(order.baseTokenAddress, order.outputTokenAddress);
+            }
+            const getConfirmations = async (esploraClient: EsploraClient, latestHeight?: number) => {
+                const txStatus = await esploraClient.getTransactionStatus(order.txid);
+                if (!latestHeight) {
+                    latestHeight = await esploraClient.getLatestHeight();
+                }
+                return txStatus.confirmed ? latestHeight - txStatus.block_height! + 1 : 0;
+            }
+            return {
+                gasRefill: order.satsToConvertToEth,
+                ...order,
+                baseToken: ADDRESS_LOOKUP[order.baseTokenAddress],
+                outputToken: ADDRESS_LOOKUP[order.outputTokenAddress],
+                getTokenAddress,
+                getToken() {
+                    return ADDRESS_LOOKUP[getTokenAddress()];
+                },
+                getAmount(): string | number | undefined {
+                    const baseAmount = order.satoshis - order.fee;
+                    return getFinal(baseAmount, order.outputTokenAmount);
+                },
+                getConfirmations,
+                async getStatus(esploraClient: EsploraClient, latestHeight?: number): Promise<OrderStatus> {
+                    const confirmations = await getConfirmations(esploraClient, latestHeight);
+                    const hasEnoughConfirmations = confirmations >= order.txProofDifficultyFactor;
+                    const data = {
+                        confirmations,
+                        confirmed: hasEnoughConfirmations
+                    };
+                    return order.status
+                        ? order.strategyAddress
+                            ? order.outputTokenAddress
+                                ? { status: OrderStatusType.Success, data }
+                                : { status: OrderStatusType.Failed, data }
+                            : { status: OrderStatusType.Success, data }
+                        : { status: OrderStatusType.Pending, data };
+                },
+            };
         });
     }
 
