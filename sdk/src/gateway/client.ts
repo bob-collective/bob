@@ -14,6 +14,8 @@ import {
     GatewayStrategy,
     EvmAddress,
     GatewayTokensInfo,
+    OrderStatus,
+    OrderStatusType,
 } from "./types";
 import { SYMBOL_LOOKUP, ADDRESS_LOOKUP } from "./tokens";
 import { createBitcoinPsbt } from "../wallet";
@@ -137,7 +139,7 @@ export class GatewayApiClient {
             ...quote,
             fee: quote.fee + (params.gasRefill || 0),
             baseToken: ADDRESS_LOOKUP[quote.baseTokenAddress],
-            outputToken: ADDRESS_LOOKUP[outputTokenAddress],
+            outputToken: quote.strategyAddress ? ADDRESS_LOOKUP[outputTokenAddress] : undefined,
         };
     }
 
@@ -255,7 +257,7 @@ export class GatewayApiClient {
      * @param userAddress The user's EVM address.
      * @returns {Promise<GatewayOrder[]>} The array of account orders.
      */
-    async getOrders(userAddress: EvmAddress): Promise<(GatewayOrder & Optional<GatewayTokensInfo, "outputToken">)[]> {
+    async getOrders(userAddress: EvmAddress): Promise<(GatewayOrder & GatewayTokensInfo)[]> {
         const response = await this.fetchGet(`${this.baseUrl}/orders/${userAddress}`);
         const orders: GatewayOrderResponse[] = await response.json();
         return orders.map((order) => {
@@ -273,6 +275,13 @@ export class GatewayApiClient {
             const getTokenAddress = (): string | undefined => {
                 return getFinal(order.baseTokenAddress, order.outputTokenAddress);
             }
+            const getConfirmations = async (esploraClient: EsploraClient, latestHeight?: number) => {
+                const txStatus = await esploraClient.getTransactionStatus(order.txid);
+                if (!latestHeight) {
+                    latestHeight = await esploraClient.getLatestHeight();
+                }
+                return txStatus.confirmed ? latestHeight - txStatus.block_height! + 1 : 0;
+            }
             return {
                 gasRefill: order.satsToConvertToEth,
                 ...order,
@@ -286,14 +295,22 @@ export class GatewayApiClient {
                     const baseAmount = order.satoshis - order.fee;
                     return getFinal(baseAmount, order.outputTokenAmount);
                 },
-                async getConfirmations(esploraClient: EsploraClient, latestHeight?: number): Promise<number> {
-                    const txStatus = await esploraClient.getTransactionStatus(order.txid);
-                    if (!latestHeight) {
-                        latestHeight = await esploraClient.getLatestHeight();
-                    }
-
-                    return txStatus.confirmed ? latestHeight - txStatus.block_height! + 1 : 0;
-                }
+                getConfirmations,
+                async getStatus(esploraClient: EsploraClient, latestHeight?: number): Promise<OrderStatus> {
+                    const confirmations = await getConfirmations(esploraClient, latestHeight);
+                    const hasEnoughConfirmations = confirmations >= order.txProofDifficultyFactor;
+                    const data = {
+                        confirmations,
+                        confirmed: hasEnoughConfirmations
+                    };
+                    return order.status
+                        ? order.strategyAddress
+                            ? order.outputTokenAddress
+                                ? { status: OrderStatusType.Success, data }
+                                : { status: OrderStatusType.Failed, data }
+                            : { status: OrderStatusType.Success, data }
+                        : { status: OrderStatusType.Pending, data };
+                },
             };
         });
     }

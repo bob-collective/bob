@@ -189,6 +189,22 @@ export type GatewayCreateOrderRequest = {
     satoshis: number;
 };
 
+export type OrderStatusData = {
+    confirmations: number;
+    confirmed: boolean;
+};
+
+export enum OrderStatusType {
+    Success = "Success",
+    Failed = "Failed",
+    Pending = "Pending",
+}
+
+export type OrderStatus =
+    | { status: OrderStatusType.Success; data: OrderStatusData }
+    | { status: OrderStatusType.Failed; data: OrderStatusData }
+    | { status: OrderStatusType.Pending; data: OrderStatusData };
+
 export interface GatewayOrderResponse {
     /** @description The gateway address */
     gatewayAddress: EvmAddress;
@@ -218,6 +234,8 @@ export interface GatewayOrderResponse {
     outputTokenAddress?: EvmAddress;
     /** @description The output amount (from strategies) */
     outputTokenAmount?: string;
+    /** @description The tx hash on the EVM chain */
+    txHash?: string;
     /** @description Get the actual token address received */
     getTokenAddress(): string | undefined;
     /** @description Get the actual token received */
@@ -226,6 +244,8 @@ export interface GatewayOrderResponse {
     getAmount(): string | number | undefined;
     /** @description Get the number of confirmations */
     getConfirmations(esploraClient: EsploraClient, latestHeight?: number): Promise<number>;
+    /** @description Get the actual order status */
+    getStatus(esploraClient: EsploraClient, latestHeight?: number): Promise<OrderStatus>;
 };
 
 /** Order given by the Gateway API once the bitcoin tx is submitted */
@@ -238,8 +258,10 @@ export type GatewayOrder = Omit<
 >;
 
 export type GatewayTokensInfo = {
+    /** @description The base token (e.g. wBTC or tBTC) */
     baseToken: Token,
-    outputToken: Token,
+    /** @description The output token (e.g. uniBTC or SolvBTC.BBN) */
+    outputToken?: Token,
 };
 
 /** @dev Internal */
