@@ -15,7 +15,6 @@ import {
     EvmAddress,
     GatewayTokensInfo,
     OrderStatus,
-    OrderStatusType,
 } from "./types";
 import { SYMBOL_LOOKUP, ADDRESS_LOOKUP } from "./tokens";
 import { createBitcoinPsbt } from "../wallet";
@@ -299,17 +298,16 @@ export class GatewayApiClient {
                 async getStatus(esploraClient: EsploraClient, latestHeight?: number): Promise<OrderStatus> {
                     const confirmations = await getConfirmations(esploraClient, latestHeight);
                     const hasEnoughConfirmations = confirmations >= order.txProofDifficultyFactor;
-                    const data = {
-                        confirmations,
-                        confirmed: hasEnoughConfirmations
-                    };
-                    return order.status
-                        ? order.strategyAddress
-                            ? order.outputTokenAddress
-                                ? { status: OrderStatusType.Success, data }
-                                : { status: OrderStatusType.Failed, data }
-                            : { status: OrderStatusType.Success, data }
-                        : { status: OrderStatusType.Pending, data };
+                    const data = { confirmations };
+                    return !hasEnoughConfirmations
+                        ? { confirmed: false, data }
+                        : order.status
+                            ? order.strategyAddress
+                                ? order.outputTokenAddress
+                                    ? { success: true, data }
+                                    : { success: false, data }
+                                : { success: true, data }
+                            : { pending: true, data };
                 },
             };
         });
