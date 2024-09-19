@@ -66,6 +66,10 @@ That's it! You do not need any tokens on any EVM chain, including BOB. The Binan
 
    ![Choose Bitcoin wallet](./images/10-binance-guide.png)
 
+1. This is what the Connect Wallet screen looks like after connecting both EVM and Bitcoin wallets. If you are using a different Bitcoin wallet, your wallet icon may look different.
+
+   ![Two connected wallets](./images/10b-binance-guide.png)
+
 1. Change networks by tapping "Ethereum".
 
    ![Changing networks](./images/11-binance-guide.png)
