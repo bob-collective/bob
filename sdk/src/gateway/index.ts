@@ -4,6 +4,5 @@ export {
     GatewayQuote,
     GatewayOrder,
     GatewayStrategyContract,
-    OrderStatusType,
     OrderStatus,
 } from "./types";
