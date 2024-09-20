@@ -1,4 +1,4 @@
-import { Network, Psbt, Signer, Transaction } from "bitcoinjs-lib";
+import { Network, Psbt, Signer, Transaction } from 'bitcoinjs-lib';
 
 /**
  * Dummy signer implementation used to estimate tx fees.

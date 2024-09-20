@@ -1,6 +1,6 @@
-import * as bitcoin from "bitcoinjs-lib";
-import { EsploraClient } from "./esplora";
-import { InscriptionId } from "./ordinal-api";
+import * as bitcoin from 'bitcoinjs-lib';
+import { EsploraClient } from './esplora';
+import { InscriptionId } from './ordinal-api';
 
 const textEncoder = new TextEncoder();
 
@@ -10,7 +10,7 @@ const OP_INT_BASE = bitcoin.opcodes.OP_RESERVED;
 const TAPROOT_ANNEX_PREFIX = 0x50;
 
 // https://github.com/ordinals/ord/blob/3bdbb00f57d06935f6ea78f115fca471ca8941be/src/envelope.rs#L9-L17
-export const PROTOCOL_ID = Buffer.from("6f7264", "hex");
+export const PROTOCOL_ID = Buffer.from('6f7264', 'hex');
 
 const CONTENT_TYPE_TAG = bitcoin.opcodes.OP_1;
 const CONTENT_ENCODING_TAG = bitcoin.opcodes.OP_9;
@@ -47,7 +47,7 @@ export class Inscription {
     getContentType(): string | null {
         const data: Buffer | null = this.tags[CONTENT_TYPE_TAG];
         if (Buffer.isBuffer(data)) {
-            return data.toString("utf-8");
+            return data.toString('utf-8');
         }
         return null;
     }
@@ -55,7 +55,7 @@ export class Inscription {
     getContentEncoding(): string | null {
         const data: Buffer | null = this.tags[CONTENT_ENCODING_TAG];
         if (Buffer.isBuffer(data)) {
-            return data.toString("utf-8");
+            return data.toString('utf-8');
         }
         return null;
     }
@@ -82,11 +82,9 @@ export class Inscription {
             bitcoin.opcodes.OP_0,
             bitcoin.opcodes.OP_IF,
             PROTOCOL_ID,
-            ...this.getTags().map(([key, value]) => [
-                1,
-                key,
-                value,
-            ]).flat(),
+            ...this.getTags()
+                .map(([key, value]) => [1, key, value])
+                .flat(),
             bitcoin.opcodes.OP_0,
             ...chunkContent(this.body),
             bitcoin.opcodes.OP_ENDIF,
@@ -99,17 +97,14 @@ export module Inscription {
      * Create a basic text inscription.
      */
     export function createTextInscription(text: string): Inscription {
-        return Inscription.createInscription(
-            "text/plain;charset=utf-8",
-            Buffer.from(textEncoder.encode(text))
-        );
+        return Inscription.createInscription('text/plain;charset=utf-8', Buffer.from(textEncoder.encode(text)));
     }
 
     /**
      * Create an inscription.
      */
     export function createInscription(contentType: string, content: Buffer): Inscription {
-        const inscription = new Inscription;
+        const inscription = new Inscription();
         // e.g. `image/png`
         inscription.setContentType(contentType);
         inscription.body = content;
@@ -126,7 +121,7 @@ function getTapscript(witness: Buffer[]) {
     }
     let scriptPosFromLast = 2;
     if (len >= 2 && last[0] == TAPROOT_ANNEX_PREFIX) {
-        scriptPosFromLast = 3
+        scriptPosFromLast = 3;
     }
     if (typeof witness[len - scriptPosFromLast] === 'undefined') {
         return null;

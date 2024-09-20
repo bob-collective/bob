@@ -2,16 +2,16 @@
 /**
  * @ignore
  */
-import { Transaction } from "bitcoinjs-lib";
+import { Transaction } from 'bitcoinjs-lib';
 //@ts-nocheck
 /**
  * @ignore
  */
-import { EsploraClient } from "./esplora";
+import { EsploraClient } from './esplora';
 /**
  * @ignore
  */
-import { encodeRawInput, encodeRawOutput, encodeRawWitness, encodeRawWitness } from "./utils";
+import { encodeRawInput, encodeRawOutput, encodeRawWitness, encodeRawWitness } from './utils';
 
 /**
  * Represents information about a Bitcoin transaction.
@@ -20,15 +20,15 @@ export interface BitcoinTxInfo {
     /**
      * The transaction version.
      */
-    version: string,
+    version: string;
     /**
      * The input vector of the transaction, encoded as a hex string.
      */
-    inputVector: string,
+    inputVector: string;
     /**
      * The output vector of the transaction, encoded as a hex string.
      */
-    outputVector: string,
+    outputVector: string;
     /**
      * The transaction locktime.
      */
@@ -36,7 +36,7 @@ export interface BitcoinTxInfo {
     /**
      * The transaction witness.
      */
-    witnessVector?: string,
+    witnessVector?: string;
 }
 
 /**
@@ -56,7 +56,7 @@ export interface BitcoinTxInfo {
 export async function getBitcoinTxInfo(
     esploraClient: EsploraClient,
     txId: string,
-    forWitness?: boolean,
+    forWitness?: boolean
 ): Promise<BitcoinTxInfo> {
     const txHex = await esploraClient.getTransactionHex(txId);
     const tx = Transaction.fromHex(txHex);
@@ -68,13 +68,13 @@ export async function getBitcoinTxInfo(
     locktimeBuffer.writeInt32LE(tx.locktime);
 
     return {
-        version: versionBuffer.toString("hex"),
-        inputVector: encodeRawInput(tx).toString("hex"),
-        outputVector: encodeRawOutput(tx).toString("hex"),
-        locktime: locktimeBuffer.toString("hex"),
-        witnessVector: forWitness ? encodeRawWitness(tx).toString("hex") : undefined,
-        witnessVector: forWitness ? encodeRawWitness(tx).toString("hex") : undefined,
-    }
+        version: versionBuffer.toString('hex'),
+        inputVector: encodeRawInput(tx).toString('hex'),
+        outputVector: encodeRawOutput(tx).toString('hex'),
+        locktime: locktimeBuffer.toString('hex'),
+        witnessVector: forWitness ? encodeRawWitness(tx).toString('hex') : undefined,
+        witnessVector: forWitness ? encodeRawWitness(tx).toString('hex') : undefined,
+    };
 }
 
 /**
@@ -113,7 +113,7 @@ export interface BitcoinTxProof {
 export async function getBitcoinTxProof(
     esploraClient: EsploraClient,
     txId: string,
-    txProofDifficultyFactor: number,
+    txProofDifficultyFactor: number
 ): Promise<BitcoinTxProof> {
     const merkleProof = await esploraClient.getMerkleProof(txId);
     const bitcoinHeaders = await getBitcoinHeaders(esploraClient, merkleProof.blockHeight, txProofDifficultyFactor);
@@ -122,7 +122,7 @@ export async function getBitcoinTxProof(
         merkleProof: merkleProof.merkle,
         txIndexInBlock: merkleProof.pos,
         bitcoinHeaders: bitcoinHeaders,
-    }
+    };
 }
 
 /**
@@ -152,15 +152,18 @@ export async function getBitcoinTxProof(
 export async function getBitcoinHeaders(
     esploraClient: EsploraClient,
     startHeight: number,
-    numBlocks: number,
+    numBlocks: number
 ): Promise<string> {
-    const range = (start: number, end: number) => Array.from({ length: end - start }, (_element, index) => index + start);
+    const range = (start: number, end: number) =>
+        Array.from({ length: end - start }, (_element, index) => index + start);
     const blockHeights = range(startHeight, startHeight + numBlocks);
 
-    const bitcoinHeaders = await Promise.all(blockHeights.map(async height => {
-        const hash = await esploraClient.getBlockHash(height);
-        return esploraClient.getBlockHeader(hash);
-    }));
+    const bitcoinHeaders = await Promise.all(
+        blockHeights.map(async (height) => {
+            const hash = await esploraClient.getBlockHash(height);
+            return esploraClient.getBlockHeader(hash);
+        })
+    );
 
     return bitcoinHeaders.join('');
 }

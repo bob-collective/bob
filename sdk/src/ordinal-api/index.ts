@@ -2,19 +2,19 @@
  * Base path for Ordinals regtest Explorer.
  * @default "http://0.0.0.0:3003"
  */
-export const REGTEST_ORD_BASE_PATH = "http://0.0.0.0:3003";
+export const REGTEST_ORD_BASE_PATH = 'http://0.0.0.0:3003';
 
 /**
  * Base path for Ordinals mainnet Explorer.
  * @default "https://ordinals-mainnet.gobob.xyz"
  */
-export const MAINNET_ORD_BASE_PATH = "https://ordinals-mainnet.gobob.xyz";
+export const MAINNET_ORD_BASE_PATH = 'https://ordinals-mainnet.gobob.xyz';
 
 /**
  * Base path for Ordinals testnet Explorer.
  * @default "https://ordinals-testnet.gobob.xyz"
  */
-export const TESTNET_ORD_BASE_PATH = "https://ordinals-testnet.gobob.xyz";
+export const TESTNET_ORD_BASE_PATH = 'https://ordinals-testnet.gobob.xyz';
 
 // https://github.com/ordinals/ord/blob/e39031a46531696e5dd0c853146f8bfab5b7582c/src/inscription_id.rs#L4-L7
 export type InscriptionId = {
@@ -29,7 +29,7 @@ export module InscriptionId {
 
     export function fromString(id: string): InscriptionId {
         // TODO: throw error if invalid?
-        const [txid, index] = id.split("i");
+        const [txid, index] = id.split('i');
         return {
             txid,
             index: parseInt(index, 10),
@@ -50,7 +50,7 @@ export module OutPoint {
 
     export function fromString(id: string): OutPoint {
         // TODO: throw error if invalid?
-        const [txid, vout] = id.split(":");
+        const [txid, vout] = id.split(':');
         return {
             txid,
             vout: parseInt(vout, 10),
@@ -71,7 +71,7 @@ export module SatPoint {
 
     export function fromString(id: string): SatPoint {
         // TODO: throw error if invalid?
-        const [txid, vout, offset] = id.split(":");
+        const [txid, vout, offset] = id.split(':');
         return {
             outpoint: {
                 txid,
@@ -336,15 +336,15 @@ export interface InscriptionJson<InscriptionId, SatPoint> {
 export class OrdinalsClient {
     private basePath: string;
 
-    constructor(networkOrUrl: string = "mainnet") {
+    constructor(networkOrUrl: string = 'mainnet') {
         switch (networkOrUrl) {
-            case "mainnet":
+            case 'mainnet':
                 this.basePath = MAINNET_ORD_BASE_PATH;
                 break;
-            case "testnet":
+            case 'testnet':
                 this.basePath = TESTNET_ORD_BASE_PATH;
                 break;
-            case "regtest":
+            case 'regtest':
                 this.basePath = REGTEST_ORD_BASE_PATH;
                 break;
             default:
@@ -368,7 +368,7 @@ export class OrdinalsClient {
     async getInscriptionFromId(id: InscriptionId): Promise<InscriptionJson<InscriptionId, SatPoint>> {
         console.log(`${this.basePath}/inscription/${InscriptionId.toString(id)}`);
         const inscriptionJson = await this.getJson<InscriptionJson<string, string>>(
-            `${this.basePath}/inscription/${InscriptionId.toString(id)}`,
+            `${this.basePath}/inscription/${InscriptionId.toString(id)}`
         );
         return {
             ...inscriptionJson,
@@ -413,7 +413,7 @@ export class OrdinalsClient {
      */
     async getInscriptionsFromBlock(height: number): Promise<InscriptionsJson<InscriptionId>> {
         const inscriptionsJson = await this.getJson<InscriptionsJson<string>>(
-            `${this.basePath}/inscriptions/block/${height}`,
+            `${this.basePath}/inscriptions/block/${height}`
         );
         return this.parseInscriptionsJson(inscriptionsJson);
     }
@@ -472,7 +472,7 @@ export class OrdinalsClient {
      */
     async getInscriptionsFromStartBlock(startHeight: number): Promise<InscriptionsJson<InscriptionId>> {
         const inscriptionsJson = await this.getJson<InscriptionsJson<string>>(
-            `${this.basePath}/inscriptions/${startHeight}`,
+            `${this.basePath}/inscriptions/${startHeight}`
         );
         return this.parseInscriptionsJson(inscriptionsJson);
     }
@@ -483,7 +483,7 @@ export class OrdinalsClient {
     private async getJson<T>(url: string): Promise<T> {
         const response = await fetch(url, {
             headers: {
-                Accept: "application/json",
+                Accept: 'application/json',
             },
         });
         if (!response.ok) {

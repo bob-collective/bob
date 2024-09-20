@@ -2,27 +2,27 @@
 /**
  * @ignore
  */
-import { Block } from "bitcoinjs-lib";
+import { Block } from 'bitcoinjs-lib';
 //@ts-nocheck
 /**
  * @ignore
  */
-import { BufferWriter, varuint } from "bitcoinjs-lib/src/bufferutils";
+import { BufferWriter, varuint } from 'bitcoinjs-lib/src/bufferutils';
 //@ts-nocheck
 /**
  * @ignore
  */
-import { hash256 } from "bitcoinjs-lib/src/crypto";
+import { hash256 } from 'bitcoinjs-lib/src/crypto';
 //@ts-nocheck
 /**
  * @ignore
  */
-import { Output, Transaction } from "bitcoinjs-lib/src/transaction";
+import { Output, Transaction } from 'bitcoinjs-lib/src/transaction';
 //@ts-nocheck
 /**
  * @ignore
  */
-import * as bitcoin from "bitcoinjs-lib";
+import * as bitcoin from 'bitcoinjs-lib';
 
 /**
  * @ignore
@@ -36,15 +36,17 @@ function varSliceSize(someScript: Buffer): number {
  * @ignore
  */
 export function encodeRawInput(tx: Transaction) {
-    const inputSize = varuint.encodingLength(tx.ins.length) + tx.ins.reduce((sum, input) => {
-        return sum + 40 + varSliceSize(input.script);
-    }, 0);
+    const inputSize =
+        varuint.encodingLength(tx.ins.length) +
+        tx.ins.reduce((sum, input) => {
+            return sum + 40 + varSliceSize(input.script);
+        }, 0);
 
     const inputBuffer = Buffer.allocUnsafe(inputSize);
     const inputBufferWriter = new BufferWriter(inputBuffer, 0);
 
     inputBufferWriter.writeVarInt(tx.ins.length);
-    tx.ins.forEach(txIn => {
+    tx.ins.forEach((txIn) => {
         inputBufferWriter.writeSlice(txIn.hash);
         inputBufferWriter.writeUInt32(txIn.index);
         inputBufferWriter.writeVarSlice(txIn.script);
@@ -65,15 +67,17 @@ function isOutput(out: Output): boolean {
  * @ignore
  */
 export function encodeRawOutput(tx: Transaction) {
-    const outputSize = varuint.encodingLength(tx.outs.length) + tx.outs.reduce((sum, output) => {
-        return sum + 8 + varSliceSize(output.script);
-    }, 0);
+    const outputSize =
+        varuint.encodingLength(tx.outs.length) +
+        tx.outs.reduce((sum, output) => {
+            return sum + 8 + varSliceSize(output.script);
+        }, 0);
 
     const outputBuffer = Buffer.allocUnsafe(outputSize);
     const outputBufferWriter = new BufferWriter(outputBuffer, 0);
 
     outputBufferWriter.writeVarInt(tx.outs.length);
-    tx.outs.forEach(txOut => {
+    tx.outs.forEach((txOut) => {
         if (isOutput(txOut)) {
             outputBufferWriter.writeUInt64(txOut.value);
         } else {
@@ -111,7 +115,7 @@ export function encodeRawWitness(tx: Transaction) {
     const witnessBuffer = Buffer.allocUnsafe(witnessSize);
     const witnessBufferWriter = new BufferWriter(witnessBuffer, 0);
 
-    tx.ins.forEach(input => {
+    tx.ins.forEach((input) => {
         witnessBufferWriter.writeVector(input.witness);
     });
 
@@ -139,9 +143,12 @@ function chunkArray<T>(array: T[], chunkSize: number): T[][] {
  * @returns An object containing the Merkle branch and root.
  */
 // https://github.com/Blockstream/electrs/blob/fd35014283c7d3a7a85c77b9fd647c9f09de12c9/src/util/electrum_merkle.rs#L86-L105
-function createMerkleBranchAndRoot(hashes: Buffer[], index: number): {
-    merkle: Buffer[],
-    root: Buffer,
+function createMerkleBranchAndRoot(
+    hashes: Buffer[],
+    index: number
+): {
+    merkle: Buffer[];
+    root: Buffer;
 } {
     let merkle: Buffer[] = [];
     while (hashes.length > 1) {
@@ -149,10 +156,14 @@ function createMerkleBranchAndRoot(hashes: Buffer[], index: number): {
             let last = hashes[hashes.length - 1];
             hashes.push(last);
         }
-        if (index % 2 == 0) { index++ } else { index-- }
+        if (index % 2 == 0) {
+            index++;
+        } else {
+            index--;
+        }
         merkle.push(hashes[index]);
         index = Math.floor(index / 2);
-        hashes = chunkArray(hashes, 2).map(pair => hash256(Buffer.concat([pair[0], pair[1]])));
+        hashes = chunkArray(hashes, 2).map((pair) => hash256(Buffer.concat([pair[0], pair[1]])));
     }
     return {
         merkle,
@@ -169,15 +180,15 @@ function createMerkleBranchAndRoot(hashes: Buffer[], index: number): {
  * @returns An object containing the position, proof, and root of the Merkle proof.
  */
 export function getMerkleProof(block: Block, txHash: string, forWitness?: boolean) {
-    const txIds = block.transactions!.map(tx => tx.getHash(forWitness));
-    const pos = txIds.map(value => value.toString("hex")).indexOf(txHash);
+    const txIds = block.transactions!.map((tx) => tx.getHash(forWitness));
+    const pos = txIds.map((value) => value.toString('hex')).indexOf(txHash);
 
     const merkleAndRoot = createMerkleBranchAndRoot(txIds, pos);
     return {
         pos: pos,
         // hashes are already little-endian
-        proof: merkleAndRoot.merkle.map(value => value.toString("hex")).join(''),
-        root: merkleAndRoot.root.toString("hex"),
+        proof: merkleAndRoot.merkle.map((value) => value.toString('hex')).join(''),
+        root: merkleAndRoot.root.toString('hex'),
     };
 }
 
@@ -194,7 +205,7 @@ export function estimateTxFee(feeRate: number, numInputs: number = 1) {
         tx.addInput(Buffer.alloc(32, 0), 0, 0xfffffffd, Buffer.alloc(0));
     }
     // https://github.com/interlay/interbtc-clients/blob/6bd3e81d695b93180c5aeae4f33910ad4395ff1a/bitcoin/src/light/wallet.rs#L80
-    tx.ins.map(tx_input => (tx_input.witness = [Buffer.alloc(33 + 32 + 7, 0), Buffer.alloc(33, 0)]));
+    tx.ins.map((tx_input) => (tx_input.witness = [Buffer.alloc(33 + 32 + 7, 0), Buffer.alloc(33, 0)]));
     tx.addOutput(Buffer.alloc(22, 0), 1000); // P2WPKH
     tx.addOutput(Buffer.alloc(22, 0), 1000); // P2WPKH (change)
     tx.addOutput(bitcoin.script.compile([bitcoin.opcodes.OP_RETURN, Buffer.alloc(20, 0)]), 0);

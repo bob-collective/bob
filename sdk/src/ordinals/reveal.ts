@@ -1,8 +1,8 @@
-import * as bitcoin from "bitcoinjs-lib";
-import * as psbtUtils from "bitcoinjs-lib/src/psbt/psbtutils";
+import * as bitcoin from 'bitcoinjs-lib';
+import * as psbtUtils from 'bitcoinjs-lib/src/psbt/psbtutils';
 
-import { RemoteSigner } from "./signer";
-import { CommitTxData } from "./commit";
+import { RemoteSigner } from './signer';
+import { CommitTxData } from './commit';
 
 const { witnessStackToScriptWitness } = psbtUtils;
 
@@ -20,7 +20,7 @@ export function createRevealTx(
     commitTxData: CommitTxData,
     commitTxResult: CommitTxResult,
     toAddress: string,
-    amount: number,
+    amount: number
 ) {
     const { scriptTaproot, tapLeafScript } = commitTxData;
 

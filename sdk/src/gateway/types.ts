@@ -1,4 +1,4 @@
-import type { EsploraClient } from "../esplora";
+import type { EsploraClient } from '../esplora';
 
 type ChainSlug = string | number;
 type TokenSymbol = string;
@@ -7,9 +7,9 @@ export type EvmAddress = string;
 
 export enum Chain {
     // NOTE: we also support Bitcoin testnet
-    BITCOIN = "bitcoin",
-    BOB = "bob",
-    BOB_SEPOLIA = "bob-sepolia",
+    BITCOIN = 'bitcoin',
+    BOB = 'bob',
+    BOB_SEPOLIA = 'bob-sepolia',
 }
 
 export enum ChainId {
@@ -56,7 +56,7 @@ export interface GatewayQuoteParams {
     /** @description Unique affiliate ID for tracking */
     affiliateId?: string;
     /** @description Optionally filter the type of routes returned */
-    type?: "swap" | "deposit" | "withdraw" | "claim";
+    type?: 'swap' | 'deposit' | 'withdraw' | 'claim';
     /** @description The percentage of fee charged by partners in Basis Points (BPS) units. This will override the default fee rate configured via platform. 1 BPS = 0.01%. The maximum value is 1000 (which equals 10%). The minimum value is 1 (which equals 0.01%). */
     fee?: number;
 
@@ -73,7 +73,7 @@ export interface GatewayQuoteParams {
  * IntegrationType
  * @enum {string}
  */
-type GatewayIntegrationType = "bridge" | "dex" | "staking" | "lending";
+type GatewayIntegrationType = 'bridge' | 'dex' | 'staking' | 'lending';
 
 interface GatewayIntegration {
     type: GatewayIntegrationType;
@@ -86,7 +86,7 @@ interface GatewayIntegration {
     monetization: boolean;
 }
 
-type GatewayStrategyType = "deposit" | "withdraw" | "claim" | "router" | "bridge";
+type GatewayStrategyType = 'deposit' | 'withdraw' | 'claim' | 'router' | 'bridge';
 
 interface GatewayToken {
     /** @example ETH */
@@ -101,7 +101,7 @@ interface GatewayToken {
     chain: string;
 }
 
-type GatewayChainType = "evm" | "ibc" | "solana" | "multiversx" | "bitcoin" | "ton" | "tron";
+type GatewayChainType = 'evm' | 'ibc' | 'solana' | 'multiversx' | 'bitcoin' | 'ton' | 'tron';
 
 interface GatewayChain {
     id: string;
@@ -220,28 +220,31 @@ export interface GatewayOrderResponse {
     outputTokenAmount?: string;
     /** @description The tx hash on the EVM chain */
     txHash?: string;
-};
+}
 
 export type OrderStatusData = {
     confirmations: number;
 };
 
-export type OrderStatus = {
-    confirmed: false;
-    pending?: never;
-    success?: never;
-    data: OrderStatusData;
-} | {
-    confirmed?: never;
-    pending: true;
-    success?: never;
-    data: OrderStatusData;
-} | {
-    confirmed?: never;
-    pending?: never;
-    success: boolean;
-    data: OrderStatusData;
-};;
+export type OrderStatus =
+    | {
+          confirmed: false;
+          pending?: never;
+          success?: never;
+          data: OrderStatusData;
+      }
+    | {
+          confirmed?: never;
+          pending: true;
+          success?: never;
+          data: OrderStatusData;
+      }
+    | {
+          confirmed?: never;
+          pending?: never;
+          success: boolean;
+          data: OrderStatusData;
+      };
 
 /** Order given by the Gateway API once the bitcoin tx is submitted */
 export type GatewayOrder = Omit<
@@ -249,7 +252,7 @@ export type GatewayOrder = Omit<
         /** @description The gas refill in satoshis */
         gasRefill: number;
     },
-    "satsToConvertToEth"
+    'satsToConvertToEth'
 > & {
     /** @description Get the actual token address received */
     getTokenAddress(): string | undefined;
@@ -265,9 +268,9 @@ export type GatewayOrder = Omit<
 
 export type GatewayTokensInfo = {
     /** @description The base token (e.g. wBTC or tBTC) */
-    baseToken: Token,
+    baseToken: Token;
     /** @description The output token (e.g. uniBTC or SolvBTC.BBN) */
-    outputToken?: Token,
+    outputToken?: Token;
 };
 
 /** @dev Internal */
@@ -287,7 +290,7 @@ export type GatewayStartOrder = GatewayCreateOrderResponse & {
 export interface GatewayStrategy {
     strategyAddress: string;
     strategyName: string;
-    strategyType: "staking" | "lending";
+    strategyType: 'staking' | 'lending';
     projectName: string;
     projectLogo?: string;
     inputTokenAddress: string;

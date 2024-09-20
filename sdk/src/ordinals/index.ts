@@ -1,9 +1,9 @@
-import * as bitcoin from "bitcoinjs-lib";
+import * as bitcoin from 'bitcoinjs-lib';
 
-import { DummySigner, RemoteSigner } from "./signer";
-import { CommitTxData, createCommitTxData } from "./commit";
-import { createRevealTx, customFinalizer, signRevealTx } from "./reveal";
-import { Inscription } from "../inscription";
+import { DummySigner, RemoteSigner } from './signer';
+import { CommitTxData, createCommitTxData } from './commit';
+import { createRevealTx, customFinalizer, signRevealTx } from './reveal';
+import { Inscription } from '../inscription';
 
 export { RemoteSigner };
 
@@ -15,7 +15,7 @@ function estimateTxSize(
     publicKey: Buffer,
     commitTxData: CommitTxData,
     toAddress: string,
-    amount: number,
+    amount: number
 ) {
     const psbt = new bitcoin.Psbt({ network });
 
@@ -57,10 +57,10 @@ export async function inscribeData(
     toAddress: string,
     feeRate: number,
     inscription: Inscription,
-    postage = 10000,
+    postage = 10000
 ) {
     const bitcoinNetwork = await signer.getNetwork();
-    const publicKey = Buffer.from(await signer.getPublicKey(), "hex");
+    const publicKey = Buffer.from(await signer.getPublicKey(), 'hex');
 
     const commitTxData = createCommitTxData(bitcoinNetwork, publicKey, inscription);
 

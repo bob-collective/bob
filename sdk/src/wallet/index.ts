@@ -1,3 +1,3 @@
-export * from "./utxo";
+export * from './utxo';
 
-export { validate as isValidBtcAddress } from "bitcoin-address-validation";
+export { validate as isValidBtcAddress } from 'bitcoin-address-validation';
