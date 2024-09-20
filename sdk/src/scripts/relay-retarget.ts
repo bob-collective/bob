@@ -103,7 +103,7 @@ async function main(): Promise<void> {
 
     try {
         await esploraClient.getBlockHash(nextRetargetHeight + proofLength);
-    } catch (e) {
+    } catch (_) {
         console.log(`Cannot retarget without ${proofLength} headers after ${nextRetargetHeight}. Exiting.`);
         return;
     }

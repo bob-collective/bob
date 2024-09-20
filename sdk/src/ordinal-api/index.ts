@@ -265,7 +265,7 @@ export interface InscriptionJson<InscriptionId, SatPoint> {
      */
     content_type: string | null;
 
-    effective_content_type: String | null;
+    effective_content_type: string | null;
 
     /**
      * The genesis fee of the inscription.

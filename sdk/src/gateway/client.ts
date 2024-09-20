@@ -114,7 +114,7 @@ export class GatewayApiClient {
             throw new Error('Unknown output token');
         }
 
-        var url = new URL(`${this.baseUrl}/quote/${outputTokenAddress}`);
+        const url = new URL(`${this.baseUrl}/quote/${outputTokenAddress}`);
         if (strategyAddress) {
             url.searchParams.append('strategy', `${strategyAddress}`);
         }

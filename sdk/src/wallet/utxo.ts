@@ -74,7 +74,7 @@ export async function createBitcoinPsbt(
     }
 
     // To construct the spending transaction and estimate the fee, we need the transactions for the UTXOs
-    let possibleInputs: Input[] = [];
+    const possibleInputs: Input[] = [];
 
     await Promise.all(
         confirmedUtxos.map(async (utxo) => {
@@ -116,6 +116,7 @@ export async function createBitcoinPsbt(
         network: getBtcNetwork(network),
         allowUnknownOutputs: true, // Required for OP_RETURN
         allowLegacyWitnessUtxo: true, // Required for P2SH-P2WPKH
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         dust: BigInt(546) as any, // TODO: update scure-btc-signer
     });
 

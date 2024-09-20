@@ -332,7 +332,7 @@ export class EsploraClient {
      * @returns {Promise<number>} A promise that resolves to the fee rate.
      */
     async getFeeEstimate(confirmationTarget: number): Promise<number> {
-        const response = await this.getJson<any>(`${this.basePath}/fee-estimates`);
+        const response = await this.getJson<Record<number, number>>(`${this.basePath}/fee-estimates`);
         return response[confirmationTarget];
     }
 

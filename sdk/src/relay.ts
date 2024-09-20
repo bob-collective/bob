@@ -1,9 +1,7 @@
-//@ts-nocheck
 /**
  * @ignore
  */
 import { Transaction } from 'bitcoinjs-lib';
-//@ts-nocheck
 /**
  * @ignore
  */
@@ -11,7 +9,7 @@ import { EsploraClient } from './esplora';
 /**
  * @ignore
  */
-import { encodeRawInput, encodeRawOutput, encodeRawWitness, encodeRawWitness } from './utils';
+import { encodeRawInput, encodeRawOutput, encodeRawWitness } from './utils';
 
 /**
  * Represents information about a Bitcoin transaction.
@@ -72,7 +70,6 @@ export async function getBitcoinTxInfo(
         inputVector: encodeRawInput(tx).toString('hex'),
         outputVector: encodeRawOutput(tx).toString('hex'),
         locktime: locktimeBuffer.toString('hex'),
-        witnessVector: forWitness ? encodeRawWitness(tx).toString('hex') : undefined,
         witnessVector: forWitness ? encodeRawWitness(tx).toString('hex') : undefined,
     };
 }

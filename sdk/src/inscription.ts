@@ -130,7 +130,7 @@ function getTapscript(witness: Buffer[]) {
 }
 
 export function parseInscriptions(tx: bitcoin.Transaction) {
-    let inscriptions: Inscription[] = [];
+    const inscriptions: Inscription[] = [];
 
     for (const txInput of tx.ins) {
         const tapscript = getTapscript(txInput.witness);
@@ -154,8 +154,8 @@ export function parseInscriptions(tx: bitcoin.Transaction) {
                 continue;
             }
 
-            let tags: Map<number, Buffer> = new Map();
-            let body: Buffer[] = [];
+            const tags: Map<number, Buffer> = new Map();
+            const body: Buffer[] = [];
             let isBody = false;
             for (let chunk = chunks.next(); !chunk.done; chunk = chunks.next()) {
                 if (chunk.value == bitcoin.opcodes.OP_ENDIF) {

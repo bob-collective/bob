@@ -48,6 +48,7 @@ export function createRevealTx(
 export const customFinalizer = (commitTxData: CommitTxData) => {
     const { tapLeafScript } = commitTxData;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return (inputIndex: number, input: any) => {
         const witness = [input.tapScriptSig[inputIndex].signature]
             .concat(tapLeafScript.script)

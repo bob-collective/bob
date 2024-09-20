@@ -104,7 +104,7 @@ async function main(): Promise<void> {
         throw new Error('No private key');
     }
 
-    let env = [
+    const env = [
         `GENESIS_PROOF_LENGTH=${proofLength}`,
         `GENESIS_HEIGHT=${initHeight}`,
         `GENESIS_HEADER=${genesis}`,

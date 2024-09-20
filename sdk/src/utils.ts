@@ -1,24 +1,19 @@
-//@ts-nocheck
 /**
  * @ignore
  */
 import { Block } from 'bitcoinjs-lib';
-//@ts-nocheck
 /**
  * @ignore
  */
 import { BufferWriter, varuint } from 'bitcoinjs-lib/src/bufferutils';
-//@ts-nocheck
 /**
  * @ignore
  */
 import { hash256 } from 'bitcoinjs-lib/src/crypto';
-//@ts-nocheck
 /**
  * @ignore
  */
 import { Output, Transaction } from 'bitcoinjs-lib/src/transaction';
-//@ts-nocheck
 /**
  * @ignore
  */
@@ -81,6 +76,7 @@ export function encodeRawOutput(tx: Transaction) {
         if (isOutput(txOut)) {
             outputBufferWriter.writeUInt64(txOut.value);
         } else {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             outputBufferWriter.writeSlice((txOut as any).valueBuffer);
         }
 
@@ -150,10 +146,10 @@ function createMerkleBranchAndRoot(
     merkle: Buffer[];
     root: Buffer;
 } {
-    let merkle: Buffer[] = [];
+    const merkle: Buffer[] = [];
     while (hashes.length > 1) {
         if (hashes.length % 2 != 0) {
-            let last = hashes[hashes.length - 1];
+            const last = hashes[hashes.length - 1];
             hashes.push(last);
         }
         if (index % 2 == 0) {
