@@ -23,7 +23,7 @@ const TOKENS = [
         decimals: 8,
         bob: '0x2925dF9Eb2092B53B06A06353A7249aF3a8B139e',
         bobSepolia: '',
-        logoURI: 'https://ethereum-optimism.github.io/data/tBTC/logo.svg',
+        logoURI: 'https://raw.githubusercontent.com/bob-collective/bob/master/assets/shoebill.svg',
     },
     {
         name: 'sb Wrapped BTC',
@@ -31,7 +31,7 @@ const TOKENS = [
         decimals: 8,
         bob: '0x5c46D274ed8AbCAe2964B63c0360ad3Ccc384dAa',
         bobSepolia: '',
-        logoURI: 'https://ethereum-optimism.github.io/data/WBTC/logo.svg',
+        logoURI: 'https://raw.githubusercontent.com/bob-collective/bob/master/assets/shoebill.svg',
     },
     {
         name: 'Segment TBTC',
@@ -39,7 +39,7 @@ const TOKENS = [
         decimals: 8,
         bob: '0xD30288EA9873f376016A0250433b7eA375676077',
         bobSepolia: '',
-        logoURI: 'https://ethereum-optimism.github.io/data/tBTC/logo.svg',
+        logoURI: 'https://raw.githubusercontent.com/bob-collective/bob/master/assets/segment.svg',
     },
     {
         name: 'Segment WBTC',
@@ -47,7 +47,7 @@ const TOKENS = [
         decimals: 8,
         bob: '0x6265C05158f672016B771D6Fb7422823ed2CbcDd',
         bobSepolia: '',
-        logoURI: 'https://ethereum-optimism.github.io/data/WBTC/logo.svg',
+        logoURI: 'https://raw.githubusercontent.com/bob-collective/bob/master/assets/segment.svg',
     },
     {
         name: 'Staked mtBTC',
@@ -80,6 +80,22 @@ const TOKENS = [
         bob: '0x236f8c0a61dA474dB21B693fB2ea7AAB0c803894',
         bobSepolia: '',
         logoURI: 'https://raw.githubusercontent.com/bob-collective/bob/master/assets/uniBTC.svg',
+    },
+    {
+        name: 'Segment SOLVBTCBBN',
+        symbol: 'seSOLVBTCBBN',
+        decimals: 8,
+        bob: '0x5EF2B8fbCc8aea2A9Dbe2729F0acf33E073Fa43e',
+        bobSepolia: '',
+        logoURI: 'https://raw.githubusercontent.com/bob-collective/bob/master/assets/segment.svg',
+    },
+    {
+        name: 'Segment UNIBTC',
+        symbol: 'seUNIBTC',
+        decimals: 8,
+        bob: '0x7848F0775EebaBbF55cB74490ce6D3673E68773A',
+        bobSepolia: '',
+        logoURI: 'https://raw.githubusercontent.com/bob-collective/bob/master/assets/segment.svg',
     },
 ];
 
