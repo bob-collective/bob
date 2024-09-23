@@ -56,7 +56,8 @@ jobs:
           node-version: "20"
           registry-url: "https://registry.npmjs.org"
           always-auth: true
-      - name: Install deps
-        run: npm ci
+      - run: npm ci
+      - run: npx prettier --check {examples,src,test}
+      - run: npm run lint
       - name: Run tests
         run: npm test
