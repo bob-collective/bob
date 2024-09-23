@@ -1,19 +1,25 @@
-import { EsploraClient, UTXO } from "./esplora";
-import { parseInscriptions } from "./inscription";
-import { InscriptionId, OrdinalsClient } from "./ordinal-api";
-import * as bitcoin from "bitcoinjs-lib";
+import { EsploraClient, UTXO } from './esplora';
+import { parseInscriptions } from './inscription';
+import { InscriptionId, OrdinalsClient } from './ordinal-api';
+import * as bitcoin from 'bitcoinjs-lib';
 
 // Get the (encoded) inscription IDs for the address
-export async function getInscriptionIds(esploraClient: EsploraClient, ordinalsClient: OrdinalsClient, bitcoinAddress: string) {
+export async function getInscriptionIds(
+    esploraClient: EsploraClient,
+    ordinalsClient: OrdinalsClient,
+    bitcoinAddress: string
+) {
     const utxos = await esploraClient.getAddressUtxos(bitcoinAddress);
     const inscriptionIds = await Promise.all(
-        utxos.sort((a, b) => {
-            // force large number if height is not available (as expected for unconfirmed utxo)
-            const heightA = a.height || Number.MAX_SAFE_INTEGER;
-            const heightB = b.height || Number.MAX_SAFE_INTEGER;
+        utxos
+            .sort((a, b) => {
+                // force large number if height is not available (as expected for unconfirmed utxo)
+                const heightA = a.height || Number.MAX_SAFE_INTEGER;
+                const heightB = b.height || Number.MAX_SAFE_INTEGER;
 
-            return heightA - heightB;
-        }).map(utxo => getInscriptionIdsForUtxo(esploraClient, ordinalsClient, utxo))
+                return heightA - heightB;
+            })
+            .map((utxo) => getInscriptionIdsForUtxo(esploraClient, ordinalsClient, utxo))
     );
     return inscriptionIds.flat();
 }
@@ -36,11 +42,13 @@ async function getInscriptionIdsForUtxo(esploraClient: EsploraClient, ordinalsCl
         // but the ordinal indexer has not yet confirmed it so we check if the
         // parent utxo has an inscription instead
         // NOTE: this won't work if the parent UTXO is not included in a block
-        const parentInscriptions = await Promise.all(tx.ins.map(async txInput => {
-            const txid = txInput.hash.reverse().toString("hex");
-            const outputJson = await ordinalsClient.getInscriptionsFromOutPoint({ txid, vout: txInput.index });
-            return outputJson.inscriptions;
-        }));
+        const parentInscriptions = await Promise.all(
+            tx.ins.map(async (txInput) => {
+                const txid = txInput.hash.reverse().toString('hex');
+                const outputJson = await ordinalsClient.getInscriptionsFromOutPoint({ txid, vout: txInput.index });
+                return outputJson.inscriptions;
+            })
+        );
         const inscriptionIds = parentInscriptions.flat();
         if (inscriptionIds.length > 0) {
             return inscriptionIds;

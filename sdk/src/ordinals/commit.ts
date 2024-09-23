@@ -1,5 +1,5 @@
-import * as bitcoin from "bitcoinjs-lib";
-import { Inscription } from "../inscription";
+import * as bitcoin from 'bitcoinjs-lib';
+import { Inscription } from '../inscription';
 
 export interface CommitTxData {
     scriptTaproot: bitcoin.payments.Payment;
@@ -21,7 +21,7 @@ function toXOnly(pubkey: Buffer) {
 export function createCommitTxData(
     network: bitcoin.Network,
     publicKey: Buffer,
-    inscription: Inscription,
+    inscription: Inscription
 ): CommitTxData {
     const xOnlyPublicKey = toXOnly(publicKey);
     const script = inscription.toScript(xOnlyPublicKey);

@@ -2,111 +2,111 @@
  * Base path for the mainnet Esplora API.
  * @default "https://btc-mainnet.gobob.xyz"
  */
-export const MAINNET_ESPLORA_BASE_PATH = "https://btc-mainnet.gobob.xyz";
+export const MAINNET_ESPLORA_BASE_PATH = 'https://btc-mainnet.gobob.xyz';
 /**
  * Base path for the testnet Esplora API.
  * @default "https://btc-testnet.gobob.xyz"
  */
-export const TESTNET_ESPLORA_BASE_PATH = "https://btc-testnet.gobob.xyz";
+export const TESTNET_ESPLORA_BASE_PATH = 'https://btc-testnet.gobob.xyz';
 /**
  * Base path for the regtest Esplora API.
  * @default "http://localhost:3003"
  */
-export const REGTEST_ESPLORA_BASE_PATH = "http://localhost:3003";
+export const REGTEST_ESPLORA_BASE_PATH = 'http://localhost:3003';
 
 /**
  * @ignore
  */
 export interface MerkleProof {
-    blockHeight: number
-    merkle: string
-    pos: number
+    blockHeight: number;
+    merkle: string;
+    pos: number;
 }
 
 /**
  * @ignore
  */
 export interface UTXO {
-    txid: string
-    vout: number
-    value: number
-    confirmed: boolean
-    height?: number
+    txid: string;
+    vout: number;
+    value: number;
+    confirmed: boolean;
+    height?: number;
 }
 
 /**
  * @ignore
  */
 export interface Transaction {
-    txid: string
-    version: number
-    locktime: number
-    size: number
-    weight: number
-    fee: number
+    txid: string;
+    version: number;
+    locktime: number;
+    size: number;
+    weight: number;
+    fee: number;
     vin: Array<{
-        txid: string
-        vout: number
-        is_coinbase: boolean
-        scriptsig: string
-        scriptsig_asm: string
-        inner_redeemscript_asm?: string
-        inner_witnessscript_asm?: string
-        sequence?: number
-        witness?: string[]
+        txid: string;
+        vout: number;
+        is_coinbase: boolean;
+        scriptsig: string;
+        scriptsig_asm: string;
+        inner_redeemscript_asm?: string;
+        inner_witnessscript_asm?: string;
+        sequence?: number;
+        witness?: string[];
         prevout: {
-            scriptpubkey: string
-            scriptpubkey_asm: string
-            scriptpubkey_type: string
-            scriptpubkey_address: string
-            value: number
-        } | null
-    }>
+            scriptpubkey: string;
+            scriptpubkey_asm: string;
+            scriptpubkey_type: string;
+            scriptpubkey_address: string;
+            value: number;
+        } | null;
+    }>;
     vout: Array<{
-        scriptpubkey: string
-        scriptpubkey_asm?: string
-        scriptpubkey_type?: string
-        scriptpubkey_address?: string
-        value: number
-    }>
-    status: TransactionStatus
+        scriptpubkey: string;
+        scriptpubkey_asm?: string;
+        scriptpubkey_type?: string;
+        scriptpubkey_address?: string;
+        value: number;
+    }>;
+    status: TransactionStatus;
 }
 
 /**
  * @ignore
  */
 export interface TransactionStatus {
-    confirmed: boolean
-    block_height?: number
-    block_hash?: string
-    block_time?: number
+    confirmed: boolean;
+    block_height?: number;
+    block_hash?: string;
+    block_time?: number;
 }
 
 /**
  * @ignore
  */
 export interface Block {
-    id: string
-    height: number
-    version: number
-    timestamp: number
-    bits: number
-    nonce: number
-    difficulty: number
-    merkle_root: string
-    tx_count: number
-    size: number
-    weight: number
-    previousblockhash: string | null
-    mediantime: number
+    id: string;
+    height: number;
+    version: number;
+    timestamp: number;
+    bits: number;
+    nonce: number;
+    difficulty: number;
+    merkle_root: string;
+    tx_count: number;
+    size: number;
+    weight: number;
+    previousblockhash: string | null;
+    mediantime: number;
 }
 
 /**
-* @ignore
-*/
+ * @ignore
+ */
 function encodeEsploraMerkleProof(merkle: string[]): string {
     // convert to little-endian
-    return merkle.map(item => Buffer.from(item, "hex").reverse().toString("hex")).join('');
+    return merkle.map((item) => Buffer.from(item, 'hex').reverse().toString('hex')).join('');
 }
 
 /**
@@ -121,8 +121,8 @@ export class EsploraClient {
      * Create an instance of the `EsploraClient` with the specified network or URL.
      * If the `networkOrUrl` parameter is omitted, it defaults to "mainnet."
      *
-     * @param networkOrUrl The Bitcoin network (e.g., "mainnet," "testnet," "regtest") 
-     * 
+     * @param networkOrUrl The Bitcoin network (e.g., "mainnet," "testnet," "regtest")
+     *
      * @returns An instance of the `EsploraClient` configured for the specified network or URL.
      *
      * @example
@@ -132,16 +132,16 @@ export class EsploraClient {
      * @example
      * // Create a client for the mainnet using the default URL.
      * const esploraClientMainnet = new EsploraClient();
-    */
-    constructor(networkOrUrl: string = "mainnet") {
+     */
+    constructor(networkOrUrl: string = 'mainnet') {
         switch (networkOrUrl) {
-            case "mainnet":
+            case 'mainnet':
                 this.basePath = MAINNET_ESPLORA_BASE_PATH;
                 break;
-            case "testnet":
+            case 'testnet':
                 this.basePath = TESTNET_ESPLORA_BASE_PATH;
                 break;
-            case "regtest":
+            case 'regtest':
                 this.basePath = REGTEST_ESPLORA_BASE_PATH;
                 break;
             default:
@@ -163,7 +163,7 @@ export class EsploraClient {
      *
      * @param {string} hash - The hash of the Bitcoin block.
      * @returns {Promise<Block>} A promise that resolves to the block data.
-     * 
+     *
      * @example
      * ```typescript
      * const BITCOIN_NETWORK = "regtest";
@@ -242,10 +242,10 @@ export class EsploraClient {
 
     /**
      * Get the complete transaction data for a Bitcoin transaction with a given ID (txId).
-     * 
+     *
      * @param txId {string} - The ID of a Bitcoin transaction.
      * @returns {Promise<Transaction>} A promise that resolves to the transaction data.
-     * 
+     *
      * @example
      * ```typescript
      * const BITCOIN_NETWORK = "regtest";
@@ -314,9 +314,9 @@ export class EsploraClient {
      */
     async getMerkleProof(txId: string): Promise<MerkleProof> {
         const response = await this.getJson<{
-            "block_height": number,
-            "merkle": string[],
-            "pos": number,
+            block_height: number;
+            merkle: string[];
+            pos: number;
         }>(`${this.basePath}/tx/${txId}/merkle-proof`);
         return {
             blockHeight: response.block_height,
@@ -332,7 +332,7 @@ export class EsploraClient {
      * @returns {Promise<number>} A promise that resolves to the fee rate.
      */
     async getFeeEstimate(confirmationTarget: number): Promise<number> {
-        const response = await this.getJson<any>(`${this.basePath}/fee-estimates`);
+        const response = await this.getJson<Record<number, number>>(`${this.basePath}/fee-estimates`);
         return response[confirmationTarget];
     }
 
@@ -347,27 +347,29 @@ export class EsploraClient {
         // https://github.com/Blockstream/electrs/blob/306f66acf2ab10bcd99b8012e95a0de30b2cc012/src/rest.rs#L860
         // https://github.com/Blockstream/electrs/blob/306f66acf2ab10bcd99b8012e95a0de30b2cc012/src/new_index/query.rs#L82
         // https://github.com/Blockstream/electrs/blob/306f66acf2ab10bcd99b8012e95a0de30b2cc012/src/config.rs#L177
-        const response = await this.getJson<Array<{
-            txid: string,
-            vout: number,
-            status: {
-                confirmed: boolean,
-                block_height: number,
-                block_hash: string,
-                block_time: number
-            },
-            value: number,
-        }>>(`${this.basePath}/address/${address}/utxo`);
+        const response = await this.getJson<
+            Array<{
+                txid: string;
+                vout: number;
+                status: {
+                    confirmed: boolean;
+                    block_height: number;
+                    block_hash: string;
+                    block_time: number;
+                };
+                value: number;
+            }>
+        >(`${this.basePath}/address/${address}/utxo`);
         return response
-            .filter(utxo => (typeof confirmed !== "undefined") ? confirmed === utxo.status.confirmed : true)
-            .map<UTXO>(utxo => {
+            .filter((utxo) => (typeof confirmed !== 'undefined' ? confirmed === utxo.status.confirmed : true))
+            .map<UTXO>((utxo) => {
                 return {
                     txid: utxo.txid,
                     vout: utxo.vout,
                     value: utxo.value,
                     confirmed: utxo.status.confirmed,
-                    height: utxo.status.block_height
-                }
+                    height: utxo.status.block_height,
+                };
             });
     }
 
@@ -380,7 +382,7 @@ export class EsploraClient {
     async broadcastTx(txHex: string): Promise<string> {
         const res = await fetch(`${this.basePath}/tx`, {
             method: 'POST',
-            body: txHex
+            body: txHex,
         });
         return await res.text();
     }
@@ -393,21 +395,21 @@ export class EsploraClient {
      */
     async getBalance(address: string): Promise<number> {
         const response = await this.getJson<{
-            address: string,
+            address: string;
             chain_stats: {
-                funded_txo_count: number,
-                funded_txo_sum: number,
-                spent_txo_count: number,
-                spent_txo_sum: number,
-                tx_count: number
-            },
+                funded_txo_count: number;
+                funded_txo_sum: number;
+                spent_txo_count: number;
+                spent_txo_sum: number;
+                tx_count: number;
+            };
             mempool_stats: {
-                funded_txo_count: number,
-                funded_txo_sum: number,
-                spent_txo_count: number,
-                spent_txo_sum: number,
-                tx_count: number
-            }
+                funded_txo_count: number;
+                funded_txo_sum: number;
+                spent_txo_count: number;
+                spent_txo_sum: number;
+                tx_count: number;
+            };
         }>(`${this.basePath}/address/${address}`);
 
         const chainBalance = response.chain_stats.funded_txo_sum - response.chain_stats.spent_txo_sum;
@@ -423,7 +425,7 @@ export class EsploraClient {
         if (!response.ok) {
             throw new Error(response.statusText);
         }
-        return await response.json() as Promise<T>;
+        return (await response.json()) as Promise<T>;
     }
 
     /**

@@ -1,4 +1,4 @@
-import { ethers, AbiCoder } from "ethers";
+import { ethers, AbiCoder } from 'ethers';
 import {
     GatewayQuoteParams,
     GatewayQuote,
@@ -15,11 +15,11 @@ import {
     EvmAddress,
     GatewayTokensInfo,
     OrderStatus,
-} from "./types";
-import { SYMBOL_LOOKUP, ADDRESS_LOOKUP } from "./tokens";
-import { createBitcoinPsbt } from "../wallet";
-import { Network } from "bitcoin-address-validation";
-import { EsploraClient } from "../esplora";
+} from './types';
+import { SYMBOL_LOOKUP, ADDRESS_LOOKUP } from './tokens';
+import { createBitcoinPsbt } from '../wallet';
+import { Network } from 'bitcoin-address-validation';
+import { EsploraClient } from '../esplora';
 
 type Optional<T, K extends keyof T> = Omit<T, K> & Partial<T>;
 
@@ -27,13 +27,13 @@ type Optional<T, K extends keyof T> = Omit<T, K> & Partial<T>;
  * Base url for the mainnet Gateway API.
  * @default "https://gateway-api-mainnet.gobob.xyz"
  */
-export const MAINNET_GATEWAY_BASE_URL = "https://gateway-api-mainnet.gobob.xyz";
+export const MAINNET_GATEWAY_BASE_URL = 'https://gateway-api-mainnet.gobob.xyz';
 
 /**
  * Base url for the testnet Gateway API.
  * @default "https://gateway-api-testnet.gobob.xyz"
  */
-export const TESTNET_GATEWAY_BASE_URL = "https://gateway-api-testnet.gobob.xyz";
+export const TESTNET_GATEWAY_BASE_URL = 'https://gateway-api-testnet.gobob.xyz';
 
 /**
  * Gateway REST HTTP API client
@@ -48,18 +48,18 @@ export class GatewayApiClient {
      */
     constructor(chainName: string) {
         switch (chainName) {
-            case "mainnet":
+            case 'mainnet':
             case Chain.BOB:
                 this.chain = Chain.BOB;
                 this.baseUrl = MAINNET_GATEWAY_BASE_URL;
                 break;
-            case "testnet":
+            case 'testnet':
             case Chain.BOB_SEPOLIA:
                 this.chain = Chain.BOB_SEPOLIA;
                 this.baseUrl = TESTNET_GATEWAY_BASE_URL;
                 break;
             default:
-                throw new Error("Invalid chain");
+                throw new Error('Invalid chain');
         }
     }
 
@@ -78,17 +78,14 @@ export class GatewayApiClient {
      * @param params The parameters for the quote.
      */
     async getQuote(
-        params: Optional<
-            GatewayQuoteParams,
-            "amount" | "fromChain" | "fromToken" | "fromUserAddress" | "toUserAddress"
-        >,
+        params: Optional<GatewayQuoteParams, 'amount' | 'fromChain' | 'fromToken' | 'fromUserAddress' | 'toUserAddress'>
     ): Promise<GatewayQuote & GatewayTokensInfo> {
         const isMainnet =
             params.toChain === ChainId.BOB ||
-            (typeof params.toChain === "string" && params.toChain.toLowerCase() === Chain.BOB);
+            (typeof params.toChain === 'string' && params.toChain.toLowerCase() === Chain.BOB);
         const isTestnet =
             params.toChain === ChainId.BOB_SEPOLIA ||
-            (typeof params.toChain === "string" && params.toChain.toLowerCase() === Chain.BOB_SEPOLIA);
+            (typeof params.toChain === 'string' && params.toChain.toLowerCase() === Chain.BOB_SEPOLIA);
 
         const isInvalidNetwork = !isMainnet && !isTestnet;
         const isMismatchMainnet = isMainnet && this.chain !== Chain.BOB;
@@ -96,40 +93,40 @@ export class GatewayApiClient {
 
         // TODO: switch URL if `toChain` is different chain?
         if (isInvalidNetwork || isMismatchMainnet || isMismatchTestnet) {
-            throw new Error("Invalid output chain");
+            throw new Error('Invalid output chain');
         }
 
-        let outputTokenAddress = "";
+        let outputTokenAddress = '';
         let strategyAddress: string | undefined;
 
         const toToken = params.toToken.toLowerCase();
-        if (params.strategyAddress?.startsWith("0x")) {
+        if (params.strategyAddress?.startsWith('0x')) {
             strategyAddress = params.strategyAddress;
         }
 
-        if (toToken.startsWith("0x")) {
+        if (toToken.startsWith('0x')) {
             outputTokenAddress = toToken;
         } else if (isMainnet && this.chain === Chain.BOB && SYMBOL_LOOKUP[ChainId.BOB][toToken]) {
             outputTokenAddress = SYMBOL_LOOKUP[ChainId.BOB][toToken].address;
         } else if (isTestnet && this.chain === Chain.BOB_SEPOLIA && SYMBOL_LOOKUP[ChainId.BOB_SEPOLIA][toToken]) {
             outputTokenAddress = SYMBOL_LOOKUP[ChainId.BOB_SEPOLIA][toToken].address;
         } else {
-            throw new Error("Unknown output token");
+            throw new Error('Unknown output token');
         }
 
-        var url = new URL(`${this.baseUrl}/quote/${outputTokenAddress}`);
+        const url = new URL(`${this.baseUrl}/quote/${outputTokenAddress}`);
         if (strategyAddress) {
-            url.searchParams.append("strategy", `${strategyAddress}`);
+            url.searchParams.append('strategy', `${strategyAddress}`);
         }
         const atomicAmount = params.amount;
         if (atomicAmount) {
-            url.searchParams.append("satoshis", `${atomicAmount}`);
+            url.searchParams.append('satoshis', `${atomicAmount}`);
         }
 
         const response = await fetch(url, {
             headers: {
-                "Content-Type": "application/json",
-                Accept: "application/json",
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
             },
         });
 
@@ -152,10 +149,10 @@ export class GatewayApiClient {
      */
     async startOrder(
         gatewayQuote: GatewayQuote,
-        params: Optional<GatewayQuoteParams, "toToken" | "amount">,
+        params: Optional<GatewayQuoteParams, 'toToken' | 'amount'>
     ): Promise<GatewayStartOrder> {
-        if (!params.toUserAddress.startsWith("0x") || !ethers.isAddress(params.toUserAddress)) {
-            throw new Error("Invalid user address");
+        if (!params.toUserAddress.startsWith('0x') || !ethers.isAddress(params.toUserAddress)) {
+            throw new Error('Invalid user address');
         }
 
         const abiCoder = new AbiCoder();
@@ -166,33 +163,33 @@ export class GatewayApiClient {
             userAddress: params.toUserAddress,
             gatewayExtraData: undefined,
             // TODO: update strategy data
-            strategyExtraData: abiCoder.encode(["uint256"], [0]),
+            strategyExtraData: abiCoder.encode(['uint256'], [0]),
             satoshis: gatewayQuote.satoshis,
         };
 
         const response = await fetch(`${this.baseUrl}/order`, {
-            method: "POST",
+            method: 'POST',
             headers: {
-                "Content-Type": "application/json",
-                Accept: "application/json",
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
             },
             body: JSON.stringify(request),
         });
 
         if (!response.ok) {
-            throw new Error("Failed to create order");
+            throw new Error('Failed to create order');
         }
 
         const data: GatewayCreateOrderResponse = await response.json();
         // NOTE: could remove this check but good for sanity
         if (data.opReturnHash != calculateOpReturnHash(request)) {
-            throw new Error("Invalid OP_RETURN hash");
+            throw new Error('Invalid OP_RETURN hash');
         }
 
         let psbtBase64: string;
         if (
             params.fromUserAddress &&
-            typeof params.fromChain === "string" &&
+            typeof params.fromChain === 'string' &&
             params.fromChain.toLowerCase() === Chain.BITCOIN
         ) {
             psbtBase64 = await createBitcoinPsbt(
@@ -201,7 +198,7 @@ export class GatewayApiClient {
                 gatewayQuote.satoshis,
                 params.fromUserPublicKey,
                 data.opReturnHash,
-                gatewayQuote.txProofDifficultyFactor,
+                gatewayQuote.txProofDifficultyFactor
             );
         }
 
@@ -235,16 +232,16 @@ export class GatewayApiClient {
         }
 
         const response = await fetch(`${this.baseUrl}/order/${uuid}`, {
-            method: "PATCH",
+            method: 'PATCH',
             headers: {
-                "Content-Type": "application/json",
-                Accept: "application/json",
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
             },
             body: JSON.stringify({ bitcoinTx: bitcoinTxHex }),
         });
 
         if (!response.ok) {
-            throw new Error("Failed to update order");
+            throw new Error('Failed to update order');
         }
 
         return await response.json();
@@ -268,19 +265,19 @@ export class GatewayApiClient {
                             : base // failed
                         : base // success
                     : order.strategyAddress // pending
-                        ? output
-                        : base;
+                      ? output
+                      : base;
             }
             const getTokenAddress = (): string | undefined => {
                 return getFinal(order.baseTokenAddress, order.outputTokenAddress);
-            }
+            };
             const getConfirmations = async (esploraClient: EsploraClient, latestHeight?: number) => {
                 const txStatus = await esploraClient.getTransactionStatus(order.txid);
                 if (!latestHeight) {
                     latestHeight = await esploraClient.getLatestHeight();
                 }
                 return txStatus.confirmed ? latestHeight - txStatus.block_height! + 1 : 0;
-            }
+            };
             return {
                 gasRefill: order.satsToConvertToEth,
                 ...order,
@@ -302,12 +299,12 @@ export class GatewayApiClient {
                     return !hasEnoughConfirmations
                         ? { confirmed: false, data }
                         : order.status
-                            ? order.strategyAddress
-                                ? order.outputTokenAddress
-                                    ? { success: true, data }
-                                    : { success: false, data }
-                                : { success: true, data }
-                            : { pending: true, data };
+                          ? order.strategyAddress
+                              ? order.outputTokenAddress
+                                  ? { success: true, data }
+                                  : { success: false, data }
+                              : { success: true, data }
+                          : { pending: true, data };
                 },
             };
         });
@@ -331,16 +328,16 @@ export class GatewayApiClient {
             const outputToken = strategy.outputTokenAddress ? ADDRESS_LOOKUP[strategy.outputTokenAddress] : undefined;
             return {
                 id: strategySlug,
-                type: "deposit",
+                type: 'deposit',
                 address: strategy.strategyAddress,
-                method: "",
+                method: '',
                 chain: {
-                    id: "", // TODO
+                    id: '', // TODO
                     chainId: chainId,
                     slug: chainName,
                     name: chainName,
-                    logo: "", // TODO
-                    type: "evm",
+                    logo: '', // TODO
+                    type: 'evm',
                     singleChainSwap: true,
                     singleChainStaking: true,
                 },
@@ -348,7 +345,7 @@ export class GatewayApiClient {
                     type: strategy.strategyType,
                     slug: strategySlug,
                     name: strategy.strategyName,
-                    logo: strategy.projectLogo || outputToken?.logoURI || "",
+                    logo: strategy.projectLogo || outputToken?.logoURI || '',
                     monetization: false,
                 },
                 inputToken: {
@@ -360,12 +357,12 @@ export class GatewayApiClient {
                 },
                 outputToken: outputToken
                     ? {
-                        symbol: outputToken.symbol,
-                        address: outputToken.address,
-                        logo: outputToken.logoURI,
-                        decimals: outputToken.decimals,
-                        chain: chainName,
-                    }
+                          symbol: outputToken.symbol,
+                          address: outputToken.address,
+                          logo: outputToken.logoURI,
+                          decimals: outputToken.decimals,
+                          chain: chainName,
+                      }
                     : null,
             };
         });
@@ -396,10 +393,10 @@ export class GatewayApiClient {
 
     private async fetchGet(url: string) {
         return await fetch(url, {
-            method: "GET",
+            method: 'GET',
             headers: {
-                "Content-Type": "application/json",
-                Accept: "application/json",
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
             },
         });
     }
@@ -413,21 +410,21 @@ function calculateOpReturnHash(req: GatewayCreateOrderRequest) {
     const abiCoder = new AbiCoder();
     return ethers.keccak256(
         abiCoder.encode(
-            ["address", "address", "uint256", "address", "bytes", "bytes"],
+            ['address', 'address', 'uint256', 'address', 'bytes', 'bytes'],
             [
                 req.gatewayAddress,
                 req.strategyAddress || ethers.ZeroAddress,
                 req.satsToConvertToEth,
                 req.userAddress,
-                req.gatewayExtraData || "0x",
-                req.strategyExtraData || "0x",
-            ],
-        ),
+                req.gatewayExtraData || '0x',
+                req.strategyExtraData || '0x',
+            ]
+        )
     );
 }
 
 function isHexPrefixed(str: string): boolean {
-    return str.slice(0, 2) === "0x";
+    return str.slice(0, 2) === '0x';
 }
 
 function stripHexPrefix(str: string): string {
@@ -437,6 +434,6 @@ function stripHexPrefix(str: string): string {
 function slugify(str: string): string {
     return str
         .toLowerCase()
-        .replace(/ /g, "-")
-        .replace(/[^\w-]+/g, "");
+        .replace(/ /g, '-')
+        .replace(/[^\w-]+/g, '');
 }

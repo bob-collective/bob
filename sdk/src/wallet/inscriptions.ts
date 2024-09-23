@@ -1,12 +1,12 @@
-import { EsploraClient, UTXO } from "../esplora";
-import { getTxInscriptions } from "../inscription";
-import { OrdinalsClient, InscriptionId } from "../ordinal-api";
+import { EsploraClient, UTXO } from '../esplora';
+import { getTxInscriptions } from '../inscription';
+import { OrdinalsClient, InscriptionId } from '../ordinal-api';
 
 export async function findUtxoForInscriptionId(
     esploraClient: EsploraClient,
     ordinalsClient: OrdinalsClient,
     utxos: UTXO[],
-    inscriptionId: string,
+    inscriptionId: string
 ): Promise<UTXO | undefined> {
     // TODO: can we get the current UTXO of the inscription from ord?
     // we can use the satpoint for this
@@ -21,7 +21,7 @@ export async function findUtxoForInscriptionId(
         } else if (txid == utxo.txid) {
             const inscriptions = await getTxInscriptions(esploraClient, utxo.txid);
 
-            if (typeof inscriptions[index] !== "undefined") {
+            if (typeof inscriptions[index] !== 'undefined') {
                 return utxo;
             }
         }
