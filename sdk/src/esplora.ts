@@ -333,7 +333,11 @@ export class EsploraClient {
      */
     async getFeeEstimate(confirmationTarget: number): Promise<number> {
         const response = await this.getJson<Record<number, number>>(`${this.basePath}/fee-estimates`);
-        return response[confirmationTarget];
+        if (response[confirmationTarget]) return response[confirmationTarget];
+        const TARGET_MAX = 1008;
+        for (let target = confirmationTarget + 1; target <= TARGET_MAX; target++) {
+            if (response[target]) return response[target];
+        }
     }
 
     /**
