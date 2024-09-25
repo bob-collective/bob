@@ -5,4 +5,3 @@ export * from './ordinals';
 export * from './helpers';
 export * from './wallet';
 export * from './gateway';
-export * from './hooks';
