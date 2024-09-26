@@ -67,9 +67,9 @@ const config = {
     ({
       codeblock: {
         showGithubLink: true,
-        githubLinkLabel: 'View on GitHub',
+        githubLinkLabel: "View on GitHub",
         showRunmeLink: false,
-        runmeLinkLabel: 'Checkout via Runme'
+        runmeLinkLabel: "Checkout via Runme",
       },
 
       image: "img/bob-social-card.png",
@@ -191,14 +191,14 @@ const config = {
         disableSwitch: true,
         respectPrefersColorScheme: false,
       },
-      announcementBar: {
-        id: "sign_up",
-        content:
-          'Missing something? Want to know more? <a target="_blank" rel="noopener noreferrer" href="https://forms.gle/etYqChR3aahUFuEZ9">Provide feedback</a>.',
-        backgroundColor: "#f58b00",
-        textColor: "#fff",
-        isCloseable: true,
-      },
+      // announcementBar: {
+      //   id: "sign_up",
+      //   content:
+      //     'Missing something? Want to know more? <a target="_blank" rel="noopener noreferrer" href="https://forms.gle/etYqChR3aahUFuEZ9">Provide feedback</a>.',
+      //   backgroundColor: "#f58b00",
+      //   textColor: "#fff",
+      //   isCloseable: true,
+      // },
     }),
 
   markdown: {
@@ -217,7 +217,7 @@ const config = {
         language: ["en"],
       },
     ],
-    'docusaurus-theme-github-codeblock',
+    "docusaurus-theme-github-codeblock",
   ],
   scripts: [
     {
