@@ -25,7 +25,7 @@ Check out our guide to see how you can [integrate BOB Gateway into your dapp](..
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/xExdId-s4xA?playlist=xExdId-s4xA" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
-## Step-by-step Guide
+## Step-by-Step Guide
 
 1. Open the [BOB Gateway website](https://bob-fusion-git-feat-external-bridges-interlay.vercel.app/bridge?type=deposit).
 
