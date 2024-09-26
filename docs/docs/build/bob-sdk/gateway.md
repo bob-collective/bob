@@ -23,10 +23,6 @@ This SDK makes it possible to do steps 2, 3, and 4 in your application's front e
 
 This is an example implementation of our SDK. You will need to decide how you handle asking your user to sign a partially-signed Bitcoin transaction (PSBT). We recommend using our [sats-wagmi](./sats-wagmi.md) package to connect to your users' wallets.
 
-:::warning Staking only on testnet
-BOB Gateway's newest functionality (i.e. staking for LSTs) is only available on testnet. We will update this page once mainnet is upgraded.
-:::
-
 ### Install the BOB SDK
 
 Add `@gobob/bob-sdk` to your project using your preferred package manager.
@@ -82,7 +78,9 @@ The SDK will handle automatically when the `toToken` has a fungible ERC20 token,
 
 ```ts
 const strategies = await gatewaySDK.getStrategies();
-const strategy = strategies.find(contract => contract.integration.name === "pell-wbtc")!;
+const strategy = strategies.find(
+  (contract) => contract.integration.name === "pell-wbtc"
+)!;
 const quoteParamsStaking: GatewayQuoteParams = {
   ...quoteParams,
   toChain: strategy.chain.chainId,
@@ -124,8 +122,14 @@ Please refer to the [OKX docs](https://www.okx.com/web3/build/docs/sdks/chains/b
 In this example, instead of signing the `psbtBase64` we instead use the in-built wallet methods to directly send the BTC.
 
 ```ts
-const { uuid, bitcoinAddress, satoshis, opReturnHash } = await gatewaySDK.startOrder(quote, quoteParams);
-const { txhash } = await window.okxwallet.bitcoin.send({ from: quoteParams.fromUserAddress, to: bitcoinAddress, value: satoshis.toString(), memo: opReturnHash })
+const { uuid, bitcoinAddress, satoshis, opReturnHash } =
+  await gatewaySDK.startOrder(quote, quoteParams);
+const { txhash } = await window.okxwallet.bitcoin.send({
+  from: quoteParams.fromUserAddress,
+  to: bitcoinAddress,
+  value: satoshis.toString(),
+  memo: opReturnHash,
+});
 await gatewaySDK.finalizeOrder(uuid, txhash);
 ```
 
