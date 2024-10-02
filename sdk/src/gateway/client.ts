@@ -63,6 +63,10 @@ export class GatewayApiClient {
         }
     }
 
+    private get chainId(): ChainId {
+        return this.chain === Chain.BOB ? ChainId.BOB : ChainId.BOB_SEPOLIA;
+    }
+
     /**
      * Returns all chains supported by the SDK.
      *
@@ -104,12 +108,13 @@ export class GatewayApiClient {
             strategyAddress = params.strategyAddress;
         }
 
+        const chainId = this.chainId;
         if (toToken.startsWith('0x')) {
             outputTokenAddress = toToken;
-        } else if (isMainnet && this.chain === Chain.BOB && SYMBOL_LOOKUP[ChainId.BOB][toToken]) {
-            outputTokenAddress = SYMBOL_LOOKUP[ChainId.BOB][toToken].address;
-        } else if (isTestnet && this.chain === Chain.BOB_SEPOLIA && SYMBOL_LOOKUP[ChainId.BOB_SEPOLIA][toToken]) {
-            outputTokenAddress = SYMBOL_LOOKUP[ChainId.BOB_SEPOLIA][toToken].address;
+        } else if (isMainnet && SYMBOL_LOOKUP[chainId][toToken]) {
+            outputTokenAddress = SYMBOL_LOOKUP[chainId][toToken].address;
+        } else if (isTestnet && SYMBOL_LOOKUP[chainId][toToken]) {
+            outputTokenAddress = SYMBOL_LOOKUP[chainId][toToken].address;
         } else {
             throw new Error('Unknown output token');
         }
@@ -134,8 +139,8 @@ export class GatewayApiClient {
         return {
             ...quote,
             fee: quote.fee + (params.gasRefill || 0),
-            baseToken: ADDRESS_LOOKUP[quote.baseTokenAddress],
-            outputToken: quote.strategyAddress ? ADDRESS_LOOKUP[outputTokenAddress] : undefined,
+            baseToken: ADDRESS_LOOKUP[chainId][quote.baseTokenAddress],
+            outputToken: quote.strategyAddress ? ADDRESS_LOOKUP[chainId][outputTokenAddress] : undefined,
         };
     }
 
@@ -254,6 +259,7 @@ export class GatewayApiClient {
      * @returns {Promise<GatewayOrder[]>} The array of account orders.
      */
     async getOrders(userAddress: EvmAddress): Promise<(GatewayOrder & GatewayTokensInfo)[]> {
+        const chainId = this.chainId;
         const response = await this.fetchGet(`${this.baseUrl}/orders/${userAddress}`);
         const orders: GatewayOrderResponse[] = await response.json();
         return orders.map((order) => {
@@ -271,6 +277,9 @@ export class GatewayApiClient {
             const getTokenAddress = (): string | undefined => {
                 return getFinal(order.baseTokenAddress, order.outputTokenAddress);
             };
+            const getToken = (): Token | undefined => {
+                return ADDRESS_LOOKUP[chainId][getTokenAddress()];
+            };
             const getConfirmations = async (esploraClient: EsploraClient, latestHeight?: number) => {
                 const txStatus = await esploraClient.getTransactionStatus(order.txid);
                 if (!latestHeight) {
@@ -281,15 +290,17 @@ export class GatewayApiClient {
             return {
                 gasRefill: order.satsToConvertToEth,
                 ...order,
-                baseToken: ADDRESS_LOOKUP[order.baseTokenAddress],
-                outputToken: ADDRESS_LOOKUP[order.outputTokenAddress],
+                baseToken: ADDRESS_LOOKUP[chainId][order.baseTokenAddress],
+                outputToken: ADDRESS_LOOKUP[chainId][order.outputTokenAddress],
                 getTokenAddress,
-                getToken() {
-                    return ADDRESS_LOOKUP[getTokenAddress()];
-                },
-                getAmount(): string | number | undefined {
-                    const baseAmount = order.satoshis - order.fee;
-                    return getFinal(baseAmount, order.outputTokenAmount);
+                getToken,
+                getTokenAmount() {
+                    let amount = order.satoshis - order.fee;
+                    const token = getToken();
+                    if (token && !order.outputTokenAmount) {
+                        amount *= Math.pow(10, token.decimals - 8);
+                    }
+                    return getFinal(amount, order.outputTokenAmount);
                 },
                 getConfirmations,
                 async getStatus(esploraClient: EsploraClient, latestHeight?: number): Promise<OrderStatus> {
@@ -318,14 +329,16 @@ export class GatewayApiClient {
     async getStrategies(): Promise<GatewayStrategyContract[]> {
         const response = await this.fetchGet(`${this.baseUrl}/strategies`);
 
-        const chainName = (this.chain === Chain.BOB ? Chain.BOB : Chain.BOB_SEPOLIA).toString();
-        const chainId = this.chain === Chain.BOB ? ChainId.BOB : ChainId.BOB_SEPOLIA;
+        const chainName = this.chain.toString();
+        const chainId = this.chainId;
 
         const strategies: GatewayStrategy[] = await response.json();
         return strategies.map((strategy) => {
             const strategySlug = slugify(strategy.strategyName);
-            const inputToken = ADDRESS_LOOKUP[strategy.inputTokenAddress];
-            const outputToken = strategy.outputTokenAddress ? ADDRESS_LOOKUP[strategy.outputTokenAddress] : undefined;
+            const inputToken = ADDRESS_LOOKUP[chainId][strategy.inputTokenAddress];
+            const outputToken = strategy.outputTokenAddress
+                ? ADDRESS_LOOKUP[chainId][strategy.outputTokenAddress]
+                : undefined;
             return {
                 id: strategySlug,
                 type: 'deposit',
@@ -388,7 +401,7 @@ export class GatewayApiClient {
     async getTokens(includeStrategies: boolean = true): Promise<Token[]> {
         // https://github.com/ethereum-optimism/ecosystem/blob/c6faa01455f9e846f31c0343a0be4c03cbeb2a6d/packages/op-app/src/hooks/useOPTokens.ts#L10
         const tokens = await this.getTokenAddresses(includeStrategies);
-        return tokens.map((token) => ADDRESS_LOOKUP[token]).filter((token) => token !== undefined);
+        return tokens.map((token) => ADDRESS_LOOKUP[this.chainId][token]).filter((token) => token !== undefined);
     }
 
     private async fetchGet(url: string) {
