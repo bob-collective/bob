@@ -197,14 +197,16 @@ export class GatewayApiClient {
             typeof params.fromChain === 'string' &&
             params.fromChain.toLowerCase() === Chain.BITCOIN
         ) {
-            psbtBase64 = await createBitcoinPsbt(
-                params.fromUserAddress,
-                gatewayQuote.bitcoinAddress,
-                gatewayQuote.satoshis,
-                params.fromUserPublicKey,
-                data.opReturnHash,
-                gatewayQuote.txProofDifficultyFactor
-            );
+            psbtBase64 = await createBitcoinPsbt({
+                fromAddress: params.fromUserAddress,
+                toAddress: gatewayQuote.bitcoinAddress,
+                amount: gatewayQuote.satoshis,
+                publicKey: params.fromUserPublicKey,
+                opReturnData: data.opReturnHash,
+                confirmationTarget: gatewayQuote.txProofDifficultyFactor,
+                feeRecipient: params.feeRecipient,
+                feeAmount: calculateFeeAmount(gatewayQuote.satoshis, params.fee),
+            });
         }
 
         return {
@@ -449,4 +451,14 @@ function slugify(str: string): string {
         .toLowerCase()
         .replace(/ /g, '-')
         .replace(/[^\w-]+/g, '');
+}
+
+function calculateFeeAmount(amount: number, fee?: number) {
+    if (typeof fee === 'undefined' || fee < 1 || fee > 1000) {
+        fee = 0;
+    }
+
+    const feeDecimal = fee / 10000;
+    const feeAmount = amount * feeDecimal;
+    return feeAmount;
 }
