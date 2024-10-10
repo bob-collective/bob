@@ -20,6 +20,7 @@ import { SYMBOL_LOOKUP, ADDRESS_LOOKUP } from './tokens';
 import { createBitcoinPsbt } from '../wallet';
 import { Network } from 'bitcoin-address-validation';
 import { EsploraClient } from '../esplora';
+import { stripHexPrefix } from '../utils';
 
 type Optional<T, K extends keyof T> = Omit<T, K> & Partial<T>;
 
@@ -436,14 +437,6 @@ function calculateOpReturnHash(req: GatewayCreateOrderRequest) {
             ]
         )
     );
-}
-
-function isHexPrefixed(str: string): boolean {
-    return str.slice(0, 2) === '0x';
-}
-
-function stripHexPrefix(str: string): string {
-    return isHexPrefixed(str) ? str.slice(2) : str;
 }
 
 function slugify(str: string): string {

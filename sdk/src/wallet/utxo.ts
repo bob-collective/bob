@@ -2,6 +2,7 @@ import { Transaction, Script, selectUTXO, TEST_NETWORK, NETWORK, p2wpkh, p2sh } 
 import { hex, base64 } from '@scure/base';
 import { AddressType, getAddressInfo, Network } from 'bitcoin-address-validation';
 import { EsploraClient, UTXO } from '../esplora';
+import { stripHexPrefix } from '../utils';
 
 const DUST_LIMIT = 546;
 
@@ -55,7 +56,7 @@ export async function createBitcoinPsbt(params: {
     feeRecipient?: string;
     feeAmount?: number;
 }): Promise<string> {
-    let {
+    const {
         fromAddress,
         toAddress,
         amount,
@@ -117,13 +118,9 @@ export async function createBitcoinPsbt(params: {
     }
 
     if (opReturnData) {
-        // Strip 0x prefix from opReturn
-        if (opReturnData.startsWith('0x')) {
-            opReturnData = opReturnData.slice(2);
-        }
         outputs.push({
             // OP_RETURN https://github.com/paulmillr/scure-btc-signer/issues/26
-            script: Script.encode(['RETURN', hex.decode(opReturnData)]),
+            script: Script.encode(['RETURN', hex.decode(stripHexPrefix(opReturnData))]),
             amount: BigInt(0),
         });
     }
