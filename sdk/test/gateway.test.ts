@@ -287,17 +287,36 @@ describe('Gateway Tests', () => {
                     fee: 0,
                     status: true,
                 },
+                // staking - failed (wBTC)
+                {
+                    ...mockOrder,
+                    baseTokenAddress: SYMBOL_LOOKUP[ChainId.BOB]['wbtc'],
+                    satoshis: 1000,
+                    fee: 0,
+                    status: true,
+                    strategyAddress: ZeroAddress,
+                },
+                // swapping - success (wBTC)
+                {
+                    ...mockOrder,
+                    baseTokenAddress: SYMBOL_LOOKUP[ChainId.BOB]['wbtc'],
+                    satoshis: 1000,
+                    fee: 0,
+                    status: true,
+                },
             ]);
 
         const gatewaySDK = new GatewaySDK('bob');
         const orders = await gatewaySDK.getOrders(ZeroAddress);
-        assert.lengthOf(orders, 5);
+        assert.lengthOf(orders, 7);
 
-        assert.strictEqual(orders[0].getAmount(), '2000');
-        assert.strictEqual(orders[1].getAmount(), undefined);
-        assert.strictEqual(orders[2].getAmount(), 1000);
-        assert.strictEqual(orders[3].getAmount(), 1000);
-        assert.strictEqual(orders[4].getAmount(), 1000);
+        assert.strictEqual(orders[0].getTokenAmount(), '2000'); // success (staking)
+        assert.strictEqual(orders[1].getTokenAmount(), undefined); // pending (staking)
+        assert.strictEqual(orders[2].getTokenAmount(), 10000000000000); // failed (staking)
+        assert.strictEqual(orders[3].getTokenAmount(), 10000000000000); // pending (swapping)
+        assert.strictEqual(orders[4].getTokenAmount(), 10000000000000); // success (swapping)
+        assert.strictEqual(orders[5].getTokenAmount(), 1000); // failed (staking)
+        assert.strictEqual(orders[6].getTokenAmount(), 1000); // success (swapping)
 
         assert.strictEqual(orders[0].getToken()!.address, SOLVBTC_ADDRESS);
         assert.strictEqual(orders[1].getToken(), undefined);

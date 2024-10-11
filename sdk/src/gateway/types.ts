@@ -200,6 +200,7 @@ export interface GatewayOrderResponse {
     status: boolean;
     /** @description When the order was created */
     timestamp: number;
+    // TODO: return converted fee
     /** @description The converted satoshi amount */
     tokens: string;
     /** @description The satoshi output amount */
@@ -259,7 +260,7 @@ export type GatewayOrder = Omit<
     /** @description Get the actual token received */
     getToken(): Token | undefined;
     /** @description Get the actual amount received of the token */
-    getAmount(): string | number | undefined;
+    getTokenAmount(): string | number | undefined;
     /** @description Get the number of confirmations */
     getConfirmations(esploraClient: EsploraClient, latestHeight?: number): Promise<number>;
     /** @description Get the actual order status */
