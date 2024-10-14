@@ -50,9 +50,11 @@ export async function createBitcoinPsbt(
     publicKey?: string,
     opReturnData?: string,
     confirmationTarget: number = 3,
-    utxoSelectionStrategy: SelectionStrategy = 'default'
 ): Promise<string> {
     const addressInfo = getAddressInfo(fromAddress);
+
+    // TODO: possibly, allow other strategies to be passed to this function
+    const utxoSelectionStrategy: SelectionStrategy = 'default';
 
     if (addressInfo.network === 'regtest') {
         throw new Error('Bitcoin regtest not supported');
@@ -130,6 +132,8 @@ export async function createBitcoinPsbt(
     });
 
     if (!transaction || !transaction.tx) {
+        console.debug(`fromAddress: ${fromAddress}, toAddress: ${toAddress}, amount: ${amount}`);
+        console.debug(`publicKey: ${publicKey}, opReturnData: ${opReturnData}`);
         throw new Error('Failed to create transaction. Do you have enough funds?');
     }
 
@@ -209,7 +213,6 @@ export async function estimateTxFee(
     publicKey?: string,
     opReturnData?: string,
     confirmationTarget: number = 3,
-    utxoSelectionStrategy: SelectionStrategy = 'default'
 ): Promise<bigint> {
     const addressInfo = getAddressInfo(fromAddress);
 
@@ -228,6 +231,7 @@ export async function estimateTxFee(
     const toAddress = fromAddress;
 
     // TODO: allow submitting the UTXOs, fee estimate and confirmed transactions
+    // to avoid fetching them again.
     const esploraClient = new EsploraClient(addressInfo.network);
 
     const [confirmedUtxos, feeRate] = await Promise.all([
@@ -278,13 +282,14 @@ export async function estimateTxFee(
     }
 
     let outputs: Output[] = [];
-    if (amount === undefined) {
-        // Select all UTXOs if no amount is specified
-        // Add outputs to the transaction after all UTXOs are selected to prevent tx creation failures
-        utxoSelectionStrategy = 'all';
-    } else {
+    // Select all UTXOs if no amount is specified
+    // Add outputs to the transaction after all UTXOs are selected to prevent tx creation failures
+    let utxoSelectionStrategy: SelectionStrategy = 'all';
+    if (amount) {
         // Add the target outputs to the transaction
         // Tx creation might fail if the requested amount is more than the available balance plus fees
+        // TODO: allow passing other UTXO selection strategies for fee etimates
+        utxoSelectionStrategy = 'default';
         outputs = targetOutputs;
     }
 
