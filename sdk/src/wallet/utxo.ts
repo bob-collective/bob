@@ -40,8 +40,22 @@ export interface Input {
  * @param publicKey Optional public key needed if using P2SH-P2WPKH.
  * @param opReturnData Optional OP_RETURN data to include in an output.
  * @param confirmationTarget The number of blocks to include this tx (for fee estimation).
- * @param utxoSelectionStrategy The strategy to use for selecting UTXOs. See https://github.com/paulmillr/scure-btc-signer/tree/main#utxo-selection for options.
  * @returns {Promise<string>} The Base64 encoded PSBT.
+ * 
+ * @example
+ * ```typescript
+ * const fromAddress = 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq';
+ * const toAddress = 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq';
+ * const amount = 100000;
+ * const publicKey = '02d4...`; // only for P2SH
+ * const opReturnData = 'Hello, World!'; // optional
+ * const confirmationTarget = 3; // optional
+ * 
+ * const psbt = await createBitcoinPsbt(fromAddress, toAddress, amount, publicKey, opReturnData, confirmationTarget);
+ * console.log(psbt);
+ * 
+ * // The PSBT can then be signed with the private key using sats-wagmi, sats-connect, ...
+ * ```
  */
 export async function createBitcoinPsbt(
     fromAddress: string,
@@ -201,8 +215,29 @@ export function getInputFromUtxoAndTx(
  * @param publicKey Optional public key needed if using P2SH-P2WPKH.
  * @param opReturnData Optional OP_RETURN data to include in an output.
  * @param confirmationTarget The number of blocks to include this tx (for fee estimation).
- * @param utxoSelectionStrategy The strategy to use for selecting UTXOs. See https://github.com/paulmillr/scure-btc-signer/tree/main#utxo-selection for options.
  * @returns {Promise<bigint>} The fee amount for estiamted transaction inclusion in satoshis.
+ * 
+ * @example
+ * ```typescript
+ * // Using a target amount (call might fail if amount is larger than balance plus fees)
+ * const fromAddress = 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq';
+ * const amount = 100000;
+ * const publicKey = '02d4...`; // only for P2SH
+ * const opReturnData = 'Hello, World!'; // optional
+ * const confirmationTarget = 3; // optional
+ * 
+ * const fee = await estimateTxFee(fromAddress, amount, publicKey, opReturnData, confirmationTarget);
+ * console.log(fee);
+ * 
+ * // Using all UTXOs without a target amount (max fee for spending all UTXOs)
+ * const fromAddress = 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq';
+ * const publicKey = '02d4...`; // only for P2SH
+ * const opReturnData = 'Hello, World!'; // optional
+ * const confirmationTarget = 3; // optional
+ * 
+ * const fee = await estimateTxFee(fromAddress, undefined, publicKey, opReturnData, confirmationTarget);
+ * console.log(fee);
+ * ```
  *
  * @dev Wtih no amount set, we estimate the fee for all UTXOs by trying to spend all inputs using strategy 'all'. If an amount is set, we use the 'default
  * strategy to select the UTXOs.
