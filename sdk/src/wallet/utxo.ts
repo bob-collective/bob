@@ -41,7 +41,7 @@ export interface Input {
  * @param opReturnData Optional OP_RETURN data to include in an output.
  * @param confirmationTarget The number of blocks to include this tx (for fee estimation).
  * @returns {Promise<string>} The Base64 encoded PSBT.
- * 
+ *
  * @example
  * ```typescript
  * const fromAddress = 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq';
@@ -50,10 +50,10 @@ export interface Input {
  * const publicKey = '02d4...`; // only for P2SH
  * const opReturnData = 'Hello, World!'; // optional
  * const confirmationTarget = 3; // optional
- * 
+ *
  * const psbt = await createBitcoinPsbt(fromAddress, toAddress, amount, publicKey, opReturnData, confirmationTarget);
  * console.log(psbt);
- * 
+ *
  * // The PSBT can then be signed with the private key using sats-wagmi, sats-connect, ...
  * ```
  */
@@ -63,7 +63,7 @@ export async function createBitcoinPsbt(
     amount: number,
     publicKey?: string,
     opReturnData?: string,
-    confirmationTarget: number = 3,
+    confirmationTarget: number = 3
 ): Promise<string> {
     const addressInfo = getAddressInfo(fromAddress);
 
@@ -216,7 +216,7 @@ export function getInputFromUtxoAndTx(
  * @param opReturnData Optional OP_RETURN data to include in an output.
  * @param confirmationTarget The number of blocks to include this tx (for fee estimation).
  * @returns {Promise<bigint>} The fee amount for estiamted transaction inclusion in satoshis.
- * 
+ *
  * @example
  * ```typescript
  * // Using a target amount (call might fail if amount is larger than balance plus fees)
@@ -225,16 +225,16 @@ export function getInputFromUtxoAndTx(
  * const publicKey = '02d4...`; // only for P2SH
  * const opReturnData = 'Hello, World!'; // optional
  * const confirmationTarget = 3; // optional
- * 
+ *
  * const fee = await estimateTxFee(fromAddress, amount, publicKey, opReturnData, confirmationTarget);
  * console.log(fee);
- * 
+ *
  * // Using all UTXOs without a target amount (max fee for spending all UTXOs)
  * const fromAddress = 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq';
  * const publicKey = '02d4...`; // only for P2SH
  * const opReturnData = 'Hello, World!'; // optional
  * const confirmationTarget = 3; // optional
- * 
+ *
  * const fee = await estimateTxFee(fromAddress, undefined, publicKey, opReturnData, confirmationTarget);
  * console.log(fee);
  * ```
@@ -247,7 +247,7 @@ export async function estimateTxFee(
     amount?: number,
     publicKey?: string,
     opReturnData?: string,
-    confirmationTarget: number = 3,
+    confirmationTarget: number = 3
 ): Promise<bigint> {
     const addressInfo = getAddressInfo(fromAddress);
 

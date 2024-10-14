@@ -15,7 +15,7 @@ describe('UTXO Tests', () => {
             'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq',
             // P2SH-P2WPKH: https://blockstream.info/address/3DFVKuT9Ft4rWpysAZ1bHpg55EBy1HVPcr
             // TODO: Use a real P2SH-P2WPKH address
-            // TODO: Add the pubkey to allow spending from the outputs 
+            // TODO: Add the pubkey to allow spending from the outputs
             // '3DFVKuT9Ft4rWpysAZ1bHpg55EBy1HVPcr',
             // P2PKH: https://blockstream.info/address/1Kr6QSydW9bFQG1mXiPNNu6WpJGmUa9i1g
             '1Kr6QSydW9bFQG1mXiPNNu6WpJGmUa9i1g',
