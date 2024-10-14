@@ -2,6 +2,7 @@ import { Transaction, Script, selectUTXO, TEST_NETWORK, NETWORK, p2wpkh, p2sh } 
 import { hex, base64 } from '@scure/base';
 import { AddressType, getAddressInfo, Network } from 'bitcoin-address-validation';
 import { EsploraClient, UTXO } from '../esplora';
+import { SelectionStrategy } from '@scure/btc-signer/lib/utxo';
 
 export type BitcoinNetworkName = Exclude<Network, 'regtest'>;
 
@@ -49,7 +50,7 @@ export async function createBitcoinPsbt(
     publicKey?: string,
     opReturnData?: string,
     confirmationTarget: number = 3,
-    utxoSelectionStrategy: string = 'default'
+    utxoSelectionStrategy: SelectionStrategy = 'default'
 ): Promise<string> {
     const addressInfo = getAddressInfo(fromAddress);
 
@@ -82,7 +83,13 @@ export async function createBitcoinPsbt(
         confirmedUtxos.map(async (utxo) => {
             const hex = await esploraClient.getTransactionHex(utxo.txid);
             const transaction = Transaction.fromRaw(Buffer.from(hex, 'hex'), { allowUnknownOutputs: true });
-            const input = getInputFromUtxoAndTx(addressInfo.network, utxo, transaction, addressInfo.type, publicKey);
+            const input = getInputFromUtxoAndTx(
+                addressInfo.network as BitcoinNetworkName,
+                utxo,
+                transaction,
+                addressInfo.type,
+                publicKey
+            );
             possibleInputs.push(input);
         })
     );
@@ -182,7 +189,6 @@ export function getInputFromUtxoAndTx(
     return input;
 }
 
-
 /**
  * Estimate the tx inclusion fee for a given address or public key with an optional OP_RETURN output.
  *
@@ -192,8 +198,8 @@ export function getInputFromUtxoAndTx(
  * @param opReturnData Optional OP_RETURN data to include in an output.
  * @param confirmationTarget The number of blocks to include this tx (for fee estimation).
  * @param utxoSelectionStrategy The strategy to use for selecting UTXOs. See https://github.com/paulmillr/scure-btc-signer/tree/main#utxo-selection for options.
- * @returns {Promise<number>} The fee amount for estiamted transaction inclusion in satoshis.
- * 
+ * @returns {Promise<bigint>} The fee amount for estiamted transaction inclusion in satoshis.
+ *
  * @dev Wtih no amount set, we estimate the fee for all UTXOs by trying to spend all inputs using strategy 'all'. If an amount is set, we use the 'default
  * strategy to select the UTXOs.
  */
@@ -203,8 +209,8 @@ export async function estimateTxFee(
     publicKey?: string,
     opReturnData?: string,
     confirmationTarget: number = 3,
-    utxoSelectionStrategy: string = 'default'
-): Promise<number> {
+    utxoSelectionStrategy: SelectionStrategy = 'default'
+): Promise<bigint> {
     const addressInfo = getAddressInfo(fromAddress);
 
     if (addressInfo.network === 'regtest') {
@@ -240,7 +246,13 @@ export async function estimateTxFee(
         confirmedUtxos.map(async (utxo) => {
             const hex = await esploraClient.getTransactionHex(utxo.txid);
             const transaction = Transaction.fromRaw(Buffer.from(hex, 'hex'), { allowUnknownOutputs: true });
-            const input = getInputFromUtxoAndTx(addressInfo.network, utxo, transaction, addressInfo.type, publicKey);
+            const input = getInputFromUtxoAndTx(
+                addressInfo.network as BitcoinNetworkName,
+                utxo,
+                transaction,
+                addressInfo.type,
+                publicKey
+            );
             possibleInputs.push(input);
         })
     );
@@ -249,7 +261,7 @@ export async function estimateTxFee(
     const targetOutputs: Output[] = [
         {
             address: toAddress,
-            amount: BigInt(amount? amount : 0),
+            amount: BigInt(amount ? amount : 0),
         },
     ];
 
@@ -291,7 +303,7 @@ export async function estimateTxFee(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         dust: BigInt(546) as any, // TODO: update scure-btc-signer
     });
-    
+
     // Add the target outputs after the fact
     if (amount === undefined) {
         transaction.tx.addOutput(targetOutputs[0]);
