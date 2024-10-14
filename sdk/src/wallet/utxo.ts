@@ -39,6 +39,7 @@ export interface Input {
  * @param publicKey Optional public key needed if using P2SH-P2WPKH.
  * @param opReturnData Optional OP_RETURN data to include in an output.
  * @param confirmationTarget The number of blocks to include this tx (for fee estimation).
+ * @param utxoSelectionStrategy The strategy to use for selecting UTXOs. See https://github.com/paulmillr/scure-btc-signer/tree/main#utxo-selection for options.
  * @returns {Promise<string>} The Base64 encoded PSBT.
  */
 export async function createBitcoinPsbt(
@@ -47,11 +48,12 @@ export async function createBitcoinPsbt(
     amount: number,
     publicKey?: string,
     opReturnData?: string,
-    confirmationTarget: number = 3
+    confirmationTarget: number = 3,
+    utxoSelectionStrategy: string = 'default'
 ): Promise<string> {
     const addressInfo = getAddressInfo(fromAddress);
-    const network = addressInfo.network;
-    if (network === 'regtest') {
+
+    if (addressInfo.network === 'regtest') {
         throw new Error('Bitcoin regtest not supported');
     }
 
@@ -80,7 +82,7 @@ export async function createBitcoinPsbt(
         confirmedUtxos.map(async (utxo) => {
             const hex = await esploraClient.getTransactionHex(utxo.txid);
             const transaction = Transaction.fromRaw(Buffer.from(hex, 'hex'), { allowUnknownOutputs: true });
-            const input = getInputFromUtxoAndTx(network, utxo, transaction, addressInfo.type, publicKey);
+            const input = getInputFromUtxoAndTx(addressInfo.network, utxo, transaction, addressInfo.type, publicKey);
             possibleInputs.push(input);
         })
     );
@@ -108,12 +110,12 @@ export async function createBitcoinPsbt(
     // https://github.com/paulmillr/scure-btc-signer?tab=readme-ov-file#utxo-selection
     // default = exactBiggest/accumBiggest creates tx with smallest fees, but it breaks
     // big outputs to small ones, which in the end will create a lot of outputs close to dust.
-    const transaction = selectUTXO(possibleInputs, outputs, 'default', {
+    const transaction = selectUTXO(possibleInputs, outputs, utxoSelectionStrategy, {
         changeAddress: fromAddress, // Refund surplus to the payment address
         feePerByte: BigInt(Math.ceil(feeRate)), // round up to the nearest integer
         bip69: true, // Sort inputs and outputs according to BIP69
         createTx: true, // Create the transaction
-        network: getBtcNetwork(network),
+        network: getBtcNetwork(addressInfo.network),
         allowUnknownOutputs: true, // Required for OP_RETURN
         allowLegacyWitnessUtxo: true, // Required for P2SH-P2WPKH
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -178,4 +180,123 @@ export function getInputFromUtxoAndTx(
     };
 
     return input;
+}
+
+
+/**
+ * Estimate the tx inclusion fee for a given address or public key with an optional OP_RETURN output.
+ *
+ * @param fromAddress The Bitcoin address which is sending to the `toAddress`.
+ * @param amount The amount of BTC (as satoshis) to send. If no amount is specified, the fee is estimated for all UTXOs, i.e., the max amount.
+ * @param publicKey Optional public key needed if using P2SH-P2WPKH.
+ * @param opReturnData Optional OP_RETURN data to include in an output.
+ * @param confirmationTarget The number of blocks to include this tx (for fee estimation).
+ * @param utxoSelectionStrategy The strategy to use for selecting UTXOs. See https://github.com/paulmillr/scure-btc-signer/tree/main#utxo-selection for options.
+ * @returns {Promise<number>} The fee amount for estiamted transaction inclusion in satoshis.
+ * 
+ * @dev Wtih no amount set, we estimate the fee for all UTXOs by trying to spend all inputs using strategy 'all'. If an amount is set, we use the 'default
+ * strategy to select the UTXOs.
+ */
+export async function estimateTxFee(
+    fromAddress: string,
+    amount?: number,
+    publicKey?: string,
+    opReturnData?: string,
+    confirmationTarget: number = 3,
+    utxoSelectionStrategy: string = 'default'
+): Promise<number> {
+    const addressInfo = getAddressInfo(fromAddress);
+
+    if (addressInfo.network === 'regtest') {
+        throw new Error('Bitcoin regtest not supported');
+    }
+
+    // We need the public key to generate the redeem and witness script to spend the scripts
+    if (addressInfo.type === (AddressType.p2sh || AddressType.p2wsh)) {
+        if (!publicKey) {
+            throw new Error('Public key is required to spend from the selected address type');
+        }
+    }
+
+    // Use the from address as the toAddress for the fee estimate
+    const toAddress = fromAddress;
+
+    // TODO: allow submitting the UTXOs, fee estimate and confirmed transactions
+    const esploraClient = new EsploraClient(addressInfo.network);
+
+    const [confirmedUtxos, feeRate] = await Promise.all([
+        esploraClient.getAddressUtxos(fromAddress),
+        esploraClient.getFeeEstimate(confirmationTarget),
+    ]);
+
+    if (confirmedUtxos.length === 0) {
+        throw new Error('No confirmed UTXOs');
+    }
+
+    // To construct the spending transaction and estimate the fee, we need the transactions for the UTXOs
+    const possibleInputs: Input[] = [];
+
+    await Promise.all(
+        confirmedUtxos.map(async (utxo) => {
+            const hex = await esploraClient.getTransactionHex(utxo.txid);
+            const transaction = Transaction.fromRaw(Buffer.from(hex, 'hex'), { allowUnknownOutputs: true });
+            const input = getInputFromUtxoAndTx(addressInfo.network, utxo, transaction, addressInfo.type, publicKey);
+            possibleInputs.push(input);
+        })
+    );
+
+    // Create transaction without outputs
+    const targetOutputs: Output[] = [
+        {
+            address: toAddress,
+            amount: BigInt(amount? amount : 0),
+        },
+    ];
+
+    if (opReturnData) {
+        // Strip 0x prefix from opReturn
+        if (opReturnData.startsWith('0x')) {
+            opReturnData = opReturnData.slice(2);
+        }
+        targetOutputs.push({
+            // OP_RETURN https://github.com/paulmillr/scure-btc-signer/issues/26
+            script: Script.encode(['RETURN', hex.decode(opReturnData)]),
+            amount: BigInt(0),
+        });
+    }
+
+    let outputs: Output[] = [];
+    if (amount === undefined) {
+        // Select all UTXOs if no amount is specified
+        // Add outputs to the transaction after all UTXOs are selected to prevent tx creation failures
+        utxoSelectionStrategy = 'all';
+    } else {
+        // Add the target outputs to the transaction
+        // Tx creation might fail if the requested amount is more than the available balance plus fees
+        outputs = targetOutputs;
+    }
+
+    // Outsource UTXO selection to btc-signer
+    // https://github.com/paulmillr/scure-btc-signer?tab=readme-ov-file#utxo-selection
+    // default = exactBiggest/accumBiggest creates tx with smallest fees, but it breaks
+    // big outputs to small ones, which in the end will create a lot of outputs close to dust.
+    const transaction = selectUTXO(possibleInputs, outputs, utxoSelectionStrategy, {
+        changeAddress: fromAddress, // Refund surplus to the payment address
+        feePerByte: BigInt(Math.ceil(feeRate)), // round up to the nearest integer
+        bip69: true, // Sort inputs and outputs according to BIP69
+        createTx: true, // Create the transaction
+        network: getBtcNetwork(addressInfo.network),
+        allowUnknownOutputs: true, // Required for OP_RETURN
+        allowLegacyWitnessUtxo: true, // Required for P2SH-P2WPKH
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        dust: BigInt(546) as any, // TODO: update scure-btc-signer
+    });
+    
+    // Add the target outputs after the fact
+    if (amount === undefined) {
+        transaction.tx.addOutput(targetOutputs[0]);
+        transaction.tx.addOutput(targetOutputs[1]);
+    }
+
+    return transaction.fee;
 }
