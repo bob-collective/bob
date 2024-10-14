@@ -269,34 +269,40 @@ describe('UTXO Tests', () => {
             // P2WPKH: https://blockstream.info/address/bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq
             'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq',
             // P2SH-P2WPKH: https://blockstream.info/address/3DFVKuT9Ft4rWpysAZ1bHpg55EBy1HVPcr
-            '3DFVKuT9Ft4rWpysAZ1bHpg55EBy1HVPcr',
+            // TODO: As above, add a correct P2SH-P2WPKH address with its pub key
+            // '3DFVKuT9Ft4rWpysAZ1bHpg55EBy1HVPcr',
             // P2PKH: https://blockstream.info/address/1Kr6QSydW9bFQG1mXiPNNu6WpJGmUa9i1g
             '1Kr6QSydW9bFQG1mXiPNNu6WpJGmUa9i1g',
         ];
 
         const amounts = [undefined, 2000, 3000];
+        const feeRates = [undefined, 10];
 
         // EVM address for OP return
         const opReturn = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2';
 
         // Refactor to execute in parallel
         await Promise.all(
-            amounts.map(async () =>
+            feeRates.map(async (feeRate) =>
                 Promise.all(
-                    paymentAddresses.map(async (paymentAddress) => {
-                        const paymentAddressType = getAddressInfo(paymentAddress).type;
+                    amounts.map(async (amount) =>
+                        Promise.all(
+                            paymentAddresses.map(async (paymentAddress) => {
+                                const paymentAddressType = getAddressInfo(paymentAddress).type;
 
-                        let pubkey: string | undefined;
+                                let pubkey: string | undefined;
 
-                        if (paymentAddressType === AddressType.p2sh) {
-                            // Use a random public key for P2SH-P2WPKH
-                            pubkey = '03b366c69e8237d9be7c4f1ac2a7abc6a79932fbf3de4e2f6c04797d7ef27abfe1';
-                        }
+                                if (paymentAddressType === AddressType.p2sh) {
+                                    // Use a random public key for P2SH-P2WPKH
+                                    pubkey = '03b366c69e8237d9be7c4f1ac2a7abc6a79932fbf3de4e2f6c04797d7ef27abfe1';
+                                }
 
-                        // If the amount is undefined, the fee should be estimated
-                        const fee = await estimateTxFee(paymentAddress, undefined, pubkey, opReturn);
-                        assert(fee > 0, 'Fee should be greater than 0');
-                    })
+                                // If the amount is undefined, the fee should be estimated
+                                const fee = await estimateTxFee(paymentAddress, amount, pubkey, opReturn, feeRate);
+                                assert(fee > 0, 'Fee should be greater than 0');
+                            })
+                        )
+                    )
                 )
             )
         );

@@ -39,6 +39,7 @@ export interface Input {
  * @param amount The amount of BTC (as satoshis) to send.
  * @param publicKey Optional public key needed if using P2SH-P2WPKH.
  * @param opReturnData Optional OP_RETURN data to include in an output.
+ * @param feeRate Optional fee rate in satoshis per byte.
  * @param confirmationTarget The number of blocks to include this tx (for fee estimation).
  * @returns {Promise<string>} The Base64 encoded PSBT.
  *
@@ -63,6 +64,7 @@ export async function createBitcoinPsbt(
     amount: number,
     publicKey?: string,
     opReturnData?: string,
+    feeRate?: number,
     confirmationTarget: number = 3
 ): Promise<string> {
     const addressInfo = getAddressInfo(fromAddress);
@@ -83,10 +85,16 @@ export async function createBitcoinPsbt(
 
     const esploraClient = new EsploraClient(addressInfo.network);
 
-    const [confirmedUtxos, feeRate] = await Promise.all([
-        esploraClient.getAddressUtxos(fromAddress),
-        esploraClient.getFeeEstimate(confirmationTarget),
-    ]);
+    let confirmedUtxos: UTXO[] = [];
+
+    if (feeRate) {
+        confirmedUtxos = await esploraClient.getAddressUtxos(fromAddress);
+    } else {
+        [confirmedUtxos, feeRate] = await Promise.all([
+            esploraClient.getAddressUtxos(fromAddress),
+            esploraClient.getFeeEstimate(confirmationTarget),
+        ]);
+    }
 
     if (confirmedUtxos.length === 0) {
         throw new Error('No confirmed UTXOs');
@@ -148,6 +156,7 @@ export async function createBitcoinPsbt(
     if (!transaction || !transaction.tx) {
         console.debug(`fromAddress: ${fromAddress}, toAddress: ${toAddress}, amount: ${amount}`);
         console.debug(`publicKey: ${publicKey}, opReturnData: ${opReturnData}`);
+        console.debug(`feeRate: ${feeRate}, confirmationTarget: ${confirmationTarget}`);
         throw new Error('Failed to create transaction. Do you have enough funds?');
     }
 
@@ -214,8 +223,9 @@ export function getInputFromUtxoAndTx(
  * @param amount The amount of BTC (as satoshis) to send. If no amount is specified, the fee is estimated for all UTXOs, i.e., the max amount.
  * @param publicKey Optional public key needed if using P2SH-P2WPKH.
  * @param opReturnData Optional OP_RETURN data to include in an output.
+ * @param feeRate Optional fee rate in satoshis per byte.
  * @param confirmationTarget The number of blocks to include this tx (for fee estimation).
- * @returns {Promise<bigint>} The fee amount for estiamted transaction inclusion in satoshis.
+ * @returns {Promise<bigint>} The fee amount for estimated transaction inclusion in satoshis.
  *
  * @example
  * ```typescript
@@ -224,18 +234,19 @@ export function getInputFromUtxoAndTx(
  * const amount = 100000;
  * const publicKey = '02d4...`; // only for P2SH
  * const opReturnData = 'Hello, World!'; // optional
+ * const feeRate = 1; // optional
  * const confirmationTarget = 3; // optional
  *
- * const fee = await estimateTxFee(fromAddress, amount, publicKey, opReturnData, confirmationTarget);
+ * const fee = await estimateTxFee(fromAddress, amount, publicKey, opReturnData, feeRate, confirmationTarget);
  * console.log(fee);
  *
  * // Using all UTXOs without a target amount (max fee for spending all UTXOs)
  * const fromAddress = 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq';
  * const publicKey = '02d4...`; // only for P2SH
  * const opReturnData = 'Hello, World!'; // optional
- * const confirmationTarget = 3; // optional
+ * const feeRate = 1; // optional
  *
- * const fee = await estimateTxFee(fromAddress, undefined, publicKey, opReturnData, confirmationTarget);
+ * const fee = await estimateTxFee(fromAddress, undefined, publicKey, opReturnData, feeRate);
  * console.log(fee);
  * ```
  *
@@ -247,6 +258,7 @@ export async function estimateTxFee(
     amount?: number,
     publicKey?: string,
     opReturnData?: string,
+    feeRate?: number,
     confirmationTarget: number = 3
 ): Promise<bigint> {
     const addressInfo = getAddressInfo(fromAddress);
@@ -269,10 +281,15 @@ export async function estimateTxFee(
     // to avoid fetching them again.
     const esploraClient = new EsploraClient(addressInfo.network);
 
-    const [confirmedUtxos, feeRate] = await Promise.all([
-        esploraClient.getAddressUtxos(fromAddress),
-        esploraClient.getFeeEstimate(confirmationTarget),
-    ]);
+    let confirmedUtxos: UTXO[] = [];
+    if (feeRate) {
+        confirmedUtxos = await esploraClient.getAddressUtxos(fromAddress);
+    } else {
+        [confirmedUtxos, feeRate] = await Promise.all([
+            esploraClient.getAddressUtxos(fromAddress),
+            esploraClient.getFeeEstimate(confirmationTarget),
+        ]);
+    }
 
     if (confirmedUtxos.length === 0) {
         throw new Error('No confirmed UTXOs');
@@ -343,6 +360,13 @@ export async function estimateTxFee(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         dust: BigInt(546) as any, // TODO: update scure-btc-signer
     });
+
+    if (!transaction || !transaction.tx) {
+        console.debug(`fromAddress: ${fromAddress}, amount: ${amount}`);
+        console.debug(`publicKey: ${publicKey}, opReturnData: ${opReturnData}`);
+        console.debug(`feeRate: ${feeRate}, confirmationTarget: ${confirmationTarget}`);
+        throw new Error('Failed to create transaction. Do you have enough funds?');
+    }
 
     // Add the target outputs after the fact
     if (amount === undefined) {
