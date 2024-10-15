@@ -2,7 +2,6 @@ import { Transaction, Script, selectUTXO, TEST_NETWORK, NETWORK, p2wpkh, p2sh } 
 import { hex, base64 } from '@scure/base';
 import { AddressType, getAddressInfo, Network } from 'bitcoin-address-validation';
 import { EsploraClient, UTXO } from '../esplora';
-import { SelectionStrategy } from '@scure/btc-signer/lib/utxo';
 
 export type BitcoinNetworkName = Exclude<Network, 'regtest'>;
 
@@ -70,7 +69,7 @@ export async function createBitcoinPsbt(
     const addressInfo = getAddressInfo(fromAddress);
 
     // TODO: possibly, allow other strategies to be passed to this function
-    const utxoSelectionStrategy: SelectionStrategy = 'default';
+    const utxoSelectionStrategy = 'default';
 
     if (addressInfo.network === 'regtest') {
         throw new Error('Bitcoin regtest not supported');
@@ -336,7 +335,7 @@ export async function estimateTxFee(
     let outputs: Output[] = [];
     // Select all UTXOs if no amount is specified
     // Add outputs to the transaction after all UTXOs are selected to prevent tx creation failures
-    let utxoSelectionStrategy: SelectionStrategy = 'all';
+    let utxoSelectionStrategy = 'all';
     if (amount) {
         // Add the target outputs to the transaction
         // Tx creation might fail if the requested amount is more than the available balance plus fees
@@ -349,7 +348,8 @@ export async function estimateTxFee(
     // https://github.com/paulmillr/scure-btc-signer?tab=readme-ov-file#utxo-selection
     // default = exactBiggest/accumBiggest creates tx with smallest fees, but it breaks
     // big outputs to small ones, which in the end will create a lot of outputs close to dust.
-    const transaction = selectUTXO(possibleInputs, outputs, utxoSelectionStrategy, {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const transaction = selectUTXO(possibleInputs, outputs, utxoSelectionStrategy as any, {
         changeAddress: fromAddress, // Refund surplus to the payment address
         feePerByte: BigInt(Math.ceil(feeRate)), // round up to the nearest integer
         bip69: true, // Sort inputs and outputs according to BIP69

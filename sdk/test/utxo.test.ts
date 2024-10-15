@@ -87,17 +87,20 @@ describe('UTXO Tests', () => {
 
                                 // Check the transfer script to the toAddress
                             } else if (output.amount === BigInt(amount)) {
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                 const scriptDecoded = OutScript.decode(output.script!) as any;
 
                                 // Remove "p2" from the address type as it's exluced in the OutScript type
                                 assert.equal(scriptDecoded.type, addressType.slice(2));
 
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                 const address = Address(NETWORK).decode(toAddress) as any;
 
                                 assert.deepEqual(scriptDecoded.hash, address.hash);
 
                                 // Check the possible change output
                             } else {
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                 const scriptDecoded = OutScript.decode(output.script!) as any;
 
                                 // Remove "p2" from the address type as it's exluced in the OutScript type
@@ -256,6 +259,7 @@ describe('UTXO Tests', () => {
                 network: NETWORK,
                 allowUnknownOutputs: true,
                 allowLegacyWitnessUtxo: true,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 dust: BigInt(546) as any,
             }
         );

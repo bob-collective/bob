@@ -203,6 +203,7 @@ export class GatewayApiClient {
                 gatewayQuote.satoshis,
                 params.fromUserPublicKey,
                 data.opReturnHash,
+                params.feeRate,
                 gatewayQuote.txProofDifficultyFactor
             );
         }
