@@ -294,21 +294,18 @@ export async function estimateTxFee(
         throw new Error('No confirmed UTXOs');
     }
 
-    // To construct the spending transaction and estimate the fee, we need the transactions for the UTXOs
-    const possibleInputs: Input[] = [];
-
-    await Promise.all(
+    const possibleInputs = await Promise.all(
         confirmedUtxos.map(async (utxo) => {
             const hex = await esploraClient.getTransactionHex(utxo.txid);
             const transaction = Transaction.fromRaw(Buffer.from(hex, 'hex'), { allowUnknownOutputs: true });
-            const input = getInputFromUtxoAndTx(
+
+            return getInputFromUtxoAndTx(
                 addressInfo.network as BitcoinNetworkName,
                 utxo,
                 transaction,
                 addressInfo.type,
                 publicKey
             );
-            possibleInputs.push(input);
         })
     );
 
@@ -322,7 +319,7 @@ export async function estimateTxFee(
 
     if (opReturnData) {
         // Strip 0x prefix from opReturn
-        if (opReturnData.startsWith('0x')) {
+        if (opReturnData.toLowerCase().startsWith('0x')) {
             opReturnData = opReturnData.slice(2);
         }
         targetOutputs.push({
