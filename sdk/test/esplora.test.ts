@@ -139,8 +139,8 @@ describe('Esplora Tests', () => {
         const client = new EsploraClient('testnet');
         const balance = await client.getBalance('tb1qjhekcm565spvr0epqu5nvd9mhgwaafg6d0n2yw');
         assert.deepEqual(balance, {
-            chain: 727499862,
-            mempool: 0,
+            confirmed: 727499862,
+            unconfirmed: 0,
             total: 727499862,
         });
     });

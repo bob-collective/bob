@@ -396,12 +396,12 @@ export class EsploraClient {
      *      that are pending (unconfirmed). The total is the sum of both confirmed and unconfirmed balances.
      *
      * @param {string} address - The Bitcoin address to check.
-     * @returns {Promise<{ chain: number, mempool: number, total: number }>} A promise that resolves to an object containing:
-     *      - `chain`: The confirmed on-chain balance in satoshis.
-     *      - `mempool`: The unconfirmed balance (in mempool) in satoshis.
+     * @returns {Promise<{ confirmed: number, unconfirmed: number, total: number }>} A promise that resolves to an object containing:
+     *      - `confirmed`: The confirmed on-chain balance in satoshis.
+     *      - `unconfirmed`: The unconfirmed balance (in mempool) in satoshis.
      *      - `total`: The total balance, which is the sum of the confirmed and unconfirmed balances.
      */
-    async getBalance(address: string): Promise<{ chain: number; mempool: number; total: number }> {
+    async getBalance(address: string): Promise<{ confirmed: number; unconfirmed: number; total: number }> {
         const response = await this.getJson<{
             address: string;
             chain_stats: {
@@ -420,19 +420,13 @@ export class EsploraClient {
             };
         }>(`${this.basePath}/address/${address}`);
 
-        const chainBalance = response.chain_stats.funded_txo_sum - response.chain_stats.spent_txo_sum;
-        const mempoolBalance = response.mempool_stats.funded_txo_sum - response.mempool_stats.spent_txo_sum;
-
-        console.log({
-            chain: chainBalance,
-            mempool: mempoolBalance,
-            total: chainBalance + mempoolBalance,
-        });
+        const confirmedBalance = response.chain_stats.funded_txo_sum - response.chain_stats.spent_txo_sum;
+        const unconfirmedBalance = response.mempool_stats.funded_txo_sum - response.mempool_stats.spent_txo_sum;
 
         return {
-            chain: chainBalance,
-            mempool: mempoolBalance,
-            total: chainBalance + mempoolBalance,
+            confirmed: confirmedBalance,
+            unconfirmed: unconfirmedBalance,
+            total: confirmedBalance + unconfirmedBalance,
         };
     }
 
