@@ -423,7 +423,12 @@ export class EsploraClient {
         const chainBalance = response.chain_stats.funded_txo_sum - response.chain_stats.spent_txo_sum;
         const mempoolBalance = response.mempool_stats.funded_txo_sum - response.mempool_stats.spent_txo_sum;
 
-        // Return as an object with chain, mempool, and total fields
+        console.log({
+            chain: chainBalance,
+            mempool: mempoolBalance,
+            total: chainBalance + mempoolBalance,
+        });
+
         return {
             chain: chainBalance,
             mempool: mempoolBalance,
