@@ -250,7 +250,7 @@ export function getInputFromUtxoAndTx(
  * ```
  *
  * @dev Wtih no amount set, we estimate the fee for all UTXOs by trying to spend all inputs using strategy 'all'. If an amount is set, we use the 'default
- * strategy to select the UTXOs.
+ * strategy to select the UTXOs. If the amount is more than available, an error will be thrown.
  */
 export async function estimateTxFee(
     fromAddress: string,
@@ -310,7 +310,7 @@ export async function estimateTxFee(
     );
 
     // Create transaction without outputs
-    const targetOutputs: Output[] = [
+    const outputs: Output[] = [
         {
             address: toAddress,
             amount: BigInt(amount ? amount : 0),
@@ -322,23 +322,17 @@ export async function estimateTxFee(
         if (opReturnData.toLowerCase().startsWith('0x')) {
             opReturnData = opReturnData.slice(2);
         }
-        targetOutputs.push({
+        outputs.push({
             // OP_RETURN https://github.com/paulmillr/scure-btc-signer/issues/26
             script: Script.encode(['RETURN', hex.decode(opReturnData)]),
             amount: BigInt(0),
         });
     }
 
-    let outputs: Output[] = [];
     // Select all UTXOs if no amount is specified
-    // Add outputs to the transaction after all UTXOs are selected to prevent tx creation failures
-    let utxoSelectionStrategy = 'all';
-    if (amount) {
-        // Add the target outputs to the transaction
-        // Tx creation might fail if the requested amount is more than the available balance plus fees
-        // TODO: allow passing other UTXO selection strategies for fee etimates
-        utxoSelectionStrategy = 'default';
-        outputs = targetOutputs;
+    let utxoSelectionStrategy = 'default';
+    if (amount === undefined) {
+        utxoSelectionStrategy = 'all';
     }
 
     // Outsource UTXO selection to btc-signer
@@ -363,12 +357,6 @@ export async function estimateTxFee(
         console.debug(`publicKey: ${publicKey}, opReturnData: ${opReturnData}`);
         console.debug(`feeRate: ${feeRate}, confirmationTarget: ${confirmationTarget}`);
         throw new Error('Failed to create transaction. Do you have enough funds?');
-    }
-
-    // Add the target outputs after the fact
-    if (amount === undefined) {
-        transaction.tx.addOutput(targetOutputs[0]);
-        transaction.tx.addOutput(targetOutputs[1]);
     }
 
     return transaction.fee;
