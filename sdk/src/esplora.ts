@@ -341,6 +341,7 @@ export class EsploraClient {
      *
      * @dev Should return up to 500 UTXOs - depending on the configured limit.
      * @param {string} address - The Bitcoin address to check.
+     * @param {string} [confirmed] - Whether to return only confirmed UTXOs. If omitted, defaults to false.
      * @returns {Promise<Array<UTXO>>} A promise that resolves to an array of UTXOs.
      */
     async getAddressUtxos(address: string, confirmed?: boolean): Promise<Array<UTXO>> {
@@ -388,12 +389,19 @@ export class EsploraClient {
     }
 
     /**
-     * Get the balance for an account / address.
+     * Get the Bitcoin balance for an address, returning both confirmed (on-chain) and unconfirmed (mempool) balances.
+     *
+     * @dev This method returns an object containing the confirmed balance, unconfirmed balance, and the total balance.
+     *      The confirmed balance represents the amount that is on-chain, while the mempool balance includes transactions
+     *      that are pending (unconfirmed). The total is the sum of both confirmed and unconfirmed balances.
      *
      * @param {string} address - The Bitcoin address to check.
-     * @returns {Promise<number>} A promise that resolves to the balance.
+     * @returns {Promise<{ confirmed: number, unconfirmed: number, total: number }>} A promise that resolves to an object containing:
+     *      - `confirmed`: The confirmed on-chain balance in satoshis.
+     *      - `unconfirmed`: The unconfirmed balance (in mempool) in satoshis.
+     *      - `total`: The total balance, which is the sum of the confirmed and unconfirmed balances.
      */
-    async getBalance(address: string): Promise<number> {
+    async getBalance(address: string): Promise<{ confirmed: number; unconfirmed: number; total: number }> {
         const response = await this.getJson<{
             address: string;
             chain_stats: {
@@ -412,9 +420,14 @@ export class EsploraClient {
             };
         }>(`${this.basePath}/address/${address}`);
 
-        const chainBalance = response.chain_stats.funded_txo_sum - response.chain_stats.spent_txo_sum;
-        const mempoolBalance = response.mempool_stats.funded_txo_sum - response.mempool_stats.spent_txo_sum;
-        return chainBalance + mempoolBalance;
+        const confirmedBalance = response.chain_stats.funded_txo_sum - response.chain_stats.spent_txo_sum;
+        const unconfirmedBalance = response.mempool_stats.funded_txo_sum - response.mempool_stats.spent_txo_sum;
+
+        return {
+            confirmed: confirmedBalance,
+            unconfirmed: unconfirmedBalance,
+            total: confirmedBalance + unconfirmedBalance,
+        };
     }
 
     /**

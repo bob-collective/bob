@@ -138,6 +138,10 @@ describe('Esplora Tests', () => {
     it('should get balance', async () => {
         const client = new EsploraClient('testnet');
         const balance = await client.getBalance('tb1qjhekcm565spvr0epqu5nvd9mhgwaafg6d0n2yw');
-        assert.equal(balance, 727499862);
+        assert.deepEqual(balance, {
+            confirmed: 727499862,
+            unconfirmed: 0,
+            total: 727499862,
+        });
     });
 });
