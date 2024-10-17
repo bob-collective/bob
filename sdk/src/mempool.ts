@@ -2,7 +2,7 @@
  * Base path for the mainnet Memopool API.
  * @default "https://btc-mainnet.gobob.xyz"
  */
-export const MAINNET_MEMPOOL_BASE_PATH = 'https://mempool.space/api/v1/';
+export const MAINNET_MEMPOOL_BASE_PATH = 'https://mempool.space/api/v1';
 /**
  * Base path for the testnet Memopool API.
  * @default "https://btc-testnet.gobob.xyz"
