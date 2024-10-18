@@ -12,7 +12,8 @@ sidebar_label: Audits
 
 ## BOB Gateway
 
-BOB's most novel product is our intent-based Bitcoin bridge, called "[BOB Gateway](/docs/learn/guides/bob-gateway/index.md)." The reports below show the results of audits for every major release so far.
+<!--TODO: Fix doc link-->
+<!--BOB's most novel product is our intent-based Bitcoin bridge, called "[BOB Gateway](/docs/learn/guides/bob-gateway/index.md)." The reports below show the results of audits for every major release so far.-->
 
 ### Common Prefix
 
