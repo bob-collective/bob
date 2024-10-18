@@ -7,7 +7,8 @@ sidebar_label: Audits
 
 ## BOB Mainnet
 
-In Phase 1 of our [roadmap](/docs/learn/bob-stack/roadmap.md), "Optimistic BOB" is an OP-stack rollup on Ethereum. We inherit the hard work of the Optimism Collective, including the many [security reviews](https://github.com/ethereum-optimism/optimism/tree/v1.1.4/technical-documents/security-reviews) they have secured for our infrastructure.
+<!--TODO: Fix doc link-->
+<!--In Phase 1 of our [roadmap](/docs/learn/bob-stack/roadmap.md), "Optimistic BOB" is an OP-stack rollup on Ethereum. We inherit the hard work of the Optimism Collective, including the many [security reviews](https://github.com/ethereum-optimism/optimism/tree/v1.1.4/technical-documents/security-reviews) they have secured for our infrastructure.-->
 
 ## BOB Gateway
 
