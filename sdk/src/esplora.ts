@@ -101,6 +101,38 @@ export interface Block {
     mediantime: number;
 }
 
+export type ConfirmationTarget =
+    | 1
+    | 2
+    | 3
+    | 4
+    | 5
+    | 6
+    | 7
+    | 8
+    | 9
+    | 10
+    | 11
+    | 12
+    | 13
+    | 14
+    | 15
+    | 16
+    | 17
+    | 18
+    | 19
+    | 20
+    | 21
+    | 22
+    | 23
+    | 24
+    | 25
+    | 144
+    | 504
+    | 1008;
+
+export type EsploraFeeEstimates = Record<ConfirmationTarget, number>;
+
 /**
  * @ignore
  */
@@ -334,6 +366,27 @@ export class EsploraClient {
     async getFeeEstimate(confirmationTarget: number): Promise<number> {
         const response = await this.getJson<Record<number, number>>(`${this.basePath}/fee-estimates`);
         return response[confirmationTarget];
+    }
+
+    /**
+     * Get the fee estimates (in sat/vB) for different confirmation targets.
+     *
+     * @returns {Promise<EsploraFeeEstimates>} A promise that resolves to an object where:
+     * - The keys are the confirmation targets (in blocks) before which the transaction is expected to confirm.
+     * - The values are the estimated fee rates (in sat/vB) for each target.
+     *
+     * Example response:
+     * {
+     *   1: 10.741,    // Estimated fee for 1 block confirmation
+     *   2: 10.741,    // Estimated fee for 2 blocks confirmation
+     *   3: 10.741,    // Estimated fee for 3 blocks confirmation
+     *   4: 5.987,     // ...
+     *   ...
+     *   1008: 1.53    // Estimated fee for confirmation within 1008 blocks
+     * }
+     */
+    async getFeeEstimates(): Promise<EsploraFeeEstimates> {
+        return this.getJson<EsploraFeeEstimates>(`${this.basePath}/fee-estimates`);
     }
 
     /**
