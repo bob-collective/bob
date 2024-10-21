@@ -94,12 +94,12 @@ const config = {
             position: "left",
             label: "Learn",
           },
-          {
-            type: "docSidebar",
-            sidebarId: "buildSidebar",
-            position: "left",
-            label: "Build",
-          },
+          // {
+          //   type: "docSidebar",
+          //   sidebarId: "buildSidebar",
+          //   position: "left",
+          //   label: "Build",
+          // },
           // {
           //   type: "docSidebar",
           //   sidebarId: "apiSidebar",
