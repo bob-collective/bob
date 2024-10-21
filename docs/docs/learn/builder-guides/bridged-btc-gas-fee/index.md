@@ -1,3 +1,8 @@
+---
+sidebar_position: 3
+sidebar_label: BTC as Gas
+---
+
 # wBTC, tBTC, and other ERC-20 as Gas Token
 
 On Ethereum rollups, gas fees need to be paid in ETH as the base currency. While a rollup can in theory choose to use their gas token, part of the gas fees on the rollup are used on Ethereum to pay for data availability.
@@ -15,9 +20,9 @@ BOB supports both approaches and leaves it up to projects to decide which approa
 
 Both approaches have their pros and cons. The following table briefly summarizes the differences between the two approaches but we recommend reading the individual pages for more details:
 
-|                        | Meta Transactions                     | Account Abstraction                                                                      |
-| ---------------------- | ------------------------------------- | ---------------------------------------------------------------------------------------- |
-| Smart contract changes | Requires changes to smart contracts.  | No changes to smart contracts needed.                                                    |
-| UX changes             | Uses standard crypto-wallet UX approach. | New UX approach is needed to distinguish between signer and smart account.            |
-| Wallets compatibility  | Compatible with standard EOA wallets. | Requires new smart contract wallets.                                                     |
-| Production readiness   | OpenGSN v3 is in beta.                 | New standard that is currently getting adopted.                                         |
+|                        | Meta Transactions                        | Account Abstraction                                                        |
+| ---------------------- | ---------------------------------------- | -------------------------------------------------------------------------- |
+| Smart contract changes | Requires changes to smart contracts.     | No changes to smart contracts needed.                                      |
+| UX changes             | Uses standard crypto-wallet UX approach. | New UX approach is needed to distinguish between signer and smart account. |
+| Wallets compatibility  | Compatible with standard EOA wallets.    | Requires new smart contract wallets.                                       |
+| Production readiness   | OpenGSN v3 is in beta.                   | New standard that is currently getting adopted.                            |
