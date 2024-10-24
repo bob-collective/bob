@@ -1,0 +1,18 @@
+/**
+ * CSS files with the .module.css suffix will be treated as CSS modules
+ * and scoped locally.
+ */
+
+.hero {
+    padding: auto;
+    margin-top: 5rem;
+    margin-right: 0;
+    margin-bottom: 5rem;
+    background-color: black;
+}
+
+.card {
+    margin: 1rem;
+    padding: 1rem;
+    border-radius: 0.5rem;
+}
