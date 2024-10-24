@@ -1,9 +1,11 @@
 ---
 sidebar_position: 3
-sidebar_label: BTC as Gas
+sidebar_label: Pay Fees with BTC
 ---
 
-# wBTC, tBTC, and other ERC-20 as Gas Token
+# Pay Fees with BTC
+
+## wBTC, tBTC, and other ERC-20 as Gas Token
 
 On Ethereum rollups, gas fees need to be paid in ETH as the base currency. While a rollup can in theory choose to use their gas token, part of the gas fees on the rollup are used on Ethereum to pay for data availability.
 

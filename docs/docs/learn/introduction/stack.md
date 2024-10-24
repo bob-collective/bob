@@ -1,6 +1,7 @@
 ---
 sidebar_position: 1
 sidebar_label: What Is BOB?
+slug: /
 ---
 
 # What Is BOB?

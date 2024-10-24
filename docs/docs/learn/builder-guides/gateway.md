@@ -1,5 +1,5 @@
 ---
-sidebar_position: 1
+sidebar_position: 2
 ---
 
 # BOB Gateway
@@ -16,15 +16,13 @@ Our SDK makes it possible for you to bring this UX directly into your app.
 1. A user makes a request for wrapped or staked Bitcoin (e.g. WBTC, tBTC, or a Bitcoin LST/LRT).
 1. The user sends BTC to the liquidity provider's Bitcoin address. A hash of the user's order is included in the `OP_RETURN` of the transaction.
 
-<!--TODO: Fix doc link-->
-<!-- 1. Gateway finalizes the transaction. After trustlessly verifying the user's Bitcoin transaction with an on-chain [Light Client](../examples/btc-swap/index.mdx), Gateway sends the LP's wrapped Bitcoin to the user's EVM address. If the user requested a Bitcoin LST/LRT, that token is minted using the LP's wrapped Bitcoin before it is sent to the user. -->
+1. Gateway finalizes the transaction. After trustlessly verifying the user's Bitcoin transaction with an on-chain [Light Client](/docs/learn/builder-guides/relay.md), Gateway sends the LP's wrapped Bitcoin to the user's EVM address. If the user requested a Bitcoin LST/LRT, that token is minted using the LP's wrapped Bitcoin before it is sent to the user.
 
 This SDK makes it possible to do steps 2, 3, and 4 in your application's front end.
 
 ## Step-by-Step Integration Guide
 
-<!--TODO: Fix doc link-->
-<!-- This is an example implementation of our SDK. You will need to decide how you handle asking your user to sign a partially-signed Bitcoin transaction (PSBT). We recommend using our [sats-wagmi](./sats-wagmi.md) package to connect to your users' wallets. -->
+This is an example implementation of our SDK. You will need to decide how you handle asking your user to sign a partially-signed Bitcoin transaction (PSBT). We recommend using our [sats-wagmi](/docs/learn/builder-guides/sats-wagmi.md) package to connect to your users' wallets.
 
 ### Install the BOB SDK
 
@@ -109,8 +107,7 @@ Create a Bitcoin transaction that sends the quoted `amount` of BTC to the LP's `
 <Tabs>
 <TabItem value="sats-wagmi" label="sats-wagmi (Recommended)">
 
-<!--TODO: Fix doc link-->
-<!-- Please follow the [guide here](./sats-wagmi.md) to install and use sats-wagmi. In this example, we sign the `psbtBase64` using sats-wagmi which abstracts the complex wallet logic for multiple connectors (including OKX, UniSat and Xverse). -->
+Please follow the [guide here](/docs/learn/builder-guides/sats-wagmi.md) to install and use sats-wagmi. In this example, we sign the `psbtBase64` using sats-wagmi which abstracts the complex wallet logic for multiple connectors (including OKX, UniSat and Xverse).
 
 It is also possible to directly use the `useSendGatewayTransaction` hook, example below.
 
@@ -198,13 +195,11 @@ BOB Gateway enables staking, swapping, lending, and bridging Bitcoin with a sing
 
 See the [Code References](#code-references) below for a deeper look at the SDK and an example implementation file.
 
-<!--TODO: Fix doc link-->
-<!--You're always welcome to [reach out to us](../../learn/introduction/contribution.md) with questions, feedback, or ideas. We look forward to seeing what you Build on Bitcoin!-->
+You're always welcome to [reach out to us](/docs/learn/introduction/contribution.md) with questions, feedback, or ideas. We look forward to seeing what you Build on Bitcoin!
 
 ## Security and Trust Assumptions
 
-<!--TODO: Fix doc link-->
-<!--The protocol requires zero trust between the market makers and users because it utilizes atomic cross-chain swaps. The verification of the Bitcoin transaction is performed cryptographically by an on-chain Bitcoin [Light Client](../examples/btc-swap/index.mdx), making the swap trustless between both parties.-->
+The protocol requires zero trust between the market makers and users because it utilizes atomic cross-chain swaps. The verification of the Bitcoin transaction is performed cryptographically by an on-chain Bitcoin [Light Client](/docs/learn/builder-guides/relay.md), making the swap trustless between both parties.
 
 Furthermore, infrastructure run by the BOB team never has access to the market markers' tBTC, wBTC, or ETH funds stored in their smart contracts. The user interface and server manage order flow to prevent liquidity sniping and user errors (e.g. sending BTC without sufficient liquidity being available), but neither the front end or back end ever have access to users' or market makers' funds.
 

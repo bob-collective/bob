@@ -1,6 +1,6 @@
 ---
-sidebar_position: 3
-sidebar_label: 'Phase 1: Optimistic BOB'
+sidebar_position: 4
+sidebar_label: "Phase 1: Optimistic BOB"
 ---
 
 # Phase 1: Optimistic BOB
@@ -55,15 +55,14 @@ Instead of changing the execution client, necessary features including proving B
 
 ### Settlement & Fraud Proofs
 
-The OP Stack settles on Ethereum. Initially, the OP Stack lacked fraud proofs which was a major downside of using OP Stack as users could not prove fraudulent behavior by the sequencer. On July 10th 2024, the OP-stack used by the BOB chain switches to a full fraud-proof enabled implementation, thus ensuring honest sequencer operation. 
+The OP Stack settles on Ethereum. Initially, the OP Stack lacked fraud proofs which was a major downside of using OP Stack as users could not prove fraudulent behavior by the sequencer. On July 10th 2024, the OP-stack used by the BOB chain switches to a full fraud-proof enabled implementation, thus ensuring honest sequencer operation.
 
 :::info Important Notice for Bridges and Users
 **ALL** withdrawals that are not finalized before the Fault Proofs upgrade executes will need to be reproven after the upgrade is complete.
 
-  *   Reproving simply requires that you execute the withdrawal proving flow again.
-  *   Withdrawals prior to the Fault Proofs upgrade must wait a 7-day challenge period before finalization. As a result, any withdrawal initiated less than 7 days before the upgrade cannot be finalized before the upgrade is executed. You may want to consider waiting until after the upgrade is complete to begin a withdrawal during this 7-day window.
-:::
-
+- Reproving simply requires that you execute the withdrawal proving flow again.
+- Withdrawals prior to the Fault Proofs upgrade must wait a 7-day challenge period before finalization. As a result, any withdrawal initiated less than 7 days before the upgrade cannot be finalized before the upgrade is executed. You may want to consider waiting until after the upgrade is complete to begin a withdrawal during this 7-day window.
+  :::
 
 #### Overview of Changes
 
@@ -93,11 +92,11 @@ Developers should then verify this proposal locally as the default game type wil
 Enable the fault proofs impacts bridges, centralized exchanges, and custom solutions that use withdrawals.
 
 :::info NOTE
-  Withdrawals that haven't finalized before the upgrade occurs will be unable to be finalized post-upgrade without reproving. This means these withdrawals will need to go through a new 7-day period. The time accrued before the upgrade will not count.
-  This means the withdrawal time could be as long as 13-14 days during the upgrade window. (If you submit it \~6 days before the upgrade, then must re-prove after the upgrade, you will have to wait a new seven days.)
+Withdrawals that haven't finalized before the upgrade occurs will be unable to be finalized post-upgrade without reproving. This means these withdrawals will need to go through a new 7-day period. The time accrued before the upgrade will not count.
+This means the withdrawal time could be as long as 13-14 days during the upgrade window. (If you submit it \~6 days before the upgrade, then must re-prove after the upgrade, you will have to wait a new seven days.)
 :::
 
-  ##### Update Logic to Support Fault Proofs
+##### Update Logic to Support Fault Proofs
 
 :::info NOTE
 
@@ -105,32 +104,31 @@ Most teams use the Optimism SDK or Viem to handle this logic under the hood and 
 
 :::
 
-  *   **Option 1: Optimism SDK Update.** If you use OptimismSDK for bridging, simply update to version 3.2.0 or higher.
-      The Optimism SDK changes do not break the API and require no changes other than updating to the correct software version to support the new `OptimismPortal` logic. The Optimism SDK will automatically begin to use the new logic once it detects that the FPM update has gone live.
-  *   **Option 2: Viem Update.** Update to the latest version of Viem (version of >=2.9.0). Viem will automatically begin to use the new logic once it detects that the FPM update has gone live.
+- **Option 1: Optimism SDK Update.** If you use OptimismSDK for bridging, simply update to version 3.2.0 or higher.
+  The Optimism SDK changes do not break the API and require no changes other than updating to the correct software version to support the new `OptimismPortal` logic. The Optimism SDK will automatically begin to use the new logic once it detects that the FPM update has gone live.
+- **Option 2: Viem Update.** Update to the latest version of Viem (version of >=2.9.0). Viem will automatically begin to use the new logic once it detects that the FPM update has gone live.
 
-  ##### Update Withdrawal Monitor
+##### Update Withdrawal Monitor
 
-  The Withdrawal Monitor service is an important part of the two-step withdrawal system that checks if anyone has been able to prove withdrawals that do not actually appear on L2.
-  The Withdrawal Monitor is now slightly slower at startup time but is more reliable, simpler, and compatible with more infrastructure to more easily support any OP Stack chain.
-  Changes to the Withdrawal Monitor are entirely backwards compatible.
+The Withdrawal Monitor service is an important part of the two-step withdrawal system that checks if anyone has been able to prove withdrawals that do not actually appear on L2.
+The Withdrawal Monitor is now slightly slower at startup time but is more reliable, simpler, and compatible with more infrastructure to more easily support any OP Stack chain.
+Changes to the Withdrawal Monitor are entirely backwards compatible.
 
-  *   **Option 1: Withdrawal from source.** If building or using withdrawal-monitor from source, make sure that you are using the latest develop branch. All withdrawal monitor changes are fully backwards compatible.
-  *   **Option 2: Docker image.** If using docker, use the latest chain-mon docker image.
+- **Option 1: Withdrawal from source.** If building or using withdrawal-monitor from source, make sure that you are using the latest develop branch. All withdrawal monitor changes are fully backwards compatible.
+- **Option 2: Docker image.** If using docker, use the latest chain-mon docker image.
 
-  ##### Update Dispute Monitor
+##### Update Dispute Monitor
 
-  The Dispute Monitor service detects when invalid outputs have been proposed. Given the large number of changes to the output proposal system, the current Fault Monitor is being replaced in favor of a new Dispute Monitor purposely built for the fault proof monitor system.
+The Dispute Monitor service detects when invalid outputs have been proposed. Given the large number of changes to the output proposal system, the current Fault Monitor is being replaced in favor of a new Dispute Monitor purposely built for the fault proof monitor system.
 
 :::info NOTE
-    Any team running the current Fault Monitor will see the monitor stop functioning when the Fault Proof Monitor upgrade goes live. These teams should run the new service and update their alerting accordingly.
+Any team running the current Fault Monitor will see the monitor stop functioning when the Fault Proof Monitor upgrade goes live. These teams should run the new service and update their alerting accordingly.
 :::
 
 #### Next Steps
 
-*   See the [Fault Proofs Explainer](https://docs.optimism.io/stack/protocol/fault-proofs/explainer) to learn more about the three main components of the Fault Proof System.
-*   You can also read more about [Cannon FPVM](https://docs.optimism.io/stack/protocol/fault-proofs/cannon) and [Mips.sol](https://docs.optimism.io/stack/protocol/fault-proofs/mips), the onchain smart contract implementation of Cannon.
-
+- See the [Fault Proofs Explainer](https://docs.optimism.io/stack/protocol/fault-proofs/explainer) to learn more about the three main components of the Fault Proof System.
+- You can also read more about [Cannon FPVM](https://docs.optimism.io/stack/protocol/fault-proofs/cannon) and [Mips.sol](https://docs.optimism.io/stack/protocol/fault-proofs/mips), the onchain smart contract implementation of Cannon.
 
 ### Settlement & Merged mining
 

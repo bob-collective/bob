@@ -1,6 +1,7 @@
 ---
 sidebar_position: 3
 ---
+
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
@@ -38,9 +39,9 @@ anvil
 ```
 
 Check the docs for more information: [Foundry](https://book.getfoundry.sh/getting-started/installation).
-  </TabItem>
-  <TabItem value="hardhat" label="Hardhat (based on TypeScript)">
-    Quickstart:
+</TabItem>
+<TabItem value="hardhat" label="Hardhat (based on TypeScript)">
+Quickstart:
 
 ```shell
 # Install hardhat
@@ -50,7 +51,7 @@ npx hardhat init
 ```
 
 Check the docs for more information: [Hardhat](https://hardhat.org/getting-started/).
-  </TabItem>
+</TabItem>
 </Tabs>
 
 ### Bitcoin
@@ -170,3 +171,10 @@ Get started: https://docs.unisat.io/dev/unisat-developer-service
 ### Collection of Bitcoin Tools
 
 [Lopp Development Tool List](https://www.lopp.net/bitcoin-information/developer-tools.html)
+
+### [UniSat Ordinals API](https://docs.unisat.io/dev/unisat-developer-service)
+
+UniSat Open-API is open to community developers, allowing you to explore the world of Bitcoin and ordinals.
+
+Getting an API key: [Contact the team](https://docs.unisat.io/dev/unisat-developer-service#getting-an-api-key).
+

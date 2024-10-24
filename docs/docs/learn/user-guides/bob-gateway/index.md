@@ -1,11 +1,9 @@
 ---
-sidebar_position: 1
-sidebar_label: BOB Gateway
+sidebar_position: 4
+sidebar_label: Bridge from Bitcoin to BOB
 ---
 
-# BOB Gateway
-
-## Bridge from Bitcoin to BOB
+# Bridge from Bitcoin to BOB
 
 [BOB Gateway](https://app.gobob.xyz) lets you stake, swap, or lend your bitcoin from a single, unified interface so you can put your bitcoin to work earning yield faster than ever before.
 
@@ -19,8 +17,7 @@ All you need is a Bitcoin wallet with some BTC to send and an EVM-compatible wal
 
 :::tip Want to add BOB Gateway to your dapp?
 
-<!--TODO: Fix doc link-->
-<!--Check out our guide to see how you can [integrate BOB Gateway into your dapp](../../../build/bob-sdk/gateway.md).-->
+Check out our guide to see how you can [integrate BOB Gateway into your dapp](/docs/learn/builder-guides/gateway.md).
 
 :::
 

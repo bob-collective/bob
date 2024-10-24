@@ -1,4 +1,4 @@
-# Gas Fee Payment in wBTC using Meta Transactions (OpenGSN & ERC-2771)
+# Meta Transactions (ERC-2771)
 
 In this example, we will show how wBTC can be used for gas fee payments using the OpenGSN and [ERC-2771 standard](https://eips.ethereum.org/EIPS/eip-2771) on BOB Sepolia (Testnet). This enables users to transact without the necessity to own ETH.
 
@@ -74,31 +74,35 @@ To allow simple interaction with the relay `ethers.Contract` instance is created
 ```typescript
 const getRelayedContract = async (contractType: ContractType) => {
   if (!window.ethereum) {
-    throw new Error('Injected provider not found!')
+    throw new Error("Injected provider not found!");
   }
 
-  const { address, abi } = contracts[contractType]
+  const { address, abi } = contracts[contractType];
 
   const config = {
-    preferredRelays: ['https://gsn-relay-sepolia.gobob.xyz/'],
+    preferredRelays: ["https://gsn-relay-sepolia.gobob.xyz/"],
     performDryRunViewRelayCall: false,
     gasPriceSlackPercent: 1000,
     maxPaymasterDataLength: 100,
     paymasterAddress: erc20PaymasterAddress,
-  }
+  };
 
   const gsnProvider = await RelayProvider.newProvider({
     provider: window.ethereum,
     config,
     overrideDependencies: { asyncPaymasterData: getErc20PaymasterData },
-  }).init()
+  }).init();
 
-  const ethersProvider = new providers.Web3Provider(gsnProvider)
+  const ethersProvider = new providers.Web3Provider(gsnProvider);
 
-  const relayedContract = new Contract(address, abi, ethersProvider.getSigner())
+  const relayedContract = new Contract(
+    address,
+    abi,
+    ethersProvider.getSigner(),
+  );
 
-  return relayedContract
-}
+  return relayedContract;
+};
 ```
 
 Then the `Contract` instance can be used in a standard way:
@@ -106,8 +110,8 @@ Then the `Contract` instance can be used in a standard way:
 ```typescript
 const transferTx = await relayedContract.transfer(
   form.address,
-  atomicAmount.toString()
-)
+  atomicAmount.toString(),
+);
 
-await transferTx.wait()
+await transferTx.wait();
 ```

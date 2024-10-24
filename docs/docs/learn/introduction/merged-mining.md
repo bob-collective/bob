@@ -1,6 +1,6 @@
 ---
-sidebar_position: 4
-sidebar_label: 'Phase 2: Optimistic Merged Mining'
+sidebar_position: 5
+sidebar_label: "Phase 2: Optimistic Merged Mining"
 ---
 
 # Phase 2: Optimistic Merged Mining

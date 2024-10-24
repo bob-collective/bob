@@ -1,14 +1,13 @@
 ---
-sidebar_position: 0
-sidebar_label: BOB Stake
+sidebar_position: 2
+sidebar_label: Stake BTC
 ---
 
-# BOB Stake
+# Stake BTC
 
 ## One-Click BTC Staking
 
-<!--TODO: Fix doc link-->
-<!--[BOB Stake](https://app.gobob.xyz/stake?type=stake&stakeWith=solv-solvbtcbbn) is a new 1-click Bitcoin staking portal and [SDK](../../../build/bob-sdk/gateway.md) for Bitcoin liquid staking. Harvest BOB Spice points in the final season of BOB Fusion by using BOB Stake and exploring the growing Bitcoin staking ecosystem on BOB.-->
+[BOB Stake](https://app.gobob.xyz/stake?type=stake&stakeWith=solv-solvbtcbbn) is a new 1-click Bitcoin staking portal and [SDK](/docs/learn/builder-guides/gateway.md) for Bitcoin liquid staking. Harvest BOB Spice points in the final season of BOB Fusion by using BOB Stake and exploring the growing Bitcoin staking ecosystem on BOB.
 
 It's built on a trustless, RFQ-based cross-chain [swap protocol](../../../build/examples/btc-swap/) that connects professional LPs with users through a seamless swapping experience. LPs handle the complexities of bridging and staking on behalf of users in exchange for a fee.
 
