@@ -2,7 +2,7 @@ import { describe, it, assert } from 'vitest';
 import { AddressType, getAddressInfo, Network } from 'bitcoin-address-validation';
 import { Address, NETWORK, OutScript, Script, Transaction, p2sh, p2wpkh, selectUTXO } from '@scure/btc-signer';
 import { hex, base64 } from '@scure/base';
-import { createBitcoinPsbt, getInputFromUtxoAndTx } from '../src/wallet/utxo';
+import { createBitcoinPsbt, getInputFromUtxoAndTx, estimateTxFee } from '../src/wallet/utxo';
 import { TransactionOutput } from '@scure/btc-signer/psbt';
 
 // TODO: Add more tests using https://github.com/paulmillr/scure-btc-signer/tree/5ead71ea9a873d8ba1882a9cd6aa561ad410d0d1/test/bitcoinjs-test/fixtures/bitcoinjs
@@ -14,7 +14,9 @@ describe('UTXO Tests', () => {
             // P2WPKH: https://blockstream.info/address/bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq
             'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq',
             // P2SH-P2WPKH: https://blockstream.info/address/3DFVKuT9Ft4rWpysAZ1bHpg55EBy1HVPcr
-            '3DFVKuT9Ft4rWpysAZ1bHpg55EBy1HVPcr',
+            // TODO: Use a real P2SH-P2WPKH address
+            // TODO: Add the pubkey to allow spending from the outputs
+            // '3DFVKuT9Ft4rWpysAZ1bHpg55EBy1HVPcr',
             // P2PKH: https://blockstream.info/address/1Kr6QSydW9bFQG1mXiPNNu6WpJGmUa9i1g
             '1Kr6QSydW9bFQG1mXiPNNu6WpJGmUa9i1g',
         ];
@@ -49,6 +51,8 @@ describe('UTXO Tests', () => {
                             // Use a random public key for P2SH-P2WPKH
                             pubkey = '03b366c69e8237d9be7c4f1ac2a7abc6a79932fbf3de4e2f6c04797d7ef27abfe1';
                         }
+                        // Note: it is possible that the above addresses have spent all of their funds
+                        // and the transaction will fail.
                         const psbtBase64 = await createBitcoinPsbt(paymentAddress, toAddress, amount, pubkey, opReturn);
                         const transaction = Transaction.fromPSBT(base64.decode(psbtBase64));
 
@@ -60,7 +64,7 @@ describe('UTXO Tests', () => {
                         // Get all outputs and add them to array
                         const outputs: TransactionOutput[] = [];
 
-                        for (var i = 0; i < transaction.outputsLength; i++) {
+                        for (let i = 0; i < transaction.outputsLength; i++) {
                             const output = transaction.getOutput(i);
 
                             outputs.push(output);
@@ -83,17 +87,20 @@ describe('UTXO Tests', () => {
 
                                 // Check the transfer script to the toAddress
                             } else if (output.amount === BigInt(amount)) {
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                 const scriptDecoded = OutScript.decode(output.script!) as any;
 
                                 // Remove "p2" from the address type as it's exluced in the OutScript type
                                 assert.equal(scriptDecoded.type, addressType.slice(2));
 
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                 const address = Address(NETWORK).decode(toAddress) as any;
 
                                 assert.deepEqual(scriptDecoded.hash, address.hash);
 
                                 // Check the possible change output
                             } else {
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                 const scriptDecoded = OutScript.decode(output.script!) as any;
 
                                 // Remove "p2" from the address type as it's exluced in the OutScript type
@@ -252,10 +259,56 @@ describe('UTXO Tests', () => {
                 network: NETWORK,
                 allowUnknownOutputs: true,
                 allowLegacyWitnessUtxo: true,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 dust: BigInt(546) as any,
             }
         );
 
         assert.isDefined(transaction);
+    });
+
+    it('should estimate the fee for a transaction', async () => {
+        // Addresses where randomly picked from blockstream.info
+        const paymentAddresses = [
+            // P2WPKH: https://blockstream.info/address/bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq
+            'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq',
+            // P2SH-P2WPKH: https://blockstream.info/address/3DFVKuT9Ft4rWpysAZ1bHpg55EBy1HVPcr
+            // TODO: As above, add a correct P2SH-P2WPKH address with its pub key
+            // '3DFVKuT9Ft4rWpysAZ1bHpg55EBy1HVPcr',
+            // P2PKH: https://blockstream.info/address/1Kr6QSydW9bFQG1mXiPNNu6WpJGmUa9i1g
+            '1Kr6QSydW9bFQG1mXiPNNu6WpJGmUa9i1g',
+        ];
+
+        const amounts = [undefined, 2000, 3000];
+        const feeRates = [undefined, 10];
+
+        // EVM address for OP return
+        const opReturn = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2';
+
+        // Refactor to execute in parallel
+        await Promise.all(
+            feeRates.map(async (feeRate) =>
+                Promise.all(
+                    amounts.map(async (amount) =>
+                        Promise.all(
+                            paymentAddresses.map(async (paymentAddress) => {
+                                const paymentAddressType = getAddressInfo(paymentAddress).type;
+
+                                let pubkey: string | undefined;
+
+                                if (paymentAddressType === AddressType.p2sh) {
+                                    // Use a random public key for P2SH-P2WPKH
+                                    pubkey = '03b366c69e8237d9be7c4f1ac2a7abc6a79932fbf3de4e2f6c04797d7ef27abfe1';
+                                }
+
+                                // If the amount is undefined, the fee should be estimated
+                                const fee = await estimateTxFee(paymentAddress, amount, pubkey, opReturn, feeRate);
+                                assert(fee > 0, 'Fee should be greater than 0');
+                            })
+                        )
+                    )
+                )
+            )
+        );
     });
 });

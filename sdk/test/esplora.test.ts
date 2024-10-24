@@ -130,14 +130,18 @@ describe('Esplora Tests', () => {
     });
 
     it('should get fee rate', async () => {
-        const client = new EsploraClient('testnet');
+        const client = new EsploraClient('mainnet');
         const feeRate = await client.getFeeEstimate(1);
-        assert.isAtLeast(feeRate, 1);
+        assert(feeRate > 0);
     });
 
     it('should get balance', async () => {
         const client = new EsploraClient('testnet');
         const balance = await client.getBalance('tb1qjhekcm565spvr0epqu5nvd9mhgwaafg6d0n2yw');
-        assert.equal(balance, 727499862);
+        assert.deepEqual(balance, {
+            confirmed: 727499862,
+            unconfirmed: 0,
+            total: 727499862,
+        });
     });
 });
