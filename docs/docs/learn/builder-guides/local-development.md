@@ -156,16 +156,16 @@ Get started: https://docs.unisat.io/dev/unisat-developer-service
 
 ### BOB SDK
 
-- [sats-wagmi](/docs/learn/builder-guides/sats-wagmi): Learn how to use the sats-wagmi React hooks library to connect your app with Bitcoin wallets like UniSat, Leather, Xverse, and MetaMask.
-- [Bitcoin Light Client](/docs/learn/builder-guides/relay): Learn how to interact with Bitcoin by proving transaction inclusion on BOB.
-- [Use tBTC, wBTC, or other ERC20 Tokens as Fee Tokens on BOB](/docs/learn/builder-guides/bridged-btc-gas-fee/index.md): Learn how to use tBTC and wBTC as fee tokens on BOB.
+- [sats-wagmi](/learn/builder-guides/sats-wagmi): Learn how to use the sats-wagmi React hooks library to connect your app with Bitcoin wallets like UniSat, Leather, Xverse, and MetaMask.
+- [Bitcoin Light Client](/learn/builder-guides/relay): Learn how to interact with Bitcoin by proving transaction inclusion on BOB.
+- [Use tBTC, wBTC, or other ERC20 Tokens as Fee Tokens on BOB](/learn/builder-guides/bridged-btc-gas-fee/index.md): Learn how to use tBTC and wBTC as fee tokens on BOB.
 
 ### Third-Party Tools on BOB
 
-- [Wallets](/docs/learn/reference/tools/wallets)
+- [Wallets](/learn/reference/tools/wallets)
 - [UniSat Ordinals API](https://docs.unisat.io/dev/unisat-developer-service)
-- [Rust zkVM](/docs/learn/reference/tools/rust-zkvm)
-- [Oracles](/docs/learn/reference/tools/oracles)
+- [Rust zkVM](/learn/reference/tools/rust-zkvm)
+- [Oracles](/learn/reference/tools/oracles)
 
 ### Collection of Bitcoin Tools
 

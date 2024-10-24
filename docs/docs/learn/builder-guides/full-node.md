@@ -6,7 +6,7 @@ sidebar_label: Run a Full Node
 # Run a Full Node
 
 :::info
-There is no protocol level incentive to run a BOB full node. If you’re interested in accessing the BOB chain, but you don’t want to set up your own node, see our [Node Providers](/docs/learn/reference/tools/node-providers) to get RPC access to fully-managed nodes hosted by a third-party provider.
+There is no protocol level incentive to run a BOB full node. If you’re interested in accessing the BOB chain, but you don’t want to set up your own node, see our [Node Providers](/learn/reference/tools/node-providers) to get RPC access to fully-managed nodes hosted by a third-party provider.
 :::
 
 ## Requirements

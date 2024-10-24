@@ -104,7 +104,7 @@ We’re offering projects on BOB free access to Dynamic and Pimlico if you’d l
 
 BOB offers a complete package for builders looking to bring world-class UX to Bitcoin. We’re offering projects on BOB free access to Dynamic and Pimlico if you’d like to do the same.
 
-[Reach out to us](/docs/learn/introduction/contribution.md) with questions, feedback, or ideas. We look forward to seeing what you Build on Bitcoin!
+[Reach out to us](/learn/introduction/contribution.md) with questions, feedback, or ideas. We look forward to seeing what you Build on Bitcoin!
 
 ## Code References
 

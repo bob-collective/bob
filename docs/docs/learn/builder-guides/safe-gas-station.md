@@ -11,7 +11,7 @@ BOB believes that users deserve next-gen UX, including abstracting away the comp
 
 ## Spice Things Up With BOB Fusion
 
-In addition to sponsoring your users' transaction fees, we would like to invite any projects joining the Safe\{Core\} Gas Station Program to be a part of [BOB Fusion](/docs/learn/user-guides/bob-fusion/). Check out the [BOB Fusion app](https://app.gobob.xyz/fusion) to see how we engage our community with weekly voting competitions, Spice harvesting bonuses, and links to our ecosystem of projects.
+In addition to sponsoring your users' transaction fees, we would like to invite any projects joining the Safe\{Core\} Gas Station Program to be a part of [BOB Fusion](/learn/user-guides/bob-fusion/). Check out the [BOB Fusion app](https://app.gobob.xyz/fusion) to see how we engage our community with weekly voting competitions, Spice harvesting bonuses, and links to our ecosystem of projects.
 
 :::tip Join BOB Fusion today!
 If free gas fees and Spice points to give your users sounds interesting to you, [contact us](https://forms.gle/EKYmrAhPsyiQ3ua57) to learn more and join the BOB Fusion campaign.
