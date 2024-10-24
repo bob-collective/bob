@@ -7,7 +7,7 @@ sidebar_label: "Phase 1: Optimistic BOB"
 
 The first deployment of BOB uses the [OP Stack](https://stack.optimism.io), benefiting from infrastructure, marketing, and BD support. Eventually, The BOB OP-Stack deployment can be [Superchain-compatible](https://www.optimism.io/superchain) making it easy for users to move seamlessly between different Superchain rollups.
 
-We are working on extending the functionality of the OP stack specifically for Bitcoin: (1) fees payable in tokenized BTC via [OpenGSN](https://opengsn.org/) and [account abstraction](https://ethereum.org/en/roadmap/account-abstraction/) to ensure easy on-ramp from Bitcoin, and (2) in [phase 2](/docs/learn/bob-stack/merged-mining), verify the rollup state through Bitcoin miners.
+We are working on extending the functionality of the OP stack specifically for Bitcoin: (1) fees payable in tokenized BTC via [OpenGSN](https://opengsn.org/) and [account abstraction](https://ethereum.org/en/roadmap/account-abstraction/) to ensure easy on-ramp from Bitcoin, and (2) in [phase 2](/docs/learn/introduction/merged-mining), verify the rollup state through Bitcoin miners.
 When possible, we implement smart contracts directly on the EVM to ensure OP stack updates can be directly applied to BOB.
 
 ## Why OP Stack?

@@ -30,7 +30,7 @@ const config = {
   organizationName: "bob-collective",
   projectName: "bob",
 
-  onBrokenLinks: "warn",
+  onBrokenLinks: "throw",
   onBrokenAnchors: "throw",
   onBrokenMarkdownLinks: "throw",
   onDuplicateRoutes: "throw",

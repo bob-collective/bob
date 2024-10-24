@@ -7,7 +7,7 @@ sidebar_label: Bridge from Bitcoin to BOB
 
 [BOB Gateway](https://app.gobob.xyz) lets you stake, swap, or lend your bitcoin from a single, unified interface so you can put your bitcoin to work earning yield faster than ever before.
 
-It's built on a trustless, RFQ-based cross-chain [swap protocol](../../../build/examples/btc-swap/) that connects professional LPs with users through a seamless swapping experience. Essentially, LPs handle the complexities of bridging and staking on behalf of users in exchange for a fee.
+It's built on a trustless, RFQ-based cross-chain swap protocol that connects professional LPs with users through a seamless swapping experience. Essentially, LPs handle the complexities of bridging and staking on behalf of users in exchange for a fee.
 
 :::tip Interested in providing liquidity?
 If you are interested in being an LP for the BOB Gateway bridge, please send us an email at `gateway@gobob.xyz`.

@@ -156,25 +156,17 @@ Get started: https://docs.unisat.io/dev/unisat-developer-service
 
 ### BOB SDK
 
-- [sats-wagmi](/docs/build/bob-sdk/sats-wagmi): Learn how to use the sats-wagmi React hooks library to connect your app with Bitcoin wallets like UniSat, Leather, Xverse, and MetaMask.
-- [Bitcoin Light Client](/docs/build/bob-sdk/relay): Learn how to interact with Bitcoin by proving transaction inclusion on BOB.
-- [Use MetaMask for Bitcoin](/docs/build/bob-sdk/metamask-snap): Learn how to use MetaMask for Bitcoin on BOB.
-- [Use tBTC, wBTC, or other ERC20 Tokens as Fee Tokens on BOB](/docs/build/bob-sdk/bridged-btc-gas-fee): Learn how to use tBTC and wBTC as fee tokens on BOB.
+- [sats-wagmi](/docs/learn/builder-guides/sats-wagmi): Learn how to use the sats-wagmi React hooks library to connect your app with Bitcoin wallets like UniSat, Leather, Xverse, and MetaMask.
+- [Bitcoin Light Client](/docs/learn/builder-guides/relay): Learn how to interact with Bitcoin by proving transaction inclusion on BOB.
+- [Use tBTC, wBTC, or other ERC20 Tokens as Fee Tokens on BOB](/docs/learn/builder-guides/bridged-btc-gas-fee/index.md): Learn how to use tBTC and wBTC as fee tokens on BOB.
 
 ### Third-Party Tools on BOB
 
-- [Wallets](/docs/build/tools/wallets)
-- [APIs](/docs/build/tools/api)
-- [Rust zkVM](/docs/build/tools/rust-zkvm)
-- [Oracles](/docs/build/tools/oracles)
+- [Wallets](/docs/learn/reference/tools/wallets)
+- [UniSat Ordinals API](https://docs.unisat.io/dev/unisat-developer-service)
+- [Rust zkVM](/docs/learn/reference/tools/rust-zkvm)
+- [Oracles](/docs/learn/reference/tools/oracles)
 
 ### Collection of Bitcoin Tools
 
 [Lopp Development Tool List](https://www.lopp.net/bitcoin-information/developer-tools.html)
-
-### [UniSat Ordinals API](https://docs.unisat.io/dev/unisat-developer-service)
-
-UniSat Open-API is open to community developers, allowing you to explore the world of Bitcoin and ordinals.
-
-Getting an API key: [Contact the team](https://docs.unisat.io/dev/unisat-developer-service#getting-an-api-key).
-

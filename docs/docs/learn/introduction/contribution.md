@@ -22,8 +22,7 @@ If you are keen to build on BOB or contribute to BOB itself:
 
 - Join the [BOB Fusion campaign](https://forms.gle/EKYmrAhPsyiQ3ua57) after you deploy on BOB.
 - Checkout the [bob-collective GitHub](https://github.com/bob-collective/bob)
-- Deploy your first "[Hello Bitcoin](/docs/build/getting-started/helloworld)" contracts on BOB.
-- Try out our [Demos](/docs/build/getting-started/#examples)
+- Deploy your first "[Hello Bitcoin](/docs/learn/builder-guides/hello-bitcoin/index.mdx)" contracts on BOB.
 
 ## More
 
