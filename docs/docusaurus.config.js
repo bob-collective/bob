@@ -47,16 +47,10 @@ const config = {
     [
       "@docusaurus/plugin-client-redirects",
       {
-        redirects: [
-          {
-            from: "/",
-            to: "/docs",
-          },
-        ],
+        redirects: [],
       },
     ],
   ],
-
   presets: [
     [
       "classic",
