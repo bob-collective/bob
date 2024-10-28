@@ -2,7 +2,7 @@ import { Transaction, Script, selectUTXO, TEST_NETWORK, NETWORK, p2wpkh, p2sh, O
 import { hex, base64 } from '@scure/base';
 import { AddressType, getAddressInfo, Network } from 'bitcoin-address-validation';
 import { EsploraClient, UTXO } from '../esplora';
-import { hash160 } from '@scure/btc-signer/lib/utils';
+import { ripemd160, sha256 } from 'bitcoinjs-lib/src/crypto';
 
 export type BitcoinNetworkName = Exclude<Network, 'regtest'>;
 
@@ -188,7 +188,7 @@ export function getInputFromUtxoAndTx(
         const inner = p2wpkh(Buffer.from(publicKey!, 'hex'), getBtcNetwork(network));
 
         // p2sh throws errors if multisig address is used
-        const hash = hash160(inner.script);
+        const hash = ripemd160(sha256(Buffer.from(inner.script)));
         const script = OutScript.encode({ type: 'sh', hash });
         if (script) {
             const s = OutScript.decode(script);
