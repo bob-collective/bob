@@ -1,7 +1,8 @@
-import { Transaction, Script, selectUTXO, TEST_NETWORK, NETWORK, p2wpkh, p2sh } from '@scure/btc-signer';
+import { Transaction, Script, selectUTXO, TEST_NETWORK, NETWORK, p2wpkh, p2sh, OutScript } from '@scure/btc-signer';
 import { hex, base64 } from '@scure/base';
 import { AddressType, getAddressInfo, Network } from 'bitcoin-address-validation';
 import { EsploraClient, UTXO } from '../esplora';
+import { hash160 } from '@scure/btc-signer/lib/utils';
 
 export type BitcoinNetworkName = Exclude<Network, 'regtest'>;
 
@@ -150,7 +151,14 @@ export function getInputFromUtxoAndTx(
             throw new Error('Bitcoin P2SH not supported without public key');
         }
         const inner = p2wpkh(Buffer.from(publicKey!, 'hex'), getBtcNetwork(network));
-        redeemScript = p2sh(inner);
+
+        // p2sh throws errors if multisig address is used
+        const hash = hash160(inner.script);
+        const script = OutScript.encode({ type: 'sh', hash });
+        if (script) {
+            const s = OutScript.decode(script);
+            if (s.type !== 'ms') redeemScript = p2sh(inner);
+        }
     }
 
     // For the redeem and witness script, we need to construct the script mixin
