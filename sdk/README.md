@@ -24,16 +24,19 @@ or
 npm i @gobob/bob-sdk
 ```
 
-## Building BOB sdk
+## Building BOB SDK
 
 ### Clone the repository
+
 Clone the repository and change to the `sdk` subfolder.
+
 ```shell
 git clone git@github.com:bob-collective/bob.git
 cd bob/sdk
 ```
 
 ### Install dependencies
+
 We use `pnpm` in the examples below. But the steps below should also work when using `yarn` or `npm` instead.
 
 ```shell

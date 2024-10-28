@@ -43,12 +43,23 @@ const config = {
     locales: ["en"],
   },
 
+  plugins: [
+    [
+      "@docusaurus/plugin-client-redirects",
+      {
+        redirects: [],
+      },
+    ],
+  ],
   presets: [
     [
       "classic",
       /** @type {import('@docusaurus/preset-classic').Options} */
       ({
+        pages: false,
+        blog: false,
         docs: {
+          routeBasePath: "/",
           sidebarPath: require.resolve("./sidebars.js"),
           editUrl: `${GITHUB_LINK}/tree/master/docs/`,
           remarkPlugins: [
@@ -93,24 +104,6 @@ const config = {
             sidebarId: "learnSidebar",
             position: "left",
             label: "Learn",
-          },
-          {
-            type: "docSidebar",
-            sidebarId: "buildSidebar",
-            position: "left",
-            label: "Build",
-          },
-          // {
-          //   type: "docSidebar",
-          //   sidebarId: "apiSidebar",
-          //   position: "left",
-          //   label: "API",
-          // },
-          {
-            type: "docSidebar",
-            sidebarId: "contractSidebar",
-            position: "left",
-            label: "Contracts",
           },
           {
             href: DISCORD,
