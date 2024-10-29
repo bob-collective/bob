@@ -47,7 +47,123 @@ const config = {
     [
       "@docusaurus/plugin-client-redirects",
       {
-        redirects: [],
+        redirects: [
+          // Introduction section
+          {
+            from: "/docs/learn/guides/faq",
+            to: "/learn/introduction/faq",
+          },
+          {
+            from: "/docs/learn/bob-stack/merged-mining",
+            to: "/learn/introduction/merged-mining",
+          },
+          {
+            from: "/docs/learn/bob-stack/op-stack",
+            to: "/learn/introduction/op-stack",
+          },
+          {
+            from: "/docs/learn/bob-stack/roadmap",
+            to: "/learn/introduction/roadmap",
+          },
+          {
+            from: "/docs/learn/bob-stack/stack-overview",
+            to: "/learn/introduction/stack-overview",
+          },
+
+          // User Guides
+          {
+            from: "/docs/learn/guides/binance-wallet-gateway",
+            to: "/learn/user-guides/binance-wallet-gateway",
+          },
+          {
+            from: "/docs/learn/guides/bob-fusion",
+            to: "/learn/user-guides/bob-fusion",
+          },
+          {
+            from: "/docs/learn/guides/bob-gateway",
+            to: "/learn/user-guides/bob-gateway",
+          },
+          {
+            from: "/docs/learn/guides/bob-pay",
+            to: "/learn/user-guides/bob-pay",
+          },
+          {
+            from: "/docs/learn/guides/bob-stake",
+            to: "/learn/user-guides/bob-stake",
+          },
+          {
+            from: "/docs/learn/guides/ethereum-bridge",
+            to: "/learn/user-guides/ethereum-bridge",
+          },
+          {
+            from: "/docs/build/getting-started/networks",
+            to: "/learn/user-guides/networks",
+          },
+          {
+            from: "/docs/learn/guides/onboard-to-bob",
+            to: "/learn/user-guides/onboard-to-bob",
+          },
+
+          // Builder Guides
+          {
+            from: "/docs/build/bob-sdk/bridged-btc-gas-fee/account-abstraction",
+            to: "/learn/builder-guides/bridged-btc-gas-fee/account-abstraction",
+          },
+          {
+            from: "/docs/build/bob-sdk/bridged-btc-gas-fee",
+            to: "/learn/builder-guides/bridged-btc-gas-fee",
+          },
+          {
+            from: "/docs/build/bob-sdk/bridged-btc-gas-fee/meta-transactions",
+            to: "/learn/builder-guides/bridged-btc-gas-fee/meta-transactions",
+          },
+          {
+            from: "/docs/build/how-to/full-node",
+            to: "/learn/builder-guides/full-node",
+          },
+          {
+            from: "/docs/build/bob-sdk/gateway",
+            to: "/learn/builder-guides/gateway",
+          },
+          {
+            from: "/docs/build/getting-started/helloworld",
+            to: "/learn/builder-guides/hello-bitcoin",
+          },
+          {
+            from: "/docs/build/getting-started/local-development",
+            to: "/learn/builder-guides/local-development",
+          },
+          {
+            from: "/docs/build/bob-sdk/relay",
+            to: "/learn/builder-guides/relay",
+          },
+          {
+            from: "/docs/build/bob-sdk/sats-wagmi",
+            to: "/learn/builder-guides/sats-wagmi",
+          },
+
+          // Reference section
+          {
+            from: "/docs/learn/security/audits",
+            to: "/learn/reference/audits",
+          },
+          {
+            from: "/docs/build/bridged-token-addresses",
+            to: "/learn/reference/bridged-token-addresses",
+          },
+          {
+            from: "/docs/build/contracts",
+            to: "/learn/reference/contracts",
+          },
+          {
+            from: "/docs/learn/security/privileged-roles",
+            to: "/learn/reference/privileged-roles",
+          },
+          {
+            from: "/docs/build/examples/zkvm-taproot",
+            to: "/learn/reference/tools/rust-zkvm",
+          },
+        ],
       },
     ],
   ],
