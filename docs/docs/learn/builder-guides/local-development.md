@@ -80,7 +80,7 @@ bitcoin-cli -regtest -rpcwallet=alice generatetoaddress 101 $ADDRESS
 
 #### Wallet
 
-You can use `bitcoin-cli` to manage the wallet. However, if you prefer you a UI, you can use Bitcoin QT.
+You can use `bitcoin-cli` to manage the wallet. However, if you prefer a UI, you can use Bitcoin QT.
 
 Start Bitcoin QT (for wallet functionality):
 
