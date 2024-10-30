@@ -13,7 +13,7 @@ If you want to engage with the community and learn how you can contribute, here 
 
 - Join our [Discord](https://discord.gg/gobob)
 - Join our [Telegram](https://t.me/+CyIcLW2nfaFlNDc1)
-- Follow us on [Twitter](https://twitter.com/build_on_bob)
+- Follow us on [Twitter](https://x.com/build_on_bob)
 - Keep an eye on the growing [Ecosystem](https://www.gobob.xyz/ecosystem)
 
 ## Builders

@@ -33,6 +33,6 @@ BOB provides trustless access to Bitcoin block and transactional data via a [BTC
 
 ### BOB SDK
 
-_A smart contract deveopers' universal toolkit for all things building on Bitcoin_
+_A smart contract developers' universal toolkit for all things building on Bitcoin_
 
 Similar to [OpenZeppelin](https://www.openzeppelin.com/) and other great Solidity libraries, BOB provides a powerful SDK for all things building on Bitcoin. This includes a wide range of Solidity contracts that can be used to interact with Bitcoin including core, [Ordinals](https://docs.ordinals.com/), [BRC20s](https://brc20.gitbook.io/brc20/overview/introduction), [Runes](https://rodarmor.com/blog/runes/), and [Lightning](https://lightning.network/), as well as improved inscription APIs and tools for a unified BTC and EVM wallet experience (e.g., manage Ordinals in your MetaMask wallet via [Snaps](https://metamask.io/snaps/)). Plus the ability to leverage [Account Abstraction](https://ethereum.org/en/roadmap/account-abstraction/) with bridged BTC.
