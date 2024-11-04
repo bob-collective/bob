@@ -432,8 +432,8 @@ export class OrdinalsClient {
      * console.log("Output:", output);
      * ```
      */
-    async getInscriptionsFromOutPoint(outPoint: OutPoint): Promise<OutputJson> {
-        return await this.getJson<OutputJson>(`${this.basePath}/output/${OutPoint.toString(outPoint)}`);
+    getInscriptionsFromOutPoint(outPoint: OutPoint): Promise<OutputJson> {
+        return this.getJson<OutputJson>(`${this.basePath}/output/${OutPoint.toString(outPoint)}`);
     }
 
     /**

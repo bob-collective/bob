@@ -2,6 +2,7 @@ import { Transaction, Script, selectUTXO, TEST_NETWORK, NETWORK, p2wpkh, p2sh } 
 import { hex, base64 } from '@scure/base';
 import { AddressType, getAddressInfo, Network } from 'bitcoin-address-validation';
 import { EsploraClient, UTXO } from '../esplora';
+import { OrdinalsClient } from '../ordinal-api';
 
 export type BitcoinNetworkName = Exclude<Network, 'regtest'>;
 
@@ -83,6 +84,7 @@ export async function createBitcoinPsbt(
     }
 
     const esploraClient = new EsploraClient(addressInfo.network);
+    const ordinalsClient = new OrdinalsClient(addressInfo.network);
 
     let confirmedUtxos: UTXO[] = [];
 
@@ -104,7 +106,10 @@ export async function createBitcoinPsbt(
 
     await Promise.all(
         confirmedUtxos.map(async (utxo) => {
-            const hex = await esploraClient.getTransactionHex(utxo.txid);
+            const [hex, ordinalsOutputJson] = await Promise.all([
+                esploraClient.getTransactionHex(utxo.txid),
+                ordinalsClient.getInscriptionsFromOutPoint(utxo),
+            ]);
             const transaction = Transaction.fromRaw(Buffer.from(hex, 'hex'), { allowUnknownOutputs: true });
             const input = getInputFromUtxoAndTx(
                 addressInfo.network as BitcoinNetworkName,
@@ -113,7 +118,8 @@ export async function createBitcoinPsbt(
                 addressInfo.type,
                 publicKey
             );
-            possibleInputs.push(input);
+            // to support taproot addresses we want to exclude outputs that contain inscriptions
+            if (ordinalsOutputJson.inscriptions.length === 0) possibleInputs.push(input);
         })
     );
 
