@@ -12,7 +12,7 @@ The [BOB Hybrid L2](https://docs.gobob.xyz/whitepaper.pdf) will launch in multip
 BOB first launched as an Ethereum L2 built with the [OP stack](https://docs.optimism.io/), operating a native Ethereum
 bridge, and supporting multiple 3rd-party Bitcoin bridges. This allows dApps on BOB to build on top of best-in-class developer tooling and new developments like sub-second transaction speeds and [fee token abstraction](/docs/learn/builder-guides/bridged-btc-gas-fee/index.md).
 
-BOB tracks the state of Bitcoin with a BTC light client, verifying block headers and accepting transaction inclusion proofs. **This enables smart contracts on BOB to trustlessly use Bitcoin state in real time**, such as [BOB Gateway](/docs/learn/user-guides/bob-gateway/index.md).
+BOB tracks the state of Bitcoin with a BTC light client, verifying block headers and accepting transaction inclusion proofs. **This enables smart contracts on BOB to trustlessly use Bitcoin state in real time**, such as [BOB Gateway](/learn/user-guides/onboard-to-bob/ethereum-bridge/).
 
 ### Phase 2: Bitcoin "Soft" Finality
 

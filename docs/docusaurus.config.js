@@ -81,7 +81,7 @@ const config = {
           },
           {
             from: "/docs/learn/guides/bob-gateway",
-            to: "/learn/user-guides/bob-gateway",
+            to: "/learn/user-guides/onboard-to-bob/bob-gateway",
           },
           {
             from: "/docs/learn/guides/bob-pay",
@@ -93,7 +93,7 @@ const config = {
           },
           {
             from: "/docs/learn/guides/ethereum-bridge",
-            to: "/learn/user-guides/ethereum-bridge",
+            to: "/learn/user-guides/onboard-to-bob/ethereum-bridge",
           },
           {
             from: "/docs/build/getting-started/networks",
