@@ -24,6 +24,18 @@ BOB is a new type of Bitcoin-secured blockchain: a Hybrid L2. Hybrid L2s inherit
 - **Zamyatin A, Harz D**
 - Pre-print, 2024
 
+### [BitVM: Bridging Bitcoin to Second Layers](https://bitvm.org/bitvm_bridge.pdf)
+
+<details>
+  <summary>Read abstract</summary>
+
+BitVM2 is a novel paradigm that enables arbitrary program execution in Bitcoin, thereby combining Turing-complete expressiveness with the security of Bitcoin consensus. At its core, BitVM2 leverages optimistic computation, assuming operators are honest unless proven otherwise by challengers through fraud proofs, and SNARK proof verification scripts, which are split into sub-programs that are executed within Bitcoin transactions. As a result, BitVM2 ensures program correctness with just three on-chain transactions. BitVM2 significantly improves over prior BitVM designs by enabling, for the first time, permissionless challenging and by reducing the complexity and number of on-chain transactions required to resolve disputes. Our construction requires no consensus changes to Bitcoin. BitVM2 enables the design of an entirely new class of applications in Bitcoin. We showcase that by presenting BitVM Bridge, a protocol that enhances prior Bitcoin bridges by reducing trust assumptions for the safety of deposits from an honest majority (t-of-n) to existential honesty (1-of-n) during setup. To guarantee liveness, we only require one active rational operator (while the others can be malicious). Any user can act as challenger, facilitating permissionless verification of the protocol.
+
+</details>
+
+- Linus R, Aumayr L, **Zamyatin A**, Pelosi A, Avarikioti Z, Meffei M
+- Pre-print, 2024
+
 ### [OptiMine: Optimistically Sequenced Merged Mining for Rollups and Sidechains](https://gobob.xyz/optimine)
 
 <details>
