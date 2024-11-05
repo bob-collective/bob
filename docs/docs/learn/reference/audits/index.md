@@ -1,5 +1,5 @@
 ---
-sidebar_position: 2
+sidebar_position: 3
 sidebar_label: Audits
 ---
 
@@ -11,7 +11,7 @@ In Phase 1 of our [roadmap](/learn/introduction/roadmap.md), "Optimistic BOB" is
 
 ## BOB Gateway
 
-BOB's most novel product is our intent-based Bitcoin bridge, called "[BOB Gateway](/learn/user-guides/bob-gateway/index.md)." The reports below show the results of audits for every major release so far.
+BOB's most novel product is our intent-based Bitcoin bridge, called "[BOB Gateway](/learn/user-guides/onboard-to-bob/bob-gateway/)." The reports below show the results of audits for every major release so far.
 
 ### Common Prefix
 
