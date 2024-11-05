@@ -51,15 +51,15 @@ const config = {
           // Introduction section
           {
             from: "/docs/learn/guides/faq",
-            to: "/learn/introduction/faq",
+            to: "/learn/user-guides/faq",
           },
           {
             from: "/docs/learn/bob-stack/merged-mining",
-            to: "/learn/introduction/merged-mining",
+            to: "/learn/introduction/roadmap",
           },
           {
             from: "/docs/learn/bob-stack/op-stack",
-            to: "/learn/introduction/op-stack",
+            to: "/learn/introduction/roadmap",
           },
           {
             from: "/docs/learn/bob-stack/roadmap",
