@@ -195,7 +195,7 @@ BOB Gateway enables staking, swapping, lending, and bridging Bitcoin with a sing
 
 See the [Code References](#code-references) below for a deeper look at the SDK and an example implementation file.
 
-You're always welcome to [reach out to us](/docs/learn/introduction/contribution.md) with questions, feedback, or ideas. We look forward to seeing what you Build on Bitcoin!
+We look forward to seeing what you Build on Bitcoin!
 
 ## Security and Trust Assumptions
 

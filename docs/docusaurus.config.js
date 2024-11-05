@@ -51,15 +51,15 @@ const config = {
           // Introduction section
           {
             from: "/docs/learn/guides/faq",
-            to: "/learn/introduction/faq",
+            to: "/learn/user-guides/faq",
           },
           {
             from: "/docs/learn/bob-stack/merged-mining",
-            to: "/learn/introduction/merged-mining",
+            to: "/learn/introduction/roadmap",
           },
           {
             from: "/docs/learn/bob-stack/op-stack",
-            to: "/learn/introduction/op-stack",
+            to: "/learn/introduction/roadmap",
           },
           {
             from: "/docs/learn/bob-stack/roadmap",
@@ -81,7 +81,7 @@ const config = {
           },
           {
             from: "/docs/learn/guides/bob-gateway",
-            to: "/learn/user-guides/bob-gateway",
+            to: "/learn/user-guides/onboard-to-bob/bob-gateway",
           },
           {
             from: "/docs/learn/guides/bob-pay",
@@ -93,7 +93,7 @@ const config = {
           },
           {
             from: "/docs/learn/guides/ethereum-bridge",
-            to: "/learn/user-guides/ethereum-bridge",
+            to: "/learn/user-guides/onboard-to-bob/ethereum-bridge",
           },
           {
             from: "/docs/build/getting-started/networks",
