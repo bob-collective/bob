@@ -92,6 +92,10 @@ const config = {
             to: "/learn/user-guides/bob-stake",
           },
           {
+            from: "/docs/learn/guides/bitcoin-bridge/",
+            to: "/learn/user-guides/onboard-to-bob/bob-gateway/",
+          },
+          {
             from: "/docs/learn/guides/ethereum-bridge",
             to: "/learn/user-guides/onboard-to-bob/ethereum-bridge",
           },
