@@ -3,6 +3,7 @@ import { hex, base64 } from '@scure/base';
 import { AddressType, getAddressInfo, Network } from 'bitcoin-address-validation';
 import { EsploraClient, UTXO } from '../esplora';
 import { OrdinalsClient } from '../ordinal-api';
+import { SelectionStrategy } from '@scure/btc-signer/utxo';
 
 export type BitcoinNetworkName = Exclude<Network, 'regtest'>;
 
@@ -70,10 +71,7 @@ export async function createBitcoinPsbt(
     const addressInfo = getAddressInfo(fromAddress);
 
     // TODO: possibly, allow other strategies to be passed to this function
-    let utxoSelectionStrategy = 'default';
-    if (addressInfo.type === AddressType.p2tr) {
-        utxoSelectionStrategy = 'all';
-    }
+    const utxoSelectionStrategy: SelectionStrategy = 'default';
 
     if (addressInfo.network === 'regtest') {
         throw new Error('Bitcoin regtest not supported');
@@ -154,7 +152,7 @@ export async function createBitcoinPsbt(
     // default = exactBiggest/accumBiggest creates tx with smallest fees, but it breaks
     // big outputs to small ones, which in the end will create a lot of outputs close to dust.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const transaction = selectUTXO(possibleInputs, outputs, utxoSelectionStrategy as any, {
+    const transaction = selectUTXO(possibleInputs, outputs, utxoSelectionStrategy, {
         changeAddress: fromAddress, // Refund surplus to the payment address
         feePerByte: BigInt(Math.ceil(feeRate)), // round up to the nearest integer
         bip69: true, // Sort inputs and outputs according to BIP69
@@ -355,7 +353,7 @@ export async function estimateTxFee(
     }
 
     // Select all UTXOs if no amount is specified
-    let utxoSelectionStrategy = 'default';
+    let utxoSelectionStrategy: SelectionStrategy = 'default';
     if (amount === undefined) {
         utxoSelectionStrategy = 'all';
     }
@@ -365,7 +363,7 @@ export async function estimateTxFee(
     // default = exactBiggest/accumBiggest creates tx with smallest fees, but it breaks
     // big outputs to small ones, which in the end will create a lot of outputs close to dust.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const transaction = selectUTXO(possibleInputs, outputs, utxoSelectionStrategy as any, {
+    const transaction = selectUTXO(possibleInputs, outputs, utxoSelectionStrategy, {
         changeAddress: fromAddress, // Refund surplus to the payment address
         feePerByte: BigInt(Math.ceil(feeRate)), // round up to the nearest integer
         bip69: true, // Sort inputs and outputs according to BIP69
