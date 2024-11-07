@@ -1,4 +1,4 @@
-import { Transaction, Script, selectUTXO, TEST_NETWORK, NETWORK, p2wpkh, p2sh } from '@scure/btc-signer';
+import { Transaction, Script, selectUTXO, TEST_NETWORK, NETWORK, p2wpkh, p2sh, p2tr } from '@scure/btc-signer';
 import { hex, base64 } from '@scure/base';
 import { AddressType, getAddressInfo, Network } from 'bitcoin-address-validation';
 import { EsploraClient, UTXO } from '../esplora';
@@ -70,14 +70,21 @@ export async function createBitcoinPsbt(
     const addressInfo = getAddressInfo(fromAddress);
 
     // TODO: possibly, allow other strategies to be passed to this function
-    const utxoSelectionStrategy = 'default';
+    let utxoSelectionStrategy = 'default';
+    if (addressInfo.type === AddressType.p2tr) {
+        utxoSelectionStrategy = 'all';
+    }
 
     if (addressInfo.network === 'regtest') {
         throw new Error('Bitcoin regtest not supported');
     }
 
     // We need the public key to generate the redeem and witness script to spend the scripts
-    if (addressInfo.type === (AddressType.p2sh || AddressType.p2wsh)) {
+    if (
+        addressInfo.type === AddressType.p2sh ||
+        addressInfo.type === AddressType.p2wsh ||
+        addressInfo.type === AddressType.p2tr
+    ) {
         if (!publicKey) {
             throw new Error('Public key is required to spend from the selected address type');
         }
@@ -106,7 +113,7 @@ export async function createBitcoinPsbt(
 
     await Promise.all(
         confirmedUtxos.map(async (utxo) => {
-            const [hex, ordinalsOutputJson] = await Promise.all([
+            const [hex, outputJson] = await Promise.all([
                 esploraClient.getTransactionHex(utxo.txid),
                 ordinalsClient.getInscriptionsFromOutPoint(utxo),
             ]);
@@ -118,8 +125,8 @@ export async function createBitcoinPsbt(
                 addressInfo.type,
                 publicKey
             );
-            // to support taproot addresses we want to exclude outputs that contain inscriptions
-            if (ordinalsOutputJson.inscriptions.length === 0) possibleInputs.push(input);
+            // to support taproot addresses we want to exclude outputs which contain inscriptions
+            if (outputJson.inscriptions.length === 0) possibleInputs.push(input);
         })
     );
 
@@ -146,7 +153,8 @@ export async function createBitcoinPsbt(
     // https://github.com/paulmillr/scure-btc-signer?tab=readme-ov-file#utxo-selection
     // default = exactBiggest/accumBiggest creates tx with smallest fees, but it breaks
     // big outputs to small ones, which in the end will create a lot of outputs close to dust.
-    const transaction = selectUTXO(possibleInputs, outputs, utxoSelectionStrategy, {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const transaction = selectUTXO(possibleInputs, outputs, utxoSelectionStrategy as any, {
         changeAddress: fromAddress, // Refund surplus to the payment address
         feePerByte: BigInt(Math.ceil(feeRate)), // round up to the nearest integer
         bip69: true, // Sort inputs and outputs according to BIP69
@@ -192,6 +200,13 @@ export function getInputFromUtxoAndTx(
         }
         const inner = p2wpkh(Buffer.from(publicKey!, 'hex'), getBtcNetwork(network));
         redeemScript = p2sh(inner);
+    } else if (addressType === AddressType.p2tr) {
+        if (!publicKey) {
+            throw new Error('Bitcoin P2TR not supported without public key');
+        }
+
+        const xOnlyPublicKey = Buffer.from(publicKey, 'hex').subarray(1, 33);
+        redeemScript = p2tr(xOnlyPublicKey, undefined, getBtcNetwork(network));
     }
 
     // For the redeem and witness script, we need to construct the script mixin
@@ -273,7 +288,11 @@ export async function estimateTxFee(
     }
 
     // We need the public key to generate the redeem and witness script to spend the scripts
-    if (addressInfo.type === (AddressType.p2sh || AddressType.p2wsh)) {
+    if (
+        addressInfo.type === AddressType.p2sh ||
+        addressInfo.type === AddressType.p2wsh ||
+        addressInfo.type === AddressType.p2tr
+    ) {
         if (!publicKey) {
             throw new Error('Public key is required to spend from the selected address type');
         }
