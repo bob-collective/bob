@@ -195,10 +195,6 @@ export function getInputFromUtxoAndTx(
         const inner = p2wpkh(Buffer.from(publicKey!, 'hex'), getBtcNetwork(network));
         redeemScript = p2sh(inner);
     } else if (addressType === AddressType.p2tr) {
-        if (!publicKey) {
-            throw new Error('Bitcoin P2TR not supported without public key');
-        }
-
         const xOnlyPublicKey = Buffer.from(publicKey, 'hex').subarray(1, 33);
         redeemScript = p2tr(xOnlyPublicKey, undefined, getBtcNetwork(network));
     }
