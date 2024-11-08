@@ -19,6 +19,8 @@ describe('UTXO Tests', () => {
             // '3DFVKuT9Ft4rWpysAZ1bHpg55EBy1HVPcr',
             // P2PKH: https://blockstream.info/address/1Kr6QSydW9bFQG1mXiPNNu6WpJGmUa9i1g
             '1Kr6QSydW9bFQG1mXiPNNu6WpJGmUa9i1g',
+            // P2TR https://blockstream.info/address/bc1peqr5a5kfufvsl66444jm9y8qq0s87ph0zv4lfkcs7h40ew02uvsqkhjav0
+            'bc1peqr5a5kfufvsl66444jm9y8qq0s87ph0zv4lfkcs7h40ew02uvsqkhjav0',
         ];
 
         const toAddresses = [
@@ -47,7 +49,7 @@ describe('UTXO Tests', () => {
 
                         let pubkey: string | undefined;
 
-                        if (paymentAddressType === AddressType.p2sh) {
+                        if (paymentAddressType === AddressType.p2sh || paymentAddressType === AddressType.p2tr) {
                             // Use a random public key for P2SH-P2WPKH
                             pubkey = '03b366c69e8237d9be7c4f1ac2a7abc6a79932fbf3de4e2f6c04797d7ef27abfe1';
                         }
@@ -267,7 +269,7 @@ describe('UTXO Tests', () => {
         assert.isDefined(transaction);
     });
 
-    it('should estimate the fee for a transaction', async () => {
+    it('should estimate the fee for a transaction', { timeout: 50000 }, async () => {
         // Addresses where randomly picked from blockstream.info
         const paymentAddresses = [
             // P2WPKH: https://blockstream.info/address/bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq
@@ -277,6 +279,8 @@ describe('UTXO Tests', () => {
             // '3DFVKuT9Ft4rWpysAZ1bHpg55EBy1HVPcr',
             // P2PKH: https://blockstream.info/address/1Kr6QSydW9bFQG1mXiPNNu6WpJGmUa9i1g
             '1Kr6QSydW9bFQG1mXiPNNu6WpJGmUa9i1g',
+            // P2TR https://blockstream.info/address/bc1peqr5a5kfufvsl66444jm9y8qq0s87ph0zv4lfkcs7h40ew02uvsqkhjav0
+            'bc1peqr5a5kfufvsl66444jm9y8qq0s87ph0zv4lfkcs7h40ew02uvsqkhjav0',
         ];
 
         const amounts = [undefined, 2000, 3000];
@@ -296,7 +300,10 @@ describe('UTXO Tests', () => {
 
                                 let pubkey: string | undefined;
 
-                                if (paymentAddressType === AddressType.p2sh) {
+                                if (
+                                    paymentAddressType === AddressType.p2sh ||
+                                    paymentAddressType === AddressType.p2tr
+                                ) {
                                     // Use a random public key for P2SH-P2WPKH
                                     pubkey = '03b366c69e8237d9be7c4f1ac2a7abc6a79932fbf3de4e2f6c04797d7ef27abfe1';
                                 }
