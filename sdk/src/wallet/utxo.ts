@@ -3,7 +3,6 @@ import { hex, base64 } from '@scure/base';
 import { AddressType, getAddressInfo, Network } from 'bitcoin-address-validation';
 import { EsploraClient, UTXO } from '../esplora';
 import { AddressInfo, InscriptionId, OrdinalsClient } from '../ordinal-api';
-import { SelectionStrategy } from '@scure/btc-signer/lib/utxo';
 
 export type BitcoinNetworkName = Exclude<Network, 'regtest'>;
 
@@ -71,7 +70,7 @@ export async function createBitcoinPsbt(
     const addressInfo = getAddressInfo(fromAddress);
 
     // TODO: possibly, allow other strategies to be passed to this function
-    const utxoSelectionStrategy: SelectionStrategy = 'default';
+    const utxoSelectionStrategy: 'all' | 'default' = 'default';
 
     if (addressInfo.network === 'regtest') {
         throw new Error('Bitcoin regtest not supported');
@@ -346,7 +345,7 @@ export async function estimateTxFee(
     }
 
     // Select all UTXOs if no amount is specified
-    let utxoSelectionStrategy: SelectionStrategy = 'default';
+    let utxoSelectionStrategy: 'all' | 'default' = 'default';
     if (amount === undefined) {
         utxoSelectionStrategy = 'all';
     }
