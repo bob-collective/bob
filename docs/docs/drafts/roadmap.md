@@ -45,7 +45,7 @@ We already have key parts of the runtime built and live:
   - Settlement layer
 - Bitcoin compatibility
   - `rust-bitcoin` support (blockers are SCALE encoding, decoding and pallet-contracts storage layout)
-  - support all transaction types in the btc realy (missing taproot)
+  - support all transaction types in the btc relay (missing taproot)
   - Simplify tx proof submission by automating coinbase tx submission
 - Scale Bridge
   - Redesign bridge protocol
