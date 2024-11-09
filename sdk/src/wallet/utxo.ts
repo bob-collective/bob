@@ -2,8 +2,8 @@ import { Transaction, Script, selectUTXO, TEST_NETWORK, NETWORK, p2wpkh, p2sh, p
 import { hex, base64 } from '@scure/base';
 import { AddressType, getAddressInfo, Network } from 'bitcoin-address-validation';
 import { EsploraClient, UTXO } from '../esplora';
-import { OrdinalsClient } from '../ordinal-api';
-import { SelectionStrategy } from '@scure/btc-signer/utxo';
+import { AddressInfo, InscriptionId, OrdinalsClient } from '../ordinal-api';
+import { SelectionStrategy } from '@scure/btc-signer/lib/utxo';
 
 export type BitcoinNetworkName = Exclude<Network, 'regtest'>;
 
@@ -88,13 +88,18 @@ export async function createBitcoinPsbt(
     const ordinalsClient = new OrdinalsClient(addressInfo.network);
 
     let confirmedUtxos: UTXO[] = [];
+    let ordinalsAddressInfo: AddressInfo = {} as AddressInfo;
 
     if (feeRate) {
-        confirmedUtxos = await esploraClient.getAddressUtxos(fromAddress);
+        [confirmedUtxos, ordinalsAddressInfo] = await Promise.all([
+            esploraClient.getAddressUtxos(fromAddress),
+            ordinalsClient.getAssetsByAddress(fromAddress),
+        ]);
     } else {
-        [confirmedUtxos, feeRate] = await Promise.all([
+        [confirmedUtxos, feeRate, ordinalsAddressInfo] = await Promise.all([
             esploraClient.getAddressUtxos(fromAddress),
             esploraClient.getFeeEstimate(confirmationTarget),
+            ordinalsClient.getAssetsByAddress(fromAddress),
         ]);
     }
 
@@ -102,15 +107,14 @@ export async function createBitcoinPsbt(
         throw new Error('No confirmed UTXOs');
     }
 
+    const inscriptionsSet = new Set(ordinalsAddressInfo.inscriptions);
+
     // To construct the spending transaction and estimate the fee, we need the transactions for the UTXOs
     const possibleInputs: Input[] = [];
 
     await Promise.all(
         confirmedUtxos.map(async (utxo) => {
-            const [hex, outputJson] = await Promise.all([
-                esploraClient.getTransactionHex(utxo.txid),
-                ordinalsClient.getInscriptionsFromOutPoint(utxo),
-            ]);
+            const hex = await esploraClient.getTransactionHex(utxo.txid);
             const transaction = Transaction.fromRaw(Buffer.from(hex, 'hex'), { allowUnknownOutputs: true });
             const input = getInputFromUtxoAndTx(
                 addressInfo.network as BitcoinNetworkName,
@@ -120,7 +124,8 @@ export async function createBitcoinPsbt(
                 publicKey
             );
             // to support taproot addresses we want to exclude outputs which contain inscriptions
-            if (outputJson.inscriptions.length === 0) possibleInputs.push(input);
+            if (!inscriptionsSet.has(InscriptionId.toString({ txid: utxo.txid, index: utxo.vout })))
+                possibleInputs.push(input);
         })
     );
 

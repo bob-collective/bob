@@ -85,7 +85,7 @@ export module SatPoint {
 /**
  * @ignore
  */
-// https://github.com/ordinals/ord/blob/0.18.5/src/api.rs#L117-L121
+// https://github.com/ordinals/ord/blob/0.21.2/src/api.rs#L147-L150
 export interface InscriptionsJson<InscriptionId> {
     /**
      * An array of inscription ids.
@@ -106,7 +106,7 @@ export interface InscriptionsJson<InscriptionId> {
 /**
  * @ignore
  */
-// https://github.com/ordinals/ord/blob/0.18.5/src/api.rs#L124-L134
+// https://github.com/ordinals/ord/blob/0.21.2/src/api.rs#L154-L164
 export interface OutputJson {
     /**
      * The address associated with the UTXO.
@@ -137,7 +137,7 @@ export interface OutputJson {
     /**
      * The SAT ranges.
      */
-    sat_ranges: string | null;
+    sat_ranges: [number, number][] | null;
 
     /**
      * The scriptPubKey associated with the UTXO.
@@ -163,7 +163,30 @@ export interface OutputJson {
 /**
  * @ignore
  */
-// https://github.com/ordinals/ord/blob/0.18.5/src/api.rs#L165-L180
+//https://github.com/ordinals/ord/blob/0.21.2/src/api.rs#L226-231
+export interface AddressInfo {
+    /**
+     * An array of output ids.
+     */
+    outputs: string[];
+    /**
+     * An array of inscription ids.
+     */
+    inscriptions: string[];
+    /**
+     * Balance in satoshi.
+     */
+    sat_balance: number;
+    /**
+     * A list of runes.
+     */
+    runes_balances: [string, `${number}`, string][];
+}
+
+/**
+ * @ignore
+ */
+// https://github.com/ordinals/ord/blob/0.21.2/src/api.rs#L195-L211
 export interface SatJson<InscriptionId> {
     /**
      * The number of the ordinal.
@@ -241,7 +264,7 @@ export interface SatJson<InscriptionId> {
 /**
  * @ignore
  */
-// https://github.com/ordinals/ord/blob/0.18.5/src/api.rs#L80-L99
+// https://github.com/ordinals/ord/blob/0.21.2/src/api.rs#L93-L113
 export interface InscriptionJson<InscriptionId, SatPoint> {
     /**
      * The address associated with the inscription.
@@ -249,6 +272,8 @@ export interface InscriptionJson<InscriptionId, SatPoint> {
     address: string | null;
 
     charms: string[];
+
+    child_count: number;
 
     /**
      * An array of child IDs.
@@ -295,11 +320,6 @@ export interface InscriptionJson<InscriptionId, SatPoint> {
     /**
      * The parent inscription IDs.
      */
-    parent: InscriptionId | null;
-
-    /**
-     * The parent inscription IDs.
-     */
     parents: string[];
 
     /**
@@ -315,7 +335,7 @@ export interface InscriptionJson<InscriptionId, SatPoint> {
     /**
      * The SAT associated with the inscription.
      */
-    sat: string | null;
+    sat: number | null;
 
     /**
      * The SAT point of the inscription, this is the current UTXO.
@@ -353,6 +373,22 @@ export class OrdinalsClient {
     }
 
     /**
+     * Retrieves address information.
+     * @param {string} address - The address to request information about.
+     * @returns {Promise<AddressInfo>} A Promise that resolves to the address information.
+     *
+     * @example
+     * ```typescript
+     * const client = new OrdinalsClient("regtest");
+     * const addressInfo = await client.getAssetsByAddress("enter_your_address_here");
+     * console.log("AddressInfo:", addressInfo);
+     * ```
+     */
+    getAssetsByAddress(address: string): Promise<AddressInfo> {
+        return this.getJson<AddressInfo>(`${this.basePath}/address/${address}`);
+    }
+
+    /**
      * Retrieves an inscription based on its ID.
      * @param {string} id - The ID of the inscription to retrieve.
      * @returns {Promise<InscriptionDataFromId>} A Promise that resolves to the inscription data.
@@ -375,7 +411,6 @@ export class OrdinalsClient {
             children: inscriptionJson.children.map(InscriptionId.fromString),
             id: InscriptionId.fromString(inscriptionJson.id),
             next: inscriptionJson.next != null ? InscriptionId.fromString(inscriptionJson.next) : null,
-            parent: inscriptionJson.parent != null ? InscriptionId.fromString(inscriptionJson.parent) : null,
             previous: inscriptionJson.previous != null ? InscriptionId.fromString(inscriptionJson.previous) : null,
             satpoint: SatPoint.fromString(inscriptionJson.satpoint),
         };
