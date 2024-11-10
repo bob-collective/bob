@@ -151,7 +151,6 @@ export async function createBitcoinPsbt(
     // https://github.com/paulmillr/scure-btc-signer?tab=readme-ov-file#utxo-selection
     // default = exactBiggest/accumBiggest creates tx with smallest fees, but it breaks
     // big outputs to small ones, which in the end will create a lot of outputs close to dust.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const transaction = selectUTXO(possibleInputs, outputs, utxoSelectionStrategy, {
         changeAddress: fromAddress, // Refund surplus to the payment address
         feePerByte: BigInt(Math.ceil(feeRate)), // round up to the nearest integer
@@ -354,7 +353,6 @@ export async function estimateTxFee(
     // https://github.com/paulmillr/scure-btc-signer?tab=readme-ov-file#utxo-selection
     // default = exactBiggest/accumBiggest creates tx with smallest fees, but it breaks
     // big outputs to small ones, which in the end will create a lot of outputs close to dust.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const transaction = selectUTXO(possibleInputs, outputs, utxoSelectionStrategy, {
         changeAddress: fromAddress, // Refund surplus to the payment address
         feePerByte: BigInt(Math.ceil(feeRate)), // round up to the nearest integer
