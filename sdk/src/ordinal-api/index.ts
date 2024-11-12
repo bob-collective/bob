@@ -163,7 +163,7 @@ export interface OutputJson {
 /**
  * @ignore
  */
-//https://github.com/ordinals/ord/blob/0.21.2/src/api.rs#L226-231
+// https://github.com/ordinals/ord/blob/0.21.2/src/api.rs#L226-231
 export interface AddressInfo {
     /**
      * An array of output ids.
