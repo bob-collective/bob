@@ -49,7 +49,11 @@ describe('UTXO Tests', () => {
 
                         let pubkey: string | undefined;
 
-                        if (paymentAddressType === AddressType.p2sh || paymentAddressType === AddressType.p2tr) {
+                        if (
+                            paymentAddressType === AddressType.p2sh ||
+                            paymentAddressType === AddressType.p2wsh ||
+                            paymentAddressType === AddressType.p2tr
+                        ) {
                             // Use a random public key for P2SH-P2WPKH
                             pubkey = '03b366c69e8237d9be7c4f1ac2a7abc6a79932fbf3de4e2f6c04797d7ef27abfe1';
                         }

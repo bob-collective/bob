@@ -77,7 +77,11 @@ export async function createBitcoinPsbt(
     }
 
     // We need the public key to generate the redeem and witness script to spend the scripts
-    if (addressInfo.type === AddressType.p2sh || addressInfo.type === AddressType.p2tr) {
+    if (
+        addressInfo.type === AddressType.p2sh ||
+        addressInfo.type === AddressType.p2wsh ||
+        addressInfo.type === AddressType.p2tr
+    ) {
         if (!publicKey) {
             throw new Error('Public key is required to spend from the selected address type');
         }
@@ -281,7 +285,11 @@ export async function estimateTxFee(
     }
 
     // We need the public key to generate the redeem and witness script to spend the scripts
-    if (addressInfo.type === AddressType.p2sh || addressInfo.type === AddressType.p2tr) {
+    if (
+        addressInfo.type === AddressType.p2sh ||
+        addressInfo.type === AddressType.p2wsh ||
+        addressInfo.type === AddressType.p2tr
+    ) {
         if (!publicKey) {
             throw new Error('Public key is required to spend from the selected address type');
         }
