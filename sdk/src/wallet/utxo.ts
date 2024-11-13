@@ -2,7 +2,7 @@ import { Transaction, Script, selectUTXO, TEST_NETWORK, NETWORK, p2wpkh, p2sh, p
 import { hex, base64 } from '@scure/base';
 import { AddressType, getAddressInfo, Network } from 'bitcoin-address-validation';
 import { EsploraClient, UTXO } from '../esplora';
-import { AddressInfo, InscriptionId, OrdinalsClient } from '../ordinal-api';
+import { OrdinalsClient, OutPoint, OutputJson } from '../ordinal-api';
 
 export type BitcoinNetworkName = Exclude<Network, 'regtest'>;
 
@@ -91,18 +91,18 @@ export async function createBitcoinPsbt(
     const ordinalsClient = new OrdinalsClient(addressInfo.network);
 
     let confirmedUtxos: UTXO[] = [];
-    let ordinalsAddressInfo: AddressInfo = {} as AddressInfo;
+    let outputsS: OutputJson[] = [];
 
     if (feeRate) {
-        [confirmedUtxos, ordinalsAddressInfo] = await Promise.all([
+        [confirmedUtxos, outputsS] = await Promise.all([
             esploraClient.getAddressUtxos(fromAddress),
-            ordinalsClient.getAssetsByAddress(fromAddress),
+            ordinalsClient.getInscriptionsFromAddress(fromAddress, 'cardinal'),
         ]);
     } else {
-        [confirmedUtxos, feeRate, ordinalsAddressInfo] = await Promise.all([
+        [confirmedUtxos, feeRate, outputsS] = await Promise.all([
             esploraClient.getAddressUtxos(fromAddress),
             esploraClient.getFeeEstimate(confirmationTarget),
-            ordinalsClient.getAssetsByAddress(fromAddress),
+            ordinalsClient.getInscriptionsFromAddress(fromAddress, 'cardinal'),
         ]);
     }
 
@@ -110,7 +110,7 @@ export async function createBitcoinPsbt(
         throw new Error('No confirmed UTXOs');
     }
 
-    const inscriptionsSet = new Set(ordinalsAddressInfo.inscriptions);
+    const outpointsSet = new Set(outputsS.map((output) => output.outpoint));
 
     // To construct the spending transaction and estimate the fee, we need the transactions for the UTXOs
     const possibleInputs: Input[] = [];
@@ -127,8 +127,7 @@ export async function createBitcoinPsbt(
                 publicKey
             );
             // to support taproot addresses we want to exclude outputs which contain inscriptions
-            if (!inscriptionsSet.has(InscriptionId.toString({ txid: utxo.txid, index: utxo.vout })))
-                possibleInputs.push(input);
+            if (!outpointsSet.has(OutPoint.toString(utxo))) possibleInputs.push(input);
         })
     );
 

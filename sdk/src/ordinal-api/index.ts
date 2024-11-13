@@ -135,6 +135,11 @@ export interface OutputJson {
     };
 
     /**
+     * The outpoint.
+     */
+    outpoint: string;
+
+    /**
      * The SAT ranges.
      */
     sat_ranges: [number, number][] | null;
@@ -469,6 +474,28 @@ export class OrdinalsClient {
      */
     getInscriptionsFromOutPoint(outPoint: OutPoint): Promise<OutputJson> {
         return this.getJson<OutputJson>(`${this.basePath}/output/${OutPoint.toString(outPoint)}`);
+    }
+
+    /**
+     * Retrieves inscriptions based on the address.
+     * @param {String} address - The Bitcoin address to check.
+     * @param {('cardinal' | 'inscribed' | 'runic')} [type] - Optional type of UTXOs to be returned. If omitted returns all types.
+     * @returns {Promise<OutputJson>} A Promise that resolves to the inscription data.
+     *
+     * @example
+     * ```typescript
+     * const client = new OrdinalsClient("regtest");
+     * const address: string = "enter_address_here";
+     * const type: 'cardinal' | 'inscribed' | 'runic' = "enter_type_here";
+     * const output = await client.getUTXOFromAddress(address, type?);
+     * console.log("Output:", output);
+     * ```
+     */
+    getInscriptionsFromAddress(address: string, type?: 'cardinal' | 'inscribed' | 'runic'): Promise<OutputJson[]> {
+        const searchParams = new URLSearchParams();
+        if (type) searchParams.append('type', type);
+        // https://docs.ordinals.com/guides/api.html#description-19
+        return this.getJson<OutputJson[]>(`${this.basePath}/outputs/${address}?${searchParams}`);
     }
 
     /**
