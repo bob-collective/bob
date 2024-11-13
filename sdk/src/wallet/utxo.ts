@@ -91,18 +91,18 @@ export async function createBitcoinPsbt(
     const ordinalsClient = new OrdinalsClient(addressInfo.network);
 
     let confirmedUtxos: UTXO[] = [];
-    let outputsS: OutputJson[] = [];
+    let outputsFromAddress: OutputJson[] = [];
 
     if (feeRate) {
-        [confirmedUtxos, outputsS] = await Promise.all([
+        [confirmedUtxos, outputsFromAddress] = await Promise.all([
             esploraClient.getAddressUtxos(fromAddress),
-            ordinalsClient.getInscriptionsFromAddress(fromAddress, 'cardinal'),
+            ordinalsClient.getOutputsFromAddress(fromAddress, 'cardinal'),
         ]);
     } else {
-        [confirmedUtxos, feeRate, outputsS] = await Promise.all([
+        [confirmedUtxos, feeRate, outputsFromAddress] = await Promise.all([
             esploraClient.getAddressUtxos(fromAddress),
             esploraClient.getFeeEstimate(confirmationTarget),
-            ordinalsClient.getInscriptionsFromAddress(fromAddress, 'cardinal'),
+            ordinalsClient.getOutputsFromAddress(fromAddress, 'cardinal'),
         ]);
     }
 
@@ -110,7 +110,7 @@ export async function createBitcoinPsbt(
         throw new Error('No confirmed UTXOs');
     }
 
-    const outpointsSet = new Set(outputsS.map((output) => output.outpoint));
+    const outpointsSet = new Set(outputsFromAddress.map((output) => output.outpoint));
 
     // To construct the spending transaction and estimate the fee, we need the transactions for the UTXOs
     const possibleInputs: Input[] = [];

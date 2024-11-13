@@ -479,7 +479,7 @@ export class OrdinalsClient {
     /**
      * Retrieves inscriptions based on the address.
      * @param {String} address - The Bitcoin address to check.
-     * @param {('cardinal' | 'inscribed' | 'runic')} [type] - Optional type of UTXOs to be returned. If omitted returns all types.
+     * @param {('cardinal' | 'inscribed' | 'runic' | 'any')} [type] - Optional type of UTXOs to be returned. If omitted returns all UTXOs.
      * @returns {Promise<OutputJson>} A Promise that resolves to the inscription data.
      *
      * @example
@@ -487,11 +487,11 @@ export class OrdinalsClient {
      * const client = new OrdinalsClient("regtest");
      * const address: string = "enter_address_here";
      * const type: 'cardinal' | 'inscribed' | 'runic' = "enter_type_here";
-     * const output = await client.getUTXOFromAddress(address, type?);
+     * const output = await client.getOutputsFromAddress(address, type?);
      * console.log("Output:", output);
      * ```
      */
-    getInscriptionsFromAddress(address: string, type?: 'cardinal' | 'inscribed' | 'runic'): Promise<OutputJson[]> {
+    getOutputsFromAddress(address: string, type?: 'cardinal' | 'inscribed' | 'runic' | 'any'): Promise<OutputJson[]> {
         const searchParams = new URLSearchParams();
         if (type) searchParams.append('type', type);
         // https://docs.ordinals.com/guides/api.html#description-19
