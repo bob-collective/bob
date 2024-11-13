@@ -127,7 +127,7 @@ export async function createBitcoinPsbt(
                 publicKey
             );
             // to support taproot addresses we want to exclude outputs which contain inscriptions
-            if (!outpointsSet.has(OutPoint.toString(utxo))) possibleInputs.push(input);
+            if (outpointsSet.has(OutPoint.toString(utxo))) possibleInputs.push(input);
         })
     );
 
