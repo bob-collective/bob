@@ -96,13 +96,15 @@ export async function createBitcoinPsbt(
     if (feeRate) {
         [confirmedUtxos, outputsFromAddress] = await Promise.all([
             esploraClient.getAddressUtxos(fromAddress),
-            ordinalsClient.getOutputsFromAddress(fromAddress, 'cardinal'),
+            // cardinal = return UTXOs not containing inscriptions or runes
+            addressInfo.type === AddressType.p2tr ? ordinalsClient.getOutputsFromAddress(fromAddress, 'cardinal') : [],
         ]);
     } else {
         [confirmedUtxos, feeRate, outputsFromAddress] = await Promise.all([
             esploraClient.getAddressUtxos(fromAddress),
             esploraClient.getFeeEstimate(confirmationTarget),
-            ordinalsClient.getOutputsFromAddress(fromAddress, 'cardinal'),
+            // cardinal = return UTXOs not containing inscriptions or runes
+            addressInfo.type === AddressType.p2tr ? ordinalsClient.getOutputsFromAddress(fromAddress, 'cardinal') : [],
         ]);
     }
 
@@ -127,7 +129,11 @@ export async function createBitcoinPsbt(
                 publicKey
             );
             // to support taproot addresses we want to exclude outputs which contain inscriptions
-            if (outpointsSet.has(OutPoint.toString(utxo))) possibleInputs.push(input);
+            if (addressInfo.type === AddressType.p2tr) {
+                if (outpointsSet.has(OutPoint.toString(utxo))) possibleInputs.push(input);
+            } else {
+                possibleInputs.push(input);
+            }
         })
     );
 
@@ -170,6 +176,10 @@ export async function createBitcoinPsbt(
         console.debug(`fromAddress: ${fromAddress}, toAddress: ${toAddress}, amount: ${amount}`);
         console.debug(`publicKey: ${publicKey}, opReturnData: ${opReturnData}`);
         console.debug(`feeRate: ${feeRate}, confirmationTarget: ${confirmationTarget}`);
+        if (addressInfo.type === AddressType.p2tr) {
+            console.debug('confirmedUtxos', confirmedUtxos);
+            console.debug('outputsFromAddress', outputsFromAddress);
+        }
         throw new Error('Failed to create transaction. Do you have enough funds?');
     }
 
@@ -202,7 +212,7 @@ export function getInputFromUtxoAndTx(
         redeemScript = p2sh(inner);
     } else if (addressType === AddressType.p2tr) {
         const xOnlyPublicKey = Buffer.from(publicKey, 'hex').subarray(1, 33);
-        redeemScript = p2tr(xOnlyPublicKey, undefined, getBtcNetwork(network));
+        redeemScript = p2tr(xOnlyPublicKey);
     }
 
     // For the redeem and witness script, we need to construct the script mixin
@@ -300,14 +310,23 @@ export async function estimateTxFee(
     // TODO: allow submitting the UTXOs, fee estimate and confirmed transactions
     // to avoid fetching them again.
     const esploraClient = new EsploraClient(addressInfo.network);
+    const ordinalsClient = new OrdinalsClient(addressInfo.network);
 
     let confirmedUtxos: UTXO[] = [];
+    let outputsFromAddress: OutputJson[] = [];
+
     if (feeRate) {
-        confirmedUtxos = await esploraClient.getAddressUtxos(fromAddress);
+        [confirmedUtxos, outputsFromAddress] = await Promise.all([
+            esploraClient.getAddressUtxos(fromAddress),
+            // cardinal = return UTXOs not containing inscriptions or runes
+            addressInfo.type === AddressType.p2tr ? ordinalsClient.getOutputsFromAddress(fromAddress, 'cardinal') : [],
+        ]);
     } else {
-        [confirmedUtxos, feeRate] = await Promise.all([
+        [confirmedUtxos, feeRate, outputsFromAddress] = await Promise.all([
             esploraClient.getAddressUtxos(fromAddress),
             esploraClient.getFeeEstimate(confirmationTarget),
+            // cardinal = return UTXOs not containing inscriptions or runes
+            addressInfo.type === AddressType.p2tr ? ordinalsClient.getOutputsFromAddress(fromAddress, 'cardinal') : [],
         ]);
     }
 
@@ -315,18 +334,27 @@ export async function estimateTxFee(
         throw new Error('No confirmed UTXOs');
     }
 
-    const possibleInputs = await Promise.all(
+    const outpointsSet = new Set(outputsFromAddress.map((output) => output.outpoint));
+    const possibleInputs: Input[] = [];
+
+    await Promise.all(
         confirmedUtxos.map(async (utxo) => {
             const hex = await esploraClient.getTransactionHex(utxo.txid);
             const transaction = Transaction.fromRaw(Buffer.from(hex, 'hex'), { allowUnknownOutputs: true });
-
-            return getInputFromUtxoAndTx(
+            const input = getInputFromUtxoAndTx(
                 addressInfo.network as BitcoinNetworkName,
                 utxo,
                 transaction,
                 addressInfo.type,
                 publicKey
             );
+
+            // to support taproot addresses we want to exclude outputs which contain inscriptions
+            if (addressInfo.type === AddressType.p2tr) {
+                if (outpointsSet.has(OutPoint.toString(utxo))) possibleInputs.push(input);
+            } else {
+                possibleInputs.push(input);
+            }
         })
     );
 
@@ -376,6 +404,10 @@ export async function estimateTxFee(
         console.debug(`fromAddress: ${fromAddress}, amount: ${amount}`);
         console.debug(`publicKey: ${publicKey}, opReturnData: ${opReturnData}`);
         console.debug(`feeRate: ${feeRate}, confirmationTarget: ${confirmationTarget}`);
+        if (addressInfo.type === AddressType.p2tr) {
+            console.debug('confirmedUtxos', confirmedUtxos);
+            console.debug('outputsFromAddress', outputsFromAddress);
+        }
         throw new Error('Failed to create transaction. Do you have enough funds?');
     }
 

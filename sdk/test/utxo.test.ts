@@ -306,6 +306,7 @@ describe('UTXO Tests', () => {
 
                                 if (
                                     paymentAddressType === AddressType.p2sh ||
+                                    paymentAddressType === AddressType.p2wsh ||
                                     paymentAddressType === AddressType.p2tr
                                 ) {
                                     // Use a random public key for P2SH-P2WPKH
