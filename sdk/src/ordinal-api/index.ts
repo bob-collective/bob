@@ -85,7 +85,7 @@ export module SatPoint {
 /**
  * @ignore
  */
-// https://github.com/ordinals/ord/blob/0.21.2/src/api.rs#L147-L150
+// https://github.com/ordinals/ord/blob/0.21.3/src/api.rs#L147-L151
 export interface InscriptionsJson<InscriptionId> {
     /**
      * An array of inscription ids.
@@ -106,7 +106,7 @@ export interface InscriptionsJson<InscriptionId> {
 /**
  * @ignore
  */
-// https://github.com/ordinals/ord/blob/0.21.2/src/api.rs#L154-L164
+// https://github.com/ordinals/ord/blob/0.21.3/src/api.rs#L154-L165
 export interface OutputJson {
     /**
      * The address associated with the UTXO.
@@ -168,7 +168,7 @@ export interface OutputJson {
 /**
  * @ignore
  */
-// https://github.com/ordinals/ord/blob/0.21.2/src/api.rs#L226-231
+// https://github.com/ordinals/ord/blob/0.21.3/src/api.rs#L228-L233
 export interface AddressInfo {
     /**
      * An array of output ids.
@@ -191,7 +191,7 @@ export interface AddressInfo {
 /**
  * @ignore
  */
-// https://github.com/ordinals/ord/blob/0.21.2/src/api.rs#L195-L211
+// https://github.com/ordinals/ord/blob/0.21.3/src/api.rs#L197-L213
 export interface SatJson<InscriptionId> {
     /**
      * The number of the ordinal.
@@ -269,7 +269,7 @@ export interface SatJson<InscriptionId> {
 /**
  * @ignore
  */
-// https://github.com/ordinals/ord/blob/0.21.2/src/api.rs#L93-L113
+// https://github.com/ordinals/ord/blob/0.21.3/src/api.rs#L93-L113
 export interface InscriptionJson<InscriptionId, SatPoint> {
     /**
      * The address associated with the inscription.
