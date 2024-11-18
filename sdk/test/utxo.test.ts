@@ -348,8 +348,17 @@ describe('UTXO Tests', () => {
 
         const maxSpendableBalance = cardinalOutputs.reduce((acc, output) => acc + output.value, 0);
 
-        // spend 90% of max spendable amount
-        await createBitcoinPsbt(paymentAddress, paymentAddress, Math.floor(maxSpendableBalance * 0.9), pubkey);
+        (selectUTXO as Mock).mockImplementationOnce(() => ({
+            tx: {
+                toPSBT() {
+                    return Uint8Array.from(
+                        Buffer.from('675f66d3ebcb97c383b48f6cbc37c8d32d57a489caa9ecb7e3691bd76731adaa', 'hex')
+                    );
+                },
+            },
+        }));
+
+        await createBitcoinPsbt(paymentAddress, paymentAddress, maxSpendableBalance, pubkey);
 
         const [possibleInputs] = (selectUTXO as Mock).mock.lastCall || [];
 
