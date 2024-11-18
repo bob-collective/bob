@@ -1,9 +1,19 @@
-import { describe, it, assert } from 'vitest';
+import { vi, describe, it, assert, Mock, expect } from 'vitest';
 import { AddressType, getAddressInfo, Network } from 'bitcoin-address-validation';
 import { Address, NETWORK, OutScript, Script, Transaction, p2sh, p2wpkh, selectUTXO } from '@scure/btc-signer';
 import { hex, base64 } from '@scure/base';
-import { createBitcoinPsbt, getInputFromUtxoAndTx, estimateTxFee } from '../src/wallet/utxo';
+import { createBitcoinPsbt, getInputFromUtxoAndTx, estimateTxFee, Input } from '../src/wallet/utxo';
 import { TransactionOutput } from '@scure/btc-signer/psbt';
+import { OrdinalsClient, OutPoint } from '../src/ordinal-api';
+
+vi.mock(import('@scure/btc-signer'), async (importOriginal) => {
+    const actual = await importOriginal();
+
+    return {
+        ...actual,
+        selectUTXO: vi.fn(actual.selectUTXO),
+    };
+});
 
 // TODO: Add more tests using https://github.com/paulmillr/scure-btc-signer/tree/5ead71ea9a873d8ba1882a9cd6aa561ad410d0d1/test/bitcoinjs-test/fixtures/bitcoinjs
 // TODO: Ensure that the paymentAddresses have sufficient funds to create the transaction
@@ -322,5 +332,39 @@ describe('UTXO Tests', () => {
                 )
             )
         );
+    });
+
+    it('should not spend outputs with inscriptions', { timeout: 50000 }, async () => {
+        const paymentAddress = 'bc1peqr5a5kfufvsl66444jm9y8qq0s87ph0zv4lfkcs7h40ew02uvsqkhjav0';
+        // Use a random public key for P2SH-P2WPKH
+        const pubkey = '03b366c69e8237d9be7c4f1ac2a7abc6a79932fbf3de4e2f6c04797d7ef27abfe1';
+
+        const ordinalsClient = new OrdinalsClient('mainnet');
+
+        // cardinal = return UTXOs not containing inscriptions or runes
+        const cardinalOutputs = await ordinalsClient.getOutputsFromAddress(paymentAddress, 'cardinal');
+
+        const cardinalOutputsSet = new Set(cardinalOutputs.map((output) => output.outpoint));
+
+        const maxSpendableBalance = cardinalOutputs.reduce((acc, output) => acc + output.value, 0);
+
+        // spend 90% of max spendable amount
+        await createBitcoinPsbt(paymentAddress, paymentAddress, Math.floor(maxSpendableBalance * 0.9), pubkey);
+
+        const [possibleInputs] = (selectUTXO as Mock).mock.lastCall || [];
+
+        expect(possibleInputs.length).toBeGreaterThan(0);
+        expect(cardinalOutputs.length).toBeGreaterThan(0);
+        expect(
+            (possibleInputs as Input[]).filter(
+                (input) =>
+                    !cardinalOutputsSet.has(
+                        OutPoint.toString({
+                            txid: input.txid,
+                            vout: input.index,
+                        })
+                    )
+            )
+        ).toStrictEqual([]);
     });
 });
