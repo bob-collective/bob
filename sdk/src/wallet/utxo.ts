@@ -91,22 +91,15 @@ export async function createBitcoinPsbt(
     const ordinalsClient = new OrdinalsClient(addressInfo.network);
 
     let confirmedUtxos: UTXO[] = [];
+    // contains UTXOs which do not contain inscriptions
     let outputsFromAddress: OutputJson[] = [];
 
-    if (feeRate) {
-        [confirmedUtxos, outputsFromAddress] = await Promise.all([
-            esploraClient.getAddressUtxos(fromAddress),
-            // cardinal = return UTXOs not containing inscriptions or runes
-            addressInfo.type === AddressType.p2tr ? ordinalsClient.getOutputsFromAddress(fromAddress, 'cardinal') : [],
-        ]);
-    } else {
-        [confirmedUtxos, feeRate, outputsFromAddress] = await Promise.all([
-            esploraClient.getAddressUtxos(fromAddress),
-            esploraClient.getFeeEstimate(confirmationTarget),
-            // cardinal = return UTXOs not containing inscriptions or runes
-            addressInfo.type === AddressType.p2tr ? ordinalsClient.getOutputsFromAddress(fromAddress, 'cardinal') : [],
-        ]);
-    }
+    [confirmedUtxos, feeRate, outputsFromAddress] = await Promise.all([
+        esploraClient.getAddressUtxos(fromAddress),
+        feeRate === undefined ? esploraClient.getFeeEstimate(confirmationTarget) : feeRate,
+        // cardinal = return UTXOs not containing inscriptions or runes
+        addressInfo.type === AddressType.p2tr ? ordinalsClient.getOutputsFromAddress(fromAddress, 'cardinal') : [],
+    ]);
 
     if (confirmedUtxos.length === 0) {
         throw new Error('No confirmed UTXOs');
@@ -313,22 +306,15 @@ export async function estimateTxFee(
     const ordinalsClient = new OrdinalsClient(addressInfo.network);
 
     let confirmedUtxos: UTXO[] = [];
+    // contains UTXOs which do not contain inscriptions
     let outputsFromAddress: OutputJson[] = [];
 
-    if (feeRate) {
-        [confirmedUtxos, outputsFromAddress] = await Promise.all([
-            esploraClient.getAddressUtxos(fromAddress),
-            // cardinal = return UTXOs not containing inscriptions or runes
-            addressInfo.type === AddressType.p2tr ? ordinalsClient.getOutputsFromAddress(fromAddress, 'cardinal') : [],
-        ]);
-    } else {
-        [confirmedUtxos, feeRate, outputsFromAddress] = await Promise.all([
-            esploraClient.getAddressUtxos(fromAddress),
-            esploraClient.getFeeEstimate(confirmationTarget),
-            // cardinal = return UTXOs not containing inscriptions or runes
-            addressInfo.type === AddressType.p2tr ? ordinalsClient.getOutputsFromAddress(fromAddress, 'cardinal') : [],
-        ]);
-    }
+    [confirmedUtxos, feeRate, outputsFromAddress] = await Promise.all([
+        esploraClient.getAddressUtxos(fromAddress),
+        feeRate === undefined ? esploraClient.getFeeEstimate(confirmationTarget) : feeRate,
+        // cardinal = return UTXOs not containing inscriptions or runes
+        addressInfo.type === AddressType.p2tr ? ordinalsClient.getOutputsFromAddress(fromAddress, 'cardinal') : [],
+    ]);
 
     if (confirmedUtxos.length === 0) {
         throw new Error('No confirmed UTXOs');
