@@ -376,4 +376,20 @@ describe('UTXO Tests', () => {
             )
         ).toStrictEqual([]);
     });
+
+    it('throws an error if insufficient balance', { timeout: 50000 }, async () => {
+        const paymentAddress = 'bc1peqr5a5kfufvsl66444jm9y8qq0s87ph0zv4lfkcs7h40ew02uvsqkhjav0';
+        // Use a random public key
+        const pubkey = '03b366c69e8237d9be7c4f1ac2a7abc6a79932fbf3de4e2f6c04797d7ef27abfe1';
+
+        const ordinalsClient = new OrdinalsClient('mainnet');
+
+        const allOutputs = await ordinalsClient.getOutputsFromAddress(paymentAddress);
+
+        const totalBalance = allOutputs.reduce((acc, output) => acc + output.value, 0);
+
+        await expect(createBitcoinPsbt(paymentAddress, paymentAddress, totalBalance, pubkey)).rejects.toThrow(
+            'Failed to create transaction. Do you have enough funds?'
+        );
+    });
 });
