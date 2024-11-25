@@ -432,17 +432,6 @@ describe('UTXO Tests', () => {
         assert(zeroBalance.total === 0n, 'If no address specified total must be 0');
     });
 
-    it('should call ordinals api if address type is p2tr', async () => {
-        vi.clearAllMocks();
-        const nativeSegwitAddress = 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq';
-        const taprootAddress = 'bc1peqr5a5kfufvsl66444jm9y8qq0s87ph0zv4lfkcs7h40ew02uvsqkhjav0';
-
-        await getBalance(nativeSegwitAddress);
-        expect(OrdinalsClient.prototype.getOutputsFromAddress).not.toHaveBeenCalled();
-        await getBalance(taprootAddress);
-        expect(OrdinalsClient.prototype.getOutputsFromAddress).toHaveBeenCalledOnce();
-    });
-
     it('returns smalled amount if address holds ordinals', async () => {
         vi.clearAllMocks();
         const taprootAddress = 'bc1peqr5a5kfufvsl66444jm9y8qq0s87ph0zv4lfkcs7h40ew02uvsqkhjav0';

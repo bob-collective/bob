@@ -98,7 +98,7 @@ export async function createBitcoinPsbt(
         esploraClient.getAddressUtxos(fromAddress),
         feeRate === undefined ? esploraClient.getFeeEstimate(confirmationTarget) : feeRate,
         // cardinal = return UTXOs not containing inscriptions or runes
-        addressInfo.type === AddressType.p2tr ? ordinalsClient.getOutputsFromAddress(fromAddress, 'cardinal') : [],
+        ordinalsClient.getOutputsFromAddress(fromAddress, 'cardinal'),
     ]);
 
     if (confirmedUtxos.length === 0) {
@@ -122,11 +122,7 @@ export async function createBitcoinPsbt(
                 publicKey
             );
             // to support taproot addresses we want to exclude outputs which contain inscriptions
-            if (addressInfo.type === AddressType.p2tr) {
-                if (outpointsSet.has(OutPoint.toString(utxo))) possibleInputs.push(input);
-            } else {
-                possibleInputs.push(input);
-            }
+            if (outpointsSet.has(OutPoint.toString(utxo))) possibleInputs.push(input);
         })
     );
 
@@ -166,13 +162,11 @@ export async function createBitcoinPsbt(
     });
 
     if (!transaction || !transaction.tx) {
+        console.debug('confirmedUtxos', confirmedUtxos);
+        console.debug('outputsFromAddress', outputsFromAddress);
         console.debug(`fromAddress: ${fromAddress}, toAddress: ${toAddress}, amount: ${amount}`);
         console.debug(`publicKey: ${publicKey}, opReturnData: ${opReturnData}`);
         console.debug(`feeRate: ${feeRate}, confirmationTarget: ${confirmationTarget}`);
-        if (addressInfo.type === AddressType.p2tr) {
-            console.debug('confirmedUtxos', confirmedUtxos);
-            console.debug('outputsFromAddress', outputsFromAddress);
-        }
         throw new Error('Failed to create transaction. Do you have enough funds?');
     }
 
@@ -313,7 +307,7 @@ export async function estimateTxFee(
         esploraClient.getAddressUtxos(fromAddress),
         feeRate === undefined ? esploraClient.getFeeEstimate(confirmationTarget) : feeRate,
         // cardinal = return UTXOs not containing inscriptions or runes
-        addressInfo.type === AddressType.p2tr ? ordinalsClient.getOutputsFromAddress(fromAddress, 'cardinal') : [],
+        ordinalsClient.getOutputsFromAddress(fromAddress, 'cardinal'),
     ]);
 
     if (confirmedUtxos.length === 0) {
@@ -336,11 +330,7 @@ export async function estimateTxFee(
             );
 
             // to support taproot addresses we want to exclude outputs which contain inscriptions
-            if (addressInfo.type === AddressType.p2tr) {
-                if (outpointsSet.has(OutPoint.toString(utxo))) possibleInputs.push(input);
-            } else {
-                possibleInputs.push(input);
-            }
+            if (outpointsSet.has(OutPoint.toString(utxo))) possibleInputs.push(input);
         })
     );
 
@@ -387,13 +377,11 @@ export async function estimateTxFee(
     });
 
     if (!transaction || !transaction.tx) {
+        console.debug('confirmedUtxos', confirmedUtxos);
+        console.debug('outputsFromAddress', outputsFromAddress);
         console.debug(`fromAddress: ${fromAddress}, amount: ${amount}`);
         console.debug(`publicKey: ${publicKey}, opReturnData: ${opReturnData}`);
         console.debug(`feeRate: ${feeRate}, confirmationTarget: ${confirmationTarget}`);
-        if (addressInfo.type === AddressType.p2tr) {
-            console.debug('confirmedUtxos', confirmedUtxos);
-            console.debug('outputsFromAddress', outputsFromAddress);
-        }
         throw new Error('Failed to create transaction. Do you have enough funds?');
     }
 
@@ -416,7 +404,7 @@ export async function estimateTxFee(
  * console.log(balance);
  * ```
  *
- * @dev For taproot address UTXOs that contain inscriptions or runes will not be used to calculate balance.
+ * @dev UTXOs that contain inscriptions or runes will not be used to calculate balance.
  */
 export async function getBalance(address?: string) {
     if (!address) {
@@ -428,43 +416,33 @@ export async function getBalance(address?: string) {
     const esploraClient = new EsploraClient(addressInfo.network);
     const ordinalsClient = new OrdinalsClient(addressInfo.network);
 
-    if (addressInfo.type === AddressType.p2tr) {
-        const [outputs, cardinalOutputs] = await Promise.all([
-            esploraClient.getAddressUtxos(address),
-            // cardinal = return UTXOs not containing inscriptions or runes
-            ordinalsClient.getOutputsFromAddress(address, 'cardinal'),
-        ]);
+    const [outputs, cardinalOutputs] = await Promise.all([
+        esploraClient.getAddressUtxos(address),
+        // cardinal = return UTXOs not containing inscriptions or runes
+        ordinalsClient.getOutputsFromAddress(address, 'cardinal'),
+    ]);
 
-        const cardinalOutputsSet = new Set(cardinalOutputs.map((output) => output.outpoint));
+    const cardinalOutputsSet = new Set(cardinalOutputs.map((output) => output.outpoint));
 
-        const total = outputs.reduce((acc, output) => {
-            if (cardinalOutputsSet.has(OutPoint.toString(output))) {
-                return acc + output.value;
-            }
+    const total = outputs.reduce((acc, output) => {
+        if (cardinalOutputsSet.has(OutPoint.toString(output))) {
+            return acc + output.value;
+        }
 
-            return acc;
-        }, 0);
+        return acc;
+    }, 0);
 
-        const confirmed = outputs.reduce((acc, output) => {
-            if (cardinalOutputsSet.has(OutPoint.toString(output)) && output.confirmed) {
-                return acc + output.value;
-            }
+    const confirmed = outputs.reduce((acc, output) => {
+        if (cardinalOutputsSet.has(OutPoint.toString(output)) && output.confirmed) {
+            return acc + output.value;
+        }
 
-            return acc;
-        }, 0);
+        return acc;
+    }, 0);
 
-        return {
-            confirmed: BigInt(confirmed),
-            unconfirmed: BigInt(total - confirmed),
-            total: BigInt(total),
-        };
-    } else {
-        const { confirmed, unconfirmed, total } = await esploraClient.getBalance(address);
-
-        return {
-            confirmed: BigInt(confirmed),
-            unconfirmed: BigInt(unconfirmed),
-            total: BigInt(total),
-        };
-    }
+    return {
+        confirmed: BigInt(confirmed),
+        unconfirmed: BigInt(total - confirmed),
+        total: BigInt(total),
+    };
 }
