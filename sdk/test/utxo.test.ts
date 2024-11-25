@@ -5,7 +5,7 @@ import { hex, base64 } from '@scure/base';
 import { createBitcoinPsbt, getInputFromUtxoAndTx, estimateTxFee, Input, getBalance } from '../src/wallet/utxo';
 import { TransactionOutput } from '@scure/btc-signer/psbt';
 import { OrdinalsClient, OutPoint } from '../src/ordinal-api';
-import { beforeEach } from 'node:test';
+import { EsploraClient } from '../src/esplora';
 
 vi.mock(import('@scure/btc-signer'), async (importOriginal) => {
     const actual = await importOriginal();
@@ -26,12 +26,10 @@ vi.mock(import('../src/ordinal-api'), async (importOriginal) => {
     return actual;
 });
 
-vi.mock(import('../src/ordinal-api'), async (importOriginal) => {
+vi.mock(import('../src/esplora'), async (importOriginal) => {
     const actual = await importOriginal();
 
-    actual.OrdinalsClient.prototype.getOutputsFromAddress = vi.fn(
-        actual.OrdinalsClient.prototype.getOutputsFromAddress
-    );
+    actual.EsploraClient.prototype.getAddressUtxos = vi.fn(actual.EsploraClient.prototype.getAddressUtxos);
 
     return actual;
 });
@@ -443,5 +441,39 @@ describe('UTXO Tests', () => {
         expect(OrdinalsClient.prototype.getOutputsFromAddress).not.toHaveBeenCalled();
         await getBalance(taprootAddress);
         expect(OrdinalsClient.prototype.getOutputsFromAddress).toHaveBeenCalledOnce();
+    });
+
+    it('returns smalled amount if address holds ordinals', async () => {
+        vi.clearAllMocks();
+        const taprootAddress = 'bc1peqr5a5kfufvsl66444jm9y8qq0s87ph0zv4lfkcs7h40ew02uvsqkhjav0';
+
+        const esploraClient = new EsploraClient('mainnet');
+
+        const outputs = await esploraClient.getAddressUtxos(taprootAddress);
+
+        const total = outputs.reduce((acc, output) => acc + output.value, 0);
+
+        const confirmed = outputs.reduce((acc, output) => {
+            if (output.confirmed) {
+                return acc + output.value;
+            }
+
+            return acc;
+        }, 0);
+
+        // mock half of the UTXOs contain inscriptions or runes
+        (OrdinalsClient.prototype.getOutputsFromAddress as Mock).mockResolvedValueOnce(
+            outputs.slice(Math.ceil(outputs.length / 2)).map((output) => {
+                const outpoint = OutPoint.toString(output);
+
+                return { outpoint };
+            })
+        );
+
+        const balanceData = await getBalance(taprootAddress);
+
+        expect(balanceData.total).toBeLessThanOrEqual(total);
+        expect(balanceData.confirmed).toBeLessThanOrEqual(confirmed);
+        expect(balanceData.unconfirmed).toBeLessThanOrEqual(total - confirmed);
     });
 });
