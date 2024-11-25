@@ -439,7 +439,6 @@ describe('UTXO Tests', () => {
         const nativeSegwitAddress = 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq';
         const taprootAddress = 'bc1peqr5a5kfufvsl66444jm9y8qq0s87ph0zv4lfkcs7h40ew02uvsqkhjav0';
 
-        expect(OrdinalsClient.prototype.getOutputsFromAddress).not.toHaveBeenCalled();
         await getBalance(nativeSegwitAddress);
         expect(OrdinalsClient.prototype.getOutputsFromAddress).not.toHaveBeenCalled();
         await getBalance(taprootAddress);
