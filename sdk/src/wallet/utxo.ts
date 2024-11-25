@@ -416,7 +416,7 @@ export async function estimateTxFee(
  * console.log(balance);
  * ```
  *
- * @dev UTXOs that contain inscriptions or runes will not be used to calculate balance.
+ * @dev UTXOs that contain inscriptions or runes will not be used to calculate balance for taproot address.
  */
 export async function getBalance(address?: string) {
     if (!address) {
