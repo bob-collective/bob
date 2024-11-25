@@ -2,9 +2,10 @@ import { vi, describe, it, assert, Mock, expect } from 'vitest';
 import { AddressType, getAddressInfo, Network } from 'bitcoin-address-validation';
 import { Address, NETWORK, OutScript, Script, Transaction, p2sh, p2wpkh, selectUTXO } from '@scure/btc-signer';
 import { hex, base64 } from '@scure/base';
-import { createBitcoinPsbt, getInputFromUtxoAndTx, estimateTxFee, Input } from '../src/wallet/utxo';
+import { createBitcoinPsbt, getInputFromUtxoAndTx, estimateTxFee, Input, getBalance } from '../src/wallet/utxo';
 import { TransactionOutput } from '@scure/btc-signer/psbt';
 import { OrdinalsClient, OutPoint } from '../src/ordinal-api';
+import { beforeEach } from 'node:test';
 
 vi.mock(import('@scure/btc-signer'), async (importOriginal) => {
     const actual = await importOriginal();
@@ -13,6 +14,26 @@ vi.mock(import('@scure/btc-signer'), async (importOriginal) => {
         ...actual,
         selectUTXO: vi.fn(actual.selectUTXO),
     };
+});
+
+vi.mock(import('../src/ordinal-api'), async (importOriginal) => {
+    const actual = await importOriginal();
+
+    actual.OrdinalsClient.prototype.getOutputsFromAddress = vi.fn(
+        actual.OrdinalsClient.prototype.getOutputsFromAddress
+    );
+
+    return actual;
+});
+
+vi.mock(import('../src/ordinal-api'), async (importOriginal) => {
+    const actual = await importOriginal();
+
+    actual.OrdinalsClient.prototype.getOutputsFromAddress = vi.fn(
+        actual.OrdinalsClient.prototype.getOutputsFromAddress
+    );
+
+    return actual;
 });
 
 // TODO: Add more tests using https://github.com/paulmillr/scure-btc-signer/tree/5ead71ea9a873d8ba1882a9cd6aa561ad410d0d1/test/bitcoinjs-test/fixtures/bitcoinjs
@@ -391,5 +412,37 @@ describe('UTXO Tests', () => {
         await expect(createBitcoinPsbt(paymentAddress, paymentAddress, totalBalance, pubkey)).rejects.toThrow(
             'Failed to create transaction. Do you have enough funds?'
         );
+    });
+
+    it('should return address balance', async () => {
+        const address = 'bc1peqr5a5kfufvsl66444jm9y8qq0s87ph0zv4lfkcs7h40ew02uvsqkhjav0';
+
+        const balance = await getBalance(address);
+
+        assert(balance.confirmed);
+        assert(balance.total);
+        assert(
+            balance.confirmed === balance.total
+                ? balance.unconfirmed === 0n
+                : balance.unconfirmed === balance.total - balance.confirmed
+        );
+
+        const zeroBalance = await getBalance();
+
+        assert(zeroBalance.confirmed === 0n, 'If no address specified confirmed must be 0');
+        assert(zeroBalance.unconfirmed === 0n, 'If no address specified unconfirmed must be 0');
+        assert(zeroBalance.total === 0n, 'If no address specified total must be 0');
+    });
+
+    it('should call ordinals api if address type is p2tr', async () => {
+        vi.clearAllMocks();
+        const nativeSegwitAddress = 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq';
+        const taprootAddress = 'bc1peqr5a5kfufvsl66444jm9y8qq0s87ph0zv4lfkcs7h40ew02uvsqkhjav0';
+
+        expect(OrdinalsClient.prototype.getOutputsFromAddress).not.toHaveBeenCalled();
+        await getBalance(nativeSegwitAddress);
+        expect(OrdinalsClient.prototype.getOutputsFromAddress).not.toHaveBeenCalled();
+        await getBalance(taprootAddress);
+        expect(OrdinalsClient.prototype.getOutputsFromAddress).toHaveBeenCalledOnce();
     });
 });
