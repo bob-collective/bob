@@ -1,10 +1,11 @@
-import { vi, describe, it, assert, Mock, expect } from 'vitest';
+import { vi, describe, it, assert, Mock, expect, beforeEach } from 'vitest';
 import { AddressType, getAddressInfo, Network } from 'bitcoin-address-validation';
 import { Address, NETWORK, OutScript, Script, Transaction, p2sh, p2wpkh, selectUTXO } from '@scure/btc-signer';
 import { hex, base64 } from '@scure/base';
-import { createBitcoinPsbt, getInputFromUtxoAndTx, estimateTxFee, Input } from '../src/wallet/utxo';
+import { createBitcoinPsbt, getInputFromUtxoAndTx, estimateTxFee, Input, getBalance } from '../src/wallet/utxo';
 import { TransactionOutput } from '@scure/btc-signer/psbt';
 import { OrdinalsClient, OutPoint } from '../src/ordinal-api';
+import { EsploraClient } from '../src/esplora';
 
 vi.mock(import('@scure/btc-signer'), async (importOriginal) => {
     const actual = await importOriginal();
@@ -15,9 +16,31 @@ vi.mock(import('@scure/btc-signer'), async (importOriginal) => {
     };
 });
 
+vi.mock(import('../src/ordinal-api'), async (importOriginal) => {
+    const actual = await importOriginal();
+
+    actual.OrdinalsClient.prototype.getOutputsFromAddress = vi.fn(
+        actual.OrdinalsClient.prototype.getOutputsFromAddress
+    );
+
+    return actual;
+});
+
+vi.mock(import('../src/esplora'), async (importOriginal) => {
+    const actual = await importOriginal();
+
+    actual.EsploraClient.prototype.getAddressUtxos = vi.fn(actual.EsploraClient.prototype.getAddressUtxos);
+
+    return actual;
+});
+
 // TODO: Add more tests using https://github.com/paulmillr/scure-btc-signer/tree/5ead71ea9a873d8ba1882a9cd6aa561ad410d0d1/test/bitcoinjs-test/fixtures/bitcoinjs
 // TODO: Ensure that the paymentAddresses have sufficient funds to create the transaction
 describe('UTXO Tests', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
     it('should spend from address to create a transaction with an OP return output', { timeout: 50000 }, async () => {
         // Addresses where randomly picked from blockstream.info
         const paymentAddresses = [
@@ -391,5 +414,57 @@ describe('UTXO Tests', () => {
         await expect(createBitcoinPsbt(paymentAddress, paymentAddress, totalBalance, pubkey)).rejects.toThrow(
             'Failed to create transaction. Do you have enough funds?'
         );
+    });
+
+    it('should return address balance', async () => {
+        const address = 'bc1peqr5a5kfufvsl66444jm9y8qq0s87ph0zv4lfkcs7h40ew02uvsqkhjav0';
+
+        const balance = await getBalance(address);
+
+        assert(balance.confirmed);
+        assert(balance.total);
+        assert(
+            balance.confirmed === balance.total
+                ? balance.unconfirmed === 0n
+                : balance.unconfirmed === balance.total - balance.confirmed
+        );
+
+        const zeroBalance = await getBalance();
+
+        assert(zeroBalance.confirmed === 0n, 'If no address specified confirmed must be 0');
+        assert(zeroBalance.unconfirmed === 0n, 'If no address specified unconfirmed must be 0');
+        assert(zeroBalance.total === 0n, 'If no address specified total must be 0');
+    });
+
+    it('returns smalled amount if address holds ordinals', async () => {
+        const taprootAddress = 'bc1peqr5a5kfufvsl66444jm9y8qq0s87ph0zv4lfkcs7h40ew02uvsqkhjav0';
+
+        const esploraClient = new EsploraClient('mainnet');
+
+        const outputs = await esploraClient.getAddressUtxos(taprootAddress);
+
+        const total = outputs.reduce((acc, output) => acc + output.value, 0);
+
+        const confirmed = outputs.reduce((acc, output) => {
+            if (output.confirmed) {
+                return acc + output.value;
+            }
+
+            return acc;
+        }, 0);
+
+        // mock half of the UTXOs contain inscriptions or runes
+        (OrdinalsClient.prototype.getOutputsFromAddress as Mock).mockResolvedValueOnce(
+            outputs.slice(Math.ceil(outputs.length / 2)).map((output) => {
+                const outpoint = OutPoint.toString(output);
+
+                return { outpoint };
+            })
+        );
+
+        const balanceData = await getBalance(taprootAddress);
+
+        expect(balanceData.total).toBeLessThan(total);
+        expect(balanceData.confirmed).toBeLessThan(confirmed);
     });
 });
