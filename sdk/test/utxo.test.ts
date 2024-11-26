@@ -464,8 +464,8 @@ describe('UTXO Tests', () => {
 
         const balanceData = await getBalance(taprootAddress);
 
-        expect(balanceData.total).toBeLessThanOrEqual(total);
-        expect(balanceData.confirmed).toBeLessThanOrEqual(confirmed);
-        expect(balanceData.unconfirmed).toBeLessThanOrEqual(total - confirmed);
+        expect(balanceData.total).toBeLessThan(total);
+        expect(balanceData.confirmed).toBeLessThan(confirmed);
+        expect(balanceData.unconfirmed).toBeLessThan(total - confirmed);
     });
 });
