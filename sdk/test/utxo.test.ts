@@ -1,4 +1,4 @@
-import { vi, describe, it, assert, Mock, expect } from 'vitest';
+import { vi, describe, it, assert, Mock, expect, beforeEach } from 'vitest';
 import { AddressType, getAddressInfo, Network } from 'bitcoin-address-validation';
 import { Address, NETWORK, OutScript, Script, Transaction, p2sh, p2wpkh, selectUTXO } from '@scure/btc-signer';
 import { hex, base64 } from '@scure/base';
@@ -37,6 +37,10 @@ vi.mock(import('../src/esplora'), async (importOriginal) => {
 // TODO: Add more tests using https://github.com/paulmillr/scure-btc-signer/tree/5ead71ea9a873d8ba1882a9cd6aa561ad410d0d1/test/bitcoinjs-test/fixtures/bitcoinjs
 // TODO: Ensure that the paymentAddresses have sufficient funds to create the transaction
 describe('UTXO Tests', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
     it('should spend from address to create a transaction with an OP return output', { timeout: 50000 }, async () => {
         // Addresses where randomly picked from blockstream.info
         const paymentAddresses = [
@@ -433,7 +437,6 @@ describe('UTXO Tests', () => {
     });
 
     it('returns smalled amount if address holds ordinals', async () => {
-        vi.clearAllMocks();
         const taprootAddress = 'bc1peqr5a5kfufvsl66444jm9y8qq0s87ph0zv4lfkcs7h40ew02uvsqkhjav0';
 
         const esploraClient = new EsploraClient('mainnet');
