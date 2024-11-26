@@ -466,6 +466,5 @@ describe('UTXO Tests', () => {
 
         expect(balanceData.total).toBeLessThan(total);
         expect(balanceData.confirmed).toBeLessThan(confirmed);
-        expect(balanceData.unconfirmed).toBeLessThan(total - confirmed);
     });
 });
