@@ -53,9 +53,9 @@ Given that ERC-4337 is still relatively new, there is not a lot of support for t
 
 ## Opportunities
 
-There are a interesting use cases that account abstraction enables being pushed by several team. Some places to look for inspiration:
+There are interesting use cases that account abstraction enables being pushed by several team. Some places to look for inspiration:
 
-- [Privy](https://docs.privy.io/): Privy allows users to chose from traditional crypto wallets and social logins to create accounts.
+- [Privy](https://docs.privy.io/): Privy allows users to choose from traditional crypto wallets and social logins to create accounts.
 - [Safe](https://docs.safe.global/getting-started/readme): Safe allows complex multi-sig setups, simple authentication, and onramping.
 - [Pimlico](https://pimlico.notion.site/Product-Directory-5d92fe60243b4c5aac6650de390e7cb3): Pimlico tracks several products around account abstraction and it is worthwhile checking out the rapid and new developments in this space.
 
