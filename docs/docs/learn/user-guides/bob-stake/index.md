@@ -15,7 +15,7 @@ All you need is a Bitcoin wallet with some BTC to send and an EVM-compatible wal
 
 ## Bonus Spice Points with Intract
 
-You can harvest extra Spice by competing any of these [Intract Campaign](https://www.intract.io/explore?query=BOB&hideCompleted=true&hideExpired=true&sortBy=rankingB&entity_type=CAMPAIGN) tasks with BOB Stake.
+You can harvest extra Spice by completing any of these [Intract Campaign](https://www.intract.io/explore?query=BOB&hideCompleted=true&hideExpired=true&sortBy=rankingB&entity_type=CAMPAIGN) tasks with BOB Stake.
 
 | Task Name          | Description                                                         | Reward                        |
 | ------------------ | ------------------------------------------------------------------- | ----------------------------- |
