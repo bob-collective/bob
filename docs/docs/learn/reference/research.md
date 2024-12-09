@@ -24,7 +24,7 @@ BOB is a new type of Bitcoin-secured blockchain: a Hybrid L2. Hybrid L2s inherit
 - **Zamyatin A, Harz D**
 - Pre-print, 2024
 
-### [BitVM: Bridging Bitcoin to Second Layers](https://bitvm.org/bitvm_bridge.pdf)
+### [BitVM2: Bridging Bitcoin to Second Layers](https://bitvm.org/bitvm_bridge.pdf)
 
 <details>
   <summary>Read abstract</summary>
