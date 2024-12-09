@@ -65,4 +65,4 @@ All steps are the same as the swap flow, except for step 8 when the BTC proof is
 - Swaps a small portion of the WBTC to ETH and sends it to the user
 - Sends the remaining WBTC to the Solv contracts to stake WBTC for SolvBTC. Stakes the solvBTC for solvBTC.BBN. Sends the SolvBTC.BBN to the user.
 
-![staking](./staking-flow.png)
+![staking](./Staking-Flow.png)
