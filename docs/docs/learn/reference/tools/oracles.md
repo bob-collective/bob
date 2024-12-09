@@ -10,7 +10,7 @@ Acurast provides [Chainlink-compatible Price Feeds](https://docs.acurast.com/int
 
 The [API3 Market](https://market.api3.org/bob) provides access to 200+ price feeds on [BOB Mainnet](https://market.api3.org/bob) and [Testnet](https://market.api3.org/bob-sepolia-testnet). The price feeds operate as a native push oracle and can be activated instantly via the Market UI.
 
-The price feeds are delivered by an aggregate of [first-party oracles](https://old-docs.api3.org/airnode/pre-alpha/#designed-for-first-party-oracles) using signed data and support [OEV recapture](https://docs.api3.org/explore/introduction/oracle-extractable-value.html).
+The price feeds are delivered by an aggregate of [first-party oracles](https://old-docs.api3.org/airnode/pre-alpha/#designed-for-first-party-oracles) using signed data and support [OEV recapture](https://docs.api3.org/oev-searchers/in-depth/oev-searching.html).
 
 Unlike traditional data feeds, reading [API3 price feeds](https://docs.api3.org/guides/dapis/) enables dApps to auction off the right to update the price feeds to searcher bots which facilitates more efficient liquidation processes for users and LPs of DeFi money markets. The OEV recaptured is returned to the dApp.
 
