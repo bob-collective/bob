@@ -2,23 +2,13 @@
 sidebar_position: 2
 ---
 
-# BOB Gateway
+# Integrate BOB Gateway in Your App
 
-## Overview
+[BOB Gateway](https://docs.gobob.xyz/learn/guides/bitcoin-bridge/) is a Bitcoin intent bridge that unlocks Bitcoin liquidity by reducing the number of steps to onboard users to your app, saving time and money. For example, users can go from **BTC** on Bitcoin to **staked BTC LSTs** with a single Bitcoin transaction.
 
-[BOB Gateway](https://docs.gobob.xyz/learn/guides/bitcoin-bridge/) is a Bitcoin intent bridge that unlocks Bitcoin liquidity by reducing the number of steps to onboard users, saving time and money. Users can go from **BTC** on Bitcoin to **staked BTC LSTs** with a single Bitcoin transaction.
-
-Our SDK makes it possible for you to bring this UX directly into your app.
-
-## How Gateway Works
-
-1. Liquidity providers (LPs) temporarily lock wrapped Bitcoin (WBTC or tBTC) in escrow smart contracts on BOB.
-1. A user makes a request for wrapped or staked Bitcoin (e.g. WBTC, tBTC, or a Bitcoin LST/LRT).
-1. The user sends BTC to the liquidity provider's Bitcoin address. A hash of the user's order is included in the `OP_RETURN` of the transaction.
-
-1. Gateway finalizes the transaction. After trustlessly verifying the user's Bitcoin transaction with an on-chain [Light Client](/learn/builder-guides/relay.md), Gateway sends the LP's wrapped Bitcoin to the user's EVM address. If the user requested a Bitcoin LST/LRT, that token is minted using the LP's wrapped Bitcoin before it is sent to the user.
-
-This SDK makes it possible to do steps 2, 3, and 4 in your application's front end.
+:::info How does BOB Gateway work?
+Discover the architecture of BOB Gateway and how it simplifies Bitcoin transactions by visiting our [BOB Gateway introduction page](../introduction/gateway).
+:::
 
 ## Step-by-Step Integration Guide
 
@@ -80,7 +70,7 @@ The SDK will handle automatically when the `toToken` has a fungible ERC20 token,
 ```ts
 const strategies = await gatewaySDK.getStrategies();
 const strategy = strategies.find(
-  (contract) => contract.integration.name === "pell-wbtc",
+  (contract) => contract.integration.name === "pell-wbtc"
 )!;
 const quoteParamsStaking: GatewayQuoteParams = {
   ...quoteParams,
