@@ -7,7 +7,7 @@ sidebar_label: Hybrid L2 Roadmap
 
 BOB is a _Hybrid L2_ (Layer 2), a new kind of rollup that inherits Bitcoin security while providing trust-minimized bridges directly to multiple L1s.
 
-Today, BOB has completed [Phase 1](#phase-1-bootstrapping-as-an-ethereum-l2) of its roadmap. The network is live as an optimistic rollup on Ethereum with [a growing TVL](https://dune.com/bob_collective/build-on-bitcoin-bob-overview) of Bitcoin liquid staking tokens (LSTs) in [our DeFi ecosystem](https://app.gobob.xyz/en/apps). Our onchain [BTC light client](/learn/builder-guides/relay.md) powers trust-minimized cross-chain BTC intents with [BOB Gateway](/learn/user-guides/onboard-to-bob/bob-gateway/).
+Today, BOB has completed [Phase 1](#-phase-1-bootstrapping-as-an-ethereum-l2) of its roadmap. The network is live as an optimistic rollup on Ethereum with [a growing TVL](https://dune.com/bob_collective/build-on-bitcoin-bob-overview) of Bitcoin liquid staking tokens (LSTs) in [our DeFi ecosystem](https://app.gobob.xyz/en/apps). Our onchain [BTC light client](/learn/builder-guides/relay.md) powers trust-minimized cross-chain BTC intents with [BOB Gateway](/learn/user-guides/onboard-to-bob/bob-gateway/).
 
 Next, our Hybrid L2 will inherit security from Bitcoin, then leverage this security to create trust-minimized bridges to Bitcoin, Ethereum, and other L1s. Thus, we won't need to rely on third-party bridges for interoperability between these networks, solving the problem of fragmented BTC multi-chain liquidity.
 
