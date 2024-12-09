@@ -27,8 +27,8 @@ When using Ethereum rollups, Ethereum becomes a co-processor to Bitcoin where th
 
 We see a staged approach to make use of the rollup PoW:
 
-- **Stage 1**: Dapps deployed on an EVM rollup can check the submitted PoW to the rollup and customize their interpretation. For example, a ordinals P2P exchange might want to pause their platform if insufficient PoW is attached to the rollup, Other dapps might ignore the PoW alltogether, making the model quite flexible.
-- **Stage 2**: Merged minig becomes a condition for a valid state transition of the rollup. Assuming that a rollup is launched on an L1 with smart contracts like Ethereum, the sequencer needs to ensure that at certain intervals a sufficient PoW is added. The rollup would be paused and its state could be invalidated through including the PoW as part of the fraud proofs (in optimistic rollups) and validity proofs (in zk rollups). Requiring PoW as part of a valid state transition for the rollup ensures that the state transition of the rollup on say Ethereum cannot settle without the explicit consent from Bitcoin miners.
+- **Stage 1**: Dapps deployed on an EVM rollup can check the submitted PoW to the rollup and customize their interpretation. For example, a ordinals P2P exchange might want to pause their platform if insufficient PoW is attached to the rollup, Other dapps might ignore the PoW altogether, making the model quite flexible.
+- **Stage 2**: Merged mining becomes a condition for a valid state transition of the rollup. Assuming that a rollup is launched on an L1 with smart contracts like Ethereum, the sequencer needs to ensure that at certain intervals a sufficient PoW is added. The rollup would be paused and its state could be invalidated through including the PoW as part of the fraud proofs (in optimistic rollups) and validity proofs (in zk rollups). Requiring PoW as part of a valid state transition for the rollup ensures that the state transition of the rollup on say Ethereum cannot settle without the explicit consent from Bitcoin miners.
 - **Stage 3**: Staking sequencers on Bitcoin and proving incorrect behavior through BitVM, one-time signatures, and other techniques ensures that sequencers are ecnomically incentivized on Bitcoin to correctly produce L2 blocks.
 - **Stage 4**: In the final stage, the rollup transitions to a fully zk-verified rollup that can then be verified by Bitcoin consensus without merged mining. We expect this to take about five years from now as it will require zk technology to mature and Bitcoin made capable of verifying zk proofs.
 
@@ -36,7 +36,7 @@ We see a staged approach to make use of the rollup PoW:
 We will share a technical paper on optimistic sequenced merged mining detailing the technical protocol soon.
 :::
 
-:::note BOB Launch PLan
+:::note BOB Launch Plan
 BOB launches as an optimistic rollup using the OP Stack which may seem counterintuitive to the above goal of eventually being a ZK rollup. However, we see having full EVM compatibility and tooling a worthwhile trade-off to adopting zkEVM rollups. Moreover, we see promising progress around abstracting the entire EVM execution into higher level zkVM like Risc Zero. Executing entire rollup blocks in a zkVM requires no changes to the EVM while still allowing validity proof production that then can eventually be used for a Bitcoin-verified ZK rollup.
 
 We further will launch the merged mining option shortly after BOB will go live in the stage 1 option described above.
@@ -44,9 +44,9 @@ We further will launch the merged mining option shortly after BOB will go live i
 
 ## Usable Decentralization
 
-Centralization is plaguing development on Bitcoin today. Due to Bitcoin's limited programmability, many applications building on Bitcoin, like the majority of Lightning wallets, are centralized as it allows for a better UX than their dencentralized counterparts.
+Centralization is plaguing development on Bitcoin today. Due to Bitcoin's limited programmability, many applications building on Bitcoin, like the majority of Lightning wallets, are centralized as it allows for a better UX than their decentralized counterparts.
 
-Lack of decentalized appliocations with great UX is a major issue that can be resolved by (1) allowing more epxressive smart contracts and piggy-backing off of the developments made on Ethereum and other L1 chains, and (2) ensuring that the EVM rollups are still secured by Bitcoin.
+Lack of decentalized appliocations with great UX is a major issue that can be resolved by (1) allowing more expressive smart contracts and piggy-backing off of the developments made on Ethereum and other L1 chains, and (2) ensuring that the EVM rollups are still secured by Bitcoin.
 
 ### Adoption Through UX
 
@@ -65,7 +65,7 @@ Lack of decentalized appliocations with great UX is a major issue that can be re
 - Complex programs like a BRC20 or Ordinals co-processor should be operated off-chain and its correct execution proven on-chain
 - Simple programs can be kept on-chain
 
-## Briding BTC, Ordinals, and BRC20s
+## Bridging BTC, Ordinals, and BRC20s
 
 We believe that in some cases, bridging BTC, Ordinals, and BRC20s to more chains with higher programmability than Bitcoin is required.
 
