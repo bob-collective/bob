@@ -112,7 +112,7 @@ Now finally, initiate the proving of an address:
 cargo run --bin taproot-prover -- --address 0000000000000000000000000000000000000001 --taproot-address $TAPROOT_ADDRESS_FROM_PREVIOUS_STEP --bonsai-api-key=$API_KEY
 ```
 
-The command above, if it runs successfully, will initiate the generation of a zk-proof on the Bonsai server, and after completion (which can take a couple of minutes), it will submit it to BOB Sepolia (Testnet) for verification. After waiting a couple of minutes, you will be able to see the result in the explorer. Go to [the explorer](https://explorerl2-fluffy-bob-7mjgi9pmtg.t.conduit.xyz/) and search for the previously logged `$TAPROOT_REGISTER` address. Go to the "Internal Transactions", click the latest transaction, and click "Logs". You should see an `OwnershipProven` event, showing your Ethereum and taproot address.
+The command above, if it runs successfully, will initiate the generation of a zk-proof on the Bonsai server, and after completion (which can take a couple of minutes), it will submit it to BOB Sepolia (Testnet) for verification. After waiting a couple of minutes, you will be able to see the result in the explorer. Go to [the explorer](https://sepolia.etherscan.io/) and search for the previously logged `$TAPROOT_REGISTER` address. Go to the "Internal Transactions", click the latest transaction, and click "Logs". You should see an `OwnershipProven` event, showing your Ethereum and taproot address.
 
 ## Diving into the Code
 
