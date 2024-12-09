@@ -50,7 +50,7 @@ To execute the demo, perform the following steps:
 
 #### 1. Account Creation and Funding
 
-Create a new Ethereum account using e.g. MetaMask, and fund the account using the l2 faucet on [this page](https://app.conduit.xyz/published/view/fluffy-bob-7mjgi9pmtg). The private key of this account will be used in the commands below (substitute the `DEPLOYER_PRIVATE_KEY` variable).
+Create a new Ethereum account using e.g. MetaMask, and fund the account using the l2 faucet on [this page](https://docs.metamask.io/services/how-to/get-testnet-tokens/). The private key of this account will be used in the commands below (substitute the `DEPLOYER_PRIVATE_KEY` variable).
 
 #### 2. Deploy the Contracts
 
