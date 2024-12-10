@@ -50,32 +50,3 @@ These are some of the features we're working on for Gateway's next upgrade, with
 1. An LP asks the relayer to deploy a new Gateway contract, which functions as an escrow for their funds. This is permissioned at the moment because BOB pays the transaction fees.
 2. The LP deposits wrapped Bitcoin (e.g. WBTC, tBTC, FBTC) in their Gateway contract.
 3. The LP can only withdraw their funds or update their swap fees after a delay so that the relayer has time to finish open orders. The relayer will not accept new orders during this delay until reset.
-
-### Example Complex Order Flows
-
-#### Swapping BTC for WBTC and gas
-
-1. BOB creates a Gateway contract from the Registry
-2. LP deposits WBTC into the Gateway contract
-3. User request a quote from the off-chain relayer to swap BTC for WBTC and to add ETH for gas fees
-4. Off-chain relayer provides the quote
-5. Users places an order with the relayer
-6. User sends BTC to the LPs Bitcoin address
-7. Off-chain relayer monitors the Bitcoin chain for the transaction (user to LP)
-8. Off-chain relayer sends the merkle proof to the Gateway contract which:
-
-- Unlocks the WBTC from the Gateway contract
-- Swaps a small portion of the WBTC to ETH and sends it to the user
-- Sends the remaining WBTC to the user
-
-![swap](./swap.png)
-
-#### Staking BTC for SolvBTC.BBN and swap for gas
-
-All steps are the same as the swap flow, except for step 8 when the BTC proof is submitted:
-
-- Unlocks the WBTC from the Gateway contract
-- Swaps a small portion of the WBTC to ETH and sends it to the user
-- Sends the remaining WBTC to the Solv contracts to stake WBTC for SolvBTC. Stakes the solvBTC for solvBTC.BBN. Sends the SolvBTC.BBN to the user.
-
-![staking](./Staking-Flow.png)
