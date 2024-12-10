@@ -65,10 +65,6 @@ const config = {
             from: "/docs/learn/bob-stack/roadmap",
             to: "/learn/introduction/roadmap",
           },
-          {
-            from: "/docs/learn/bob-stack/stack-overview",
-            to: "/learn/introduction/stack-overview",
-          },
 
           // User Guides
           {
