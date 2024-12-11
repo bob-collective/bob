@@ -29,8 +29,8 @@ These are some of the features we're working on for Gateway's next upgrade, with
 
 1. Liquidity providers (LPs) temporarily lock wrapped Bitcoin (WBTC or tBTC) in escrow smart contracts on BOB.
 1. A user makes a request to the off-chain relayer to reserve some of the available liquidity.
-1. The user sends BTC to the liquidity provider's Bitcoin address. A hash of the user's order is included in the `OP_RETURN` of their transaction, including data such as the recipient's EVM address on BOB.
-1. The relayer trustlessly verifies the user's Bitcoin transaction by submitting a Merkle proof to an on-chain [Light Client](/learn/builder-guides/relay), granting the relayer permission to withdraw the LP's wrapped Bitcoin without needing to use an oracle.
+1. The user sends BTC to the liquidity provider's Bitcoin address. A hash of the user's order is included in the `OP_RETURN` of their transaction, including data such as the recipient's EVM address on BOB and their desired strategy (i.e. their intent).
+1. The relayer submits a Merkle proof of the user's Bitcoin transaction to an on-chain [Light Client](/learn/builder-guides/relay), granting the relayer permission to withdraw the LP's wrapped Bitcoin. **Encoding the user's order in their Bitcoin transaction makes it possible to trustlessly verify and complete the user's intent without using an oracle.**
 1. Gateway sends the LP's wrapped Bitcoin to the user's EVM address. If the user requested a Bitcoin LST/LRT, that token is minted using the LP's wrapped Bitcoin _before_ it is sent to the user.
 
 ## Architecture
@@ -39,11 +39,11 @@ These are some of the features we're working on for Gateway's next upgrade, with
 
 ### User Flow
 
-1. A user requests to swap BTC for wrapped BTC (e.g. WBTC, tBTC, or FBTC) or staked BTC (e.g. SolvBTC.BBN, uniBTC)
-1. The user gets a "quote" of which Gateway smart contract is an available route (i.e. which LP they can swap with)
-1. The user creates an "order" with the relayer to reserve the LP's liquidity
-1. The user creates a Bitcoin transaction, updating the order with their txid
-1. The relayer monitors the Bitcoin chain and sends the LP's wrapped BTC to the user after the txid seen on Bitcoin. Specifically, the relayer submits a Merkle proof of the Bitcoin tx to an [on-chain light client](/learn/builder-guides/relay) for trustless verification of the user's intent.
+1. A user requests to swap BTC for wrapped BTC (e.g. WBTC, tBTC, or FBTC) or staked BTC (e.g. SolvBTC.BBN, uniBTC).
+1. The user gets a "quote" of which Gateway smart contract is an available route (i.e. which LP they can swap with).
+1. The user creates an "order" with the relayer to reserve the LP's liquidity.
+1. The user creates a Bitcoin transaction, updating the order with their txid. Gateway's SDK creates a hash of the user's intent, which is included in the `OP_RETURN` of the transaction. This hash includes metadata such as the user's EVM address, which strategy they are using (i.e. their intent), and how many sats to convert to ETH for gas, among other data. By including a deterministic hash of the user's order, we lay the groundwork for making Gateway trustless in the future by decentralizing the relayer set.
+1. The relayer monitors the Bitcoin chain and sends the LP's wrapped BTC to the user after the txid is seen on Bitcoin. Specifically, the relayer submits a Merkle proof of the user's Bitcoin tx to an [on-chain light client](/learn/builder-guides/relay) for trustless verification of the user's intent. It accomplishes this by requiring that the recipient's EVM address, sequence of smart contract calls, and other order data exactly match the hash in the `OP_RETURN` of the user's Bitcoin transaction.
 
 ### Liquidity Provider (LP) Flow
 
