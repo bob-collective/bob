@@ -9,7 +9,6 @@ import {BTCUtils} from "@bob-collective/bitcoin-spv/BTCUtils.sol";
 import {ValidateSPV} from "@bob-collective/bitcoin-spv/ValidateSPV.sol";
 
 contract FullRelayWithVerify is FullRelay {
-    using SafeMath for uint256;
     using BTCUtils for bytes;
     using BTCUtils for uint256;
 
