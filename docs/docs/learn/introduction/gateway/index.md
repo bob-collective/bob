@@ -30,7 +30,7 @@ These are some of the features we're working on for Gateway's next upgrade, with
 1. Liquidity providers (LPs) temporarily lock wrapped Bitcoin (WBTC or tBTC) in escrow smart contracts on BOB.
 1. A user makes a request to the off-chain relayer to reserve some of the available liquidity.
 1. The user sends BTC to the liquidity provider's Bitcoin address. A hash of the user's order is included in the `OP_RETURN` of their transaction, including data such as the recipient's EVM address on BOB.
-1. The relayer trustlessly verifies the user's Bitcoin transaction by submitting a Merkle proof to an on-chain [Light Client](/learn/builder-guides/relay.md), granting the relayer permission to withdraw the LP's wrapped Bitcoin without needing to use an oracle.
+1. The relayer trustlessly verifies the user's Bitcoin transaction by submitting a Merkle proof to an on-chain [Light Client](/learn/builder-guides/relay), granting the relayer permission to withdraw the LP's wrapped Bitcoin without needing to use an oracle.
 1. Gateway sends the LP's wrapped Bitcoin to the user's EVM address. If the user requested a Bitcoin LST/LRT, that token is minted using the LP's wrapped Bitcoin _before_ it is sent to the user.
 
 ## Architecture
