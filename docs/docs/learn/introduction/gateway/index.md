@@ -9,7 +9,7 @@ sidebar_label: "BOB Gateway: Bitcoin Intents"
 
 Bitcoin users can easily onboard to the BOB Hybrid L2 without previously holding any Ethereum assets. This page explains the structure of _BOB Gateway_, an intent-based bridge that coordinates peer-to-peer swaps between users and liquidity providers (LPs).
 
-Cross-chain transfers are secured by verifying Bitcoin transaction proofs with an [on-chain light client](/learn/builder-guides/relay), avoiding the need for an oracle. Optional intents, such as staking, lending, and swapping a small amount of ETH for transaction fees can all be accomplished while only requiring a single Bitcoin transaction from the user.
+Cross-chain transfers are secured by verifying Bitcoin transaction proofs with an [on-chain light client](/learn/builder-guides/relay), avoiding the need for an oracle. Optional intents, such as staking, lending, and swapping a small amount of ETH for gas can all be accomplished while only requiring a single Bitcoin transaction from the user.
 
 ## Next Steps for Gateway
 
@@ -47,7 +47,7 @@ These are some of the features we're working on for Gateway's next upgrade, with
 
 ### Liquidity Provider (LP) Flow
 
-1. An LP asks the relayer to deploy a new Gateway contract, which functions as an escrow for their funds. This is permissioned at the moment because BOB pays the transaction fees.
+1. An LP asks the relayer to deploy a new Gateway contract, which functions as an escrow for their funds. This is permissioned at the moment because BOB pays the transaction's gas. See the [Trust Assumptions](#trust-assumptions) section below for more information.
 2. The LP deposits wrapped Bitcoin (e.g. WBTC, tBTC, FBTC) in their Gateway contract.
 3. The LP can only withdraw their funds or update their swap fees after a delay so that the relayer has time to finish open orders. The relayer will not accept new orders during this delay until reset.
 
