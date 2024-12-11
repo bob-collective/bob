@@ -5,6 +5,18 @@ sidebar_label: Run a Full Node
 
 # Run a Full Node
 
+:::warning Holocene Upgrade on January 9th, 2025
+The Optimism Fork (Holocene) will be activated on ​Mainnet​ on ​`Thu 09 Jan 2025 18:00:01 UTC`
+
+Prior to the update, update your nodes to:
+
+- run op-geth >= [v1.101411.2](https://pylonlinks.com/link?url=https%3A%2F%2Fgithub.com%2Fethereum-optimism%2Fop-geth%2Freleases%2Ftag%2Fv1.101411.2&utm_campaign_id=b0864ff3-1c35-4e96-87fc-2c2706284a23&utm_slack_channel=C081M8AV61K)
+- run op-node >= [v1.10.0](https://pylonlinks.com/link?url=https%3A%2F%2Fgithub.com%2Fethereum-optimism%2Foptimism%2Freleases%2Ftag%2Fop-node%252Fv1.10.0&utm_campaign_id=b0864ff3-1c35-4e96-87fc-2c2706284a23&utm_slack_channel=C081M8AV61K)
+- set on both the flag `--override.holocene=1736445601`
+
+**If you are not using the previous fork, Granite, on your nodes, please reach out** (check the following flag is set `​--override.granite​`). In that case, you might need to enable the Granite hard fork flags two days before on `​Tue 07 Jan 2025 18:00:01 UTC​`. You can use the same software version and configure it with `​--override.granite=1736272801`
+:::
+
 :::info
 There is no protocol level incentive to run a BOB full node. If you’re interested in accessing the BOB chain, but you don’t want to set up your own node, see our [Node Providers](/learn/reference/tools/node-providers) to get RPC access to fully-managed nodes hosted by a third-party provider.
 :::
