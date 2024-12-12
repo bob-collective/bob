@@ -182,3 +182,13 @@ export function getMerkleProof(block: Block, txHash: string, forWitness?: boolea
         root: merkleAndRoot.root.toString('hex'),
     };
 }
+
+export class TreeNode<T> {
+    val: T;
+    children: TreeNode<T>[];
+
+    constructor(val: T, children: TreeNode<T>[] = []) {
+        this.val = val;
+        this.children = children;
+    }
+}

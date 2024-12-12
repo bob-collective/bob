@@ -3,6 +3,8 @@ import { hex, base64 } from '@scure/base';
 import { AddressType, getAddressInfo, Network } from 'bitcoin-address-validation';
 import { EsploraClient, UTXO } from '../esplora';
 import { OrdinalsClient, OutPoint, OutputJson } from '../ordinal-api';
+import { getTxInscriptions } from '../inscription';
+import { TreeNode } from '../utils';
 
 export type BitcoinNetworkName = Exclude<Network, 'regtest'>;
 
@@ -424,7 +426,46 @@ export async function getBalance(address?: string) {
 
     const cardinalOutputsSet = new Set(cardinalOutputs.map((output) => output.outpoint));
 
+    const rootUtxoNodes = outputs.map((output) => new TreeNode<Pick<UTXO, 'txid' | 'vout'>>(output));
+    // [[TreeNode], ...[TreeNode]] structure
+    // to preserve last constructed children nodes
+    let children = Array.from(rootUtxoNodes);
+
+    // bfs with extra steps
+    while (children.length > 0) {
+        const accumulator: TreeNode<Pick<UTXO, 'txid' | 'vout'>>[][] = Array(children.length);
+
+        for (let i = 0; i < children.length; i++) {
+            const childNode = children[i];
+
+            const txInscriptions = await getTxInscriptions(esploraClient, childNode.val.txid);
+
+            // if does not contain inscriptions -- include to the next round
+            if (txInscriptions.length === 0) {
+                const transaction = await esploraClient.getTransaction(childNode.val.txid);
+
+                if (!transaction.status.confirmed) {
+                    childNode.children = transaction.vin.map((vin) => {
+                        return new TreeNode<Pick<UTXO, 'txid' | 'vout'>>({
+                            vout: vin.vout,
+                            txid: vin.txid,
+                        });
+                    });
+
+                    accumulator[i] = childNode.children;
+                }
+            } else {
+                // set children to null -> mark it as containing inscriptions
+                childNode.children = null;
+            }
+        }
+
+        children = accumulator.flat();
+    }
+
     const total = outputs.reduce((acc, output) => {
+        // check should be here
+
         if (cardinalOutputsSet.has(OutPoint.toString(output))) {
             return acc + output.value;
         }
