@@ -9,7 +9,7 @@ const GITHUB_LINK = "https://github.com/bob-collective/bob";
 const LANDING_PAGE = "https://gobob.xyz";
 const DOCS_PAGE = "https://docs.gobob.xyz";
 const DISCORD = "https://discord.gg/gobob";
-const TWITTER = "https://twitter.com/build_on_bob";
+const TWITTER = "https://x.com/build_on_bob";
 const TELEGRAM = "https://t.me/+CyIcLW2nfaFlNDc1";
 const FORUM = "https://forum.gobob.xyz";
 const PRESS_KIT =
@@ -43,12 +43,139 @@ const config = {
     locales: ["en"],
   },
 
+  plugins: [
+    [
+      "@docusaurus/plugin-client-redirects",
+      {
+        redirects: [
+          // Introduction section
+          {
+            from: "/docs/learn/guides/faq",
+            to: "/learn/user-guides/faq",
+          },
+          {
+            from: "/docs/learn/bob-stack/merged-mining",
+            to: "/learn/introduction/roadmap",
+          },
+          {
+            from: "/docs/learn/bob-stack/op-stack",
+            to: "/learn/introduction/roadmap",
+          },
+          {
+            from: "/docs/learn/bob-stack/roadmap",
+            to: "/learn/introduction/roadmap",
+          },
+          {
+            from: "/docs/learn/bob-stack/stack-overview",
+            to: "/learn/introduction/stack-overview",
+          },
+
+          // User Guides
+          {
+            from: "/docs/learn/guides/binance-wallet-gateway",
+            to: "/learn/user-guides/binance-wallet-gateway",
+          },
+          {
+            from: "/docs/learn/guides/bob-fusion",
+            to: "/learn/user-guides/bob-fusion",
+          },
+          {
+            from: "/docs/learn/guides/bob-gateway",
+            to: "/learn/user-guides/onboard-to-bob/bob-gateway",
+          },
+          {
+            from: "/docs/learn/guides/bob-pay",
+            to: "/learn/user-guides/bob-pay",
+          },
+          {
+            from: "/docs/learn/guides/bob-stake",
+            to: "/learn/user-guides/bob-stake",
+          },
+          {
+            from: "/docs/learn/guides/ethereum-bridge",
+            to: "/learn/user-guides/onboard-to-bob/ethereum-bridge",
+          },
+          {
+            from: "/docs/build/getting-started/networks",
+            to: "/learn/user-guides/networks",
+          },
+          {
+            from: "/docs/learn/guides/onboard-to-bob",
+            to: "/learn/user-guides/onboard-to-bob",
+          },
+
+          // Builder Guides
+          {
+            from: "/docs/build/bob-sdk/bridged-btc-gas-fee/account-abstraction",
+            to: "/learn/builder-guides/bridged-btc-gas-fee/account-abstraction",
+          },
+          {
+            from: "/docs/build/bob-sdk/bridged-btc-gas-fee",
+            to: "/learn/builder-guides/bridged-btc-gas-fee",
+          },
+          {
+            from: "/docs/build/bob-sdk/bridged-btc-gas-fee/meta-transactions",
+            to: "/learn/builder-guides/bridged-btc-gas-fee/meta-transactions",
+          },
+          {
+            from: "/docs/build/how-to/full-node",
+            to: "/learn/builder-guides/full-node",
+          },
+          {
+            from: "/docs/build/bob-sdk/gateway",
+            to: "/learn/builder-guides/gateway",
+          },
+          {
+            from: "/docs/build/getting-started/helloworld",
+            to: "/learn/builder-guides/hello-bitcoin",
+          },
+          {
+            from: "/docs/build/getting-started/local-development",
+            to: "/learn/builder-guides/local-development",
+          },
+          {
+            from: "/docs/build/bob-sdk/relay",
+            to: "/learn/builder-guides/relay",
+          },
+          {
+            from: "/docs/build/bob-sdk/sats-wagmi",
+            to: "/learn/builder-guides/sats-wagmi",
+          },
+
+          // Reference section
+          {
+            from: "/docs/learn/security/audits",
+            to: "/learn/reference/audits",
+          },
+          {
+            from: "/docs/build/bridged-token-addresses",
+            to: "/learn/reference/bridged-token-addresses",
+          },
+          {
+            from: "/docs/build/contracts",
+            to: "/learn/reference/contracts",
+          },
+          {
+            from: "/docs/learn/security/privileged-roles",
+            to: "/learn/reference/privileged-roles",
+          },
+          {
+            from: "/docs/build/examples/zkvm-taproot",
+            to: "/learn/reference/tools/rust-zkvm",
+          },
+        ],
+      },
+    ],
+  ],
   presets: [
     [
       "classic",
       /** @type {import('@docusaurus/preset-classic').Options} */
       ({
+        pages: false,
+        blog: false,
         docs: {
+          routeBasePath: "/",
           sidebarPath: require.resolve("./sidebars.js"),
           editUrl: `${GITHUB_LINK}/tree/master/docs/`,
           remarkPlugins: [
@@ -67,9 +194,9 @@ const config = {
     ({
       codeblock: {
         showGithubLink: true,
-        githubLinkLabel: 'View on GitHub',
+        githubLinkLabel: "View on GitHub",
         showRunmeLink: false,
-        runmeLinkLabel: 'Checkout via Runme'
+        runmeLinkLabel: "Checkout via Runme",
       },
 
       image: "img/bob-social-card.png",
@@ -93,24 +220,6 @@ const config = {
             sidebarId: "learnSidebar",
             position: "left",
             label: "Learn",
-          },
-          {
-            type: "docSidebar",
-            sidebarId: "buildSidebar",
-            position: "left",
-            label: "Build",
-          },
-          // {
-          //   type: "docSidebar",
-          //   sidebarId: "apiSidebar",
-          //   position: "left",
-          //   label: "API",
-          // },
-          {
-            type: "docSidebar",
-            sidebarId: "contractSidebar",
-            position: "left",
-            label: "Contracts",
           },
           {
             href: DISCORD,
@@ -191,14 +300,14 @@ const config = {
         disableSwitch: true,
         respectPrefersColorScheme: false,
       },
-      announcementBar: {
-        id: "sign_up",
-        content:
-          'Missing something? Want to know more? <a target="_blank" rel="noopener noreferrer" href="https://forms.gle/etYqChR3aahUFuEZ9">Provide feedback</a>.',
-        backgroundColor: "#f58b00",
-        textColor: "#fff",
-        isCloseable: true,
-      },
+      // announcementBar: {
+      //   id: "sign_up",
+      //   content:
+      //     'Missing something? Want to know more? <a target="_blank" rel="noopener noreferrer" href="https://forms.gle/etYqChR3aahUFuEZ9">Provide feedback</a>.',
+      //   backgroundColor: "#f58b00",
+      //   textColor: "#fff",
+      //   isCloseable: true,
+      // },
     }),
 
   markdown: {
@@ -217,7 +326,7 @@ const config = {
         language: ["en"],
       },
     ],
-    'docusaurus-theme-github-codeblock',
+    "docusaurus-theme-github-codeblock",
   ],
   scripts: [
     {

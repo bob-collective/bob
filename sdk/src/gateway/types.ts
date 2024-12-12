@@ -60,6 +60,8 @@ export interface GatewayQuoteParams {
     /** @description The percentage of fee charged by partners in Basis Points (BPS) units. This will override the default fee rate configured via platform. 1 BPS = 0.01%. The maximum value is 1000 (which equals 10%). The minimum value is 1 (which equals 0.01%). */
     fee?: number;
 
+    feeRate?: number;
+
     // NOTE: the following are new fields added by us
     /** @description Amount of satoshis to swap for ETH */
     gasRefill?: number;
@@ -200,6 +202,7 @@ export interface GatewayOrderResponse {
     status: boolean;
     /** @description When the order was created */
     timestamp: number;
+    // TODO: return converted fee
     /** @description The converted satoshi amount */
     tokens: string;
     /** @description The satoshi output amount */
@@ -259,7 +262,7 @@ export type GatewayOrder = Omit<
     /** @description Get the actual token received */
     getToken(): Token | undefined;
     /** @description Get the actual amount received of the token */
-    getAmount(): string | number | undefined;
+    getTokenAmount(): string | number | undefined;
     /** @description Get the number of confirmations */
     getConfirmations(esploraClient: EsploraClient, latestHeight?: number): Promise<number>;
     /** @description Get the actual order status */
