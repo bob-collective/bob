@@ -5,7 +5,7 @@ import { hex, base64 } from '@scure/base';
 import { createBitcoinPsbt, getInputFromUtxoAndTx, estimateTxFee, Input, getBalance } from '../src/wallet/utxo';
 import { TransactionOutput } from '@scure/btc-signer/psbt';
 import { OrdinalsClient, OutPoint } from '../src/ordinal-api';
-import { EsploraClient } from '../src/esplora';
+import { getTxInscriptions } from '../src/inscription';
 
 vi.mock(import('@scure/btc-signer'), async (importOriginal) => {
     const actual = await importOriginal();
@@ -32,6 +32,12 @@ vi.mock(import('../src/esplora'), async (importOriginal) => {
     actual.EsploraClient.prototype.getAddressUtxos = vi.fn(actual.EsploraClient.prototype.getAddressUtxos);
 
     return actual;
+});
+
+vi.mock(import('../src/inscription'), async (importOriginal) => {
+    const actual = await importOriginal();
+
+    return { ...actual, getTxInscriptions: vi.fn(actual.getTxInscriptions) };
 });
 
 // TODO: Add more tests using https://github.com/paulmillr/scure-btc-signer/tree/5ead71ea9a873d8ba1882a9cd6aa561ad410d0d1/test/bitcoinjs-test/fixtures/bitcoinjs
@@ -397,7 +403,7 @@ describe('UTXO Tests', () => {
                         })
                     )
             )
-        ).not.toStrictEqual([]);
+        ).not.toEqual([]);
     });
 
     it('throws an error if insufficient balance', { timeout: 50000 }, async () => {

@@ -31,7 +31,6 @@ class TreeNode<T> {
 const processNodes = async (rootNodes: TreeNode<OutputNodeData>[], esploraClient: EsploraClient) => {
     const queue = Array.from(rootNodes);
 
-    // bfs with extra steps
     while (queue.length > 0) {
         const childNode = queue.shift();
 
