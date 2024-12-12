@@ -6,7 +6,8 @@
 
 - [Light Relay](/docs/build/bob-sdk/relay): [`0x9fe7ef727da3d79e0308ff43f31ea1d077ee9f41`](https://explorer.gobob.xyz/address/0x9fe7ef727da3d79e0308ff43f31ea1d077ee9f41)
 - [Gateway](/docs/build/bob-sdk/gateway): [`0xcc2c1d45A3ECeEdec364a6B9e537AE97Fa20bEa7`](https://explorer.gobob.xyz/address/0xcc2c1d45A3ECeEdec364a6B9e537AE97Fa20bEa7)
-- [Gateway](/docs/build/bob-sdk/gateway) Registry: [`0xAE6770a207E86FaE3b191564FA55ce7Bfee0Dde9`](https://explorer.gobob.xyz/address/0xAE6770a207E86FaE3b191564FA55ce7Bfee0Dde9)
+- GatewayRegistry V2: [`0x37f330e667208633e1da1cf601d01f0ef8484306`](https://explorer.gobob.xyz/address/0x37f330e667208633e1da1cf601d01f0ef8484306)
+- GatewayRegistry V3: [`0xAE6770a207E86FaE3b191564FA55ce7Bfee0Dde9`](https://explorer.gobob.xyz/address/0xAE6770a207E86FaE3b191564FA55ce7Bfee0Dde9)
 
 ### BOB Mainnet (L2)
 
@@ -47,6 +48,14 @@
 - L1ERC721Bridge: [`0xA67fc05D295d2Be6bC4cBfad4f880c1c58734212`](https://etherscan.io/address/0xA67fc05D295d2Be6bC4cBfad4f880c1c58734212)
 
 ## Testnets
+
+### BOB Sepolia Core Contracts (L2)
+
+<!--TODO: Add Sepolia Light Relay address-->
+<!-- - [Light Relay](/docs/build/bob-sdk/relay): [``]() -->
+
+- GatewayRegistry V2: [`0x345f46fdd0adad44ba8e2a65ce6a7ba879f3404e`](https://bob-sepolia.explorer.gobob.xyz/address/0x345f46fdd0adad44ba8e2a65ce6a7ba879f3404e)
+- GatewayRegistry V3: [`0xfDFed82309b14b7e3EDfc768Bb5EBF80dDcaFb3A`](https://bob-sepolia.explorer.gobob.xyz/address/0xfDFed82309b14b7e3EDfc768Bb5EBF80dDcaFb3A)
 
 ### BOB Sepolia (L2)
 
