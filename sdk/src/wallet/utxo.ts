@@ -18,7 +18,7 @@ export const getBtcNetwork = (name: BitcoinNetworkName) => {
 
 type Output = { address: string; amount: bigint } | { script: Uint8Array; amount: bigint };
 
-export class TreeNode<T> {
+class TreeNode<T> {
     val: T;
     children: TreeNode<T>[];
 
@@ -61,7 +61,7 @@ const processNodes = async (rootNodes: TreeNode<OutputNodeData>[], esploraClient
 };
 
 const checkUtxoNode = (node: TreeNode<OutputNodeData>) => {
-    // leaf node == confirmed input
+    // leaf node either confirmed or contains ordinals
     if (node.children.length === 0) return node.val.cardinal;
 
     return node.children.reduce((acc, child) => acc && checkUtxoNode(child), true);
