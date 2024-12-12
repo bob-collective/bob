@@ -31,9 +31,8 @@ class TreeNode<T> {
 const processNodes = async (rootNodes: TreeNode<OutputNodeData>[], esploraClient: EsploraClient) => {
     const queue = Array.from(rootNodes);
 
-    // use `for` (not `while`) to wait for async function return values
     // bfs with extra steps
-    for (let i = 0; queue.length > 0; i++) {
+    while (queue.length > 0) {
         const childNode = queue.shift();
 
         const txInscriptions = await getTxInscriptions(esploraClient, childNode.val.txid);
