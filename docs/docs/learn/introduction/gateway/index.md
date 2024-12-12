@@ -35,7 +35,11 @@ These are some of the features we're working on for Gateway's next upgrade, with
 
 ## Architecture
 
-![architecture](./architecture.png)
+<img
+src={require("./architecture.png").default}
+style={{ width: "100%", maxWidth: "100%", height: "auto" }}
+alt="architecture"
+/>
 
 ### User Flow
 
