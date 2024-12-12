@@ -220,7 +220,7 @@ export async function createBitcoinPsbt(
     });
 
     if (!transaction || !transaction.tx) {
-        console.debug('confirmedUtxos', utxos);
+        console.debug('utxos', utxos);
         console.debug('outputsFromAddress', cardinalOutputs);
         console.debug(`fromAddress: ${fromAddress}, toAddress: ${toAddress}, amount: ${amount}`);
         console.debug(`publicKey: ${publicKey}, opReturnData: ${opReturnData}`);
@@ -443,8 +443,8 @@ export async function estimateTxFee(
     });
 
     if (!transaction || !transaction.tx) {
-        console.debug('confirmedUtxos', utxos);
-        console.debug('outputsFromAddress', cardinalOutputs);
+        console.debug('utxos', utxos);
+        console.debug('cardinalOutputs', cardinalOutputs);
         console.debug(`fromAddress: ${fromAddress}, amount: ${amount}`);
         console.debug(`publicKey: ${publicKey}, opReturnData: ${opReturnData}`);
         console.debug(`feeRate: ${feeRate}, confirmationTarget: ${confirmationTarget}`);
