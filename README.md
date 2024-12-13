@@ -75,7 +75,7 @@ Let's review the calculation given in the [Bitcoin Wiki](https://en.bitcoin.it/w
 ```
 hashrate = difficulty * 2**32 / 600 (60 * 10 = 10 minutes)
 hashrate = ~157 (GH/s) = (22012.4941572 * 2**32 / 600) / 10**9 (example)
-hashrate = ~595 (EH/s) (83148355189239.77 * 2**32 / 600) / 10**18 (current)
+hashrate = ~595 (EH/s) = (83148355189239.77 * 2**32 / 600) / 10**18 (current)
 ```
 
 The `LightRelay` requires that the proof is included at the *current* or *previous* difficulty so we can assume the attacker has 2016 * 2 blocks to brute-force a valid chain of `proofLength`.
