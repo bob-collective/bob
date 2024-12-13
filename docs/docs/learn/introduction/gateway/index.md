@@ -62,3 +62,34 @@ While development for BOB Gateway is advancing rapidly, there are still some tra
 - Liquidity providers (LPs) receive BTC directly from users on Bitcoin mainnet. As a result, the off-chain relayer cannot interfere with funds received by the LPs.
 - The relayer is currently necessary to complete the user's intent (e.g. by submitting a Merkle proof of the BTC transaction to the on-chain light client, unlocking the LP's wrapped BTC). Since users cannot submit the proofs themselves yet, user funds are "stuck" whenever the relayer is offline. Users will be able to submit their own BTC proofs after we transition Gateway use a full Bitcoin light client and add functionality to protect LPs from potentially malicious strategy contracts.
 - At the moment there is only one relayer. In addition to its other functionality, this relayer pays gas on the user's behalf so that the user doesn't need to make a transaction on BOB to complete the bridging process. Since a malicious actor could create a strategy designed to take advantage of the relayer (e.g. spend all of the funds available for gas fees), the process of adding new strategies to Gateway as well as decentralizing the relayer role are restricted by the BOB team until Gateway is upgraded as described above.
+
+### Security of the Light Client
+
+Gateway currently uses a "light" Bitcoin light client, which only checks that the submitted Bitcoin block headers meet the current or previous difficulty target. Later, we will transition to a "full" Bitcoin light client and submit every Bitcoin block header to the relay.
+
+The following calculation shows that **it would take ~$12,000,000 of hashrate (excluding the opportunity cost of not mining) to attack the relay** at the time of this writing in December, 2024.
+
+Let's review the calculation given in the [Bitcoin Wiki](https://en.bitcoin.it/wiki/Difficulty) to compute the hashrate:
+
+```
+hashrate = difficulty * 2**32 / 600 (60 * 10 = 10 minutes)
+hashrate = ~157 (GH/s) = (22012.4941572 * 2**32 / 600) / 10**9 (example)
+hashrate = ~743 (EH/s) = (103919634711492.2 * 2**32 / 600) / 10**18 (time of writing, Dec 2024)
+```
+
+The `LightRelay` requires that the proof is included at the _current_ or _previous_ difficulty so we can assume the attacker has 2016 \* 2 blocks to brute-force a valid chain of `proofLength`.
+This is possible since, due to SPV assumptions, we can not verify the transactions references by the block header are valid, only that sufficient PoW has accumulated on the chain.
+
+Let's assume the attacker can generate 6 blocks (with some invalid transactions) within two difficulty adjustment period, 2016 \* 2 blocks (four weeks).
+
+```
+hashrate * 6/(2016*2)
+743 (EH/s) * 6/(2016*2) = 1.105 EH/s (~1,105,654 TH/s)
+```
+
+So we need ~0.142% of the current hashrate to build six blocks in two weeks.
+
+If we estimate it would cost $11 per TH/s (excluding electricity and other setup costs) then the total cost of that hashrate would be $12,162,194.
+This excludes the opportunity cost from actually mining on Bitcoin mainnet, receiving fees and block rewards.
+
+**Therefore, given that the value protected by the relay is less than $12m, protocols secured by the relay are "economically safe".**
