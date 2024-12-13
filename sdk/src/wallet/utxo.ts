@@ -157,7 +157,12 @@ export async function createBitcoinPsbt(
 
     const cardinalOutputsSet = new Set(cardinalOutputs.map((output) => output.outpoint));
 
-    const rootUtxoNodes = utxos.map((utxo) => new TreeNode<OutputNodeData>({ ...utxo, cardinal: true }));
+    const rootUtxoNodes = utxos.reduce((acc, utxo) => {
+        if (!cardinalOutputsSet.has(OutPoint.toString(utxo)))
+            acc.push(new TreeNode<OutputNodeData>({ ...utxo, cardinal: true }));
+
+        return acc;
+    }, []);
 
     await processNodes(rootUtxoNodes, esploraClient);
 
@@ -373,7 +378,12 @@ export async function estimateTxFee(
 
     const cardinalOutputsSet = new Set(cardinalOutputs.map((output) => output.outpoint));
 
-    const rootUtxoNodes = utxos.map((utxo) => new TreeNode<OutputNodeData>({ ...utxo, cardinal: true }));
+    const rootUtxoNodes = utxos.reduce((acc, utxo) => {
+        if (!cardinalOutputsSet.has(OutPoint.toString(utxo)))
+            acc.push(new TreeNode<OutputNodeData>({ ...utxo, cardinal: true }));
+
+        return acc;
+    }, []);
 
     await processNodes(rootUtxoNodes, esploraClient);
 
@@ -489,7 +499,12 @@ export async function getBalance(address?: string) {
 
     const cardinalOutputsSet = new Set(cardinalOutputs.map((output) => output.outpoint));
 
-    const rootUtxoNodes = utxos.map((utxo) => new TreeNode<OutputNodeData>({ ...utxo, cardinal: true }));
+    const rootUtxoNodes = utxos.reduce((acc, utxo) => {
+        if (!cardinalOutputsSet.has(OutPoint.toString(utxo)))
+            acc.push(new TreeNode<OutputNodeData>({ ...utxo, cardinal: true }));
+
+        return acc;
+    }, []);
 
     await processNodes(rootUtxoNodes, esploraClient);
 
