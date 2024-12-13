@@ -50,7 +50,7 @@ To execute the demo, perform the following steps:
 
 #### 1. Account Creation and Funding
 
-Create a new Ethereum account using e.g. MetaMask, and fund the account using the l2 faucet on [this page](https://app.conduit.xyz/published/view/fluffy-bob-7mjgi9pmtg). The private key of this account will be used in the commands below (substitute the `DEPLOYER_PRIVATE_KEY` variable).
+Create a new Ethereum account using e.g. MetaMask, and [bridge some Sepolia ETH to BOB Sepolia](https://puff-bob-jznbxtoq7h.testnets.rollbridge.app/) - after funding your account using a [Sepolia faucet](https://sepolia-faucet.pk910.de/), if necessary. The private key of this account will be used in the commands below (substitute the `DEPLOYER_PRIVATE_KEY` variable).
 
 #### 2. Deploy the Contracts
 
@@ -112,7 +112,7 @@ Now finally, initiate the proving of an address:
 cargo run --bin taproot-prover -- --address 0000000000000000000000000000000000000001 --taproot-address $TAPROOT_ADDRESS_FROM_PREVIOUS_STEP --bonsai-api-key=$API_KEY
 ```
 
-The command above, if it runs successfully, will initiate the generation of a zk-proof on the Bonsai server, and after completion (which can take a couple of minutes), it will submit it to BOB Sepolia (Testnet) for verification. After waiting a couple of minutes, you will be able to see the result in the explorer. Go to [the explorer](https://explorerl2-fluffy-bob-7mjgi9pmtg.t.conduit.xyz/) and search for the previously logged `$TAPROOT_REGISTER` address. Go to the "Internal Transactions", click the latest transaction, and click "Logs". You should see an `OwnershipProven` event, showing your Ethereum and taproot address.
+The command above, if it runs successfully, will initiate the generation of a zk-proof on the Bonsai server, and after completion (which can take a couple of minutes), it will submit it to BOB Sepolia (Testnet) for verification. After waiting a couple of minutes, you will be able to see the result in the explorer. Go to [the explorer](https://bob-sepolia.explorer.gobob.xyz) and search for the previously logged `$TAPROOT_REGISTER` address. Go to the "Internal Transactions", click the latest transaction, and click "Logs". You should see an `OwnershipProven` event, showing your Ethereum and taproot address.
 
 ## Diving into the Code
 

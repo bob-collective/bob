@@ -10,11 +10,12 @@ Acurast provides [Chainlink-compatible Price Feeds](https://docs.acurast.com/int
 
 The [API3 Market](https://market.api3.org/bob) provides access to 200+ price feeds on [BOB Mainnet](https://market.api3.org/bob) and [Testnet](https://market.api3.org/bob-sepolia-testnet). The price feeds operate as a native push oracle and can be activated instantly via the Market UI.
 
-The price feeds are delivered by an aggregate of [first-party oracles](https://docs.api3.org/explore/airnode/why-first-party-oracles.html) using signed data and support [OEV recapture](https://docs.api3.org/explore/introduction/oracle-extractable-value.html).
+The price feeds are delivered by an aggregate of [first-party oracles](https://old-docs.api3.org/airnode/v0.10/#designed-for-first-party-oracles) using signed data and support [OEV recapture](https://docs.api3.org/oev-searchers/in-depth/oev-searching.html).
 
 Unlike traditional data feeds, reading [API3 price feeds](https://docs.api3.org/guides/dapis/) enables dApps to auction off the right to update the price feeds to searcher bots which facilitates more efficient liquidation processes for users and LPs of DeFi money markets. The OEV recaptured is returned to the dApp.
 
 Check out these guides on how to:
+
 - [Use dAPIs on the Market](https://docs.api3.org/guides/dapis/subscribing-to-dapis/)
 - [Read a dAPI](https://docs.api3.org/guides/dapis/read-a-dapi/)
 
@@ -70,4 +71,16 @@ To use Tellor data see their [integration guide](https://docs.tellor.io/tellor/g
 
 **Supported Networks**
 
-- BOB Mainnet: [0x896419Ed2E0dC848a1f7d2814F4e5Df4b9B9bFcc](https://explorer.gobob.xyz/address/0x896419Ed2E0dC848a1f7d2814F4e5Df4b9B9bFcc)
+BOB Mainnet:
+
+- Token: [0x665060707c3Ea3c31b3eaBaD7F409072446E1D50](https://explorer.gobob.xyz/address/0x665060707c3Ea3c31b3eaBaD7F409072446E1D50)
+- Oracle: [0x896419Ed2E0dC848a1f7d2814F4e5Df4b9B9bFcc](https://explorer.gobob.xyz/address/0x896419Ed2E0dC848a1f7d2814F4e5Df4b9B9bFcc)
+- Governance: [0xC866DB9021fe81856fF6c5B3E3514BF9D1593D81](https://explorer.gobob.xyz/address/0xC866DB9021fe81856fF6c5B3E3514BF9D1593D81)
+- Autopay: [0x9EA18BFDB50E9bb4A18F9d3Df7804E398F8fE0dc](https://explorer.gobob.xyz/address/0x9EA18BFDB50E9bb4A18F9d3Df7804E398F8fE0dc)
+  BOB Testnet:
+
+- Token/Playground: [0x896419Ed2E0dC848a1f7d2814F4e5Df4b9B9bFcc](https://bob-sepolia.explorer.gobob.xyz/address/0x896419Ed2E0dC848a1f7d2814F4e5Df4b9B9bFcc)
+- Oracle: [0xC866DB9021fe81856fF6c5B3E3514BF9D1593D81](https://bob-sepolia.explorer.gobob.xyz/address/0xC866DB9021fe81856fF6c5B3E3514BF9D1593D81)
+- Governance: [0x6684E5DdbEe1b97E10847468cB5f4e38f3aB83FE](https://bob-sepolia.explorer.gobob.xyz/address/0x6684E5DdbEe1b97E10847468cB5f4e38f3aB83FE)
+- Autopay: [0x89e44099f5E80484dcF48995080481214b9c2D7c](https://bob-sepolia.explorer.gobob.xyz/address/0x89e44099f5E80484dcF48995080481214b9c2D7c)
+- QueryDataStorage: [0x9EA18BFDB50E9bb4A18F9d3Df7804E398F8fE0dc](https://bob-sepolia.explorer.gobob.xyz/address/0x9EA18BFDB50E9bb4A18F9d3Df7804E398F8fE0dc)
