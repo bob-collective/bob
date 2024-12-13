@@ -162,7 +162,7 @@ export async function createBitcoinPsbt(
             acc.push(new TreeNode<OutputNodeData>({ ...utxo, cardinal: true }));
 
         return acc;
-    }, []);
+    }, [] as TreeNode<OutputNodeData>[]);
 
     await processNodes(rootUtxoNodes, esploraClient);
 
@@ -383,7 +383,7 @@ export async function estimateTxFee(
             acc.push(new TreeNode<OutputNodeData>({ ...utxo, cardinal: true }));
 
         return acc;
-    }, []);
+    }, [] as TreeNode<OutputNodeData>[]);
 
     await processNodes(rootUtxoNodes, esploraClient);
 
@@ -504,7 +504,7 @@ export async function getBalance(address?: string) {
             acc.push(new TreeNode<OutputNodeData>({ ...utxo, cardinal: true }));
 
         return acc;
-    }, []);
+    }, [] as TreeNode<OutputNodeData>[]);
 
     await processNodes(rootUtxoNodes, esploraClient);
 
