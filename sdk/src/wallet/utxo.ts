@@ -28,11 +28,13 @@ class TreeNode<T> {
     }
 }
 
-const processNodes = async (rootNodes: TreeNode<OutputNodeData>[], esploraClient: EsploraClient) => {
+const processNodes = async (rootNodes: (TreeNode<OutputNodeData> | null)[], esploraClient: EsploraClient) => {
     const queue = Array.from(rootNodes);
 
     while (queue.length > 0) {
         const childNode = queue.shift();
+
+        if (childNode === null) continue;
 
         const txInscriptions = await getTxInscriptions(esploraClient, childNode.val.txid);
 
@@ -157,12 +159,16 @@ export async function createBitcoinPsbt(
 
     const cardinalOutputsSet = new Set(cardinalOutputs.map((output) => output.outpoint));
 
-    const rootUtxoNodes = utxos.reduce((acc, utxo) => {
-        if (!cardinalOutputsSet.has(OutPoint.toString(utxo)))
-            acc.push(new TreeNode<OutputNodeData>({ ...utxo, cardinal: true }));
+    const rootUtxoNodes = utxos.reduce(
+        (acc, utxo) => {
+            if (!cardinalOutputsSet.has(OutPoint.toString(utxo)))
+                acc.push(new TreeNode<OutputNodeData>({ ...utxo, cardinal: true }));
+            else acc.push(null);
 
-        return acc;
-    }, [] as TreeNode<OutputNodeData>[]);
+            return acc;
+        },
+        [] as (TreeNode<OutputNodeData> | null)[]
+    );
 
     await processNodes(rootUtxoNodes, esploraClient);
 
@@ -184,7 +190,7 @@ export async function createBitcoinPsbt(
             if (cardinalOutputsSet.has(OutPoint.toString(utxo))) return possibleInputs.push(input);
 
             // allow to spend output if none of `vin` contains ordinals
-            if (checkUtxoNode(rootUtxoNodes[index])) return possibleInputs.push(input);
+            if (rootUtxoNodes[index] !== null && checkUtxoNode(rootUtxoNodes[index])) return possibleInputs.push(input);
         })
     );
 
@@ -378,12 +384,16 @@ export async function estimateTxFee(
 
     const cardinalOutputsSet = new Set(cardinalOutputs.map((output) => output.outpoint));
 
-    const rootUtxoNodes = utxos.reduce((acc, utxo) => {
-        if (!cardinalOutputsSet.has(OutPoint.toString(utxo)))
-            acc.push(new TreeNode<OutputNodeData>({ ...utxo, cardinal: true }));
+    const rootUtxoNodes = utxos.reduce(
+        (acc, utxo) => {
+            if (!cardinalOutputsSet.has(OutPoint.toString(utxo)))
+                acc.push(new TreeNode<OutputNodeData>({ ...utxo, cardinal: true }));
+            else acc.push(null);
 
-        return acc;
-    }, [] as TreeNode<OutputNodeData>[]);
+            return acc;
+        },
+        [] as (TreeNode<OutputNodeData> | null)[]
+    );
 
     await processNodes(rootUtxoNodes, esploraClient);
 
@@ -405,7 +415,7 @@ export async function estimateTxFee(
             if (cardinalOutputsSet.has(OutPoint.toString(utxo))) return possibleInputs.push(input);
 
             // allow to spend output if none of `vin` contains ordinals
-            if (checkUtxoNode(rootUtxoNodes[index])) return possibleInputs.push(input);
+            if (rootUtxoNodes[index] !== null && checkUtxoNode(rootUtxoNodes[index])) return possibleInputs.push(input);
         })
     );
 
@@ -499,12 +509,16 @@ export async function getBalance(address?: string) {
 
     const cardinalOutputsSet = new Set(cardinalOutputs.map((output) => output.outpoint));
 
-    const rootUtxoNodes = utxos.reduce((acc, utxo) => {
-        if (!cardinalOutputsSet.has(OutPoint.toString(utxo)))
-            acc.push(new TreeNode<OutputNodeData>({ ...utxo, cardinal: true }));
+    const rootUtxoNodes = utxos.reduce(
+        (acc, utxo) => {
+            if (!cardinalOutputsSet.has(OutPoint.toString(utxo)))
+                acc.push(new TreeNode<OutputNodeData>({ ...utxo, cardinal: true }));
+            else acc.push(null);
 
-        return acc;
-    }, [] as TreeNode<OutputNodeData>[]);
+            return acc;
+        },
+        [] as (TreeNode<OutputNodeData> | null)[]
+    );
 
     await processNodes(rootUtxoNodes, esploraClient);
 
@@ -513,7 +527,7 @@ export async function getBalance(address?: string) {
         if (cardinalOutputsSet.has(OutPoint.toString(utxo))) return acc + utxo.value;
 
         // allow to spend output if none of `vin` contains ordinals
-        if (checkUtxoNode(rootUtxoNodes[index])) return acc + utxo.value;
+        if (rootUtxoNodes[index] !== null && checkUtxoNode(rootUtxoNodes[index])) return acc + utxo.value;
 
         return acc;
     }, 0);
