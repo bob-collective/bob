@@ -6,6 +6,7 @@ import { createBitcoinPsbt, getInputFromUtxoAndTx, estimateTxFee, Input, getBala
 import { TransactionOutput } from '@scure/btc-signer/psbt';
 import { OrdinalsClient, OutPoint } from '../src/ordinal-api';
 import { getTxInscriptions } from '../src/inscription';
+import { EsploraClient } from '../src/esplora';
 
 vi.mock(import('@scure/btc-signer'), async (importOriginal) => {
     const actual = await importOriginal();
@@ -440,5 +441,37 @@ describe('UTXO Tests', () => {
         assert(zeroBalance.confirmed === 0n, 'If no address specified confirmed must be 0');
         assert(zeroBalance.unconfirmed === 0n, 'If no address specified unconfirmed must be 0');
         assert(zeroBalance.total === 0n, 'If no address specified total must be 0');
+    });
+
+    it('outputs could be spent if not confirmed by ord service', { timeout: 50000 }, async () => {
+        const taprootAddress = 'bc1peqr5a5kfufvsl66444jm9y8qq0s87ph0zv4lfkcs7h40ew02uvsqkhjav0';
+
+        const esploraClient = new EsploraClient('mainnet');
+
+        const outputs = await esploraClient.getAddressUtxos(taprootAddress);
+
+        const total = outputs.reduce((acc, output) => acc + output.value, 0);
+
+        const confirmed = outputs.reduce((acc, output) => {
+            if (output.confirmed) {
+                return acc + output.value;
+            }
+
+            return acc;
+        }, 0);
+
+        // mock half of the UTXOs contain inscriptions or runes
+        (OrdinalsClient.prototype.getOutputsFromAddress as Mock).mockResolvedValueOnce(
+            outputs.slice(Math.ceil(outputs.length / 2)).map((output) => {
+                const outpoint = OutPoint.toString(output);
+
+                return { outpoint };
+            })
+        );
+
+        const balanceData = await getBalance(taprootAddress);
+
+        expect(balanceData.total).toEqual(BigInt(total));
+        expect(balanceData.confirmed).toBeLessThan(BigInt(confirmed));
     });
 });
