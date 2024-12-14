@@ -1,17 +1,27 @@
 ---
 sidebar_position: 2
-sidebar_label: "BOB Gateway: Bitcoin Intents"
+sidebar_label: "BOB Bitcoin Interoperability"
 ---
 
-# BOB Gateway: Bitcoin Intents
+# BOB Bitcoin Interoperability
 
 ## Introduction
 
-Bitcoin users can easily onboard to the BOB Hybrid L2 without previously holding any Ethereum assets. This page explains the structure of _BOB Gateway_, an intent-based bridge that coordinates peer-to-peer swaps between users and liquidity providers (LPs).
+Bitcoin users can easily onboard to the BOB Hybrid L2 without previously holding any Ethereum assets. This page explains the technology behind [BOB BTC Bridge](https://app.gobob.xyz/en?type=deposit&network=bitcoin&receive=WBTC) and [BOB Stake](https://app.gobob.xyz/en/stake): _BOB Gateway_ is an intent-based bridge that coordinates peer-to-peer swaps between users and liquidity providers (LPs).
 
-Cross-chain transfers are secured by verifying Bitcoin transaction proofs with an [on-chain light client](/learn/builder-guides/relay), avoiding the need for an oracle. Optional intents, such as staking, lending, and swapping a small amount of ETH for gas can all be accomplished while only requiring a single Bitcoin transaction from the user.
+Cross-chain transfers are secured by verifying Bitcoin transaction proofs with an [on-chain light client](/learn/builder-guides/relay), avoiding the need for an oracle. Optional intents, such as staking, lending, and swapping tokens can all be accomplished while only requiring a single Bitcoin transaction from the user.
 
-## Next Steps for Gateway
+## Bridge or Stake BTC on BOB
+
+Gateway powers the [BOB BTC Bridge](https://app.gobob.xyz/en?type=deposit&network=bitcoin&receive=WBTC) and [BOB Stake](https://app.gobob.xyz/en/stake).
+
+:::info Bridge or Stake BTC on BOB
+Check our user guides to learn how to swap your BTC to wrapped BTC or staked BTC.
+- [Bridge BTC to BOB](/learn/user-guides/onboard-to-bob/bob-gateway/): Receive wBTC or tBTC on BOB.
+- [Stake BTC on BOB](/learn/user-guides/bob-stake): Receive SolvBTC.BBN, uniBTC, or other staked BTC on BOB.
+:::
+
+## Gateway for Builders
 
 We are interested in working closely with builders looking to connect their smart contracts as new _strategies_ for BOB Gateway users.
 
@@ -54,6 +64,21 @@ alt="architecture"
 1. An LP asks the relayer to deploy a new Gateway contract, which functions as an escrow for their funds. This is permissioned at the moment because BOB pays the transaction's gas. See the [Trust Assumptions](#trust-assumptions) section below for more information.
 2. The LP deposits wrapped Bitcoin (e.g. WBTC, tBTC, FBTC) in their Gateway contract.
 3. The LP can only withdraw their funds or update their swap fees after a delay so that the relayer has time to finish open orders. The relayer will not accept new orders during this delay until reset.
+
+## Adoption and Fees
+
+You can find the current liquidity, LPs, and usage of Gateway on the [BOB Gateway Dune dashboard](https://dune.com/bob_collective/gateway).
+
+LPs can configure fees. Currently, most LPs use the following fee structure:
+
+- less than 0.01 BTC: 20 bps
+- 0.01 - 0.1 BTC: 10 bps
+- 0.1 - 1 BTC: 7.5 bps
+- more than 1 BTC: 5 bps
+
+Frontends can also charge additional fees on top. The BOB bridge and staking page apply a 0% fee on top of the LP fee. By default, LPs are chosen based on available liquidity and the lowest fee.
+
+For an up-to-date info on fees, please see the quotes provided on the BOB bridge and staking pages or use the SDK if you are a builder.
 
 ## Trust Assumptions
 
