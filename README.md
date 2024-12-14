@@ -70,27 +70,27 @@ Proof length is the number of headers needed before and after a retarget to upda
 
 ## Security (Light Relay)
 
-Let's review the calculation given in the [Bitcoin Wiki](https://en.bitcoin.it/wiki/Difficulty) to compute the hashrate: 
+Let's review the calculation given in the [Bitcoin Wiki](https://en.bitcoin.it/wiki/Difficulty) to compute the hashrate:
 
 ```
 hashrate = difficulty * 2**32 / 600 (60 * 10 = 10 minutes)
 hashrate = ~157 (GH/s) = (22012.4941572 * 2**32 / 600) / 10**9 (example)
-hashrate = ~595 (EH/s) (83148355189239.77 * 2**32 / 600) / 10**18 (current)
+hashrate = ~743 (EH/s) = (103919634711492.2 * 2**32 / 600) / 10**18 (time of writing, Dec 2024)
 ```
 
-The `LightRelay` requires that the proof is included at the *current* or *previous* difficulty so we can assume the attacker has 2016 * 2 blocks to brute-force a valid chain of `proofLength`.
-This is possible since due to SPV assumptions we can not verify the transactions references by the block header are valid, only that sufficient PoW has accumulated on the chain.
+The `LightRelay` requires that the proof is included at the _current_ or _previous_ difficulty so we can assume the attacker has 2016 \* 2 blocks to brute-force a valid chain of `proofLength`.
+This is possible since, due to SPV assumptions, we can not verify the transactions references by the block header are valid, only that sufficient PoW has accumulated on the chain.
 
-Let's assume the attacker can generate 6 blocks (with some invalid transactions) within two difficulty adjustment period, 2016 * 2 blocks (four weeks).
+Let's assume the attacker can generate 6 blocks (with some invalid transactions) within two difficulty adjustment period, 2016 \* 2 blocks (four weeks).
 
 ```
 hashrate * 6/(2016*2)
-595 * 6/(2016*2) = 0.885 EH/s (~885712 TH/s)
+743 (EH/s) * 6/(2016*2) = 1.105 EH/s (~1,105,654 TH/s)
 ```
 
-So we need ~0.148% of the current hashrate to build six blocks in two weeks.
+So we need ~0.142% of the current hashrate to build six blocks in two weeks.
 
-If we estimate it would cost $11 per TH/s (excluding electricity and other setup costs) then the total cost of that hashrate would be $9,742,832.
+If we estimate it would cost $11 per TH/s (excluding electricity and other setup costs) then the total cost of that hashrate would be $12,162,194.
 This excludes the opportunity cost from actually mining on Bitcoin mainnet, receiving fees and block rewards.
 
-Therefore, provided the value protected by the relay is less than $10m protocols secured by the relay are "economically safe".
+Therefore, provided the value protected by the relay is less than $12m protocols secured by the relay are "economically safe".

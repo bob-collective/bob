@@ -2,11 +2,9 @@
 sidebar_position: 2
 ---
 
-# BOB Gateway
+# Integrate BOB Gateway in Your App
 
-## Overview
-
-[BOB Gateway](https://docs.gobob.xyz/learn/guides/bitcoin-bridge/) is a Bitcoin intent bridge that unlocks Bitcoin liquidity by reducing the number of steps to onboard users, saving time and money. Users can go from **BTC** on Bitcoin to **staked BTC LSTs** with a single Bitcoin transaction.
+[BOB Gateway](https://docs.gobob.xyz/learn/guides/bitcoin-bridge/) is a Bitcoin intent bridge that unlocks Bitcoin liquidity by reducing the number of steps to onboard users to your app, saving time and money. For example, users can go from **BTC** on Bitcoin to **staked BTC LSTs** with a single Bitcoin transaction.
 
 Our SDK makes it possible for you to bring this UX directly into your app.
 
@@ -18,7 +16,10 @@ Our SDK makes it possible for you to bring this UX directly into your app.
 
 1. Gateway finalizes the transaction. After trustlessly verifying the user's Bitcoin transaction with an on-chain [Light Client](/learn/builder-guides/relay.md), Gateway sends the LP's wrapped Bitcoin to the user's EVM address. If the user requested a Bitcoin LST/LRT, that token is minted using the LP's wrapped Bitcoin before it is sent to the user.
 
-This SDK makes it possible to do steps 2, 3, and 4 in your application's front end.
+This SDK exposes helper functions for steps 2, 3, and 4 to be used in your application's front end.
+:::info Learn More
+Discover the architecture of BOB Gateway and how it simplifies Bitcoin transactions by visiting our [BOB Gateway introduction page](../introduction/gateway).
+:::
 
 ## Step-by-Step Integration Guide
 
@@ -80,7 +81,7 @@ The SDK will handle automatically when the `toToken` has a fungible ERC20 token,
 ```ts
 const strategies = await gatewaySDK.getStrategies();
 const strategy = strategies.find(
-  (contract) => contract.integration.name === "pell-wbtc",
+  (contract) => contract.integration.name === "pell-wbtc"
 )!;
 const quoteParamsStaking: GatewayQuoteParams = {
   ...quoteParams,
