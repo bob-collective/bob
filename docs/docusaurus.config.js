@@ -9,7 +9,7 @@ const GITHUB_LINK = "https://github.com/bob-collective/bob";
 const LANDING_PAGE = "https://gobob.xyz";
 const DOCS_PAGE = "https://docs.gobob.xyz";
 const DISCORD = "https://discord.gg/gobob";
-const TWITTER = "https://twitter.com/build_on_bob";
+const TWITTER = "https://x.com/build_on_bob";
 const TELEGRAM = "https://t.me/+CyIcLW2nfaFlNDc1";
 const FORUM = "https://forum.gobob.xyz";
 const PRESS_KIT =
@@ -64,10 +64,6 @@ const config = {
           {
             from: "/docs/learn/bob-stack/roadmap",
             to: "/learn/introduction/roadmap",
-          },
-          {
-            from: "/docs/learn/bob-stack/stack-overview",
-            to: "/learn/introduction/stack-overview",
           },
 
           // User Guides
@@ -140,6 +136,10 @@ const config = {
           {
             from: "/docs/build/bob-sdk/sats-wagmi",
             to: "/learn/builder-guides/sats-wagmi",
+          },
+          {
+            from: "/docs/build/how-to/metamask-snap",
+            to: "/learn/builder-guides/metamask-snap",
           },
 
           // Reference section

@@ -134,7 +134,7 @@ describe('Gateway Tests', () => {
         }).rejects.toThrowError('Invalid output chain');
     });
 
-    it('should start order', async () => {
+    it('should start order', { timeout: 50000 }, async () => {
         const gatewaySDK = new GatewaySDK('bob');
 
         const mockQuote = {

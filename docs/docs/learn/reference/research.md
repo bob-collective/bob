@@ -24,7 +24,7 @@ BOB is a new type of Bitcoin-secured blockchain: a Hybrid L2. Hybrid L2s inherit
 - **Zamyatin A, Harz D**
 - Pre-print, 2024
 
-### [BitVM: Bridging Bitcoin to Second Layers](https://bitvm.org/bitvm_bridge.pdf)
+### [BitVM2: Bridging Bitcoin to Second Layers](https://bitvm.org/bitvm_bridge.pdf)
 
 <details>
   <summary>Read abstract</summary>
@@ -83,7 +83,7 @@ We provide the first systematic exposition of cross-chain communication protocol
 </details>
 
 - **Zamyatin A**, Al-Bassam M, Zindros D, Kokoris-Kogias E, Moreno-Sanchez P, Kiayias A, Knottenbelt WJ
-- Financial Cyprography and Data Security 2021
+- Financial Cryptography and Data Security 2021
 - In collaboration with Imperial College London, UCL, IOHK, EPFL, TU Vienna, University of Athens, University of Edinburgh
 
 ### [TxChain: Efficient Cryptocurrency Light Clients via Contingent Transaction Aggregation](https://eprint.iacr.org/2020/580.pdf)
@@ -95,7 +95,7 @@ Cryptocurrency light- or simplified payment verification (SPV) clients allow nod
 
 Recently, two improved sublinear light clients were proposed: to validate the blockchain, NIPoPoWs and FlyClient only download a polylogarithmic number of block headers, sampled at random. The actual verification of payments, however, remains costly: for each verified transaction, the corresponding block must too be downloaded. This yields NIPoPoWs and FlyClient only effective under low transaction volumes.
 
-We present TxChain, a novel mechanism to maintain efficiency of light clients even under high transaction volumes. Specifically, we introduce the concept of contingent transaction aggregation, where proving inclusion of a single contingent transaction implicitly proves that n other transactions exist in the blockchain. To verify n payments, TxChain requires a only single transaction in the best (n≤c), and n/c+logc(n) transactions in the worst case (n>c). We deploy TxChain on Bitcoin without consensus changes and implement a soft fork for Ethereum. To demonstrate effectiveness in the cross-chain setting, we implement TxChain as a smart contract on Ethereum to efficiently verify Bitcoin payments.
+We present TxChain, a novel mechanism to maintain efficiency of light clients even under high transaction volumes. Specifically, we introduce the concept of contingent transaction aggregation, where proving inclusion of a single contingent transaction implicitly proves that n other transactions exist in the blockchain. To verify n payments, TxChain requires only a single transaction in the best (n≤c), and n/c+logc(n) transactions in the worst case (n>c). We deploy TxChain on Bitcoin without consensus changes and implement a soft fork for Ethereum. To demonstrate effectiveness in the cross-chain setting, we implement TxChain as a smart contract on Ethereum to efficiently verify Bitcoin payments.
 
 </details>
 

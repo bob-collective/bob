@@ -1,7 +1,8 @@
-import { Transaction, Script, selectUTXO, TEST_NETWORK, NETWORK, p2wpkh, p2sh } from '@scure/btc-signer';
+import { Transaction, Script, selectUTXO, TEST_NETWORK, NETWORK, p2wpkh, p2sh, p2tr } from '@scure/btc-signer';
 import { hex, base64 } from '@scure/base';
 import { AddressType, getAddressInfo, Network } from 'bitcoin-address-validation';
 import { EsploraClient, UTXO } from '../esplora';
+import { OrdinalsClient, OutPoint, OutputJson } from '../ordinal-api';
 
 export type BitcoinNetworkName = Exclude<Network, 'regtest'>;
 
@@ -69,35 +70,42 @@ export async function createBitcoinPsbt(
     const addressInfo = getAddressInfo(fromAddress);
 
     // TODO: possibly, allow other strategies to be passed to this function
-    const utxoSelectionStrategy = 'default';
+    const utxoSelectionStrategy: 'all' | 'default' = 'default';
 
     if (addressInfo.network === 'regtest') {
         throw new Error('Bitcoin regtest not supported');
     }
 
     // We need the public key to generate the redeem and witness script to spend the scripts
-    if (addressInfo.type === (AddressType.p2sh || AddressType.p2wsh)) {
+    if (
+        addressInfo.type === AddressType.p2sh ||
+        addressInfo.type === AddressType.p2wsh ||
+        addressInfo.type === AddressType.p2tr
+    ) {
         if (!publicKey) {
             throw new Error('Public key is required to spend from the selected address type');
         }
     }
 
     const esploraClient = new EsploraClient(addressInfo.network);
+    const ordinalsClient = new OrdinalsClient(addressInfo.network);
 
     let confirmedUtxos: UTXO[] = [];
+    // contains UTXOs which do not contain inscriptions
+    let outputsFromAddress: OutputJson[] = [];
 
-    if (feeRate) {
-        confirmedUtxos = await esploraClient.getAddressUtxos(fromAddress);
-    } else {
-        [confirmedUtxos, feeRate] = await Promise.all([
-            esploraClient.getAddressUtxos(fromAddress),
-            esploraClient.getFeeEstimate(confirmationTarget),
-        ]);
-    }
+    [confirmedUtxos, feeRate, outputsFromAddress] = await Promise.all([
+        esploraClient.getAddressUtxos(fromAddress),
+        feeRate === undefined ? esploraClient.getFeeEstimate(confirmationTarget) : feeRate,
+        // cardinal = return UTXOs not containing inscriptions or runes
+        ordinalsClient.getOutputsFromAddress(fromAddress, 'cardinal'),
+    ]);
 
     if (confirmedUtxos.length === 0) {
         throw new Error('No confirmed UTXOs');
     }
+
+    const outpointsSet = new Set(outputsFromAddress.map((output) => output.outpoint));
 
     // To construct the spending transaction and estimate the fee, we need the transactions for the UTXOs
     const possibleInputs: Input[] = [];
@@ -113,7 +121,8 @@ export async function createBitcoinPsbt(
                 addressInfo.type,
                 publicKey
             );
-            possibleInputs.push(input);
+            // to support taproot addresses we want to exclude outputs which contain inscriptions
+            if (outpointsSet.has(OutPoint.toString(utxo))) possibleInputs.push(input);
         })
     );
 
@@ -153,6 +162,8 @@ export async function createBitcoinPsbt(
     });
 
     if (!transaction || !transaction.tx) {
+        console.debug('confirmedUtxos', confirmedUtxos);
+        console.debug('outputsFromAddress', outputsFromAddress);
         console.debug(`fromAddress: ${fromAddress}, toAddress: ${toAddress}, amount: ${amount}`);
         console.debug(`publicKey: ${publicKey}, opReturnData: ${opReturnData}`);
         console.debug(`feeRate: ${feeRate}, confirmationTarget: ${confirmationTarget}`);
@@ -186,6 +197,9 @@ export function getInputFromUtxoAndTx(
         }
         const inner = p2wpkh(Buffer.from(publicKey!, 'hex'), getBtcNetwork(network));
         redeemScript = p2sh(inner);
+    } else if (addressType === AddressType.p2tr) {
+        const xOnlyPublicKey = Buffer.from(publicKey, 'hex').subarray(1, 33);
+        redeemScript = p2tr(xOnlyPublicKey);
     }
 
     // For the redeem and witness script, we need to construct the script mixin
@@ -267,7 +281,11 @@ export async function estimateTxFee(
     }
 
     // We need the public key to generate the redeem and witness script to spend the scripts
-    if (addressInfo.type === (AddressType.p2sh || AddressType.p2wsh)) {
+    if (
+        addressInfo.type === AddressType.p2sh ||
+        addressInfo.type === AddressType.p2wsh ||
+        addressInfo.type === AddressType.p2tr
+    ) {
         if (!publicKey) {
             throw new Error('Public key is required to spend from the selected address type');
         }
@@ -279,33 +297,40 @@ export async function estimateTxFee(
     // TODO: allow submitting the UTXOs, fee estimate and confirmed transactions
     // to avoid fetching them again.
     const esploraClient = new EsploraClient(addressInfo.network);
+    const ordinalsClient = new OrdinalsClient(addressInfo.network);
 
     let confirmedUtxos: UTXO[] = [];
-    if (feeRate) {
-        confirmedUtxos = await esploraClient.getAddressUtxos(fromAddress);
-    } else {
-        [confirmedUtxos, feeRate] = await Promise.all([
-            esploraClient.getAddressUtxos(fromAddress),
-            esploraClient.getFeeEstimate(confirmationTarget),
-        ]);
-    }
+    // contains UTXOs which do not contain inscriptions
+    let outputsFromAddress: OutputJson[] = [];
+
+    [confirmedUtxos, feeRate, outputsFromAddress] = await Promise.all([
+        esploraClient.getAddressUtxos(fromAddress),
+        feeRate === undefined ? esploraClient.getFeeEstimate(confirmationTarget) : feeRate,
+        // cardinal = return UTXOs not containing inscriptions or runes
+        ordinalsClient.getOutputsFromAddress(fromAddress, 'cardinal'),
+    ]);
 
     if (confirmedUtxos.length === 0) {
         throw new Error('No confirmed UTXOs');
     }
 
-    const possibleInputs = await Promise.all(
+    const outpointsSet = new Set(outputsFromAddress.map((output) => output.outpoint));
+    const possibleInputs: Input[] = [];
+
+    await Promise.all(
         confirmedUtxos.map(async (utxo) => {
             const hex = await esploraClient.getTransactionHex(utxo.txid);
             const transaction = Transaction.fromRaw(Buffer.from(hex, 'hex'), { allowUnknownOutputs: true });
-
-            return getInputFromUtxoAndTx(
+            const input = getInputFromUtxoAndTx(
                 addressInfo.network as BitcoinNetworkName,
                 utxo,
                 transaction,
                 addressInfo.type,
                 publicKey
             );
+
+            // to support taproot addresses we want to exclude outputs which contain inscriptions
+            if (outpointsSet.has(OutPoint.toString(utxo))) possibleInputs.push(input);
         })
     );
 
@@ -330,7 +355,7 @@ export async function estimateTxFee(
     }
 
     // Select all UTXOs if no amount is specified
-    let utxoSelectionStrategy = 'default';
+    let utxoSelectionStrategy: 'all' | 'default' = 'default';
     if (amount === undefined) {
         utxoSelectionStrategy = 'all';
     }
@@ -339,8 +364,7 @@ export async function estimateTxFee(
     // https://github.com/paulmillr/scure-btc-signer?tab=readme-ov-file#utxo-selection
     // default = exactBiggest/accumBiggest creates tx with smallest fees, but it breaks
     // big outputs to small ones, which in the end will create a lot of outputs close to dust.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const transaction = selectUTXO(possibleInputs, outputs, utxoSelectionStrategy as any, {
+    const transaction = selectUTXO(possibleInputs, outputs, utxoSelectionStrategy, {
         changeAddress: fromAddress, // Refund surplus to the payment address
         feePerByte: BigInt(Math.ceil(feeRate)), // round up to the nearest integer
         bip69: true, // Sort inputs and outputs according to BIP69
@@ -353,6 +377,8 @@ export async function estimateTxFee(
     });
 
     if (!transaction || !transaction.tx) {
+        console.debug('confirmedUtxos', confirmedUtxos);
+        console.debug('outputsFromAddress', outputsFromAddress);
         console.debug(`fromAddress: ${fromAddress}, amount: ${amount}`);
         console.debug(`publicKey: ${publicKey}, opReturnData: ${opReturnData}`);
         console.debug(`feeRate: ${feeRate}, confirmationTarget: ${confirmationTarget}`);
@@ -360,4 +386,63 @@ export async function estimateTxFee(
     }
 
     return transaction.fee;
+}
+
+/**
+ * Get balance of provided address in satoshis.
+ *
+ * @typedef { {confirmed: BigInt, unconfirmed: BigInt, total: bigint} } Balance
+ *
+ * @param {string} [address] The Bitcoin address. If no address specified returning object will contain zeros.
+ * @returns {Promise<Balance>} The balance object of provided address in satoshis.
+ *
+ * @example
+ * ```typescript
+ * const address = 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq';
+ *
+ * const balance = await getBalance(address);
+ * console.log(balance);
+ * ```
+ *
+ * @dev UTXOs that contain inscriptions or runes will not be used to calculate balance.
+ */
+export async function getBalance(address?: string) {
+    if (!address) {
+        return { confirmed: BigInt(0), unconfirmed: BigInt(0), total: BigInt(0) };
+    }
+
+    const addressInfo = getAddressInfo(address);
+
+    const esploraClient = new EsploraClient(addressInfo.network);
+    const ordinalsClient = new OrdinalsClient(addressInfo.network);
+
+    const [outputs, cardinalOutputs] = await Promise.all([
+        esploraClient.getAddressUtxos(address),
+        // cardinal = return UTXOs not containing inscriptions or runes
+        ordinalsClient.getOutputsFromAddress(address, 'cardinal'),
+    ]);
+
+    const cardinalOutputsSet = new Set(cardinalOutputs.map((output) => output.outpoint));
+
+    const total = outputs.reduce((acc, output) => {
+        if (cardinalOutputsSet.has(OutPoint.toString(output))) {
+            return acc + output.value;
+        }
+
+        return acc;
+    }, 0);
+
+    const confirmed = outputs.reduce((acc, output) => {
+        if (cardinalOutputsSet.has(OutPoint.toString(output)) && output.confirmed) {
+            return acc + output.value;
+        }
+
+        return acc;
+    }, 0);
+
+    return {
+        confirmed: BigInt(confirmed),
+        unconfirmed: BigInt(total - confirmed),
+        total: BigInt(total),
+    };
 }

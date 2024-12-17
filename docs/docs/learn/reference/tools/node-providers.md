@@ -24,3 +24,12 @@ Follow [Conduit's guide](https://docs.conduit.xyz/guides/run-a-node/op-stack-nod
 
 - BOB Mainnet
 - BOB Sepolia (Testnet)
+
+## dRPC
+
+[dRPC](https://drpc.org/?utm_source=docs&utm_medium=bob) provides geo-distributed and auto-scalable RPC nodes that enhances security, reliability, and cost-efficiency for Web3 companies of all sizes. dRPC also supports Websockets.
+
+**Supported Networks**
+
+- [BOB Mainnet](https://drpc.org/chainlist/bob?utm_source=docs&utm_medium=bob)
+- [BOB Sepolia](https://drpc.org/chainlist/bob?utm_source=docs&utm_medium=bob#bob-testnet) (Testnet)
