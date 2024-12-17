@@ -137,6 +137,10 @@ const config = {
             from: "/docs/build/bob-sdk/sats-wagmi",
             to: "/learn/builder-guides/sats-wagmi",
           },
+          {
+            from: "/docs/build/how-to/metamask-snap",
+            to: "/learn/builder-guides/metamask-snap",
+          },
 
           // Reference section
           {
