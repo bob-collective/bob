@@ -50,8 +50,6 @@
 
 ### BOB Sepolia Core Contracts (L2)
 
-<!--TODO: Add Sepolia Light Relay address-->
-<!-- - [Light Relay](/learn/builder-guides/relay): [``]() -->
 - [TestLightRelay](/learn/builder-guides/relay): [`0x377d6993b848013991e3d8b3028db74ec6fdf03a`](https://bob-sepolia.explorer.gobob.xyz/address/0x377d6993b848013991e3d8b3028db74ec6fdf03a)
 - GatewayRegistry V2: [`0x345f46fdd0adad44ba8e2a65ce6a7ba879f3404e`](https://bob-sepolia.explorer.gobob.xyz/address/0x345f46fdd0adad44ba8e2a65ce6a7ba879f3404e)
 - GatewayRegistry V3: [`0xfDFed82309b14b7e3EDfc768Bb5EBF80dDcaFb3A`](https://bob-sepolia.explorer.gobob.xyz/address/0xfDFed82309b14b7e3EDfc768Bb5EBF80dDcaFb3A)
