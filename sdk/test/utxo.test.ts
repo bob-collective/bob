@@ -5,6 +5,7 @@ import { hex, base64 } from '@scure/base';
 import { createBitcoinPsbt, getInputFromUtxoAndTx, estimateTxFee, Input, getBalance } from '../src/wallet/utxo';
 import { TransactionOutput } from '@scure/btc-signer/psbt';
 import { OrdinalsClient, OutPoint } from '../src/ordinal-api';
+import { getTxInscriptions } from '../src/inscription';
 import { EsploraClient } from '../src/esplora';
 
 vi.mock(import('@scure/btc-signer'), async (importOriginal) => {
@@ -32,6 +33,12 @@ vi.mock(import('../src/esplora'), async (importOriginal) => {
     actual.EsploraClient.prototype.getAddressUtxos = vi.fn(actual.EsploraClient.prototype.getAddressUtxos);
 
     return actual;
+});
+
+vi.mock(import('../src/inscription'), async (importOriginal) => {
+    const actual = await importOriginal();
+
+    return { ...actual, getTxInscriptions: vi.fn(actual.getTxInscriptions) };
 });
 
 // TODO: Add more tests using https://github.com/paulmillr/scure-btc-signer/tree/5ead71ea9a873d8ba1882a9cd6aa561ad410d0d1/test/bitcoinjs-test/fixtures/bitcoinjs
@@ -397,7 +404,7 @@ describe('UTXO Tests', () => {
                         })
                     )
             )
-        ).toStrictEqual([]);
+        ).toEqual([]);
     });
 
     it('throws an error if insufficient balance', { timeout: 50000 }, async () => {
@@ -416,7 +423,7 @@ describe('UTXO Tests', () => {
         );
     });
 
-    it('should return address balance', async () => {
+    it('should return address balance', { timeout: 50000 }, async () => {
         const address = 'bc1peqr5a5kfufvsl66444jm9y8qq0s87ph0zv4lfkcs7h40ew02uvsqkhjav0';
 
         const balance = await getBalance(address);
@@ -436,7 +443,7 @@ describe('UTXO Tests', () => {
         assert(zeroBalance.total === 0n, 'If no address specified total must be 0');
     });
 
-    it('returns smalled amount if address holds ordinals', async () => {
+    it('outputs could be spent if not confirmed by ord service', { timeout: 50000 }, async () => {
         const taprootAddress = 'bc1peqr5a5kfufvsl66444jm9y8qq0s87ph0zv4lfkcs7h40ew02uvsqkhjav0';
 
         const esploraClient = new EsploraClient('mainnet');
@@ -464,7 +471,7 @@ describe('UTXO Tests', () => {
 
         const balanceData = await getBalance(taprootAddress);
 
-        expect(balanceData.total).toBeLessThan(total);
-        expect(balanceData.confirmed).toBeLessThan(confirmed);
+        expect(balanceData.total).toBeLessThan(BigInt(total));
+        expect(balanceData.confirmed).toBeLessThan(BigInt(confirmed));
     });
 });
