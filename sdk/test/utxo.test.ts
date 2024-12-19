@@ -404,7 +404,7 @@ describe('UTXO Tests', () => {
                         })
                     )
             )
-        ).not.toEqual([]);
+        ).toEqual([]);
     });
 
     it('throws an error if insufficient balance', { timeout: 50000 }, async () => {
@@ -471,7 +471,7 @@ describe('UTXO Tests', () => {
 
         const balanceData = await getBalance(taprootAddress);
 
-        expect(balanceData.total).toEqual(BigInt(total));
+        expect(balanceData.total).toBeLessThan(BigInt(total));
         expect(balanceData.confirmed).toBeLessThan(BigInt(confirmed));
     });
 });

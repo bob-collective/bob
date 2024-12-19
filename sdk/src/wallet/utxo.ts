@@ -3,7 +3,6 @@ import { hex, base64 } from '@scure/base';
 import { AddressType, getAddressInfo, Network } from 'bitcoin-address-validation';
 import { EsploraClient, UTXO } from '../esplora';
 import { OrdinalsClient, OutPoint, OutputJson } from '../ordinal-api';
-import { getTxInscriptions } from '../inscription';
 
 export type BitcoinNetworkName = Exclude<Network, 'regtest'>;
 
@@ -32,7 +31,8 @@ const createUtxoNodes = (utxos: UTXO[], cardinalOutputsSet: Set<string>) =>
     utxos.reduce(
         (acc, utxo) => {
             if (!cardinalOutputsSet.has(OutPoint.toString(utxo)))
-                acc.push(new TreeNode<OutputNodeData>({ ...utxo, cardinal: true }));
+                // mark node as containing ordinals
+                acc.push(new TreeNode<OutputNodeData>({ ...utxo, cardinal: false }));
             else acc.push(null);
 
             return acc;
@@ -40,7 +40,12 @@ const createUtxoNodes = (utxos: UTXO[], cardinalOutputsSet: Set<string>) =>
         [] as (TreeNode<OutputNodeData> | null)[]
     );
 
-const processNodes = async (rootNodes: (TreeNode<OutputNodeData> | null)[], esploraClient: EsploraClient) => {
+const processNodes = async (
+    rootNodes: (TreeNode<OutputNodeData> | null)[],
+    cardinalOutputsSet: Set<string>,
+    esploraClient: EsploraClient,
+    ordinalsClient: OrdinalsClient
+) => {
     const queue = Array.from(rootNodes);
 
     while (queue.length > 0) {
@@ -48,26 +53,27 @@ const processNodes = async (rootNodes: (TreeNode<OutputNodeData> | null)[], espl
 
         if (childNode === null) continue;
 
-        const txInscriptions = await getTxInscriptions(esploraClient, childNode.val.txid);
+        const transaction = await esploraClient.getTransaction(childNode.val.txid);
 
-        if (txInscriptions.length === 0) {
-            const transaction = await esploraClient.getTransaction(childNode.val.txid);
+        if (transaction.status.confirmed) {
+            // if confirmed check if it contains ordinals
+            childNode.val.cardinal = cardinalOutputsSet.has(OutPoint.toString(childNode.val));
+        } else {
+            const response = await ordinalsClient.getInscriptionsFromOutPoint(childNode.val);
 
-            // if not confirmed check inputs for current utxo
-            if (!transaction.status.confirmed) {
+            if (response.inscriptions.length === 0) {
+                // if not confirmed check inputs for current utxo
                 childNode.children = transaction.vin.map((vin) => {
                     return new TreeNode<OutputNodeData>({
                         vout: vin.vout,
                         txid: vin.txid,
-                        cardinal: true,
+                        // mark node as containing ordinals
+                        cardinal: false,
                     });
                 });
 
                 queue.push(...childNode.children);
             }
-        } else {
-            // mark node as containing ordinals
-            childNode.val.cardinal = false;
         }
     }
 };
@@ -173,7 +179,7 @@ export async function createBitcoinPsbt(
 
     const rootUtxoNodes = createUtxoNodes(utxos, cardinalOutputsSet);
 
-    await processNodes(rootUtxoNodes, esploraClient);
+    await processNodes(rootUtxoNodes, cardinalOutputsSet, esploraClient, ordinalsClient);
 
     // To construct the spending transaction and estimate the fee, we need the transactions for the UTXOs
     const possibleInputs: Input[] = [];
@@ -389,7 +395,7 @@ export async function estimateTxFee(
 
     const rootUtxoNodes = createUtxoNodes(utxos, cardinalOutputsSet);
 
-    await processNodes(rootUtxoNodes, esploraClient);
+    await processNodes(rootUtxoNodes, cardinalOutputsSet, esploraClient, ordinalsClient);
 
     const possibleInputs: Input[] = [];
 
@@ -505,7 +511,7 @@ export async function getBalance(address?: string) {
 
     const rootUtxoNodes = createUtxoNodes(utxos, cardinalOutputsSet);
 
-    await processNodes(rootUtxoNodes, esploraClient);
+    await processNodes(rootUtxoNodes, cardinalOutputsSet, esploraClient, ordinalsClient);
 
     const total = utxos.reduce((acc, utxo, index) => {
         // there will be a match if output is confirmed and has no ordinals
