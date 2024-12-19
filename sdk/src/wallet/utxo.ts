@@ -3,6 +3,7 @@ import { hex, base64 } from '@scure/base';
 import { AddressType, getAddressInfo, Network } from 'bitcoin-address-validation';
 import { EsploraClient, UTXO } from '../esplora';
 import { OrdinalsClient, OutPoint, OutputJson } from '../ordinal-api';
+import { getTxInscriptions } from '../inscription';
 
 export type BitcoinNetworkName = Exclude<Network, 'regtest'>;
 
@@ -16,6 +17,69 @@ export const getBtcNetwork = (name: BitcoinNetworkName) => {
 };
 
 type Output = { address: string; amount: bigint } | { script: Uint8Array; amount: bigint };
+
+class TreeNode<T> {
+    val: T;
+    children: TreeNode<T>[];
+
+    constructor(val: T, children: TreeNode<T>[] = []) {
+        this.val = val;
+        this.children = children;
+    }
+}
+
+const createUtxoNodes = (utxos: UTXO[], cardinalOutputsSet: Set<string>) =>
+    utxos.reduce(
+        (acc, utxo) => {
+            if (!cardinalOutputsSet.has(OutPoint.toString(utxo)))
+                acc.push(new TreeNode<OutputNodeData>({ ...utxo, cardinal: true }));
+            else acc.push(null);
+
+            return acc;
+        },
+        [] as (TreeNode<OutputNodeData> | null)[]
+    );
+
+const processNodes = async (rootNodes: (TreeNode<OutputNodeData> | null)[], esploraClient: EsploraClient) => {
+    const queue = Array.from(rootNodes);
+
+    while (queue.length > 0) {
+        const childNode = queue.shift();
+
+        if (childNode === null) continue;
+
+        const txInscriptions = await getTxInscriptions(esploraClient, childNode.val.txid);
+
+        if (txInscriptions.length === 0) {
+            const transaction = await esploraClient.getTransaction(childNode.val.txid);
+
+            // if not confirmed check inputs for current utxo
+            if (!transaction.status.confirmed) {
+                childNode.children = transaction.vin.map((vin) => {
+                    return new TreeNode<OutputNodeData>({
+                        vout: vin.vout,
+                        txid: vin.txid,
+                        cardinal: true,
+                    });
+                });
+
+                queue.push(...childNode.children);
+            }
+        } else {
+            // mark node as containing ordinals
+            childNode.val.cardinal = false;
+        }
+    }
+};
+
+const checkUtxoNode = (node: TreeNode<OutputNodeData>) => {
+    // leaf node either confirmed or contains ordinals
+    if (node.children.length === 0) return node.val.cardinal;
+
+    return node.children.reduce((acc, child) => acc && checkUtxoNode(child), true);
+};
+
+type OutputNodeData = Pick<UTXO, 'txid' | 'vout'> & { cardinal: boolean };
 
 export interface Input {
     txid: string;
@@ -90,28 +154,32 @@ export async function createBitcoinPsbt(
     const esploraClient = new EsploraClient(addressInfo.network);
     const ordinalsClient = new OrdinalsClient(addressInfo.network);
 
-    let confirmedUtxos: UTXO[] = [];
+    let utxos: UTXO[] = [];
     // contains UTXOs which do not contain inscriptions
-    let outputsFromAddress: OutputJson[] = [];
+    let cardinalOutputs: OutputJson[] = [];
 
-    [confirmedUtxos, feeRate, outputsFromAddress] = await Promise.all([
+    [utxos, feeRate, cardinalOutputs] = await Promise.all([
         esploraClient.getAddressUtxos(fromAddress),
         feeRate === undefined ? esploraClient.getFeeEstimate(confirmationTarget) : feeRate,
         // cardinal = return UTXOs not containing inscriptions or runes
         ordinalsClient.getOutputsFromAddress(fromAddress, 'cardinal'),
     ]);
 
-    if (confirmedUtxos.length === 0) {
+    if (utxos.length === 0) {
         throw new Error('No confirmed UTXOs');
     }
 
-    const outpointsSet = new Set(outputsFromAddress.map((output) => output.outpoint));
+    const cardinalOutputsSet = new Set(cardinalOutputs.map((output) => output.outpoint));
+
+    const rootUtxoNodes = createUtxoNodes(utxos, cardinalOutputsSet);
+
+    await processNodes(rootUtxoNodes, esploraClient);
 
     // To construct the spending transaction and estimate the fee, we need the transactions for the UTXOs
     const possibleInputs: Input[] = [];
 
     await Promise.all(
-        confirmedUtxos.map(async (utxo) => {
+        utxos.map(async (utxo, index) => {
             const hex = await esploraClient.getTransactionHex(utxo.txid);
             const transaction = Transaction.fromRaw(Buffer.from(hex, 'hex'), { allowUnknownOutputs: true });
             const input = getInputFromUtxoAndTx(
@@ -122,7 +190,10 @@ export async function createBitcoinPsbt(
                 publicKey
             );
             // to support taproot addresses we want to exclude outputs which contain inscriptions
-            if (outpointsSet.has(OutPoint.toString(utxo))) possibleInputs.push(input);
+            if (cardinalOutputsSet.has(OutPoint.toString(utxo))) return possibleInputs.push(input);
+
+            // allow to spend output if none of `vin` contains ordinals
+            if (rootUtxoNodes[index] !== null && checkUtxoNode(rootUtxoNodes[index])) return possibleInputs.push(input);
         })
     );
 
@@ -162,8 +233,8 @@ export async function createBitcoinPsbt(
     });
 
     if (!transaction || !transaction.tx) {
-        console.debug('confirmedUtxos', confirmedUtxos);
-        console.debug('outputsFromAddress', outputsFromAddress);
+        console.debug('utxos', utxos);
+        console.debug('outputsFromAddress', cardinalOutputs);
         console.debug(`fromAddress: ${fromAddress}, toAddress: ${toAddress}, amount: ${amount}`);
         console.debug(`publicKey: ${publicKey}, opReturnData: ${opReturnData}`);
         console.debug(`feeRate: ${feeRate}, confirmationTarget: ${confirmationTarget}`);
@@ -299,26 +370,31 @@ export async function estimateTxFee(
     const esploraClient = new EsploraClient(addressInfo.network);
     const ordinalsClient = new OrdinalsClient(addressInfo.network);
 
-    let confirmedUtxos: UTXO[] = [];
+    let utxos: UTXO[] = [];
     // contains UTXOs which do not contain inscriptions
-    let outputsFromAddress: OutputJson[] = [];
+    let cardinalOutputs: OutputJson[] = [];
 
-    [confirmedUtxos, feeRate, outputsFromAddress] = await Promise.all([
+    [utxos, feeRate, cardinalOutputs] = await Promise.all([
         esploraClient.getAddressUtxos(fromAddress),
         feeRate === undefined ? esploraClient.getFeeEstimate(confirmationTarget) : feeRate,
         // cardinal = return UTXOs not containing inscriptions or runes
         ordinalsClient.getOutputsFromAddress(fromAddress, 'cardinal'),
     ]);
 
-    if (confirmedUtxos.length === 0) {
+    if (utxos.length === 0) {
         throw new Error('No confirmed UTXOs');
     }
 
-    const outpointsSet = new Set(outputsFromAddress.map((output) => output.outpoint));
+    const cardinalOutputsSet = new Set(cardinalOutputs.map((output) => output.outpoint));
+
+    const rootUtxoNodes = createUtxoNodes(utxos, cardinalOutputsSet);
+
+    await processNodes(rootUtxoNodes, esploraClient);
+
     const possibleInputs: Input[] = [];
 
     await Promise.all(
-        confirmedUtxos.map(async (utxo) => {
+        utxos.map(async (utxo, index) => {
             const hex = await esploraClient.getTransactionHex(utxo.txid);
             const transaction = Transaction.fromRaw(Buffer.from(hex, 'hex'), { allowUnknownOutputs: true });
             const input = getInputFromUtxoAndTx(
@@ -330,7 +406,10 @@ export async function estimateTxFee(
             );
 
             // to support taproot addresses we want to exclude outputs which contain inscriptions
-            if (outpointsSet.has(OutPoint.toString(utxo))) possibleInputs.push(input);
+            if (cardinalOutputsSet.has(OutPoint.toString(utxo))) return possibleInputs.push(input);
+
+            // allow to spend output if none of `vin` contains ordinals
+            if (rootUtxoNodes[index] !== null && checkUtxoNode(rootUtxoNodes[index])) return possibleInputs.push(input);
         })
     );
 
@@ -377,8 +456,8 @@ export async function estimateTxFee(
     });
 
     if (!transaction || !transaction.tx) {
-        console.debug('confirmedUtxos', confirmedUtxos);
-        console.debug('outputsFromAddress', outputsFromAddress);
+        console.debug('utxos', utxos);
+        console.debug('cardinalOutputs', cardinalOutputs);
         console.debug(`fromAddress: ${fromAddress}, amount: ${amount}`);
         console.debug(`publicKey: ${publicKey}, opReturnData: ${opReturnData}`);
         console.debug(`feeRate: ${feeRate}, confirmationTarget: ${confirmationTarget}`);
@@ -416,7 +495,7 @@ export async function getBalance(address?: string) {
     const esploraClient = new EsploraClient(addressInfo.network);
     const ordinalsClient = new OrdinalsClient(addressInfo.network);
 
-    const [outputs, cardinalOutputs] = await Promise.all([
+    const [utxos, cardinalOutputs] = await Promise.all([
         esploraClient.getAddressUtxos(address),
         // cardinal = return UTXOs not containing inscriptions or runes
         ordinalsClient.getOutputsFromAddress(address, 'cardinal'),
@@ -424,17 +503,23 @@ export async function getBalance(address?: string) {
 
     const cardinalOutputsSet = new Set(cardinalOutputs.map((output) => output.outpoint));
 
-    const total = outputs.reduce((acc, output) => {
-        if (cardinalOutputsSet.has(OutPoint.toString(output))) {
-            return acc + output.value;
-        }
+    const rootUtxoNodes = createUtxoNodes(utxos, cardinalOutputsSet);
+
+    await processNodes(rootUtxoNodes, esploraClient);
+
+    const total = utxos.reduce((acc, utxo, index) => {
+        // there will be a match if output is confirmed and has no ordinals
+        if (cardinalOutputsSet.has(OutPoint.toString(utxo))) return acc + utxo.value;
+
+        // allow to spend output if none of `vin` contains ordinals
+        if (rootUtxoNodes[index] !== null && checkUtxoNode(rootUtxoNodes[index])) return acc + utxo.value;
 
         return acc;
     }, 0);
 
-    const confirmed = outputs.reduce((acc, output) => {
-        if (cardinalOutputsSet.has(OutPoint.toString(output)) && output.confirmed) {
-            return acc + output.value;
+    const confirmed = utxos.reduce((acc, utxo) => {
+        if (cardinalOutputsSet.has(OutPoint.toString(utxo)) && utxo.confirmed) {
+            return acc + utxo.value;
         }
 
         return acc;
