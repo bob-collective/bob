@@ -27,18 +27,24 @@ class TreeNode<T> {
     }
 }
 
-const createUtxoNodes = (utxos: UTXO[], cardinalOutputsSet: Set<string>) =>
-    utxos.reduce(
-        (acc, utxo) => {
-            if (!cardinalOutputsSet.has(OutPoint.toString(utxo)))
-                // mark node as containing ordinals
-                acc.push(new TreeNode<OutputNodeData>({ ...utxo, cardinal: false }));
-            else acc.push(null);
+const isCardinal = (output: OutputJson) => output.inscriptions.length === 0 && Object.keys(output.runes).length === 0;
 
-            return acc;
-        },
-        [] as (TreeNode<OutputNodeData> | null)[]
-    );
+const createUtxoNodes = async (utxos: UTXO[], cardinalOutputsSet: Set<string>, ordinalsClient: OrdinalsClient) => {
+    const outputs = await ordinalsClient.getOutputsFromOutPoints(utxos.map(OutPoint.toString));
+
+    return utxos.map((utxo, index) => {
+        const output = outputs[index];
+
+        if (!cardinalOutputsSet.has(OutPoint.toString(utxo)))
+            return new TreeNode<OutputNodeData>({
+                ...utxo,
+                cardinal: isCardinal(output),
+                indexed: output.indexed,
+            });
+
+        return null;
+    });
+};
 
 const processNodes = async (
     rootNodes: (TreeNode<OutputNodeData> | null)[],
@@ -58,22 +64,22 @@ const processNodes = async (
         if (transaction.status.confirmed) {
             // if confirmed check if it contains ordinals
             childNode.val.cardinal = cardinalOutputsSet.has(OutPoint.toString(childNode.val));
-        } else {
-            const response = await ordinalsClient.getInscriptionsFromOutPoint(childNode.val);
+        } else if (!childNode.val.indexed || childNode.val.cardinal) {
+            const outputs = await ordinalsClient.getOutputsFromOutPoints(transaction.vin.map(OutPoint.toString));
 
-            if (Object.keys(response.runes).length === 0 && response.inscriptions.length === 0) {
-                // if not confirmed check inputs for current utxo
-                childNode.children = transaction.vin.map((vin) => {
-                    return new TreeNode<OutputNodeData>({
-                        vout: vin.vout,
-                        txid: vin.txid,
-                        // mark node as containing ordinals
-                        cardinal: false,
-                    });
+            // if not confirmed check inputs for current utxo
+            childNode.children = transaction.vin.map((vin, index) => {
+                const output = outputs[index];
+
+                return new TreeNode<OutputNodeData>({
+                    vout: vin.vout,
+                    txid: vin.txid,
+                    cardinal: isCardinal(output),
+                    indexed: output.indexed,
                 });
+            });
 
-                queue.push(...childNode.children);
-            }
+            queue.push(...childNode.children);
         }
     }
 };
@@ -85,7 +91,7 @@ const checkUtxoNode = (node: TreeNode<OutputNodeData>) => {
     return node.children.reduce((acc, child) => acc && checkUtxoNode(child), true);
 };
 
-type OutputNodeData = Pick<UTXO, 'txid' | 'vout'> & { cardinal: boolean };
+type OutputNodeData = Pick<UTXO, 'txid' | 'vout'> & { cardinal: boolean; indexed: boolean };
 
 export interface Input {
     txid: string;
@@ -177,7 +183,7 @@ export async function createBitcoinPsbt(
 
     const cardinalOutputsSet = new Set(cardinalOutputs.map((output) => output.outpoint));
 
-    const rootUtxoNodes = createUtxoNodes(utxos, cardinalOutputsSet);
+    const rootUtxoNodes = await createUtxoNodes(utxos, cardinalOutputsSet, ordinalsClient);
 
     await processNodes(rootUtxoNodes, cardinalOutputsSet, esploraClient, ordinalsClient);
 
@@ -393,7 +399,7 @@ export async function estimateTxFee(
 
     const cardinalOutputsSet = new Set(cardinalOutputs.map((output) => output.outpoint));
 
-    const rootUtxoNodes = createUtxoNodes(utxos, cardinalOutputsSet);
+    const rootUtxoNodes = await createUtxoNodes(utxos, cardinalOutputsSet, ordinalsClient);
 
     await processNodes(rootUtxoNodes, cardinalOutputsSet, esploraClient, ordinalsClient);
 
@@ -509,7 +515,7 @@ export async function getBalance(address?: string) {
 
     const cardinalOutputsSet = new Set(cardinalOutputs.map((output) => output.outpoint));
 
-    const rootUtxoNodes = createUtxoNodes(utxos, cardinalOutputsSet);
+    const rootUtxoNodes = await createUtxoNodes(utxos, cardinalOutputsSet, ordinalsClient);
 
     await processNodes(rootUtxoNodes, cardinalOutputsSet, esploraClient, ordinalsClient);
 
