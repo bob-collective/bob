@@ -61,7 +61,7 @@ const processNodes = async (
         } else {
             const response = await ordinalsClient.getInscriptionsFromOutPoint(childNode.val);
 
-            if (response.inscriptions.length === 0) {
+            if (Object.keys(response.runes).length === 0 && response.inscriptions.length === 0) {
                 // if not confirmed check inputs for current utxo
                 childNode.children = transaction.vin.map((vin) => {
                     return new TreeNode<OutputNodeData>({
