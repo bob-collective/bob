@@ -28,17 +28,17 @@ Before the first user operation can be made, the paymaster smart contract has to
 
 #### Connecting MetaMask and funding your account
 
-1. Go to [demo-acccount-abstraction.gobob.xyz](https://demo-account-abstraction.gobob.xyz/)
-2. Fund your account with Sepolia ETH from the [Sepolia testnet faucet](https://faucetlink.to/sepolia).
-3. Transfer Sepolia ETH to BOB Sepolia (Testnet) using [our Bridge](https://app.gobob.xyz/).
-4. Connect with your MetaMask account and get wBTC by clicking on the 'Get Tokens' button in the application header. (You will receive 30,000 wBTC that you can spend.)
-5. Add wBTC to your MetaMask, wBTC address is `0x2868d708e442A6a940670d26100036d426F1e16b`
-6. Transfer wBTC to the smart contract account via MetaMask (displayed above the amount field in the form).
+1. Clone [the repo](https://github.com/bob-collective/demo-account-abstraction-transfer/) and [start the front-end locally](#local-development).
+1. Fund your account with Sepolia ETH from the [Sepolia testnet faucet](https://faucetlink.to/sepolia).
+1. Transfer Sepolia ETH to BOB Testnet using [Superbridge](https://puff-bob-jznbxtoq7h.testnets.rollbridge.app/).
+1. Connect with your MetaMask account and get wBTC by clicking on the `Get Tokens` button in the application header. (You will receive 30,000 wBTC that you can spend.)
+1. Add wBTC to your MetaMask, wBTC address is `0x2868d708e442A6a940670d26100036d426F1e16b`.
+1. Transfer wBTC to the smart contract account via MetaMask (displayed above the amount field in the form).
 
 #### Making a transfer
 
-1. Input the amount you wish to send and the recipient's address into the form fields.
-2. Click on 'Transfer'. This will require three interactions with MetaMask: first one will deposit small amount of ETH to the entry point contract so that you can sign the user operation that allows the paymaster contract to spend your wBTC. Then you will sign the approval user operation. Finally, you will sign the transfer user operation.
+1. Input the amount you wish to send and the recipient`s address into the form fields.
+2. Click on `Transfer`. This will require three interactions with MetaMask: first one will deposit small amount of ETH to the entry point contract so that you can sign the user operation that allows the paymaster contract to spend your wBTC. Then you will sign the approval user operation. Finally, you will sign the transfer user operation.
 3. Wait for the transfer user operation to be executed.
 
 ## Limitations
