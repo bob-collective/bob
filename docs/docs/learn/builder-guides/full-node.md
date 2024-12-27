@@ -15,6 +15,8 @@ Prior to the update, update your nodes to:
 - set on both the flag `--override.holocene=1736445601`
 
 **If you are not using the previous fork, Granite, on your nodes, please reach out** (check the following flag is set `​--override.granite​`). In that case, you might need to enable the Granite hard fork flags two days before on `​Tue 07 Jan 2025 18:00:01 UTC​`. You can use the same software version and configure it with `​--override.granite=1736272801`
+
+BOB Sepolia flags: `—override.holocene=1732633200, granite: "1725984001"`
 :::
 
 :::info
