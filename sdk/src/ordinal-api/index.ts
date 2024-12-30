@@ -569,7 +569,7 @@ export class OrdinalsClient {
         if (!response.ok) {
             throw new Error(response.statusText);
         }
-        return (await response.json()) as Promise<T>;
+        return response.json() as Promise<T>;
     }
 
     /**
@@ -587,7 +587,7 @@ export class OrdinalsClient {
         if (!response.ok) {
             throw new Error(response.statusText);
         }
-        return (await response.json()) as Promise<T>;
+        return response.json() as Promise<T>;
     }
 
     /**
