@@ -33,16 +33,15 @@ const createUtxoNodes = async (utxos: UTXO[], cardinalOutputsSet: Set<string>, o
     const outputs = await ordinalsClient.getOutputsFromOutPoints(utxos.map(OutPoint.toString));
 
     return utxos.map((utxo, index) => {
+        if (cardinalOutputsSet.has(OutPoint.toString(utxo))) return null;
+
         const output = outputs[index];
 
-        if (!cardinalOutputsSet.has(OutPoint.toString(utxo)))
-            return new TreeNode<OutputNodeData>({
-                ...utxo,
-                cardinal: isCardinal(output),
-                indexed: output.indexed,
-            });
-
-        return null;
+        return new TreeNode<OutputNodeData>({
+            ...utxo,
+            cardinal: isCardinal(output),
+            indexed: output.indexed,
+        });
     });
 };
 
@@ -61,7 +60,7 @@ const processNodes = async (
 
         const transaction = await esploraClient.getTransaction(childNode.val.txid);
 
-        if (transaction.status.confirmed) {
+        if (childNode.val.indexed && transaction.status.confirmed) {
             // if confirmed check if it contains ordinals
             childNode.val.cardinal = cardinalOutputsSet.has(OutPoint.toString(childNode.val));
         } else if (!childNode.val.indexed || childNode.val.cardinal) {
@@ -201,11 +200,13 @@ export async function createBitcoinPsbt(
                 addressInfo.type,
                 publicKey
             );
+            const rootUtxoNode = rootUtxoNodes[index];
+
             // to support taproot addresses we want to exclude outputs which contain inscriptions
             if (cardinalOutputsSet.has(OutPoint.toString(utxo))) return possibleInputs.push(input);
 
             // allow to spend output if none of `vin` contains ordinals
-            if (rootUtxoNodes[index] !== null && checkUtxoNode(rootUtxoNodes[index])) return possibleInputs.push(input);
+            if (rootUtxoNode !== null && checkUtxoNode(rootUtxoNode)) return possibleInputs.push(input);
         })
     );
 
@@ -416,12 +417,13 @@ export async function estimateTxFee(
                 addressInfo.type,
                 publicKey
             );
+            const rootUtxoNode = rootUtxoNodes[index];
 
             // to support taproot addresses we want to exclude outputs which contain inscriptions
             if (cardinalOutputsSet.has(OutPoint.toString(utxo))) return possibleInputs.push(input);
 
             // allow to spend output if none of `vin` contains ordinals
-            if (rootUtxoNodes[index] !== null && checkUtxoNode(rootUtxoNodes[index])) return possibleInputs.push(input);
+            if (rootUtxoNode !== null && checkUtxoNode(rootUtxoNode)) return possibleInputs.push(input);
         })
     );
 
@@ -520,11 +522,13 @@ export async function getBalance(address?: string) {
     await processNodes(rootUtxoNodes, cardinalOutputsSet, esploraClient, ordinalsClient);
 
     const total = utxos.reduce((acc, utxo, index) => {
+        const rootUtxoNode = rootUtxoNodes[index];
+
         // there will be a match if output is confirmed and has no ordinals
         if (cardinalOutputsSet.has(OutPoint.toString(utxo))) return acc + utxo.value;
 
         // allow to spend output if none of `vin` contains ordinals
-        if (rootUtxoNodes[index] !== null && checkUtxoNode(rootUtxoNodes[index])) return acc + utxo.value;
+        if (rootUtxoNode !== null && checkUtxoNode(rootUtxoNode)) return acc + utxo.value;
 
         return acc;
     }, 0);
