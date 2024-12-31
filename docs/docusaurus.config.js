@@ -307,6 +307,35 @@ const config = {
         disableSwitch: true,
         respectPrefersColorScheme: false,
       },
+      // Docusaurus x Algolia documentation: https://docusaurus.io/docs/search#connecting-algolia
+      algolia: {
+        appId: "AO8XE1SP27",
+
+        // Public API key (safe to commit)
+        apiKey: "c9e55704810dd96a5013d44fb439186b",
+
+        indexName: "BOB Docs",
+        contextualSearch: true,
+
+        // Optional: Replace parts of the item URLs from Algolia.
+        // Useful when using the same search index for multiple deployments using a different baseUrl.
+        // You can use regexp or string in the `from` param. For example: localhost:3000 vs myCompany.com/docs
+        replaceSearchResultPathname: {
+          from: "localhost:3000",
+          to: "docs.gobob.xyz",
+        },
+
+        // Optional: path for dedicated search page (`false` to disable it)
+        searchPagePath: "search",
+
+        // Collect data on user events, such as search queries
+        insights: true,
+
+        // Other parameters: https://www.algolia.com/doc/api-reference/search-api-parameters/
+        searchParameters: {},
+
+        // Other options: https://docsearch.algolia.com/docs/api/
+      },
       // announcementBar: {
       //   id: "sign_up",
       //   content:
@@ -320,21 +349,7 @@ const config = {
   markdown: {
     mermaid: true,
   },
-  themes: [
-    "@docusaurus/theme-mermaid",
-    [
-      "@easyops-cn/docusaurus-search-local",
-      {
-        indexBlog: false,
-        indexDocs: true,
-        indexPages: false,
-        hashed: true,
-        highlightSearchTermsOnTargetPage: true,
-        language: ["en"],
-      },
-    ],
-    "docusaurus-theme-github-codeblock",
-  ],
+  themes: ["@docusaurus/theme-mermaid", "docusaurus-theme-github-codeblock"],
   scripts: [
     {
       src: "https://cdn.usefathom.com/script.js",
