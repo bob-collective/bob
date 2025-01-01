@@ -478,7 +478,7 @@ describe('UTXO Tests', () => {
     });
 
     it(
-        'outputs could not be spent if not confirmed by ord service, indexed and contain runes or inscriptions',
+        'outputs could not be spent if not confirmed by ord service, not indexed and contain runes or inscriptions',
         { timeout: 50000 },
         async () => {
             const taprootAddress = 'bc1peqr5a5kfufvsl66444jm9y8qq0s87ph0zv4lfkcs7h40ew02uvsqkhjav0';
