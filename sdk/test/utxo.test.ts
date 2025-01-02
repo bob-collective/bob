@@ -22,6 +22,9 @@ vi.mock(import('../src/ordinal-api'), async (importOriginal) => {
     actual.OrdinalsClient.prototype.getOutputsFromAddress = vi.fn(
         actual.OrdinalsClient.prototype.getOutputsFromAddress
     );
+    actual.OrdinalsClient.prototype.getOutputsFromOutPoints = vi.fn(
+        actual.OrdinalsClient.prototype.getOutputsFromOutPoints
+    );
 
     return actual;
 });
@@ -29,6 +32,7 @@ vi.mock(import('../src/ordinal-api'), async (importOriginal) => {
 vi.mock(import('../src/esplora'), async (importOriginal) => {
     const actual = await importOriginal();
 
+    actual.EsploraClient.prototype.getTransaction = vi.fn(actual.EsploraClient.prototype.getTransaction);
     actual.EsploraClient.prototype.getAddressUtxos = vi.fn(actual.EsploraClient.prototype.getAddressUtxos);
 
     return actual;
@@ -397,7 +401,7 @@ describe('UTXO Tests', () => {
                         })
                     )
             )
-        ).toStrictEqual([]);
+        ).toEqual([]);
     });
 
     it('throws an error if insufficient balance', { timeout: 50000 }, async () => {
@@ -416,7 +420,7 @@ describe('UTXO Tests', () => {
         );
     });
 
-    it('should return address balance', async () => {
+    it('should return address balance', { timeout: 50000 }, async () => {
         const address = 'bc1peqr5a5kfufvsl66444jm9y8qq0s87ph0zv4lfkcs7h40ew02uvsqkhjav0';
 
         const balance = await getBalance(address);
@@ -436,7 +440,7 @@ describe('UTXO Tests', () => {
         assert(zeroBalance.total === 0n, 'If no address specified total must be 0');
     });
 
-    it('returns smalled amount if address holds ordinals', async () => {
+    it('outputs could not be spent if not confirmed by ord service and indexed', { timeout: 50000 }, async () => {
         const taprootAddress = 'bc1peqr5a5kfufvsl66444jm9y8qq0s87ph0zv4lfkcs7h40ew02uvsqkhjav0';
 
         const esploraClient = new EsploraClient('mainnet');
@@ -461,10 +465,107 @@ describe('UTXO Tests', () => {
                 return { outpoint };
             })
         );
+        // mark every requested output as indexed
+        // will not be a part of `cardinalOutputsSet` -- could not be spent
+        (OrdinalsClient.prototype.getOutputsFromOutPoints as Mock).mockResolvedValue(
+            Array.from(outputs, () => ({ indexed: true, inscriptions: [], runes: {} }))
+        );
 
         const balanceData = await getBalance(taprootAddress);
 
-        expect(balanceData.total).toBeLessThan(total);
-        expect(balanceData.confirmed).toBeLessThan(confirmed);
+        expect(balanceData.total).toBeLessThan(BigInt(total));
+        expect(balanceData.confirmed).toBeLessThan(BigInt(confirmed));
     });
+
+    it(
+        'outputs could not be spent if not confirmed by ord service, not indexed and contain runes or inscriptions',
+        { timeout: 50000 },
+        async () => {
+            const taprootAddress = 'bc1peqr5a5kfufvsl66444jm9y8qq0s87ph0zv4lfkcs7h40ew02uvsqkhjav0';
+
+            const esploraClient = new EsploraClient('mainnet');
+
+            const outputs = await esploraClient.getAddressUtxos(taprootAddress);
+
+            const total = outputs.reduce((acc, output) => acc + output.value, 0);
+
+            const confirmed = outputs.reduce((acc, output) => {
+                if (output.confirmed) {
+                    return acc + output.value;
+                }
+
+                return acc;
+            }, 0);
+
+            // mock half of the UTXOs contain inscriptions or runes
+            (OrdinalsClient.prototype.getOutputsFromAddress as Mock).mockResolvedValueOnce(
+                outputs.slice(Math.ceil(outputs.length / 2)).map((output) => {
+                    const outpoint = OutPoint.toString(output);
+
+                    return { outpoint };
+                })
+            );
+            // mark every requested output as not indexed and containing inscriptions -- not cardinal
+            // will not be a part of `cardinalOutputsSet` -- could not be spent
+            (OrdinalsClient.prototype.getOutputsFromOutPoints as Mock).mockResolvedValue(
+                Array.from(outputs, () => ({ indexed: false, inscriptions: [null], runes: {} }))
+            );
+
+            // no inputs otherwise will loop infinitely
+            (EsploraClient.prototype.getTransaction as Mock).mockResolvedValue({
+                vin: [],
+            });
+
+            const balanceData = await getBalance(taprootAddress);
+
+            expect(balanceData.total).toBeLessThan(BigInt(total));
+            expect(balanceData.confirmed).toBeLessThan(BigInt(confirmed));
+        }
+    );
+
+    // coinbase reached
+    it(
+        'outputs could be spent if not confirmed by ord service, not indexed and does not contain runes or inscriptions',
+        { timeout: 50000 },
+        async () => {
+            const taprootAddress = 'bc1peqr5a5kfufvsl66444jm9y8qq0s87ph0zv4lfkcs7h40ew02uvsqkhjav0';
+
+            const esploraClient = new EsploraClient('mainnet');
+
+            const outputs = await esploraClient.getAddressUtxos(taprootAddress);
+
+            const total = outputs.reduce((acc, output) => acc + output.value, 0);
+
+            const confirmed = outputs.reduce((acc, output) => {
+                if (output.confirmed) {
+                    return acc + output.value;
+                }
+
+                return acc;
+            }, 0);
+
+            // mock half of the UTXOs contain inscriptions or runes
+            (OrdinalsClient.prototype.getOutputsFromAddress as Mock).mockResolvedValueOnce(
+                outputs.slice(Math.ceil(outputs.length / 2)).map((output) => {
+                    const outpoint = OutPoint.toString(output);
+
+                    return { outpoint };
+                })
+            );
+            // mark every requested output as not indexed and not containing inscriptions or runes
+            (OrdinalsClient.prototype.getOutputsFromOutPoints as Mock).mockResolvedValue(
+                Array.from(outputs, () => ({ indexed: false, inscriptions: [], runes: {} }))
+            );
+
+            // no inputs otherwise will loop infinitely
+            (EsploraClient.prototype.getTransaction as Mock).mockResolvedValue({
+                vin: [],
+            });
+
+            const balanceData = await getBalance(taprootAddress);
+
+            expect(balanceData.total).toEqual(BigInt(total));
+            expect(balanceData.confirmed).toBeLessThan(BigInt(confirmed));
+        }
+    );
 });
