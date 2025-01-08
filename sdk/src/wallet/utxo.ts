@@ -231,8 +231,9 @@ export async function createBitcoinPsbt(
         }
     }
 
+    let possibleInputs: Input[] = [];
     const esploraClient = new EsploraClient(addressInfo.network);
-    const [possibleInputs, computedfeeRate] = await Promise.all([
+    [possibleInputs, feeRate] = await Promise.all([
         collectPossibleInputs(fromAddress, publicKey),
         feeRate === undefined ? esploraClient.getFeeEstimate(confirmationTarget) : feeRate,
     ]);
@@ -262,7 +263,7 @@ export async function createBitcoinPsbt(
     // big outputs to small ones, which in the end will create a lot of outputs close to dust.
     const transaction = selectUTXO(possibleInputs, outputs, utxoSelectionStrategy, {
         changeAddress: fromAddress, // Refund surplus to the payment address
-        feePerByte: BigInt(Math.ceil(computedfeeRate)), // round up to the nearest integer
+        feePerByte: BigInt(Math.ceil(feeRate)), // round up to the nearest integer
         bip69: true, // Sort inputs and outputs according to BIP69
         createTx: true, // Create the transaction
         network: getBtcNetwork(addressInfo.network),
@@ -276,7 +277,7 @@ export async function createBitcoinPsbt(
         console.debug('possibleInputs', possibleInputs);
         console.debug(`fromAddress: ${fromAddress}, toAddress: ${toAddress}, amount: ${amount}`);
         console.debug(`publicKey: ${publicKey}, opReturnData: ${opReturnData}`);
-        console.debug(`feeRate: ${computedfeeRate}, confirmationTarget: ${confirmationTarget}`);
+        console.debug(`feeRate: ${feeRate}, confirmationTarget: ${confirmationTarget}`);
         throw new Error('Failed to create transaction. Do you have enough funds?');
     }
 
@@ -404,8 +405,9 @@ export async function estimateTxFee(
     // Use the from address as the toAddress for the fee estimate
     const toAddress = fromAddress;
 
+    let possibleInputs: Input[] = [];
     const esploraClient = new EsploraClient(addressInfo.network);
-    const [possibleInputs, computedfeeRate] = await Promise.all([
+    [possibleInputs, feeRate] = await Promise.all([
         collectPossibleInputs(fromAddress, publicKey),
         feeRate === undefined ? esploraClient.getFeeEstimate(confirmationTarget) : feeRate,
     ]);
@@ -442,7 +444,7 @@ export async function estimateTxFee(
     // big outputs to small ones, which in the end will create a lot of outputs close to dust.
     const transaction = selectUTXO(possibleInputs, outputs, utxoSelectionStrategy, {
         changeAddress: fromAddress, // Refund surplus to the payment address
-        feePerByte: BigInt(Math.ceil(computedfeeRate)), // round up to the nearest integer
+        feePerByte: BigInt(Math.ceil(feeRate)), // round up to the nearest integer
         bip69: true, // Sort inputs and outputs according to BIP69
         createTx: true, // Create the transaction
         network: getBtcNetwork(addressInfo.network),
@@ -456,7 +458,7 @@ export async function estimateTxFee(
         console.debug('possibleInputs', possibleInputs);
         console.debug(`fromAddress: ${fromAddress}, amount: ${amount}`);
         console.debug(`publicKey: ${publicKey}, opReturnData: ${opReturnData}`);
-        console.debug(`feeRate: ${computedfeeRate}, confirmationTarget: ${confirmationTarget}`);
+        console.debug(`feeRate: ${feeRate}, confirmationTarget: ${confirmationTarget}`);
         throw new Error('Failed to create transaction. Do you have enough funds?');
     }
 
