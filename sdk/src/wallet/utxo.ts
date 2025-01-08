@@ -64,7 +64,7 @@ const processNodes = async (
 
         const transaction = await esploraClient.getTransaction(childNode.val.txid);
 
-        if (childNode.val.indexed && transaction.status.confirmed) {
+        if (transaction.status.confirmed) {
             // if confirmed check if it contains ordinals
             childNode.val.cardinal = cardinalOutputsSet.has(OutPoint.toString(childNode.val));
         } else if (!childNode.val.indexed || childNode.val.cardinal) {

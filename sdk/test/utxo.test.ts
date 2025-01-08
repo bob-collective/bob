@@ -23,157 +23,125 @@ vi.mock(import('@scure/btc-signer'), async (importOriginal) => {
     };
 });
 
-vi.mock(import('../src/ordinal-api'), async (importOriginal) => {
-    const actual = await importOriginal();
-
-    actual.OrdinalsClient.prototype.getOutputsFromAddress = vi.fn(
-        actual.OrdinalsClient.prototype.getOutputsFromAddress
-    );
-    actual.OrdinalsClient.prototype.getOutputsFromOutPoints = vi.fn(
-        actual.OrdinalsClient.prototype.getOutputsFromOutPoints
-    );
-
-    return actual;
-});
-
-vi.mock(import('../src/esplora'), async (importOriginal) => {
-    const actual = await importOriginal();
-
-    actual.EsploraClient.prototype.getTransaction = vi.fn(actual.EsploraClient.prototype.getTransaction);
-    actual.EsploraClient.prototype.getAddressUtxos = vi.fn(actual.EsploraClient.prototype.getAddressUtxos);
-
-    return actual;
-});
-
 // TODO: Add more tests using https://github.com/paulmillr/scure-btc-signer/tree/5ead71ea9a873d8ba1882a9cd6aa561ad410d0d1/test/bitcoinjs-test/fixtures/bitcoinjs
 // TODO: Ensure that the paymentAddresses have sufficient funds to create the transaction
 describe('UTXO Tests', () => {
     beforeEach(() => {
-        vi.clearAllMocks();
+        vi.restoreAllMocks();
     });
 
-    it.skip(
-        'should spend from address to create a transaction with an OP return output',
-        { timeout: 50000 },
-        async () => {
-            // Addresses where randomly picked from blockstream.info
-            const paymentAddresses = [
-                // P2WPKH: https://blockstream.info/address/bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq
-                'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq',
-                // P2SH-P2WPKH: https://blockstream.info/address/3DFVKuT9Ft4rWpysAZ1bHpg55EBy1HVPcr
-                // TODO: Use a real P2SH-P2WPKH address
-                // TODO: Add the pubkey to allow spending from the outputs
-                // '3DFVKuT9Ft4rWpysAZ1bHpg55EBy1HVPcr',
-                // P2PKH: https://blockstream.info/address/1Kr6QSydW9bFQG1mXiPNNu6WpJGmUa9i1g
-                '1Kr6QSydW9bFQG1mXiPNNu6WpJGmUa9i1g',
-                // P2TR https://blockstream.info/address/bc1peqr5a5kfufvsl66444jm9y8qq0s87ph0zv4lfkcs7h40ew02uvsqkhjav0
-                'bc1peqr5a5kfufvsl66444jm9y8qq0s87ph0zv4lfkcs7h40ew02uvsqkhjav0',
-            ];
+    it('should spend from address to create a transaction with an OP return output', { timeout: 50000 }, async () => {
+        // Addresses where randomly picked from blockstream.info
+        const paymentAddresses = [
+            // P2WPKH: https://blockstream.info/address/bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq
+            'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq',
+            // P2SH-P2WPKH: https://blockstream.info/address/3DFVKuT9Ft4rWpysAZ1bHpg55EBy1HVPcr
+            // TODO: Use a real P2SH-P2WPKH address
+            // TODO: Add the pubkey to allow spending from the outputs
+            // '3DFVKuT9Ft4rWpysAZ1bHpg55EBy1HVPcr',
+            // P2PKH: https://blockstream.info/address/1Kr6QSydW9bFQG1mXiPNNu6WpJGmUa9i1g
+            '1Kr6QSydW9bFQG1mXiPNNu6WpJGmUa9i1g',
+            // P2TR https://blockstream.info/address/bc1peqr5a5kfufvsl66444jm9y8qq0s87ph0zv4lfkcs7h40ew02uvsqkhjav0
+            'bc1peqr5a5kfufvsl66444jm9y8qq0s87ph0zv4lfkcs7h40ew02uvsqkhjav0',
+        ];
 
-            const toAddresses = [
-                // P2SH
-                '35iMHbUZeTssxBodiHwEEkb32jpBfVueEL',
-                // P2WSH
-                'bc1q6rgl33d3s9dugudw7n68yrryajkr3ha9q8q24j20zs62se4q9tsqdy0t2q',
-                // P2WPKH
-                'bc1qafk4yhqvj4wep57m62dgrmutldusqde8adh20d',
-                // P2PKH
-                '1Pr4Y216BpyGxj1Qa9GUzLQU6uUuzE61YS',
-                // P2TR
-                'bc1peqr5a5kfufvsl66444jm9y8qq0s87ph0zv4lfkcs7h40ew02uvsqkhjav0',
-            ];
-            const amount = 1000;
+        const toAddresses = [
+            // P2SH
+            '35iMHbUZeTssxBodiHwEEkb32jpBfVueEL',
+            // P2WSH
+            'bc1q6rgl33d3s9dugudw7n68yrryajkr3ha9q8q24j20zs62se4q9tsqdy0t2q',
+            // P2WPKH
+            'bc1qafk4yhqvj4wep57m62dgrmutldusqde8adh20d',
+            // P2PKH
+            '1Pr4Y216BpyGxj1Qa9GUzLQU6uUuzE61YS',
+            // P2TR
+            'bc1peqr5a5kfufvsl66444jm9y8qq0s87ph0zv4lfkcs7h40ew02uvsqkhjav0',
+        ];
+        const amount = 1000;
 
-            // EVM address for OP return
-            let opReturn = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2';
+        // EVM address for OP return
+        let opReturn = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2';
 
-            // Refactor to execute in parallel
-            await Promise.all(
-                toAddresses.map(async (toAddress) => {
-                    await Promise.all(
-                        paymentAddresses.map(async (paymentAddress) => {
-                            const paymentAddressType = getAddressInfo(paymentAddress).type;
+        // Refactor to execute in parallel
+        await Promise.all(
+            toAddresses.map(async (toAddress) => {
+                await Promise.all(
+                    paymentAddresses.map(async (paymentAddress) => {
+                        const paymentAddressType = getAddressInfo(paymentAddress).type;
 
-                            let pubkey: string | undefined;
+                        let pubkey: string | undefined;
 
-                            if (
-                                paymentAddressType === AddressType.p2sh ||
-                                paymentAddressType === AddressType.p2wsh ||
-                                paymentAddressType === AddressType.p2tr
-                            ) {
-                                // Use a random public key for P2SH-P2WPKH
-                                pubkey = '03b366c69e8237d9be7c4f1ac2a7abc6a79932fbf3de4e2f6c04797d7ef27abfe1';
+                        if (
+                            paymentAddressType === AddressType.p2sh ||
+                            paymentAddressType === AddressType.p2wsh ||
+                            paymentAddressType === AddressType.p2tr
+                        ) {
+                            // Use a random public key for P2SH-P2WPKH
+                            pubkey = '03b366c69e8237d9be7c4f1ac2a7abc6a79932fbf3de4e2f6c04797d7ef27abfe1';
+                        }
+                        // Note: it is possible that the above addresses have spent all of their funds
+                        // and the transaction will fail.
+                        const psbtBase64 = await createBitcoinPsbt(paymentAddress, toAddress, amount, pubkey, opReturn);
+                        const transaction = Transaction.fromPSBT(base64.decode(psbtBase64));
+
+                        assert(transaction);
+
+                        // Check that output conditions are correct
+                        const addressType = getAddressInfo(toAddress).type;
+
+                        // Get all outputs and add them to array
+                        const outputs: TransactionOutput[] = [];
+
+                        for (let i = 0; i < transaction.outputsLength; i++) {
+                            const output = transaction.getOutput(i);
+
+                            outputs.push(output);
+                        }
+
+                        for (const output of outputs) {
+                            // All outputs should have an amount and a script
+                            assert.exists(output.amount);
+                            assert.exists(output.script);
+                            // Check OP_RETURN
+                            if (opReturn.startsWith('0x')) {
+                                opReturn = opReturn.slice(2);
                             }
-                            // Note: it is possible that the above addresses have spent all of their funds
-                            // and the transaction will fail.
-                            const psbtBase64 = await createBitcoinPsbt(
-                                paymentAddress,
-                                toAddress,
-                                amount,
-                                pubkey,
-                                opReturn
-                            );
-                            const transaction = Transaction.fromPSBT(base64.decode(psbtBase64));
+                            if (output.amount! === BigInt(0)) {
+                                const parsedScript = Script.decode(output.script!);
 
-                            assert(transaction);
+                                assert.equal(parsedScript.length, 2);
+                                assert.equal(parsedScript[0], 'RETURN');
+                                assert.deepEqual(parsedScript[1], hex.decode(opReturn));
 
-                            // Check that output conditions are correct
-                            const addressType = getAddressInfo(toAddress).type;
+                                // Check the transfer script to the toAddress
+                            } else if (output.amount === BigInt(amount)) {
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                const scriptDecoded = OutScript.decode(output.script!) as any;
 
-                            // Get all outputs and add them to array
-                            const outputs: TransactionOutput[] = [];
+                                // Remove "p2" from the address type as it's exluced in the OutScript type
+                                assert.equal(scriptDecoded.type, addressType.slice(2));
 
-                            for (let i = 0; i < transaction.outputsLength; i++) {
-                                const output = transaction.getOutput(i);
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                const address = Address(NETWORK).decode(toAddress) as any;
 
-                                outputs.push(output);
+                                assert.deepEqual(scriptDecoded.hash, address.hash);
+
+                                // Check the possible change output
+                            } else {
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                const scriptDecoded = OutScript.decode(output.script!) as any;
+
+                                // Remove "p2" from the address type as it's exluced in the OutScript type
+                                assert.equal(scriptDecoded.type, paymentAddressType.slice(2));
                             }
+                        }
+                    })
+                );
+            })
+        );
+    });
 
-                            for (const output of outputs) {
-                                // All outputs should have an amount and a script
-                                assert.exists(output.amount);
-                                assert.exists(output.script);
-                                // Check OP_RETURN
-                                if (opReturn.startsWith('0x')) {
-                                    opReturn = opReturn.slice(2);
-                                }
-                                if (output.amount! === BigInt(0)) {
-                                    const parsedScript = Script.decode(output.script!);
-
-                                    assert.equal(parsedScript.length, 2);
-                                    assert.equal(parsedScript[0], 'RETURN');
-                                    assert.deepEqual(parsedScript[1], hex.decode(opReturn));
-
-                                    // Check the transfer script to the toAddress
-                                } else if (output.amount === BigInt(amount)) {
-                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                    const scriptDecoded = OutScript.decode(output.script!) as any;
-
-                                    // Remove "p2" from the address type as it's exluced in the OutScript type
-                                    assert.equal(scriptDecoded.type, addressType.slice(2));
-
-                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                    const address = Address(NETWORK).decode(toAddress) as any;
-
-                                    assert.deepEqual(scriptDecoded.hash, address.hash);
-
-                                    // Check the possible change output
-                                } else {
-                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                    const scriptDecoded = OutScript.decode(output.script!) as any;
-
-                                    // Remove "p2" from the address type as it's exluced in the OutScript type
-                                    assert.equal(scriptDecoded.type, paymentAddressType.slice(2));
-                                }
-                            }
-                        })
-                    );
-                })
-            );
-        }
-    );
-
-    it.skip('should get input from an UTXO and its transaction', async () => {
+    it('should get input from an UTXO and its transaction', async () => {
         const testset = [
             // - P2WPKH (Unisat)
             {
@@ -250,7 +218,7 @@ describe('UTXO Tests', () => {
 
     // custom test using partially real data that would otherwise produce an invalid output
     // below the dust limit if we did not manually configure that to the correct value of 546
-    it.skip('should not output too small change', async () => {
+    it('should not output too small change', async () => {
         const inputScript = Buffer.from('a9147ecd91afdcadf6f1b9e8e026a312e4cce61e63ea87', 'hex');
         const outputOpReturn = Buffer.from(
             '6a200000000000000000000000000000000000000000000000000000000000000000',
@@ -327,7 +295,7 @@ describe('UTXO Tests', () => {
         assert.isDefined(transaction);
     });
 
-    it.skip('should estimate the fee for a transaction', { timeout: 50000 }, async () => {
+    it('should estimate the fee for a transaction', { timeout: 50000 }, async () => {
         // Addresses where randomly picked from blockstream.info
         const paymentAddresses = [
             // P2WPKH: https://blockstream.info/address/bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq
@@ -369,7 +337,8 @@ describe('UTXO Tests', () => {
 
                                 // If the amount is undefined, the fee should be estimated
                                 const fee = await estimateTxFee(paymentAddress, amount, pubkey, opReturn, feeRate);
-                                assert(fee > 0, 'Fee should be greater than 0');
+
+                                expect(fee).toBeGreaterThan(0);
                             })
                         )
                     )
@@ -378,7 +347,7 @@ describe('UTXO Tests', () => {
         );
     });
 
-    it.skip('should not spend outputs with inscriptions', { timeout: 50000 }, async () => {
+    it('should not spend outputs with inscriptions', { timeout: 50000 }, async () => {
         const paymentAddress = 'bc1peqr5a5kfufvsl66444jm9y8qq0s87ph0zv4lfkcs7h40ew02uvsqkhjav0';
         // Use a random public key
         const pubkey = '03b366c69e8237d9be7c4f1ac2a7abc6a79932fbf3de4e2f6c04797d7ef27abfe1';
@@ -421,7 +390,7 @@ describe('UTXO Tests', () => {
         ).toEqual([]);
     });
 
-    it.skip('throws an error if insufficient balance', { timeout: 50000 }, async () => {
+    it('throws an error if insufficient balance', { timeout: 50000 }, async () => {
         const paymentAddress = 'bc1peqr5a5kfufvsl66444jm9y8qq0s87ph0zv4lfkcs7h40ew02uvsqkhjav0';
         // Use a random public key
         const pubkey = '03b366c69e8237d9be7c4f1ac2a7abc6a79932fbf3de4e2f6c04797d7ef27abfe1';
@@ -437,7 +406,7 @@ describe('UTXO Tests', () => {
         );
     });
 
-    it.skip('should return address balance', { timeout: 50000 }, async () => {
+    it('should return address balance', { timeout: 50000 }, async () => {
         const address = 'bc1peqr5a5kfufvsl66444jm9y8qq0s87ph0zv4lfkcs7h40ew02uvsqkhjav0';
 
         const balance = await getBalance(address);
@@ -457,7 +426,7 @@ describe('UTXO Tests', () => {
         assert(zeroBalance.total === 0n, 'If no address specified total must be 0');
     });
 
-    it.skip('outputs could not be spent if not confirmed by ord service and indexed', { timeout: 50000 }, async () => {
+    it('outputs could not be spent if not confirmed by ord service and indexed', { timeout: 50000 }, async () => {
         const taprootAddress = 'bc1peqr5a5kfufvsl66444jm9y8qq0s87ph0zv4lfkcs7h40ew02uvsqkhjav0';
 
         const esploraClient = new EsploraClient('mainnet');
@@ -475,7 +444,9 @@ describe('UTXO Tests', () => {
         }, 0);
 
         // mock half of the UTXOs contain inscriptions or runes
-        (OrdinalsClient.prototype.getOutputsFromAddress as Mock).mockResolvedValueOnce(
+        vi.spyOn(OrdinalsClient.prototype, 'getOutputsFromAddress').mockResolvedValueOnce(
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-expect-error
             outputs.slice(Math.ceil(outputs.length / 2)).map((output) => {
                 const outpoint = OutPoint.toString(output);
 
@@ -484,7 +455,9 @@ describe('UTXO Tests', () => {
         );
         // mark every requested output as indexed
         // will not be a part of `cardinalOutputsSet` -- could not be spent
-        (OrdinalsClient.prototype.getOutputsFromOutPoints as Mock).mockResolvedValue(
+        vi.spyOn(OrdinalsClient.prototype, 'getOutputsFromOutPoints').mockResolvedValue(
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-expect-error
             Array.from(outputs, () => ({ indexed: true, inscriptions: [], runes: {} }))
         );
 
@@ -494,7 +467,7 @@ describe('UTXO Tests', () => {
         expect(balanceData.confirmed).toBeLessThan(BigInt(confirmed));
     });
 
-    it.skip(
+    it(
         'outputs could not be spent if not confirmed by ord service, not indexed and contain runes or inscriptions',
         { timeout: 50000 },
         async () => {
@@ -515,7 +488,9 @@ describe('UTXO Tests', () => {
             }, 0);
 
             // mock half of the UTXOs contain inscriptions or runes
-            (OrdinalsClient.prototype.getOutputsFromAddress as Mock).mockResolvedValueOnce(
+            vi.spyOn(OrdinalsClient.prototype, 'getOutputsFromAddress').mockResolvedValueOnce(
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-expect-error
                 outputs.slice(Math.ceil(outputs.length / 2)).map((output) => {
                     const outpoint = OutPoint.toString(output);
 
@@ -524,12 +499,19 @@ describe('UTXO Tests', () => {
             );
             // mark every requested output as not indexed and containing inscriptions -- not cardinal
             // will not be a part of `cardinalOutputsSet` -- could not be spent
-            (OrdinalsClient.prototype.getOutputsFromOutPoints as Mock).mockResolvedValue(
+            vi.spyOn(OrdinalsClient.prototype, 'getOutputsFromOutPoints').mockResolvedValue(
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-expect-error
                 Array.from(outputs, () => ({ indexed: false, inscriptions: [null], runes: {} }))
             );
 
             // no inputs otherwise will loop infinitely
-            (EsploraClient.prototype.getTransaction as Mock).mockResolvedValue({
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-expect-error
+            vi.spyOn(EsploraClient.prototype, 'getTransaction').mockResolvedValue({
+                status: {
+                    confirmed: true,
+                },
                 vin: [],
             });
 
@@ -541,7 +523,7 @@ describe('UTXO Tests', () => {
     );
 
     // coinbase reached
-    it.skip(
+    it(
         'outputs could be spent if not confirmed by ord service, not indexed and does not contain runes or inscriptions',
         { timeout: 50000 },
         async () => {
@@ -562,7 +544,9 @@ describe('UTXO Tests', () => {
             }, 0);
 
             // mock half of the UTXOs contain inscriptions or runes
-            (OrdinalsClient.prototype.getOutputsFromAddress as Mock).mockResolvedValueOnce(
+            vi.spyOn(OrdinalsClient.prototype, 'getOutputsFromAddress').mockResolvedValueOnce(
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-expect-error
                 outputs.slice(Math.ceil(outputs.length / 2)).map((output) => {
                     const outpoint = OutPoint.toString(output);
 
@@ -570,12 +554,19 @@ describe('UTXO Tests', () => {
                 })
             );
             // mark every requested output as not indexed and not containing inscriptions or runes
-            (OrdinalsClient.prototype.getOutputsFromOutPoints as Mock).mockResolvedValue(
+            vi.spyOn(OrdinalsClient.prototype, 'getOutputsFromOutPoints').mockResolvedValue(
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-expect-error
                 Array.from(outputs, () => ({ indexed: false, inscriptions: [], runes: {} }))
             );
 
             // no inputs otherwise will loop infinitely
-            (EsploraClient.prototype.getTransaction as Mock).mockResolvedValue({
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-expect-error
+            vi.spyOn(EsploraClient.prototype, 'getTransaction').mockResolvedValue({
+                status: {
+                    confirmed: false,
+                },
                 vin: [],
             });
 
@@ -593,11 +584,31 @@ describe('UTXO Tests', () => {
         const utxos: UTXO[] = [
             // regular tx
             // part of cardinals set
+            // curl -s -H "Accept: application/json" "https://ordinals-mainnet.gobob.xyz/output/4871cc57fb9dd5359c4d0ef5352b83a21bb7d25729fce56ea8e3aa3c8ff14049:1"
             {
                 confirmed: true,
                 txid: '4871cc57fb9dd5359c4d0ef5352b83a21bb7d25729fce56ea8e3aa3c8ff14049',
                 value: 1,
                 vout: 1,
+            },
+            // regular tx, mocked in esplora call
+            // not confirmed & not in cardinals set -> check inputs
+            // curl -s -H "Accept: application/json" "https://ordinals-mainnet.gobob.xyz/output/c63275cb82afe248315dcc9534043c16b43471cefd76fdb1c7ae53d71168a3af:1"
+            {
+                confirmed: false,
+                txid: 'c63275cb82afe248315dcc9534043c16b43471cefd76fdb1c7ae53d71168a3af',
+                value: 1,
+                vout: 1,
+            },
+            // regular tx
+            // 4 `vin`s, 1 contains inscription
+            // not confirmed & not included in cardinals set -> check inputs (can not be spent)
+            // curl -s -H "Accept: application/json" "https://ordinals-mainnet.gobob.xyz/output/1de1e2025afaa055b4174c7da4646db9a67035666ed64e26420364a15320c217:4"
+            {
+                confirmed: false,
+                txid: '1de1e2025afaa055b4174c7da4646db9a67035666ed64e26420364a15320c217',
+                value: 1,
+                vout: 4,
             },
             // transfer inscription
             // curl -s -H "Accept: application/json" "https://ordinals-mainnet.gobob.xyz/output/200bead2c2484d69fabffbda3ec55af7f3d809200b53c4d06ac443925df004ef:1"
@@ -617,10 +628,38 @@ describe('UTXO Tests', () => {
             },
         ];
 
-        const cardinalOutputsSet = new Set(['4871cc57fb9dd5359c4d0ef5352b83a21bb7d25729fce56ea8e3aa3c8ff14049:1']);
+        const cardinalOutputsSet = new Set([
+            '4871cc57fb9dd5359c4d0ef5352b83a21bb7d25729fce56ea8e3aa3c8ff14049:1',
+
+            // vin for utxo[1]
+            // https://btc-mainnet.gobob.xyz/tx/c63275cb82afe248315dcc9534043c16b43471cefd76fdb1c7ae53d71168a3af
+            '8eafa7525377d4b9bafd16c39410f66d3b3a1667d9ba643dbaefe66f8682d35a:1',
+
+            // 4 `vin`s for utxo[2]
+            // https://btc-mainnet.gobob.xyz/tx/1de1e2025afaa055b4174c7da4646db9a67035666ed64e26420364a15320c217
+            'bd4a3f8c3e836f8ac14756e9b745eea8b3e6374d52e96ab3133dc4ea3d82c0e2:4',
+            '4902cc605ccd829554a32fe730ec174c4ea626a2c4676adbb2d13d243785af63:5',
+            // contains inscriptions
+            // curl -s -H "Accept: application/json" "https://ordinals-mainnet.gobob.xyz/output/8d336ca4f129b6590fa9ed5e6a0bc46de74f586a11ce8c8d72900e3311c9d773:0"
+            // '8d336ca4f129b6590fa9ed5e6a0bc46de74f586a11ce8c8d72900e3311c9d773:0',
+            '81fdaeb84ca992a5f9d0c27fc7ba861aed15dbf0285ed1e01367fa461f091899:19',
+        ]);
+
+        const original = EsploraClient.prototype.getTransaction;
+
+        vi.spyOn(EsploraClient.prototype, 'getTransaction').mockImplementation(async function (tx) {
+            const result = await original.call(this, tx);
+
+            // mark as unconfirmed -> continue building tree for `vin`s
+            if (tx === utxos[1].txid || tx === utxos[2].txid) {
+                result.status.confirmed = false;
+            }
+
+            return result;
+        });
 
         const allowedList = await processUtxos(utxos, cardinalOutputsSet, esploraClient, ordinalsClient);
 
-        expect(allowedList).toEqual([true, false, false]);
+        expect(allowedList).toEqual([true, true, false, false, false]);
     });
 });
