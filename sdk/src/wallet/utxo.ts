@@ -104,12 +104,14 @@ export const processUtxos = async (
     cardinalOutputsSet: Set<string>,
     esploraClient: EsploraClient,
     ordinalsClient: OrdinalsClient
-): Promise<boolean[]> => {
+): Promise<UTXO[]> => {
     const rootUtxoNodes = await createUtxoNodes(utxos, cardinalOutputsSet, ordinalsClient);
 
     await processNodes(rootUtxoNodes, cardinalOutputsSet, esploraClient, ordinalsClient);
 
-    return rootUtxoNodes.map(checkUtxoNode);
+    const allowedList = rootUtxoNodes.map(checkUtxoNode);
+
+    return utxos.filter((_, index) => allowedList[index]);
 };
 
 type OutputNodeData = Pick<UTXO, 'txid' | 'vout'> & { cardinal: boolean; indexed: boolean };
@@ -204,13 +206,11 @@ export async function createBitcoinPsbt(
 
     const cardinalOutputsSet = new Set(cardinalOutputs.map((output) => output.outpoint));
 
-    const allowedList = await processUtxos(utxos, cardinalOutputsSet, esploraClient, ordinalsClient);
+    const allowedUtxos = await processUtxos(utxos, cardinalOutputsSet, esploraClient, ordinalsClient);
 
     // To construct the spending transaction and estimate the fee, we need the transactions for the UTXOs
-    const possibleInputs: Input[] = [];
-
-    await Promise.all(
-        utxos.map(async (utxo, index) => {
+    const possibleInputs = await Promise.all(
+        allowedUtxos.map(async (utxo) => {
             const hex = await esploraClient.getTransactionHex(utxo.txid);
             const transaction = Transaction.fromRaw(Buffer.from(hex, 'hex'), { allowUnknownOutputs: true });
             const input = getInputFromUtxoAndTx(
@@ -221,11 +221,7 @@ export async function createBitcoinPsbt(
                 publicKey
             );
 
-            // to support taproot addresses we want to exclude outputs which contain inscriptions
-            if (cardinalOutputsSet.has(OutPoint.toString(utxo))) return possibleInputs.push(input);
-
-            // allow to spend output if none of `vin` contains ordinals
-            if (allowedList[index]) return possibleInputs.push(input);
+            return input;
         })
     );
 
@@ -419,12 +415,10 @@ export async function estimateTxFee(
 
     const cardinalOutputsSet = new Set(cardinalOutputs.map((output) => output.outpoint));
 
-    const allowedList = await processUtxos(utxos, cardinalOutputsSet, esploraClient, ordinalsClient);
+    const allowedUtxos = await processUtxos(utxos, cardinalOutputsSet, esploraClient, ordinalsClient);
 
-    const possibleInputs: Input[] = [];
-
-    await Promise.all(
-        utxos.map(async (utxo, index) => {
+    const possibleInputs = await Promise.all(
+        allowedUtxos.map(async (utxo) => {
             const hex = await esploraClient.getTransactionHex(utxo.txid);
             const transaction = Transaction.fromRaw(Buffer.from(hex, 'hex'), { allowUnknownOutputs: true });
             const input = getInputFromUtxoAndTx(
@@ -435,11 +429,7 @@ export async function estimateTxFee(
                 publicKey
             );
 
-            // to support taproot addresses we want to exclude outputs which contain inscriptions
-            if (cardinalOutputsSet.has(OutPoint.toString(utxo))) return possibleInputs.push(input);
-
-            // allow to spend output if none of `vin` contains ordinals
-            if (allowedList[index]) return possibleInputs.push(input);
+            return input;
         })
     );
 
@@ -533,20 +523,12 @@ export async function getBalance(address?: string) {
 
     const cardinalOutputsSet = new Set(cardinalOutputs.map((output) => output.outpoint));
 
-    const allowedList = await processUtxos(utxos, cardinalOutputsSet, esploraClient, ordinalsClient);
+    const allowedUtxos = await processUtxos(utxos, cardinalOutputsSet, esploraClient, ordinalsClient);
 
-    const total = utxos.reduce((acc, utxo, index) => {
-        // there will be a match if output is confirmed and has no ordinals
-        if (cardinalOutputsSet.has(OutPoint.toString(utxo))) return acc + utxo.value;
+    const total = allowedUtxos.reduce((acc, utxo) => acc + utxo.value, 0);
 
-        // allow to spend output if none of `vin` contains ordinals
-        if (allowedList[index]) return acc + utxo.value;
-
-        return acc;
-    }, 0);
-
-    const confirmed = utxos.reduce((acc, utxo) => {
-        if (cardinalOutputsSet.has(OutPoint.toString(utxo)) && utxo.confirmed) {
+    const confirmed = allowedUtxos.reduce((acc, utxo) => {
+        if (utxo.confirmed) {
             return acc + utxo.value;
         }
 

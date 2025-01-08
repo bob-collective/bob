@@ -573,7 +573,7 @@ describe('UTXO Tests', () => {
             const balanceData = await getBalance(taprootAddress);
 
             expect(balanceData.total).toEqual(BigInt(total));
-            expect(balanceData.confirmed).toBeLessThan(BigInt(confirmed));
+            expect(balanceData.confirmed).toEqual(BigInt(confirmed));
         }
     );
 
@@ -658,8 +658,8 @@ describe('UTXO Tests', () => {
             return result;
         });
 
-        const allowedList = await processUtxos(utxos, cardinalOutputsSet, esploraClient, ordinalsClient);
+        const allowedUtxos = await processUtxos(utxos, cardinalOutputsSet, esploraClient, ordinalsClient);
 
-        expect(allowedList).toEqual([true, true, false, false, false]);
+        expect(allowedUtxos).toEqual([utxos[0], utxos[1]]);
     });
 });
