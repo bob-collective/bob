@@ -99,7 +99,7 @@ const checkUtxoNode = (node: TreeNode<OutputNodeData> | null): boolean => {
 /**
  * @ignore
  */
-export const processUtxos = async (
+export const _processUtxos = async (
     utxos: UTXO[],
     cardinalOutputsSet: Set<string>,
     esploraClient: EsploraClient,
@@ -112,6 +112,51 @@ export const processUtxos = async (
     const allowedList = rootUtxoNodes.map(checkUtxoNode);
 
     return utxos.filter((_, index) => allowedList[index]);
+};
+
+const processUtxos = async (address: string, esploraClient: EsploraClient): Promise<UTXO[]> => {
+    const addressInfo = getAddressInfo(address);
+
+    const ordinalsClient = new OrdinalsClient(addressInfo.network);
+
+    const [utxos, cardinalOutputs] = await Promise.all([
+        esploraClient.getAddressUtxos(address),
+        // cardinal = return UTXOs not containing inscriptions or runes
+        ordinalsClient.getOutputsFromAddress(address, 'cardinal'),
+    ]);
+
+    const cardinalOutputsSet = new Set(cardinalOutputs.map((output) => output.outpoint));
+
+    return _processUtxos(utxos, cardinalOutputsSet, esploraClient, ordinalsClient);
+};
+
+const collectPossibleInputs = async (fromAddress: string, publicKey: string) => {
+    const addressInfo = getAddressInfo(fromAddress);
+
+    const esploraClient = new EsploraClient(addressInfo.network);
+
+    const allowedUtxos = await processUtxos(fromAddress, esploraClient);
+
+    if (allowedUtxos.length === 0) {
+        throw new Error('No confirmed UTXOs');
+    }
+
+    // To construct the spending transaction and estimate the fee, we need the transactions for the UTXOs
+    return Promise.all(
+        allowedUtxos.map(async (utxo) => {
+            const hex = await esploraClient.getTransactionHex(utxo.txid);
+            const transaction = Transaction.fromRaw(Buffer.from(hex, 'hex'), { allowUnknownOutputs: true });
+            const input = getInputFromUtxoAndTx(
+                addressInfo.network as BitcoinNetworkName,
+                utxo,
+                transaction,
+                addressInfo.type,
+                publicKey
+            );
+
+            return input;
+        })
+    );
 };
 
 type OutputNodeData = Pick<UTXO, 'txid' | 'vout'> & { cardinal: boolean; indexed: boolean };
@@ -187,43 +232,10 @@ export async function createBitcoinPsbt(
     }
 
     const esploraClient = new EsploraClient(addressInfo.network);
-    const ordinalsClient = new OrdinalsClient(addressInfo.network);
-
-    let utxos: UTXO[] = [];
-    // contains UTXOs which do not contain inscriptions
-    let cardinalOutputs: OutputJson[] = [];
-
-    [utxos, feeRate, cardinalOutputs] = await Promise.all([
-        esploraClient.getAddressUtxos(fromAddress),
+    const [possibleInputs, computedfeeRate] = await Promise.all([
+        collectPossibleInputs(fromAddress, publicKey),
         feeRate === undefined ? esploraClient.getFeeEstimate(confirmationTarget) : feeRate,
-        // cardinal = return UTXOs not containing inscriptions or runes
-        ordinalsClient.getOutputsFromAddress(fromAddress, 'cardinal'),
     ]);
-
-    if (utxos.length === 0) {
-        throw new Error('No confirmed UTXOs');
-    }
-
-    const cardinalOutputsSet = new Set(cardinalOutputs.map((output) => output.outpoint));
-
-    const allowedUtxos = await processUtxos(utxos, cardinalOutputsSet, esploraClient, ordinalsClient);
-
-    // To construct the spending transaction and estimate the fee, we need the transactions for the UTXOs
-    const possibleInputs = await Promise.all(
-        allowedUtxos.map(async (utxo) => {
-            const hex = await esploraClient.getTransactionHex(utxo.txid);
-            const transaction = Transaction.fromRaw(Buffer.from(hex, 'hex'), { allowUnknownOutputs: true });
-            const input = getInputFromUtxoAndTx(
-                addressInfo.network as BitcoinNetworkName,
-                utxo,
-                transaction,
-                addressInfo.type,
-                publicKey
-            );
-
-            return input;
-        })
-    );
 
     const outputs: Output[] = [
         {
@@ -250,7 +262,7 @@ export async function createBitcoinPsbt(
     // big outputs to small ones, which in the end will create a lot of outputs close to dust.
     const transaction = selectUTXO(possibleInputs, outputs, utxoSelectionStrategy, {
         changeAddress: fromAddress, // Refund surplus to the payment address
-        feePerByte: BigInt(Math.ceil(feeRate)), // round up to the nearest integer
+        feePerByte: BigInt(Math.ceil(computedfeeRate)), // round up to the nearest integer
         bip69: true, // Sort inputs and outputs according to BIP69
         createTx: true, // Create the transaction
         network: getBtcNetwork(addressInfo.network),
@@ -261,11 +273,10 @@ export async function createBitcoinPsbt(
     });
 
     if (!transaction || !transaction.tx) {
-        console.debug('utxos', utxos);
-        console.debug('outputsFromAddress', cardinalOutputs);
+        console.debug('possibleInputs', possibleInputs);
         console.debug(`fromAddress: ${fromAddress}, toAddress: ${toAddress}, amount: ${amount}`);
         console.debug(`publicKey: ${publicKey}, opReturnData: ${opReturnData}`);
-        console.debug(`feeRate: ${feeRate}, confirmationTarget: ${confirmationTarget}`);
+        console.debug(`feeRate: ${computedfeeRate}, confirmationTarget: ${confirmationTarget}`);
         throw new Error('Failed to create transaction. Do you have enough funds?');
     }
 
@@ -393,45 +404,11 @@ export async function estimateTxFee(
     // Use the from address as the toAddress for the fee estimate
     const toAddress = fromAddress;
 
-    // TODO: allow submitting the UTXOs, fee estimate and confirmed transactions
-    // to avoid fetching them again.
     const esploraClient = new EsploraClient(addressInfo.network);
-    const ordinalsClient = new OrdinalsClient(addressInfo.network);
-
-    let utxos: UTXO[] = [];
-    // contains UTXOs which do not contain inscriptions
-    let cardinalOutputs: OutputJson[] = [];
-
-    [utxos, feeRate, cardinalOutputs] = await Promise.all([
-        esploraClient.getAddressUtxos(fromAddress),
+    const [possibleInputs, computedfeeRate] = await Promise.all([
+        collectPossibleInputs(fromAddress, publicKey),
         feeRate === undefined ? esploraClient.getFeeEstimate(confirmationTarget) : feeRate,
-        // cardinal = return UTXOs not containing inscriptions or runes
-        ordinalsClient.getOutputsFromAddress(fromAddress, 'cardinal'),
     ]);
-
-    if (utxos.length === 0) {
-        throw new Error('No confirmed UTXOs');
-    }
-
-    const cardinalOutputsSet = new Set(cardinalOutputs.map((output) => output.outpoint));
-
-    const allowedUtxos = await processUtxos(utxos, cardinalOutputsSet, esploraClient, ordinalsClient);
-
-    const possibleInputs = await Promise.all(
-        allowedUtxos.map(async (utxo) => {
-            const hex = await esploraClient.getTransactionHex(utxo.txid);
-            const transaction = Transaction.fromRaw(Buffer.from(hex, 'hex'), { allowUnknownOutputs: true });
-            const input = getInputFromUtxoAndTx(
-                addressInfo.network as BitcoinNetworkName,
-                utxo,
-                transaction,
-                addressInfo.type,
-                publicKey
-            );
-
-            return input;
-        })
-    );
 
     // Create transaction without outputs
     const outputs: Output[] = [
@@ -465,7 +442,7 @@ export async function estimateTxFee(
     // big outputs to small ones, which in the end will create a lot of outputs close to dust.
     const transaction = selectUTXO(possibleInputs, outputs, utxoSelectionStrategy, {
         changeAddress: fromAddress, // Refund surplus to the payment address
-        feePerByte: BigInt(Math.ceil(feeRate)), // round up to the nearest integer
+        feePerByte: BigInt(Math.ceil(computedfeeRate)), // round up to the nearest integer
         bip69: true, // Sort inputs and outputs according to BIP69
         createTx: true, // Create the transaction
         network: getBtcNetwork(addressInfo.network),
@@ -476,11 +453,10 @@ export async function estimateTxFee(
     });
 
     if (!transaction || !transaction.tx) {
-        console.debug('utxos', utxos);
-        console.debug('cardinalOutputs', cardinalOutputs);
+        console.debug('possibleInputs', possibleInputs);
         console.debug(`fromAddress: ${fromAddress}, amount: ${amount}`);
         console.debug(`publicKey: ${publicKey}, opReturnData: ${opReturnData}`);
-        console.debug(`feeRate: ${feeRate}, confirmationTarget: ${confirmationTarget}`);
+        console.debug(`feeRate: ${computedfeeRate}, confirmationTarget: ${confirmationTarget}`);
         throw new Error('Failed to create transaction. Do you have enough funds?');
     }
 
@@ -513,17 +489,8 @@ export async function getBalance(address?: string) {
     const addressInfo = getAddressInfo(address);
 
     const esploraClient = new EsploraClient(addressInfo.network);
-    const ordinalsClient = new OrdinalsClient(addressInfo.network);
 
-    const [utxos, cardinalOutputs] = await Promise.all([
-        esploraClient.getAddressUtxos(address),
-        // cardinal = return UTXOs not containing inscriptions or runes
-        ordinalsClient.getOutputsFromAddress(address, 'cardinal'),
-    ]);
-
-    const cardinalOutputsSet = new Set(cardinalOutputs.map((output) => output.outpoint));
-
-    const allowedUtxos = await processUtxos(utxos, cardinalOutputsSet, esploraClient, ordinalsClient);
+    const allowedUtxos = await processUtxos(address, esploraClient);
 
     const total = allowedUtxos.reduce((acc, utxo) => acc + utxo.value, 0);
 
