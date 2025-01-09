@@ -554,10 +554,10 @@ describe('UTXO Tests', () => {
                 })
             );
             // mark every requested output as not indexed and not containing inscriptions or runes
-            vi.spyOn(OrdinalsClient.prototype, 'getOutputsFromOutPoints').mockResolvedValue(
+            vi.spyOn(OrdinalsClient.prototype, 'getInscriptionsFromOutPoint').mockResolvedValue(
                 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                 // @ts-expect-error
-                Array.from(outputs, () => ({ indexed: false, inscriptions: [], runes: {} }))
+                { indexed: false, inscriptions: [], runes: {} }
             );
 
             // no inputs otherwise will loop infinitely

@@ -34,19 +34,19 @@ const createUtxoNodes = async (
     cardinalOutputsSet: Set<string>,
     ordinalsClient: OrdinalsClient
 ): Promise<(null | TreeNode<OutputNodeData>)[]> => {
-    const outputs = await ordinalsClient.getOutputsFromOutPoints(utxos.map(OutPoint.toString));
+    return Promise.all(
+        utxos.map<Promise<TreeNode<OutputNodeData> | null>>(async (utxo) => {
+            if (cardinalOutputsSet.has(OutPoint.toString(utxo))) return null;
 
-    return utxos.map<TreeNode<OutputNodeData> | null>((utxo, index) => {
-        if (cardinalOutputsSet.has(OutPoint.toString(utxo))) return null;
+            const output = await ordinalsClient.getInscriptionsFromOutPoint(utxo);
 
-        const output = outputs[index];
-
-        return new TreeNode<OutputNodeData>({
-            ...utxo,
-            cardinal: isCardinal(output),
-            indexed: output.indexed,
-        });
-    });
+            return new TreeNode<OutputNodeData>({
+                ...utxo,
+                cardinal: isCardinal(output),
+                indexed: output.indexed,
+            });
+        })
+    );
 };
 
 const processNodes = async (
@@ -68,19 +68,19 @@ const processNodes = async (
             // if confirmed check if it contains ordinals
             childNode.val.cardinal = cardinalOutputsSet.has(OutPoint.toString(childNode.val));
         } else if (!childNode.val.indexed || childNode.val.cardinal) {
-            const outputs = await ordinalsClient.getOutputsFromOutPoints(transaction.vin.map(OutPoint.toString));
-
             // if not confirmed check inputs for current utxo
-            childNode.children = transaction.vin.map((vin, index) => {
-                const output = outputs[index];
+            childNode.children = await Promise.all(
+                transaction.vin.map(async (vin) => {
+                    const output = await ordinalsClient.getInscriptionsFromOutPoint(vin);
 
-                return new TreeNode<OutputNodeData>({
-                    vout: vin.vout,
-                    txid: vin.txid,
-                    cardinal: isCardinal(output),
-                    indexed: output.indexed,
-                });
-            });
+                    return new TreeNode<OutputNodeData>({
+                        vout: vin.vout,
+                        txid: vin.txid,
+                        cardinal: isCardinal(output),
+                        indexed: output.indexed,
+                    });
+                })
+            );
 
             queue.push(...childNode.children);
         }
