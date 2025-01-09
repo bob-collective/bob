@@ -114,7 +114,8 @@ export const _processUtxos = async (
     return utxos.filter((_, index) => allowedList[index]);
 };
 
-const processUtxos = async (address: string, esploraClient: EsploraClient): Promise<UTXO[]> => {
+// NOTE: consider refactoring boolean argument
+const processUtxos = async (address: string, esploraClient: EsploraClient, checkUtxos = false): Promise<UTXO[]> => {
     const addressInfo = getAddressInfo(address);
 
     const ordinalsClient = new OrdinalsClient(addressInfo.network);
@@ -125,9 +126,9 @@ const processUtxos = async (address: string, esploraClient: EsploraClient): Prom
         ordinalsClient.getOutputsFromAddress(address, 'cardinal'),
     ]);
 
-    // if (utxos.length === 0) {
-    //     throw new Error('No confirmed UTXOs');
-    // }
+    if (checkUtxos && utxos.length === 0) {
+        throw new Error('No confirmed UTXOs');
+    }
 
     const cardinalOutputsSet = new Set(cardinalOutputs.map((output) => output.outpoint));
 
@@ -139,7 +140,7 @@ const collectPossibleInputs = async (fromAddress: string, publicKey: string) => 
 
     const esploraClient = new EsploraClient(addressInfo.network);
 
-    const allowedUtxos = await processUtxos(fromAddress, esploraClient);
+    const allowedUtxos = await processUtxos(fromAddress, esploraClient, true);
 
     // To construct the spending transaction and estimate the fee, we need the transactions for the UTXOs
     return Promise.all(
