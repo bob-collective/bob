@@ -125,6 +125,10 @@ const processUtxos = async (address: string, esploraClient: EsploraClient): Prom
         ordinalsClient.getOutputsFromAddress(address, 'cardinal'),
     ]);
 
+    // if (utxos.length === 0) {
+    //     throw new Error('No confirmed UTXOs');
+    // }
+
     const cardinalOutputsSet = new Set(cardinalOutputs.map((output) => output.outpoint));
 
     return _processUtxos(utxos, cardinalOutputsSet, esploraClient, ordinalsClient);
@@ -136,10 +140,6 @@ const collectPossibleInputs = async (fromAddress: string, publicKey: string) => 
     const esploraClient = new EsploraClient(addressInfo.network);
 
     const allowedUtxos = await processUtxos(fromAddress, esploraClient);
-
-    if (allowedUtxos.length === 0) {
-        throw new Error('No confirmed UTXOs');
-    }
 
     // To construct the spending transaction and estimate the fee, we need the transactions for the UTXOs
     return Promise.all(
