@@ -8,6 +8,7 @@ const darkCodeTheme = themes.dracula;
 const GITHUB_LINK = "https://github.com/bob-collective/bob";
 const LANDING_PAGE = "https://gobob.xyz";
 const DOCS_PAGE = "https://docs.gobob.xyz";
+const STATUS_PAGE = "https://conduit-bob.checkly-dashboards.com/";
 const DISCORD = "https://discord.gg/gobob";
 const TWITTER = "https://x.com/build_on_bob";
 const TELEGRAM = "https://t.me/+CyIcLW2nfaFlNDc1";
@@ -236,6 +237,11 @@ const config = {
           {
             href: GITHUB_LINK,
             label: "GitHub",
+            position: "right",
+          },
+          {
+            href: STATUS_PAGE,
+            label: "Status",
             position: "right",
           },
         ],
