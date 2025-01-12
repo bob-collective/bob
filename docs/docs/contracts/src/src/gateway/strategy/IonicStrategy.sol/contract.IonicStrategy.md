@@ -2,7 +2,7 @@
 [Git Source](https://github.com/bob-collective/bob/blob/master/src/gateway/strategy/IonicStrategy.sol)
 
 **Inherits:**
-[IStrategyWithSlippageArgs](../../gateway/IStrategy.sol/abstract.IStrategyWithSlippageArgs.md), Context
+[IStrategyWithSlippageArgs](../../../gateway/IStrategy.sol/abstract.IStrategyWithSlippageArgs.md), Context
 
 *Implements IStrategyWithSlippageArgs and allows the contract to handle tokens with slippage arguments.*
 

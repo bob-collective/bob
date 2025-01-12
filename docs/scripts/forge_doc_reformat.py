@@ -28,14 +28,20 @@ def parse_inherits(md_content):
     return None
 
 # Function to replace paths inside brackets with empty brackets
-def replace_paths_with_empty_brackets(line):
+def replace_paths_with_empty_brackets(line,file_path):
     def replace_path(match):
         default_path = 'docs/docs/src'
         path = default_path + match.group(0)[1:-1]  # Remove parentheses
         start = "docs/docs/src/src/X/X/"
         relative_path = os.path.relpath(path, start)
+        print(f"path: {path}")
+        print(f"line: {line}")
+        print(f"file_path: {file_path}")
         print(f"Original Path: {relative_path}")
-        return '(' + relative_path + ')'
+        if '/src/gateway/strategy/' in file_path:
+            return '(../' + relative_path + ')'
+        else:
+            return '(' + relative_path + ')'
     return re.sub(r'\([^)]+\)', replace_path, line)
 
 # Function to process a single Markdown file
@@ -45,10 +51,11 @@ def process_md_file(file_path):
 
     # Parse Inherits line
     inherits = parse_inherits(md_content)
-
+    print(f"file_path: ",file_path);
     # Modify the Inherits line
     if inherits:
-        modified_inherits = replace_paths_with_empty_brackets(inherits)
+        modified_inherits = replace_paths_with_empty_brackets(inherits,file_path)
+        print(f"modified_inherits: {modified_inherits}")
         md_content = md_content.replace(inherits, modified_inherits)
 
     md_content = replace_git_sources(md_content)
@@ -82,5 +89,9 @@ if __name__ == "__main__":
 
     # Process all Markdown files in the specified directory and its subdirectories
     process_all_md_files(directory_path)
+
+    # Specific file path to process
+    # file_to_process = "/Users/nakul/Desktop/Interlay_Work/bob/docs/scripts/../docs/contracts/src/src/gateway/strategy/AvalonStrategy.sol/contract.AvalonLstStrategy.md"
+    # process_md_file(file_to_process)
 
     print("All Markdown files in the directory processed.")
