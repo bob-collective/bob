@@ -17,29 +17,32 @@ export const getBtcNetwork = (name: BitcoinNetworkName) => {
 
 type Output = { address: string; amount: bigint } | { script: Uint8Array; amount: bigint };
 
-const isCardinalOutput = (output: OutputJson) => output.inscriptions.length === 0 && Object.keys(output.runes).length === 0;
+const isCardinalOutput = (output: OutputJson) =>
+    output.inscriptions.length === 0 && Object.keys(output.runes).length === 0;
 
 const isCardinalTx = async (
     txid: string,
     cardinalOutputsSet: Set<string>,
     esploraClient: EsploraClient,
     ordinalsClient: OrdinalsClient,
-    limit: number = 3,
+    limit: number = 3
 ): Promise<boolean> => {
     if (limit === 0) return false;
     const transaction = await esploraClient.getTransaction(txid);
-    const results = await Promise.all(transaction.vin.map(async vin => {
-        if (cardinalOutputsSet.has(OutPoint.toString(vin))) return true;
+    const results = await Promise.all(
+        transaction.vin.map(async (vin) => {
+            if (cardinalOutputsSet.has(OutPoint.toString(vin))) return true;
 
-        const output = await ordinalsClient.getInscriptionsFromOutPoint(vin);
-        if (output.indexed) {
-            return isCardinalOutput(output);
-        } else {
-            return isCardinalTx(vin.txid, cardinalOutputsSet, esploraClient, ordinalsClient, limit - 1);
-        }
-    }));
-    return results.every(result => result === true);
-}
+            const output = await ordinalsClient.getInscriptionsFromOutPoint(vin);
+            if (output.indexed) {
+                return isCardinalOutput(output);
+            } else {
+                return isCardinalTx(vin.txid, cardinalOutputsSet, esploraClient, ordinalsClient, limit - 1);
+            }
+        })
+    );
+    return results.every((result) => result === true);
+};
 
 const findSafeUtxos = async (
     utxos: UTXO[],
@@ -47,18 +50,24 @@ const findSafeUtxos = async (
     esploraClient: EsploraClient,
     ordinalsClient: OrdinalsClient
 ): Promise<UTXO[]> => {
-    const results = await Promise.all(utxos.map(async (utxo) => {
-        // the utxo is confirmed and a known cardinal
-        if (cardinalOutputsSet.has(OutPoint.toString(utxo))) return true;
+    const results = await Promise.all(
+        utxos.map(async (utxo) => {
+            // the utxo is confirmed and a known cardinal
+            if (cardinalOutputsSet.has(OutPoint.toString(utxo))) return true;
 
-        // the utxo is unconfirmed (not indexed by Ord)
-        return isCardinalTx(utxo.txid, cardinalOutputsSet, esploraClient, ordinalsClient);
-    }));
+            // the utxo is unconfirmed (not indexed by Ord)
+            return isCardinalTx(utxo.txid, cardinalOutputsSet, esploraClient, ordinalsClient);
+        })
+    );
 
     return utxos.filter((_, index) => results[index]);
 };
 
-const getSafeUtxos = async (address: string, esploraClient: EsploraClient, ordinalsClient: OrdinalsClient): Promise<UTXO[]> => {
+const getSafeUtxos = async (
+    address: string,
+    esploraClient: EsploraClient,
+    ordinalsClient: OrdinalsClient
+): Promise<UTXO[]> => {
     const [utxos, cardinalOutputs] = await Promise.all([
         // all utxos including unconfirmed txs
         esploraClient.getAddressUtxos(address),
