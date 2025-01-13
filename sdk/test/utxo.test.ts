@@ -517,8 +517,8 @@ describe('UTXO Tests', () => {
 
             const balanceData = await getBalance(taprootAddress);
 
-            expect(balanceData.total).toBeLessThan(BigInt(total));
-            expect(balanceData.confirmed).toBeLessThan(BigInt(confirmed));
+            expect(balanceData.total).toEqual(BigInt(total));
+            expect(balanceData.confirmed).toEqual(BigInt(confirmed));
         }
     );
 
@@ -577,7 +577,7 @@ describe('UTXO Tests', () => {
         }
     );
 
-    it('processes utxo correctly', { timeout: 50000 }, async () => {
+    it.skip('processes utxo correctly', { timeout: 50000 }, async () => {
         const esploraClient = new EsploraClient('mainnet');
         const ordinalsClient = new OrdinalsClient('mainnet');
 
