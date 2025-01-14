@@ -33,18 +33,21 @@ const isCardinalTx = async (
 
     const results = await Promise.all(
         transaction.vin.map(async (vin) => {
-            if (cardinalOutputsSet.has(OutPoint.toString(vin))) return true;
+            const inscriptions = await getTxInscriptions(esploraClient, vin.txid);
 
-            const [output, inscriptions] = await Promise.all([
-                ordinalsClient.getInscriptionsFromOutPoint(vin),
-                getTxInscriptions(esploraClient, vin.txid),
-            ]);
+            if (inscriptions.length === 0) {
+                if (cardinalOutputsSet.has(OutPoint.toString(vin))) return true;
 
-            if (output.indexed || inscriptions.length === 0) {
-                return isCardinalOutput(output);
-            } else {
-                return isCardinalTx(vin.txid, cardinalOutputsSet, esploraClient, ordinalsClient, limit - 1);
+                const output = await ordinalsClient.getInscriptionsFromOutPoint(vin);
+
+                if (output.indexed) {
+                    return isCardinalOutput(output);
+                } else {
+                    return isCardinalTx(vin.txid, cardinalOutputsSet, esploraClient, ordinalsClient, limit - 1);
+                }
             }
+
+            return false;
         })
     );
     return results.every((result) => result === true);
