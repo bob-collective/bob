@@ -3,6 +3,7 @@ import { hex, base64 } from '@scure/base';
 import { AddressType, getAddressInfo, Network } from 'bitcoin-address-validation';
 import { EsploraClient, UTXO } from '../esplora';
 import { OrdinalsClient, OutPoint, OutputJson } from '../ordinal-api';
+import { getTxInscriptions } from '../inscription';
 
 export type BitcoinNetworkName = Exclude<Network, 'regtest'>;
 
@@ -29,12 +30,17 @@ const isCardinalTx = async (
 ): Promise<boolean> => {
     if (limit === 0) return false;
     const transaction = await esploraClient.getTransaction(txid);
+
     const results = await Promise.all(
         transaction.vin.map(async (vin) => {
             if (cardinalOutputsSet.has(OutPoint.toString(vin))) return true;
 
-            const output = await ordinalsClient.getInscriptionsFromOutPoint(vin);
-            if (output.indexed) {
+            const [output, inscriptions] = await Promise.all([
+                ordinalsClient.getInscriptionsFromOutPoint(vin),
+                getTxInscriptions(esploraClient, vin.txid),
+            ]);
+
+            if (output.indexed || inscriptions.length === 0) {
                 return isCardinalOutput(output);
             } else {
                 return isCardinalTx(vin.txid, cardinalOutputsSet, esploraClient, ordinalsClient, limit - 1);
