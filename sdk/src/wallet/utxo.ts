@@ -33,11 +33,11 @@ const isCardinalTx = async (
 
     const results = await Promise.all(
         transaction.vin.map(async (vin) => {
+            if (cardinalOutputsSet.has(OutPoint.toString(vin))) return true;
+
             const inscriptions = await getTxInscriptions(esploraClient, vin.txid);
 
             if (inscriptions.length === 0) {
-                if (cardinalOutputsSet.has(OutPoint.toString(vin))) return true;
-
                 const output = await ordinalsClient.getInscriptionsFromOutPoint(vin);
 
                 if (output.indexed) {
