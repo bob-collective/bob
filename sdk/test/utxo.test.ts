@@ -8,7 +8,7 @@ import {
     estimateTxFee,
     Input,
     getBalance,
-    _processUtxos,
+    findSafeUtxos,
 } from '../src/wallet/utxo';
 import { TransactionOutput } from '@scure/btc-signer/psbt';
 import { OrdinalsClient, OutPoint } from '../src/ordinal-api';
@@ -517,8 +517,8 @@ describe('UTXO Tests', () => {
 
             const balanceData = await getBalance(taprootAddress);
 
-            expect(balanceData.total).toBeLessThan(BigInt(total));
-            expect(balanceData.confirmed).toBeLessThan(BigInt(confirmed));
+            expect(balanceData.total).toEqual(BigInt(total));
+            expect(balanceData.confirmed).toEqual(BigInt(confirmed));
         }
     );
 
@@ -658,7 +658,7 @@ describe('UTXO Tests', () => {
             return result;
         });
 
-        const allowedUtxos = await _processUtxos(utxos, cardinalOutputsSet, esploraClient, ordinalsClient);
+        const allowedUtxos = await findSafeUtxos(utxos, cardinalOutputsSet, esploraClient, ordinalsClient);
 
         expect(allowedUtxos).toEqual([utxos[0], utxos[1]]);
     });

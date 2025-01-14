@@ -17,134 +17,87 @@ export const getBtcNetwork = (name: BitcoinNetworkName) => {
 
 type Output = { address: string; amount: bigint } | { script: Uint8Array; amount: bigint };
 
-class TreeNode<T> {
-    val: T;
-    children: TreeNode<T>[];
+const isCardinalOutput = (output: OutputJson) =>
+    output.inscriptions.length === 0 && Object.keys(output.runes).length === 0;
 
-    constructor(val: T, children: TreeNode<T>[] = []) {
-        this.val = val;
-        this.children = children;
-    }
-}
-
-const isCardinal = (output: OutputJson) => output.inscriptions.length === 0 && Object.keys(output.runes).length === 0;
-
-const createUtxoNodes = async (
-    utxos: UTXO[],
-    cardinalOutputsSet: Set<string>,
-    ordinalsClient: OrdinalsClient
-): Promise<(null | TreeNode<OutputNodeData>)[]> => {
-    return Promise.all(
-        utxos.map<Promise<TreeNode<OutputNodeData> | null>>(async (utxo) => {
-            if (cardinalOutputsSet.has(OutPoint.toString(utxo))) return null;
-
-            const output = await ordinalsClient.getInscriptionsFromOutPoint(utxo);
-
-            return new TreeNode<OutputNodeData>({
-                ...utxo,
-                cardinal: isCardinal(output),
-                indexed: output.indexed,
-            });
-        })
-    );
-};
-
-const processNodes = async (
-    rootNodes: (TreeNode<OutputNodeData> | null)[],
+const isCardinalTx = async (
+    txid: string,
     cardinalOutputsSet: Set<string>,
     esploraClient: EsploraClient,
-    ordinalsClient: OrdinalsClient
-) => {
-    const queue = Array.from(rootNodes);
+    ordinalsClient: OrdinalsClient,
+    limit: number = 3
+): Promise<boolean> => {
+    if (limit === 0) return false;
+    const transaction = await esploraClient.getTransaction(txid);
+    const results = await Promise.all(
+        transaction.vin.map(async (vin) => {
+            if (cardinalOutputsSet.has(OutPoint.toString(vin))) return true;
 
-    while (queue.length > 0) {
-        const childNode = queue.shift();
-
-        if (childNode === null) continue;
-
-        const transaction = await esploraClient.getTransaction(childNode.val.txid);
-
-        if (transaction.status.confirmed) {
-            // if confirmed check if it contains ordinals
-            childNode.val.cardinal = cardinalOutputsSet.has(OutPoint.toString(childNode.val));
-        } else if (!childNode.val.indexed || childNode.val.cardinal) {
-            // if not confirmed check inputs for current utxo
-            childNode.children = await Promise.all(
-                transaction.vin.map(async (vin) => {
-                    const output = await ordinalsClient.getInscriptionsFromOutPoint(vin);
-
-                    return new TreeNode<OutputNodeData>({
-                        vout: vin.vout,
-                        txid: vin.txid,
-                        cardinal: isCardinal(output),
-                        indexed: output.indexed,
-                    });
-                })
-            );
-
-            queue.push(...childNode.children);
-        }
-    }
-};
-
-const checkUtxoNode = (node: TreeNode<OutputNodeData> | null): boolean => {
-    // if `null` then node is confirmed and indexed and included in cardinals set -> can be spent
-    if (node === null) return true;
-    // leaf node either confirmed or contains ordinals
-    if (node.children.length === 0) return node.val.cardinal;
-
-    return node.children.reduce((acc, child) => acc && checkUtxoNode(child), true);
+            const output = await ordinalsClient.getInscriptionsFromOutPoint(vin);
+            if (output.indexed) {
+                return isCardinalOutput(output);
+            } else {
+                return isCardinalTx(vin.txid, cardinalOutputsSet, esploraClient, ordinalsClient, limit - 1);
+            }
+        })
+    );
+    return results.every((result) => result === true);
 };
 
 /**
  * @ignore
  */
-export const _processUtxos = async (
+export const findSafeUtxos = async (
     utxos: UTXO[],
     cardinalOutputsSet: Set<string>,
     esploraClient: EsploraClient,
     ordinalsClient: OrdinalsClient
 ): Promise<UTXO[]> => {
-    const rootUtxoNodes = await createUtxoNodes(utxos, cardinalOutputsSet, ordinalsClient);
+    const results = await Promise.all(
+        utxos.map(async (utxo) => {
+            // the utxo is confirmed and a known cardinal
+            if (cardinalOutputsSet.has(OutPoint.toString(utxo))) return true;
 
-    await processNodes(rootUtxoNodes, cardinalOutputsSet, esploraClient, ordinalsClient);
+            // the utxo is unconfirmed (not indexed by Ord)
+            return isCardinalTx(utxo.txid, cardinalOutputsSet, esploraClient, ordinalsClient);
+        })
+    );
 
-    const allowedList = rootUtxoNodes.map(checkUtxoNode);
-
-    return utxos.filter((_, index) => allowedList[index]);
+    return utxos.filter((_, index) => results[index]);
 };
 
-// NOTE: consider refactoring boolean argument
-const processUtxos = async (address: string, esploraClient: EsploraClient, checkUtxos = false): Promise<UTXO[]> => {
-    const addressInfo = getAddressInfo(address);
-
-    const ordinalsClient = new OrdinalsClient(addressInfo.network);
-
+const getSafeUtxos = async (
+    address: string,
+    esploraClient: EsploraClient,
+    ordinalsClient: OrdinalsClient
+): Promise<UTXO[]> => {
     const [utxos, cardinalOutputs] = await Promise.all([
+        // all utxos including unconfirmed txs
         esploraClient.getAddressUtxos(address),
         // cardinal = return UTXOs not containing inscriptions or runes
         ordinalsClient.getOutputsFromAddress(address, 'cardinal'),
     ]);
 
-    if (checkUtxos && utxos.length === 0) {
-        throw new Error('No confirmed UTXOs');
-    }
-
     const cardinalOutputsSet = new Set(cardinalOutputs.map((output) => output.outpoint));
 
-    return _processUtxos(utxos, cardinalOutputsSet, esploraClient, ordinalsClient);
+    return findSafeUtxos(utxos, cardinalOutputsSet, esploraClient, ordinalsClient);
 };
 
 const collectPossibleInputs = async (fromAddress: string, publicKey: string) => {
     const addressInfo = getAddressInfo(fromAddress);
 
     const esploraClient = new EsploraClient(addressInfo.network);
+    const ordinalsClient = new OrdinalsClient(addressInfo.network);
 
-    const allowedUtxos = await processUtxos(fromAddress, esploraClient, true);
+    const safeUtxos = await getSafeUtxos(fromAddress, esploraClient, ordinalsClient);
+
+    if (safeUtxos.length === 0) {
+        throw new Error('No confirmed UTXOs');
+    }
 
     // To construct the spending transaction and estimate the fee, we need the transactions for the UTXOs
     return Promise.all(
-        allowedUtxos.map(async (utxo) => {
+        safeUtxos.map(async (utxo) => {
             const hex = await esploraClient.getTransactionHex(utxo.txid);
             const transaction = Transaction.fromRaw(Buffer.from(hex, 'hex'), { allowUnknownOutputs: true });
             const input = getInputFromUtxoAndTx(
@@ -159,8 +112,6 @@ const collectPossibleInputs = async (fromAddress: string, publicKey: string) => 
         })
     );
 };
-
-type OutputNodeData = Pick<UTXO, 'txid' | 'vout'> & { cardinal: boolean; indexed: boolean };
 
 export interface Input {
     txid: string;
@@ -492,12 +443,13 @@ export async function getBalance(address?: string) {
     const addressInfo = getAddressInfo(address);
 
     const esploraClient = new EsploraClient(addressInfo.network);
+    const ordinalsClient = new OrdinalsClient(addressInfo.network);
 
-    const allowedUtxos = await processUtxos(address, esploraClient);
+    const safeUtxos = await getSafeUtxos(address, esploraClient, ordinalsClient);
 
-    const total = allowedUtxos.reduce((acc, utxo) => acc + utxo.value, 0);
+    const total = safeUtxos.reduce((acc, utxo) => acc + utxo.value, 0);
 
-    const confirmed = allowedUtxos.reduce((acc, utxo) => {
+    const confirmed = safeUtxos.reduce((acc, utxo) => {
         if (utxo.confirmed) {
             return acc + utxo.value;
         }
