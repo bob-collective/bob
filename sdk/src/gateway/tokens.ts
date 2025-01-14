@@ -173,6 +173,74 @@ const segmentTokens = [
     },
 ];
 
+const avalonTokens = [
+    {
+        name: 'Avalon TBTC',
+        symbol: 'aBOBTBTC',
+        decimals: 18,
+        nobridge: true,
+        tokens: {
+            bob: {
+                address: '0x5E007Ed35c7d89f5889eb6FD0cdCAa38059560ef',
+            },
+        },
+        logoURI: 'https://app.avalonfinance.xyz/icons/tokens/avalon.svg',
+    },
+    {
+        name: 'Avalon WBTC',
+        symbol: 'aBOBWBTC',
+        decimals: 8,
+        nobridge: true,
+        tokens: {
+            bob: {
+                address: '0xd6890176e8d912142AC489e8B5D8D93F8dE74D60',
+            },
+        },
+        logoURI: 'https://app.avalonfinance.xyz/icons/tokens/avalon.svg',
+    },
+    {
+        name: 'Avalon SOLVBTCBBN',
+        symbol: 'aBOBSOLVBTCBBN',
+        decimals: 18,
+        nobridge: true,
+        tokens: {
+            bob: {
+                address: '0x2E6500A7Add9a788753a897e4e3477f651c612eb',
+            },
+        },
+        logoURI: 'https://app.avalonfinance.xyz/icons/tokens/avalon.svg',
+    },
+];
+
+const ionicTokens = [
+    {
+        name: 'Ionic TBTC',
+        symbol: 'iontBTC',
+        decimals: 18,
+        nobridge: true,
+        tokens: {
+            bob: {
+                address: '0x68e0e4d875FDe34fc4698f40ccca0Db5b67e3693',
+            },
+        },
+        logoURI:
+            'https://doc.ionic.money/~gitbook/image?url=https://1954749119-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%252F4L4EczL4rCp3jyJhAxHG%252Fuploads%252FPy57T6N8vDpy1jGqxElR%252FTwitter%2520Avatar%2520green.png?alt%3Dmedia%26token%3D1808baa5-0996-41d1-ad6d-fe09c7188cdc&width=768&dpr=4&quality=100&sign=14802451&sv=2',
+    },
+    {
+        name: 'Ionic Wrapped BTC',
+        symbol: 'ionWBTC',
+        decimals: 8,
+        nobridge: true,
+        tokens: {
+            bob: {
+                address: '0xEBc8a7EE7f1D6534eBF45Bd5311203BF0A17493c',
+            },
+        },
+        logoURI:
+            'https://doc.ionic.money/~gitbook/image?url=https://1954749119-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%252F4L4EczL4rCp3jyJhAxHG%252Fuploads%252FPy57T6N8vDpy1jGqxElR%252FTwitter%2520Avatar%2520green.png?alt%3Dmedia%26token%3D1808baa5-0996-41d1-ad6d-fe09c7188cdc&width=768&dpr=4&quality=100&sign=14802451&sv=2',
+    },
+];
+
 const TOKENS: Array<{
     name: string;
     symbol: string;
@@ -187,7 +255,7 @@ const TOKENS: Array<{
         };
     };
     logoURI: string;
-}> = [...bobTokens, ...bobSepoliaTokens, ...shoebillTokens, ...segmentTokens];
+}> = [...bobTokens, ...bobSepoliaTokens, ...shoebillTokens, ...segmentTokens, ...avalonTokens, ...ionicTokens];
 
 /** @description Tokens supported on BOB and BOB Sepolia */
 export const SYMBOL_LOOKUP: { [key in number]: { [key in string]: Token } } = {};
