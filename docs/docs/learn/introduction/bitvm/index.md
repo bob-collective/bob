@@ -82,6 +82,12 @@ Under correct operation, the bridging process completes in less than one hour in
 - The 4GB program is never put on-chain. That would require 1,000 separate transactions, each the size of an entire Bitcoin block! Instead, the setup process includes the creation of a Taproot tree that represents the relationship between the inputs and outputs of all the intermediary sub-programs. The last Tapleaf in the tree is used for the `Payout` transaction, enabling the operator to claim the funds if the program execution is not challenged.
 - Operators pay out using their own money, then are _reimbursed_ by spending the UTXO from a previous `PegIn` after the challenge period. These settings (challenge period duration, operator capital) are what constrain the throughput of the bridge(/other collateralized program)
 
+## Next Steps
+
+BOB plans to launch the BitVM bridge on BOB Sepolia in early 2025. The mainnet deployment will follow after successful auditing and partner integrations.
+
+BOB is also working with Babylon to make BOB a Bitcoin Secured Network (BSN). Once complete, transactions on BOB will receive finality from staked BTC in addition to the finality it already has as an Ethereum rollup. This increase in network security advances BOB on its [Hybrid L2 Roadmap](/learn/introduction/roadmap/).
+
 ## Further Reading
 
 Credit to [Janusz](https://x.com/januszg_) for compiling many of these resources.
