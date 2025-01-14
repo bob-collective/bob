@@ -9,6 +9,8 @@ sidebar_label: "BitVM"
 
 Building on Bitcoin is fun once again!
 
+BitVM plays a crucial role in BOB's [Hybrid L2 Roadmap](/learn/introduction/roadmap) by [enabling Bitcoin finality](https://blog.gobob.xyz/posts/bob-integrates-with-babylon-to-become-a-bitcoin-secured-network-bringing-bitcoin-finality-to-the-hybrid-l2) for our rollup. BitVM also makes it safer for BTC holders to participate in DeFi on BOB by [minimizing the trust needed to bridge](https://blog.gobob.xyz/posts/bob-announces-trust-minimized-bitcoin-bridge-prototype-powered-by-bitvm). From the network infrastructure to the tokens in your wallet, BitVM unlocks huge security advancements for Bitcoin DeFi.
+
 Read on to learn how BitVM enables Bitcoin rollups and a new type of BTC bridge with a "1-of-N" trust assumption - all without a soft fork to Bitcoin.
 
 ## Why BitVM Matters
@@ -17,9 +19,9 @@ Before we dive into technical details, let's introduce a few products that BitVM
 
 BitVM enables:
 
-- Vastly improved bridge design, making multi-sig bridge custodians effectively obsolete
+- Vastly improved bridge design: users can deposit and withdraw BTC from an L2 without trusting multi-sig custodians
   - [BOB is developing a trust-minimized BitVM bridge with Fiamma](https://blog.gobob.xyz/posts/bob-announces-trust-minimized-bitcoin-bridge-prototype-powered-by-bitvm)
-- Optimistic rollups on Bitcoin
+- Bitcoin rollups that verify the Layer 2 state directly on Bitcoin
   - [BOB will receive Bitcoin finality from Babylon](https://blog.gobob.xyz/posts/bob-integrates-with-babylon-to-become-a-bitcoin-secured-network-bringing-bitcoin-finality-to-the-hybrid-l2)
 - Significant decreases in the trust assumptions that Bitcoin users make when interacting with off-chain protocols
 - An entirely new design space for applications built directly on Bitcoin
@@ -28,30 +30,30 @@ BitVM enables:
 
 _BitVM_ is a way to expand the range of what is possible to do on Bitcoin. It does this by performing computation off-chain that is held accountable by an on-chain fraud proving mechanism. Since Bitcoin Script is very limited in what it can do, running more advanced programs on Bitcoin requires a way to verify that the results of off-chain calculations are correct.
 
-**The two main use cases are Bitcoin rollups and trust-minimized bridges.** In both, we want to allow users to deposit and withdraw BTC from an L2 without trusting a 3rd party.
-
 Existing bridges typically rely on centralized entities—such as Wrapped Bitcoin (WBTC) and Coinbase Wrapped Bitcoin (cbBTC)—or semi-trusted networks like tBTC, where security depends on the honesty of the majority of participants. In contrast, BitVM bridges introduce a superior security model: BTC deposits cannot be stolen as long as there is a single honest and online node in the network, and this node can be the depositor themself.
 
 BitVM verifies off-chain computation similarly to optimistic rollups:
 
-1. A _prover_ performs a computation off-chain,
+1. An _operator_ performs a computation off-chain,
 1. then makes an on-chain claim about the results of that computation.
 1. If the claim is incorrect, a _verifier_ will invalidate it directly on the Bitcoin blockchain.
 
-In practice, this would look like a collection of provers depositing their collateral and committing to manage a pool of BTC according to the rules of a specific, pre-defined computer program (a bridge, for example). **If a prover withdraws or transfers this BTC in a way that violates those rules, any verifier can slash the dishonest prover's collateral** by submitting a specific kind of transaction on Bitcoin that will be explained in a moment.
+In practice, this would look like a collection of operators depositing their collateral and committing to manage a pool of BTC according to the rules of a specific, pre-defined computer program (a bridge, for example).
+
+**If an operator attempts to withdraw BTC in a way that violates those rules, any verifier can prevent the withdrawal and slash the dishonest operator's collateral for the malicious attempt.** The verifier does this by submitting a specific kind of transaction on Bitcoin that will be explained in a moment.
 
 This reveals two important aspects of the setup:
 
-1. A prover can only be trusted to transfer an amount of BTC equal to their collateral in a given amount of time. Said another way, the throughput of the system is constrained by the amount of collateral the prover deposited and the length in time of the challenge window.
-2. The verifier can challenge a dishonest transaction directly to the blockchain, slashing the prover. In other words, one honest verifier can prevent an infinite number of provers from cheating.
+1. An operator only needs to provide enough collateral to cover the cost of disproving plus some extra amount to deter them from cheating and being slashed. This capital efficiency is exactly why BitVM is much better than other bridges, including collateralized bridges.
+2. The verifier can challenge a dishonest transaction directly to the blockchain, slashing the operator and preventing the malicious withdrawal from happening. In other words, one honest verifier can prevent an infinite number of operators from cheating.
 
-This setup is called _optimistic_ because normal operation is assumed to be correct, allowing compute to happen at web2 prices while also maintaining a strong mechanism of on-chain accountability that would make a dishonest claim from the prover prohibitively expensive.
+This setup is called _optimistic_ because normal operation is assumed to be correct, allowing compute to happen at web2 prices while also maintaining a strong mechanism of on-chain accountability to prevent a dishonest claim from any operators.
 
 ## BitVM Technical Summary
 
 1. Compress a program into a SNARK verifier implemented in Bitcoin Script. With Groth16, this will be about 1GB in size.
 1. Split the verifier into discrete sub-program chunks that are a maximum of 4MB each. This makes it possible for an entire specific sub-program chunk could be included in a Bitcoin transaction in the event of a challenge.
-1. During the setup step, each operator (i.e. each prover) commits to the program by depositing collateral.
+1. During the setup step, each operator commits to the program by depositing collateral.
 1. Each operator continually runs the original program (e.g. a bridge) off-chain to determine the correct outputs of each input (e.g. how much BTC to withdraw and who to send it to during a bridge peg-out).
 1. The operator uses their own funds to cover the program's output (e.g. sends their own BTC to a withdrawing user), then requests a reimbursement by withdrawing funds from BitVM (i.e. the set of funds being managed by the operators).
 1. If challenged, the operator must reveal all of the intermediary program results (i.e. each of the inputs and outputs of the sub-program chunks). If the operator is cheating, at least one of the sub-program results will be fake.
@@ -68,8 +70,8 @@ One of the most exciting applications of BitVM is a BTC [light-client](/learn/bu
 
 1. Operators pay BTC to the withdrawing user from their own funds and then reclaim the BTC from BitVM.
 1. BitVM checks that there is a correct peg-out on Bitcoin matching the unwrap transaction on the L2.
-1. If all is correct, the Operator gets the BTC refunded.
-1. If the Operator has committed fraud (e.g. by sending BTC to their wallet instead of the user's), they are slashed and kicked out.
+1. If all is correct, the operator gets the BTC refunded.
+1. If the operator has committed fraud (e.g. by sending BTC to their wallet instead of the user's), the refund transaction is prevented and the operator is slashed and kicked out.
 
 Under correct operation, the bridging process completes in less than one hour in each direction. This is much faster than existing Ethereum L1 or L2 bridges to Bitcoin.
 
