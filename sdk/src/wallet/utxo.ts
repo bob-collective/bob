@@ -44,7 +44,10 @@ const isCardinalTx = async (
     return results.every((result) => result === true);
 };
 
-const findSafeUtxos = async (
+/**
+ * @ignore
+ */
+export const findSafeUtxos = async (
     utxos: UTXO[],
     cardinalOutputsSet: Set<string>,
     esploraClient: EsploraClient,
