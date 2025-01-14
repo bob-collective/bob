@@ -3,6 +3,8 @@ sidebar_position: 2
 sidebar_label: "BitVM"
 ---
 
+import BitvmDiagram from "./bitvm-diagram.svg";
+
 # BitVM: A New Paradigm for Bitcoin
 
 ## Introduction
@@ -50,6 +52,8 @@ This reveals two important aspects of the setup:
 This setup is called _optimistic_ because normal operation is assumed to be correct, allowing compute to happen at web2 prices while also maintaining a strong mechanism of on-chain accountability to prevent a dishonest claim from any operators.
 
 ## BitVM Technical Summary
+
+<BitvmDiagram style={{ width: "100%", maxWidth: "100%", height: "auto" }} />
 
 1. Compress a program into a SNARK verifier implemented in Bitcoin Script. With Groth16, this will be about 1GB in size.
 1. Split the verifier into discrete sub-program chunks that are a maximum of 4MB each. This makes it possible for an entire specific sub-program chunk could be included in a Bitcoin transaction in the event of a challenge.
