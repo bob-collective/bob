@@ -37,17 +37,15 @@ const isCardinalTx = async (
 
             const inscriptions = await getTxInscriptions(esploraClient, vin.txid);
 
-            if (inscriptions.length === 0) {
-                const output = await ordinalsClient.getInscriptionsFromOutPoint(vin);
+            if (inscriptions.length > 0) return false;
 
-                if (output.indexed) {
-                    return isCardinalOutput(output);
-                } else {
-                    return isCardinalTx(vin.txid, cardinalOutputsSet, esploraClient, ordinalsClient, limit - 1);
-                }
+            const output = await ordinalsClient.getInscriptionsFromOutPoint(vin);
+
+            if (output.indexed) {
+                return isCardinalOutput(output);
+            } else {
+                return isCardinalTx(vin.txid, cardinalOutputsSet, esploraClient, ordinalsClient, limit - 1);
             }
-
-            return false;
         })
     );
     return results.every((result) => result === true);
@@ -66,6 +64,10 @@ export const findSafeUtxos = async (
         utxos.map(async (utxo) => {
             // the utxo is confirmed and a known cardinal
             if (cardinalOutputsSet.has(OutPoint.toString(utxo))) return true;
+
+            const inscriptions = await getTxInscriptions(esploraClient, utxo.txid);
+
+            if (inscriptions.length > 0) return false;
 
             // the utxo is unconfirmed (not indexed by Ord)
             return isCardinalTx(utxo.txid, cardinalOutputsSet, esploraClient, ordinalsClient);
