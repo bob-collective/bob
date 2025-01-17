@@ -79,7 +79,7 @@ hashrate = ~743 (EH/s) = (103919634711492.2 * 2**32 / 600) / 10**18 (time of wri
 ```
 
 The `LightRelay` requires that the proof is included at the _current_ or _previous_ difficulty so we can assume the attacker has 2016 \* 2 blocks to brute-force a valid chain of `proofLength`.
-This is possible since, due to SPV assumptions, we can not verify the transactions references by the block header are valid, only that sufficient PoW has accumulated on the chain.
+This is possible since, due to SPV assumptions, we can not verify the transactions referenced by the block header are valid, only that sufficient PoW has accumulated on the chain.
 
 Let's assume the attacker can generate 6 blocks (with some invalid transactions) within two difficulty adjustment period, 2016 \* 2 blocks (four weeks).
 
