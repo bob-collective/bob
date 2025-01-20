@@ -269,7 +269,7 @@ export interface SatJson<InscriptionId> {
 /**
  * @ignore
  */
-// https://github.com/ordinals/ord/blob/0.21.3/src/api.rs#L93-L113
+// https://github.com/ordinals/ord/blob/0.22.1/src/api.rs#L93-L114
 export interface InscriptionJson<InscriptionId, SatPoint> {
     /**
      * The address associated with the inscription.
@@ -301,6 +301,8 @@ export interface InscriptionJson<InscriptionId, SatPoint> {
      * The genesis fee of the inscription.
      */
     fee: number;
+
+    metaprotocol: string | null;
 
     /**
      * The genesis height of the inscription.
