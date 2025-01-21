@@ -22,14 +22,17 @@ const isCardinalOutput = (output: OutputJson) =>
     output.inscriptions.length === 0 && Object.keys(output.runes).length === 0;
 
 const isCardinalTx = async (
-    txid: string,
+    outpoint: OutPoint,
     cardinalOutputsSet: Set<string>,
     esploraClient: EsploraClient,
     ordinalsClient: OrdinalsClient,
     limit: number = 3
 ): Promise<boolean> => {
     if (limit === 0) return false;
-    const transaction = await esploraClient.getTransaction(txid);
+    const transaction = await esploraClient.getTransaction(outpoint.txid);
+
+    // if confirmed check if it's included in cardinal set
+    if (transaction.status.confirmed) return cardinalOutputsSet.has(OutPoint.toString(outpoint));
 
     const results = await Promise.all(
         transaction.vin.map(async (vin) => {
@@ -44,7 +47,7 @@ const isCardinalTx = async (
             if (output.indexed) {
                 return isCardinalOutput(output);
             } else {
-                return isCardinalTx(vin.txid, cardinalOutputsSet, esploraClient, ordinalsClient, limit - 1);
+                return isCardinalTx(vin, cardinalOutputsSet, esploraClient, ordinalsClient, limit - 1);
             }
         })
     );
@@ -70,7 +73,7 @@ export const findSafeUtxos = async (
             if (inscriptions.length > 0) return false;
 
             // the utxo is unconfirmed (not indexed by Ord)
-            return isCardinalTx(utxo.txid, cardinalOutputsSet, esploraClient, ordinalsClient);
+            return isCardinalTx(utxo, cardinalOutputsSet, esploraClient, ordinalsClient);
         })
     );
 
@@ -239,7 +242,7 @@ export async function createBitcoinPsbt(
     });
 
     if (!transaction || !transaction.tx) {
-        console.debug('possibleInputs', possibleInputs);
+        console.debug('possibleInputs', possibleInputs.length);
         console.debug(`fromAddress: ${fromAddress}, toAddress: ${toAddress}, amount: ${amount}`);
         console.debug(`publicKey: ${publicKey}, opReturnData: ${opReturnData}`);
         console.debug(`feeRate: ${feeRate}, confirmationTarget: ${confirmationTarget}`);
