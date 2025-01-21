@@ -242,7 +242,7 @@ export async function createBitcoinPsbt(
     });
 
     if (!transaction || !transaction.tx) {
-        console.debug('possibleInputs', possibleInputs.length);
+        console.debug('possibleInputs', possibleInputs);
         console.debug(`fromAddress: ${fromAddress}, toAddress: ${toAddress}, amount: ${amount}`);
         console.debug(`publicKey: ${publicKey}, opReturnData: ${opReturnData}`);
         console.debug(`feeRate: ${feeRate}, confirmationTarget: ${confirmationTarget}`);

@@ -28,6 +28,7 @@ vi.mock(import('@scure/btc-signer'), async (importOriginal) => {
 describe('UTXO Tests', () => {
     beforeEach(() => {
         vi.restoreAllMocks();
+        global.fetch = vi.fn(global.fetch);
     });
 
     it('should spend from address to create a transaction with an OP return output', { timeout: 50000 }, async () => {
@@ -661,5 +662,6 @@ describe('UTXO Tests', () => {
         const allowedUtxos = await findSafeUtxos(utxos, cardinalOutputsSet, esploraClient, ordinalsClient);
 
         expect(allowedUtxos).toEqual([utxos[0], utxos[1]]);
+        expect((global.fetch as Mock).mock.calls.length).toBeLessThanOrEqual(12);
     });
 });
