@@ -25,10 +25,8 @@ const isCardinalTx = async (
     outpoint: OutPoint,
     cardinalOutputsSet: Set<string>,
     esploraClient: EsploraClient,
-    ordinalsClient: OrdinalsClient,
-    limit: number = 3
+    ordinalsClient: OrdinalsClient
 ): Promise<boolean> => {
-    if (limit === 0) return false;
     const transaction = await esploraClient.getTransaction(outpoint.txid);
 
     // if confirmed check if it's included in cardinal set
@@ -49,7 +47,7 @@ const isCardinalTx = async (
             if (output.indexed) {
                 return isCardinalOutput(output);
             } else {
-                return isCardinalTx(vin, cardinalOutputsSet, esploraClient, ordinalsClient, limit - 1);
+                return isCardinalTx(vin, cardinalOutputsSet, esploraClient, ordinalsClient);
             }
         })
     );

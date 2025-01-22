@@ -662,6 +662,6 @@ describe('UTXO Tests', () => {
         const allowedUtxos = await findSafeUtxos(utxos, cardinalOutputsSet, esploraClient, ordinalsClient);
 
         expect(allowedUtxos).toEqual([utxos[0], utxos[1]]);
-        expect((global.fetch as Mock).mock.calls.length).toEqual(9);
+        expect((global.fetch as Mock).mock.calls.length).toEqual(11);
     });
 });
