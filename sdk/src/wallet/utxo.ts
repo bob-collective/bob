@@ -34,15 +34,17 @@ const isCardinalTx = async (
     // if confirmed check if it's included in cardinal set
     if (transaction.status.confirmed) return cardinalOutputsSet.has(OutPoint.toString(outpoint));
 
+    const outputs = await ordinalsClient.getOutputsFromOutPoints(transaction.vin.map(OutPoint.toString));
+
     const results = await Promise.all(
-        transaction.vin.map(async (vin) => {
+        transaction.vin.map(async (vin, index) => {
             if (cardinalOutputsSet.has(OutPoint.toString(vin))) return true;
 
             const inscriptions = await getTxInscriptions(esploraClient, vin.txid);
 
             if (inscriptions.length > 0) return false;
 
-            const output = await ordinalsClient.getInscriptionsFromOutPoint(vin);
+            const output = outputs[index];
 
             if (output.indexed) {
                 return isCardinalOutput(output);
