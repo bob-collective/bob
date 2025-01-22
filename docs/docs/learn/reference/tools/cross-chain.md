@@ -1,5 +1,16 @@
 # Cross-chain
 
+## Chainlink
+
+[Chainlink's Cross-chain Interoperability Protocol (CCIP)](https://chain.link/cross-chain) powers cross-chain messages, token bridging, and other actions that span multiple blockchains.
+
+Visit the [Chainlink CCIP](https://docs.chain.link/ccip) documentation to learn how to integrate it into your app.
+
+Supported Networks
+
+- [BOB Mainnet](https://docs.chain.link/ccip/directory/mainnet/chain/bitcoin-mainnet-bob-1)
+- [BOB Sepolia](https://docs.chain.link/ccip/directory/testnet/chain/bitcoin-testnet-sepolia-bob-1)
+
 ## LayerZero
 
 LayerZero is a technology that enables applications to move data across blockchains, uniquely supporting censorship-resistant messages and permissionless development through immutable smart contracts. Projects on BOB can connect to 35+ supported blockchains using LayerZero's contracts.
