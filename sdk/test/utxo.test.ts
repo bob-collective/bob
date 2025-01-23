@@ -627,6 +627,15 @@ describe('UTXO Tests', () => {
                 value: 1,
                 vout: 1,
             },
+            // rune entching
+            // https://ordiscan.com/tx/14fc0f49150ff88a907141bac48819364afcec23919e364e3fab0eda04838b95
+            {
+                // fake mempool tx
+                confirmed: false,
+                txid: '14fc0f49150ff88a907141bac48819364afcec23919e364e3fab0eda04838b95',
+                value: 1,
+                vout: 0,
+            },
         ];
 
         const cardinalOutputsSet = new Set([
@@ -662,6 +671,6 @@ describe('UTXO Tests', () => {
         const allowedUtxos = await findSafeUtxos(utxos, cardinalOutputsSet, esploraClient, ordinalsClient);
 
         expect(allowedUtxos).toEqual([utxos[0], utxos[1]]);
-        expect((global.fetch as Mock).mock.calls.length).toEqual(11);
+        expect((global.fetch as Mock).mock.calls.length).toEqual(12);
     });
 });

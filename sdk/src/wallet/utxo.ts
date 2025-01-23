@@ -1,9 +1,11 @@
+import * as bitcoin from 'bitcoinjs-lib';
 import { Transaction, Script, selectUTXO, TEST_NETWORK, NETWORK, p2wpkh, p2sh, p2tr } from '@scure/btc-signer';
 import { hex, base64 } from '@scure/base';
 import { AddressType, getAddressInfo, Network } from 'bitcoin-address-validation';
 import { EsploraClient, UTXO } from '../esplora';
 import { OrdinalsClient, OutPoint, OutputJson } from '../ordinal-api';
-import { getTxInscriptions } from '../inscription';
+import { parseInscriptions } from '../inscription';
+import { parseRune } from '../runes';
 
 export type BitcoinNetworkName = Exclude<Network, 'regtest'>;
 
@@ -38,9 +40,13 @@ const isCardinalTx = async (
         transaction.vin.map(async (vin, index) => {
             if (cardinalOutputsSet.has(OutPoint.toString(vin))) return true;
 
-            const inscriptions = await getTxInscriptions(esploraClient, vin.txid);
+            const txHex = await esploraClient.getTransactionHex(vin.txid);
+            const tx = bitcoin.Transaction.fromHex(txHex);
 
-            if (inscriptions.length > 0) return false;
+            const inscriptions = parseInscriptions(tx);
+            const rune = parseRune(tx);
+
+            if (rune || inscriptions.length > 0) return false;
 
             const output = outputs[index];
 
@@ -68,9 +74,13 @@ export const findSafeUtxos = async (
             // the utxo is confirmed and a known cardinal
             if (cardinalOutputsSet.has(OutPoint.toString(utxo))) return true;
 
-            const inscriptions = await getTxInscriptions(esploraClient, utxo.txid);
+            const txHex = await esploraClient.getTransactionHex(utxo.txid);
+            const tx = bitcoin.Transaction.fromHex(txHex);
 
-            if (inscriptions.length > 0) return false;
+            const inscriptions = parseInscriptions(tx);
+            const rune = parseRune(tx);
+
+            if (rune || inscriptions.length > 0) return false;
 
             // the utxo is unconfirmed (not indexed by Ord)
             return isCardinalTx(utxo, cardinalOutputsSet, esploraClient, ordinalsClient);
