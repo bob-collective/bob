@@ -1,6 +1,6 @@
 # Build on Bitcoin
 
-BOB is a Bitcoin-augmented rollup bringing experimentation and freedom of choice to builders to make a real-world impact. BOBs vision is to onboard the next billion users to Bitcoin.
+BOB is a Bitcoin-augmented rollup bringing experimentation and freedom of choice to builders to make a real-world impact. BOB's vision is to onboard the next billion users to Bitcoin.
 
 ## Learn more
 
@@ -38,12 +38,12 @@ forge fmt
 
 ## Local Testnet
 
-To deploy the relay contract to a local environment for testing use our convenience script [here](https://github.com/bob-collective/bob/blob/master/sdk/scripts/relay-retarget.ts):
+To deploy the relay contracts to a local environment for testing use our convenience script [here](https://github.com/bob-collective/bob/blob/master/sdk/scripts/relay-retarget.ts):
 
 ```shell
 # start local ethereum testnet node
 docker-compose up anvil
-# run script to deploy the relay contract
+# run script to deploy the relay contracts
 cd sdk
 npm run deploy-relay -- --init-height=latest --dev --network=mainnet --testnet
 npm run update-relay -- --dev --network=mainnet --relay-address=0x<relay-address>
@@ -81,7 +81,7 @@ hashrate = ~743 (EH/s) = (103919634711492.2 * 2**32 / 600) / 10**18 (time of wri
 The `LightRelay` requires that the proof is included at the _current_ or _previous_ difficulty so we can assume the attacker has 2016 \* 2 blocks to brute-force a valid chain of `proofLength`.
 This is possible since, due to SPV assumptions, we can not verify the transactions referenced by the block header are valid, only that sufficient PoW has accumulated on the chain.
 
-Let's assume the attacker can generate 6 blocks (with some invalid transactions) within two difficulty adjustment period, 2016 \* 2 blocks (four weeks).
+Assuming the attacker can generate six blocks (with some invalid transactions) within two difficulty adjustment period, 2016 \* 2 blocks (four weeks).
 
 ```
 hashrate * 6/(2016*2)
