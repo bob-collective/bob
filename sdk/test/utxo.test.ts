@@ -661,7 +661,7 @@ describe('UTXO Tests', () => {
             const result = await original.call(this, tx);
 
             // mark as unconfirmed -> continue building tree for `vin`s
-            if (tx === utxos[1].txid || tx === utxos[2].txid) {
+            if (tx === utxos[1].txid || tx === utxos[2].txid || tx === utxos[5].txid) {
                 result.status.confirmed = false;
             }
 
