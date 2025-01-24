@@ -29,6 +29,14 @@ const isCardinalTx = async (
     esploraClient: EsploraClient,
     ordinalsClient: OrdinalsClient
 ): Promise<boolean> => {
+    const txHex = await esploraClient.getTransactionHex(outpoint.txid);
+    const tx = bitcoin.Transaction.fromHex(txHex);
+
+    const inscriptions = parseInscriptions(tx);
+    const rune = parseRune(tx);
+
+    if (rune || inscriptions.length > 0) return false;
+
     const transaction = await esploraClient.getTransaction(outpoint.txid);
 
     // if confirmed check if it's included in cardinal set
@@ -39,14 +47,6 @@ const isCardinalTx = async (
     const results = await Promise.all(
         transaction.vin.map(async (vin, index) => {
             if (cardinalOutputsSet.has(OutPoint.toString(vin))) return true;
-
-            const txHex = await esploraClient.getTransactionHex(vin.txid);
-            const tx = bitcoin.Transaction.fromHex(txHex);
-
-            const inscriptions = parseInscriptions(tx);
-            const rune = parseRune(tx);
-
-            if (rune || inscriptions.length > 0) return false;
 
             const output = outputs[index];
 
@@ -73,14 +73,6 @@ export const findSafeUtxos = async (
         utxos.map(async (utxo) => {
             // the utxo is confirmed and a known cardinal
             if (cardinalOutputsSet.has(OutPoint.toString(utxo))) return true;
-
-            const txHex = await esploraClient.getTransactionHex(utxo.txid);
-            const tx = bitcoin.Transaction.fromHex(txHex);
-
-            const inscriptions = parseInscriptions(tx);
-            const rune = parseRune(tx);
-
-            if (rune || inscriptions.length > 0) return false;
 
             // the utxo is unconfirmed (not indexed by Ord)
             return isCardinalTx(utxo, cardinalOutputsSet, esploraClient, ordinalsClient);
