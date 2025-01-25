@@ -5,7 +5,7 @@ import { AddressType, getAddressInfo, Network } from 'bitcoin-address-validation
 import { EsploraClient, UTXO } from '../esplora';
 import { OrdinalsClient, OutPoint, OutputJson } from '../ordinal-api';
 import { parseInscriptions } from '../inscription';
-import { parseRune } from '../runes';
+import { parseRunestone } from '../runes';
 
 export type BitcoinNetworkName = Exclude<Network, 'regtest'>;
 
@@ -33,7 +33,7 @@ const isCardinalTx = async (
     const tx = bitcoin.Transaction.fromHex(txHex);
 
     const inscriptions = parseInscriptions(tx);
-    const rune = parseRune(tx);
+    const rune = parseRunestone(tx);
 
     if (rune || inscriptions.length > 0) return false;
 
