@@ -29,15 +29,16 @@ const isCardinalTx = async (
     esploraClient: EsploraClient,
     ordinalsClient: OrdinalsClient
 ): Promise<boolean> => {
-    const txHex = await esploraClient.getTransactionHex(outpoint.txid);
+    const [txHex, transaction] = await Promise.all([
+        esploraClient.getTransactionHex(outpoint.txid),
+        esploraClient.getTransaction(outpoint.txid),
+    ]);
     const tx = bitcoin.Transaction.fromHex(txHex);
 
     const inscriptions = parseInscriptions(tx);
     const rune = parseRunestone(tx);
 
     if (rune || inscriptions.length > 0) return false;
-
-    const transaction = await esploraClient.getTransaction(outpoint.txid);
 
     // if confirmed check if it's included in cardinal set
     if (transaction.status.confirmed) return cardinalOutputsSet.has(OutPoint.toString(outpoint));
