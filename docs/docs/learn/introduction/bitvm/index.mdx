@@ -47,7 +47,7 @@ In practice, this would look like a collection of operators depositing their col
 This reveals two important aspects of the setup:
 
 1. An operator only needs to provide enough collateral to cover the cost of disproving plus some extra amount to deter them from cheating and being slashed. This capital efficiency is exactly why BitVM is much better than other bridges, including collateralized bridges.
-2. The verifier can challenge a dishonest transaction directly to the blockchain, slashing the operator and preventing the malicious withdrawal from happening. In other words, one honest verifier can prevent an infinite number of operators from cheating.
+2. The verifier can challenge a dishonest transaction directly to Bitcoin, slashing the operator and preventing the malicious withdrawal from happening. In other words, one honest verifier can prevent an infinite number of operators from cheating.
 
 This setup is called _optimistic_ because normal operation is assumed to be correct, allowing compute to happen at web2 prices while also maintaining a strong mechanism of on-chain accountability to prevent a dishonest claim from any operators.
 
