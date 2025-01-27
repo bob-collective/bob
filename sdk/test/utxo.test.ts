@@ -620,6 +620,7 @@ describe('UTXO Tests', () => {
                 vout: 1,
             },
             // rune transfer
+            // https://ordiscan.com/tx/b4e912281e8c7b8588adcf1cd0ea8b0bb5f492ea3f008f3ec351f99bdd5f833d
             // curl -s -H "Accept: application/json" "https://ordinals-mainnet.gobob.xyz/output/b4e912281e8c7b8588adcf1cd0ea8b0bb5f492ea3f008f3ec351f99bdd5f833d:1"
             {
                 confirmed: true,
@@ -633,6 +634,15 @@ describe('UTXO Tests', () => {
                 // fake mempool tx
                 confirmed: false,
                 txid: '14fc0f49150ff88a907141bac48819364afcec23919e364e3fab0eda04838b95',
+                value: 1,
+                vout: 0,
+            },
+            // rune mint
+            // https://ordiscan.com/tx/1f2caffea51fd7e5653591f60e5f616e806a33fd572a18db1724f4f330e5014d
+            {
+                // fake mempool tx
+                confirmed: false,
+                txid: '1f2caffea51fd7e5653591f60e5f616e806a33fd572a18db1724f4f330e5014d',
                 value: 1,
                 vout: 0,
             },
@@ -661,8 +671,9 @@ describe('UTXO Tests', () => {
             const result = await original.call(this, tx);
 
             // mark as unconfirmed -> continue building tree for `vin`s
-            if (tx === utxos[1].txid || tx === utxos[2].txid || tx === utxos[5].txid) {
-                result.status.confirmed = false;
+            const utxo = utxos.find((utxo) => utxo.txid === tx);
+            if (utxo) {
+                result.status.confirmed = utxo.confirmed;
             }
 
             return result;
@@ -671,6 +682,6 @@ describe('UTXO Tests', () => {
         const allowedUtxos = await findSafeUtxos(utxos, cardinalOutputsSet, esploraClient, ordinalsClient);
 
         expect(allowedUtxos).toEqual([utxos[0], utxos[1]]);
-        expect((global.fetch as Mock).mock.calls.length).toEqual(14);
+        expect((global.fetch as Mock).mock.calls.length).toEqual(16);
     });
 });
