@@ -1,0 +1,60 @@
+name: Contracts
+
+on: [pull_request]
+
+env:
+  FOUNDRY_PROFILE: ci
+
+jobs:
+  tests:
+    name: Tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    defaults:
+      run:
+        working-directory: contracts
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+      - name: Install deps
+        run: forge install
+      - name: Run forge tests
+        run: forge test -vvv --deny-warnings
+
+  bindings:
+    name: Bindings
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    defaults:
+      run:
+        working-directory: contracts
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+      - name: Pull library deps
+        run: forge install
+      - name: Check fmt
+        run: forge fmt --check
+      - name: Build contracts before checking bindings are correct
+        run: forge build --sizes
+      - name: Versions
+        run: |
+          forge --version
+          git submodule status
+      - name: Run forge docs
+        run: |
+          forge doc --out ../docs/docs/contracts
+          python3 ../docs/scripts/forge_doc_reformat.py
+      - name: Commit forge docs
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: Generate Foundry docs"
+          file_pattern: "./docs/"
