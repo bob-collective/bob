@@ -22,6 +22,7 @@ describe('Ordinal API Tests', () => {
             height: 779832,
             id: InscriptionId.fromString('b61b0172d95e266c18aea0c624db987e971a5d6d4ebc2aaed85da4642d635735i0'),
             number: 348020,
+            metaprotocol: null,
             next: InscriptionId.fromString('693bd98380ad6e58f83de6068c236c6eb9d629c825cc3342c2d93f24c6762c6di0'),
             parents: [],
             previous: InscriptionId.fromString('4f0ff6259efa9d56b16664e6c5c9755c148818dc6bbca98f7f9166b277e4b7c0i0'),
@@ -89,6 +90,7 @@ describe('Ordinal API Tests', () => {
         const sat: number = 100;
         const satJson = await client.getInscriptionsFromSat(sat);
         const expectedSatJson = {
+            address: null,
             block: 0,
             charms: [],
             cycle: 0,
