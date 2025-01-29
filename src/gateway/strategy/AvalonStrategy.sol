@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import {IStrategyWithSlippageArgs} from "../IStrategy.sol";
-import {StrategySlippageArgs} from "../CommonStructs.sol";
+import {IStrategyWithSlippageArgs, StrategySlippageArgs} from "../IStrategy.sol";
 import {BedrockStrategy} from "./BedrockStrategy.sol";
 import {SolvLSTStrategy} from "./SolvStrategy.sol";
 

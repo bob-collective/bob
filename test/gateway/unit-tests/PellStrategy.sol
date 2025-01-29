@@ -16,7 +16,7 @@ import {
 } from "../../../src/gateway/strategy/PellStrategy.sol";
 import {IBedrockVault, BedrockStrategy} from "../../../src/gateway/strategy/BedrockStrategy.sol";
 import {SolvLSTStrategy, ISolvBTCRouter} from "../../../src/gateway/strategy/SolvStrategy.sol";
-import {StrategySlippageArgs} from "../../../src/gateway/CommonStructs.sol";
+import {StrategySlippageArgs} from "../../../src/gateway/IStrategy.sol";
 import {ArbitaryErc20} from "./Utils.sol";
 import {DummyBedrockVaultImplementation} from "./BedrockStrategy.sol";
 import {DummySolvRouter} from "./SolvStrategy.sol";

@@ -7,7 +7,7 @@ using stdStorage for StdStorage;
 
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {IAvalonIPool, AvalonLendingStrategy} from "../../../src/gateway/strategy/AvalonStrategy.sol";
-import {StrategySlippageArgs} from "../../../src/gateway/CommonStructs.sol";
+import {StrategySlippageArgs} from "../../../src/gateway/IStrategy.sol";
 import {Constants} from "./Constants.sol";
 
 abstract contract ForkedStrategyTemplateWbtc is Test {

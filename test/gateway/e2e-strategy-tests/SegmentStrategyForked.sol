@@ -21,7 +21,7 @@ import {
 } from "../../../src/gateway/strategy/SegmentStrategy.sol";
 import {IBedrockVault, BedrockStrategy} from "../../../src/gateway/strategy/BedrockStrategy.sol";
 import {SolvLSTStrategy, ISolvBTCRouter} from "../../../src/gateway/strategy/SolvStrategy.sol";
-import {StrategySlippageArgs} from "../../../src/gateway/CommonStructs.sol";
+import {StrategySlippageArgs} from "../../../src/gateway/IStrategy.sol";
 import {Constants} from "./Constants.sol";
 import {ForkedStrategyTemplateTbtc, ForkedStrategyTemplateWbtc} from "./ForkedTemplate.sol";
 

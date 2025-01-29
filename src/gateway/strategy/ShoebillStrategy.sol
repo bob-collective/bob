@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import {IStrategyWithSlippageArgs} from "../IStrategy.sol";
-import {StrategySlippageArgs} from "../CommonStructs.sol";
+import {IStrategyWithSlippageArgs, StrategySlippageArgs} from "../IStrategy.sol";
 
 import {Context} from "@openzeppelin/contracts/utils/Context.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";

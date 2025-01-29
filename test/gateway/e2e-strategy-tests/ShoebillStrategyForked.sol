@@ -7,7 +7,7 @@ using stdStorage for StdStorage;
 
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {ICErc20, ShoebillStrategy} from "../../../src/gateway/strategy/ShoebillStrategy.sol";
-import {StrategySlippageArgs} from "../../../src/gateway/CommonStructs.sol";
+import {StrategySlippageArgs} from "../../../src/gateway/IStrategy.sol";
 import {Constants} from "./Constants.sol";
 import {ForkedStrategyTemplateTbtc} from "./ForkedTemplate.sol";
 

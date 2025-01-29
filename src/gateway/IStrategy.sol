@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import {StrategySlippageArgs} from "./CommonStructs.sol";
-
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 interface IStrategy {
@@ -27,4 +25,8 @@ abstract contract IStrategyWithSlippageArgs is IStrategy {
 
         handleGatewayMessageWithSlippageArgs(tokenSent, amountIn, recipient, args);
     }
+}
+
+struct StrategySlippageArgs {
+    uint256 amountOutMin;
 }

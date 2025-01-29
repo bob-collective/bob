@@ -7,7 +7,7 @@ using stdStorage for StdStorage;
 
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {ISolvBTCRouter, SolvBTCStrategy, SolvLSTStrategy} from "../../../src/gateway/strategy/SolvStrategy.sol";
-import {StrategySlippageArgs} from "../../../src/gateway/CommonStructs.sol";
+import {StrategySlippageArgs} from "../../../src/gateway/IStrategy.sol";
 import {ArbitaryErc20} from "./Utils.sol";
 
 contract DummySolvRouter is ISolvBTCRouter {

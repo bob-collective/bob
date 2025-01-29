@@ -12,7 +12,7 @@ import {ArbitaryErc20} from "./Utils.sol";
 import {
     IAvalonIPool, AvalonLendingStrategy, AvalonLstStrategy
 } from "../../../src/gateway/strategy/AvalonStrategy.sol";
-import {StrategySlippageArgs} from "../../../src/gateway/CommonStructs.sol";
+import {StrategySlippageArgs} from "../../../src/gateway/IStrategy.sol";
 import {ISolvBTCRouter, SolvLSTStrategy} from "../../../src/gateway/strategy/SolvStrategy.sol";
 import {DummySolvRouter} from "./SolvStrategy.sol";
 

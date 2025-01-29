@@ -10,7 +10,7 @@ import {ERC20} from "openzeppelin-contracts/token/ERC20/ERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 import {BedrockStrategy, IBedrockVault} from "../../../src/gateway/strategy/BedrockStrategy.sol";
-import {StrategySlippageArgs} from "../../../src/gateway/CommonStructs.sol";
+import {StrategySlippageArgs} from "../../../src/gateway/IStrategy.sol";
 import {ArbitaryErc20} from "./Utils.sol";
 
 contract DummyBedrockVaultImplementation is IBedrockVault {
