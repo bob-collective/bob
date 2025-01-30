@@ -27,6 +27,10 @@ struct App {
     /// The relay address
     #[clap(long, env = "RELAY_ADDRESS")]
     relay_address: Address,
+
+    /// The esplora URL
+    #[clap(long, env = "ESPLORA_URL")]
+    esplora_url: Option<String>,
 }
 
 #[tokio::main]
@@ -38,10 +42,8 @@ async fn main() -> Result<()> {
     let signer: PrivateKeySigner = privk.parse().expect("should parse private key");
     let wallet = EthereumWallet::from(signer);
     let rpc_url: Url = app.eth_rpc_url.parse()?;
-    let provider =
-        ProviderBuilder::new().with_recommended_fillers().wallet(wallet).on_http(rpc_url);
-
-    let esplora_client = EsploraClient::new(None, bitcoin::Network::Bitcoin)?;
+    let provider = ProviderBuilder::new().wallet(wallet).on_http(rpc_url);
+    let esplora_client = EsploraClient::new(app.esplora_url, bitcoin::Network::Bitcoin)?;
 
     let relayer = Relayer::new(BitcoinRelay::new(app.relay_address, provider), esplora_client);
     relayer.run().await?;

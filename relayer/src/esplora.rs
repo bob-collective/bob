@@ -57,4 +57,8 @@ impl EsploraClient {
     pub async fn get_block_header_at_height(&self, height: u32) -> Result<Header> {
         self.get_block_header(&self.get_block_hash(height).await?).await
     }
+
+    pub async fn get_chain_height(&self) -> Result<u32> {
+        Ok(self.get("blocks/tip/height").await?.parse()?)
+    }
 }
