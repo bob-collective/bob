@@ -86,10 +86,16 @@ impl<
         let mut latest_height = self.find_latest_height().await?;
 
         loop {
-            let headers: Vec<RelayHeader> = self.pull_headers(latest_height).await?;
+            let headers = self.pull_headers(latest_height).await?;
+
             latest_height += headers.len() as u32;
-            self.push_headers(headers).await?;
-            tokio::time::sleep(Duration::from_secs(2)).await;
+
+            if headers.is_empty() {
+                // we are up to date, sleep for a bit
+                tokio::time::sleep(Duration::from_secs(15)).await;
+            } else {
+                self.push_headers(headers).await?;
+            }
         }
     }
 
@@ -106,8 +112,10 @@ impl<
         //     .collect::<Vec<_>>();
         // Ok(try_join_all(futures).await?)
 
+        let bitcoin_height = self.esplora_client.get_chain_height().await?;
+
         let mut relay_headers = Vec::new();
-        for height in latest_height..latest_height + HEADERS_PER_BATCH as u32 {
+        for height in latest_height .. (latest_height + HEADERS_PER_BATCH as u32).min(bitcoin_height + 1) {
             let hash = self.esplora_client.get_block_hash(height).await?;
             let header = self.esplora_client.get_block_header(&hash).await?;
             relay_headers.push(RelayHeader { hash, header, height });
