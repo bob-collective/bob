@@ -2,7 +2,7 @@
 [Git Source](https://github.com/bob-collective/bob/blob/master/src/gateway/IStrategy.sol)
 
 **Inherits:**
-[IStrategy](../../../../gateway/IStrategy.sol/interface.IStrategy.md)
+[IStrategy](../../gateway/IStrategy.sol/interface.IStrategy.md)
 
 
 ## Functions
