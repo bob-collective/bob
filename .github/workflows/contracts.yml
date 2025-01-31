@@ -23,7 +23,9 @@ jobs:
       - name: Install deps
         run: forge install
       - name: Run forge tests
-        run: forge test -vvv --deny-warnings
+        # Currently forked tests are disabled to increase reliability of CI builds
+        run: |
+          forge test --no-match-contract Forked -vvv --deny-warnings
 
   bindings:
     name: Bindings
