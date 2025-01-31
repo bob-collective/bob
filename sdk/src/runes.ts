@@ -1,16 +1,17 @@
 import * as bitcoin from 'bitcoinjs-lib';
 import { EsploraClient } from './esplora';
-// This implementation is based on ord 0.17.1, *use this as a reference only
-import { Runestone } from 'runestone-js';
+import { Cenotaph, RunestoneSpec, tryDecodeRunestone } from '@magiceden-oss/runestone-lib';
 
-export function parseRunestone(tx: bitcoin.Transaction): Runestone | undefined {
-    for (const out of tx.outs) {
-        if (out.script[0] === bitcoin.opcodes.OP_RETURN && out.script[1] === bitcoin.opcodes.OP_13) {
-            // skip OP_RETURN OP_13 OP_PUSHBYTES
-            const pureOutputBuffer = out.script.subarray(3);
-            return Runestone.dechiper(pureOutputBuffer);
-        }
-    }
+export function parseRunestone(tx: bitcoin.Transaction): RunestoneSpec | Cenotaph | null {
+    const rune = tryDecodeRunestone({
+        vout: tx.outs.map((out) => ({
+            scriptPubKey: {
+                hex: out.script.toString('hex'),
+            },
+        })),
+    });
+
+    return rune;
 }
 
 export async function getTxRunestone(esploraClient: EsploraClient, txid: string) {
