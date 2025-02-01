@@ -40,7 +40,10 @@ export function createCommitTxData(
         network,
     });
 
-    const cblock = scriptTaproot.witness?.[scriptTaproot.witness.length - 1];
+    if (!scriptTaproot.witness || scriptTaproot.witness.length === 0) {
+    throw new Error('Witness is undefined or empty');
+}
+const cblock = scriptTaproot.witness[scriptTaproot.witness.length - 1];
 
     const tapLeafScript = {
         leafVersion: scriptTaproot.redeemVersion!,
