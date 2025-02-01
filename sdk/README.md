@@ -56,8 +56,8 @@ pnpm test
 
 ## Contributing
 
-BOB is an open-source project. We welcome contributions of all sorts. There are many ways to help, from reporting issues, contributing code, and helping us improve our community.  
-Contributions are what make the open source community such an amazing place to be learn, inspire, and create. Any contributions you make are greatly appreciated.
+BOB is an open-source project. We welcome contributions of all sorts. There are many ways to help, from reporting issues to contributing code, and helping us improve our community.  
+Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are greatly appreciated.
 
 1. Set up git so you can [sign your commits](https://git-scm.com/book/en/v2/Git-Tools-Signing-Your-Work) (Alternative link: [GitHub: Signing commits](https://docs.github.com/en/authentication/managing-commit-signature-verification/signing-commits))  
 Unsigned PRs cannot be merged, so do not skip this step.
@@ -65,7 +65,7 @@ Unsigned PRs cannot be merged, so do not skip this step.
 3. Create your Feature Branch (git checkout -b yourname/AmazingFeature)
 4. Commit your Changes (git commit -m 'Add some AmazingFeature')
 5. Push to the Branch (git push origin yourname/AmazingFeature)
-6. Open a Pull Request with a description of feature you are adding
+6. Open a Pull Request with a description of the feature you are adding
 
 If you are searching for a place to start or would like to discuss features, reach out to us:
 
