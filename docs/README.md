@@ -8,7 +8,7 @@ This website is built using [Docusaurus 2](https://docusaurus.io/), a modern sta
 $ yarn
 ```
 
-You also need to run `yarn` in the `/sdk` root folder (required for the the automatic generation of the API documentation).  
+You also need to run `yarn` in the `/sdk` root folder (required for the automatic generation of the API documentation).  
 
 ### Local Development
 
@@ -24,7 +24,7 @@ This command starts a local development server and opens up a browser window. Mo
 $ yarn build
 ```
 
-This command generates static content into the `build` directory and can be served using any static contents hosting service.
+This command generates static content into the `build` directory and can be served using any static content hosting service.
 
 ### Deployment
 
