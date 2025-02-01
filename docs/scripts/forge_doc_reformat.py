@@ -17,7 +17,7 @@ def replace_git_sources(md_content):
         return replaced_url
 
     # Updated regular expression to capture the commit hash or tag
-    return re.sub(r'https://github.com/.+?/blob/([a-f0-9]+?)/.+?$', replace_source, md_content, flags=re.MULTILINE)
+    return re.sub(r'https://github.com/.+?/blob/([^/]+)/.+?$', replace_source, md_content, flags=re.MULTILINE)
 
 # Function to parse the Inherits line in the Markdown content
 def parse_inherits(md_content):
