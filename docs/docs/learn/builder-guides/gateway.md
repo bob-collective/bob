@@ -6,15 +6,15 @@ sidebar_position: 2
 
 [BOB Gateway](https://docs.gobob.xyz/learn/guides/bitcoin-bridge/) is a Bitcoin intent bridge that unlocks Bitcoin liquidity by reducing the number of steps to onboard users to your app, saving time and money. For example, users can go from **BTC** on Bitcoin to **staked BTC LSTs** with a single Bitcoin transaction.
 
-Our SDK makes it possible for you to bring this UX directly into your app.
+Our SDK enables seamless integration of this user experience into your app.
 
 ## How Gateway Works
 
 1. Liquidity providers (LPs) temporarily lock wrapped Bitcoin (WBTC or tBTC) in escrow smart contracts on BOB.
-1. A user makes a request for wrapped or staked Bitcoin (e.g. WBTC, tBTC, or a Bitcoin LST/LRT).
-1. The user sends BTC to the liquidity provider's Bitcoin address. A hash of the user's order is included in the `OP_RETURN` of the transaction.
+2. A user makes a request for wrapped or staked Bitcoin (e.g. WBTC, tBTC, or a Bitcoin LST/LRT).
+3. The user sends BTC to the liquidity provider's Bitcoin address. A hash of the user's order is included in the `OP_RETURN` of the transaction.
 
-1. Gateway finalizes the transaction. After trustlessly verifying the user's Bitcoin transaction with an on-chain [Light Client](/learn/builder-guides/relay.md), Gateway sends the LP's wrapped Bitcoin to the user's EVM address. If the user requested a Bitcoin LST/LRT, that token is minted using the LP's wrapped Bitcoin before it is sent to the user.
+4. Gateway finalizes the transaction. After trustlessly verifying the user's Bitcoin transaction with an on-chain [Light Client](/learn/builder-guides/relay.md), Gateway sends the LP's wrapped Bitcoin to the user's EVM address. If the user requests a Bitcoin LST/LRT, it is minted using the LP's wrapped Bitcoin before being sent.
 
 This SDK exposes helper functions for steps 2, 3, and 4 to be used in your application's front end.
 :::info Learn More
@@ -29,7 +29,7 @@ This is an example implementation of our SDK. You will need to decide how you ha
 
 Add `@gobob/bob-sdk` to your project using your preferred package manager.
 
-```bash npm2yarn
+```bash 
 npm install @gobob/bob-sdk
 ```
 
