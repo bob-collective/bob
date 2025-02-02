@@ -17,7 +17,7 @@ If you are developing on the BOB network, you need to install a wallet and a dev
 
 - [Metamask](https://metamask.io/)
 
-You can also use other EVM wallets. BOB has a special Snap though so that you can use MetaMask for both the BOB chain and Bitcoin.
+You can also use other EVM wallets. BOB has a special Snap that allows you to use MetaMask for both the BOB chain and Bitcoin
 
 #### Install a development environment
 
@@ -58,7 +58,7 @@ Check the docs for more information: [Hardhat](https://hardhat.org/getting-start
 
 #### Install
 
-Install Bitcoin Core `25.0` or higher so that you have access to the `bitcoind` and `bitcoin-cli` commands:
+Install Bitcoin Core (v25.0 or later) to access the bitcoind and bitcoin-cli commands:
 
 - MacOS: `brew install bitcoin`
 - Ubuntu: `sudo add-apt-repository ppa:bitcoin/bitcoin && sudo apt-get update && sudo apt-get install bitcoind`
@@ -142,9 +142,9 @@ If you are working with ordinals or BRC20 tokens on Bitcoin testnet or mainnet, 
 
 The good:
 
-- BRC20 indexing
-- Swagger supports code-gen
-- Additional APIs (inscription, swap, marketplace)
+- **BRC20 indexing**  
+- **Swagger supports code-gen**  
+- **Additional APIs** (inscription, swap, marketplace)  
 
 The bad:
 
@@ -154,11 +154,21 @@ Get started: https://docs.unisat.io/dev/unisat-developer-service
 
 ## More Tools
 
-### BOB SDK
+### **BOB SDK**  
+- **[sats-wagmi](/learn/builder-guides/sats-wagmi):**  
+  Learn how to use the sats-wagmi React hooks library to connect your app with Bitcoin wallets like UniSat, Leather, Xverse, and MetaMask.  
+- **[Bitcoin Light Client](/learn/builder-guides/relay):**  
+  Learn how to interact with Bitcoin by proving transaction inclusion on BOB.  
+- **[Use tBTC, wBTC, or other ERC20 Tokens as Fee Tokens on BOB](/learn/builder-guides/bridged-btc-gas-fee/index.md):**  
+  Learn how to use tBTC and wBTC as fee tokens on BOB.  
 
-- [sats-wagmi](/learn/builder-guides/sats-wagmi): Learn how to use the sats-wagmi React hooks library to connect your app with Bitcoin wallets like UniSat, Leather, Xverse, and MetaMask.
-- [Bitcoin Light Client](/learn/builder-guides/relay): Learn how to interact with Bitcoin by proving transaction inclusion on BOB.
-- [Use tBTC, wBTC, or other ERC20 Tokens as Fee Tokens on BOB](/learn/builder-guides/bridged-btc-gas-fee/index.md): Learn how to use tBTC and wBTC as fee tokens on BOB.
+### **Third-Party Tools on BOB**  
+
+- [Wallets](/learn/reference/tools/wallets)  
+- [UniSat Ordinals API](https://docs.unisat.io/dev/unisat-developer-service)  
+- [Rust zkVM](/learn/reference/tools/rust-zkvm)  
+- [Oracles](/learn/reference/tools/oracles)  
+
 
 ### Third-Party Tools on BOB
 
