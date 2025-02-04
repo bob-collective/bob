@@ -251,7 +251,7 @@ describe('UTXO Tests', () => {
                     },
                 },
                 {
-                    txid: Buffer.alloc(32, 0).toString('hex'),
+                    txid: Buffer.alloc(32, 2).toString('hex'),
                     index: 0,
                     ...redeemScript,
                     witnessUtxo: {
@@ -260,7 +260,7 @@ describe('UTXO Tests', () => {
                     },
                 },
                 {
-                    txid: Buffer.alloc(32, 0).toString('hex'),
+                    txid: Buffer.alloc(32, 3).toString('hex'),
                     index: 0,
                     ...redeemScript,
                     witnessUtxo: {
