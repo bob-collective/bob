@@ -1,5 +1,6 @@
 [workspace]
-members = ["relayer", "crates/bindings"]
+members = ["relayer", "crates/*"]
 
 [workspace.dependencies]
-bindings = { path = "crates/bindings" }
+bindings = { package = "bob-bindings", path = "crates/bindings" }
+utils = { package = "bob-utils", path = "crates/utils" }
