@@ -1,4 +1,3 @@
-use crate::esplora::EsploraClient;
 use alloy::{
     network::ReceiptResponse,
     primitives::{Bytes, FixedBytes, U256},
@@ -7,6 +6,7 @@ use bindings::fullrelaywithverify::FullRelayWithVerify::FullRelayWithVerifyInsta
 use bitcoin::{block::Header as BitcoinHeader, consensus, hashes::Hash, BlockHash};
 use eyre::{eyre, Result};
 use std::time::Duration;
+use utils::EsploraClient;
 
 const HEADERS_PER_BATCH: usize = 5;
 
@@ -115,7 +115,9 @@ impl<
         let bitcoin_height = self.esplora_client.get_chain_height().await?;
 
         let mut relay_headers = Vec::new();
-        for height in latest_height .. (latest_height + HEADERS_PER_BATCH as u32).min(bitcoin_height + 1) {
+        for height in
+            latest_height..(latest_height + HEADERS_PER_BATCH as u32).min(bitcoin_height + 1)
+        {
             let hash = self.esplora_client.get_block_hash(height).await?;
             let header = self.esplora_client.get_block_header(&hash).await?;
             relay_headers.push(RelayHeader { hash, header, height });

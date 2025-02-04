@@ -1,5 +1,5 @@
 [package]
-name = "relayer"
+name = "bob-relayer"
 version = "0.1.0"
 edition = "2021"
 
@@ -22,3 +22,4 @@ hex = "0.4.3"
 thiserror = "1.0.58"
 futures = "0.3"
 clap = { version = "4", features = ["derive", "env"] }
+utils.workspace = true
