@@ -433,7 +433,7 @@ export class GatewayApiClient {
             );
         }
 
-        if (![stakeParams.sender, stakeParams.receiver, stakeParams.token].every(isAddress)) {
+        if (![stakeParams.sender, stakeParams.receiver, stakeParams.token].every((address) => isAddress(address))) {
             throw new Error(`Invalid EVM address detected.`);
         }
 

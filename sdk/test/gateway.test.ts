@@ -4,7 +4,7 @@ import { MAINNET_GATEWAY_BASE_URL } from '../src/gateway/client';
 import { SYMBOL_LOOKUP } from '../src/gateway/tokens';
 import { BuildStakeParams, Chain, ChainId, StakeTransactionParams } from '../src/gateway/types';
 import { ZeroAddress } from 'ethers';
-import { bobTestnet } from './testUtils';
+import { bobSepolia } from 'viem/chains';
 import nock from 'nock';
 import * as bitcoin from 'bitcoinjs-lib';
 import { createPublicClient, http, maxUint256 } from 'viem';
@@ -352,7 +352,7 @@ describe('Gateway Tests', () => {
 
         // call method
         const publicClient = createPublicClient({
-            chain: bobTestnet,
+            chain: bobSepolia,
             transport: http(),
         });
 
