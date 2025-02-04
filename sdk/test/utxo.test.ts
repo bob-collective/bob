@@ -230,10 +230,18 @@ describe('UTXO Tests', () => {
         const inner = p2wpkh(Buffer.from(publicKey, 'hex'), NETWORK);
         const redeemScript = p2sh(inner);
 
+        // Generate unique txid values for each UTXO
+        const txids = [
+            '0000000000000000000000000000000000000000000000000000000000000001',
+            '0000000000000000000000000000000000000000000000000000000000000002',
+            '0000000000000000000000000000000000000000000000000000000000000003',
+            '0000000000000000000000000000000000000000000000000000000000000004'
+        ];
+
         const transaction = selectUTXO(
             [
                 {
-                    txid: Buffer.alloc(32, 0).toString('hex'),
+                    txid: txids[0],
                     index: 0,
                     ...redeemScript,
                     witnessUtxo: {
@@ -242,7 +250,7 @@ describe('UTXO Tests', () => {
                     },
                 },
                 {
-                    txid: Buffer.alloc(32, 0).toString('hex'),
+                    txid: txids[1],
                     index: 0,
                     ...redeemScript,
                     witnessUtxo: {
@@ -251,7 +259,7 @@ describe('UTXO Tests', () => {
                     },
                 },
                 {
-                    txid: Buffer.alloc(32, 0).toString('hex'),
+                    txid: txids[2],
                     index: 0,
                     ...redeemScript,
                     witnessUtxo: {
@@ -260,7 +268,7 @@ describe('UTXO Tests', () => {
                     },
                 },
                 {
-                    txid: Buffer.alloc(32, 0).toString('hex'),
+                    txid: txids[3],
                     index: 0,
                     ...redeemScript,
                     witnessUtxo: {
@@ -295,6 +303,7 @@ describe('UTXO Tests', () => {
 
         assert.isDefined(transaction);
     });
+
 
     it('should estimate the fee for a transaction', { timeout: 50000 }, async () => {
         // Addresses where randomly picked from blockstream.info
