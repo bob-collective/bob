@@ -23,6 +23,7 @@ import { createBitcoinPsbt } from '../wallet';
 import { Network } from 'bitcoin-address-validation';
 import { EsploraClient } from '../esplora';
 import { strategyCaller } from './strategyABI';
+import { isAddress, Address, isAddressEqual } from 'viem';
 
 type Optional<T, K extends keyof T> = Omit<T, K> & Partial<T>;
 
@@ -421,8 +422,7 @@ export class GatewayApiClient {
         const strategies = await this.getStrategies();
 
         // Convert addresses to lowercase and check if strategy exists
-        const strategy = strategies.find((s) => s.address.toLowerCase() === stakeParams.strategyAddress.toLowerCase());
-
+        const strategy = strategies.find((s) => isAddressEqual(s.address as Address, stakeParams.strategyAddress));
         if (!strategy) {
             throw new Error(`Strategy with address ${stakeParams.strategyAddress} not found.`);
         }
@@ -433,10 +433,7 @@ export class GatewayApiClient {
             );
         }
 
-        // Helper function to validate an EVM address
-        const isValidEvmAddress = (address: EvmAddress) => typeof address === 'string' && address.startsWith('0x');
-
-        if (![stakeParams.sender, stakeParams.receiver, stakeParams.token].every(isValidEvmAddress)) {
+        if (![stakeParams.sender, stakeParams.receiver, stakeParams.token].every(isAddress)) {
             throw new Error(`Invalid EVM address detected.`);
         }
 
