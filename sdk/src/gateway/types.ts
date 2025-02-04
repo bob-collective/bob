@@ -1,5 +1,6 @@
 import type { EsploraClient } from '../esplora';
 import { Address } from 'viem';
+import { strategyCaller } from './strategyABI';
 
 type ChainSlug = string | number;
 type TokenSymbol = string;
@@ -29,7 +30,7 @@ export type BuildStakeParams = {
 
 export type StakeERC20Params = {
     strategyAddress: Address;
-    abi: any; // You can refine this type further based on the actual structure of your ABI
+    abi: typeof strategyCaller; // You can refine this type further based on the actual structure of your ABI
     functionName: string;
     args: [Address, bigint, Address, { amountOutMin: bigint }];
     account: Address;
