@@ -15,11 +15,14 @@ import {
     EvmAddress,
     GatewayTokensInfo,
     OrderStatus,
+    StakeERC20Params,
+    BuildStakeParams,
 } from './types';
 import { SYMBOL_LOOKUP, ADDRESS_LOOKUP } from './tokens';
 import { createBitcoinPsbt } from '../wallet';
 import { Network } from 'bitcoin-address-validation';
 import { EsploraClient } from '../esplora';
+import { strategyCaller } from './strategyABI';
 
 type Optional<T, K extends keyof T> = Omit<T, K> & Partial<T>;
 
@@ -403,6 +406,45 @@ export class GatewayApiClient {
         // https://github.com/ethereum-optimism/ecosystem/blob/c6faa01455f9e846f31c0343a0be4c03cbeb2a6d/packages/op-app/src/hooks/useOPTokens.ts#L10
         const tokens = await this.getTokenAddresses(includeStrategies);
         return tokens.map((token) => ADDRESS_LOOKUP[this.chainId][token]).filter((token) => token !== undefined);
+    }
+
+    async buildStake(stakeParams: BuildStakeParams): Promise<StakeERC20Params> {
+        const strategies = await this.getStrategies();
+
+        // Convert addresses to lowercase and check if strategy exists
+        const strategy = strategies.find((s) => s.address.toLowerCase() === stakeParams.strategyAddress.toLowerCase());
+
+        if (!strategy) {
+            throw new Error(`Strategy with address ${stakeParams.strategyAddress} not found.`);
+        }
+
+        if (strategy.inputToken.address.toLowerCase() !== stakeParams.token.toLowerCase()) {
+            throw new Error(
+                `Provided token ${stakeParams.token} does not match strategy's input token ${strategy.inputToken.address}.`
+            );
+        }
+
+        // Helper function to validate an EVM address
+        const isValidEvmAddress = (address: EvmAddress) => typeof address === 'string' && address.startsWith('0x');
+
+        if (![stakeParams.sender, stakeParams.receiver, stakeParams.token].every(isValidEvmAddress)) {
+            throw new Error(`Invalid EVM address detected.`);
+        }
+
+        const params: StakeERC20Params = {
+            strategyAddress: stakeParams.strategyAddress,
+            abi: strategyCaller,
+            functionName: 'handleGatewayMessageWithSlippageArgs',
+            args: [
+                stakeParams.token,
+                stakeParams.amount,
+                stakeParams.receiver,
+                { amountOutMin: stakeParams.amountOutMin },
+            ],
+            account: stakeParams.sender,
+        };
+
+        return params;
     }
 
     private async fetchGet(url: string) {
