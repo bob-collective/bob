@@ -235,7 +235,7 @@ describe('UTXO Tests', () => {
             '0000000000000000000000000000000000000000000000000000000000000001',
             '0000000000000000000000000000000000000000000000000000000000000002',
             '0000000000000000000000000000000000000000000000000000000000000003',
-            '0000000000000000000000000000000000000000000000000000000000000004'
+            '0000000000000000000000000000000000000000000000000000000000000004',
         ];
 
         const transaction = selectUTXO(
@@ -303,7 +303,6 @@ describe('UTXO Tests', () => {
 
         assert.isDefined(transaction);
     });
-
 
     it('should estimate the fee for a transaction', { timeout: 50000 }, async () => {
         // Addresses where randomly picked from blockstream.info
