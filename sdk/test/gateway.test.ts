@@ -2,7 +2,7 @@ import { assert, describe, expect, it } from 'vitest';
 import { GatewaySDK } from '../src/gateway';
 import { MAINNET_GATEWAY_BASE_URL } from '../src/gateway/client';
 import { SYMBOL_LOOKUP } from '../src/gateway/tokens';
-import { BuildStakeParams, Chain, ChainId, StakeERC20Params } from '../src/gateway/types';
+import { BuildStakeParams, Chain, ChainId, StakeTransactionParams } from '../src/gateway/types';
 import { ZeroAddress } from 'ethers';
 import { bobTestnet } from './testUtils';
 import nock from 'nock';
@@ -328,7 +328,7 @@ describe('Gateway Tests', () => {
 
     // Skipping this test as it is likely to fail on the testnet once the user transfers their funds
     // or if the strategy is removed from the testnet. Use nock for mocking the responses in the meantime for other test.
-    it.skip('should get stake info', async () => {
+    it.skip('should correctly retrieve stake info and simulate call testnet strategy', async () => {
         const gatewaySDK = new GatewaySDK('testnet');
         const params: BuildStakeParams = {
             strategyAddress: '0x06cEA150E651236499319d78f92791f0FAe6FE67' as Address,
@@ -339,7 +339,7 @@ describe('Gateway Tests', () => {
             amountOutMin: 0n,
         };
 
-        const expected: StakeERC20Params = {
+        const expected: StakeTransactionParams = {
             strategyAddress: params.strategyAddress,
             abi: expect.any(Array), // Assuming ABI is an array
             functionName: 'handleGatewayMessageWithSlippageArgs',
@@ -500,7 +500,7 @@ describe('Gateway Tests', () => {
             amountOutMin: 0n,
         };
 
-        const expected: StakeERC20Params = {
+        const expected: StakeTransactionParams = {
             strategyAddress: params.strategyAddress,
             abi: expect.any(Array), // Assuming ABI is an array
             functionName: 'handleGatewayMessageWithSlippageArgs',

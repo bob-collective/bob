@@ -15,7 +15,7 @@ import {
     EvmAddress,
     GatewayTokensInfo,
     OrderStatus,
-    StakeERC20Params,
+    StakeTransactionParams,
     BuildStakeParams,
 } from './types';
 import { SYMBOL_LOOKUP, ADDRESS_LOOKUP } from './tokens';
@@ -408,7 +408,16 @@ export class GatewayApiClient {
         return tokens.map((token) => ADDRESS_LOOKUP[this.chainId][token]).filter((token) => token !== undefined);
     }
 
-    async buildStake(stakeParams: BuildStakeParams): Promise<StakeERC20Params> {
+    /**
+     * Builds the parameters required to stake ERC-20 tokens using the specified strategy.
+     *
+     * @param stakeParams - The parameters required for staking.
+     * @returns {Promise<StakeERC20Params>} The constructed staking parameters.
+     * @throws {Error} If the strategy or token does not match, or if any address is invalid.
+     *
+     * @note Tokens must be approved first before calling the staking function.
+     */
+    async buildStake(stakeParams: BuildStakeParams): Promise<StakeTransactionParams> {
         const strategies = await this.getStrategies();
 
         // Convert addresses to lowercase and check if strategy exists
@@ -431,9 +440,9 @@ export class GatewayApiClient {
             throw new Error(`Invalid EVM address detected.`);
         }
 
-        const params: StakeERC20Params = {
+        return {
             strategyAddress: stakeParams.strategyAddress,
-            abi: strategyCaller,
+            abi: strategyCaller, // Ensure 'strategyCaller' is correctly imported or defined
             functionName: 'handleGatewayMessageWithSlippageArgs',
             args: [
                 stakeParams.token,
@@ -443,8 +452,6 @@ export class GatewayApiClient {
             ],
             account: stakeParams.sender,
         };
-
-        return params;
     }
 
     private async fetchGet(url: string) {

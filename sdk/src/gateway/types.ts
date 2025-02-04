@@ -19,20 +19,39 @@ export enum ChainId {
     BOB_SEPOLIA = 808813,
 }
 
+/**
+ * Parameters required to construct a staking transaction.
+ */
 export type BuildStakeParams = {
+    /** @description The address of the staking strategy contract */
     strategyAddress: Address;
+    /** @description The token address being staked */
     token: Address;
+    /** @description The sender's wallet address (must be an EVM address) */
     sender: Address;
+    /** @description The receiver's wallet address (must be an EVM address) */
     receiver: Address;
+    /** @description The amount of tokens to stake (in smallest unit, e.g., wei for ERC-20 tokens) */
     amount: bigint;
+    /** @description Minimum acceptable output amount after slippage */
     amountOutMin: bigint;
 };
 
-export type StakeERC20Params = {
+/**
+ * Parameters needed to execute a staking transaction on an EVM-based chain.
+ *
+ * ⚠️ **Important**: The token must be approved before calling this transaction.
+ */
+export type StakeTransactionParams = {
+    /** @description The address of the staking strategy contract */
     strategyAddress: Address;
-    abi: typeof strategyCaller; // You can refine this type further based on the actual structure of your ABI
+    /** @description The ABI used to interact with the staking contract */
+    abi: typeof strategyCaller;
+    /** @description The name of the function being called on the contract */
     functionName: string;
+    /** @description Arguments required for the staking contract call */
     args: [Address, bigint, Address, { amountOutMin: bigint }];
+    /** @description The wallet address executing the transaction */
     account: Address;
 };
 
