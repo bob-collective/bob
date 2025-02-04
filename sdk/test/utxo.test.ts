@@ -40,8 +40,8 @@ describe('UTXO Tests', () => {
             // TODO: Use a real P2SH-P2WPKH address
             // TODO: Add the pubkey to allow spending from the outputs
             // '3DFVKuT9Ft4rWpysAZ1bHpg55EBy1HVPcr',
-            // P2PKH: https://blockstream.info/address/1PM46U2c5LhkcQXnHwfwQU6V1y4F4L7Ct4
-            '1PM46U2c5LhkcQXnHwfwQU6V1y4F4L7Ct4',
+            // P2PKH: https://blockstream.info/address/12higDjoCCNXSA95xZMWUdPvXNmkAduhWv
+            '12higDjoCCNXSA95xZMWUdPvXNmkAduhWv',
             // P2TR https://blockstream.info/address/bc1peqr5a5kfufvsl66444jm9y8qq0s87ph0zv4lfkcs7h40ew02uvsqkhjav0
             'bc1peqr5a5kfufvsl66444jm9y8qq0s87ph0zv4lfkcs7h40ew02uvsqkhjav0',
         ];
@@ -242,7 +242,7 @@ describe('UTXO Tests', () => {
                     },
                 },
                 {
-                    txid: Buffer.alloc(32, 0).toString('hex'),
+                    txid: Buffer.alloc(32, 1).toString('hex'),
                     index: 0,
                     ...redeemScript,
                     witnessUtxo: {
@@ -251,7 +251,7 @@ describe('UTXO Tests', () => {
                     },
                 },
                 {
-                    txid: Buffer.alloc(32, 0).toString('hex'),
+                    txid: Buffer.alloc(32, 2).toString('hex'),
                     index: 0,
                     ...redeemScript,
                     witnessUtxo: {
@@ -260,7 +260,7 @@ describe('UTXO Tests', () => {
                     },
                 },
                 {
-                    txid: Buffer.alloc(32, 0).toString('hex'),
+                    txid: Buffer.alloc(32, 3).toString('hex'),
                     index: 0,
                     ...redeemScript,
                     witnessUtxo: {
@@ -304,8 +304,8 @@ describe('UTXO Tests', () => {
             // P2SH-P2WPKH: https://blockstream.info/address/3DFVKuT9Ft4rWpysAZ1bHpg55EBy1HVPcr
             // TODO: As above, add a correct P2SH-P2WPKH address with its pub key
             // '3DFVKuT9Ft4rWpysAZ1bHpg55EBy1HVPcr',
-            // P2PKH: https://blockstream.info/address/1PM46U2c5LhkcQXnHwfwQU6V1y4F4L7Ct4
-            '1PM46U2c5LhkcQXnHwfwQU6V1y4F4L7Ct4',
+            // P2PKH: https://blockstream.info/address/12higDjoCCNXSA95xZMWUdPvXNmkAduhWv
+            '12higDjoCCNXSA95xZMWUdPvXNmkAduhWv',
             // P2TR https://blockstream.info/address/bc1peqr5a5kfufvsl66444jm9y8qq0s87ph0zv4lfkcs7h40ew02uvsqkhjav0
             'bc1peqr5a5kfufvsl66444jm9y8qq0s87ph0zv4lfkcs7h40ew02uvsqkhjav0',
         ];
