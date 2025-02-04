@@ -230,18 +230,10 @@ describe('UTXO Tests', () => {
         const inner = p2wpkh(Buffer.from(publicKey, 'hex'), NETWORK);
         const redeemScript = p2sh(inner);
 
-        // Generate unique txid values for each UTXO
-        const txids = [
-            '0000000000000000000000000000000000000000000000000000000000000001',
-            '0000000000000000000000000000000000000000000000000000000000000002',
-            '0000000000000000000000000000000000000000000000000000000000000003',
-            '0000000000000000000000000000000000000000000000000000000000000004',
-        ];
-
         const transaction = selectUTXO(
             [
                 {
-                    txid: txids[0],
+                    txid: Buffer.alloc(32, 0).toString('hex'),
                     index: 0,
                     ...redeemScript,
                     witnessUtxo: {
@@ -250,7 +242,7 @@ describe('UTXO Tests', () => {
                     },
                 },
                 {
-                    txid: txids[1],
+                    txid: Buffer.alloc(32, 1).toString('hex'),
                     index: 0,
                     ...redeemScript,
                     witnessUtxo: {
@@ -259,7 +251,7 @@ describe('UTXO Tests', () => {
                     },
                 },
                 {
-                    txid: txids[2],
+                    txid: Buffer.alloc(32, 0).toString('hex'),
                     index: 0,
                     ...redeemScript,
                     witnessUtxo: {
@@ -268,7 +260,7 @@ describe('UTXO Tests', () => {
                     },
                 },
                 {
-                    txid: txids[3],
+                    txid: Buffer.alloc(32, 0).toString('hex'),
                     index: 0,
                     ...redeemScript,
                     witnessUtxo: {
