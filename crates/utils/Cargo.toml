@@ -7,18 +7,18 @@ edition = "2021"
 eyre = "0.6"
 thiserror = "1.0.58"
 tracing = "0.1.0"
-futures = "0.3.26"
 serde = "1.0.139"
 serde_json = "1.0.82"
-tokio = { version = "1.40", features = ["full"] }
 tempfile = "3"
-reqwest = { version = "0.11.11", features = ["json"] }
 hex = "0.4.3"
+
+reqwest = { workspace = true, features = ["json"] }
+tokio = { workspace = true, features = ["full"] }
 
 num = "0.2"
 num-traits = "0.2.19"
 num-derive = "0.3"
 
 # Bitcoin
-bitcoin = { version = "0.30.0", features = ["serde"] }
-bitcoincore-rpc = "0.17"
+bitcoin = { workspace = true, features = ["serde"] }
+bitcoincore-rpc.workspace = true
