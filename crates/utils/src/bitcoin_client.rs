@@ -1,9 +1,10 @@
 use bitcoin::{
-    consensus::serialize,
+    address::NetworkChecked,
+    consensus::{self, serialize},
     hashes::{hex::FromHex, sha256d::Hash as Sha256dHash, Hash},
     opcodes,
     script::{Error as ScriptError, Instruction},
-    MerkleBlock, Network, ScriptBuf, Txid,
+    Address, Amount, MerkleBlock, Network, ScriptBuf, Txid,
 };
 use bitcoincore_rpc::{
     bitcoin::{BlockHash, Transaction},
@@ -98,6 +99,12 @@ pub enum Error {
     BitcoinError(#[from] BitcoinError),
     #[error("ScriptError: {0}")]
     ScriptError(#[from] ScriptError),
+    #[error("SerdeError: {0}")]
+    SerdeError(#[from] serde_json::Error),
+    #[error("HexError: {0}")]
+    HexError(#[from] bitcoin::hashes::hex::Error),
+    #[error("EncodeError: {0}")]
+    EncodeError(#[from] bitcoin::consensus::encode::Error),
     #[error("Missing Txid")]
     MissingTxId,
     #[error("Timeout: {0}")]
@@ -108,6 +115,8 @@ pub enum Error {
     InvalidBitcoinTx,
     #[error("Invalid network")]
     InvalidNetwork,
+    #[error("Invalid recipient")]
+    InvalidRecipient,
 }
 
 #[derive(Clone)]
@@ -182,8 +191,20 @@ impl BitcoinClient {
         Ok(serialize(&self.rpc.get_block_header(hash)?))
     }
 
-    pub fn get_raw_tx(&self, txid: &Txid, block_hash: &BlockHash) -> Result<Vec<u8>, Error> {
-        Ok(Vec::<u8>::from_hex(&self.rpc.get_raw_transaction_hex(txid, Some(block_hash))?).unwrap())
+    pub fn get_raw_tx(
+        &self,
+        txid: &Txid,
+        block_hash: Option<&BlockHash>,
+    ) -> Result<Vec<u8>, Error> {
+        Ok(Vec::<u8>::from_hex(&self.rpc.get_raw_transaction_hex(txid, block_hash)?)?)
+    }
+
+    pub fn get_tx(
+        &self,
+        txid: &Txid,
+        block_hash: Option<&BlockHash>,
+    ) -> Result<Transaction, Error> {
+        Ok(consensus::deserialize(&self.get_raw_tx(txid, block_hash)?)?)
     }
 
     pub fn get_merkle_block(
@@ -226,6 +247,64 @@ impl BitcoinClient {
             }
             _ => Err(Error::InvalidBitcoinTx),
         }
+    }
+
+    pub fn send_to_address_with_op_return(
+        &self,
+        address: Option<&Address<NetworkChecked>>,
+        amount: Option<Amount>,
+        op_return_data: Option<&Vec<u8>>,
+        replaceable: Option<bool>,
+        confirmation_target: Option<u32>,
+        estimate_mode: Option<bitcoincore_rpc::json::EstimateMode>,
+    ) -> Result<Txid, Error> {
+        match (address, amount, op_return_data) {
+            // txs must have at least one output
+            (Some(_), None, _) | (None, Some(_), _) | (None, None, None) => {
+                return Err(Error::InvalidRecipient);
+            }
+            _ => {}
+        }
+
+        let mut outputs = serde_json::Map::new();
+        if let (Some(addr), Some(amt)) = (address, amount) {
+            outputs.insert(addr.to_string(), serde_json::Value::from(amt.to_btc()));
+        }
+        if let Some(data) = op_return_data {
+            outputs.insert("data".to_string(), serde_json::Value::String(hex::encode(data)));
+        }
+
+        let tx = self.rpc.call::<String>(
+            "createrawtransaction",
+            &[
+                serde_json::to_value::<&[bitcoincore_rpc::json::CreateRawTransactionInput]>(&[])?,
+                serde_json::to_value(outputs)?,
+            ],
+        )?;
+        let tx = self
+            .rpc
+            .fund_raw_transaction(
+                tx,
+                Some(&bitcoincore_rpc::json::FundRawTransactionOptions {
+                    add_inputs: None,
+                    change_address: None,
+                    change_position: None,
+                    change_type: None,
+                    include_watching: None,
+                    lock_unspents: None,
+                    fee_rate: None,
+                    subtract_fee_from_outputs: None,
+                    replaceable,
+                    conf_target: confirmation_target,
+                    estimate_mode,
+                }),
+                None,
+            )?
+            .hex;
+        let tx = self.rpc.sign_raw_transaction_with_wallet(&tx, None, None)?.hex;
+        let txid = self.rpc.send_raw_transaction(&tx)?;
+
+        Ok(txid)
     }
 }
 
