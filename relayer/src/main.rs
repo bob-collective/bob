@@ -4,12 +4,11 @@ use alloy::{
 };
 use bindings::fullrelaywithverify::FullRelayWithVerify as BitcoinRelay;
 use clap::Parser;
-use esplora::EsploraClient;
 use eyre::Result;
 use relayer::Relayer;
 use reqwest::Url;
+use utils::EsploraClient;
 
-mod esplora;
 mod relayer;
 
 /// Relayer
@@ -70,10 +69,9 @@ mod tests {
         let wallet = EthereumWallet::from(signer.clone());
         let rpc_url = anvil.endpoint_url();
 
-        let provider =
-            ProviderBuilder::new().with_recommended_fillers().wallet(wallet).on_http(rpc_url);
+        let provider = ProviderBuilder::new().wallet(wallet).on_http(rpc_url);
 
-        let esplora_client = esplora::EsploraClient::new(None, bitcoin::Network::Bitcoin)?;
+        let esplora_client = EsploraClient::new(None, bitcoin::Network::Bitcoin)?;
 
         let period_start_height = 201600;
         // change this to test different headers
