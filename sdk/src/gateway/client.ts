@@ -413,13 +413,24 @@ export class GatewayApiClient {
      * Builds the parameters required to stake ERC-20 tokens using the specified strategy.
      *
      * @param stakeParams - The parameters required for staking.
-     * @returns {Promise<StakeERC20Params>} The constructed staking parameters.
+     * @returns {Promise<BuildStakeParams>} The constructed staking parameters.
      * @throws {Error} If the strategy or token does not match, or if any address is invalid.
      *
      * @note Tokens must be approved first before calling the staking function.
      * @example
-     * // check configs: https://viem.sh/docs/contract/writeContract.html#usage
+     * ```ts
+     * // Check configs: https://viem.sh/docs/contract/writeContract.html#usage
      * import { account, publicClient, walletClient } from './config';
+     *
+     * // Define staking parameters
+     * const params: BuildStakeParams = {
+     *     strategyAddress: '0x06cEA150E651236499319d78f92791f0FAe6FE67' as Address,
+     *     token: '0x6744babdf02dcf578ea173a9f0637771a9e1c4d0' as Address,
+     *     sender: '0x5e46D220eC8B01f55B70Dbb503c697f6E231eb65' as Address, // Sender must hold the input token
+     *     receiver: '0x5e46D220eC8B01f55B70Dbb503c697f6E231eb65' as Address,
+     *     amount: 100n,
+     *     amountOutMin: 0n,
+     * };
      *
      * // Call SDK method to build stake parameters
      * const result = await gatewaySDK.buildStake(params);
@@ -443,6 +454,7 @@ export class GatewayApiClient {
      *     account: result.account, // Ensure correct type
      * });
      * await walletClient.writeContract(stakeRequest);
+     * ```
      */
     async buildStake(stakeParams: BuildStakeParams): Promise<StakeTransactionParams> {
         const strategies = await this.getStrategies();
