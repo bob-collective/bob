@@ -38,11 +38,11 @@ _A Hybrid L2 should inherit security from multiple L1s._
 
 #### Ethereum Consensus: OP Stack Rollup
 
-BOB launched on the [OP stack](https://docs.optimism.io/) to be able to roll its transactions up to Ethereum for 1-click onboarding of users, assets, and liquidity. This unlocks cutting-edge upgrades to the network, such as the upcoming ZK improvements by [RiscZero](https://www.risczero.com/).
+BOB launched on the [OP stack](https://docs.optimism.io/) to be able to roll its transactions up to Ethereum for 1-click onboarding of users, assets, and liquidity.
 
-#### Bitcoin Consensus: Soft Finality via Babylon
+#### Bitcoin Consensus: Soft Finality via BTC-Staking
 
-BOB will soon transition to [phase two of our roadmap](/learn/introduction/roadmap/#-phase-2-bitcoin-soft-finality), a dual-consensus model that inherits finality and security from Bitcoin. This requires modifying BOB's sequencer to request validation from Bitcoin finality protocol participants (i.e. [Babylon](https://babylonchain.io/)) to validate the chain state before submitting state commitments to Ethereum.
+BOB will soon transition to [phase two of our roadmap](/learn/introduction/roadmap/#-phase-2-bitcoin-soft-finality), a dual-consensus model that inherits finality and security from Bitcoin. This requires modifying BOB's sequencer to request validation from Bitcoin finality protocol participants (e.g. [BTC stakers](https://babylonchain.io/)) to validate the chain state before submitting state commitments to Ethereum.
 
 [BOB's ultimate goal](/learn/introduction/roadmap/#phase-3-full-bitcoin-security) is to settle directly on Bitcoin. While we believe in full-state validation via ZK rollups in the long run, it is unlikely that Bitcoin will support a ZK verifier in the near future. As such, the best possible design at the moment is an optimistic rollup that leverages on-chain fraud-proofs via mechanisms like [BitVM](/learn/introduction/bitvm/).
 
