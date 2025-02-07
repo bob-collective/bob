@@ -413,7 +413,7 @@ export class GatewayApiClient {
      * Builds the parameters required to stake ERC-20 tokens using the specified strategy.
      *
      * @param stakeParams - The parameters required for staking.
-     * @returns {Promise<BuildStakeParams>} The constructed staking parameters.
+     * @returns {Promise<StakeTransactionParams>} The constructed staking parameters.
      * @throws {Error} If the strategy or token does not match, or if any address is invalid.
      *
      * @note Tokens must be approved first before calling the staking function.
