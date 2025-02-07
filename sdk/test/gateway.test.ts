@@ -341,10 +341,13 @@ describe('Gateway Tests', () => {
 
         const expected: StakeTransactionParams = {
             strategyAddress: params.strategyAddress,
-            abi: expect.any(Array), // Assuming ABI is an array
-            functionName: 'handleGatewayMessageWithSlippageArgs',
-            args: [params.token, params.amount, params.receiver, { amountOutMin: params.amountOutMin }],
+            strategyABI: expect.any(Array), // Assuming ABI is an array
+            strategyFunctionName: 'handleGatewayMessageWithSlippageArgs',
+            strategyArgs: [params.token, params.amount, params.receiver, { amountOutMin: params.amountOutMin }],
             account: params.sender,
+            erc20TokenABI: expect.any(Array),
+            erc20ApproveFunctionName: 'approve',
+            erc20ApproveArgs: [params.strategyAddress, params.amount],
         };
 
         const result = await gatewaySDK.buildStake(params);
@@ -383,14 +386,14 @@ describe('Gateway Tests', () => {
         );
 
         const maxAllowance = numberToHex(maxUint256);
-
         const { request } = await publicClient.simulateContract({
             address: result.strategyAddress, // Ensure correct type
-            abi: result.abi,
-            functionName: result.functionName,
-            args: result.args,
+            abi: result.strategyABI,
+            functionName: result.strategyFunctionName,
+            args: result.strategyArgs,
             account: result.account, // Ensure correct type
             stateOverride: [
+                // overriding token allowance
                 {
                     address: params.token,
                     stateDiff: [
@@ -502,10 +505,13 @@ describe('Gateway Tests', () => {
 
         const expected: StakeTransactionParams = {
             strategyAddress: params.strategyAddress,
-            abi: expect.any(Array), // Assuming ABI is an array
-            functionName: 'handleGatewayMessageWithSlippageArgs',
-            args: [params.token, params.amount, params.receiver, { amountOutMin: params.amountOutMin }],
+            strategyABI: expect.any(Array), // Assuming ABI is an array
+            strategyFunctionName: 'handleGatewayMessageWithSlippageArgs',
+            strategyArgs: [params.token, params.amount, params.receiver, { amountOutMin: params.amountOutMin }],
             account: params.sender,
+            erc20TokenABI: expect.any(Array),
+            erc20ApproveFunctionName: 'approve',
+            erc20ApproveArgs: [params.strategyAddress, params.amount],
         };
 
         const result = await gatewaySDK.buildStake(params);

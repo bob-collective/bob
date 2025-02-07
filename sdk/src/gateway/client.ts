@@ -22,7 +22,7 @@ import { SYMBOL_LOOKUP, ADDRESS_LOOKUP } from './tokens';
 import { createBitcoinPsbt } from '../wallet';
 import { Network } from 'bitcoin-address-validation';
 import { EsploraClient } from '../esplora';
-import { strategyCaller } from './strategyABI';
+import { erc20ApproveCaller, strategyCaller } from './strategyABI';
 import { isAddress, Address, isAddressEqual } from 'viem';
 
 type Optional<T, K extends keyof T> = Omit<T, K> & Partial<T>;
@@ -417,6 +417,32 @@ export class GatewayApiClient {
      * @throws {Error} If the strategy or token does not match, or if any address is invalid.
      *
      * @note Tokens must be approved first before calling the staking function.
+     * @example
+     * // check configs: https://viem.sh/docs/contract/writeContract.html#usage
+     * import { account, publicClient, walletClient } from './config';
+     *
+     * // Call SDK method to build stake parameters
+     * const result = await gatewaySDK.buildStake(params);
+     *
+     * // Approve ERC-20 token to be spent
+     * const { request: approveRequest } = await publicClient.simulateContract({
+     *     address: params.token, // Ensure correct type
+     *     abi: result.erc20TokenABI,
+     *     functionName: result.erc20ApproveFunctionName,
+     *     args: result.erc20ApproveArgs,
+     *     account: result.account, // Ensure correct type
+     * });
+     * await walletClient.writeContract(approveRequest);
+     *
+     * // Call strategy contract
+     * const { request: stakeRequest } = await publicClient.simulateContract({
+     *     address: result.strategyAddress, // Ensure correct type
+     *     abi: result.strategyABI,
+     *     functionName: result.strategyFunctionName,
+     *     args: result.strategyArgs,
+     *     account: result.account, // Ensure correct type
+     * });
+     * await walletClient.writeContract(stakeRequest);
      */
     async buildStake(stakeParams: BuildStakeParams): Promise<StakeTransactionParams> {
         const strategies = await this.getStrategies();
@@ -427,7 +453,7 @@ export class GatewayApiClient {
             throw new Error(`Strategy with address ${stakeParams.strategyAddress} not found.`);
         }
 
-        if (strategy.inputToken.address.toLowerCase() !== stakeParams.token.toLowerCase()) {
+        if (!isAddressEqual(strategy.inputToken.address as Address, stakeParams.token)) {
             throw new Error(
                 `Provided token ${stakeParams.token} does not match strategy's input token ${strategy.inputToken.address}.`
             );
@@ -439,14 +465,17 @@ export class GatewayApiClient {
 
         return {
             strategyAddress: stakeParams.strategyAddress,
-            abi: strategyCaller, // Ensure 'strategyCaller' is correctly imported or defined
-            functionName: 'handleGatewayMessageWithSlippageArgs',
-            args: [
+            strategyABI: strategyCaller,
+            strategyFunctionName: 'handleGatewayMessageWithSlippageArgs',
+            strategyArgs: [
                 stakeParams.token,
                 stakeParams.amount,
                 stakeParams.receiver,
                 { amountOutMin: stakeParams.amountOutMin },
             ],
+            erc20TokenABI: erc20ApproveCaller,
+            erc20ApproveFunctionName: 'approve',
+            erc20ApproveArgs: [stakeParams.strategyAddress, stakeParams.amount],
             account: stakeParams.sender,
         };
     }
