@@ -7,8 +7,7 @@ import { ZeroAddress } from 'ethers';
 import { bobSepolia } from 'viem/chains';
 import nock from 'nock';
 import * as bitcoin from 'bitcoinjs-lib';
-import { createPublicClient, http, maxUint256 } from 'viem';
-import { keccak256, numberToHex, encodeAbiParameters } from 'viem';
+import { createPublicClient, http, maxUint256, keccak256, numberToHex, encodeAbiParameters } from 'viem';
 import { Address } from 'viem/accounts';
 
 const TBTC = SYMBOL_LOOKUP[ChainId.BOB]['tbtc'];
@@ -345,7 +344,6 @@ describe('Gateway Tests', () => {
             strategyFunctionName: 'handleGatewayMessageWithSlippageArgs',
             strategyArgs: [params.token, params.amount, params.receiver, { amountOutMin: params.amountOutMin }],
             account: params.sender,
-            erc20TokenABI: expect.any(Array),
             erc20ApproveFunctionName: 'approve',
             erc20ApproveArgs: [params.strategyAddress, params.amount],
         };
@@ -509,8 +507,6 @@ describe('Gateway Tests', () => {
             strategyFunctionName: 'handleGatewayMessageWithSlippageArgs',
             strategyArgs: [params.token, params.amount, params.receiver, { amountOutMin: params.amountOutMin }],
             account: params.sender,
-            erc20TokenABI: expect.any(Array),
-            erc20ApproveFunctionName: 'approve',
             erc20ApproveArgs: [params.strategyAddress, params.amount],
         };
 

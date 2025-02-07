@@ -1,6 +1,6 @@
 import type { EsploraClient } from '../esplora';
 import { Address } from 'viem';
-import { erc20ApproveCaller, strategyCaller } from './strategyABI';
+import { strategyCaller } from './strategyABI';
 
 type ChainSlug = string | number;
 type TokenSymbol = string;
@@ -53,10 +53,6 @@ export type StakeTransactionParams = {
     strategyArgs: [Address, bigint, Address, { amountOutMin: bigint }];
     /** @description The wallet address executing the transaction */
     account: Address;
-    /** @description The ABI used to interact with the ERC-20 token contract for approval */
-    erc20TokenABI: typeof erc20ApproveCaller;
-    /** @description  The function name used to approve token spending before staking */
-    erc20ApproveFunctionName: string;
     /** @description  Arguments required for the token approval transaction */
     erc20ApproveArgs: [Address, bigint];
 };

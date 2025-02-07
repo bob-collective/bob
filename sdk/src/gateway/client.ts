@@ -22,7 +22,7 @@ import { SYMBOL_LOOKUP, ADDRESS_LOOKUP } from './tokens';
 import { createBitcoinPsbt } from '../wallet';
 import { Network } from 'bitcoin-address-validation';
 import { EsploraClient } from '../esplora';
-import { erc20ApproveCaller, strategyCaller } from './strategyABI';
+import { strategyCaller } from './strategyABI';
 import { isAddress, Address, isAddressEqual } from 'viem';
 
 type Optional<T, K extends keyof T> = Omit<T, K> & Partial<T>;
@@ -421,6 +421,7 @@ export class GatewayApiClient {
      * ```ts
      * // Check configs: https://viem.sh/docs/contract/writeContract.html#usage
      * import { account, publicClient, walletClient } from './config';
+     * import { erc20Abi } from 'viem';
      *
      * // Define staking parameters
      * const params: BuildStakeParams = {
@@ -438,8 +439,8 @@ export class GatewayApiClient {
      * // Approve ERC-20 token to be spent
      * const { request: approveRequest } = await publicClient.simulateContract({
      *     address: params.token, // Ensure correct type
-     *     abi: result.erc20TokenABI,
-     *     functionName: result.erc20ApproveFunctionName,
+     *     abi: erc20Abi,
+     *     functionName: 'approve',
      *     args: result.erc20ApproveArgs,
      *     account: result.account, // Ensure correct type
      * });
@@ -485,8 +486,6 @@ export class GatewayApiClient {
                 stakeParams.receiver,
                 { amountOutMin: stakeParams.amountOutMin },
             ],
-            erc20TokenABI: erc20ApproveCaller,
-            erc20ApproveFunctionName: 'approve',
             erc20ApproveArgs: [stakeParams.strategyAddress, stakeParams.amount],
             account: stakeParams.sender,
         };
