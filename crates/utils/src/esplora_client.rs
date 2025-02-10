@@ -134,7 +134,7 @@ impl EsploraClient {
     }
 
     pub async fn validate_and_send_raw_transaction(&self, tx: &Transaction) -> Result<Txid> {
-        let txid = tx.txid();
+        let txid = tx.compute_txid();
         let tx_status = self.get_tx_status(&txid).await?;
         match tx_status {
             TransactionStatus { confirmed: true, block_height: Some(_), .. } => Ok(txid),
