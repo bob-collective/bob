@@ -11,6 +11,18 @@ Supported Networks
 - [BOB Mainnet](https://docs.chain.link/ccip/directory/mainnet/chain/bitcoin-mainnet-bob-1)
 - [BOB Sepolia](https://docs.chain.link/ccip/directory/testnet/chain/bitcoin-testnet-sepolia-bob-1)
 
+## Hyperlane
+
+[Hyperlane](https://hyperlane.xyz/) is a permissionless interoperability protocol for cross-chain communication. It enables message passing and asset transfers across different chains without relying on centralized intermediaries or requiring any permissions.
+
+See [Hyperlane's docs](https://docs.hyperlane.xyz/docs/intro) to learn how you can integrated their protocol. Their [GitHub](https://github.com/hyperlane-xyz) and [Discord](https://discord.com/invite/hyperlane) are available as well.
+
+### Supported Networks
+
+**Supported Networks**
+
+- [BOB Mainnet](https://docs.hyperlane.xyz/docs/reference/domains)
+
 ## LayerZero
 
 LayerZero is a technology that enables applications to move data across blockchains, uniquely supporting censorship-resistant messages and permissionless development through immutable smart contracts. Projects on BOB can connect to 35+ supported blockchains using LayerZero's contracts.
