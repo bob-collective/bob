@@ -42,6 +42,7 @@ If you are having issues with your RPC connection, try [BlastAPI's public endpoi
 - WS URL: [wss://bob-sepolia.rpc.gobob.xyz](wss://bob-sepolia.rpc.gobob.xyz)
 - Explorer: https://bob-sepolia.explorer.gobob.xyz/
 - Bridge: https://bob-sepolia.gobob.xyz/
+- Faucet: https://console.optimism.io/faucet
 
 ### Ethereum Sepolia (Testnet)
 
