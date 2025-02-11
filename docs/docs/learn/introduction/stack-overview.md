@@ -72,7 +72,7 @@ The native bridges to Ethereum and Bitcoin are both secured by our [hybrid Bitco
 
 _A Hybrid L2 should make Bitcoin DeFi smooth and safe for users and builders._
 
-[Intent-based bridging](/learn/introduction/gateway/), [smart accounts](/learn/reference/tools/account-abstraction/) controlled by Bitcoin wallets, [paying fees with BTC](/learn/builder-guides/bridged-btc-gas-fee/), and [unilateral exit back to Bitcoin](/learn/introduction/bitvm/) and Ethereum - BOB is singularly-focused on bringing this UX and security to Bitcoin DeFi by providing these tools to teams building on BOB.
+[Intent-based bridging](/learn/introduction/gateway/), [smart accounts](/learn/reference/tools/account-abstraction/) controlled by Bitcoin wallets, [paying fees with BTC](/learn/builder-guides/bridged-btc-gas-fee/), and [unilateral exit back to Bitcoin](/learn/introduction/bitvm/) and Ethereum - BOB is singularly focused on bringing this UX and security to Bitcoin DeFi by providing these tools to teams building on BOB.
 
 ### Smart Contracts Reading and Writing to Bitcoin
 
