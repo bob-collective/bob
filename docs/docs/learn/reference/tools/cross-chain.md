@@ -23,7 +23,7 @@ Key CCIP developer tools:
 
 If you require technical advice or wish to consult on your project's implementation, please contact a CCIP expert through Chainlink’s [CCIP contact form](https://chain.link/ccip-contact).
 
-Supported Networks
+#### Supported Networks
 
 - [BOB Mainnet](https://docs.chain.link/ccip/directory/mainnet/chain/bitcoin-mainnet-bob-1)
 - [BOB Sepolia](https://docs.chain.link/ccip/directory/testnet/chain/bitcoin-testnet-sepolia-bob-1)
@@ -34,9 +34,7 @@ Supported Networks
 
 See [Hyperlane's docs](https://docs.hyperlane.xyz/docs/intro) to learn how you can integrate their protocol. Their [GitHub](https://github.com/hyperlane-xyz) and [Discord](https://discord.com/invite/hyperlane) are available as well.
 
-### Supported Networks
-
-**Supported Networks**
+#### Supported Networks
 
 - [BOB Mainnet](https://docs.hyperlane.xyz/docs/reference/domains)
 
@@ -46,9 +44,7 @@ LayerZero is a technology that enables applications to move data across blockcha
 
 Visit [LayerZero's documentation](https://docs.layerzero.network/v2) to learn more about their supported chains, data schema, omnichain fungible tokens (OFTs), and other useful guides. Their [GitHub repository](https://github.com/LayerZero-Labs) and [Discord](https://discord-layerzero.netlify.app/discord) are also wonderful resources for getting started.
 
-### Supported Networks
-
-**Supported Networks**
+#### Supported Networks
 
 - [BOB Mainnet](https://docs.layerzero.network/v2/developers/evm/technical-reference/deployed-contracts#bob)
 - [BOB Testnet](https://docs.layerzero.network/v2/developers/evm/technical-reference/deployed-contracts#bob-testnet)
