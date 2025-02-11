@@ -2,7 +2,9 @@
 
 ## Chainlink CCIP
 
-BOB has chosen Chainlink’s [Cross-Chain Interoperability Protocol (CCIP)](https://chain.link/cross-chain) as its canonical bridge solution. This means asset issuers looking to expand their token cross-chain can benefit from CCIP. This applies both to assets issued natively on BOB that want to expand to other chains, as well as native tokens on other chains looking to bridge into the BOB ecosystem.
+BOB has chosen Chainlink’s [Cross-Chain Interoperability Protocol (CCIP)](https://chain.link/cross-chain) as its canonical bridge solution. CCIP will complement BOB’s [trust-minimized BitVM bridge to Bitcoin](https://blog.gobob.xyz/posts/bob-announces-trust-minimized-bitcoin-bridge-prototype-powered-by-bitvm) and native bridge to Ethereum, supporting BOB’s mission to position Bitcoin as the backbone of DeFi.
+
+This means asset issuers looking to expand their token cross-chain can benefit from CCIP. This applies both to assets issued natively on BOB that want to expand to other chains, as well as native tokens on other chains looking to bridge into the BOB ecosystem.
 
 Chainlink CCIP enables developers to build secure cross-chain apps that can transfer tokens, send messages, and initiate actions across blockchains. Through the [Cross-Chain Token (CCT)](https://blog.chain.link/ccip-v-1-5-upgrade/) standard, CCIP enables token developers to integrate new and existing tokens with CCIP in a self-serve manner in minutes. CCTs support self-serve deployments, full control and ownership for developers, enhanced programmability, and zero-slippage transfers. CCIP is built with [defense-in-depth security](https://blog.chain.link/ccip-security-features/) and is powered by Chainlink oracle networks—a proven standard with a track record of securing tens of billions of dollars and enabling over $18 trillion in onchain transaction value.
 
