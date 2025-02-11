@@ -32,7 +32,7 @@ Supported Networks
 
 [Hyperlane](https://hyperlane.xyz/) is a permissionless interoperability protocol for cross-chain communication. It enables message passing and asset transfers across different chains without relying on centralized intermediaries or requiring any permissions.
 
-See [Hyperlane's docs](https://docs.hyperlane.xyz/docs/intro) to learn how you can integrated their protocol. Their [GitHub](https://github.com/hyperlane-xyz) and [Discord](https://discord.com/invite/hyperlane) are available as well.
+See [Hyperlane's docs](https://docs.hyperlane.xyz/docs/intro) to learn how you can integrate their protocol. Their [GitHub](https://github.com/hyperlane-xyz) and [Discord](https://discord.com/invite/hyperlane) are available as well.
 
 ### Supported Networks
 
