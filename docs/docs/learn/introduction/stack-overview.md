@@ -38,13 +38,21 @@ _A Hybrid L2 should inherit security from multiple L1s._
 
 #### Ethereum Consensus: OP Stack Rollup
 
-BOB launched on the [OP stack](https://docs.optimism.io/) to be able to roll its transactions up to Ethereum for 1-click onboarding of users, assets, and liquidity.
+BOB launched on the [OP stack](https://docs.optimism.io/) as an optimistic rollup and will soon transition to a validity rollup model. This involves using SNARKs to create validity proofs that cryptographically verify the correctness of BOB state proposals, as described below. These ZK proofs enable immediate finalization of state and faster withdrawals to Ethereum, reducing withdrawal times from 7 days to just a few hours.
 
 #### Bitcoin Consensus: Soft Finality via BTC-Staking
 
-BOB will soon transition to [phase two of our roadmap](/learn/introduction/roadmap/#-phase-2-bitcoin-soft-finality), a dual-consensus model that inherits finality and security from Bitcoin. This requires modifying BOB's sequencer to request validation from Bitcoin finality protocol participants (e.g. [BTC stakers](https://babylonchain.io/)) to validate the chain state before submitting state commitments to Ethereum.
+BOB will soon transition to [phase two of our roadmap](/learn/introduction/roadmap/#-phase-2-bitcoin-soft-finality), introducing BTC-staked Finality Providers (FPs) to our consensus mechanism. These FPs sign BOB state proposals and receive sequencer fees in exchange for providing economic security through their staked BTC. If FPs sign competing chains, their staked BTC will be slashed, creating strong economic incentives against chain forks - a critical feature for maintaining consistency across BOB's native bridges.
 
-[BOB's ultimate goal](/learn/introduction/roadmap/#phase-3-full-bitcoin-security) is to settle directly on Bitcoin. While we believe in full-state validation via ZK rollups in the long run, it is unlikely that Bitcoin will support a ZK verifier in the near future. As such, the best possible design at the moment is an optimistic rollup that leverages on-chain fraud-proofs via mechanisms like [BitVM](/learn/introduction/bitvm/).
+The consensus process combines three key building blocks:
+
+- Validity proofs using SNARKs to cryptographically guarantee the correctness of all BOB state transitions
+- BTC-staked FPs that sign state proposals, with ⅔ stake required for finalization
+- BitVM integration that enables verification of BOB's state on Bitcoin through a SNARK fraud-proof mechanism with a 1-of-N trust assumption
+
+This dual-consensus model provides both mathematical certainty of transaction validity through SNARKs and economic security backed by native BTC. The combination enables secure bridging to both Bitcoin and Ethereum while preventing safety failures and double-spend attacks.
+
+[BOB's ultimate goal](/learn/introduction/roadmap/#phase-3-full-bitcoin-security) is to settle directly on Bitcoin. While direct ZK verification on Bitcoin is unlikely in the near future, BOB's innovative combination of BitVM and BTC-staked finality creates a robust security model that doesn't require any Bitcoin forks.
 
 ### Native Bridges
 
