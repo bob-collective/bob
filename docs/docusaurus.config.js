@@ -363,6 +363,7 @@ const config = {
       defer: true,
     },
   ],
+  staticDirectories: ["static"],
 };
 
 module.exports = config;
