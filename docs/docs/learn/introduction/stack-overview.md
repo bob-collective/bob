@@ -91,7 +91,7 @@ The majority of Bitcoin's stack and applications built around it are implemented
 
 We built the [BOB Gateway SDK](/learn/builder-guides/gateway/) to make it possible for any frontend to offer its users these options by plugging into our infrastructure. Using the BOB Gateway SDK with [Dynamic's](https://www.dynamic.xyz/) wallet abstraction, you can even send native BTC to someone's email address via [BOB Pay](/learn/user-guides/bob-pay/#what-is-bob-pay).
 
-BOB also supports [third-party bridges](https://app.gobob.xyz/bridge/) to many chains. Developers working on cross-chain protocols can leverage [Chainlink CCIP](/learn/reference/tools/cross-chain#chainlink), [LayerZero](/learn/reference/tools/cross-chain#layerzero), and [Hyperlane](https://docs.hyperlane.xyz/docs/reference/contract-addresses/) on BOB.
+BOB also supports [third-party bridges](https://app.gobob.xyz/bridge/) to many chains. Developers working on cross-chain protocols can leverage [Chainlink CCIP](/learn/reference/tools/cross-chain#chainlink-ccip), [LayerZero](/learn/reference/tools/cross-chain#layerzero), and [Hyperlane](https://docs.hyperlane.xyz/docs/reference/contract-addresses/) on BOB.
 
 ### Hybrid Tooling
 
