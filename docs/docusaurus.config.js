@@ -168,7 +168,7 @@ const config = {
       },
     ],
     [
-      "@docusaurus/plugin-google-gtag",
+      '@docusaurus/plugin-google-gtag',
       {
         trackingID: ["GTM-NSJLJ9D5", "G-VX9XQWCCC5"],
         anonymizeIP: true,
@@ -363,7 +363,6 @@ const config = {
       defer: true,
     },
   ],
-  staticDirectories: ["static"],
 };
 
 module.exports = config;
