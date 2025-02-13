@@ -22,3 +22,6 @@ num-derive = "0.3"
 # Bitcoin
 bitcoin = { workspace = true, features = ["serde"] }
 bitcoincore-rpc.workspace = true
+
+[dev-dependencies]
+pretty_assertions = "1.4.1"

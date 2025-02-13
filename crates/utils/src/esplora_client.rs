@@ -1,5 +1,6 @@
 use bitcoin::{
-    block::Header, consensus, hashes::hex::FromHex, BlockHash, Network, Transaction, Txid,
+    block::Header, consensus, hashes::hex::FromHex, BlockHash, MerkleBlock, Network, Transaction,
+    Txid,
 };
 use eyre::Result;
 use reqwest::{Client, Url};
@@ -11,13 +12,6 @@ const ESPLORA_MAINNET_URL: &str = "https://blockstream.info/api/";
 const ESPLORA_TESTNET_URL: &str = "https://blockstream.info/testnet/api/";
 const ESPLORA_LOCALHOST_URL: &str = "http://localhost:3002";
 
-#[derive(Debug, Deserialize)]
-pub struct MerkleProof {
-    pub block_height: u32,
-    pub merkle: Vec<String>,
-    pub pos: u32,
-}
-
 // https://github.com/Blockstream/electrs/blob/adedee15f1fe460398a7045b292604df2161adc0/src/util/transaction.rs#L17-L26
 #[derive(Debug, Deserialize)]
 pub struct TransactionStatus {
@@ -28,6 +22,13 @@ pub struct TransactionStatus {
     pub block_hash: Option<BlockHash>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub block_time: Option<u32>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct MerkleProof {
+    pub block_height: u32,
+    pub merkle: Vec<String>,
+    pub pos: u32,
 }
 
 impl MerkleProof {
@@ -78,6 +79,10 @@ impl EsploraClient {
         Ok(serde_json::from_str(&body)?)
     }
 
+    pub async fn get_tx(&self, txid: &Txid) -> Result<Transaction> {
+        Ok(consensus::deserialize(&self.get_raw_tx(txid).await?)?)
+    }
+
     pub async fn get_tx_hex(&self, txid: &Txid) -> Result<String> {
         self.get(&format!("/tx/{txid}/hex")).await
     }
@@ -86,8 +91,14 @@ impl EsploraClient {
         Ok(Vec::<u8>::from_hex(&self.get_tx_hex(txid).await?)?)
     }
 
+    pub async fn get_merkleblock_proof(&self, txid: &Txid) -> Result<MerkleBlock> {
+        Ok(consensus::deserialize(&Vec::<u8>::from_hex(
+            &self.get(&format!("tx/{txid}/merkleblock-proof")).await?,
+        )?)?)
+    }
+
     pub async fn get_merkle_proof(&self, txid: &Txid) -> Result<MerkleProof> {
-        self.get_and_decode(&format!("/tx/{txid}/merkle-proof")).await
+        self.get_and_decode(&format!("tx/{txid}/merkle-proof")).await
     }
 
     pub async fn get_block_hash(&self, height: u32) -> Result<BlockHash> {
@@ -111,16 +122,20 @@ impl EsploraClient {
         self.get_block_header(&self.get_block_hash(height).await?).await
     }
 
+    pub async fn get_block_txids(&self, hash: &BlockHash) -> Result<Vec<Txid>> {
+        self.get_and_decode(&format!("block/{hash}/txids")).await
+    }
+
     pub async fn get_chain_height(&self) -> Result<u32> {
         Ok(self.get("blocks/tip/height").await?.parse()?)
     }
 
     pub async fn get_tx_status(&self, txid: &Txid) -> Result<TransactionStatus> {
-        self.get_and_decode(&format!("/tx/{txid}/status")).await
+        self.get_and_decode(&format!("tx/{txid}/status")).await
     }
 
     pub async fn send_transaction(&self, tx: &Transaction) -> Result<Txid> {
-        let url = self.url.join("/tx")?;
+        let url = self.url.join("tx")?;
         let txid = self
             .cli
             .post(url)
@@ -143,5 +158,49 @@ impl EsploraClient {
                 self.send_transaction(tx).await
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use pretty_assertions::assert_eq;
+
+    // construct the MerkleBlock from the header and txs
+    async fn build_merkle_block(
+        esplora_client: &EsploraClient,
+        txid: &Txid,
+        block_hash: &BlockHash,
+    ) -> Result<MerkleBlock> {
+        let header = esplora_client.get_block_header(block_hash).await?;
+        let txids = esplora_client.get_block_txids(block_hash).await?;
+        Ok(MerkleBlock::from_header_txids_with_predicate(&header, &txids, |t| txid.eq(t)))
+    }
+
+    #[tokio::test]
+    async fn test_esplora() -> Result<()> {
+        let esplora_client = EsploraClient::new(None, Network::Bitcoin)?;
+        let txid =
+            Txid::from_str("aaddbc39689a3d63b3bcaafc6d1440ef911ac30bc0fe4679b891bf3e389fb053")?;
+        let left = esplora_client.get_merkleblock_proof(&txid).await?;
+
+        let mut matches: Vec<Txid> = vec![];
+        let mut index: Vec<u32> = vec![];
+        left.extract_matches(&mut matches, &mut index)?;
+        matches.get(0).filter(|x| txid == **x).unwrap();
+
+        let right = build_merkle_block(
+            &esplora_client,
+            &txid,
+            &BlockHash::from_str(
+                "00000000000000000000b1c1dc40e2299515217ff11745e07a1f9078f06cb783",
+            )?,
+        )
+        .await?;
+
+        // for some reason left has more bits so just compare the header
+        assert_eq!(left.header, right.header);
+
+        Ok(())
     }
 }
