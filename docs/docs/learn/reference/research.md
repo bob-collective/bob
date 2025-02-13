@@ -12,9 +12,7 @@ Our team members have co-authored over 30 scientific publications in collaborati
 
 ## Latest Research Papers
 
-### <a href="/documents/BOB_Hybrid_L2_Vision_Paper_EN.pdf">BOB: The Hybrid L2</a>
-
-<a href="/documents/BOB_Hybrid_L2_Vision_Paper_CN.pdf">中文版</a> | <a href="/documents/BOB_Hybrid_L2_Vision_Paper_KR.pdf">한국어</a>
+### [BOB: The Hybrid L2](https://docs.gobob.xyz/whitepaper.pdf)
 
 <details>
   <summary>Read abstract</summary>
