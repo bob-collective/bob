@@ -44,11 +44,10 @@ BOB launched on the [OP stack](https://docs.optimism.io/) as an optimistic rollu
 
 BOB will soon transition to [phase two of our roadmap](/learn/introduction/roadmap/#-phase-2-bitcoin-soft-finality), introducing BTC-staked Finality Providers (FPs) to our consensus mechanism. These FPs sign BOB state proposals and receive sequencer fees in exchange for providing economic security through their staked BTC. If FPs sign competing chains, their staked BTC will be slashed, creating strong economic incentives against chain forks - a critical feature for maintaining consistency across BOB's native bridges.
 
-The consensus process combines three key building blocks:
+The consensus process combines two key building blocks:
 
 - Validity proofs using SNARKs to cryptographically guarantee the correctness of all BOB state transitions
 - BTC-staked FPs that sign state proposals, with ⅔ stake required for finalization
-- BitVM integration that enables verification of BOB's state on Bitcoin through a SNARK fraud-proof mechanism with a 1-of-N trust assumption
 
 This dual-consensus model provides both mathematical certainty of transaction validity through SNARKs and economic security backed by native BTC. The combination enables secure bridging to both Bitcoin and Ethereum while preventing safety failures and double-spend attacks.
 
@@ -64,9 +63,9 @@ BOB utilizes the [OP Stack's native bridge contracts](https://docs.optimism.io/a
 
 #### BitVM Bridge
 
-[BOB has prototyped](https://blog.gobob.xyz/posts/bob-announces-trust-minimized-bitcoin-bridge-prototype-powered-by-bitvm/) a two-way light-client BTC bridge powered by [BitVM](/learn/introduction/bitvm/) in partnership with Fiamma. A bridged version of BTC secured by BitVM is a massive improvement in BTC safety because it relies on a 1-of-N trust assumption for operation and unlocks unilateral exit back to Bitcoin.
+[BOB has prototyped](https://blog.gobob.xyz/posts/bob-announces-trust-minimized-bitcoin-bridge-prototype-powered-by-bitvm/) a two-way light-client BTC bridge powered by [BitVM](/learn/introduction/bitvm/) in partnership with Fiamma. Withdrawals of bridged BTC from BOB to Bitcoin through this BitVM bridge are verified by a ZK SNARK fraud-proof mechanism that relies on a 1-of-N trust assumption for operation. A bridged version of BTC secured by BitVM is a massive improvement in BTC safety because it unlocks unilateral exit back to Bitcoin.
 
-The native bridges to Ethereum and Bitcoin are both secured by our [hybrid Bitcoin consensus model](#hybrid-consensus) described above.
+In combination with our [hybrid Bitcoin consensus model](#hybrid-consensus) described above, BOB's native bridges to Bitcoin and Ethereum will both be secured by Bitcoin Finality Providers.
 
 ## EVM Ecosystem
 
