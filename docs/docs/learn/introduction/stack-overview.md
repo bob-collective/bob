@@ -25,7 +25,7 @@ Users can already force withdraw their assets from BOB to Ethereum, even if BOB'
 
 #### Bitcoin DA: Forced Withdrawal with Bitcoin Transactions
 
-BOB is researching a dual data availability architecture that combines Ethereum's cost efficiency with Bitcoin's censorship resistance. We are exploring modifying our `op-node` to add a check for forced withdrawal transactions on Bitcoin as part of the derivation pipeline.
+BOB is researching a [hybrid data availability](https://blog.gobob.xyz/posts/hybrid-data-availability-enforcing-bitvm-withdrawals-on-bob) architecture that combines Ethereum's cost efficiency with Bitcoin's censorship resistance. We are exploring modifying our `op-node` to add a check for forced withdrawal transactions on Bitcoin as part of the derivation pipeline.
 
 This hybrid DA model offers:
 
