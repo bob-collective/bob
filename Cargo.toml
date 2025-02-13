@@ -7,8 +7,8 @@ bindings = { package = "bob-bindings", path = "crates/bindings" }
 utils = { package = "bob-utils", path = "crates/utils" }
 
 # Bitcoin
-bitcoin = "0.30.0"
-bitcoincore-rpc = "0.17"
+bitcoin = "0.32.5"
+bitcoincore-rpc = "0.19.0"
 
 # Ethereum
 alloy = "0.11.0"
