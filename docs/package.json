@@ -7,7 +7,7 @@
     "install:sdk": "cd ../sdk && yarn install",
     "typedoc:sdk": "npx typedoc --tsconfig ../sdk/tsconfig.json --out docs/api/ts-sdk ../sdk/src/*",
     "start": "yarn typedoc:sdk && docusaurus start",
-    "build:docs": "yarn typedoc:sdk && docusaurus build",
+    "build:docs": "yarn typedoc:sdk && docusaurus build && cp static/documents/BOB_Hybrid_L2_Vision_Paper_EN.pdf build/whitepaper.pdf",
     "build": "yarn install:sdk && yarn build:docs",
     "swizzle": "docusaurus swizzle",
     "deploy": "docusaurus deploy",
