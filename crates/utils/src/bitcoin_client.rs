@@ -2,6 +2,7 @@ use bitcoin::{
     address::NetworkChecked,
     consensus::{self, serialize},
     hashes::{hex::FromHex, sha256d::Hash as Sha256dHash, Hash},
+    hex::HexToBytesError,
     opcodes,
     script::{Error as ScriptError, Instruction},
     Address, Amount, MerkleBlock, Network, ScriptBuf, Txid,
@@ -102,7 +103,7 @@ pub enum Error {
     #[error("SerdeError: {0}")]
     SerdeError(#[from] serde_json::Error),
     #[error("HexError: {0}")]
-    HexError(#[from] bitcoin::hashes::hex::Error),
+    HexError(#[from] HexToBytesError),
     #[error("EncodeError: {0}")]
     EncodeError(#[from] bitcoin::consensus::encode::Error),
     #[error("Missing Txid")]
@@ -175,12 +176,7 @@ impl BitcoinClient {
 
     pub fn network(&self) -> Result<Network, Error> {
         let info = self.rpc.get_blockchain_info()?;
-        match info.chain.as_str() {
-            "main" => Ok(Network::Bitcoin),
-            "test" => Ok(Network::Testnet),
-            "regtest" => Ok(Network::Regtest),
-            _ => Err(Error::InvalidNetwork),
-        }
+        Ok(info.chain)
     }
 
     pub fn get_block_hash(&self, height: u64) -> Result<BlockHash, Error> {
@@ -222,7 +218,7 @@ impl BitcoinClient {
         block_hash: &BlockHash,
     ) -> Result<(Vec<Sha256dHash>, usize), Error> {
         let block = self.rpc.get_block(block_hash)?;
-        let txids: Vec<_> = block.txdata.iter().map(|tx| tx.txid()).collect();
+        let txids: Vec<_> = block.txdata.iter().map(|tx| tx.compute_txid()).collect();
         let pos = txids.iter().position(|txid| txid == tx_hash).ok_or(Error::MissingTxId)?;
         let txids = txids.into_iter().map(Sha256dHash::from).collect();
 
