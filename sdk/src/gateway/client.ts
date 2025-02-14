@@ -170,6 +170,7 @@ export class GatewayApiClient {
             // TODO: update strategy data
             strategyExtraData: abiCoder.encode(['uint256'], [0]),
             satoshis: gatewayQuote.satoshis,
+            campaignId: params.campaignId,
         };
 
         const response = await fetch(`${this.baseUrl}/order`, {
