@@ -9,7 +9,7 @@ use bitcoin::{
 };
 use bitcoincore_rpc::{
     bitcoin::{BlockHash, Transaction},
-    json::TestMempoolAcceptResult,
+    json::{EstimateMode, TestMempoolAcceptResult},
     jsonrpc::{error::RpcError, Error as JsonRpcError},
     Auth, Client, Error as BitcoinError, RpcApi,
 };
@@ -118,6 +118,8 @@ pub enum Error {
     InvalidNetwork,
     #[error("Invalid recipient")]
     InvalidRecipient,
+    #[error("Fee estimate not found")]
+    CouldNotDetectFeeEstimate,
 }
 
 #[derive(Clone)]
@@ -301,6 +303,25 @@ impl BitcoinClient {
         let txid = self.rpc.send_raw_transaction(&tx)?;
 
         Ok(txid)
+    }
+
+    pub fn get_sats_per_byte(
+        bitcoin_client: &BitcoinClient,
+        estimate_mode: Option<EstimateMode>,
+        conf_target: u16,
+    ) -> Result<u64, Error> {
+        let network = bitcoin_client.network()?;
+        match network {
+            // For regtest, default to 1 sat/byte
+            // Reason:https://github.com/bitcoin/bitcoin/issues/11500
+            Network::Regtest => Ok(1),
+            _ => {
+                match bitcoin_client.rpc.estimate_smart_fee(conf_target, estimate_mode)?.fee_rate {
+                    Some(fee_estimate) => Ok(fee_estimate.to_sat()),
+                    None => Err(Error::CouldNotDetectFeeEstimate),
+                }
+            }
+        }
     }
 }
 
