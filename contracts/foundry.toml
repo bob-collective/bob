@@ -8,6 +8,7 @@ out = "out"
 libs = ["lib"]
 script = "script"
 test = "test"
+allow_internal_expect_revert = true # Need it because: https://book.getfoundry.sh/guides/v1.0-migration#expect-revert-cheatcode-disabled-on-internal-calls-by-default
 
 optimizer = true
 optimizer_runs = 5_000
