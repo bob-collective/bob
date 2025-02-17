@@ -1,5 +1,5 @@
 ---
-sidebar_position: 8
+sidebar_position: 4
 ---
 
 # sats-wagmi - Reactive primitives for Bitcoin apps
