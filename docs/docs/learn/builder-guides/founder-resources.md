@@ -5,7 +5,6 @@ sidebar_label: Founder Resources
 
 # Founder Resources
 
-**Dear Founders and Entrepreneurs,**
 
 Whether you're a Bitcoin native looking to leverage EVM capabilities or an Ethereum builder ready to tap into Bitcoin's potential, BOB provides the infrastructure, capital, and ecosystem you need to succeed.
 
