@@ -40,8 +40,8 @@ describe('UTXO Tests', () => {
             // TODO: Use a real P2SH-P2WPKH address
             // TODO: Add the pubkey to allow spending from the outputs
             // '3DFVKuT9Ft4rWpysAZ1bHpg55EBy1HVPcr',
-            // P2PKH: https://blockstream.info/address/1Kr6QSydW9bFQG1mXiPNNu6WpJGmUa9i1g
-            '1Kr6QSydW9bFQG1mXiPNNu6WpJGmUa9i1g',
+            // P2PKH: https://blockstream.info/address/12higDjoCCNXSA95xZMWUdPvXNmkAduhWv
+            '12higDjoCCNXSA95xZMWUdPvXNmkAduhWv',
             // P2TR https://blockstream.info/address/bc1peqr5a5kfufvsl66444jm9y8qq0s87ph0zv4lfkcs7h40ew02uvsqkhjav0
             'bc1peqr5a5kfufvsl66444jm9y8qq0s87ph0zv4lfkcs7h40ew02uvsqkhjav0',
         ];
@@ -242,7 +242,7 @@ describe('UTXO Tests', () => {
                     },
                 },
                 {
-                    txid: Buffer.alloc(32, 0).toString('hex'),
+                    txid: Buffer.alloc(32, 1).toString('hex'),
                     index: 0,
                     ...redeemScript,
                     witnessUtxo: {
@@ -251,7 +251,7 @@ describe('UTXO Tests', () => {
                     },
                 },
                 {
-                    txid: Buffer.alloc(32, 0).toString('hex'),
+                    txid: Buffer.alloc(32, 2).toString('hex'),
                     index: 0,
                     ...redeemScript,
                     witnessUtxo: {
@@ -260,7 +260,7 @@ describe('UTXO Tests', () => {
                     },
                 },
                 {
-                    txid: Buffer.alloc(32, 0).toString('hex'),
+                    txid: Buffer.alloc(32, 3).toString('hex'),
                     index: 0,
                     ...redeemScript,
                     witnessUtxo: {
@@ -304,8 +304,8 @@ describe('UTXO Tests', () => {
             // P2SH-P2WPKH: https://blockstream.info/address/3DFVKuT9Ft4rWpysAZ1bHpg55EBy1HVPcr
             // TODO: As above, add a correct P2SH-P2WPKH address with its pub key
             // '3DFVKuT9Ft4rWpysAZ1bHpg55EBy1HVPcr',
-            // P2PKH: https://blockstream.info/address/1Kr6QSydW9bFQG1mXiPNNu6WpJGmUa9i1g
-            '1Kr6QSydW9bFQG1mXiPNNu6WpJGmUa9i1g',
+            // P2PKH: https://blockstream.info/address/12higDjoCCNXSA95xZMWUdPvXNmkAduhWv
+            '12higDjoCCNXSA95xZMWUdPvXNmkAduhWv',
             // P2TR https://blockstream.info/address/bc1peqr5a5kfufvsl66444jm9y8qq0s87ph0zv4lfkcs7h40ew02uvsqkhjav0
             'bc1peqr5a5kfufvsl66444jm9y8qq0s87ph0zv4lfkcs7h40ew02uvsqkhjav0',
         ];
@@ -620,12 +620,31 @@ describe('UTXO Tests', () => {
                 vout: 1,
             },
             // rune transfer
+            // https://ordiscan.com/tx/b4e912281e8c7b8588adcf1cd0ea8b0bb5f492ea3f008f3ec351f99bdd5f833d
             // curl -s -H "Accept: application/json" "https://ordinals-mainnet.gobob.xyz/output/b4e912281e8c7b8588adcf1cd0ea8b0bb5f492ea3f008f3ec351f99bdd5f833d:1"
             {
                 confirmed: true,
                 txid: 'b4e912281e8c7b8588adcf1cd0ea8b0bb5f492ea3f008f3ec351f99bdd5f833d',
                 value: 1,
                 vout: 1,
+            },
+            // rune entching
+            // https://ordiscan.com/tx/14fc0f49150ff88a907141bac48819364afcec23919e364e3fab0eda04838b95
+            {
+                // fake mempool tx
+                confirmed: false,
+                txid: '14fc0f49150ff88a907141bac48819364afcec23919e364e3fab0eda04838b95',
+                value: 1,
+                vout: 0,
+            },
+            // rune mint
+            // https://ordiscan.com/tx/1f2caffea51fd7e5653591f60e5f616e806a33fd572a18db1724f4f330e5014d
+            {
+                // fake mempool tx
+                confirmed: false,
+                txid: '1f2caffea51fd7e5653591f60e5f616e806a33fd572a18db1724f4f330e5014d',
+                value: 1,
+                vout: 0,
             },
         ];
 
@@ -652,8 +671,9 @@ describe('UTXO Tests', () => {
             const result = await original.call(this, tx);
 
             // mark as unconfirmed -> continue building tree for `vin`s
-            if (tx === utxos[1].txid || tx === utxos[2].txid) {
-                result.status.confirmed = false;
+            const utxo = utxos.find((utxo) => utxo.txid === tx);
+            if (utxo) {
+                result.status.confirmed = utxo.confirmed;
             }
 
             return result;
@@ -662,6 +682,6 @@ describe('UTXO Tests', () => {
         const allowedUtxos = await findSafeUtxos(utxos, cardinalOutputsSet, esploraClient, ordinalsClient);
 
         expect(allowedUtxos).toEqual([utxos[0], utxos[1]]);
-        expect((global.fetch as Mock).mock.calls.length).toEqual(11);
+        expect((global.fetch as Mock).mock.calls.length).toEqual(16);
     });
 });

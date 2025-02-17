@@ -1,0 +1,27 @@
+name: SDK
+
+on: [pull_request]
+
+env:
+  FOUNDRY_PROFILE: ci
+
+jobs:
+  tests:
+    name: Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./sdk
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+          always-auth: true
+      - run: npm ci
+      - run: npx prettier --check {examples,src,test}
+      - run: npm run lint
+      - name: Run tests
+        run: npm test

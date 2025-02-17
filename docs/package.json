@@ -7,7 +7,7 @@
     "install:sdk": "cd ../sdk && yarn install",
     "typedoc:sdk": "npx typedoc --tsconfig ../sdk/tsconfig.json --out docs/api/ts-sdk ../sdk/src/*",
     "start": "yarn typedoc:sdk && docusaurus start",
-    "build:docs": "yarn typedoc:sdk && docusaurus build && cp static/whitepaper.pdf build/whitepaper.pdf",
+    "build:docs": "yarn typedoc:sdk && docusaurus build && cp static/documents/BOB_Hybrid_L2_Vision_Paper_EN.pdf build/whitepaper.pdf",
     "build": "yarn install:sdk && yarn build:docs",
     "swizzle": "docusaurus swizzle",
     "deploy": "docusaurus deploy",
@@ -20,6 +20,7 @@
   "dependencies": {
     "@docusaurus/core": "^3.5.2",
     "@docusaurus/plugin-client-redirects": "^3.5.2",
+    "@docusaurus/plugin-google-gtag": "^3.5.2",
     "@docusaurus/preset-classic": "^3.5.2",
     "@docusaurus/remark-plugin-npm2yarn": "^3.5.2",
     "@docusaurus/theme-live-codeblock": "^3.5.2",

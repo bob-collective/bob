@@ -167,6 +167,13 @@ const config = {
         ],
       },
     ],
+    [
+      "@docusaurus/plugin-google-gtag",
+      {
+        trackingID: ["GTM-NSJLJ9D5", "G-VX9XQWCCC5"],
+        anonymizeIP: true,
+      },
+    ],
   ],
   presets: [
     [
@@ -182,13 +189,6 @@ const config = {
           remarkPlugins: [
             [require("@docusaurus/remark-plugin-npm2yarn"), { sync: true }],
           ],
-        },
-        gtag: {
-          trackingID: "G-VX9XQWCCC5",
-          anonymizeIP: true,
-        },
-        googleTagManager: {
-          containerId: "GTM-NSJLJ9D5",
         },
         theme: {
           customCss: require.resolve("./src/css/custom.css"),
@@ -369,6 +369,7 @@ const config = {
       defer: true,
     },
   ],
+  staticDirectories: ["static"],
 };
 
 module.exports = config;

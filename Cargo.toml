@@ -1,0 +1,18 @@
+[workspace]
+resolver = "2"
+members = ["relayer", "crates/*"]
+
+[workspace.dependencies]
+bindings = { package = "bob-bindings", path = "crates/bindings" }
+utils = { package = "bob-utils", path = "crates/utils" }
+
+# Bitcoin
+bitcoin = "0.32.5"
+bitcoincore-rpc = "0.19.0"
+
+# Ethereum
+alloy = "0.11.0"
+
+# Other
+reqwest = "0.11.11"
+tokio = "1.40"

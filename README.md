@@ -66,6 +66,7 @@ Proof length is the number of headers needed before and after a retarget to upda
 | Network               | Name           | Address                                                                                                                                 |
 | --------------------- | -------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
 | BOB Sepolia (Testnet) | TestLightRelay | [0x377d6993b848013991e3d8b3028db74ec6fdf03a](https://bob-sepolia.explorer.gobob.xyz/address/0x377d6993b848013991e3d8b3028db74ec6fdf03a) |
+| BOB Sepolia (Signet) | FullRelayWithVerify | [0x604d1442e9534940992435D558807e3BE813a22A](https://bob-sepolia.explorer.gobob.xyz/address/0x604d1442e9534940992435D558807e3BE813a22A)             |
 | BOB Mainnet           | LightRelay     | [0x9fe7ef727da3d79e0308ff43f31ea1d077ee9f41](https://explorer.gobob.xyz/address/0x9fe7ef727da3d79e0308ff43f31ea1d077ee9f41)             |
 
 ## Security (Light Relay)

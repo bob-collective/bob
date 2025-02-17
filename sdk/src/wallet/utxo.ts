@@ -1,9 +1,11 @@
+import * as bitcoin from 'bitcoinjs-lib';
 import { Transaction, Script, selectUTXO, TEST_NETWORK, NETWORK, p2wpkh, p2sh, p2tr } from '@scure/btc-signer';
 import { hex, base64 } from '@scure/base';
 import { AddressType, getAddressInfo, Network } from 'bitcoin-address-validation';
 import { EsploraClient, UTXO } from '../esplora';
 import { OrdinalsClient, OutPoint, OutputJson } from '../ordinal-api';
-import { getTxInscriptions } from '../inscription';
+import { parseInscriptions } from '../inscription';
+import { parseRunestone } from '../runes';
 
 export type BitcoinNetworkName = Exclude<Network, 'regtest'>;
 
@@ -27,7 +29,16 @@ const isCardinalTx = async (
     esploraClient: EsploraClient,
     ordinalsClient: OrdinalsClient
 ): Promise<boolean> => {
-    const transaction = await esploraClient.getTransaction(outpoint.txid);
+    const [txHex, transaction] = await Promise.all([
+        esploraClient.getTransactionHex(outpoint.txid),
+        esploraClient.getTransaction(outpoint.txid),
+    ]);
+    const tx = bitcoin.Transaction.fromHex(txHex);
+
+    const inscriptions = parseInscriptions(tx);
+    const rune = parseRunestone(tx);
+
+    if (rune || inscriptions.length > 0) return false;
 
     // if confirmed check if it's included in cardinal set
     if (transaction.status.confirmed) return cardinalOutputsSet.has(OutPoint.toString(outpoint));
@@ -37,10 +48,6 @@ const isCardinalTx = async (
     const results = await Promise.all(
         transaction.vin.map(async (vin, index) => {
             if (cardinalOutputsSet.has(OutPoint.toString(vin))) return true;
-
-            const inscriptions = await getTxInscriptions(esploraClient, vin.txid);
-
-            if (inscriptions.length > 0) return false;
 
             const output = outputs[index];
 
@@ -67,10 +74,6 @@ export const findSafeUtxos = async (
         utxos.map(async (utxo) => {
             // the utxo is confirmed and a known cardinal
             if (cardinalOutputsSet.has(OutPoint.toString(utxo))) return true;
-
-            const inscriptions = await getTxInscriptions(esploraClient, utxo.txid);
-
-            if (inscriptions.length > 0) return false;
 
             // the utxo is unconfirmed (not indexed by Ord)
             return isCardinalTx(utxo, cardinalOutputsSet, esploraClient, ordinalsClient);

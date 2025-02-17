@@ -1,0 +1,33 @@
+[profile.default]
+fs_permissions = [
+    { access = "read", path = "./optimized-out" },
+    { access = "read", path = "./test/fullRelay/testData/" },
+]
+src = "src"
+out = "out"
+libs = ["lib"]
+script = "script"
+test = "test"
+allow_internal_expect_revert = true # Need it because: https://book.getfoundry.sh/guides/v1.0-migration#expect-revert-cheatcode-disabled-on-internal-calls-by-default
+
+optimizer = true
+optimizer_runs = 5_000
+# solc = "0.8.17"
+auto_detect_solc = true
+
+# Compile only the production code with IR
+[profile.optimized]
+out = "optimized-out"
+test = "src"
+# `viaIR` flag needs to enabled since `Lightrelay.t.sol` requires it
+via_ir = true
+
+# See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
+
+remappings = [
+    "@bob-collective/bitcoin-spv/=lib/bitcoin-spv/src/",
+    "ds-test/=lib/forge-std/lib/ds-test/src/",
+    "forge-std/=lib/forge-std/src/",
+    "@openzeppelin/=lib/openzeppelin-contracts/",
+    "openzeppelin-contracts/=lib/openzeppelin-contracts/contracts/",
+]

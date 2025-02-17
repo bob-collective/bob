@@ -1,0 +1,20 @@
+[package]
+name = "bob-relayer"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bindings.workspace = true
+utils.workspace = true
+
+clap = { version = "4", features = ["derive", "env"] }
+eyre = "0.6"
+reqwest.workspace = true
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+
+# Bitcoin
+bitcoin = { workspace = true, features = ["serde"] }
+bitcoincore-rpc.workspace = true
+
+# Ethereum
+alloy = { workspace = true, features = ["full", "providers", "node-bindings"] }
