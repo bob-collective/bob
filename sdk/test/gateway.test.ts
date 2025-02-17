@@ -2,10 +2,13 @@ import { assert, describe, expect, it } from 'vitest';
 import { GatewaySDK } from '../src/gateway';
 import { MAINNET_GATEWAY_BASE_URL } from '../src/gateway/client';
 import { SYMBOL_LOOKUP } from '../src/gateway/tokens';
-import { Chain, ChainId } from '../src/gateway/types';
+import { BuildStakeParams, Chain, ChainId, StakeTransactionParams } from '../src/gateway/types';
 import { ZeroAddress } from 'ethers';
+import { bobSepolia } from 'viem/chains';
 import nock from 'nock';
 import * as bitcoin from 'bitcoinjs-lib';
+import { createPublicClient, http, maxUint256, keccak256, numberToHex, encodeAbiParameters } from 'viem';
+import { Address } from 'viem/accounts';
 
 const TBTC = SYMBOL_LOOKUP[ChainId.BOB]['tbtc'];
 const TBTC_ADDRESS = TBTC.address;
@@ -320,5 +323,194 @@ describe('Gateway Tests', () => {
 
         assert.strictEqual(orders[0].getToken()!.address, SOLVBTC_ADDRESS);
         assert.strictEqual(orders[1].getToken(), undefined);
+    });
+
+    // Skipping this test as it is likely to fail on the testnet once the user transfers their funds
+    // or if the strategy is removed from the testnet. Use nock for mocking the responses in the meantime for other test.
+    it.skip('should correctly retrieve stake info and simulate call testnet strategy', async () => {
+        const gatewaySDK = new GatewaySDK('testnet');
+        const params: BuildStakeParams = {
+            strategyAddress: '0x06cEA150E651236499319d78f92791f0FAe6FE67' as Address,
+            token: '0x6744babdf02dcf578ea173a9f0637771a9e1c4d0' as Address,
+            sender: '0x5e46D220eC8B01f55B70Dbb503c697f6E231eb65' as Address, // sender needs to hold the input token
+            receiver: '0x5e46D220eC8B01f55B70Dbb503c697f6E231eb65' as Address,
+            amount: 100n,
+            amountOutMin: 0n,
+        };
+
+        const expected: StakeTransactionParams = {
+            strategyAddress: params.strategyAddress,
+            strategyABI: expect.any(Array), // Assuming ABI is an array
+            strategyFunctionName: 'handleGatewayMessageWithSlippageArgs',
+            strategyArgs: [params.token, params.amount, params.receiver, { amountOutMin: params.amountOutMin }],
+            account: params.sender,
+            erc20ApproveFunctionName: 'approve',
+            erc20ApproveArgs: [params.strategyAddress, params.amount],
+        };
+
+        const result = await gatewaySDK.buildStake(params);
+        expect(result).toMatchObject(expected);
+
+        // call method
+        const publicClient = createPublicClient({
+            chain: bobSepolia,
+            transport: http(),
+        });
+
+        // For the allowances mapping in OpenZeppelin ERC20, the base slot is 1.
+        const baseSlot = 1n;
+
+        // Compute the inner slot for the owner using viem's encodeAbiParameters.
+        const innerSlot = keccak256(
+            encodeAbiParameters(
+                [
+                    { name: 'owner', type: 'address' },
+                    { name: 'slot', type: 'uint256' },
+                ],
+                [params.sender, baseSlot]
+            )
+        );
+
+        // Compute the final allowance storage key using the spender (strategyAddress) and the inner slot.
+        // The second parameter is encoded as bytes32.
+        const allowanceSlot = keccak256(
+            encodeAbiParameters(
+                [
+                    { name: 'spender', type: 'address' },
+                    { name: 'innerSlot', type: 'bytes32' },
+                ],
+                [params.strategyAddress, innerSlot]
+            )
+        );
+
+        const maxAllowance = numberToHex(maxUint256);
+        const { request } = await publicClient.simulateContract({
+            address: result.strategyAddress, // Ensure correct type
+            abi: result.strategyABI,
+            functionName: result.strategyFunctionName,
+            args: result.strategyArgs,
+            account: result.account, // Ensure correct type
+            stateOverride: [
+                // overriding token allowance
+                {
+                    address: params.token,
+                    stateDiff: [
+                        {
+                            slot: allowanceSlot,
+                            value: maxAllowance,
+                        },
+                    ],
+                },
+            ],
+        });
+        // Assert that the request object is valid
+        expect(request).toEqual(
+            expect.objectContaining({
+                abi: expect.any(Array),
+                address: expect.any(String),
+                args: expect.any(Array),
+                functionName: expect.any(String),
+                account: expect.any(Object),
+            })
+        );
+    });
+
+    it('should throw error for invalid strategy address in buildStake', async () => {
+        const gatewaySDK = new GatewaySDK('testnet');
+        const params: BuildStakeParams = {
+            strategyAddress: ZeroAddress as Address,
+            token: '0x6744babdf02dcf578ea173a9f0637771a9e1c4d0' as Address,
+            sender: '0x5e46D220eC8B01f55B70Dbb503c697f6E231eb65' as Address,
+            receiver: '0x5e46D220eC8B01f55B70Dbb503c697f6E231eb65' as Address,
+            amount: 100n,
+            amountOutMin: 0n,
+        };
+
+        await expect(gatewaySDK.buildStake(params)).rejects.toThrowError(
+            `Strategy with address ${ZeroAddress} not found.`
+        );
+    });
+
+    it('should throw error for invalid token address in buildStake', async () => {
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
+            .get(`/strategies`)
+            .reply(200, [
+                {
+                    strategyAddress: ZeroAddress,
+                    inputTokenAddress: TBTC_ADDRESS,
+                    strategyName: 'Pell Network (tBTC)',
+                    strategyType: 'staking',
+                },
+            ]);
+        const gatewaySDK = new GatewaySDK('bob');
+        const params: BuildStakeParams = {
+            strategyAddress: ZeroAddress as Address,
+            token: ZeroAddress as Address,
+            sender: '0x5e46D220eC8B01f55B70Dbb503c697f6E231eb65' as Address,
+            receiver: '0x5e46D220eC8B01f55B70Dbb503c697f6E231eb65' as Address,
+            amount: 100n,
+            amountOutMin: 0n,
+        };
+
+        await expect(gatewaySDK.buildStake(params)).rejects.toThrowError(
+            `Provided token ${params.token} does not match strategy's input token ${TBTC_ADDRESS}.`
+        );
+    });
+
+    it('should throw error for invalid sender address in buildStake', async () => {
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
+            .get(`/strategies`)
+            .reply(200, [
+                {
+                    strategyAddress: ZeroAddress,
+                    inputTokenAddress: TBTC_ADDRESS,
+                    strategyName: 'Pell Network (tBTC)',
+                    strategyType: 'staking',
+                },
+            ]);
+        const gatewaySDK = new GatewaySDK('bob');
+        const params: BuildStakeParams = {
+            strategyAddress: ZeroAddress as Address,
+            token: TBTC_ADDRESS as Address,
+            sender: 'ab5e46D220eC8B01f55B70Dbb503c697f6E231eb65' as Address,
+            receiver: '0x5e46D220eC8B01f55B70Dbb503c697f6E231eb65' as Address,
+            amount: 100n,
+            amountOutMin: 0n,
+        };
+        await expect(gatewaySDK.buildStake(params)).rejects.toThrowError(`Invalid EVM address detected.`);
+    });
+
+    it('should return valid staking info', async () => {
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
+            .get(`/strategies`)
+            .reply(200, [
+                {
+                    strategyAddress: ZeroAddress,
+                    inputTokenAddress: TBTC_ADDRESS,
+                    strategyName: 'Pell Network (tBTC)',
+                    strategyType: 'staking',
+                },
+            ]);
+        const gatewaySDK = new GatewaySDK('bob');
+        const params: BuildStakeParams = {
+            strategyAddress: ZeroAddress as Address,
+            token: TBTC_ADDRESS as Address,
+            sender: '0x5e46D220eC8B01f55B70Dbb503c697f6E231eb65' as Address,
+            receiver: '0x5e46D220eC8B01f55B70Dbb503c697f6E231eb65' as Address,
+            amount: 100n,
+            amountOutMin: 0n,
+        };
+
+        const expected: StakeTransactionParams = {
+            strategyAddress: params.strategyAddress,
+            strategyABI: expect.any(Array), // Assuming ABI is an array
+            strategyFunctionName: 'handleGatewayMessageWithSlippageArgs',
+            strategyArgs: [params.token, params.amount, params.receiver, { amountOutMin: params.amountOutMin }],
+            account: params.sender,
+            erc20ApproveArgs: [params.strategyAddress, params.amount],
+        };
+
+        const result = await gatewaySDK.buildStake(params);
+        expect(result).toMatchObject(expected);
     });
 });

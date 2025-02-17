@@ -1,4 +1,6 @@
 import type { EsploraClient } from '../esplora';
+import { Address } from 'viem';
+import { strategyCaller } from './strategyABI';
 
 type ChainSlug = string | number;
 type TokenSymbol = string;
@@ -16,6 +18,44 @@ export enum ChainId {
     BOB = 60808,
     BOB_SEPOLIA = 808813,
 }
+
+/**
+ * Parameters required to construct a staking transaction.
+ */
+export type BuildStakeParams = {
+    /** @description The address of the staking strategy contract */
+    strategyAddress: Address;
+    /** @description The token address being staked */
+    token: Address;
+    /** @description The sender's wallet address (must be an EVM address) */
+    sender: Address;
+    /** @description The receiver's wallet address (must be an EVM address) */
+    receiver: Address;
+    /** @description The amount of tokens to stake (in smallest unit, e.g., wei for ERC-20 tokens) */
+    amount: bigint;
+    /** @description Minimum acceptable output amount after slippage */
+    amountOutMin: bigint;
+};
+
+/**
+ * Parameters needed to execute a staking transaction on an EVM-based chain.
+ *
+ * ⚠️ **Important**: The token must be approved before calling this transaction.
+ */
+export type StakeTransactionParams = {
+    /** @description The address of the staking strategy contract */
+    strategyAddress: Address;
+    /** @description The ABI used to interact with the staking contract */
+    strategyABI: typeof strategyCaller;
+    /** @description The name of the function being called on the contract */
+    strategyFunctionName: string;
+    /** @description Arguments required for the staking contract call */
+    strategyArgs: [Address, bigint, Address, { amountOutMin: bigint }];
+    /** @description The wallet address executing the transaction */
+    account: Address;
+    /** @description  Arguments required for the token approval transaction */
+    erc20ApproveArgs: [Address, bigint];
+};
 
 /**
  * Designed to be compatible with the Superchain token list.
