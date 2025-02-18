@@ -306,21 +306,19 @@ impl BitcoinClient {
     }
 
     pub fn get_sats_per_byte(
-        bitcoin_client: &BitcoinClient,
+        &self,
         estimate_mode: Option<EstimateMode>,
         conf_target: u16,
     ) -> Result<u64, Error> {
-        let network = bitcoin_client.network()?;
+        let network = self.network()?;
         match network {
             // For regtest, default to 1 sat/byte
             // Reason:https://github.com/bitcoin/bitcoin/issues/11500
             Network::Regtest => Ok(1),
-            _ => {
-                match bitcoin_client.rpc.estimate_smart_fee(conf_target, estimate_mode)?.fee_rate {
-                    Some(fee_estimate) => Ok(fee_estimate.to_sat()),
-                    None => Err(Error::CouldNotDetectFeeEstimate),
-                }
-            }
+            _ => match self.rpc.estimate_smart_fee(conf_target, estimate_mode)?.fee_rate {
+                Some(fee_estimate) => Ok(fee_estimate.to_sat()),
+                None => Err(Error::CouldNotDetectFeeEstimate),
+            },
         }
     }
 }
