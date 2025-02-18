@@ -24,30 +24,35 @@ No matter how sophisticated the strategy, everything is handled on the user's be
 
 We’ll build up to a complex, multi-step strategy by starting with a simple one that we later extend.
 
-### One-Step Strategy Example: Staking uniBTC
+### One-Intent Example: Staking WBTC into SolvBTC.BBN
 
 At this point in the P2P swap process the Gateway relayer has already verified that the user sent BTC to the LP. Having trustlessly verified this, the relayer sets about manipulating the LP's wrapped BTC to accomplish the user's intent.
 
-[In this example](https://github.com/bob-collective/bob/blob/master/contracts/src/gateway/strategy/BedrockStrategy.sol#L48) the relayer calls Bedrock's uniBTC vault to deposit WBTC as collateral and mint uniBTC tokens.
+[In this example](https://github.com/bob-collective/bob/blob/master/contracts/src/gateway/strategy/SolvStrategy.sol#L110) the relayer deposits WBTC to mint SolvBTC, which is then deposited to mint SolvBTC.BBN, the LST that receives yield from Babylon.
 
-```typescript title="BedrockStrategy.sol"
-  // Call the uniBTC vault's mint function with the LP's WBTC
-  vault.mint(address(tokensent), amountin);
-  ierc20 unibtc = ierc20(vault.unibtc());
-  uint256 unibtcamount = unibtc.balanceof(address(this));
-  // Transfer the token to the user to complete the process
-  uniBTC.safeTransfer(recipient, uniBTCAmount);
+```typescript title="SolvStrategy.sol"
+// Mint SolvBTC with the LP's WBTC
+uint256 shareValueBTC = solvBTCRouter.createSubscription(solvBTCPoolId, amountIn);
+
+// Mint SolvBTC.BBN with the SolvBTC created in the previous LP's WBTC
+solvBTC.safeIncreaseAllowance(address(solvLSTRouter), shareValueBTC);
+uint256 shareValueLST = solvLSTRouter.createSubscription(solvLSTPoolId, shareValueBTC);
+require(shareValueLST >= args.amountOutMin, "Insufficient output amount");
+
+// Transfer the SolvBTC.BBN token to the user to complete the process
+solvLST.safeTransfer(recipient, shareValueLST);
 ```
 
-### Multi-Step Strategy Example: Stake-and-Lend
+### Multi-Intent Example: Stake-and-Lend
 
-You are not limited to one smart contract call. You may wish to make several functions calls sequentially to accomplish a more sophisticated goal.
+As we saw above, you are not limited to one smart contract call. You may wish to make several functions calls sequentially to accomplish a more sophisticated goal. This allows you to compose several DeFi protocols, such as staking, restaking, or lending.
 
-A user with a higher risk tolerance may want to seek even more yield by depositing their BTC LST in a lending protocol. To extend the staking example above, [let's look at a snippet](https://github.com/bob-collective/bob/blob/master/contracts/src/gateway/strategy/AvalonStrategy.sol#L66) that picks up just after the `mint` step.
+A user with a higher risk tolerance may want to seek even more yield by depositing their BTC LST in a lending protocol. To extend the staking example above, let's look at [a snippet from AvalonStrategy.sol](https://github.com/bob-collective/bob/blob/master/contracts/src/gateway/strategy/AvalonStrategy.sol#L66) that replaces the final `safeTransfer` function with an additional step to deposit the SolvBTC.BBN into the Avalon lending protocol.
 
 ```typescript title="AvalonStrategy.sol"
-// Deposit uniBTC from the previous step into the Avalon lending protocol
-// The recipient is the user's EVM address, so their wallet controls the output tokens
+// tokenSent is solvLST, which identifies the correct Avalon lending pool
+// amountIn is the balanceOf SolvBTC.BBN from the previous step
+// recipient is the user's EVM address, so their wallet controls the output tokens
 pool.supply(address(tokenSent), amountIn, recipient, 0);
 ```
 
@@ -66,36 +71,39 @@ You're welcome to reach out to our Developer Relations Engineer, @DerrekWonders,
 
 At the moment there is only one relayer for BOB Gateway. In addition to its other functionality, this relayer pays gas on the user's behalf so that the user doesn't need to make a transaction on BOB to complete the bridging process. Since a malicious actor could create a strategy designed to take advantage of the relayer (e.g. spend all of the funds available for gas fees), the process of adding new strategies to Gateway as well as decentralizing the relayer role are restricted by the BOB team until Gateway is upgraded as described [on this page](/learn/introduction/gateway/).
 
-### Example End-to-End Test: Staking uniBTC
+### Example End-to-End Test: Staking SolvBTC.BBN
 
-In addition to the strategy contract described above, you also need to create an end-to-end integration test using Foundry’s ability to simulate the transactions on a live fork of BOB mainnet. That’s why the e2e test files follow a `[ProtocolName]StrategyForked.sol` naming convention, such as [BedrockStrategyForked.sol](https://github.com/bob-collective/bob/blob/master/contracts/test/gateway/e2e-strategy-tests/BedrockStrategyForked.sol#L21).
+In addition to the strategy contract described above, you also need to create an end-to-end integration test using Foundry’s ability to simulate the transactions on a live fork of BOB mainnet. That’s why the e2e test files follow a `[ProtocolName]StrategyForked.sol` naming convention, such as [SolvStrategyForked.sol](https://github.com/bob-collective/bob/blob/master/contracts/test/gateway/e2e-strategy-tests/SolvStrategyForked.sol#L40).
 
-Returning to the single-step uniBTC staking strategy from the beginning:
+Returning to the [SolvBTC.BBN staking strategy](#one-intent-example-staking-wbtc-into-solvbtcbbn) from the beginning:
 
-```solidity title="BedrockStrategyForked.sol"
-function testBedrockStrategy() public {
-    IBedrockVault vault = IBedrockVault(0x2ac98DB41Cbd3172CB7B8FD8A8Ab3b91cFe45dCf);
-    BedrockStrategy strategy = new BedrockStrategy(vault);
+```solidity title="SolvStrategyForked.sol"
+function testSolvLSTStrategy() public {
+    IERC20 solvBTC = IERC20(0x541FD749419CA806a8bc7da8ac23D346f2dF8B77);
+    IERC20 solvBTCBBN = IERC20(0xCC0966D8418d412c599A6421b760a847eB169A8c);
+    SolvLSTStrategy strategy = new SolvLSTStrategy(
+        ISolvBTCRouter(0x49b072158564Db36304518FFa37B1cFc13916A90),
+        ISolvBTCRouter(0xbA46FcC16B464D9787314167bDD9f1Ce28405bA1),
+        0x5664520240a46b4b3e9655c20cc3f9e08496a9b746a478e476ae3e04d6c8fc31,
+        0x6899a7e13b655fa367208cb27c6eaa2410370d1565dc1f5f11853a1e8cbef033,
+        solvBTC,
+        solvBTCBBN
+    );
 
     vm.startPrank(Constants.DUMMY_SENDER);
-    token.approve(address(strategy), 1e8);
-    strategy.handleGatewayMessageWithSlippageArgs(
-        token,
-        1e8, // Amount: 1 WBTC
-        Constants.DUMMY_RECEIVER,
-        StrategySlippageArgs(0) // No slippage allowed
-    );
+    token.approve(address(strategy), 1 * 1e8);
+
+    strategy.handleGatewayMessageWithSlippageArgs(token, 1e8, Constants.DUMMY_RECEIVER, StrategySlippageArgs(0));
     vm.stopPrank();
 
-    IERC20 uniBTC = IERC20(vault.uniBTC());
-    assertEq(uniBTC.balanceOf(Constants.DUMMY_RECEIVER), 1e8, "User uniBTC balance mismatch");
+    assertEq(solvBTCBBN.balanceOf(Constants.DUMMY_RECEIVER), 1 ether);
 }
 ```
 
 After forking and installing the repo, you can run this test with the following command in your shell:
 
 ```shell
-BOB_PROD_PUBLIC_RPC_URL=https://rpc.gobob.xyz/ forge test --match-contract BedrockStrategyForked -vv
+BOB_PROD_PUBLIC_RPC_URL=https://rpc.gobob.xyz/ forge test --match-contract SolvStrategyForked -vv
 ```
 
 [Constants.sol](https://github.com/bob-collective/bob/blob/master/contracts/test/gateway/e2e-strategy-tests/Constants.sol) has useful constants for your test functions, such as WBTC/tBTC contract addresses and dummy sender/receiver addresses.
