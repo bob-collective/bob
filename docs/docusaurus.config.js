@@ -230,12 +230,6 @@ const config = {
             label: "Learn",
           },
           {
-            type: "docSidebar",
-            sidebarId: "contractSidebar",
-            position: "left",
-            label: "Contracts",
-          },
-          {
             href: DISCORD,
             label: "Discord",
             position: "right",
