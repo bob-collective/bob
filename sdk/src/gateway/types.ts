@@ -109,6 +109,8 @@ export interface GatewayQuoteParams {
     fromUserPublicKey?: string;
     /** @description Strategy address */
     strategyAddress?: string;
+    /** @description Campaign id for tracking */
+    campaignId?: string;
 }
 
 /**
@@ -229,6 +231,7 @@ export type GatewayCreateOrderRequest = {
     gatewayExtraData?: string;
     strategyExtraData?: string;
     satoshis: number;
+    campaignId?: string;
 };
 
 export interface GatewayOrderResponse {
