@@ -26,11 +26,11 @@ We’ll build up to a complex, multi-step strategy by starting with a simple one
 
 ### One-Intent Example: Staking WBTC into SolvBTC.BBN
 
-At this point in the P2P swap process the Gateway relayer has already verified that the user sent BTC to the LP. Having trustlessly verified this, the relayer sets about manipulating the LP's wrapped BTC to accomplish the user's intent.
+At this point in the P2P swap process, the Gateway relayer has already verified that the user sent BTC to the LP. Having trustlessly verified this, the relayer sets about manipulating the LP's wrapped BTC to accomplish the user's intent.
 
 [In this example](https://github.com/bob-collective/bob/blob/master/contracts/src/gateway/strategy/SolvStrategy.sol#L110) the relayer deposits WBTC to mint SolvBTC, which is then deposited to mint SolvBTC.BBN, the LST that receives yield from Babylon.
 
-```typescript title="SolvStrategy.sol"
+```solidity title="SolvStrategy.sol"
 // Mint SolvBTC with the LP's WBTC
 uint256 shareValueBTC = solvBTCRouter.createSubscription(solvBTCPoolId, amountIn);
 
@@ -49,7 +49,7 @@ As we saw above, you are not limited to one smart contract call. You may wish to
 
 A user with a higher risk tolerance may want to seek even more yield by depositing their BTC LST in a lending protocol. To extend the staking example above, let's look at [a snippet from AvalonStrategy.sol](https://github.com/bob-collective/bob/blob/master/contracts/src/gateway/strategy/AvalonStrategy.sol#L66) that replaces the final `safeTransfer` function with an additional step to deposit the SolvBTC.BBN into the Avalon lending protocol.
 
-```typescript title="AvalonStrategy.sol"
+```solidity title="AvalonStrategy.sol"
 // tokenSent is solvLST, which identifies the correct Avalon lending pool
 // amountIn is the balanceOf SolvBTC.BBN from the previous step
 // recipient is the user's EVM address, so their wallet controls the output tokens
@@ -69,7 +69,7 @@ Make a PR to our repo with your strategy and we’ll merge it after review.
 You're welcome to reach out to our Developer Relations Engineer, @DerrekWonders, on [Discord](https://discord.gg/gobob) with any questions.
 :::
 
-At the moment there is only one relayer for BOB Gateway. In addition to its other functionality, this relayer pays gas on the user's behalf so that the user doesn't need to make a transaction on BOB to complete the bridging process. Since a malicious actor could create a strategy designed to take advantage of the relayer (e.g. spend all of the funds available for gas fees), the process of adding new strategies to Gateway as well as decentralizing the relayer role are restricted by the BOB team until Gateway is upgraded as described [on this page](/learn/introduction/gateway/).
+At the moment, there is only one relayer for BOB Gateway. In addition to its other functionality, this relayer pays gas on the user's behalf so that the user doesn't need to make a transaction on BOB to complete the bridging process. Since a malicious actor could create a strategy designed to take advantage of the relayer (e.g. spend all of the funds available for gas fees), the process of adding new strategies to Gateway as well as decentralizing the relayer role are restricted by the BOB team until Gateway is upgraded as described [on this page](/learn/introduction/gateway/).
 
 ### Example End-to-End Test: Staking SolvBTC.BBN
 

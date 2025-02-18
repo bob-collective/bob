@@ -1,7 +1,7 @@
 // @ts-check
 
-const fs = require("fs");
-const contractDir = "docs/contracts/src/src/gateway";
+// const fs = require("fs");
+// const contractDir = "docs/contracts/src/src/gateway";
 
 /** @type {import('@docusaurus/plugin-content-docs').SidebarsConfig} */
 const sidebars = {
