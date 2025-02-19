@@ -17,13 +17,17 @@ import {
     OrderStatus,
     StakeTransactionParams,
     BuildStakeParams,
+    OffRampGatewayQuote,
+    OffRampGatewayCreateQuoteRequest,
+    OffRampGatewayCreateQuoteResponse,
 } from './types';
 import { SYMBOL_LOOKUP, ADDRESS_LOOKUP } from './tokens';
 import { createBitcoinPsbt } from '../wallet';
 import { Network } from 'bitcoin-address-validation';
 import { EsploraClient } from '../esplora';
-import { strategyCaller } from './strategyABI';
+import { offRampCaller, strategyCaller } from './strategyABI';
 import { isAddress, Address, isAddressEqual } from 'viem';
+import * as bitcoin from 'bitcoinjs-lib';
 
 type Optional<T, K extends keyof T> = Omit<T, K> & Partial<T>;
 
@@ -145,6 +149,104 @@ export class GatewayApiClient {
             fee: quote.fee + (params.gasRefill || 0),
             baseToken: ADDRESS_LOOKUP[chainId][quote.baseTokenAddress],
             outputToken: quote.strategyAddress ? ADDRESS_LOOKUP[chainId][outputTokenAddress] : undefined,
+        };
+    }
+
+    async getOffRampQuote(
+        params: Optional<
+            GatewayQuoteParams,
+            | 'toChain'
+            | 'toToken'
+            | 'toUserAddress'
+            | 'affiliateId'
+            | 'type'
+            | 'fee'
+            | 'feeRate'
+            | 'gasRefill'
+            | 'strategyAddress'
+            | 'campaignId'
+        >
+    ): Promise<OffRampGatewayQuote> {
+        let bitcoinNetwork = bitcoin.networks.regtest;
+
+        const isMainnet =
+            params.fromChain === ChainId.BOB ||
+            (typeof params.fromChain === 'string' && params.fromChain.toLowerCase() === Chain.BOB);
+
+        const isTestnet =
+            params.fromChain === ChainId.BOB_SEPOLIA ||
+            (typeof params.fromChain === 'string' && params.fromChain.toLowerCase() === Chain.BOB_SEPOLIA);
+
+        const isInvalidNetwork = !isMainnet && !isTestnet;
+        const isMismatchMainnet = isMainnet && this.chain !== Chain.BOB;
+        const isMismatchTestnet = isTestnet && this.chain !== Chain.BOB_SEPOLIA;
+
+        let outputTokenAddress = '';
+        const toToken = params.toToken.toLowerCase();
+
+        const chainId = this.chainId;
+        if (toToken.startsWith('0x')) {
+            outputTokenAddress = toToken;
+        } else if (isMainnet && SYMBOL_LOOKUP[chainId][toToken]) {
+            outputTokenAddress = SYMBOL_LOOKUP[chainId][toToken].address;
+        } else if (isTestnet && SYMBOL_LOOKUP[chainId][toToken]) {
+            outputTokenAddress = SYMBOL_LOOKUP[chainId][toToken].address;
+        } else {
+            throw new Error('Unknown output token');
+        }
+
+        if (isMismatchMainnet) {
+            throw new Error('OffRamp not enabled for mainnet');
+        }
+
+        if (isInvalidNetwork || isMismatchTestnet) {
+            throw new Error('Invalid output chain');
+        }
+
+        if (isMainnet) {
+            bitcoinNetwork = bitcoin.networks.bitcoin;
+        } else if (isTestnet) {
+            bitcoinNetwork = bitcoin.networks.testnet;
+        }
+
+        const request: OffRampGatewayCreateQuoteRequest = {
+            slippage: params.maxSlippage,
+            amountToLock: BigInt(params.amount),
+            token: outputTokenAddress as EvmAddress,
+            userEvmAddress: params.fromUserAddress,
+        };
+
+        const response = await fetch(`${this.baseUrl}/offramp-quote`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
+            },
+            body: JSON.stringify(request),
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to get offramp order');
+        }
+
+        const data: OffRampGatewayCreateQuoteResponse = await response.json();
+
+        const receiverAddressOp = getScriptPubKey(params.bitcoinUserAddress, bitcoinNetwork);
+
+        return {
+            offRampABI: offRampCaller,
+            offRampFunctionName: 'createOffRampRequest',
+            offRampArgs: [
+                {
+                    offRampAddress: data.gateway as Address,
+                    amountLocked: data.amountToLock,
+                    maxFees: data.minimumFeesToPay,
+                    user: params.fromUserAddress as Address,
+                    token: outputTokenAddress as Address,
+                    userBtcAddress: receiverAddressOp,
+                },
+            ],
+            insufficient_user_balance: data.insufficientUserBalance,
         };
     }
 
@@ -522,6 +624,11 @@ function calculateOpReturnHash(req: GatewayCreateOrderRequest) {
             ]
         )
     );
+}
+
+function getScriptPubKey(userAddress: string, network: bitcoin.Network): Buffer {
+    const address = bitcoin.address.toOutputScript(userAddress, network);
+    return Buffer.concat([Buffer.from([address.length]), address]);
 }
 
 function isHexPrefixed(str: string): boolean {

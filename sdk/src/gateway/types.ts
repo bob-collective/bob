@@ -1,6 +1,7 @@
 import type { EsploraClient } from '../esplora';
 import { Address } from 'viem';
-import { strategyCaller } from './strategyABI';
+import { offRampCaller, strategyCaller } from './strategyABI';
+import { Bytes } from '@scure/btc-signer/utils';
 
 type ChainSlug = string | number;
 type TokenSymbol = string;
@@ -111,6 +112,8 @@ export interface GatewayQuoteParams {
     strategyAddress?: string;
     /** @description Campaign id for tracking */
     campaignId?: string;
+    /** @description Users bitcoin Address */
+    bitcoinUserAddress?: string;
 }
 
 /**
@@ -222,6 +225,26 @@ export type GatewayQuote = {
     strategyAddress?: EvmAddress;
 };
 
+export type OffRampGatewayQuote = {
+    /** @description The ABI used to interact with the offRamp contract */
+    offRampABI: typeof offRampCaller;
+    /** @description The name of the function being called on the contract */
+    offRampFunctionName: string;
+    /** @description Arguments required for the offRamp contract call */
+    offRampArgs: [
+        {
+            offRampAddress: Address;
+            amountLocked: bigint;
+            maxFees: bigint;
+            user: Address;
+            token: Address;
+            userBtcAddress: Bytes;
+        },
+    ];
+    /** @description Does account holds enough balance */
+    insufficient_user_balance: boolean;
+};
+
 /** @dev Internal */
 export type GatewayCreateOrderRequest = {
     gatewayAddress: EvmAddress;
@@ -232,6 +255,22 @@ export type GatewayCreateOrderRequest = {
     strategyExtraData?: string;
     satoshis: number;
     campaignId?: string;
+};
+
+/** @dev Internal */
+export type OffRampGatewayCreateQuoteRequest = {
+    slippage: number;
+    amountToLock: bigint;
+    token: EvmAddress;
+    userEvmAddress: EvmAddress;
+};
+
+/** @dev Internal */
+export type OffRampGatewayCreateQuoteResponse = {
+    amountToLock: bigint;
+    minimumFeesToPay: bigint;
+    gateway: EvmAddress;
+    insufficientUserBalance: boolean;
 };
 
 export interface GatewayOrderResponse {
