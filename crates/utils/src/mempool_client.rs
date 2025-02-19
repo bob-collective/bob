@@ -44,7 +44,6 @@ impl MempoolClient {
 
     async fn get(&self, path: &str) -> Result<String> {
         let url = self.url.join(path)?;
-        println!("url: {}", url);
         Ok(self.cli.get(url).send().await?.error_for_status()?.text().await?)
     }
 
