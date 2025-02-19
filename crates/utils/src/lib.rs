@@ -6,6 +6,7 @@ mod mempool_client;
 pub use bitcoin_client::*;
 pub use bitcoin_core::*;
 pub use esplora_client::*;
+pub use mempool_client::*;
 
 #[cfg(test)]
 mod tests {

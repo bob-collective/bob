@@ -2,7 +2,6 @@ use eyre::{bail, Result};
 use reqwest::{Client, Url};
 use serde::Deserialize;
 use std::str::FromStr;
-use tracing::*;
 
 const MEMPOOL_MAINNET_URL: &str = "https://mempool.space/api/v1/";
 const MEMPOOL_TESTNET_URL: &str = "https://mempool.space/testnet/api/v1/";
@@ -60,11 +59,11 @@ mod tests {
     async fn test_mempool_fees() -> Result<()> {
         let client = MempoolClient::new(None, bitcoin::Network::Signet)?;
         let fees = client.get_fee_estimates().await?;
-        assert!(fees.fastest_fee >= 0);
-        assert!(fees.half_hour_fee >= 0);
-        assert!(fees.hour_fee >= 0);
-        assert!(fees.economy_fee >= 0);
-        assert!(fees.minimum_fee >= 0);
+        assert!(fees.fastest_fee > 0);
+        assert!(fees.half_hour_fee > 0);
+        assert!(fees.hour_fee > 0);
+        assert!(fees.economy_fee > 0);
+        assert!(fees.minimum_fee > 0);
 
         Ok(())
     }

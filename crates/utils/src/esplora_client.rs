@@ -1,6 +1,6 @@
 use bitcoin::{
-    block::Header, consensus, hashes::hex::FromHex, BlockHash, MerkleBlock, Network, Transaction,
-    Txid,
+    block::Header, consensus, hashes::hex::FromHex, BlockHash, CompactTarget, MerkleBlock, Network,
+    Transaction, TxMerkleNode, Txid,
 };
 use eyre::Result;
 use reqwest::{Client, Url};
@@ -43,6 +43,23 @@ impl MerkleProof {
             })
             .collect()
     }
+}
+
+#[derive(Debug, Deserialize)]
+pub struct BlockValue {
+    pub id: BlockHash,
+    pub height: u32,
+    pub version: u32,
+    pub timestamp: u32,
+    pub tx_count: u32,
+    pub size: u32,
+    pub weight: u64,
+    pub merkle_root: TxMerkleNode,
+    pub previousblockhash: Option<BlockHash>,
+    pub mediantime: u32,
+    pub nonce: u32,
+    pub bits: CompactTarget,
+    pub difficulty: f64,
 }
 
 #[derive(Clone)]
@@ -112,6 +129,10 @@ impl EsploraClient {
 
     pub async fn get_block_header(&self, hash: &BlockHash) -> Result<Header> {
         Ok(consensus::deserialize(&self.get_raw_block_header(hash).await?)?)
+    }
+
+    pub async fn get_block_value(&self, hash: &BlockHash) -> Result<BlockValue> {
+        self.get_and_decode(&format!("block/{hash}")).await
     }
 
     pub async fn get_raw_block_header_at_height(&self, height: u32) -> Result<Vec<u8>> {
@@ -201,6 +222,18 @@ mod tests {
         // for some reason left has more bits so just compare the header
         assert_eq!(left.header, right.header);
 
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_esplora_get_block_value() -> Result<()> {
+        let esplora_client = EsploraClient::new(None, Network::Bitcoin)?;
+
+        let block_hash = BlockHash::from_str(
+            "00000000000000000000e4726002778d999b973fe138208ed5f6c23df0af7898",
+        )?;
+
+        assert_eq!(esplora_client.get_block_value(&block_hash).await.unwrap().height, 884457);
         Ok(())
     }
 }
