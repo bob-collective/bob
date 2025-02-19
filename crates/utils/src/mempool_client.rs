@@ -27,17 +27,16 @@ pub struct MempoolClient {
 
 impl MempoolClient {
     pub fn new(mempool_url: Option<String>, network: bitcoin::Network) -> Result<Self> {
-        let url = mempool_url.unwrap_or_else(|| match network {
-            bitcoin::Network::Bitcoin => MEMPOOL_MAINNET_URL.to_owned(),
-            bitcoin::Network::Testnet => MEMPOOL_TESTNET_URL.to_owned(),
-            bitcoin::Network::Signet => MEMPOOL_SIGNET_URL.to_owned(),
-            bitcoin::Network::Testnet4 => MEMPOOL_TESTNET4_URL.to_owned(),
-            _ => String::new(),
-        });
-
-        if url.is_empty() {
-            bail!("Unsupported Bitcoin network by Mempool: {:?}", network);
-        }
+        let url = match mempool_url {
+            Some(url) => url,
+            None => match network {
+                bitcoin::Network::Bitcoin => MEMPOOL_MAINNET_URL.to_owned(),
+                bitcoin::Network::Testnet => MEMPOOL_TESTNET_URL.to_owned(),
+                bitcoin::Network::Signet => MEMPOOL_SIGNET_URL.to_owned(),
+                bitcoin::Network::Testnet4 => MEMPOOL_TESTNET4_URL.to_owned(),
+                _ => bail!("Unsupported Bitcoin network by Mempool: {:?}", network),
+            },
+        };
 
         Ok(Self { url: Url::from_str(&url)?, cli: Client::new() })
     }
