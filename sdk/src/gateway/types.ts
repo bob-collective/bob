@@ -258,14 +258,6 @@ export type GatewayCreateOrderRequest = {
 };
 
 /** @dev Internal */
-export type OffRampGatewayCreateQuoteRequest = {
-    slippage: number;
-    amountToLock: bigint;
-    token: EvmAddress;
-    userEvmAddress: EvmAddress;
-};
-
-/** @dev Internal */
 export type OffRampGatewayCreateQuoteResponse = {
     amountToLock: bigint;
     minimumFeesToPay: bigint;

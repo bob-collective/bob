@@ -18,7 +18,6 @@ import {
     StakeTransactionParams,
     BuildStakeParams,
     OffRampGatewayQuote,
-    OffRampGatewayCreateQuoteRequest,
     OffRampGatewayCreateQuoteResponse,
 } from './types';
 import { SYMBOL_LOOKUP, ADDRESS_LOOKUP } from './tokens';
@@ -209,20 +208,19 @@ export class GatewayApiClient {
             bitcoinNetwork = bitcoin.networks.testnet;
         }
 
-        const request: OffRampGatewayCreateQuoteRequest = {
-            slippage: params.maxSlippage,
-            amountToLock: BigInt(params.amount),
-            token: outputTokenAddress as EvmAddress,
+        const queryParams = new URLSearchParams({
+            slippage: params.maxSlippage.toString(),
+            amountToLock: params.amount.toString(),
+            token: outputTokenAddress,
             userEvmAddress: params.fromUserAddress,
-        };
+        }).toString();
 
-        const response = await fetch(`${this.baseUrl}/offramp-quote`, {
+        const response = await fetch(`${this.baseUrl}/offramp-quote?${queryParams}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
                 Accept: 'application/json',
             },
-            body: JSON.stringify(request),
         });
 
         if (!response.ok) {
