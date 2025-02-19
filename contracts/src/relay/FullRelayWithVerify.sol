@@ -41,7 +41,7 @@ contract FullRelayWithVerify is FullRelay {
         bytes32 _headerHash = _header.hash256();
         bytes32 _GCD = getLastReorgCommonAncestor();
 
-        require(_isAncestor(_headerHash, _GCD, 240), "GCD does not confirm header");
+        require(_isAncestor(_headerHash, _GCD, 2048), "GCD does not confirm header");
         require(_getConfs(_headerHash) >= _numConfs, "Insufficient confirmations");
     }
 
