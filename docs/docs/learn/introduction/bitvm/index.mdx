@@ -95,7 +95,7 @@ Under correct operation, the bridging process completes in less than one hour in
 - **Optimized Transaction Size**: All transactions are under 400kb, eliminating the need for special miner cooperation. This was achieved through Fiamma's optimization of the disprove script chunk size and splitting the Assert transaction into multiple linked transactions.
 - **Enhanced Security Model**: Correct behavior is enforced through bit commits, following the BitVM2 standard, reducing trust assumptions compared to previous implementations.
 - **Streamlined Verification**: Our implementation uses hardcoded public inputs rather than checking them in complex scripts, allowing us to run unmodified RISC0 circuits.
-- **Smart Contract Integration**: Instead of [superblock](https://www.fairgate.io/post/3-a-review-of-the-the-bitvm2-based-linus24-bridge) logic, additional verification is performed by BOB smart contracts using an on-chain relay, with double-checking of payments and block correctness in the prover.
+- **Smart Contract Integration**: Instead of [superblock](https://www.fairgate.io/post/3-a-review-of-the-the-bitvm2-based-linus24-bridge) logic, additional verification is performed by BOB smart contracts using an [on-chain relay](/learn/builder-guides/relay/), with double-checking of payments and block correctness in the prover.
 - **User-Friendly Offramp**: We're making it easy to convert wrapped tokens back to native bitcoin by integrating the BitVM bridge with [BOB Gateway](/learn/introduction/gateway/).
 
 ## Common Misconceptions
