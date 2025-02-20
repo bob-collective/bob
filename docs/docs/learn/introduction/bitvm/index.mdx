@@ -60,7 +60,7 @@ This setup is called _optimistic_ because normal operation is assumed to be corr
 <BitvmDiagram style={{ width: "100%", maxWidth: "100%", height: "auto" }} />
 
 1. Compress a program into a SNARK verifier implemented in Bitcoin Script. With Groth16, this will be about 1GB in size.
-1. Split the verifier into discrete sub-program chunks that are a maximum of 4MB each. This makes it possible for an entire specific sub-program chunk could be included in a Bitcoin transaction in the event of a challenge.
+1. Split the verifier into discrete sub-program chunks that are optimized for Bitcoin transaction size limits. These chunks are under 400kb each, eliminating the need for special miner cooperation at any step.
 1. During the setup step, each operator commits to the program by depositing collateral.
 1. Each operator continually runs the original program (e.g. a bridge) off-chain to determine the correct outputs of each input (e.g. how much BTC to withdraw and who to send it to during a bridge peg-out).
 1. The operator uses their own funds to cover the program's output (e.g. sends their own BTC to a withdrawing user), then requests a reimbursement by withdrawing funds from BitVM (i.e. the set of funds being managed by the operators).
@@ -79,18 +79,24 @@ One of the most exciting applications of BitVM is a BTC light-client bridge on B
 1. Operators pay BTC to the withdrawing user from their own funds and then reclaim the BTC from BitVM.
 1. A smart contract on BOB uses the [BTC relay](/learn/builder-guides/relay) to verify that there is a correct peg-out on Bitcoin corresponding to the withdrawal request by a user on BOB. If this check passes, a burn event on BOB is emitted.
 1. BitVM checks that there is a correct peg-out on Bitcoin matching the burn event on BOB.
-1. The operator uses the BitVM light client to create a SNARK, proving that
-
+1. The operator uses the BitVM light client to create a SNARK, proving that:
    - there is a burn event on BOB that burns bobBTC,
    - the BOB block that includes the burn event was correctly created,
    - the BOB block is signed by Babylon Finality Providers (FPs) staked on Bitcoin,
    - the BOB block hash that includes the burn event is stored on the Babylon chain, and
    - the BOB block hash is part of a Babylon checkpoint on Bitcoin with at least 100 Bitcoin confirmations.
-
 1. If all is correct, the operator gets the BTC refunded.
 1. If the operator has committed fraud (e.g. by sending BTC to their wallet instead of the user's), the refund transaction is prevented and the operator is slashed and kicked out.
 
 Under correct operation, the bridging process completes in less than one hour in each direction for users bridging in and out. This is much faster than existing Ethereum L1 or L2 bridges to Bitcoin.
+
+### Recent Technical Improvements
+
+- **Optimized Transaction Size**: All transactions are under 400kb, eliminating the need for special miner cooperation. This was achieved through Fiamma's optimization of the disprove script chunk size and splitting the Assert transaction into multiple linked transactions.
+- **Enhanced Security Model**: Correct behavior is enforced through bit commits, following the BitVM2 standard, reducing trust assumptions compared to previous implementations.
+- **Streamlined Verification**: Our implementation uses hardcoded public inputs rather than checking them in complex scripts, allowing us to run unmodified RISC0 circuits.
+- **Smart Contract Integration**: Instead of [superblock](https://www.fairgate.io/post/3-a-review-of-the-the-bitvm2-based-linus24-bridge) logic, additional verification is performed by BOB smart contracts using an on-chain relay, with double-checking of payments and block correctness in the prover.
+- **User-Friendly Offramp**: We're making it easy to convert wrapped tokens back to native bitcoin by integrating the BitVM bridge with [BOB Gateway](/learn/introduction/gateway/).
 
 ## Common Misconceptions
 
