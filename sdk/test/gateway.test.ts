@@ -2,7 +2,7 @@ import { assert, describe, expect, it } from 'vitest';
 import { GatewaySDK } from '../src/gateway';
 import { MAINNET_GATEWAY_BASE_URL, SIGNET_GATEWAY_BASE_URL } from '../src/gateway/client';
 import { SYMBOL_LOOKUP } from '../src/gateway/tokens';
-import { BuildStakeParams, Chain, ChainId, OffRampGatewayQuote, StakeTransactionParams } from '../src/gateway/types';
+import { BuildStakeParams, Chain, ChainId, OffRampRequestPayload, StakeTransactionParams } from '../src/gateway/types';
 import { ZeroAddress } from 'ethers';
 import { bobSepolia } from 'viem/chains';
 import nock from 'nock';
@@ -527,7 +527,7 @@ describe('Gateway Tests', () => {
                 gateway: "0x30b006c80d99b645d6507780565706ac7b19761d"
             });
 
-        const result: OffRampGatewayQuote = await gatewaySDK.getOffRampQuote({
+        const result: OffRampRequestPayload = await gatewaySDK.getOffRampQuoteAndRequest({
             fromChain: 'bob-sepolia',
             toToken: '0x6744bAbDf02DCF578EA173A9F0637771A9e1c4d0',
             maxSlippage: 5,

@@ -17,7 +17,7 @@ import {
     OrderStatus,
     StakeTransactionParams,
     BuildStakeParams,
-    OffRampGatewayQuote,
+    OffRampRequestPayload,
     OffRampGatewayCreateQuoteResponse,
 } from './types';
 import { SYMBOL_LOOKUP, ADDRESS_LOOKUP } from './tokens';
@@ -159,7 +159,7 @@ export class GatewayApiClient {
         };
     }
 
-    async getOffRampQuote(
+    async getOffRampQuoteAndRequest(
         params: Optional<
             GatewayQuoteParams,
             | 'toChain'
@@ -175,7 +175,7 @@ export class GatewayApiClient {
             | 'fromToken'
             | 'fromUserAddress'
         >
-    ): Promise<OffRampGatewayQuote> {
+    ): Promise<OffRampRequestPayload> {
         let bitcoinNetwork = bitcoin.networks.regtest;
 
         const isMainnet =

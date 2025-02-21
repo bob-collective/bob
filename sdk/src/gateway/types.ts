@@ -225,7 +225,7 @@ export type GatewayQuote = {
     strategyAddress?: EvmAddress;
 };
 
-export type OffRampGatewayQuote = {
+export type OffRampRequestPayload = {
     /** @description The ABI used to interact with the offRamp contract */
     offRampABI: typeof offRampCaller;
     /** @description The name of the function being called on the contract */
