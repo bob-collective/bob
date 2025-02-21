@@ -241,8 +241,6 @@ export type OffRampGatewayQuote = {
             userBtcAddress: Bytes;
         },
     ];
-    /** @description Does account holds enough balance */
-    insufficient_user_balance: boolean;
 };
 
 /** @dev Internal */
@@ -259,10 +257,9 @@ export type GatewayCreateOrderRequest = {
 
 /** @dev Internal */
 export type OffRampGatewayCreateQuoteResponse = {
-    amountToLock: bigint;
-    minimumFeesToPay: bigint;
+    amountToLock: string;
+    minimumFeesToPay: string;
     gateway: EvmAddress;
-    insufficientUserBalance: boolean;
 };
 
 export interface GatewayOrderResponse {

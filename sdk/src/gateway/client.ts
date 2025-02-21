@@ -43,6 +43,11 @@ export const MAINNET_GATEWAY_BASE_URL = 'https://gateway-api-mainnet.gobob.xyz';
 export const TESTNET_GATEWAY_BASE_URL = 'https://gateway-api-testnet.gobob.xyz';
 
 /**
+ * Base url for the Signet Gateway API.
+ * @default "https://gateway-api-testnet.gobob.xyz"
+ */
+export const SIGNET_GATEWAY_BASE_URL = 'https://gateway-api-signet.gobob.xyz';
+/**
  * Gateway REST HTTP API client
  */
 export class GatewayApiClient {
@@ -61,9 +66,12 @@ export class GatewayApiClient {
                 this.baseUrl = MAINNET_GATEWAY_BASE_URL;
                 break;
             case 'testnet':
-            case Chain.BOB_SEPOLIA:
                 this.chain = Chain.BOB_SEPOLIA;
                 this.baseUrl = TESTNET_GATEWAY_BASE_URL;
+                break;
+            case 'signet':
+                this.chain = Chain.BOB_SEPOLIA; // Same chain as testnet
+                this.baseUrl = SIGNET_GATEWAY_BASE_URL;
                 break;
             default:
                 throw new Error('Invalid chain');
@@ -164,6 +172,8 @@ export class GatewayApiClient {
             | 'gasRefill'
             | 'strategyAddress'
             | 'campaignId'
+            | 'fromToken'
+            | 'fromUserAddress'
         >
     ): Promise<OffRampGatewayQuote> {
         let bitcoinNetwork = bitcoin.networks.regtest;
@@ -208,6 +218,8 @@ export class GatewayApiClient {
             bitcoinNetwork = bitcoin.networks.testnet;
         }
 
+        const receiverAddressOp = getScriptPubKey(params.bitcoinUserAddress, bitcoinNetwork);
+
         const queryParams = new URLSearchParams({
             slippage: params.maxSlippage.toString(),
             amountToLock: params.amount.toString(),
@@ -229,22 +241,19 @@ export class GatewayApiClient {
 
         const data: OffRampGatewayCreateQuoteResponse = await response.json();
 
-        const receiverAddressOp = getScriptPubKey(params.bitcoinUserAddress, bitcoinNetwork);
-
         return {
             offRampABI: offRampCaller,
             offRampFunctionName: 'createOffRampRequest',
             offRampArgs: [
                 {
                     offRampAddress: data.gateway as Address,
-                    amountLocked: data.amountToLock,
-                    maxFees: data.minimumFeesToPay,
+                    amountLocked: BigInt(data.amountToLock.toString()),
+                    maxFees: BigInt(data.minimumFeesToPay.toString()),
                     user: params.fromUserAddress as Address,
                     token: outputTokenAddress as Address,
                     userBtcAddress: receiverAddressOp,
                 },
             ],
-            insufficient_user_balance: data.insufficientUserBalance,
         };
     }
 
