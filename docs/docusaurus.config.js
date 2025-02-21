@@ -200,6 +200,11 @@ const config = {
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
+      docs: {
+        sidebar: {
+          hideable: true,
+        },
+      },
       codeblock: {
         showGithubLink: true,
         githubLinkLabel: "View on GitHub",
@@ -301,7 +306,7 @@ const config = {
             ],
           },
         ],
-        copyright: `Built with ❤️ by the BOB Collective. ${new Date().getFullYear()}.`,
+        copyright: `Built with 🧡 by the BOB Collective. ${new Date().getFullYear()}.`,
       },
       prism: {
         theme: lightCodeTheme,
