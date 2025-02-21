@@ -24,7 +24,7 @@ import { SYMBOL_LOOKUP, ADDRESS_LOOKUP } from './tokens';
 import { createBitcoinPsbt } from '../wallet';
 import { Network } from 'bitcoin-address-validation';
 import { EsploraClient } from '../esplora';
-import { offRampCaller, strategyCaller } from './strategyABI';
+import { offRampCaller, strategyCaller } from './abi';
 import { isAddress, Address, isAddressEqual } from 'viem';
 import * as bitcoin from 'bitcoinjs-lib';
 

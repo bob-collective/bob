@@ -1,6 +1,6 @@
 import type { EsploraClient } from '../esplora';
 import { Address } from 'viem';
-import { offRampCaller, strategyCaller } from './strategyABI';
+import { offRampCaller, strategyCaller } from './abi';
 import { Bytes } from '@scure/btc-signer/utils';
 
 type ChainSlug = string | number;
