@@ -514,41 +514,36 @@ describe('Gateway Tests', () => {
         expect(result).toMatchObject(expected);
     });
 
-
     it('should return valid offramp quote', async () => {
         const gatewaySDK = new GatewaySDK('signet');
 
-        nock(`${SIGNET_GATEWAY_BASE_URL}`)
-            .get('/offramp-quote')
-            .query(true)
-            .reply(200, {
-                amountToLock: "0x5af3107a4000",
-                minimumFeesToPay: "0x38065e1e400",
-                gateway: "0x30b006c80d99b645d6507780565706ac7b19761d"
-            });
+        nock(`${SIGNET_GATEWAY_BASE_URL}`).get('/offramp-quote').query(true).reply(200, {
+            amountToLock: '0x5af3107a4000',
+            minimumFeesToPay: '0x38065e1e400',
+            gateway: '0x30b006c80d99b645d6507780565706ac7b19761d',
+        });
 
         const result: OffRampRequestPayload = await gatewaySDK.getOffRampQuoteAndRequest({
             fromChain: 'bob-sepolia',
             toToken: '0x6744bAbDf02DCF578EA173A9F0637771A9e1c4d0',
             maxSlippage: 5,
             amount: 100000000000000,
-            fromUserAddress: "0xFAEe001465dE6D7E8414aCDD9eF4aC5A35B2B808",
-            bitcoinUserAddress: "tb1qn40xpua4eskjgmueq6fwujex05wdtprh46vkpc"
+            fromUserAddress: '0xFAEe001465dE6D7E8414aCDD9eF4aC5A35B2B808',
+            bitcoinUserAddress: 'tb1qn40xpua4eskjgmueq6fwujex05wdtprh46vkpc',
         });
 
         expect(result.offRampArgs).to.deep.equal([
             {
-                offRampAddress: "0x30b006c80d99b645d6507780565706ac7b19761d",
+                offRampAddress: '0x30b006c80d99b645d6507780565706ac7b19761d',
                 amountLocked: BigInt(100000000000000n),
                 maxFees: BigInt(3850000000000n),
-                user: "0xFAEe001465dE6D7E8414aCDD9eF4aC5A35B2B808",
-                token: "0x6744babdf02dcf578ea173a9f0637771a9e1c4d0",
+                user: '0xFAEe001465dE6D7E8414aCDD9eF4aC5A35B2B808',
+                token: '0x6744babdf02dcf578ea173a9f0637771a9e1c4d0',
                 userBtcAddress: Buffer.from([
-                    22, 0, 20, 157, 94, 96, 243, 181, 204, 45,
-                    36, 111, 153, 6, 146, 238, 75, 38, 125, 28,
-                    213, 132, 119
-                ])
-            }
+                    22, 0, 20, 157, 94, 96, 243, 181, 204, 45, 36, 111, 153, 6, 146, 238, 75, 38, 125, 28, 213, 132,
+                    119,
+                ]),
+            },
         ]);
     });
 });
