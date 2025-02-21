@@ -13,6 +13,7 @@ def replace_git_sources(md_content):
         original_url = match.group(0)
         # Capture the commit hash or tag using a group in the regular expression
         commit_hash = match.group(1)
+        # TODO: Add 'contracts/' after 'blob/master/' or otherwise adjust the build pipeline to fix incorrect url outputs
         replaced_url = original_url.replace(f'/blob/{commit_hash}/', '/blob/master/')
         return replaced_url
 
