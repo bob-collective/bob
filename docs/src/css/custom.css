@@ -114,12 +114,22 @@
   --ifm-navbar-link-hover-color: var(--bob-accent);
   --ifm-menu-color-active: var(--bob-accent);
   --ifm-breadcrumb-color-active: var(--bob-accent);
+
+  /* Add repeating dot background */
+  background-image: url("/img/dot.svg");
+  background-repeat: repeat;
+  background-size: 20px 20px;
+  background-position: center;
 }
 
 /* Navbar and Footer */
 .navbar,
 .footer {
   background-color: var(--bob-background);
+  background-image: url("/img/dot.svg");
+  background-repeat: repeat;
+  background-size: 20px 20px;
+  background-position: center;
 }
 
 .navbar {
@@ -134,7 +144,7 @@
 .footer__title,
 .navbar-sidebar {
   color: var(--bob-text-secondary);
-  background-color: var(--bob-background);
+  background-color: transparent;
 }
 
 @media (max-width: 996px) {
