@@ -516,7 +516,6 @@ describe('Gateway Tests', () => {
 
     it('should return valid offramp quote', async () => {
         const gatewaySDK = new GatewaySDK('signet');
-
         nock(`${SIGNET_GATEWAY_BASE_URL}`).get('/offramp-quote').query(true).reply(200, {
             amountToLock: '0x5af3107a4000',
             minimumFeesToPay: '0x38065e1e400',
@@ -526,7 +525,6 @@ describe('Gateway Tests', () => {
         const result: OffRampRequestPayload = await gatewaySDK.getOffRampQuoteAndRequest({
             fromChain: 'bob-sepolia',
             toToken: '0x6744bAbDf02DCF578EA173A9F0637771A9e1c4d0',
-            maxSlippage: 5,
             amount: 100000000000000,
             fromUserAddress: '0xFAEe001465dE6D7E8414aCDD9eF4aC5A35B2B808',
             bitcoinUserAddress: 'tb1qn40xpua4eskjgmueq6fwujex05wdtprh46vkpc',

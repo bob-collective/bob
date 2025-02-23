@@ -174,6 +174,7 @@ export class GatewayApiClient {
             | 'campaignId'
             | 'fromToken'
             | 'fromUserAddress'
+            | 'maxSlippage'
         >
     ): Promise<OffRampRequestPayload> {
         let bitcoinNetwork = bitcoin.networks.regtest;
@@ -221,10 +222,8 @@ export class GatewayApiClient {
         const receiverAddressOp = getScriptPubKey(params.bitcoinUserAddress, bitcoinNetwork);
 
         const queryParams = new URLSearchParams({
-            slippage: params.maxSlippage.toString(),
             amountToLock: params.amount.toString(),
             token: outputTokenAddress,
-            userEvmAddress: params.fromUserAddress,
         }).toString();
 
         const response = await fetch(`${this.baseUrl}/offramp-quote?${queryParams}`, {
