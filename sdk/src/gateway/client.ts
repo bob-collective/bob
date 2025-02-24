@@ -159,6 +159,22 @@ export class GatewayApiClient {
         };
     }
 
+    /**
+     * **Note:** Before calling this method, the user must approve the spending of funds
+     * on the offramp contract to ensure the transaction can proceed successfully.
+     *
+     * Retrieves an offramp quote and constructs the required request payload.
+     *
+     * @param {Optional<GatewayQuoteParams,
+     *   'toChain' | 'toToken' | 'toUserAddress' | 'affiliateId' | 'type' | 'fee' |
+     *   'feeRate' | 'gasRefill' | 'strategyAddress' | 'campaignId' | 'fromToken' |
+     *   'fromUserAddress' | 'maxSlippage'
+     * >} params - The parameters required for obtaining an offramp quote, with specific fields marked as optional.
+     *
+     * @returns {Promise<OffRampRequestPayload>} The constructed offramp request payload.
+     *
+     * @throws {Error} If the provided arguments are invalid or violate constraints.
+     */
     async getOffRampQuoteAndRequest(
         params: Optional<
             GatewayQuoteParams,
