@@ -251,7 +251,9 @@ export class GatewayApiClient {
         });
 
         if (!response.ok) {
-            throw new Error('Failed to get offramp order');
+            const errorData = await response.json();
+            const errorMessage = errorData?.message || 'Failed to get offramp quote';
+            throw new Error(`Offramp API Error: ${errorMessage}`);
         }
 
         const data: OffRampGatewayCreateQuoteResponse = await response.json();
