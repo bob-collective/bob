@@ -536,7 +536,7 @@ describe('Gateway Tests', () => {
                 maxFees: BigInt(15370000000000),
                 user: '0xFAEe001465dE6D7E8414aCDD9eF4aC5A35B2B808',
                 token: '0xda472456b1a6a2fc9ae7edb0e007064224d4284c',
-                userBtcAddress: '0x1600149d5e60f3b5cc2d246f990692ee4b267d1cd58477'
+                userBtcAddress: '0x1600149d5e60f3b5cc2d246f990692ee4b267d1cd58477',
             },
         ]);
     });
