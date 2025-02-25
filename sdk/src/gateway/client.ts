@@ -197,12 +197,11 @@ export class GatewayApiClient {
         let bitcoinNetwork = bitcoin.networks.regtest;
 
         const isMainnet =
-            this.chainId === ChainId.BOB ||
-            (typeof this.chainId === 'string' && this.chainId.toLowerCase() === Chain.BOB);
+            this.chainId === ChainId.BOB || (typeof this.chainId === 'string' && this.chainId === Chain.BOB);
 
         const isTestnet =
             this.chainId === ChainId.BOB_SEPOLIA ||
-            (typeof this.chainId === 'string' && this.chainId.toLowerCase() === Chain.BOB_SEPOLIA);
+            (typeof this.chainId === 'string' && this.chainId === Chain.BOB_SEPOLIA);
 
         const isInvalidNetwork = !isMainnet && !isTestnet;
         const isMismatchMainnet = isMainnet && this.chain !== Chain.BOB;
