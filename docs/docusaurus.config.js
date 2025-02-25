@@ -55,6 +55,10 @@ const config = {
             to: "/learn/user-guides/faq",
           },
           {
+            from: "/learn/introduction/faq",
+            to: "/learn/user-guides/faq",
+          },
+          {
             from: "/docs/learn/bob-stack/merged-mining",
             to: "/learn/introduction/roadmap",
           },
