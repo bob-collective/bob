@@ -7,7 +7,7 @@ sidebar_label: Pay Fees with BTC
 
 ## wBTC, tBTC, and other ERC-20 as Gas Token
 
-On Ethereum rollups, gas fees need to be paid in ETH as the base currency. While a rollup can in theory choose to use their gas token, part of the gas fees on the rollup are used on Ethereum to pay for data availability.
+On Ethereum rollups, gas fees need to be paid in ETH as the base currency. While a rollup can, in theory, choose to use their gas token, part of the gas fees on the rollup are used on Ethereum to pay for data availability.
 
 In many cases, it is desirable to pay gas fees in other tokens. In particular, on BOB, we want to allow users to pay gas fees in bridged BTC to create a seamless experience for Bitcoin users.
 
@@ -16,7 +16,7 @@ There are two approaches to how gas fees can be paid in bridged BTC (or any othe
 - [Meta Transactions (ERC-2771)](meta-transactions): Let someone else submit a transaction on your behalf.
 - [Account Abstraction (ERC-4337)](account-abstraction): Use a smart contract wallet with a paymaster to pay gas fees.
 
-BOB supports both approaches and leaves it up to projects to decide which approach they want to use.
+BOB supports both approaches, allowing projects to choose their preferred method.
 
 ## Meta Transactions vs. Account Abstraction
 

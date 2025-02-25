@@ -4,7 +4,7 @@ sidebar_position: 4
 
 # sats-wagmi - Reactive primitives for Bitcoin apps
 
-sats-wagmi is a library with a handful of BTC wallet connectors, leaving aside the need of the developer to integrate each one individually. The library also exports useful React hooks that mimic the standard followed in the EVM [wagmi](https://wagmi.sh/react/getting-started) library.
+sats-wagmi is a library that provides multiple BTC wallet connectors, eliminating the need for developers to integrate each one individually. The library also exports useful React hooks that mimic the standard followed in the EVM [wagmi](https://wagmi.sh/react/getting-started) library.
 
 ## Features
 
@@ -32,7 +32,7 @@ npm install @gobob/sats-wagmi
 
 ### 1. Wrap App in Context Provider
 
-To start, we will need to wrap our React App with Context so that our application is aware of sats-wagmi & React Query's reactive state and in-memory caching:
+First, wrap your React App with Context to enable sats-wagmi and React Query's reactive state and in-memory caching:
 
 ```tsx
  // 1. Import modules
@@ -58,7 +58,7 @@ function App() {
 
 After that, we will create a `WalletOptions` component that will display our connectors. This will allow users to select a wallet and connect.
 
-Below, we are rendering a list of `connectors` retrieved from `useConnect`. When the user clicks on a connector, the `connect` function will connect the users' wallet.
+Below, we render a list of connectors from useConnect. When the user selects a connector, the connect function establishes the connection
 
 ```tsx
 import * as React from 'react'
@@ -77,7 +77,7 @@ export function WalletOptions() {
 
 ### 3. Display Connected Account
 
-Lastly, if an account is connected, we want to show the connected address.
+If an account is connected, display the wallet address.
 
 We are utilizing `useAccount` to extract the account and `useDisconnect` to show a "Disconnect" button so a user can disconnect their wallet.
 

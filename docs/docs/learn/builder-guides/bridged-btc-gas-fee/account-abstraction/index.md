@@ -39,7 +39,7 @@ Before the first user operation can be made, the paymaster smart contract has to
 
 1. Input the amount you wish to send and the recipient`s address into the form fields.
 2. Click on `Transfer`. This will require three interactions with MetaMask: first one will deposit small amount of ETH to the entry point contract so that you can sign the user operation that allows the paymaster contract to spend your wBTC. Then you will sign the approval user operation. Finally, you will sign the transfer user operation.
-3. Wait for the transfer user operation to be executed.
+3. Wait for the transfer operation to complete.
 
 ## Limitations
 
@@ -47,7 +47,7 @@ Given that ERC-4337 is still relatively new, there is not a lot of support for t
 
 ## Opportunities
 
-There are interesting use cases that account abstraction enables being pushed by several team. Some places to look for inspiration:
+There are interesting use cases that account abstraction enables being pushed by several team. Here are some resources for further exploration:
 
 - [Privy](https://docs.privy.io/): Privy allows users to choose from traditional crypto wallets and social logins to create accounts.
 - [Safe](https://docs.safe.global/getting-started/readme): Safe allows complex multi-sig setups, simple authentication, and onramping.

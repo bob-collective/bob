@@ -24,7 +24,7 @@ A specific advantage of using the Simple Payment Verification (SPV) "Light Relay
 
 ## Using The Relay
 
-The code for the light relay is in [`src/relay/LightRelay.sol`](https://github.com/bob-collective/bob/blob/master/src/relay/LightRelay.sol) which stores the difficulty for the current and previous epoch. To update this it is possible to use `retarget(headers)` with `proofLength * 2` block headers from Bitcoin (before and after the retarget) serialized sequentially.
+The code for the light relay is in [`src/relay/LightRelay.sol`](https://github.com/bob-collective/bob/blob/master/src/relay/LightRelay.sol) which stores the difficulty for the current and previous epoch. To update this, use `retarget(headers)` with `proofLength * 2` Bitcoin block headers (before and after the retarget) serialized sequentially.
 
 ### Adding BOB contracts as dependency
 
@@ -56,21 +56,30 @@ Refer to the `getBitcoinTxProof` and `getBitcoinTxInfo` functions to encode the 
 
 :::
 
-### Validating Merkle Proofs (SPV + Witness)
+### **Validating Merkle Proofs (SPV + Witness)**  
 
-:::info
-
-Why might you want to do this? Under normal SPV assumptions it is not possible to prove witness data (such as Ordinal inscriptions) are included on the main chain.
-
+:::info  
+Why might you want to do this?  
+Under normal SPV assumptions, it is not possible to prove witness data (such as Ordinal inscriptions) are included on the main chain.  
 :::
 
-To check that witness data is also included according to the relay we need to do the following:
+To verify witness data, follow these steps:  
 
-1. Verify coinbase is included (tx + merkle proof)
-2. Verify payment is included (tx + merkle proof)
-3. Validate witness commitment (extract root from coinbase, provide merkle proof for wtxids)
+1. **Verify coinbase is included** (transaction + Merkle proof).  
+2. **Verify payment is included** (transaction + Merkle proof).  
+3. **Validate witness commitment**:  
+   - Extract the root from the coinbase.  
+   - Provide a Merkle proof for wtxids.  
 
-Use the `WitnessTx.validateWitnessProof` function to verify witness data is included. See [`test/WitnessTx.t.sol`](https://github.com/bob-collective/bob/blob/master/test/WitnessTx.t.sol) for an example. As above, this requires the serialized transaction and merkle proof for the **coinbase** transaction. To verify the witness data is included we need to encode the **payment** arguments differently. Check the expected structs in [`src/bridge/WitnessTx.sol`](https://github.com/bob-collective/bob/blob/master/src/bridge/WitnessTx.sol), it requires a `witnessVector` and separate witness merkle root hash built using the block's "wtxids" - transactions serialized with the witness data and then hashed according to Bitcoin's double sha2.
+Use the `WitnessTx.validateWitnessProof` function to verify witness data inclusion.  
+See [`test/WitnessTx.t.sol`](https://github.com/bob-collective/bob/blob/master/test/WitnessTx.t.sol) for an example.  
+
+This requires:  
+- **Serialized transaction**  
+- **Merkle proof for the coinbase transaction**  
+- **Witness vector and witness Merkle root hash** (constructed from "wtxids")  
+
+Check the expected structs in [`src/bridge/WitnessTx.sol`](https://github.com/bob-collective/bob/blob/master/src/bridge/WitnessTx.sol).  
 
 :::warning BOB SDK
 
@@ -80,7 +89,7 @@ This approach is still experimental and not yet fully supported by the SDK. To c
 
 ### Checking Output Amounts
 
-To extract the output amount `BitcoinTx.processTxOutputs` can be used to extract the amount transferred to a specific address. See [`test/BitcoinTx.t.sol`](https://github.com/bob-collective/bob/blob/master/test/BitcoinTx.t.sol) for an example. The address is the `keccak256` hash of the expected `scriptPubKey`.
+To extract the output amount `BitcoinTx.processTxOutputs` can be used to extract the amount transferred to a specific address. See [`test/BitcoinTx.t.sol`](https://github.com/bob-collective/bob/blob/master/test/BitcoinTx.t.sol) for an example. The address is derived from the `keccak256` hash of the expected `scriptPubKey`.
 
 :::tip BOB SDK
 
