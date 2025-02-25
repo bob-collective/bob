@@ -1,6 +1,6 @@
 import type { EsploraClient } from '../esplora';
 import { Address } from 'viem';
-import { strategyCaller } from './strategyABI';
+import { offRampCaller, strategyCaller } from './abi';
 
 type ChainSlug = string | number;
 type TokenSymbol = string;
@@ -111,6 +111,8 @@ export interface GatewayQuoteParams {
     strategyAddress?: string;
     /** @description Campaign id for tracking */
     campaignId?: string;
+    /** @description Users bitcoin Address */
+    bitcoinUserAddress?: string;
 }
 
 /**
@@ -222,6 +224,24 @@ export type GatewayQuote = {
     strategyAddress?: EvmAddress;
 };
 
+export type OffRampRequestPayload = {
+    /** @description The ABI used to interact with the offRamp contract */
+    offRampABI: typeof offRampCaller;
+    /** @description The name of the function being called on the contract */
+    offRampFunctionName: string;
+    /** @description Arguments required for the offRamp contract call */
+    offRampArgs: [
+        {
+            offRampAddress: Address;
+            amountLocked: bigint;
+            maxFees: bigint;
+            user: Address;
+            token: Address;
+            userBtcAddress: string;
+        },
+    ];
+};
+
 /** @dev Internal */
 export type GatewayCreateOrderRequest = {
     gatewayAddress: EvmAddress;
@@ -232,6 +252,13 @@ export type GatewayCreateOrderRequest = {
     strategyExtraData?: string;
     satoshis: number;
     campaignId?: string;
+};
+
+/** @dev Internal */
+export type OffRampGatewayCreateQuoteResponse = {
+    amountToLock: string;
+    minimumFeesToPay: string;
+    gateway: EvmAddress;
 };
 
 export interface GatewayOrderResponse {
@@ -330,6 +357,25 @@ export type GatewayStartOrder = GatewayCreateOrderResponse & {
     bitcoinAddress: string;
     satoshis: number;
     psbtBase64?: string;
+};
+
+export type GatewayOffRampOrder = {
+    /** @description Unique identifier for the off-ramp request */
+    requestId: string;
+    /** @description The gateway address handling the off-ramp */
+    offrampAddress: string;
+    /** @description The amount of satoshis to receive */
+    satoshisToGet: number;
+    /** @description The transaction hash on the EVM chain */
+    evmTxHash: string;
+    /** @description The transaction ID on the Bitcoin network */
+    btcTxHash: string;
+    /** @description The timestamp when the order was created */
+    timestamp: number;
+    /** @description Indicates if the off-ramp process is completed */
+    done: boolean;
+    /** @description The user's EVM address */
+    userAddress: string;
 };
 
 /** @dev Internal */

@@ -1,8 +1,15 @@
 import { assert, describe, expect, it } from 'vitest';
 import { GatewaySDK } from '../src/gateway';
-import { MAINNET_GATEWAY_BASE_URL } from '../src/gateway/client';
+import { MAINNET_GATEWAY_BASE_URL, SIGNET_GATEWAY_BASE_URL } from '../src/gateway/client';
 import { SYMBOL_LOOKUP } from '../src/gateway/tokens';
-import { BuildStakeParams, Chain, ChainId, StakeTransactionParams } from '../src/gateway/types';
+import {
+    BuildStakeParams,
+    Chain,
+    ChainId,
+    GatewayOffRampOrder,
+    OffRampRequestPayload,
+    StakeTransactionParams,
+} from '../src/gateway/types';
 import { ZeroAddress } from 'ethers';
 import { bobSepolia } from 'viem/chains';
 import nock from 'nock';
@@ -512,5 +519,68 @@ describe('Gateway Tests', () => {
 
         const result = await gatewaySDK.buildStake(params);
         expect(result).toMatchObject(expected);
+    });
+
+    it('should return valid offramp quote', async () => {
+        const gatewaySDK = new GatewaySDK('signet');
+        nock(`${SIGNET_GATEWAY_BASE_URL}`).get('/offramp-quote').query(true).reply(200, {
+            amountToLock: '0x5af3107a4000',
+            minimumFeesToPay: '0xdfa9b63e400',
+            gateway: '0x525b3d3c4a9f104c116fb4af9bbac94104879650',
+        });
+
+        const result: OffRampRequestPayload = await gatewaySDK.getOffRampQuoteAndRequest({
+            toToken: '0xda472456b1a6a2fc9ae7edb0e007064224d4284c',
+            amount: 100000000000000,
+            fromUserAddress: '0xFAEe001465dE6D7E8414aCDD9eF4aC5A35B2B808',
+            bitcoinUserAddress: 'tb1qn40xpua4eskjgmueq6fwujex05wdtprh46vkpc',
+        });
+
+        expect(result.offRampArgs).to.deep.equal([
+            {
+                offRampAddress: '0x525b3d3c4a9f104c116fb4af9bbac94104879650',
+                amountLocked: BigInt(100000000000000),
+                maxFees: BigInt(15370000000000),
+                user: '0xFAEe001465dE6D7E8414aCDD9eF4aC5A35B2B808',
+                token: '0xda472456b1a6a2fc9ae7edb0e007064224d4284c',
+                userBtcAddress: '0x1600149d5e60f3b5cc2d246f990692ee4b267d1cd58477',
+            },
+        ]);
+    });
+
+    it('should return valid offramp orders', async () => {
+        const gatewaySDK = new GatewaySDK('signet');
+        const userAddress = '0xFAEe001465dE6D7E8414aCDD9eF4aC5A35B2B808';
+
+        // Mock response data
+        const mockResponse: GatewayOffRampOrder[] = [
+            {
+                requestId: '0x2',
+                offrampAddress: '0x525b3d3c4a9f104c116fb4af9bbac94104879650',
+                satoshisToGet: 1606,
+                evmTxHash: '0x2429589cc2456f882a26e1282b378f13c6284eaa494c4f1c7018a9f4a5ad6de4',
+                btcTxHash: '4a944bab27987ada4ab22afa5dbbc57f74559fef243dd094aac539509703a982',
+                timestamp: 1740476956,
+                done: false,
+                userAddress: userAddress.toLowerCase(),
+            },
+            {
+                requestId: '0x1',
+                offrampAddress: '0x525b3d3c4a9f104c116fb4af9bbac94104879650',
+                satoshisToGet: 1606,
+                evmTxHash: '0xb417e4547dedf78ad57389cee6731d416d43f633630daf99b6ace5a82ce1fe36',
+                btcTxHash: '4c6d4ec35469bbd82c5c533782f21a174d6947a72eddd87915c624dc473fc7cf',
+                timestamp: 1740476884,
+                done: false,
+                userAddress: userAddress.toLowerCase(),
+            },
+        ];
+
+        nock(`${SIGNET_GATEWAY_BASE_URL}`).get(`/offramp-orders/${userAddress}`).times(5).reply(200, mockResponse);
+
+        const result: GatewayOffRampOrder[] = await gatewaySDK.getOffRampOrders(userAddress);
+
+        // Assertion
+        expect(result).to.deep.equal(mockResponse);
     });
 });
