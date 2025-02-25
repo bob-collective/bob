@@ -1,7 +1,6 @@
 import type { EsploraClient } from '../esplora';
 import { Address } from 'viem';
 import { offRampCaller, strategyCaller } from './abi';
-import { Bytes } from '@scure/btc-signer/utils';
 
 type ChainSlug = string | number;
 type TokenSymbol = string;
@@ -238,7 +237,7 @@ export type OffRampRequestPayload = {
             maxFees: bigint;
             user: Address;
             token: Address;
-            userBtcAddress: Bytes;
+            userBtcAddress: string;
         },
     ];
 };

@@ -523,7 +523,6 @@ describe('Gateway Tests', () => {
         });
 
         const result: OffRampRequestPayload = await gatewaySDK.getOffRampQuoteAndRequest({
-            fromChain: 'bob-sepolia',
             toToken: '0xda472456b1a6a2fc9ae7edb0e007064224d4284c',
             amount: 100000000000000,
             fromUserAddress: '0xFAEe001465dE6D7E8414aCDD9eF4aC5A35B2B808',
@@ -533,14 +532,11 @@ describe('Gateway Tests', () => {
         expect(result.offRampArgs).to.deep.equal([
             {
                 offRampAddress: '0x525b3d3c4a9f104c116fb4af9bbac94104879650',
-                amountLocked: BigInt(100000000000000n),
+                amountLocked: BigInt(100000000000000),
                 maxFees: BigInt(15370000000000),
                 user: '0xFAEe001465dE6D7E8414aCDD9eF4aC5A35B2B808',
                 token: '0xda472456b1a6a2fc9ae7edb0e007064224d4284c',
-                userBtcAddress: Buffer.from([
-                    22, 0, 20, 157, 94, 96, 243, 181, 204, 45, 36, 111, 153, 6, 146, 238, 75, 38, 125, 28, 213, 132,
-                    119,
-                ]),
+                userBtcAddress: '0x1600149d5e60f3b5cc2d246f990692ee4b267d1cd58477'
             },
         ]);
     });

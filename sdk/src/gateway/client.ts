@@ -191,17 +191,18 @@ export class GatewayApiClient {
             | 'fromToken'
             | 'fromUserAddress'
             | 'maxSlippage'
+            | 'fromChain'
         >
     ): Promise<OffRampRequestPayload> {
         let bitcoinNetwork = bitcoin.networks.regtest;
 
         const isMainnet =
-            params.fromChain === ChainId.BOB ||
-            (typeof params.fromChain === 'string' && params.fromChain.toLowerCase() === Chain.BOB);
+            this.chainId === ChainId.BOB ||
+            (typeof this.chainId === 'string' && this.chainId.toLowerCase() === Chain.BOB);
 
         const isTestnet =
-            params.fromChain === ChainId.BOB_SEPOLIA ||
-            (typeof params.fromChain === 'string' && params.fromChain.toLowerCase() === Chain.BOB_SEPOLIA);
+            this.chainId === ChainId.BOB_SEPOLIA ||
+            (typeof this.chainId === 'string' && this.chainId.toLowerCase() === Chain.BOB_SEPOLIA);
 
         const isInvalidNetwork = !isMainnet && !isTestnet;
         const isMismatchMainnet = isMainnet && this.chain !== Chain.BOB;
@@ -210,13 +211,12 @@ export class GatewayApiClient {
         let outputTokenAddress = '';
         const toToken = params.toToken.toLowerCase();
 
-        const chainId = this.chainId;
         if (toToken.startsWith('0x')) {
             outputTokenAddress = toToken;
-        } else if (isMainnet && SYMBOL_LOOKUP[chainId][toToken]) {
-            outputTokenAddress = SYMBOL_LOOKUP[chainId][toToken].address;
-        } else if (isTestnet && SYMBOL_LOOKUP[chainId][toToken]) {
-            outputTokenAddress = SYMBOL_LOOKUP[chainId][toToken].address;
+        } else if (isMainnet && SYMBOL_LOOKUP[this.chainId][toToken]) {
+            outputTokenAddress = SYMBOL_LOOKUP[this.chainId][toToken].address;
+        } else if (isTestnet && SYMBOL_LOOKUP[this.chainId][toToken]) {
+            outputTokenAddress = SYMBOL_LOOKUP[this.chainId][toToken].address;
         } else {
             throw new Error('Unknown output token');
         }
@@ -235,12 +235,12 @@ export class GatewayApiClient {
             bitcoinNetwork = bitcoin.networks.testnet;
         }
 
-        const receiverAddressOp = getScriptPubKey(params.bitcoinUserAddress, bitcoinNetwork);
+        const receiverAddress = toHexScriptPubKey(params.bitcoinUserAddress, bitcoinNetwork);
 
         const queryParams = new URLSearchParams({
             amountToLock: params.amount.toString(),
             token: outputTokenAddress,
-        }).toString();
+        });
 
         const response = await fetch(`${this.baseUrl}/offramp-quote?${queryParams}`, {
             method: 'GET',
@@ -260,7 +260,7 @@ export class GatewayApiClient {
 
         return {
             offRampABI: offRampCaller,
-            offRampFunctionName: 'createOffRampRequest',
+            offRampFunctionName: 'createOffRampRequest' as const,
             offRampArgs: [
                 {
                     offRampAddress: data.gateway as Address,
@@ -268,7 +268,7 @@ export class GatewayApiClient {
                     maxFees: BigInt(data.minimumFeesToPay.toString()),
                     user: params.fromUserAddress as Address,
                     token: outputTokenAddress as Address,
-                    userBtcAddress: receiverAddressOp,
+                    userBtcAddress: receiverAddress,
                 },
             ],
         };
@@ -650,9 +650,10 @@ function calculateOpReturnHash(req: GatewayCreateOrderRequest) {
     );
 }
 
-function getScriptPubKey(userAddress: string, network: bitcoin.Network): Buffer {
+function toHexScriptPubKey(userAddress: string, network: bitcoin.Network): string {
     const address = bitcoin.address.toOutputScript(userAddress, network);
-    return Buffer.concat([Buffer.from([address.length]), address]);
+    const buffer = Buffer.concat([Buffer.from([address.length]), address]);
+    return '0x' + buffer.toString('hex'); // Convert buffer to hex string
 }
 
 function isHexPrefixed(str: string): boolean {
