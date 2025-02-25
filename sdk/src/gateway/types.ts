@@ -359,6 +359,25 @@ export type GatewayStartOrder = GatewayCreateOrderResponse & {
     psbtBase64?: string;
 };
 
+export type GatewayOffRampOrder = {
+    /** @description Unique identifier for the off-ramp request */
+    requestId: string;
+    /** @description The gateway address handling the off-ramp */
+    offrampAddress: string;
+    /** @description The amount of satoshis to receive */
+    satoshisToGet: number;
+    /** @description The transaction hash on the EVM chain */
+    evmTxHash: string;
+    /** @description The transaction ID on the Bitcoin network */
+    btcTxHash: string;
+    /** @description The timestamp when the order was created */
+    timestamp: number;
+    /** @description Indicates if the off-ramp process is completed */
+    done: boolean;
+    /** @description The user's EVM address */
+    userAddress: string;
+};
+
 /** @dev Internal */
 export interface GatewayStrategy {
     strategyAddress: string;

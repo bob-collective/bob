@@ -19,6 +19,7 @@ import {
     BuildStakeParams,
     OffRampRequestPayload,
     OffRampGatewayCreateQuoteResponse,
+    GatewayOffRampOrder,
 } from './types';
 import { SYMBOL_LOOKUP, ADDRESS_LOOKUP } from './tokens';
 import { createBitcoinPsbt } from '../wallet';
@@ -271,6 +272,24 @@ export class GatewayApiClient {
                 },
             ],
         };
+    }
+
+    /**
+     * Returns all pending and completed offramp orders for this account.
+     *
+     * @param userAddress The user's EVM address.
+     * @returns {Promise<GatewayOffRampOrder[]>} The array of account orders.
+     */
+    async getOffRampOrders(userAddress: EvmAddress): Promise<GatewayOffRampOrder[]> {
+        const isTestnet =
+            this.chainId === ChainId.BOB_SEPOLIA ||
+            (typeof this.chainId === 'string' && this.chainId === Chain.BOB_SEPOLIA);
+        if (!isTestnet) {
+            throw new Error('Invalid output chain offramp only enabled for testnet');
+        }
+
+        const response = await this.fetchGet(`${this.baseUrl}/offramp-orders/${userAddress}`);
+        return await response.json();
     }
 
     // TODO: add error handling
