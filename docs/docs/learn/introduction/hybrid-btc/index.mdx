@@ -44,9 +44,7 @@ The HybridBTC.pendle vault operates across multiple chains to generate yield for
 
 The vault employs a multi-layered security model:
 
-<!-- TODO: Confirm multi-sig parties. -->
-
-- 🔐 **Distributed Control**: The vault will be a shared multi-sig Safe between Veda and BOB. A majority of signers is required to make any changes to the strategy, such as accepting new assets or whitelisting new markets.
+- 🔐 **Distributed Control**: The vault will be a shared 4-of-6 multi-sig Safe between Veda and BOB. A majority of signers is required to make any changes to the strategy, such as accepting new assets or whitelisting new markets.
 - 👀 **Transparent Operations**: The on-chain strategies can be monitored to verify execution and prevent misuse of funds.
 - 🛡️ **Risk Isolation**: Each asset type exists in a separate vault, limiting counterparty risk.
 - ⚙️ **Strategy Constraints**: Each vault is limited to a pre-defined mandate that defines its deployment and risk management parameters.
@@ -55,8 +53,6 @@ The vault employs a multi-layered security model:
 
 The HybridBTC.pendle vault generates multiple sources of yield:
 
-<!-- TODO: Clarify or remove the BOB Incentives section.  -->
-
 1. **Base Yield**:
 
    - Generated from Pendle pool deployments
@@ -64,10 +60,10 @@ The HybridBTC.pendle vault generates multiple sources of yield:
    - No impermanent loss risk
    - Protected principal
 
-1. **BOB Incentives**:
+1. **Additional Incentives**:
 
    - Additional rewards for vault participants
-   - Part of BOB's broader DeFi incentive program
+   - At launch, users receive Veda points and $OP tokens
 
 1. **Optional DeFi Strategies on BOB**:
 
