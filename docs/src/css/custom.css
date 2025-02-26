@@ -308,3 +308,14 @@
 .theme-doc-sidebar-container button[class*="collapseSidebarButton"]:hover {
   border-top-color: var(--bob-border);
 }
+
+/* Mobile Sidebar */
+@media (max-width: 769px) {
+  .navbar-sidebar {
+    background-color: var(--bob-background) !important;
+  }
+
+  .navbar-sidebar__backdrop {
+    background-color: rgba(0, 0, 0, 0.75);
+  }
+}
