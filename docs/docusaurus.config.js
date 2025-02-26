@@ -204,6 +204,11 @@ const config = {
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
+      docs: {
+        sidebar: {
+          hideable: true,
+        },
+      },
       codeblock: {
         showGithubLink: true,
         githubLinkLabel: "View on GitHub",
@@ -305,7 +310,7 @@ const config = {
             ],
           },
         ],
-        copyright: `Built with ❤️ by the BOB Collective. ${new Date().getFullYear()}.`,
+        copyright: `Built with 🧡 by the BOB Collective. ${new Date().getFullYear()}.`,
       },
       prism: {
         theme: lightCodeTheme,
@@ -365,6 +370,38 @@ const config = {
       src: "https://cdn.usefathom.com/script.js",
       site: "NBNJSTNS",
       defer: true,
+    },
+  ],
+  headTags: [
+    {
+      tagName: "link",
+      attributes: {
+        rel: "preload",
+        href: "/fonts/IBMPlexSans-Regular.ttf",
+        as: "font",
+        type: "font/ttf",
+        crossorigin: "anonymous",
+      },
+    },
+    {
+      tagName: "link",
+      attributes: {
+        rel: "preload",
+        href: "/fonts/Inter_18pt-Regular.ttf",
+        as: "font",
+        type: "font/ttf",
+        crossorigin: "anonymous",
+      },
+    },
+    {
+      tagName: "link",
+      attributes: {
+        rel: "preload",
+        href: "/fonts/Inter_28pt-SemiBold.ttf",
+        as: "font",
+        type: "font/ttf",
+        crossorigin: "anonymous",
+      },
     },
   ],
   staticDirectories: ["static"],

@@ -39,14 +39,13 @@ Software stack:
 
 We provide a simple docker-compose configuration to get you started. This guide assumes all data will be stored under `/opt/`.
 
-1. Retrieve BOB mainnet chain configuration.  
+1. Retrieve BOB mainnet chain configuration.
 
-*genesis.json*  
-`wget -O /opt/genesis.json "https://api.conduit.xyz/file/getOptimismGenesisJSON?network=036d1667-e469-424e-9db9-5b09cf4d460d&organization=610ec5c5-8b4c-444a-b2b4-a94c1835defe"
-`
+```json title="genesis.json"
+wget -O /opt/genesis.json "https://api.conduit.xyz/file/getOptimismGenesisJSON?network=036d1667-e469-424e-9db9-5b09cf4d460d&organization=610ec5c5-8b4c-444a-b2b4-a94c1835defe"
+```
 
-*rollup.json*  
-```json
+```json title="rollup.json"
 {
   "genesis": {
     "l1": {
@@ -84,8 +83,7 @@ We provide a simple docker-compose configuration to get you started. This guide 
 
 2. Create all the necessary configuration files in the same directory as the docker-compose.yml file.
 
-*op-geth.env*  
-```
+```sh title="op-geth.env"
 GETH_SNAPSHOT=false
 GETH_DISCOVERY_V4=true
 GETH_DATADIR=/opt/op-geth/
@@ -104,9 +102,9 @@ GETH_METRICS=true
 GETH_AUTHRPC_JWTSECRET=/opt/op-geth/geth/jwtsecret.hex
 ```
 
-*op-node.env*  
 Ensure you have an Ethereum L1 full node RPC available and set `OP_NODE_L1_ETH_RPC` & `OP_NODE_L1_BEACON` to the respective RPC endpoints.
-```
+
+```sh title="op-node.env"
 OP_NODE_L1_ETH_RPC=.....
 OP_NODE_L1_BEACON=......
 OP_NODE_L1_RPC_KIND=standard
@@ -127,9 +125,9 @@ OP_NODE_SAFEDB_PATH=/opt/op-node/
 OP_NODE_METRICS_ENABLED=true
 ```
 
-
 3. Run opgeth-init to initialise the op-geth data directory
-```
+
+```sh
 docker run -t \
   --env-file ./op-geth.env \
   -v ./genesis.json:/opt/genesis.json:ro \
@@ -138,8 +136,7 @@ docker run -t \
   init --datadir=/opt/op-geth/ --state.scheme=path /opt/genesis.json
 ```
 
-*docker-compose.yml*  
-```
+```yml title="docker-compose.yml"
 services:
   opgeth:
     image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-geth:v1.101411.1
@@ -159,10 +156,10 @@ services:
       - ./op-geth-data/geth:/opt/op-geth/geth:ro
     network_mode: host
     healthcheck:
-        test: ["CMD", "curl", "-f", "http://localhost:7300"]
-        interval: 30s
-        timeout: 10s
-        retries: 5
+      test: ["CMD", "curl", "-f", "http://localhost:7300"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
     depends_on:
       opgeth:
         condition: service_started
