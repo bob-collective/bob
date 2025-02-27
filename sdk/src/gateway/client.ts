@@ -41,7 +41,7 @@ export const MAINNET_GATEWAY_BASE_URL = 'https://gateway-api-mainnet.gobob.xyz';
  * Base url for the testnet Gateway API.
  * @default "https://gateway-api-testnet.gobob.xyz"
  */
-export const TESTNET_GATEWAY_BASE_URL = 'https://gateway-api-testnet.gobob.xyz';
+export const TESTNET_GATEWAY_BASE_URL = 'https://gateway-api-signet.gobob.xyz';
 
 /**
  * Base url for the Signet Gateway API.
