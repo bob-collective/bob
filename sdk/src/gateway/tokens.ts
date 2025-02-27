@@ -93,6 +93,17 @@ const bobSepoliaTokens = [
         },
         logoURI: 'https://ethereum-optimism.github.io/data/WBTC/logo.svg',
     },
+    {
+        name: 'Bob BTC',
+        symbol: 'bobBTC',
+        decimals: 18,
+        tokens: {
+            'bob-sepolia': {
+                address: '0xda472456b1a6a2fc9ae7edb0e007064224d4284c',
+            },
+        },
+        logoURI: 'https://ethereum-optimism.github.io/data/WBTC/logo.svg', //TODO: change logo latter
+    },
 ];
 
 const shoebillTokens = [
