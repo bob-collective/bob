@@ -102,7 +102,7 @@ const bobSepoliaTokens = [
                 address: '0xda472456b1a6a2fc9ae7edb0e007064224d4284c',
             },
         },
-        logoURI: 'http://app.gobob.xyz/assets/hybridbtc-pendle.webp', // TODO: change logo latter
+        logoURI: 'https://app.gobob.xyz/apple-touch-icon.webp', // TODO: change logo latter
     },
 ];
 
