@@ -1,16 +1,16 @@
 /**
  * Base path for the mainnet Memopool API.
- * @default "https://btc-mainnet.gobob.xyz"
+ * @default "https://mempool.space/api/v1"
  */
 export const MAINNET_MEMPOOL_BASE_PATH = 'https://mempool.space/api/v1';
 /**
  * Base path for the testnet Memopool API.
- * @default "https://btc-testnet.gobob.xyz"
+ * @default "https://mempool.space/testnet4/api/v1"
  */
 export const TESTNET_MEMPOOL_BASE_PATH = 'https://mempool.space/testnet4/api/v1';
 /**
  * Base path for the signet Memopool API.
- * @default "https://btc-signet.gobob.xyz"
+ * @default "https://mempool.space/signet/api/v1"
  */
 export const SIGNET_MEMPOOL_BASE_PATH = 'https://mempool.space/signet/api/v1';
 /**
