@@ -7,11 +7,12 @@ import { OrdinalsClient, OutPoint, OutputJson } from '../ordinal-api';
 import { parseInscriptions } from '../inscription';
 import { parseRunestone } from '../runes';
 
-export type BitcoinNetworkName = Exclude<Network, 'regtest'>;
+export type BitcoinNetworkName = Exclude<Network, 'regtest'> | 'signet';
 
 const bitcoinNetworks: Record<BitcoinNetworkName, typeof NETWORK> = {
     mainnet: NETWORK,
     testnet: TEST_NETWORK,
+    signet: TEST_NETWORK,
 };
 
 export const getBtcNetwork = (name: BitcoinNetworkName) => {
@@ -100,11 +101,15 @@ const getSafeUtxos = async (
     return findSafeUtxos(utxos, cardinalOutputsSet, esploraClient, ordinalsClient);
 };
 
-const collectPossibleInputs = async (fromAddress: string, publicKey: string) => {
+const collectPossibleInputs = async (
+    fromAddress: string,
+    publicKey: string,
+    bitcoinNetworkName: BitcoinNetworkName
+) => {
     const addressInfo = getAddressInfo(fromAddress);
 
-    const esploraClient = new EsploraClient(addressInfo.network);
-    const ordinalsClient = new OrdinalsClient(addressInfo.network);
+    const esploraClient = new EsploraClient(bitcoinNetworkName);
+    const ordinalsClient = new OrdinalsClient(bitcoinNetworkName);
 
     const safeUtxos = await getSafeUtxos(fromAddress, esploraClient, ordinalsClient);
 
@@ -117,13 +122,7 @@ const collectPossibleInputs = async (fromAddress: string, publicKey: string) => 
         safeUtxos.map(async (utxo) => {
             const hex = await esploraClient.getTransactionHex(utxo.txid);
             const transaction = Transaction.fromRaw(Buffer.from(hex, 'hex'), { allowUnknownOutputs: true });
-            const input = getInputFromUtxoAndTx(
-                addressInfo.network as BitcoinNetworkName,
-                utxo,
-                transaction,
-                addressInfo.type,
-                publicKey
-            );
+            const input = getInputFromUtxoAndTx(bitcoinNetworkName, utxo, transaction, addressInfo.type, publicKey);
 
             return input;
         })
@@ -175,6 +174,7 @@ export async function createBitcoinPsbt(
     fromAddress: string,
     toAddress: string,
     amount: number,
+    bitcoinNetworkName: BitcoinNetworkName,
     publicKey?: string,
     opReturnData?: string,
     feeRate?: number,
@@ -203,9 +203,9 @@ export async function createBitcoinPsbt(
     // TODO: allow submitting the UTXOs, fee estimate and confirmed transactions
     // to avoid fetching them again.
     let possibleInputs: Input[] = [];
-    const esploraClient = new EsploraClient(addressInfo.network);
+    const esploraClient = new EsploraClient(bitcoinNetworkName);
     [possibleInputs, feeRate] = await Promise.all([
-        collectPossibleInputs(fromAddress, publicKey),
+        collectPossibleInputs(fromAddress, publicKey, bitcoinNetworkName),
         feeRate === undefined ? esploraClient.getFeeEstimate(confirmationTarget) : feeRate,
     ]);
 
@@ -320,6 +320,7 @@ export function getInputFromUtxoAndTx(
  * @param opReturnData Optional OP_RETURN data to include in an output.
  * @param feeRate Optional fee rate in satoshis per byte.
  * @param confirmationTarget The number of blocks to include this tx (for fee estimation).
+ * @param bitcoinNetworkName The name of bitcoin network
  * @returns {Promise<bigint>} The fee amount for estimated transaction inclusion in satoshis.
  *
  * @example
@@ -350,6 +351,7 @@ export function getInputFromUtxoAndTx(
  */
 export async function estimateTxFee(
     fromAddress: string,
+    bitcoinNetworkName: BitcoinNetworkName,
     amount?: number,
     publicKey?: string,
     opReturnData?: string,
@@ -379,9 +381,9 @@ export async function estimateTxFee(
     // TODO: allow submitting the UTXOs, fee estimate and confirmed transactions
     // to avoid fetching them again.
     let possibleInputs: Input[] = [];
-    const esploraClient = new EsploraClient(addressInfo.network);
+    const esploraClient = new EsploraClient(bitcoinNetworkName);
     [possibleInputs, feeRate] = await Promise.all([
-        collectPossibleInputs(fromAddress, publicKey),
+        collectPossibleInputs(fromAddress, publicKey, bitcoinNetworkName),
         feeRate === undefined ? esploraClient.getFeeEstimate(confirmationTarget) : feeRate,
     ]);
 
@@ -456,15 +458,13 @@ export async function estimateTxFee(
  *
  * @dev UTXOs that contain inscriptions or runes will not be used to calculate balance.
  */
-export async function getBalance(address?: string) {
+export async function getBalance(bitcoinNetworkName: BitcoinNetworkName, address?: string) {
     if (!address) {
         return { confirmed: BigInt(0), unconfirmed: BigInt(0), total: BigInt(0) };
     }
 
-    const addressInfo = getAddressInfo(address);
-
-    const esploraClient = new EsploraClient(addressInfo.network);
-    const ordinalsClient = new OrdinalsClient(addressInfo.network);
+    const esploraClient = new EsploraClient(bitcoinNetworkName);
+    const ordinalsClient = new OrdinalsClient(bitcoinNetworkName);
 
     const safeUtxos = await getSafeUtxos(address, esploraClient, ordinalsClient);
 

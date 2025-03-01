@@ -13,6 +13,11 @@ export const TESTNET_ESPLORA_BASE_PATH = 'https://btc-testnet.gobob.xyz';
  * @default "http://localhost:3003"
  */
 export const REGTEST_ESPLORA_BASE_PATH = 'http://localhost:3003';
+/**
+ * Base path for the signet Esplora API.
+ * @default "https://btc-signet.gobob.xyz"
+ */
+export const SIGNET_ESPLORA_BASE_PATH = 'https://btc-signet.gobob.xyz';
 
 /**
  * @ignore
@@ -169,6 +174,9 @@ export class EsploraClient {
         switch (networkOrUrl) {
             case 'mainnet':
                 this.basePath = MAINNET_ESPLORA_BASE_PATH;
+                break;
+            case 'signet':
+                this.basePath = SIGNET_ESPLORA_BASE_PATH;
                 break;
             case 'testnet':
                 this.basePath = TESTNET_ESPLORA_BASE_PATH;
