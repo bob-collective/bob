@@ -14,7 +14,7 @@ export const MAINNET_ORD_BASE_PATH = 'https://ordinals-mainnet.gobob.xyz';
  * Base path for Ordinals testnet Explorer.
  * @default "https://ordinals-testnet.gobob.xyz"
  */
-export const TESTNET_ORD_BASE_PATH = 'https://ordinals-signet.gobob.xyz';
+export const TESTNET_ORD_BASE_PATH = 'https://ordinals-testnet.gobob.xyz';
 
 /**
  * Base path for Ordinals signet Explorer.

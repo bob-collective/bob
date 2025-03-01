@@ -7,7 +7,7 @@ export const MAINNET_ESPLORA_BASE_PATH = 'https://btc-mainnet.gobob.xyz';
  * Base path for the testnet Esplora API.
  * @default "https://btc-testnet.gobob.xyz"
  */
-export const TESTNET_ESPLORA_BASE_PATH = 'https://btc-signet.gobob.xyz';
+export const TESTNET_ESPLORA_BASE_PATH = 'https://btc-testnet.gobob.xyz';
 /**
  * Base path for the regtest Esplora API.
  * @default "http://localhost:3003"

@@ -22,7 +22,7 @@ import {
     GatewayOffRampOrder,
 } from './types';
 import { SYMBOL_LOOKUP, ADDRESS_LOOKUP } from './tokens';
-import { createBitcoinPsbt } from '../wallet';
+import { BitcoinNetworkName, createBitcoinPsbt } from '../wallet';
 import { Network } from 'bitcoin-address-validation';
 import { EsploraClient } from '../esplora';
 import { offRampCaller, strategyCaller } from './abi';
@@ -54,6 +54,7 @@ export const SIGNET_GATEWAY_BASE_URL = 'https://gateway-api-signet.gobob.xyz';
 export class GatewayApiClient {
     private chain: Chain.BOB | Chain.BOB_SEPOLIA;
     private baseUrl: string;
+    private bitcoinNetworkName: BitcoinNetworkName;
 
     /**
      * @constructor
@@ -65,14 +66,17 @@ export class GatewayApiClient {
             case Chain.BOB:
                 this.chain = Chain.BOB;
                 this.baseUrl = MAINNET_GATEWAY_BASE_URL;
+                this.bitcoinNetworkName = 'mainnet';
                 break;
             case 'testnet':
                 this.chain = Chain.BOB_SEPOLIA;
                 this.baseUrl = TESTNET_GATEWAY_BASE_URL;
+                this.bitcoinNetworkName = 'testnet';
                 break;
             case 'signet':
                 this.chain = Chain.BOB_SEPOLIA; // Same chain as testnet
                 this.baseUrl = SIGNET_GATEWAY_BASE_URL;
+                this.bitcoinNetworkName = 'signet';
                 break;
             default:
                 throw new Error('Invalid chain');
@@ -353,7 +357,8 @@ export class GatewayApiClient {
                 params.fromUserPublicKey,
                 data.opReturnHash,
                 params.feeRate,
-                gatewayQuote.txProofDifficultyFactor
+                gatewayQuote.txProofDifficultyFactor,
+                this.bitcoinNetworkName
             );
         }
 
