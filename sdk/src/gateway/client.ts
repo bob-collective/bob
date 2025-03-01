@@ -66,17 +66,17 @@ export class GatewayApiClient {
             case Chain.BOB:
                 this.chain = Chain.BOB;
                 this.baseUrl = MAINNET_GATEWAY_BASE_URL;
-                this.bitcoinNetworkName = 'mainnet';
+                this.bitcoinNetworkName = 'mainnet' as BitcoinNetworkName;
                 break;
             case 'testnet':
                 this.chain = Chain.BOB_SEPOLIA;
                 this.baseUrl = TESTNET_GATEWAY_BASE_URL;
-                this.bitcoinNetworkName = 'testnet';
+                this.bitcoinNetworkName = 'testnet' as BitcoinNetworkName;
                 break;
             case 'signet':
                 this.chain = Chain.BOB_SEPOLIA; // Same chain as testnet
                 this.baseUrl = SIGNET_GATEWAY_BASE_URL;
-                this.bitcoinNetworkName = 'signet';
+                this.bitcoinNetworkName = 'signet' as BitcoinNetworkName;
                 break;
             default:
                 throw new Error('Invalid chain');
@@ -354,11 +354,11 @@ export class GatewayApiClient {
                 params.fromUserAddress,
                 gatewayQuote.bitcoinAddress,
                 gatewayQuote.satoshis,
+                this.bitcoinNetworkName,
                 params.fromUserPublicKey,
                 data.opReturnHash,
                 params.feeRate,
-                gatewayQuote.txProofDifficultyFactor,
-                this.bitcoinNetworkName
+                gatewayQuote.txProofDifficultyFactor
             );
         }
 

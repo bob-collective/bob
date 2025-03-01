@@ -12,6 +12,7 @@ export type BitcoinNetworkName = Exclude<Network, 'regtest'> | 'signet';
 const bitcoinNetworks: Record<BitcoinNetworkName, typeof NETWORK> = {
     mainnet: NETWORK,
     testnet: TEST_NETWORK,
+    signet: TEST_NETWORK,
 };
 
 export const getBtcNetwork = (name: BitcoinNetworkName) => {
@@ -173,11 +174,11 @@ export async function createBitcoinPsbt(
     fromAddress: string,
     toAddress: string,
     amount: number,
+    bitcoinNetworkName: BitcoinNetworkName,
     publicKey?: string,
     opReturnData?: string,
     feeRate?: number,
-    confirmationTarget: number = 3,
-    bitcoinNetworkName: BitcoinNetworkName
+    confirmationTarget: number = 3
 ): Promise<string> {
     const addressInfo = getAddressInfo(fromAddress);
 
@@ -350,12 +351,12 @@ export function getInputFromUtxoAndTx(
  */
 export async function estimateTxFee(
     fromAddress: string,
+    bitcoinNetworkName: BitcoinNetworkName,
     amount?: number,
     publicKey?: string,
     opReturnData?: string,
     feeRate?: number,
-    confirmationTarget: number = 3,
-    bitcoinNetworkName: BitcoinNetworkName
+    confirmationTarget: number = 3
 ): Promise<bigint> {
     const addressInfo = getAddressInfo(fromAddress);
 
@@ -457,7 +458,7 @@ export async function estimateTxFee(
  *
  * @dev UTXOs that contain inscriptions or runes will not be used to calculate balance.
  */
-export async function getBalance(address?: string, bitcoinNetworkName: BitcoinNetworkName) {
+export async function getBalance(bitcoinNetworkName: BitcoinNetworkName, address?: string) {
     if (!address) {
         return { confirmed: BigInt(0), unconfirmed: BigInt(0), total: BigInt(0) };
     }
