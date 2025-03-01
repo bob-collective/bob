@@ -17,7 +17,7 @@ echo "swapped_endianness_blockhash = $swapped_endianness_blockhash"
 header=$(curl -s $ESPLORA/block/$block_hash/header)
 echo "header = $header"
 
-forge create ../src/relay/FullRelayWithVerify.sol:FullRelayWithVerify \
+forge create src/relay/FullRelayWithVerify.sol:FullRelayWithVerify \
     --rpc-url $BOB_RPC \
     --private-key $DEPLOYER_PRIVATE_KEY \
     --priority-gas-price 1 \

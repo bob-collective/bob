@@ -1,0 +1,79 @@
+---
+sidebar_position: 5
+sidebar_label: HybridBTC
+---
+
+import HybridBtcDiagram from "./hybrid-btc-flow.svg";
+
+# HybridBTC
+
+HybridBTC is BOB's first yield-generating product, enabling Bitcoin holders to earn real yield on their BTC through BOB's cross-chain infrastructure. Like all BOB products, it reflects our commitment to making Bitcoin DeFi safer and more accessible by leveraging modern EVM tooling. We've unified best-in-class solutions into one seamless experience, from [paying fees with BTC](/learn/builder-guides/bridged-btc-gas-fee), to [signing with your Bitcoin wallet](/learn/reference/tools/account-abstraction/#btc-connect), to [staking your BTC directly from Bitcoin](/learn/user-guides/stake-with-ledger). HybridBTC builds on this foundation to deliver secure, efficient yield generation for Bitcoin holders.
+
+## Quick Overview
+
+HybridBTC is a yield-generating product that allows Bitcoin holders to earn real yield on their BTC through BOB's cross-chain infrastructure. Key features include:
+
+- Accepts deposits in multiple forms of wrapped BTC and BTC liquid staking tokens (LST)
+- Generates yield denominated in BTC plus additional incentives
+- No impermanent loss or liquidation risks
+- Managed by Veda, a DeFi protocol with over $3B in TVL
+- Yield is generated through deployment into Pendle pools and other DeFi opportunities
+- HybridBTC.pendle tokens can be used in [BOB's DeFi ecosystem](https://app.gobob.xyz/apps) for additional yield sources
+
+## How It Works
+
+The HybridBTC.pendle vault operates across multiple chains to generate yield for BTC holders.
+
+<HybridBtcDiagram
+  style={{ width: "100%", maxWidth: "100%", height: "auto" }}
+  alt="Diagram showing HybridBTC flow"
+/>
+
+1. **Deposit**: Users deposit their wrapped BTC or BTC LST into the HybridBTC.pendle vault on Ethereum mainnet. (e.g. WBTC, tBTC, SolvBTC, SolvBTC.BBN, or LBTC)
+
+1. **Yield Generation**: The vault deploys deposited BTC into Pendle pools on Ethereum, selling users' Babylon and LST points for BTC-denominated returns.
+
+1. **Token Receipt**: Users receive HybridBTC.pendle tokens on BOB representing their vault position and accruing yield.
+
+1. **DeFi Yield**: The HybridBTC.pendle token can be used in BOB's DeFi ecosystem for even more yield. Read the [Yield Sources](#yield-sources) section below to learn more.
+
+1. **Withdrawal**: Users can redeem their HybridBTC.pendle tokens at any time to receive their original BTC or LST plus accumulated yield.
+
+### Privileged Roles and Security
+
+The vault employs a multi-layered security model:
+
+- 🔐 **Distributed Control**: The vault will be a shared 4-of-6 multi-sig Safe between Veda and BOB. A majority of signers is required to make any changes to the strategy, such as accepting new assets or whitelisting new markets.
+- 👀 **Transparent Operations**: The on-chain strategies can be monitored to verify execution and prevent misuse of funds.
+- ⚙️ **Strategy Constraints**: Each vault is limited to a pre-defined mandate that defines its deployment and risk management parameters.
+
+## Yield Sources
+
+The HybridBTC.pendle vault generates multiple sources of yield:
+
+1. **Base Yield**:
+
+   - Generated from Pendle pool deployments
+   - Real yield denominated in BTC
+   - No impermanent loss risk
+
+1. **Additional Incentives**:
+
+   - Additional rewards for vault participants
+   - At launch, users receive Veda points and $OP tokens
+
+1. **Optional DeFi Strategies on BOB**:
+
+   - Provide liquidity in DEX pools to earn trading fees
+   - Use as collateral in lending protocols like Euler v2
+   - Borrow additional BTC or other assets to leverage yield positions
+   - Participate in leveraged yield farming
+   - Note: These additional strategies may involve different risk profiles
+
+:::tip Explore DeFi on BOB
+Head over to [our Apps page](https://app.gobob.xyz/apps) to discover the rich Bitcoin DeFi ecosystem on BOB.
+:::
+
+## Conclusion
+
+HybridBTC represents a significant advancement in Bitcoin DeFi, offering BTC holders a secure way to earn real yield across multiple chains. By combining BOB's Hybrid L2 security model with Veda's proven yield generation strategies, users can access sophisticated DeFi opportunities while enjoying a seamless, user-friendly experience that makes stacking sats simpler than ever.

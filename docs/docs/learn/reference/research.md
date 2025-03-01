@@ -12,6 +12,18 @@ Our team members have co-authored over 30 scientific publications in collaborati
 
 ## Latest Research Papers
 
+### <a href="/documents/BitVM_Status_Report_Feb_2025.pdf">BitVM Status Report</a>
+
+<details>
+  <summary>Read abstract</summary>
+
+BitVM2 represents a significant advancement in Bitcoin's programmability, enabling arbitrary program execution through optimistic computation without requiring consensus changes. We present a comprehensive analysis of BitVM2's improvements over its predecessor, highlighting its reduction to just three on-chain transactions for dispute resolution and introduction of permissionless challenging. We detail the roles and incentive structures of the BitVM ecosystem participants and evaluate various approaches to Bitcoin L2s, providing a practical roadmap for implementing BitVM in production environments. Our analysis demonstrates that while current technological limitations prevent immediate deployment of certain L2 models, BitVM2 enables practical and secure implementations of Bitcoin bridges with minimal trust assumptions.
+
+</details>
+
+- **Zamyatin A, Harz D**
+- Pre-print, 2025
+
 ### <a href="/documents/BOB_Hybrid_L2_Vision_Paper_EN.pdf">BOB: The Hybrid L2</a>
 
 <a href="/documents/BOB_Hybrid_L2_Vision_Paper_CN.pdf">中文版</a> | <a href="/documents/BOB_Hybrid_L2_Vision_Paper_KR.pdf">한국어</a>

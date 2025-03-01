@@ -13,16 +13,6 @@ It's built on a trustless, RFQ-based cross-chain swap protocol that connects pro
 
 All you need is a Bitcoin wallet with some BTC to send and an EVM-compatible wallet to receive your Bitcoin LST on BOB. We'll even send you some ETH to cover the fees of your first few transactions on BOB.
 
-## Bonus Spice Points with Intract
-
-You can harvest extra Spice by completing any of these [Intract Campaign](https://www.intract.io/explore?query=BOB&hideCompleted=true&hideExpired=true&sortBy=rankingB&entity_type=CAMPAIGN) tasks with BOB Stake.
-
-| Task Name          | Description                                                         | Reward                        |
-| ------------------ | ------------------------------------------------------------------- | ----------------------------- |
-| Stake with Solv    | Stake 0.0003 BTC (~$20) with SolvBTC.BBN                            | 200 Intract XP (20,000 Spice) |
-| Stake with Bedrock | Stake 0.0003 BTC (~$20) with uniBTC                                 | 200 Intract XP (20,000 Spice) |
-| Restake with Pell  | Restake 0.0003 BTC (~$20) with Pell (either solv.btc.bbn or uniBTC) | 200 Intract XP (20,000 Spice) |
-
 ## Step-by-Step Guide
 
 1. Open the [BOB Stake website](https://app.gobob.xyz/stake?type=stake&stakeWith=solv-solvbtcbbn).
@@ -55,7 +45,7 @@ You will receive your assets at the EVM address you connect at this step.
 
 ![Select Bitcoin Wallet](./bob-stake-06.png)
 
-7. Type the amount of BTC that you would like to stake. The minimum for [Intract Campaign](https://www.intract.io/explore?query=BOB&hideCompleted=true&hideExpired=true&sortBy=rankingB&entity_type=CAMPAIGN) tasks is 0.0003 BTC.
+7. Type the amount of BTC that you would like to stake.
 
 ![Amount field with 0.0003 BTC typed in](./bob-stake-07.png)
 
@@ -63,7 +53,7 @@ You will receive your assets at the EVM address you connect at this step.
 
 ![Choosing the box labelled Stake with](./bob-stake-08.png)
 
-9. Choose a BTC yield source. BOB has [Intract Campaign](https://www.intract.io/explore?query=BOB&hideCompleted=true&hideExpired=true&sortBy=rankingB&entity_type=CAMPAIGN) tasks for uniBTC, SolvBTC.BBN, and Pell restaking.
+9. Choose a BTC yield source.
 
 ![Bitcoin staking options](./bob-stake-09.png)
 

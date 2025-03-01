@@ -17,13 +17,17 @@ import {
     OrderStatus,
     StakeTransactionParams,
     BuildStakeParams,
+    OffRampRequestPayload,
+    OffRampGatewayCreateQuoteResponse,
+    GatewayOffRampOrder,
 } from './types';
 import { SYMBOL_LOOKUP, ADDRESS_LOOKUP } from './tokens';
 import { createBitcoinPsbt } from '../wallet';
 import { Network } from 'bitcoin-address-validation';
 import { EsploraClient } from '../esplora';
-import { strategyCaller } from './strategyABI';
+import { offRampCaller, strategyCaller } from './abi';
 import { isAddress, Address, isAddressEqual } from 'viem';
+import * as bitcoin from 'bitcoinjs-lib';
 
 type Optional<T, K extends keyof T> = Omit<T, K> & Partial<T>;
 
@@ -39,6 +43,11 @@ export const MAINNET_GATEWAY_BASE_URL = 'https://gateway-api-mainnet.gobob.xyz';
  */
 export const TESTNET_GATEWAY_BASE_URL = 'https://gateway-api-testnet.gobob.xyz';
 
+/**
+ * Base url for the Signet Gateway API.
+ * @default "https://gateway-api-testnet.gobob.xyz"
+ */
+export const SIGNET_GATEWAY_BASE_URL = 'https://gateway-api-signet.gobob.xyz';
 /**
  * Gateway REST HTTP API client
  */
@@ -58,9 +67,12 @@ export class GatewayApiClient {
                 this.baseUrl = MAINNET_GATEWAY_BASE_URL;
                 break;
             case 'testnet':
-            case Chain.BOB_SEPOLIA:
                 this.chain = Chain.BOB_SEPOLIA;
                 this.baseUrl = TESTNET_GATEWAY_BASE_URL;
+                break;
+            case 'signet':
+                this.chain = Chain.BOB_SEPOLIA; // Same chain as testnet
+                this.baseUrl = SIGNET_GATEWAY_BASE_URL;
                 break;
             default:
                 throw new Error('Invalid chain');
@@ -148,6 +160,138 @@ export class GatewayApiClient {
         };
     }
 
+    /**
+     * **Note:** Before calling this method, the user must approve the spending of funds
+     * on the offramp contract to ensure the transaction can proceed successfully.
+     *
+     * Retrieves an offramp quote and constructs the required request payload.
+     *
+     * @param {Optional<GatewayQuoteParams,
+     *   'toChain' | 'toToken' | 'toUserAddress' | 'affiliateId' | 'type' | 'fee' |
+     *   'feeRate' | 'gasRefill' | 'strategyAddress' | 'campaignId' | 'fromToken' |
+     *   'fromUserAddress' | 'maxSlippage'
+     * >} params - The parameters required for obtaining an offramp quote, with specific fields marked as optional.
+     *
+     * @returns {Promise<OffRampRequestPayload>} The constructed offramp request payload.
+     *
+     * @throws {Error} If the provided arguments are invalid or violate constraints.
+     */
+    async getOffRampQuoteAndRequest(
+        params: Optional<
+            GatewayQuoteParams,
+            | 'toChain'
+            | 'toToken'
+            | 'toUserAddress'
+            | 'affiliateId'
+            | 'type'
+            | 'fee'
+            | 'feeRate'
+            | 'gasRefill'
+            | 'strategyAddress'
+            | 'campaignId'
+            | 'fromToken'
+            | 'fromUserAddress'
+            | 'maxSlippage'
+            | 'fromChain'
+        >
+    ): Promise<OffRampRequestPayload> {
+        let bitcoinNetwork = bitcoin.networks.regtest;
+
+        const isMainnet =
+            this.chainId === ChainId.BOB || (typeof this.chainId === 'string' && this.chainId === Chain.BOB);
+
+        const isTestnet =
+            this.chainId === ChainId.BOB_SEPOLIA ||
+            (typeof this.chainId === 'string' && this.chainId === Chain.BOB_SEPOLIA);
+
+        const isInvalidNetwork = !isMainnet && !isTestnet;
+        const isMismatchMainnet = isMainnet && this.chain !== Chain.BOB;
+        const isMismatchTestnet = isTestnet && this.chain !== Chain.BOB_SEPOLIA;
+
+        let outputTokenAddress = '';
+        const toToken = params.toToken.toLowerCase();
+
+        if (toToken.startsWith('0x')) {
+            outputTokenAddress = toToken;
+        } else if (isMainnet && SYMBOL_LOOKUP[this.chainId][toToken]) {
+            outputTokenAddress = SYMBOL_LOOKUP[this.chainId][toToken].address;
+        } else if (isTestnet && SYMBOL_LOOKUP[this.chainId][toToken]) {
+            outputTokenAddress = SYMBOL_LOOKUP[this.chainId][toToken].address;
+        } else {
+            throw new Error('Unknown output token');
+        }
+
+        if (isMismatchMainnet) {
+            throw new Error('OffRamp not enabled for mainnet');
+        }
+
+        if (isInvalidNetwork || isMismatchTestnet) {
+            throw new Error('Invalid output chain');
+        }
+
+        if (isMainnet) {
+            bitcoinNetwork = bitcoin.networks.bitcoin;
+        } else if (isTestnet) {
+            bitcoinNetwork = bitcoin.networks.testnet;
+        }
+
+        const receiverAddress = toHexScriptPubKey(params.bitcoinUserAddress, bitcoinNetwork);
+
+        const queryParams = new URLSearchParams({
+            amountToLock: params.amount.toString(),
+            token: outputTokenAddress,
+        });
+
+        const response = await fetch(`${this.baseUrl}/offramp-quote?${queryParams}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
+            },
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            const errorMessage = errorData?.message || 'Failed to get offramp quote';
+            throw new Error(`Offramp API Error: ${errorMessage}`);
+        }
+
+        const data: OffRampGatewayCreateQuoteResponse = await response.json();
+
+        return {
+            offRampABI: offRampCaller,
+            offRampFunctionName: 'createOffRampRequest' as const,
+            offRampArgs: [
+                {
+                    offRampAddress: data.gateway as Address,
+                    amountLocked: BigInt(data.amountToLock.toString()),
+                    maxFees: BigInt(data.minimumFeesToPay.toString()),
+                    user: params.fromUserAddress as Address,
+                    token: outputTokenAddress as Address,
+                    userBtcAddress: receiverAddress,
+                },
+            ],
+        };
+    }
+
+    /**
+     * Returns all pending and completed offramp orders for this account.
+     *
+     * @param userAddress The user's EVM address.
+     * @returns {Promise<GatewayOffRampOrder[]>} The array of account orders.
+     */
+    async getOffRampOrders(userAddress: EvmAddress): Promise<GatewayOffRampOrder[]> {
+        const isTestnet =
+            this.chainId === ChainId.BOB_SEPOLIA ||
+            (typeof this.chainId === 'string' && this.chainId === Chain.BOB_SEPOLIA);
+        if (!isTestnet) {
+            throw new Error('Invalid output chain offramp only enabled for testnet');
+        }
+
+        const response = await this.fetchGet(`${this.baseUrl}/offramp-orders/${userAddress}`);
+        return await response.json();
+    }
+
     // TODO: add error handling
     /**
      * Start an order via the Gateway API to reserve liquidity. This is step 1 of 2, see the {@link finalizeOrder} method.
@@ -174,6 +318,7 @@ export class GatewayApiClient {
             // TODO: update strategy data
             strategyExtraData: abiCoder.encode(['uint256'], [0]),
             satoshis: gatewayQuote.satoshis,
+            campaignId: params.campaignId,
         };
 
         const response = await fetch(`${this.baseUrl}/order`, {
@@ -521,6 +666,12 @@ function calculateOpReturnHash(req: GatewayCreateOrderRequest) {
             ]
         )
     );
+}
+
+function toHexScriptPubKey(userAddress: string, network: bitcoin.Network): string {
+    const address = bitcoin.address.toOutputScript(userAddress, network);
+    const buffer = Buffer.concat([Buffer.from([address.length]), address]);
+    return '0x' + buffer.toString('hex'); // Convert buffer to hex string
 }
 
 function isHexPrefixed(str: string): boolean {

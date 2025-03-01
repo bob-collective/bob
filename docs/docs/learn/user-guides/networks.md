@@ -2,20 +2,25 @@
 sidebar_position: 1
 ---
 
-# Connect to BOB
+import AddToWallet from '@site/src/components/AddToWallet';
+
+# Connect to the BOB Network
 
 ## Mainnet Information
 
 ### BOB Mainnet
+
+<AddToWallet />
 
 - Chain ID: 60808
 - Gas Token: ETH
 - RPC URL: https://rpc.gobob.xyz/
 - WS URL: [wss://rpc.gobob.xyz](wss://rpc.gobob.xyz)
 - Explorer: https://explorer.gobob.xyz/
+- OKLink Explorer: https://www.oklink.com/bob
 - Bridge (BOB - Ethereum): https://app.gobob.xyz/bridge
 
-If you are having issues with your RPC connection, try [BlastAPI's public endpoints for BOB](https://blastapi.io/public-api/bob).
+If you are having issues with your RPC connection to the network, try [BlastAPI's public endpoints for BOB](https://blastapi.io/public-api/bob).
 
 - RPC URL: https://bob-mainnet.public.blastapi.io
 - WS URL: [wss://bob-mainnet.public.blastapi.io](wss://bob-mainnet.public.blastapi.io)
