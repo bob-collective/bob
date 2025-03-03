@@ -337,7 +337,14 @@ describe('UTXO Tests', () => {
                                 }
 
                                 // If the amount is undefined, the fee should be estimated
-                                const fee = await estimateTxFee(paymentAddress, amount, pubkey, opReturn, feeRate);
+                                const fee = await estimateTxFee(
+                                    paymentAddress,
+                                    'mainnet' as BitcoinNetworkName,
+                                    amount,
+                                    pubkey,
+                                    opReturn,
+                                    feeRate
+                                );
 
                                 expect(fee).toBeGreaterThan(0);
                             })
