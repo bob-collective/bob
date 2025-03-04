@@ -23,7 +23,7 @@ import {
 } from './types';
 import { SYMBOL_LOOKUP, ADDRESS_LOOKUP } from './tokens';
 import { createBitcoinPsbt } from '../wallet';
-import { Network } from 'bitcoin-address-validation';
+import { AddressType, getAddressInfo, Network } from 'bitcoin-address-validation';
 import { EsploraClient } from '../esplora';
 import { offRampCaller, strategyCaller } from './abi';
 import { isAddress, Address, isAddressEqual } from 'viem';
@@ -235,6 +235,9 @@ export class GatewayApiClient {
             bitcoinNetwork = bitcoin.networks.testnet;
         }
 
+        if (getAddressInfo(params.bitcoinUserAddress).type === AddressType.p2tr) {
+            throw new Error('Only following bitcoin address types are supported P2PKH, P2WPKH, P2SH or P2WSH.');
+        }
         const receiverAddress = toHexScriptPubKey(params.bitcoinUserAddress, bitcoinNetwork);
 
         const queryParams = new URLSearchParams({
@@ -668,7 +671,7 @@ function calculateOpReturnHash(req: GatewayCreateOrderRequest) {
     );
 }
 
-function toHexScriptPubKey(userAddress: string, network: bitcoin.Network): string {
+export function toHexScriptPubKey(userAddress: string, network: bitcoin.Network): string {
     const address = bitcoin.address.toOutputScript(userAddress, network);
     const buffer = Buffer.concat([Buffer.from([address.length]), address]);
     return '0x' + buffer.toString('hex'); // Convert buffer to hex string
