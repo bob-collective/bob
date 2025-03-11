@@ -37,6 +37,8 @@ async fn main() -> Result<()> {
     // env_logger::init();
     let app = App::parse();
 
+    println!("Starting relayer...");
+
     let privk = app.private_key.trim().strip_prefix("0x").expect("Requires private key");
     let signer: PrivateKeySigner = privk.parse().expect("should parse private key");
     let wallet = EthereumWallet::from(signer);
