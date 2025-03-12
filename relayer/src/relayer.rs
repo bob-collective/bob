@@ -1,10 +1,15 @@
 use alloy::{
     network::ReceiptResponse,
     primitives::{Bytes, FixedBytes, U256},
+    rpc::types::Transaction,
+    sol_types::SolCall,
+    transports::RpcError,
 };
 use bindings::fullrelaywithverify::FullRelayWithVerify::FullRelayWithVerifyInstance as BitcoinRelayInstance;
 use bitcoin::{block::Header as BitcoinHeader, consensus, hashes::Hash, BlockHash};
 use eyre::{eyre, Result};
+use reqwest::Client;
+use serde_json::Value;
 use std::time::Duration;
 use utils::EsploraClient;
 
@@ -44,46 +49,62 @@ pub struct Relayer<
 impl<
         T: alloy::contract::private::Transport + ::core::clone::Clone,
         P: alloy::contract::private::Provider<T, N>,
-        N: alloy::contract::private::Network,
+        N: alloy::contract::private::Network<TransactionResponse = Transaction>,
     > Relayer<T, P, N>
 {
     pub fn new(contract: BitcoinRelayInstance<T, P, N>, esplora_client: EsploraClient) -> Self {
         Self { contract, esplora_client }
     }
 
-    async fn find_latest_height(&self) -> Result<u32> {
-        let latest_digest = self.contract.getBestKnownDigest().call().await?._0;
-        let mut latest_height: u32 =
-            self.contract.findHeight(latest_digest).call().await?._0.try_into().unwrap();
+    async fn relayed_height(&self) -> Result<u32> {
+        let relayer_blockhash = self.contract.getBestKnownDigest().call().await?._0;
+        let relayed_height: u32 =
+            self.contract.findHeight(relayer_blockhash).call().await?._0.try_into().unwrap();
 
-        let mut latest = self
-            .esplora_client
-            .get_block_header(&BlockHash::from_byte_array(latest_digest.0))
-            .await?;
+        Ok(relayed_height)
+    }
 
-        let mut better_or_same =
-            self.esplora_client.get_block_header_at_height(latest_height).await?;
+    async fn has_relayed(&self, blockhash: BlockHash) -> Result<bool> {
+        let result = self.contract.findHeight(blockhash.to_byte_array().into()).call().await;
 
-        while latest != better_or_same {
-            println!("wrong header");
-            latest = self.esplora_client.get_block_header(&latest.prev_blockhash).await?;
-            latest_height -= 1;
-            better_or_same = self.esplora_client.get_block_header_at_height(latest_height).await?;
+        match result {
+            Ok(_) => Ok(true),
+            Err(alloy::contract::Error::TransportError(RpcError::ErrorResp(_e))) => {
+                // If the block is not relayed, the findHeight call reverts.
+                return Ok(false);
+            }
+            Err(e) => Err(e)?, // something else went wrong (e.g. network issues)
         }
+    }
 
-        Ok(latest_height)
+    async fn latest_common_height(&self) -> Result<u32> {
+        // Start at the tip of the relayed chain, then move back until we find a block that matches bitcoin chain.
+        // We do it like this because calling esplora.get_block_hash for a block in a fork will fail.
+        let mut height = self.relayed_height().await?;
+
+        loop {
+            let actual_hash = self.esplora_client.get_block_hash(height).await?;
+            let is_relayed = self.has_relayed(actual_hash).await?;
+
+            if is_relayed {
+                return Ok(height);
+            }
+
+            println!("Found fork: {actual_hash} at height {height}");
+            height -= 1;
+        }
     }
 
     #[allow(unused)]
     pub async fn run_once(&self) -> Result<()> {
-        let latest_height = self.find_latest_height().await?;
+        let latest_height = self.latest_common_height().await?;
         let headers: Vec<RelayHeader> = self.pull_headers(latest_height).await?;
         self.push_headers(headers).await?;
         Ok(())
     }
 
     pub async fn run(&self) -> Result<()> {
-        let mut latest_height = self.find_latest_height().await?;
+        let mut latest_height = self.latest_common_height().await?;
 
         loop {
             let headers = self.pull_headers(latest_height).await?;
@@ -231,20 +252,7 @@ impl<
     }
 
     async fn update_best_digest(&self, new_best: RelayHeader) -> Result<()> {
-        let current_best_digest_raw = self.contract.getBestKnownDigest().call().await?._0;
-        let current_best_digest = BlockHash::from_byte_array(current_best_digest_raw.0);
-        let current_best = RelayHeader {
-            hash: current_best_digest,
-            header: self.esplora_client.get_block_header(&current_best_digest).await?,
-            height: self
-                .contract
-                .findHeight(current_best_digest_raw)
-                .call()
-                .await?
-                ._0
-                .try_into()
-                .unwrap(),
-        };
+        let current_best = self.get_heaviest_relayed_block_header().await?;
 
         let ancestor = self.find_lca(&new_best, current_best.clone()).await?;
         let delta = new_best.height - ancestor.height + 1;
@@ -262,6 +270,141 @@ impl<
             .get_receipt()
             .await?;
         assert!(receipt.status());
+
+        Ok(())
+    }
+
+    /// Fetch the block header from the contract. We used to fetch from esplora but that would
+    /// fail if there was a fork. This function is currently a bit over engineered - it uses
+    /// a subgraph to find the tx that submitted the heaviest block, then takes the blockheader
+    /// from its calldata. It would have been a lot easier if the smart contract were to store
+    /// the blockheader directly - something we might do in the future. That would come at the
+    /// cost of additional gas usage though.
+    async fn get_heaviest_relayed_block_header(&self) -> Result<RelayHeader> {
+        let relayer_blockhash = self.contract.getBestKnownDigest().call().await?._0;
+
+        let query = format!(
+            r#"
+            query MyQuery {{
+                newTips(
+                    first: 1
+                    orderBy: block_number
+                    orderDirection: desc
+                    where: {{to: "{relayer_blockhash}"}}
+                ) {{
+                    transactionHash_
+                }}
+            }}
+        "#
+        );
+
+        let res: Value = Client::new()
+            .post("https://api.goldsky.com/api/public/project_clto8zgmd1jbw01xig1ge1u0h/subgraphs/Relay-sepolia/1.0.0/gn")
+            .json(&serde_json::json!({ "query": query }))
+            .send()
+            .await?
+            .json()
+            .await?;
+
+        let txid = res["data"]["newTips"]
+            .as_array()
+            .and_then(|x| x.first())
+            .and_then(|x| x.as_object())
+            .and_then(|x| x.get("transactionHash_"))
+            .and_then(|x| x.as_str())
+            .ok_or(eyre!("No events in the subgraph"))?
+            .to_string();
+
+        let txid: [u8; 32] = alloy::hex::decode(txid)?.try_into().unwrap();
+
+        let tx = self.contract.provider().get_transaction_by_hash(txid.into()).await?.unwrap();
+        use alloy::consensus::Transaction;
+
+        let input = tx.as_ref().input();
+
+        use bindings::fullrelaywithverify::FullRelayWithVerify::markNewHeaviestCall;
+
+        let decoded = markNewHeaviestCall::abi_decode(&input, true)?;
+        let header: bitcoin::block::Header = bitcoin::consensus::deserialize(&decoded._newBest.0)?;
+
+        let height = self.contract.findHeight(relayer_blockhash).call().await?._0;
+        let hash = bitcoin::BlockHash::from_slice(&relayer_blockhash.0)?;
+        Ok(RelayHeader { hash, header, height: height.try_into()? })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use alloy::hex;
+    use alloy::{
+        network::EthereumWallet,
+        primitives::TxHash,
+        providers::{Provider, ProviderBuilder},
+        signers::local::PrivateKeySigner,
+        sol_types::SolCall,
+    };
+    use reqwest::Url;
+
+    #[tokio::test]
+    async fn test_has_relayed() -> Result<()> {
+        let relayer = Relayer::new(
+            BitcoinRelayInstance::new(
+                "0xaAD39528eB8b3c70b613C442F351610969974fDF".parse()?,
+                ProviderBuilder::new().on_http("https://bob-sepolia.rpc.gobob.xyz/".parse()?),
+            ),
+            EsploraClient::new(
+                Some("https://btc-signet.gobob.xyz/".to_string()),
+                bitcoin::Network::Bitcoin,
+            )?,
+        );
+
+        assert!(!relayer.has_relayed(BlockHash::from_slice(&[1u8; 32])?).await?);
+        assert!(
+            relayer
+                .has_relayed(BlockHash::from_slice(&hex::decode(
+                    "0x915c9fffe077970ee032ed8be0c6953fe2a4ab9827ca151e4977a6d72a010000"
+                )?)?)
+                .await?
+        );
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    #[ignore] // Run this manually with anvil --fork-url wss://bob-sepolia.rpc.gobob.xyz --fork-block-number 9563094
+    async fn test_latest_common_height() -> Result<()> {
+        let relayer = Relayer::new(
+            BitcoinRelayInstance::new(
+                "0xaAD39528eB8b3c70b613C442F351610969974fDF".parse()?,
+                ProviderBuilder::new().on_http("http://127.0.0.1:8545".parse()?),
+            ),
+            EsploraClient::new(
+                Some("https://btc-signet.gobob.xyz/".to_string()),
+                bitcoin::Network::Bitcoin,
+            )?,
+        );
+
+        assert_eq!(relayer.relayed_height().await?, 238513);
+        assert_eq!(relayer.latest_common_height().await?, 238512);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_heaviest_relayed_block_header() -> Result<()> {
+        let relayer = Relayer::new(
+            BitcoinRelayInstance::new(
+                "0xaAD39528eB8b3c70b613C442F351610969974fDF".parse()?,
+                ProviderBuilder::new().on_http("https://bob-sepolia.rpc.gobob.xyz/".parse()?),
+            ),
+            EsploraClient::new(
+                Some("https://btc-signet.gobob.xyz/".to_string()),
+                bitcoin::Network::Bitcoin,
+            )?,
+        );
+
+        // Not much we can easily test except that we find an actual block header
+        relayer.get_heaviest_relayed_block_header().await?;
 
         Ok(())
     }
