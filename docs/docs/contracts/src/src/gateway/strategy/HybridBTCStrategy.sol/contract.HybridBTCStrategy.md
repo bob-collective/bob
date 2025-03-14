@@ -30,7 +30,7 @@ constructor(IERC20 _boringVault, ITeller _teller);
 
 ### handleGatewayMessageWithSlippageArgs
 
-Deposits tokens into Pell Network.
+Deposits tokens into Veda Protocol and mints vault shares.
 
 *Requires that the strategy is approved to spend the incoming tokens.*
 
