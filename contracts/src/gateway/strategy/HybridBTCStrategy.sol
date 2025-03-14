@@ -26,7 +26,7 @@ contract HybridBTCStrategy is IStrategyWithSlippageArgs, Context {
     }
 
     /**
-     * @notice Deposits tokens into Pell Network.
+     * @notice Deposits tokens into Veda Protocol and mints vault shares.
      * @dev Requires that the strategy is approved to spend the incoming tokens.
      * @param tokenSent The ERC20 token to deposit.
      * @param amountIn The amount to be deposited.
