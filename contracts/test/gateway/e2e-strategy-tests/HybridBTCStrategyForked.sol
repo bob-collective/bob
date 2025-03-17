@@ -14,6 +14,8 @@ import {ForkedStrategyTemplateWbtc} from "./ForkedTemplate.sol";
 // Command to run this contract tests with Foundry:
 // BOB_PROD_PUBLIC_RPC_URL=https://rpc.gobob.xyz/ forge test --match-contract HybridBTCStrategyForkedWbtc -vv
 contract HybridBTCStrategyForkedWbtc is ForkedStrategyTemplateWbtc {
+    event TokenOutput(address tokenReceived, uint256 amountOut);
+
     uint256 public amountIn = 100000000; // 1 btc
 
     // Veda contracts
@@ -38,6 +40,8 @@ contract HybridBTCStrategyForkedWbtc is ForkedStrategyTemplateWbtc {
 
         vm.startPrank(Constants.DUMMY_SENDER);
         token.approve(address(hybridBTCStrategy), amountIn);
+        vm.expectEmit(address(hybridBTCStrategy));
+        emit TokenOutput(address(boringVault), amountIn);
         hybridBTCStrategy.handleGatewayMessageWithSlippageArgs(
             token,
             amountIn,
