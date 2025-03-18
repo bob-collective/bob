@@ -46,7 +46,7 @@
     "@scure/btc-signer": "^1.6.0",
     "bitcoin-address-validation": "^2.2.3",
     "bitcoinjs-lib": "^6.1.6",
-    "ethers": "^6.13.2",
+    "ethers": "^6.13.5",
     "viem": "^2.22.19",
     "global": "^4.4.0"
   }
