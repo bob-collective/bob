@@ -22,7 +22,7 @@ const bobTokens = [
                 address: '0x9998e05030Aee3Af9AD3df35A34F5C51e1628779',
             },
         },
-        logoURI: 'https://app.gobob.xyz/assets/hybridbtc-pendle.webp',
+        logoURI: 'https://raw.githubusercontent.com/bob-collective/bob/master/assets/hybridBTC-pendle.svg',
     },
     {
         name: 'Wrapped BTC',
