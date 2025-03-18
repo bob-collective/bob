@@ -1,3 +1,4 @@
+use bitcoin::Network;
 use eyre::{bail, Result};
 use reqwest::{Client, Url};
 use serde::Deserialize;
@@ -25,7 +26,7 @@ pub struct MempoolClient {
 }
 
 impl MempoolClient {
-    pub fn new(mempool_url: Option<String>, network: bitcoin::Network) -> Result<Self> {
+    pub fn new(mempool_url: Option<String>, network: Network) -> Result<Self> {
         let url = match mempool_url {
             Some(url) => url,
             None => match network {
@@ -70,7 +71,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_mempool_client_for_regtest() -> Result<()> {
-        let client = MempoolClient::new(None, bitcoin::Network::Regtest);
+        let client = MempoolClient::new(None, Network::Regtest);
         assert!(client.is_err());
         Ok(())
     }
