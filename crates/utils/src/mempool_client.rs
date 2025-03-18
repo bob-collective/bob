@@ -1,5 +1,5 @@
 use bitcoin::Network;
-use eyre::{bail, Result};
+use eyre::{anyhow, bail, Result};
 use reqwest::{Client, Url};
 use serde::Deserialize;
 use std::str::FromStr;
@@ -26,14 +26,17 @@ pub struct MempoolClient {
 }
 
 impl MempoolClient {
-    pub fn new(mempool_url: Option<String>, network: Network) -> Result<Self> {
+    pub fn new(mempool_url: Option<String>, network: String) -> Result<Self> {
+        let network: Network =
+            network.parse().map_err(|_| anyhow!("Invalid Bitcoin network: {}", network))?;
+
         let url = match mempool_url {
             Some(url) => url,
             None => match network {
-                bitcoin::Network::Bitcoin => MEMPOOL_MAINNET_URL.to_owned(),
-                bitcoin::Network::Testnet => MEMPOOL_TESTNET_URL.to_owned(),
-                bitcoin::Network::Signet => MEMPOOL_SIGNET_URL.to_owned(),
-                bitcoin::Network::Testnet4 => MEMPOOL_TESTNET4_URL.to_owned(),
+                Network::Bitcoin => MEMPOOL_MAINNET_URL.to_owned(),
+                Network::Testnet => MEMPOOL_TESTNET_URL.to_owned(),
+                Network::Signet => MEMPOOL_SIGNET_URL.to_owned(),
+                Network::Testnet4 => MEMPOOL_TESTNET4_URL.to_owned(),
                 _ => bail!("Unsupported Bitcoin network by Mempool: {:?}", network),
             },
         };
@@ -58,7 +61,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_mempool_fees() -> Result<()> {
-        let client = MempoolClient::new(None, bitcoin::Network::Signet)?;
+        let client = MempoolClient::new(None, Network::Signet.to_string())?;
         let fees = client.get_fee_estimates().await?;
         assert!(fees.fastest_fee > 0);
         assert!(fees.half_hour_fee > 0);
@@ -71,7 +74,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_mempool_client_for_regtest() -> Result<()> {
-        let client = MempoolClient::new(None, Network::Regtest);
+        let client = MempoolClient::new(None, Network::Regtest.to_string());
         assert!(client.is_err());
         Ok(())
     }
