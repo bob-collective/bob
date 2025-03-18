@@ -14,6 +14,17 @@ const bobTokens = [
         logoURI: 'https://ethereum-optimism.github.io/data/tBTC/logo.svg',
     },
     {
+        name: 'Hybrid Bitcoin',
+        symbol: 'HybridBTC.pendle',
+        decimals: 8,
+        tokens: {
+            bob: {
+                address: '0x9998e05030Aee3Af9AD3df35A34F5C51e1628779',
+            },
+        },
+        logoURI: 'https://raw.githubusercontent.com/bob-collective/bob/master/assets/hybridBTC-pendle.svg',
+    },
+    {
         name: 'Wrapped BTC',
         symbol: 'WBTC',
         decimals: 8,
