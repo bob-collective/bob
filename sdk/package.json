@@ -1,6 +1,6 @@
 {
   "name": "@gobob/bob-sdk",
-  "version": "3.1.6",
+  "version": "3.1.7",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
