@@ -1,6 +1,6 @@
 use bitcoin::{
     address::NetworkChecked,
-    consensus::{self, serialize},
+    consensus::{self, encode, serialize},
     hashes::{hex::FromHex, sha256d::Hash as Sha256dHash, Hash},
     hex::HexToBytesError,
     opcodes,
@@ -15,7 +15,7 @@ use bitcoincore_rpc::{
 };
 use num_derive::FromPrimitive;
 use serde_json::error::Category as SerdeJsonCategory;
-use std::{sync::Arc, time::Duration};
+use std::{collections::HashMap, sync::Arc, time::Duration};
 use tokio::time::{error::Elapsed, sleep, timeout};
 use tracing::*;
 
@@ -118,6 +118,8 @@ pub enum Error {
     InvalidNetwork,
     #[error("Invalid recipient")]
     InvalidRecipient,
+    #[error("Hex decoding error: {0}")]
+    HexDecodeError(#[from] hex::FromHexError), // <-- Add this line
 }
 
 #[derive(Clone)]
@@ -301,6 +303,48 @@ impl BitcoinClient {
         let txid = self.rpc.send_raw_transaction(&tx)?;
 
         Ok(txid)
+    }
+
+    pub fn create_tx(
+        &self,
+        address: Option<&Address<NetworkChecked>>,
+        amount: Option<Amount>,
+        replaceable: Option<bool>,
+        confirmation_target: Option<u32>,
+        estimate_mode: Option<bitcoincore_rpc::json::EstimateMode>,
+    ) -> Result<Transaction, Error> {
+        match (address, amount) {
+            (Some(addr), Some(amt)) => {
+                let mut outputs = HashMap::new();
+                outputs.insert(addr.to_string(), amt);
+
+                // Step 1: Create raw transaction
+                let raw_tx = self.rpc.create_raw_transaction(&[], &outputs, None, replaceable)?;
+
+                // Step 2: Fund the transaction
+                let funded_tx = self
+                    .rpc
+                    .fund_raw_transaction(
+                        &raw_tx,
+                        Some(&bitcoincore_rpc::json::FundRawTransactionOptions {
+                            replaceable,
+                            conf_target: confirmation_target,
+                            estimate_mode,
+                            ..Default::default()
+                        }),
+                        None,
+                    )?
+                    .hex;
+
+                // Step 3: Sign the transaction
+                let signed_tx =
+                    self.rpc.sign_raw_transaction_with_wallet(&funded_tx, None, None)?.hex;
+
+                // Step 4: Deserialize and return Transaction
+                Ok(encode::deserialize(&hex::decode(signed_tx)?)?)
+            }
+            _ => Err(Error::InvalidRecipient),
+        }
     }
 }
 
