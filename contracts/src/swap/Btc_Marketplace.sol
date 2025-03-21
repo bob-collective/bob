@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {BTCUtils} from "@bob-collective/bitcoin-spv/BTCUtils.sol";
 import {BitcoinTx} from "../utils/BitcoinTx.sol";
-import {ERC2771Recipient} from "@opengsn/packages/contracts/src/ERC2771Recipient.sol";
+import {ERC2771Recipient} from "../ERC2771/ERC2771Recipient.sol";
 import {TestLightRelay} from "../relay/TestLightRelay.sol";
 
 using SafeERC20 for IERC20;

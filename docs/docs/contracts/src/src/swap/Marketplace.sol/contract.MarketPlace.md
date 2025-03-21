@@ -2,7 +2,7 @@
 [Git Source](https://github.com/bob-collective/bob/blob/master/src/swap/Marketplace.sol)
 
 **Inherits:**
-ERC2771Recipient
+[ERC2771Recipient](../../ERC2771/ERC2771Recipient.sol/abstract.ERC2771Recipient.md)
 
 
 ## State Variables

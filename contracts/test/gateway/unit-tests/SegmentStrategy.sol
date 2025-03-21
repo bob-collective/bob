@@ -6,7 +6,7 @@ import {stdStorage, StdStorage, Test, console} from "forge-std/Test.sol";
 using stdStorage for StdStorage;
 
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
-import {ERC20} from "openzeppelin-contracts/token/ERC20/ERC20.sol";
+import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {
     ISeBep20,
     SegmentStrategy,
