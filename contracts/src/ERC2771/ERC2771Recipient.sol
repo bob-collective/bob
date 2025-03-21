@@ -14,7 +14,6 @@ import "./IERC2771Recipient.sol";
  * @notice A subclass must use `_msgSender()` instead of `msg.sender`.
  */
 abstract contract ERC2771Recipient is IERC2771Recipient {
-
     /*
      * Forwarder singleton we accept calls from
      */
@@ -25,7 +24,7 @@ abstract contract ERC2771Recipient is IERC2771Recipient {
      * @notice Method is not a required method to allow Recipients to trust multiple Forwarders. Not recommended yet.
      * @return forwarder The address of the Forwarder contract that is being used.
      */
-    function getTrustedForwarder() public virtual view returns (address forwarder){
+    function getTrustedForwarder() public view virtual returns (address forwarder) {
         return _trustedForwarder;
     }
 
@@ -34,18 +33,18 @@ abstract contract ERC2771Recipient is IERC2771Recipient {
     }
 
     /// @inheritdoc IERC2771Recipient
-    function isTrustedForwarder(address forwarder) public virtual override view returns(bool) {
+    function isTrustedForwarder(address forwarder) public view virtual override returns (bool) {
         return forwarder == _trustedForwarder;
     }
 
     /// @inheritdoc IERC2771Recipient
-    function _msgSender() internal override virtual view returns (address ret) {
+    function _msgSender() internal view virtual override returns (address ret) {
         if (msg.data.length >= 20 && isTrustedForwarder(msg.sender)) {
             // At this point we know that the sender is a trusted forwarder,
             // so we trust that the last bytes of msg.data are the verified sender address.
             // extract sender address from the end of msg.data
             assembly {
-                ret := shr(96,calldataload(sub(calldatasize(),20)))
+                ret := shr(96, calldataload(sub(calldatasize(), 20)))
             }
         } else {
             ret = msg.sender;
@@ -53,9 +52,9 @@ abstract contract ERC2771Recipient is IERC2771Recipient {
     }
 
     /// @inheritdoc IERC2771Recipient
-    function _msgData() internal override virtual view returns (bytes calldata ret) {
+    function _msgData() internal view virtual override returns (bytes calldata ret) {
         if (msg.data.length >= 20 && isTrustedForwarder(msg.sender)) {
-            return msg.data[0:msg.data.length-20];
+            return msg.data[0:msg.data.length - 20];
         } else {
             return msg.data;
         }
