@@ -10,6 +10,3 @@
 [submodule "lib/account-abstraction"]
 	path = contracts/lib/account-abstraction
 	url = https://github.com/eth-infinitism/account-abstraction
-[submodule "lib/gsn"]
-	path = contracts/lib/gsn
-	url = https://github.com/opengsn/gsn
