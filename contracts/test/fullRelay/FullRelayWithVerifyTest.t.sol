@@ -2,7 +2,7 @@
 pragma solidity ^0.8.17;
 
 import {FullRelayTestUtils} from "./FullRelayTestUtils.sol";
-import {IFullRelay} from "../../src/relay/FullRelayInterfaces.sol";
+import {IFullRelay} from "../../src/relay/IFullRelay.sol";
 
 import {stdJson} from "forge-std/StdJson.sol";
 import {console} from "forge-std/Test.sol";

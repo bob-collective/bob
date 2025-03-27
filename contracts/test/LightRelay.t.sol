@@ -4,8 +4,6 @@ pragma solidity ^0.8.17;
 import {Test, console2} from "forge-std/Test.sol";
 
 import {LightRelay} from "../src/relay/LightRelay.sol";
-import {ILightRelay} from "../src/relay/LightRelay.sol";
-import {IRelay} from "../src/relay/IRelay.sol";
 import {BitcoinTx} from "../src/utils/BitcoinTx.sol";
 
 // Light relay test cases imported from: https://github.com/keep-network/tbtc-v2/blob/cadead9ecd6005325ace4d64288c20733b058352/solidity/test/relay/LightRelay.test.ts
