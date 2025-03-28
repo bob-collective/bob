@@ -1,11 +1,13 @@
 mod bitcoin_client;
 mod bitcoin_core;
 mod esplora_client;
+mod gateway;
 mod mempool_client;
 
 pub use bitcoin_client::*;
 pub use bitcoin_core::*;
 pub use esplora_client::*;
+pub use gateway::*;
 pub use mempool_client::*;
 
 #[cfg(test)]
