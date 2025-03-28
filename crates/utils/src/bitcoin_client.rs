@@ -118,6 +118,8 @@ pub enum Error {
     InvalidNetwork,
     #[error("Invalid recipient")]
     InvalidRecipient,
+    #[error("Hex decoding error: {0}")]
+    HexDecodeError(#[from] hex::FromHexError),
 }
 
 #[derive(Clone)]
@@ -254,6 +256,27 @@ impl BitcoinClient {
         confirmation_target: Option<u32>,
         estimate_mode: Option<bitcoincore_rpc::json::EstimateMode>,
     ) -> Result<Txid, Error> {
+        let tx = self.create_and_sign_tx(
+            address,
+            amount,
+            op_return_data,
+            replaceable,
+            confirmation_target,
+            estimate_mode,
+        )?;
+        let txid = self.validate_and_send_raw_transaction(&tx)?;
+        Ok(txid)
+    }
+
+    pub fn create_and_sign_tx(
+        &self,
+        address: Option<&Address<NetworkChecked>>,
+        amount: Option<Amount>,
+        op_return_data: Option<&Vec<u8>>,
+        replaceable: Option<bool>,
+        confirmation_target: Option<u32>,
+        estimate_mode: Option<bitcoincore_rpc::json::EstimateMode>,
+    ) -> Result<Transaction, Error> {
         match (address, amount, op_return_data) {
             // txs must have at least one output
             (Some(_), None, _) | (None, Some(_), _) | (None, None, None) => {
@@ -269,7 +292,6 @@ impl BitcoinClient {
         if let Some(data) = op_return_data {
             outputs.insert("data".to_string(), serde_json::Value::String(hex::encode(data)));
         }
-
         let tx = self.rpc.call::<String>(
             "createrawtransaction",
             &[
@@ -297,10 +319,9 @@ impl BitcoinClient {
                 None,
             )?
             .hex;
-        let tx = self.rpc.sign_raw_transaction_with_wallet(&tx, None, None)?.hex;
-        let txid = self.rpc.send_raw_transaction(&tx)?;
-
-        Ok(txid)
+        let signed_tx = self.rpc.sign_raw_transaction_with_wallet(&tx, None, None)?;
+        let transaction = signed_tx.transaction()?;
+        Ok(transaction)
     }
 }
 
