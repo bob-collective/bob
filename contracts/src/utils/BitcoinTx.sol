@@ -9,7 +9,7 @@ import {BytesLib} from "@bob-collective/bitcoin-spv/BytesLib.sol";
 import {ValidateSPV} from "@bob-collective/bitcoin-spv/ValidateSPV.sol";
 
 import {ILightRelay} from "../relay/ILightRelay.sol";
-
+import {IFullRelay} from "../relay/IFullRelay.sol";
 /// @title Bitcoin transaction
 /// @notice Allows to reference Bitcoin raw transaction in Solidity.
 /// @dev See https://developer.bitcoin.org/reference/transactions.html#raw-transaction-format
@@ -137,9 +137,9 @@ library BitcoinTx {
         uint64 txOutputValue;
     }
 
-    /// @notice Validates the SPV proof of the Bitcoin transaction.
+    /// @notice Validates the SPV proof of the Bitcoin transaction using a light relay contract.
     ///         Reverts in case the validation or proof verification fail.
-    /// @param relay Bitcoin relay providing the current Bitcoin network difficulty.
+    /// @param relay Bitcoin light relay providing the current Bitcoin network difficulty.
     /// @param txProofDifficultyFactor The number of confirmations required on the Bitcoin chain.
     /// @param txInfo Bitcoin transaction data.
     /// @param proof Bitcoin proof data.
@@ -149,11 +149,7 @@ library BitcoinTx {
         view
         returns (bytes32 txHash)
     {
-        require(txInfo.inputVector.validateVin(), "Invalid input vector provided");
-        require(txInfo.outputVector.validateVout(), "Invalid output vector provided");
-
-        txHash =
-            abi.encodePacked(txInfo.version, txInfo.inputVector, txInfo.outputVector, txInfo.locktime).hash256View();
+        txHash = computeTxHash(txInfo);
 
         require(
             txHash.prove(proof.bitcoinHeaders.extractMerkleRootLE(), proof.merkleProof, proof.txIndexInBlock),
@@ -165,11 +161,56 @@ library BitcoinTx {
         return txHash;
     }
 
+    function validateProof(IFullRelay relay, uint256 txProofDifficultyFactor, Info memory txInfo, Proof memory proof)
+        internal
+        view
+        returns (bytes32 txHash)
+    {
+        txHash = computeTxHash(txInfo);
+
+        require(
+            txHash.prove(proof.bitcoinHeaders.extractMerkleRootLE(), proof.merkleProof, proof.txIndexInBlock),
+            "Tx merkle proof is not valid for provided header and tx hash"
+        );
+
+        checkHeaderIsValid(relay, txProofDifficultyFactor, proof.bitcoinHeaders);
+
+        return txHash;
+    }
+
+    /// @notice Checks that the header is an ancestor of the current relay tip and is sufficently deep.
+    /// @param relay Bitcoin full relay providing the current Bitcoin network difficulty.
+    /// @param txProofDifficultyFactor Minimum number of blocks between the header and the current chain tip stored in the relay.
+    /// @param header Bitcoin header that is being checked.
+    function checkHeaderIsValid(IFullRelay relay, uint256 txProofDifficultyFactor, bytes memory header) internal view {
+        require(header.length == 80, "Invalid header length");
+
+        bytes32 digest = header.hash256();
+
+        bytes32 currentTip = relay.getBestKnownDigest();
+
+        // TODO: Set Limit
+        require(relay.isAncestor(digest, currentTip, 100), "Header is not part of the best known chain");
+
+        require(
+            relay.findHeight(currentTip) - relay.findHeight(digest) >= txProofDifficultyFactor,
+            "Header is not deep enough in the chain"
+        );
+    }
+
+    /// @notice Validates Bitcoin transaction input and output vectors then computes the hash.
+    /// @param txInfo Bitcoin transaction data.
+    /// @return txHash 32-byte transaction hash.
+    function computeTxHash(Info memory txInfo) internal view returns (bytes32 txHash) {
+        require(txInfo.inputVector.validateVin(), "Invalid input vector provided");
+        require(txInfo.outputVector.validateVout(), "Invalid output vector provided");
+        return abi.encodePacked(txInfo.version, txInfo.inputVector, txInfo.outputVector, txInfo.locktime).hash256View();
+    }
 
     /// @notice Evaluates the given Bitcoin proof difficulty against the actual
-    ///         Bitcoin chain difficulty provided by the relay oracle.
+    ///         Bitcoin chain difficulty provided by the light relay oracle.
     ///         Reverts in case the evaluation fails.
-    /// @param relay Bitcoin relay providing the current Bitcoin network difficulty.
+    /// @param relay Bitcoin light relay providing the current Bitcoin network difficulty.
     /// @param txProofDifficultyFactor The number of confirmations required on the Bitcoin chain.
     /// @param bitcoinHeaders Bitcoin headers chain being part of the SPV
     ///        proof. Used to extract the observed proof difficulty.
