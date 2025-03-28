@@ -7,9 +7,9 @@ pragma solidity ^0.8.17;
 import {BTCUtils} from "@bob-collective/bitcoin-spv/BTCUtils.sol";
 import {BytesLib} from "@bob-collective/bitcoin-spv/BytesLib.sol";
 import {ValidateSPV} from "@bob-collective/bitcoin-spv/ValidateSPV.sol";
-
 import {ILightRelay} from "../relay/ILightRelay.sol";
-import {IFullRelay} from "../relay/IFullRelay.sol";
+import {IFullRelayWithVerify} from "../relay/IFullRelayWithVerify.sol";
+
 /// @title Bitcoin transaction
 /// @notice Allows to reference Bitcoin raw transaction in Solidity.
 /// @dev See https://developer.bitcoin.org/reference/transactions.html#raw-transaction-format
@@ -161,41 +161,18 @@ library BitcoinTx {
         return txHash;
     }
 
-    function validateProof(IFullRelay relay, uint256 txProofDifficultyFactor, Info memory txInfo, Proof memory proof)
+    function validateProof(IFullRelayWithVerify relay, uint256 txProofDifficultyFactor, Info memory txInfo, Proof memory proof)
         internal
         view
         returns (bytes32 txHash)
     {
         txHash = computeTxHash(txInfo);
 
-        require(
-            txHash.prove(proof.bitcoinHeaders.extractMerkleRootLE(), proof.merkleProof, proof.txIndexInBlock),
-            "Tx merkle proof is not valid for provided header and tx hash"
-        );
+        // TODO: Could be more efficient to verify the merkle proof here and also compute the digest, then we dont need to forward as much data to the relay
 
-        checkHeaderIsValid(relay, txProofDifficultyFactor, proof.bitcoinHeaders);
+        relay.verifyProof(proof.bitcoinHeaders, proof.merkleProof, txHash, proof.txIndexInBlock, uint8(txProofDifficultyFactor));
 
         return txHash;
-    }
-
-    /// @notice Checks that the header is an ancestor of the current relay tip and is sufficently deep.
-    /// @param relay Bitcoin full relay providing the current Bitcoin network difficulty.
-    /// @param txProofDifficultyFactor Minimum number of blocks between the header and the current chain tip stored in the relay.
-    /// @param header Bitcoin header that is being checked.
-    function checkHeaderIsValid(IFullRelay relay, uint256 txProofDifficultyFactor, bytes memory header) internal view {
-        require(header.length == 80, "Invalid header length");
-
-        bytes32 digest = header.hash256();
-
-        bytes32 currentTip = relay.getBestKnownDigest();
-
-        // TODO: Set Limit
-        require(relay.isAncestor(digest, currentTip, 100), "Header is not part of the best known chain");
-
-        require(
-            relay.findHeight(currentTip) - relay.findHeight(digest) >= txProofDifficultyFactor,
-            "Header is not deep enough in the chain"
-        );
     }
 
     /// @notice Validates Bitcoin transaction input and output vectors then computes the hash.
