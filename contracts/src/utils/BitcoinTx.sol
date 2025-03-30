@@ -161,16 +161,19 @@ library BitcoinTx {
         return txHash;
     }
 
-    function validateProof(IFullRelayWithVerify relay, uint256 txProofDifficultyFactor, Info memory txInfo, Proof memory proof)
-        internal
-        view
-        returns (bytes32 txHash)
-    {
+    function validateProof(
+        IFullRelayWithVerify relay,
+        uint256 txProofDifficultyFactor,
+        Info memory txInfo,
+        Proof memory proof
+    ) internal view returns (bytes32 txHash) {
         txHash = computeTxHash(txInfo);
 
         // TODO: Could be more efficient to verify the merkle proof here and also compute the digest, then we dont need to forward as much data to the relay
 
-        relay.verifyProof(proof.bitcoinHeaders, proof.merkleProof, txHash, proof.txIndexInBlock, uint8(txProofDifficultyFactor));
+        relay.verifyProof(
+            proof.bitcoinHeaders, proof.merkleProof, txHash, proof.txIndexInBlock, uint8(txProofDifficultyFactor)
+        );
 
         return txHash;
     }
