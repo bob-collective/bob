@@ -4,8 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-alloy = { version = "0.6.2", features = ["sol-types", "json-rpc", "transports", "dyn-abi"] }
-
 eyre = "0.6"
 thiserror = "1.0.58"
 tracing = "0.1.0"
