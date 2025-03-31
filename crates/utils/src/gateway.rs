@@ -4,6 +4,9 @@ use alloy::{
     sol,
 };
 
+pub(crate) const BOB_CHAIN_ID: u64 = 60808;
+pub(crate) const BOB_SEPOLIA_TESTNET_CHAIN_ID: u64 = 808813;
+
 pub struct OffRampOpReturnData {
     pub order_id: U256,
     pub registry_address: Address,
