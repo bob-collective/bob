@@ -2,7 +2,7 @@
 [Git Source](https://github.com/bob-collective/bob/blob/master/src/relay/FullRelay.sol)
 
 **Inherits:**
-[IFullRelay](../../relay/FullRelayInterfaces.sol/interface.IFullRelay.md)
+[IFullRelay](../../relay/IFullRelay.sol/interface.IFullRelay.md)
 
 **Author:**
 Distributed Crafts (https://www.gobob.xyz/)

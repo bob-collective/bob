@@ -2,12 +2,27 @@
 pragma solidity ^0.8.17;
 
 import {FullRelayTestUtils} from "./FullRelayTestUtils.sol";
-import {IFullRelay} from "../../src/relay/FullRelayInterfaces.sol";
+import {FullRelayWithVerify} from "../../src/relay/FullRelayWithVerify.sol";
+import {IFullRelayWithVerify} from "../../src/relay/IFullRelayWithVerify.sol";
+import {BitcoinTx} from "../../src/utils/BitcoinTx.sol";
+import {BTCUtils} from "@bob-collective/bitcoin-spv/BTCUtils.sol";
 
 import {stdJson} from "forge-std/StdJson.sol";
 import {console} from "forge-std/Test.sol";
 
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
+
+// Wrapper contract around BitcoinTx library, so we can test transaction reverts
+contract BitcoinTxTester {
+    function validateProof(
+        IFullRelayWithVerify relay,
+        uint256 txProofDifficultyFactor,
+        BitcoinTx.Info memory txInfo,
+        BitcoinTx.Proof memory proof
+    ) external view returns (bytes32 txHash) {
+        return BitcoinTx.validateProof(relay, txProofDifficultyFactor, txInfo, proof);
+    }
+}
 
 contract FullRelayWithVerifyTest is FullRelayTestUtils {
     using stdJson for string;
@@ -23,7 +38,9 @@ contract FullRelayWithVerifyTest is FullRelayTestUtils {
     constructor() FullRelayTestUtils("headers.json", ".genesis.hex", ".genesis.height", ".genesis.digest_le") {
         relay.setAncestorOverride(true, true);
     }
+}
 
+contract FullRelayWithVerifyDirectTest is FullRelayWithVerifyTest {
     function testMalformedProofSupplied() public {
         vm.expectRevert(bytes("Bad merkle array proof"));
         relay.verifyProof(header, hex"00", txToVerify, txId, 0);
@@ -59,5 +76,67 @@ contract FullRelayWithVerifyTest is FullRelayTestUtils {
 
     function testSuccessfullyVerify() public view {
         relay.verifyProof(header, proof, txToVerify, txId, 0);
+    }
+}
+
+contract FullRelayWithVerifyThroughBitcoinTxTest is FullRelayWithVerifyTest {
+    using BitcoinTx for FullRelayWithVerify;
+    using BTCUtils for bytes;
+
+    BitcoinTxTester bitcoinTxTester = new BitcoinTxTester();
+
+    uint256 txProofDifficultyFactor = 1;
+
+    bytes32 expectedTxHash = hex"48e5a1a0e616d8fd92b4ef228c424e0c816799a256c6a90892195ccfc53300d6";
+    BitcoinTx.Info txInfoStruct = BitcoinTx.Info({
+        version: hex"01000000",
+        inputVector: hex"011746bd867400f3494b8f44c24b83e1aa58c4f0ff25b4a61cffeffd4bc0f9ba300000000000ffffffff",
+        outputVector: hex"024897070000000000220020a4333e5612ab1a1043b25755c89b16d55184a42f81799e623e6bc39db8539c180000000000000000166a14edb1b5c2f39af0fec151732585b1049b07895211",
+        locktime: hex"00000000"
+    });
+
+    BitcoinTx.Proof proofStruct = BitcoinTx.Proof({merkleProof: proof, txIndexInBlock: 281, bitcoinHeaders: header});
+
+    function testSuccessfullyVerify() public {
+        bytes32 txHash = bitcoinTxTester.validateProof(
+            IFullRelayWithVerify(address(relay)), txProofDifficultyFactor, txInfoStruct, proofStruct
+        );
+        assertEq(txHash, expectedTxHash);
+    }
+
+    function testIncorrectProofSupplied() public {
+        BitcoinTx.Proof memory proofStruct2 = proofStruct;
+        proofStruct2.merkleProof = hex"00";
+        vm.expectRevert(bytes("Bad merkle array proof"));
+        bitcoinTxTester.validateProof(
+            IFullRelayWithVerify(address(relay)), txProofDifficultyFactor, txInfoStruct, proofStruct2
+        );
+    }
+
+    function testIncorrectInputVectorSupplied() public {
+        BitcoinTx.Info memory txInfoStruct2 = txInfoStruct;
+        txInfoStruct2.inputVector = hex"00";
+        vm.expectRevert(bytes("Invalid input vector provided"));
+        bitcoinTxTester.validateProof(
+            IFullRelayWithVerify(address(relay)), txProofDifficultyFactor, txInfoStruct2, proofStruct
+        );
+    }
+
+    function testIncorrectOutputVectorSupplied() public {
+        BitcoinTx.Info memory txInfoStruct2 = txInfoStruct;
+        txInfoStruct2.outputVector = hex"00";
+        vm.expectRevert(bytes("Invalid output vector provided"));
+        bitcoinTxTester.validateProof(
+            IFullRelayWithVerify(address(relay)), txProofDifficultyFactor, txInfoStruct2, proofStruct
+        );
+    }
+
+    function testIncorrectLocktimeSupplied() public {
+        BitcoinTx.Info memory txInfoStruct2 = txInfoStruct;
+        txInfoStruct2.locktime = hex"00000001";
+        vm.expectRevert(bytes("Bad inclusion proof"));
+        bitcoinTxTester.validateProof(
+            IFullRelayWithVerify(address(relay)), txProofDifficultyFactor, txInfoStruct2, proofStruct
+        );
     }
 }

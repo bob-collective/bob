@@ -1,5 +1,5 @@
 # IFullRelay
-[Git Source](https://github.com/bob-collective/bob/blob/master/src/relay/FullRelayInterfaces.sol)
+[Git Source](https://github.com/bob-collective/bob/blob/master/src/relay/IFullRelay.sol)
 
 
 ## Functions

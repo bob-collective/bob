@@ -9,12 +9,12 @@ Allows to reference Bitcoin raw transaction in Solidity.
 ## Functions
 ### validateProof
 
-Validates the SPV proof of the Bitcoin transaction.
+Validates the SPV proof of the Bitcoin transaction using a light relay contract.
 Reverts in case the validation or proof verification fail.
 
 
 ```solidity
-function validateProof(IRelay relay, uint256 txProofDifficultyFactor, Info memory txInfo, Proof memory proof)
+function validateProof(ILightRelay relay, uint256 txProofDifficultyFactor, Info memory txInfo, Proof memory proof)
     internal
     view
     returns (bytes32 txHash);
@@ -23,7 +23,7 @@ function validateProof(IRelay relay, uint256 txProofDifficultyFactor, Info memor
 
 |Name|Type|Description|
 |----|----|-----------|
-|`relay`|`IRelay`|Bitcoin relay providing the current Bitcoin network difficulty.|
+|`relay`|`ILightRelay`|Bitcoin light relay providing the current Bitcoin network difficulty.|
 |`txProofDifficultyFactor`|`uint256`|The number of confirmations required on the Bitcoin chain.|
 |`txInfo`|`Info`|Bitcoin transaction data.|
 |`proof`|`Proof`|Bitcoin proof data.|
@@ -35,15 +35,48 @@ function validateProof(IRelay relay, uint256 txProofDifficultyFactor, Info memor
 |`txHash`|`bytes32`|Proven 32-byte transaction hash.|
 
 
+### validateProof
+
+
+```solidity
+function validateProof(
+    IFullRelayWithVerify relay,
+    uint256 txProofDifficultyFactor,
+    Info memory txInfo,
+    Proof memory proof
+) internal view returns (bytes32 txHash);
+```
+
+### computeTxHash
+
+Validates Bitcoin transaction input and output vectors then computes the hash.
+
+
+```solidity
+function computeTxHash(Info memory txInfo) internal view returns (bytes32 txHash);
+```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`txInfo`|`Info`|Bitcoin transaction data.|
+
+**Returns**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`txHash`|`bytes32`|32-byte transaction hash.|
+
+
 ### evaluateProofDifficulty
 
 Evaluates the given Bitcoin proof difficulty against the actual
-Bitcoin chain difficulty provided by the relay oracle.
+Bitcoin chain difficulty provided by the light relay oracle.
 Reverts in case the evaluation fails.
 
 
 ```solidity
-function evaluateProofDifficulty(IRelay relay, uint256 txProofDifficultyFactor, bytes memory bitcoinHeaders)
+function evaluateProofDifficulty(ILightRelay relay, uint256 txProofDifficultyFactor, bytes memory bitcoinHeaders)
     internal
     view;
 ```
@@ -51,7 +84,7 @@ function evaluateProofDifficulty(IRelay relay, uint256 txProofDifficultyFactor, 
 
 |Name|Type|Description|
 |----|----|-----------|
-|`relay`|`IRelay`|Bitcoin relay providing the current Bitcoin network difficulty.|
+|`relay`|`ILightRelay`|Bitcoin light relay providing the current Bitcoin network difficulty.|
 |`txProofDifficultyFactor`|`uint256`|The number of confirmations required on the Bitcoin chain.|
 |`bitcoinHeaders`|`bytes`|Bitcoin headers chain being part of the SPV proof. Used to extract the observed proof difficulty.|
 

@@ -1,8 +1,5 @@
 # ILightRelay
-[Git Source](https://github.com/bob-collective/bob/blob/master/src/relay/LightRelay.sol)
-
-**Inherits:**
-[IRelay](../../relay/IRelay.sol/interface.IRelay.md)
+[Git Source](https://github.com/bob-collective/bob/blob/master/src/relay/ILightRelay.sol)
 
 
 ## Functions
@@ -30,11 +27,22 @@ function validateChain(bytes memory headers)
 function getBlockDifficulty(uint256 blockNumber) external view returns (uint256);
 ```
 
-### getEpochDifficulty
+### getCurrentEpochDifficulty
+
+Returns the difficulty of the current epoch.
 
 
 ```solidity
-function getEpochDifficulty(uint256 epochNumber) external view returns (uint256);
+function getCurrentEpochDifficulty() external view returns (uint256);
+```
+
+### getPrevEpochDifficulty
+
+Returns the difficulty of the previous epoch.
+
+
+```solidity
+function getPrevEpochDifficulty() external view returns (uint256);
 ```
 
 ### getRelayRange
