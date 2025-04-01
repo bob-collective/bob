@@ -7,8 +7,8 @@ pragma solidity ^0.8.17;
 import {BTCUtils} from "@bob-collective/bitcoin-spv/BTCUtils.sol";
 import {BytesLib} from "@bob-collective/bitcoin-spv/BytesLib.sol";
 import {ValidateSPV} from "@bob-collective/bitcoin-spv/ValidateSPV.sol";
-
-import {IRelay} from "../relay/IRelay.sol";
+import {ILightRelay} from "../relay/ILightRelay.sol";
+import {IFullRelayWithVerify} from "../relay/IFullRelayWithVerify.sol";
 
 /// @title Bitcoin transaction
 /// @notice Allows to reference Bitcoin raw transaction in Solidity.
@@ -137,23 +137,19 @@ library BitcoinTx {
         uint64 txOutputValue;
     }
 
-    /// @notice Validates the SPV proof of the Bitcoin transaction.
+    /// @notice Validates the SPV proof of the Bitcoin transaction using a light relay contract.
     ///         Reverts in case the validation or proof verification fail.
-    /// @param relay Bitcoin relay providing the current Bitcoin network difficulty.
+    /// @param relay Bitcoin light relay providing the current Bitcoin network difficulty.
     /// @param txProofDifficultyFactor The number of confirmations required on the Bitcoin chain.
     /// @param txInfo Bitcoin transaction data.
     /// @param proof Bitcoin proof data.
     /// @return txHash Proven 32-byte transaction hash.
-    function validateProof(IRelay relay, uint256 txProofDifficultyFactor, Info memory txInfo, Proof memory proof)
+    function validateProof(ILightRelay relay, uint256 txProofDifficultyFactor, Info memory txInfo, Proof memory proof)
         internal
         view
         returns (bytes32 txHash)
     {
-        require(txInfo.inputVector.validateVin(), "Invalid input vector provided");
-        require(txInfo.outputVector.validateVout(), "Invalid output vector provided");
-
-        txHash =
-            abi.encodePacked(txInfo.version, txInfo.inputVector, txInfo.outputVector, txInfo.locktime).hash256View();
+        txHash = computeTxHash(txInfo);
 
         require(
             txHash.prove(proof.bitcoinHeaders.extractMerkleRootLE(), proof.merkleProof, proof.txIndexInBlock),
@@ -165,14 +161,40 @@ library BitcoinTx {
         return txHash;
     }
 
+    function validateProof(
+        IFullRelayWithVerify relay,
+        uint256 txProofDifficultyFactor,
+        Info memory txInfo,
+        Proof memory proof
+    ) internal view returns (bytes32 txHash) {
+        txHash = computeTxHash(txInfo);
+
+        // TODO: Could be more efficient to verify the merkle proof here and also compute the digest, then we dont need to forward as much data to the relay
+
+        relay.verifyProof(
+            proof.bitcoinHeaders, proof.merkleProof, txHash, proof.txIndexInBlock, uint8(txProofDifficultyFactor)
+        );
+
+        return txHash;
+    }
+
+    /// @notice Validates Bitcoin transaction input and output vectors then computes the hash.
+    /// @param txInfo Bitcoin transaction data.
+    /// @return txHash 32-byte transaction hash.
+    function computeTxHash(Info memory txInfo) internal view returns (bytes32 txHash) {
+        require(txInfo.inputVector.validateVin(), "Invalid input vector provided");
+        require(txInfo.outputVector.validateVout(), "Invalid output vector provided");
+        return abi.encodePacked(txInfo.version, txInfo.inputVector, txInfo.outputVector, txInfo.locktime).hash256View();
+    }
+
     /// @notice Evaluates the given Bitcoin proof difficulty against the actual
-    ///         Bitcoin chain difficulty provided by the relay oracle.
+    ///         Bitcoin chain difficulty provided by the light relay oracle.
     ///         Reverts in case the evaluation fails.
-    /// @param relay Bitcoin relay providing the current Bitcoin network difficulty.
+    /// @param relay Bitcoin light relay providing the current Bitcoin network difficulty.
     /// @param txProofDifficultyFactor The number of confirmations required on the Bitcoin chain.
     /// @param bitcoinHeaders Bitcoin headers chain being part of the SPV
     ///        proof. Used to extract the observed proof difficulty.
-    function evaluateProofDifficulty(IRelay relay, uint256 txProofDifficultyFactor, bytes memory bitcoinHeaders)
+    function evaluateProofDifficulty(ILightRelay relay, uint256 txProofDifficultyFactor, bytes memory bitcoinHeaders)
         internal
         view
     {

@@ -2,7 +2,7 @@
 [Git Source](https://github.com/bob-collective/bob/blob/master/src/relay/LightRelay.sol)
 
 **Inherits:**
-Ownable, [ILightRelay](../../relay/LightRelay.sol/interface.ILightRelay.md)
+Ownable, [ILightRelay](../../relay/ILightRelay.sol/interface.ILightRelay.md)
 
 *The LightRelay contract manages a relay for Bitcoin header information,
 allowing retargeting and validation of header chains.

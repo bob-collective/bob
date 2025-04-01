@@ -51,7 +51,7 @@ Validates the witness SPV proof using the relay.
 
 ```solidity
 function validateWitnessProofAndDifficulty(
-    IRelay relay,
+    ILightRelay relay,
     uint256 txProofDifficultyFactor,
     WitnessInfo memory txInfo,
     WitnessProof memory proof
@@ -61,7 +61,7 @@ function validateWitnessProofAndDifficulty(
 
 |Name|Type|Description|
 |----|----|-----------|
-|`relay`|`IRelay`|Bitcoin relay providing the current Bitcoin network difficulty.|
+|`relay`|`ILightRelay`|Bitcoin relay providing the current Bitcoin network difficulty.|
 |`txProofDifficultyFactor`|`uint256`|The number of confirmations required on the Bitcoin chain.|
 |`txInfo`|`WitnessInfo`|Bitcoin transaction data.|
 |`proof`|`WitnessProof`|Bitcoin proof data.|
