@@ -9,6 +9,7 @@ import {ValidateSPV} from "@bob-collective/bitcoin-spv/ValidateSPV.sol";
 
 import {BitcoinTx} from "./BitcoinTx.sol";
 import {ILightRelay} from "../relay/ILightRelay.sol";
+import {IFullRelayWithVerify} from "../relay/IFullRelayWithVerify.sol";
 
 library WitnessTx {
     using BTCUtils for bytes;
@@ -106,7 +107,7 @@ library WitnessTx {
     /// @param txInfo Bitcoin transaction data.
     /// @param proof Bitcoin proof data.
     /// @return wTxHash Proven 32-byte transaction hash.
-    function validateWitnessProofAndDifficulty(
+    function validateWitnessProof(
         ILightRelay relay,
         uint256 txProofDifficultyFactor,
         WitnessInfo memory txInfo,
