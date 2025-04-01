@@ -1,8 +1,8 @@
 # FullRelay
-[Git Source](https://github.com/bob-collective/bob/blob/master/src/relay/FullRelay.sol)
+[Git Source](https://github.com/bob-collective/bob/blob/1abe7d0a95cbaa62e47217036600733eae5f19f9/src/relay/FullRelay.sol)
 
 **Inherits:**
-[IFullRelay](../../relay/FullRelayInterfaces.sol/interface.IFullRelay.md)
+[IFullRelay](/src/relay/IFullRelay.sol/interface.IFullRelay.md)
 
 **Author:**
 Distributed Crafts (https://www.gobob.xyz/)

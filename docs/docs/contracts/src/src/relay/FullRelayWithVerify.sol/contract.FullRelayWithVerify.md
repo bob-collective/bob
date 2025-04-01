@@ -1,8 +1,8 @@
 # FullRelayWithVerify
-[Git Source](https://github.com/bob-collective/bob/blob/master/src/relay/FullRelayWithVerify.sol)
+[Git Source](https://github.com/bob-collective/bob/blob/1abe7d0a95cbaa62e47217036600733eae5f19f9/src/relay/FullRelayWithVerify.sol)
 
 **Inherits:**
-[FullRelay](../../relay/FullRelay.sol/contract.FullRelay.md)
+[FullRelay](/src/relay/FullRelay.sol/contract.FullRelay.md)
 
 
 ## Functions

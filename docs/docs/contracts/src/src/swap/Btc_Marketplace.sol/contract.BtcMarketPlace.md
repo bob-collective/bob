@@ -1,8 +1,8 @@
 # BtcMarketPlace
-[Git Source](https://github.com/bob-collective/bob/blob/master/src/swap/Btc_Marketplace.sol)
+[Git Source](https://github.com/bob-collective/bob/blob/1abe7d0a95cbaa62e47217036600733eae5f19f9/src/swap/Btc_Marketplace.sol)
 
 **Inherits:**
-[ERC2771Recipient](../../ERC2771/ERC2771Recipient.sol/abstract.ERC2771Recipient.md)
+[ERC2771Recipient](/src/ERC2771/ERC2771Recipient.sol/abstract.ERC2771Recipient.md)
 
 
 ## State Variables

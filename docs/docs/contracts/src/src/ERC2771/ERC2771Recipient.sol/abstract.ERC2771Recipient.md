@@ -1,8 +1,8 @@
 # ERC2771Recipient
-[Git Source](https://github.com/bob-collective/bob/blob/master/src/ERC2771/ERC2771Recipient.sol)
+[Git Source](https://github.com/bob-collective/bob/blob/1abe7d0a95cbaa62e47217036600733eae5f19f9/src/ERC2771/ERC2771Recipient.sol)
 
 **Inherits:**
-[IERC2771Recipient](../../ERC2771/IERC2771Recipient.sol/abstract.IERC2771Recipient.md)
+[IERC2771Recipient](/src/ERC2771/IERC2771Recipient.sol/abstract.IERC2771Recipient.md)
 
 Note that this contract was called `BaseRelayRecipient` in the previous revision of the GSN.
 

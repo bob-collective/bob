@@ -1,8 +1,8 @@
 # TestLightRelay
-[Git Source](https://github.com/bob-collective/bob/blob/master/src/relay/TestLightRelay.sol)
+[Git Source](https://github.com/bob-collective/bob/blob/1abe7d0a95cbaa62e47217036600733eae5f19f9/src/relay/TestLightRelay.sol)
 
 **Inherits:**
-[LightRelay](../../relay/LightRelay.sol/contract.LightRelay.md)
+[LightRelay](/src/relay/LightRelay.sol/contract.LightRelay.md)
 
 TestLightRelay is a stub version of LightRelay intended to be
 used on for testing network. It allows to set the relay's

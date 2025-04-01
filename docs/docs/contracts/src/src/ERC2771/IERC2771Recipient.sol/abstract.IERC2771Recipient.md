@@ -1,5 +1,5 @@
 # IERC2771Recipient
-[Git Source](https://github.com/bob-collective/bob/blob/master/src/ERC2771/IERC2771Recipient.sol)
+[Git Source](https://github.com/bob-collective/bob/blob/1abe7d0a95cbaa62e47217036600733eae5f19f9/src/ERC2771/IERC2771Recipient.sol)
 
 A contract must implement this interface in order to support relayed transaction.
 
