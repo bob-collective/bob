@@ -114,6 +114,21 @@ library WitnessTx {
         WitnessProof memory proof
     ) internal view returns (bytes32 wTxHash) {
         wTxHash = validateWitnessProof(txInfo, proof);
+
+        // Checks that the header chain is valid with respect to the difficulty stored in the light relay
         BitcoinTx.evaluateProofDifficulty(relay, txProofDifficultyFactor, proof.coinbaseProof.bitcoinHeaders);
+    }
+
+    function validateWitnessProof(
+        IFullRelayWithVerify relay,
+        uint256 txProofDifficultyFactor,
+        WitnessInfo memory txInfo,
+        WitnessProof memory proof
+    ) internal view returns (bytes32 wTxHash) {
+        wTxHash = validateWitnessProof(txInfo, proof);
+
+        // Checks that the header is valid with respect to the chain stored in the full relay
+        bytes32 headerHash = proof.coinbaseProof.bitcoinHeaders.hash256();
+        relay.verifyHeaderHash(headerHash, uint8(txProofDifficultyFactor));
     }
 }
