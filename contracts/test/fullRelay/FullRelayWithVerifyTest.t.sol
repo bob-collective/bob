@@ -134,7 +134,7 @@ contract FullRelayWithVerifyThroughBitcoinTxTest is FullRelayWithVerifyTest {
     function testIncorrectLocktimeSupplied() public {
         BitcoinTx.Info memory txInfoStruct2 = txInfoStruct;
         txInfoStruct2.locktime = hex"00000001";
-        vm.expectRevert(bytes("Bad inclusion proof"));
+        vm.expectRevert(bytes("Tx merkle proof is not valid for provided header and tx hash"));
         bitcoinTxTester.validateProof(
             IFullRelayWithVerify(address(relay)), txProofDifficultyFactor, txInfoStruct2, proofStruct
         );
