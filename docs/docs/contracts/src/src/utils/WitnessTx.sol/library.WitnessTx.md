@@ -44,13 +44,13 @@ function validateWitnessProof(WitnessInfo memory txInfo, WitnessProof memory pro
 |`wTxHash`|`bytes32`|Proven 32-byte transaction hash.|
 
 
-### validateWitnessProofAndDifficulty
+### validateWitnessProof
 
 Validates the witness SPV proof using the relay.
 
 
 ```solidity
-function validateWitnessProofAndDifficulty(
+function validateWitnessProof(
     ILightRelay relay,
     uint256 txProofDifficultyFactor,
     WitnessInfo memory txInfo,
@@ -72,6 +72,18 @@ function validateWitnessProofAndDifficulty(
 |----|----|-----------|
 |`wTxHash`|`bytes32`|Proven 32-byte transaction hash.|
 
+
+### validateWitnessProof
+
+
+```solidity
+function validateWitnessProof(
+    IFullRelayWithVerify relay,
+    uint256 txProofDifficultyFactor,
+    WitnessInfo memory txInfo,
+    WitnessProof memory proof
+) internal view returns (bytes32 wTxHash);
+```
 
 ## Structs
 ### WitnessInfo

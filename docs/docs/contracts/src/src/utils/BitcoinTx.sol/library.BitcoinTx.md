@@ -37,6 +37,9 @@ function validateProof(ILightRelay relay, uint256 txProofDifficultyFactor, Info 
 
 ### validateProof
 
+Validates the SPV proof of the Bitcoin transaction using a full relay contract.
+Reverts in case the validation or proof verification fail.
+
 
 ```solidity
 function validateProof(
@@ -46,6 +49,21 @@ function validateProof(
     Proof memory proof
 ) internal view returns (bytes32 txHash);
 ```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`relay`|`IFullRelayWithVerify`|Bitcoin full relay contract.|
+|`txProofDifficultyFactor`|`uint256`|The number of confirmations required on the Bitcoin chain stored in the full relay.|
+|`txInfo`|`Info`|Bitcoin transaction data.|
+|`proof`|`Proof`|Bitcoin proof data.|
+
+**Returns**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`txHash`|`bytes32`|Proven 32-byte transaction hash.|
+
 
 ### computeTxHash
 
@@ -87,6 +105,25 @@ function evaluateProofDifficulty(ILightRelay relay, uint256 txProofDifficultyFac
 |`relay`|`ILightRelay`|Bitcoin light relay providing the current Bitcoin network difficulty.|
 |`txProofDifficultyFactor`|`uint256`|The number of confirmations required on the Bitcoin chain.|
 |`bitcoinHeaders`|`bytes`|Bitcoin headers chain being part of the SPV proof. Used to extract the observed proof difficulty.|
+
+
+### verifyHeader
+
+Validates the header using the full relay contract by checking it against the chain stored in the full relay.
+
+
+```solidity
+function verifyHeader(IFullRelayWithVerify relay, uint256 txProofDifficultyFactor, bytes memory bitcoinHeader)
+    internal
+    view;
+```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`relay`|`IFullRelayWithVerify`|Bitcoin full relay contract.|
+|`txProofDifficultyFactor`|`uint256`|The number of confirmations required on the Bitcoin chain stored in the full relay.|
+|`bitcoinHeader`|`bytes`|Bitcoin header to verify.|
 
 
 ### processTxOutputs
@@ -135,6 +172,48 @@ function reverseEndianness(bytes32 b) internal pure returns (bytes32 txHash);
 ```solidity
 function ensureTxInputSpendsUtxo(bytes memory _vin, BitcoinTx.UTXO memory utxo) internal pure;
 ```
+
+### isHeaderValidLength
+
+Checks whether the header is 80 bytes long
+
+
+```solidity
+function isHeaderValidLength(bytes memory _header) internal pure returns (bool);
+```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`_header`|`bytes`|   The header for which the length is checked|
+
+**Returns**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`<none>`|`bool`|True if the header's length is 80 bytes, and false otherwise|
+
+
+### isMerkleArrayValidLength
+
+Checks whether the merkle proof array's length is a multiple of 32 bytes
+
+
+```solidity
+function isMerkleArrayValidLength(bytes memory _merkleProofArray) internal pure returns (bool);
+```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`_merkleProofArray`|`bytes`|   The merkle proof array for which the length is checked|
+
+**Returns**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`<none>`|`bool`|True if the merkle proof array's length is a multiple of 32 bytes, and false otherwise|
+
 
 ## Structs
 ### Info
