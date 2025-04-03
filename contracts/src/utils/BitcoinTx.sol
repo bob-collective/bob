@@ -151,7 +151,6 @@ library BitcoinTx {
     {
         txHash = computeTxHash(txInfo);
 
-        require(isHeaderValidLength(proof.bitcoinHeaders), "Bad header block");
         require(isMerkleArrayValidLength(proof.merkleProof), "Bad merkle array proof");
         require(
             txHash.prove(proof.bitcoinHeaders.extractMerkleRootLE(), proof.merkleProof, proof.txIndexInBlock),
@@ -178,7 +177,6 @@ library BitcoinTx {
     ) internal view returns (bytes32 txHash) {
         txHash = computeTxHash(txInfo);
 
-        require(isHeaderValidLength(proof.bitcoinHeaders), "Bad header block");
         require(isMerkleArrayValidLength(proof.merkleProof), "Bad merkle array proof");
         require(
             txHash.prove(proof.bitcoinHeaders.extractMerkleRootLE(), proof.merkleProof, proof.txIndexInBlock),
@@ -236,6 +234,10 @@ library BitcoinTx {
         );
     }
 
+    /// @notice Validates the header using the full relay contract by checking it against the chain stored in the full relay.
+    /// @param relay Bitcoin full relay contract.
+    /// @param txProofDifficultyFactor The number of confirmations required on the Bitcoin chain stored in the full relay.
+    /// @param bitcoinHeader Bitcoin header to verify.
     function verifyHeader(IFullRelayWithVerify relay, uint256 txProofDifficultyFactor, bytes memory bitcoinHeader)
         internal
         view
@@ -432,13 +434,6 @@ library BitcoinTx {
     /// @return            True if the header's length is 80 bytes, and false otherwise
     function isHeaderValidLength(bytes memory _header) internal pure returns (bool) {
         return _header.length == 80;
-    }
-
-    /// @notice                 Checks whether the header chain's length is a multiple of 80 bytes
-    /// @param  _headerChain    The header chain for which the length is checked
-    /// @return                 True if the header chain's length is a multiple of 80 bytes, and false otherwise
-    function isHeaderChainValidLength(bytes memory _headerChain) internal pure returns (bool) {
-        return _headerChain.length % 80 == 0;
     }
 
     /// @notice                      Checks whether the merkle proof array's length is a multiple of 32 bytes
