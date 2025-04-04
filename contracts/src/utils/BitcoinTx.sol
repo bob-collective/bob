@@ -165,16 +165,15 @@ library BitcoinTx {
     /// @notice Validates the SPV proof of the Bitcoin transaction using a full relay contract.
     ///         Reverts in case the validation or proof verification fail.
     /// @param relay Bitcoin full relay contract.
-    /// @param txProofDifficultyFactor The number of confirmations required on the Bitcoin chain stored in the full relay.
+    /// @param minConfirmations The minimumnumber of confirmations required on the Bitcoin chain stored in the full relay.
     /// @param txInfo Bitcoin transaction data.
     /// @param proof Bitcoin proof data.
     /// @return txHash Proven 32-byte transaction hash.
-    function validateProof(
-        IFullRelayWithVerify relay,
-        uint256 txProofDifficultyFactor,
-        Info memory txInfo,
-        Proof memory proof
-    ) internal view returns (bytes32 txHash) {
+    function validateProof(IFullRelayWithVerify relay, uint256 minConfirmations, Info memory txInfo, Proof memory proof)
+        internal
+        view
+        returns (bytes32 txHash)
+    {
         txHash = computeTxHash(txInfo);
 
         require(isMerkleArrayValidLength(proof.merkleProof), "Bad merkle array proof");
@@ -183,7 +182,7 @@ library BitcoinTx {
             "Tx merkle proof is not valid for provided header and tx hash"
         );
 
-        verifyHeader(relay, txProofDifficultyFactor, proof.bitcoinHeaders);
+        verifyHeader(relay, minConfirmations, proof.bitcoinHeaders);
 
         return txHash;
     }
@@ -236,15 +235,15 @@ library BitcoinTx {
 
     /// @notice Validates the header using the full relay contract by checking it against the chain stored in the full relay.
     /// @param relay Bitcoin full relay contract.
-    /// @param txProofDifficultyFactor The number of confirmations required on the Bitcoin chain stored in the full relay.
+    /// @param minConfirmations The minimum number of confirmations required on the Bitcoin chain stored in the full relay.
     /// @param bitcoinHeader Bitcoin header to verify.
-    function verifyHeader(IFullRelayWithVerify relay, uint256 txProofDifficultyFactor, bytes memory bitcoinHeader)
+    function verifyHeader(IFullRelayWithVerify relay, uint256 minConfirmations, bytes memory bitcoinHeader)
         internal
         view
     {
         require(isHeaderValidLength(bitcoinHeader), "Bad header block");
         bytes32 headerHash = bitcoinHeader.hash256();
-        relay.verifyHeaderHash(headerHash, uint8(txProofDifficultyFactor));
+        relay.verifyHeaderHash(headerHash, uint8(minConfirmations));
     }
 
     /// @notice Represents temporary information needed during the processing of

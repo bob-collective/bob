@@ -18,22 +18,22 @@ import {BTCUtils} from "@bob-collective/bitcoin-spv/BTCUtils.sol";
 contract BitcoinTxTester {
     function validateProof(
         IFullRelayWithVerify relay,
-        uint256 txProofDifficultyFactor,
+        uint256 minConfirmations,
         BitcoinTx.Info memory txInfo,
         BitcoinTx.Proof memory proof
     ) external view returns (bytes32 txHash) {
-        return BitcoinTx.validateProof(relay, txProofDifficultyFactor, txInfo, proof);
+        return BitcoinTx.validateProof(relay, minConfirmations, txInfo, proof);
     }
 }
 
 contract WitnessTxTester {
     function validateWitnessProof(
         IFullRelayWithVerify relay,
-        uint256 txProofDifficultyFactor,
+        uint256 minConfirmations,
         WitnessTx.WitnessInfo memory txInfo,
         WitnessTx.WitnessProof memory proof
     ) external view returns (bytes32 txHash) {
-        return WitnessTx.validateWitnessProof(relay, txProofDifficultyFactor, txInfo, proof);
+        return WitnessTx.validateWitnessProof(relay, minConfirmations, txInfo, proof);
     }
 }
 
@@ -96,7 +96,7 @@ contract FullRelayWithVerifyThroughBitcoinTxTest is FullRelayWithVerifyTest {
 
     BitcoinTxTester bitcoinTxTester = new BitcoinTxTester();
 
-    uint256 txProofDifficultyFactor = 1;
+    uint256 minConfirmations = 1;
 
     bytes32 expectedTxHash = hex"48e5a1a0e616d8fd92b4ef228c424e0c816799a256c6a90892195ccfc53300d6";
     BitcoinTx.Info txInfoStruct = BitcoinTx.Info({
@@ -110,7 +110,7 @@ contract FullRelayWithVerifyThroughBitcoinTxTest is FullRelayWithVerifyTest {
 
     function testSuccessfullyVerify() public {
         bytes32 txHash = bitcoinTxTester.validateProof(
-            IFullRelayWithVerify(address(relay)), txProofDifficultyFactor, txInfoStruct, proofStruct
+            IFullRelayWithVerify(address(relay)), minConfirmations, txInfoStruct, proofStruct
         );
         assertEq(txHash, expectedTxHash);
     }
@@ -120,7 +120,7 @@ contract FullRelayWithVerifyThroughBitcoinTxTest is FullRelayWithVerifyTest {
         proofStruct2.merkleProof = hex"00";
         vm.expectRevert(bytes("Bad merkle array proof"));
         bitcoinTxTester.validateProof(
-            IFullRelayWithVerify(address(relay)), txProofDifficultyFactor, txInfoStruct, proofStruct2
+            IFullRelayWithVerify(address(relay)), minConfirmations, txInfoStruct, proofStruct2
         );
     }
 
@@ -129,7 +129,7 @@ contract FullRelayWithVerifyThroughBitcoinTxTest is FullRelayWithVerifyTest {
         txInfoStruct2.inputVector = hex"00";
         vm.expectRevert(bytes("Invalid input vector provided"));
         bitcoinTxTester.validateProof(
-            IFullRelayWithVerify(address(relay)), txProofDifficultyFactor, txInfoStruct2, proofStruct
+            IFullRelayWithVerify(address(relay)), minConfirmations, txInfoStruct2, proofStruct
         );
     }
 
@@ -138,7 +138,7 @@ contract FullRelayWithVerifyThroughBitcoinTxTest is FullRelayWithVerifyTest {
         txInfoStruct2.outputVector = hex"00";
         vm.expectRevert(bytes("Invalid output vector provided"));
         bitcoinTxTester.validateProof(
-            IFullRelayWithVerify(address(relay)), txProofDifficultyFactor, txInfoStruct2, proofStruct
+            IFullRelayWithVerify(address(relay)), minConfirmations, txInfoStruct2, proofStruct
         );
     }
 
@@ -147,7 +147,7 @@ contract FullRelayWithVerifyThroughBitcoinTxTest is FullRelayWithVerifyTest {
         txInfoStruct2.locktime = hex"00000001";
         vm.expectRevert(bytes("Tx merkle proof is not valid for provided header and tx hash"));
         bitcoinTxTester.validateProof(
-            IFullRelayWithVerify(address(relay)), txProofDifficultyFactor, txInfoStruct2, proofStruct
+            IFullRelayWithVerify(address(relay)), minConfirmations, txInfoStruct2, proofStruct
         );
     }
 
@@ -158,7 +158,7 @@ contract FullRelayWithVerifyThroughBitcoinTxTest is FullRelayWithVerifyTest {
             hex"0000002073bd2184edd9c4fc76642ea6754ee40136970efc10c4190000000000000000000296ef123ea96da5cf695f22bf7d94be87d49db1ad7ac371ac43c4da4161c8c216349c5ba11928170d3878";
         vm.expectRevert(bytes("Bad header block"));
         bitcoinTxTester.validateProof(
-            IFullRelayWithVerify(address(relay)), txProofDifficultyFactor, txInfoStruct, proofStruct2
+            IFullRelayWithVerify(address(relay)), minConfirmations, txInfoStruct, proofStruct2
         );
     }
 
@@ -167,23 +167,21 @@ contract FullRelayWithVerifyThroughBitcoinTxTest is FullRelayWithVerifyTest {
         proofStruct2.merkleProof = hex"00";
         vm.expectRevert(bytes("Bad merkle array proof"));
         bitcoinTxTester.validateProof(
-            IFullRelayWithVerify(address(relay)), txProofDifficultyFactor, txInfoStruct, proofStruct2
+            IFullRelayWithVerify(address(relay)), minConfirmations, txInfoStruct, proofStruct2
         );
     }
 
     function testGCDDoesntConfirmHeader() public {
         relay.setAncestorOverride(false, false);
         vm.expectRevert(bytes("GCD does not confirm header"));
-        bitcoinTxTester.validateProof(
-            IFullRelayWithVerify(address(relay)), txProofDifficultyFactor, txInfoStruct, proofStruct
-        );
+        bitcoinTxTester.validateProof(IFullRelayWithVerify(address(relay)), minConfirmations, txInfoStruct, proofStruct);
     }
 
     function testInsufficientConfirmations() public {
-        uint256 txProofDifficultyFactor2 = 9;
+        uint256 minConfirmations2 = 9;
         vm.expectRevert(bytes("Insufficient confirmations"));
         bitcoinTxTester.validateProof(
-            IFullRelayWithVerify(address(relay)), txProofDifficultyFactor2, txInfoStruct, proofStruct
+            IFullRelayWithVerify(address(relay)), minConfirmations2, txInfoStruct, proofStruct
         );
     }
 }
@@ -193,7 +191,7 @@ contract FullRelayWithVerifyThroughWitnessTxTest is FullRelayWithVerifyTest {
 
     WitnessTxTester witnessTxTester = new WitnessTxTester();
 
-    uint256 txProofDifficultyFactor = 1;
+    uint256 minConfirmations = 1;
 
     WitnessTx.WitnessInfo txInfoStruct = WitnessTx.WitnessInfo({
         info: BitcoinTx.Info({
@@ -232,7 +230,7 @@ contract FullRelayWithVerifyThroughWitnessTxTest is FullRelayWithVerifyTest {
 
     function testSuccessfullyVerify() public {
         bytes32 wTxHash = witnessTxTester.validateWitnessProof(
-            IFullRelayWithVerify(address(relay)), txProofDifficultyFactor, txInfoStruct, proofStruct
+            IFullRelayWithVerify(address(relay)), minConfirmations, txInfoStruct, proofStruct
         );
         assertEq(wTxHash, expectedWTxId);
     }
@@ -242,7 +240,7 @@ contract FullRelayWithVerifyThroughWitnessTxTest is FullRelayWithVerifyTest {
         proofStruct2.coinbaseProof.merkleProof = hex"00";
         vm.expectRevert(bytes("Tx merkle proof is not valid for provided header and tx hash"));
         witnessTxTester.validateWitnessProof(
-            IFullRelayWithVerify(address(relay)), txProofDifficultyFactor, txInfoStruct, proofStruct2
+            IFullRelayWithVerify(address(relay)), minConfirmations, txInfoStruct, proofStruct2
         );
     }
 
@@ -251,7 +249,7 @@ contract FullRelayWithVerifyThroughWitnessTxTest is FullRelayWithVerifyTest {
         proofStruct2.paymentProof.merkleProof = hex"00";
         vm.expectRevert(bytes("Tx witness merkle proof is not valid for provided header and tx hash"));
         witnessTxTester.validateWitnessProof(
-            IFullRelayWithVerify(address(relay)), txProofDifficultyFactor, txInfoStruct, proofStruct2
+            IFullRelayWithVerify(address(relay)), minConfirmations, txInfoStruct, proofStruct2
         );
     }
 
@@ -259,15 +257,15 @@ contract FullRelayWithVerifyThroughWitnessTxTest is FullRelayWithVerifyTest {
         relay.setAncestorOverride(false, false);
         vm.expectRevert(bytes("GCD does not confirm header"));
         witnessTxTester.validateWitnessProof(
-            IFullRelayWithVerify(address(relay)), txProofDifficultyFactor, txInfoStruct, proofStruct
+            IFullRelayWithVerify(address(relay)), minConfirmations, txInfoStruct, proofStruct
         );
     }
 
     function testInsufficientConfirmations() public {
-        uint256 txProofDifficultyFactor2 = 9;
+        uint256 minConfirmations2 = 9;
         vm.expectRevert(bytes("Insufficient confirmations"));
         witnessTxTester.validateWitnessProof(
-            IFullRelayWithVerify(address(relay)), txProofDifficultyFactor2, txInfoStruct, proofStruct
+            IFullRelayWithVerify(address(relay)), minConfirmations2, txInfoStruct, proofStruct
         );
     }
 }

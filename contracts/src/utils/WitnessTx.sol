@@ -101,7 +101,7 @@ library WitnessTx {
         return paymentWTxId;
     }
 
-    /// @notice Validates the witness SPV proof using the relay.
+    /// @notice Validates the witness SPV proof using the light relay.
     /// @param relay Bitcoin relay providing the current Bitcoin network difficulty.
     /// @param txProofDifficultyFactor The number of confirmations required on the Bitcoin chain.
     /// @param txInfo Bitcoin transaction data.
@@ -119,9 +119,15 @@ library WitnessTx {
         BitcoinTx.evaluateProofDifficulty(relay, txProofDifficultyFactor, proof.coinbaseProof.bitcoinHeaders);
     }
 
+    /// @notice Validates the witness SPV proof using the full relay.
+    /// @param relay Bitcoin full relay contract.
+    /// @param minConfirmations The minimum number of confirmations required on the Bitcoin chain.
+    /// @param txInfo Bitcoin transaction data.
+    /// @param proof Bitcoin proof data.
+    /// @return wTxHash Proven 32-byte transaction hash.
     function validateWitnessProof(
         IFullRelayWithVerify relay,
-        uint256 txProofDifficultyFactor,
+        uint256 minConfirmations,
         WitnessInfo memory txInfo,
         WitnessProof memory proof
     ) internal view returns (bytes32 wTxHash) {
@@ -129,6 +135,6 @@ library WitnessTx {
 
         // Checks that the header is valid with respect to the chain stored in the full relay
         bytes32 headerHash = proof.coinbaseProof.bitcoinHeaders.hash256();
-        relay.verifyHeaderHash(headerHash, uint8(txProofDifficultyFactor));
+        relay.verifyHeaderHash(headerHash, uint8(minConfirmations));
     }
 }
