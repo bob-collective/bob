@@ -42,19 +42,17 @@ Reverts in case the validation or proof verification fail.
 
 
 ```solidity
-function validateProof(
-    IFullRelayWithVerify relay,
-    uint256 txProofDifficultyFactor,
-    Info memory txInfo,
-    Proof memory proof
-) internal view returns (bytes32 txHash);
+function validateProof(IFullRelayWithVerify relay, uint256 minConfirmations, Info memory txInfo, Proof memory proof)
+    internal
+    view
+    returns (bytes32 txHash);
 ```
 **Parameters**
 
 |Name|Type|Description|
 |----|----|-----------|
 |`relay`|`IFullRelayWithVerify`|Bitcoin full relay contract.|
-|`txProofDifficultyFactor`|`uint256`|The number of confirmations required on the Bitcoin chain stored in the full relay.|
+|`minConfirmations`|`uint256`|The minimumnumber of confirmations required on the Bitcoin chain stored in the full relay.|
 |`txInfo`|`Info`|Bitcoin transaction data.|
 |`proof`|`Proof`|Bitcoin proof data.|
 
@@ -113,16 +111,14 @@ Validates the header using the full relay contract by checking it against the ch
 
 
 ```solidity
-function verifyHeader(IFullRelayWithVerify relay, uint256 txProofDifficultyFactor, bytes memory bitcoinHeader)
-    internal
-    view;
+function verifyHeader(IFullRelayWithVerify relay, uint256 minConfirmations, bytes memory bitcoinHeader) internal view;
 ```
 **Parameters**
 
 |Name|Type|Description|
 |----|----|-----------|
 |`relay`|`IFullRelayWithVerify`|Bitcoin full relay contract.|
-|`txProofDifficultyFactor`|`uint256`|The number of confirmations required on the Bitcoin chain stored in the full relay.|
+|`minConfirmations`|`uint256`|The minimum number of confirmations required on the Bitcoin chain stored in the full relay.|
 |`bitcoinHeader`|`bytes`|Bitcoin header to verify.|
 
 
