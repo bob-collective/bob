@@ -151,6 +151,7 @@ library BitcoinTx {
     {
         txHash = computeTxHash(txInfo);
 
+        require(isMerkleArrayValidLength(proof.merkleProof), "Bad merkle array proof");
         require(
             txHash.prove(proof.bitcoinHeaders.extractMerkleRootLE(), proof.merkleProof, proof.txIndexInBlock),
             "Tx merkle proof is not valid for provided header and tx hash"
@@ -161,19 +162,27 @@ library BitcoinTx {
         return txHash;
     }
 
-    function validateProof(
-        IFullRelayWithVerify relay,
-        uint256 txProofDifficultyFactor,
-        Info memory txInfo,
-        Proof memory proof
-    ) internal view returns (bytes32 txHash) {
+    /// @notice Validates the SPV proof of the Bitcoin transaction using a full relay contract.
+    ///         Reverts in case the validation or proof verification fail.
+    /// @param relay Bitcoin full relay contract.
+    /// @param minConfirmations The minimumnumber of confirmations required on the Bitcoin chain stored in the full relay.
+    /// @param txInfo Bitcoin transaction data.
+    /// @param proof Bitcoin proof data.
+    /// @return txHash Proven 32-byte transaction hash.
+    function validateProof(IFullRelayWithVerify relay, uint256 minConfirmations, Info memory txInfo, Proof memory proof)
+        internal
+        view
+        returns (bytes32 txHash)
+    {
         txHash = computeTxHash(txInfo);
 
-        // TODO: Could be more efficient to verify the merkle proof here and also compute the digest, then we dont need to forward as much data to the relay
-
-        relay.verifyProof(
-            proof.bitcoinHeaders, proof.merkleProof, txHash, proof.txIndexInBlock, uint8(txProofDifficultyFactor)
+        require(isMerkleArrayValidLength(proof.merkleProof), "Bad merkle array proof");
+        require(
+            txHash.prove(proof.bitcoinHeaders.extractMerkleRootLE(), proof.merkleProof, proof.txIndexInBlock),
+            "Tx merkle proof is not valid for provided header and tx hash"
         );
+
+        verifyHeader(relay, minConfirmations, proof.bitcoinHeaders);
 
         return txHash;
     }
@@ -222,6 +231,19 @@ library BitcoinTx {
             observedDiff >= requestedDiff * txProofDifficultyFactor,
             "Insufficient accumulated difficulty in header chain"
         );
+    }
+
+    /// @notice Validates the header using the full relay contract by checking it against the chain stored in the full relay.
+    /// @param relay Bitcoin full relay contract.
+    /// @param minConfirmations The minimum number of confirmations required on the Bitcoin chain stored in the full relay.
+    /// @param bitcoinHeader Bitcoin header to verify.
+    function verifyHeader(IFullRelayWithVerify relay, uint256 minConfirmations, bytes memory bitcoinHeader)
+        internal
+        view
+    {
+        require(isHeaderValidLength(bitcoinHeader), "Bad header block");
+        bytes32 headerHash = bitcoinHeader.hash256();
+        relay.verifyHeaderHash(headerHash, uint8(minConfirmations));
     }
 
     /// @notice Represents temporary information needed during the processing of
@@ -404,5 +426,19 @@ library BitcoinTx {
         }
 
         revert("Transaction does not spend the required utxo");
+    }
+
+    /// @notice            Checks whether the header is 80 bytes long
+    /// @param  _header    The header for which the length is checked
+    /// @return            True if the header's length is 80 bytes, and false otherwise
+    function isHeaderValidLength(bytes memory _header) internal pure returns (bool) {
+        return _header.length == 80;
+    }
+
+    /// @notice                      Checks whether the merkle proof array's length is a multiple of 32 bytes
+    /// @param  _merkleProofArray    The merkle proof array for which the length is checked
+    /// @return                      True if the merkle proof array's length is a multiple of 32 bytes, and false otherwise
+    function isMerkleArrayValidLength(bytes memory _merkleProofArray) internal pure returns (bool) {
+        return _merkleProofArray.length % 32 == 0;
     }
 }

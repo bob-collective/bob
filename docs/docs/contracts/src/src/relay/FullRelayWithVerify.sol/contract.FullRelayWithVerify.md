@@ -28,9 +28,8 @@ constructor(bytes memory _genesisHeader, uint256 _height, bytes32 _periodStart)
 
 ### verifyProof
 
-Provide a proof of a tx that satisfies some request
-
-*The caller must specify which inputs, which outputs, and which request*
+Verifies an SPV proof of a tx by checking that the tx is valid with respect
+to a header and the header is valid with respect to the chain
 
 
 ```solidity
@@ -47,6 +46,22 @@ function verifyProof(bytes calldata _header, bytes calldata _proof, bytes32 _txI
 |`_txId`|`bytes32`|          The transaction id to verify|
 |`_index`|`uint256`|         The index of the tx in the merkle tree's leaves|
 |`_numConfs`|`uint8`|      Number of confirmations required|
+
+
+### verifyHeaderHash
+
+Verifies that a given block hash is part of the chain and is sufficiently deep
+
+
+```solidity
+function verifyHeaderHash(bytes32 _headerHash, uint8 _numConfs) public view;
+```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`_headerHash`|`bytes32`| The header hash to verify|
+|`_numConfs`|`uint8`|   Number of confirmations required|
 
 
 ### _getConfs
