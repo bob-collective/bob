@@ -106,7 +106,13 @@ contract FullRelayWithVerifyThroughBitcoinTxTest is FullRelayWithVerifyTest {
         locktime: hex"00000000"
     });
 
-    BitcoinTx.Proof proofStruct = BitcoinTx.Proof({merkleProof: proof, txIndexInBlock: 281, bitcoinHeaders: header});
+    BitcoinTx.Proof proofStruct = BitcoinTx.Proof({
+        merkleProof: proof,
+        txIndexInBlock: 281,
+        bitcoinHeaders: header,
+        coinbasePreimage: hex"77b98a5e6643973bba49dda18a75140306d2d8694b66f2dcb3561ad5aff0b0c7",
+        coinbaseProof: hex"dc20dadef477faab2852f2f8ae0c826aa7e05c4de0d36f0e63630429554884c371da5974b6f34fa2c3536738f031b49f34e0c9d084d7280f26212e39007ebe9ea0870c312745b58128a00a6557851e987ece02294d156f0020336e158928e8964292642c6c4dc469f34b7bacf2d8c42115bab6afc9067f2ed30e8749729b63e0889e203ee58e355903c1e71f78c008df6c3597b2cc66d0b8aae1a4a33caa775498e531cfb6af58e87db99e0f536dd226d18f43e3864148ba5b7faca5c775f10bc810c602e1af2195a34577976921ce009a4ddc0a07f605c96b0f5fcf580831ebbe01a31fa29bde884609d286dccfa5ba8e558ce3125bd4c3a19e888cf26852286202d2a7d302c75e0ff5ca8fe7299fb0d9d1132bf2c56c2e3b73df799286193d60c109b187d64571efbaa8047be85821f8e67e0e85f2f5894bc63d00c2ed9d64"
+    });
 
     function testSuccessfullyVerify() public {
         bytes32 txHash = bitcoinTxTester.validateProof(
@@ -208,17 +214,13 @@ contract FullRelayWithVerifyThroughWitnessTxTest is FullRelayWithVerifyTest {
     WitnessTx.WitnessProof proofStruct = WitnessTx.WitnessProof({
         witnessNonce: hex"0000000000000000000000000000000000000000000000000000000000000000",
         paymentMerkleRoot: hex"9fa45bc4b83457fdac0be52f099ef0fde5050eeeba145e1bf2dfe1d83c9eb615",
-        coinbaseProof: BitcoinTx.Proof({
-            bitcoinHeaders: header,
-            merkleProof: hex"dc20dadef477faab2852f2f8ae0c826aa7e05c4de0d36f0e63630429554884c371da5974b6f34fa2c3536738f031b49f34e0c9d084d7280f26212e39007ebe9ea0870c312745b58128a00a6557851e987ece02294d156f0020336e158928e8964292642c6c4dc469f34b7bacf2d8c42115bab6afc9067f2ed30e8749729b63e0889e203ee58e355903c1e71f78c008df6c3597b2cc66d0b8aae1a4a33caa775498e531cfb6af58e87db99e0f536dd226d18f43e3864148ba5b7faca5c775f10bc810c602e1af2195a34577976921ce009a4ddc0a07f605c96b0f5fcf580831ebbe01a31fa29bde884609d286dccfa5ba8e558ce3125bd4c3a19e888cf26852286202d2a7d302c75e0ff5ca8fe7299fb0d9d1132bf2c56c2e3b73df799286193d60c109b187d64571efbaa8047be85821f8e67e0e85f2f5894bc63d00c2ed9d64",
-            txIndexInBlock: 0
-        }),
         paymentProof: BitcoinTx.Proof({
-            // we don't pass the block headers here since we need the merkle root
-            // calculated using the witness tx ids, only the coinbase headers are needed
-            bitcoinHeaders: hex"",
+            bitcoinHeaders: header,
             merkleProof: hex"e35a0d6de94b656694589964a252957e4673a9fb1d2f8b4a92e3f0a7bb654fddb94e5a1e6d7f7f499fd1be5dd30a73bf5584bf137da5fdd77cc21aeb95b9e35788894be019284bd4fbed6dd6118ac2cb6d26bc4be4e423f55a3a48f2874d8d02a31bc4acab4ffe4dcd24084a1878f7317dee840d2d4e205e02ea9fc11607c72e2505d205b4d642eba1c43cead8da1574e0e8a93aa8642b51d5ca43f5214f1ed6eabaf6285d83f460b56fa9dd423882166fde09a8f8eb254066e6a0a4b4c0072160c3386a0b49e75f1723d6ab28ac9a2028a0c72866e2111d79d4817b88e17c828221415c3515b18a26ef99833ee24daa50652ea01ef021e3752765b6cb4d5a1ed37708d9cd7078665f071123a2c78ecb98eaf3a3434b643a72126e0d3ecd455112cbf3511561e8a0acd78901f1f2d05ad76726fd077e1b9cfd3943046a9295fa",
-            txIndexInBlock: 281
+            txIndexInBlock: 281,
+            // We dont need to pass the preimage of the coinbase tx since we verify the coinbase tx directly in validateWitnessProof
+            coinbasePreimage: hex"",
+            coinbaseProof: hex"dc20dadef477faab2852f2f8ae0c826aa7e05c4de0d36f0e63630429554884c371da5974b6f34fa2c3536738f031b49f34e0c9d084d7280f26212e39007ebe9ea0870c312745b58128a00a6557851e987ece02294d156f0020336e158928e8964292642c6c4dc469f34b7bacf2d8c42115bab6afc9067f2ed30e8749729b63e0889e203ee58e355903c1e71f78c008df6c3597b2cc66d0b8aae1a4a33caa775498e531cfb6af58e87db99e0f536dd226d18f43e3864148ba5b7faca5c775f10bc810c602e1af2195a34577976921ce009a4ddc0a07f605c96b0f5fcf580831ebbe01a31fa29bde884609d286dccfa5ba8e558ce3125bd4c3a19e888cf26852286202d2a7d302c75e0ff5ca8fe7299fb0d9d1132bf2c56c2e3b73df799286193d60c109b187d64571efbaa8047be85821f8e67e0e85f2f5894bc63d00c2ed9d64"
         }),
         coinbaseTx: BitcoinTx.Info({
             version: hex"02000000",
@@ -237,8 +239,10 @@ contract FullRelayWithVerifyThroughWitnessTxTest is FullRelayWithVerifyTest {
 
     function testIncorrectCoinbaseProofSupplied() public {
         WitnessTx.WitnessProof memory proofStruct2 = proofStruct;
-        proofStruct2.coinbaseProof.merkleProof = hex"00";
-        vm.expectRevert(bytes("Tx merkle proof is not valid for provided header and tx hash"));
+        // different final byte
+        proofStruct2.paymentProof.coinbaseProof =
+            hex"dc20dadef477faab2852f2f8ae0c826aa7e05c4de0d36f0e63630429554884c371da5974b6f34fa2c3536738f031b49f34e0c9d084d7280f26212e39007ebe9ea0870c312745b58128a00a6557851e987ece02294d156f0020336e158928e8964292642c6c4dc469f34b7bacf2d8c42115bab6afc9067f2ed30e8749729b63e0889e203ee58e355903c1e71f78c008df6c3597b2cc66d0b8aae1a4a33caa775498e531cfb6af58e87db99e0f536dd226d18f43e3864148ba5b7faca5c775f10bc810c602e1af2195a34577976921ce009a4ddc0a07f605c96b0f5fcf580831ebbe01a31fa29bde884609d286dccfa5ba8e558ce3125bd4c3a19e888cf26852286202d2a7d302c75e0ff5ca8fe7299fb0d9d1132bf2c56c2e3b73df799286193d60c109b187d64571efbaa8047be85821f8e67e0e85f2f5894bc63d00c2ed9d65";
+        vm.expectRevert(bytes("Coinbase merkle proof is not valid for provided header and hash"));
         witnessTxTester.validateWitnessProof(
             IFullRelayWithVerify(address(relay)), minConfirmations, txInfoStruct, proofStruct2
         );
@@ -246,8 +250,19 @@ contract FullRelayWithVerifyThroughWitnessTxTest is FullRelayWithVerifyTest {
 
     function testIncorrectPaymentProofSupplied() public {
         WitnessTx.WitnessProof memory proofStruct2 = proofStruct;
-        proofStruct2.paymentProof.merkleProof = hex"00";
+        // different final byte
+        proofStruct2.paymentProof.merkleProof =
+            hex"e35a0d6de94b656694589964a252957e4673a9fb1d2f8b4a92e3f0a7bb654fddb94e5a1e6d7f7f499fd1be5dd30a73bf5584bf137da5fdd77cc21aeb95b9e35788894be019284bd4fbed6dd6118ac2cb6d26bc4be4e423f55a3a48f2874d8d02a31bc4acab4ffe4dcd24084a1878f7317dee840d2d4e205e02ea9fc11607c72e2505d205b4d642eba1c43cead8da1574e0e8a93aa8642b51d5ca43f5214f1ed6eabaf6285d83f460b56fa9dd423882166fde09a8f8eb254066e6a0a4b4c0072160c3386a0b49e75f1723d6ab28ac9a2028a0c72866e2111d79d4817b88e17c828221415c3515b18a26ef99833ee24daa50652ea01ef021e3752765b6cb4d5a1ed37708d9cd7078665f071123a2c78ecb98eaf3a3434b643a72126e0d3ecd455112cbf3511561e8a0acd78901f1f2d05ad76726fd077e1b9cfd3943046a9295fb";
         vm.expectRevert(bytes("Tx witness merkle proof is not valid for provided header and tx hash"));
+        witnessTxTester.validateWitnessProof(
+            IFullRelayWithVerify(address(relay)), minConfirmations, txInfoStruct, proofStruct2
+        );
+    }
+
+    function testInconsistentProofLengths() public {
+        WitnessTx.WitnessProof memory proofStruct2 = proofStruct;
+        proofStruct2.paymentProof.merkleProof = hex"00";
+        vm.expectRevert(bytes("Tx not on same level of merkle tree as coinbase"));
         witnessTxTester.validateWitnessProof(
             IFullRelayWithVerify(address(relay)), minConfirmations, txInfoStruct, proofStruct2
         );

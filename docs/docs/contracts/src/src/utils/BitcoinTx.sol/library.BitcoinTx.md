@@ -63,6 +63,22 @@ function validateProof(IFullRelayWithVerify relay, uint256 minConfirmations, Inf
 |`txHash`|`bytes32`|Proven 32-byte transaction hash.|
 
 
+### verifySPVProof
+
+Verifies an SPV proof of a Bitcoin transaction.
+
+
+```solidity
+function verifySPVProof(bytes32 txHash, Proof memory proof) internal view;
+```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`txHash`|`bytes32`|The hash of the transaction to verify.|
+|`proof`|`Proof`|The proof.|
+
+
 ### computeTxHash
 
 Validates Bitcoin transaction input and output vectors then computes the hash.
@@ -234,6 +250,8 @@ struct Proof {
     bytes merkleProof;
     uint256 txIndexInBlock;
     bytes bitcoinHeaders;
+    bytes32 coinbasePreimage;
+    bytes coinbaseProof;
 }
 ```
 

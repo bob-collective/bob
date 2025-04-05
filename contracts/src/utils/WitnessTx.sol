@@ -35,9 +35,7 @@ library WitnessTx {
         bytes32 witnessNonce;
         /// @notice The *witness* merkle root of the payment.
         bytes32 paymentMerkleRoot;
-        /// @notice Coinbase proof.
-        BitcoinTx.Proof coinbaseProof;
-        /// @notice Payment proof.
+        /// @notice Payment proof, includes the coinbase proof.
         BitcoinTx.Proof paymentProof;
         /// @notice Coinbase transaction.
         /// @dev Needed to extract the witness commitment.
@@ -58,6 +56,14 @@ library WitnessTx {
         require(txInfo.info.inputVector.validateVin(), "Invalid payment input vector provided");
         require(txInfo.info.outputVector.validateVout(), "Invalid payment output vector provided");
 
+        // Due to a vulnerability in the Bitcoin SPV proof verification detailed here:
+        // https://bitslog.com/2018/06/09/leaf-node-weakness-in-bitcoin-merkle-tree-design/
+        // we must ensure that both the coinbase and payment tx are the same length.
+        require(
+            proof.paymentProof.merkleProof.length == proof.paymentProof.coinbaseProof.length,
+            "Tx not on same level of merkle tree as coinbase"
+        );
+
         bytes32 coinbaseTxHash = abi.encodePacked(
             proof.coinbaseTx.version,
             proof.coinbaseTx.inputVector,
@@ -65,13 +71,11 @@ library WitnessTx {
             proof.coinbaseTx.locktime
         ).hash256View();
 
+        bytes32 root = proof.paymentProof.bitcoinHeaders.extractMerkleRootLE();
+
         require(
-            coinbaseTxHash.prove(
-                proof.coinbaseProof.bitcoinHeaders.extractMerkleRootLE(),
-                proof.coinbaseProof.merkleProof,
-                proof.coinbaseProof.txIndexInBlock
-            ),
-            "Tx merkle proof is not valid for provided header and tx hash"
+            coinbaseTxHash.prove(root, proof.paymentProof.coinbaseProof, 0),
+            "Coinbase merkle proof is not valid for provided header and hash"
         );
 
         bytes32 paymentWTxId = abi.encodePacked(
@@ -116,7 +120,7 @@ library WitnessTx {
         wTxHash = validateWitnessProof(txInfo, proof);
 
         // Checks that the header chain is valid with respect to the difficulty stored in the light relay
-        BitcoinTx.evaluateProofDifficulty(relay, txProofDifficultyFactor, proof.coinbaseProof.bitcoinHeaders);
+        BitcoinTx.evaluateProofDifficulty(relay, txProofDifficultyFactor, proof.paymentProof.bitcoinHeaders);
     }
 
     /// @notice Validates the witness SPV proof using the full relay.
@@ -134,7 +138,7 @@ library WitnessTx {
         wTxHash = validateWitnessProof(txInfo, proof);
 
         // Checks that the header is valid with respect to the chain stored in the full relay
-        bytes32 headerHash = proof.coinbaseProof.bitcoinHeaders.hash256();
+        bytes32 headerHash = proof.paymentProof.bitcoinHeaders.hash256();
         relay.verifyHeaderHash(headerHash, uint8(minConfirmations));
     }
 }

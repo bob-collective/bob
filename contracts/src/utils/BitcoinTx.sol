@@ -124,6 +124,11 @@ library BitcoinTx {
         /// @notice Single byte-string of 80-byte bitcoin headers,
         ///         lowest height first.
         bytes bitcoinHeaders;
+        /// @notice The sha256 preimage of the coinbase tx hash
+        ///         i.e. the sha256 hash of the coinbase transaction.
+        bytes32 coinbasePreimage;
+        /// @notice The merkle proof of the coinbase transaction.
+        bytes coinbaseProof;
     }
 
     /// @notice Represents info about an unspent transaction output.
@@ -151,11 +156,7 @@ library BitcoinTx {
     {
         txHash = computeTxHash(txInfo);
 
-        require(isMerkleArrayValidLength(proof.merkleProof), "Bad merkle array proof");
-        require(
-            txHash.prove(proof.bitcoinHeaders.extractMerkleRootLE(), proof.merkleProof, proof.txIndexInBlock),
-            "Tx merkle proof is not valid for provided header and tx hash"
-        );
+        verifySPVProof(txHash, proof);
 
         evaluateProofDifficulty(relay, txProofDifficultyFactor, proof.bitcoinHeaders);
 
@@ -176,15 +177,38 @@ library BitcoinTx {
     {
         txHash = computeTxHash(txInfo);
 
-        require(isMerkleArrayValidLength(proof.merkleProof), "Bad merkle array proof");
-        require(
-            txHash.prove(proof.bitcoinHeaders.extractMerkleRootLE(), proof.merkleProof, proof.txIndexInBlock),
-            "Tx merkle proof is not valid for provided header and tx hash"
-        );
+        verifySPVProof(txHash, proof);
 
         verifyHeader(relay, minConfirmations, proof.bitcoinHeaders);
 
         return txHash;
+    }
+
+    /// @notice Verifies an SPV proof of a Bitcoin transaction.
+    /// @param txHash The hash of the transaction to verify.
+    /// @param proof The proof.
+    function verifySPVProof(bytes32 txHash, Proof memory proof) internal view {
+        require(isMerkleArrayValidLength(proof.merkleProof), "Bad merkle array proof");
+
+        // Due to a vulnerability in the Bitcoin SPV proof verification detailed here:
+        // https://bitslog.com/2018/06/09/leaf-node-weakness-in-bitcoin-merkle-tree-design/
+        // we verify a proof of the coinbase tx in the block as well as the tx we want to verify
+        // and then ensure that both proofs are the same length.
+        require(
+            proof.merkleProof.length == proof.coinbaseProof.length, "Tx not on same level of merkle tree as coinbase"
+        );
+        bytes32 root = proof.bitcoinHeaders.extractMerkleRootLE();
+        require(
+            txHash.prove(root, proof.merkleProof, proof.txIndexInBlock),
+            "Tx merkle proof is not valid for provided header and tx hash"
+        );
+
+        bytes32 coinbaseHash = sha256(abi.encodePacked(proof.coinbasePreimage));
+
+        require(
+            coinbaseHash.prove(root, proof.coinbaseProof, 0),
+            "Coinbase merkle proof is not valid for provided header and hash"
+        );
     }
 
     /// @notice Validates Bitcoin transaction input and output vectors then computes the hash.

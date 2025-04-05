@@ -54,7 +54,9 @@ contract OrdMarketPlaceTest is OrdMarketplace, Test {
             txIndexInBlock: 4,
             bitcoinHeaders: abi.encodePacked(
                 hex"00a00020a672b6254445e7b2dd6e5433f52ea9596e6ce51776fa6ea66d0200000000000013d7683b2bfc7d7cde91c6792f62e6b9453ca2f1e72cdbf106ecabf767dd2ac5bcf98f628886021ac954f84d"
-            )
+            ),
+            coinbasePreimage: hex"3771b0300bca74bf47d4b2cbdbea7cc83e2ec322a2f2ff27f14ce71b48b7ea84",
+            coinbaseProof: hex"cfaf006975ad3f6fc5e6a6638ce006dbc8f19e25506e215f8fdd015977a2e6160941eca8d53fad72e69e103e11ad58ef1026f92c7f1392d2adee013ed62a9574cdf1894199316cedef100c1978e60790bf7ecab02c06341f8a122af8129e1ab0"
         });
 
         BitcoinTx.UTXO memory utxo;
@@ -83,7 +85,9 @@ contract OrdMarketPlaceTest is OrdMarketplace, Test {
             txIndexInBlock: 25,
             bitcoinHeaders: abi.encodePacked(
                 hex"00200020b70169ce36e45282d9e32c6b3cf815c4580872c94d7801000000000000000000a9bb880a70ef5e045fa684064c5229fb1c540a799e2bdb71efde06304a26de4dc2c77a65952e0417d2418bf4"
-            )
+            ),
+            coinbasePreimage: hex"2fbb4c1246a619151f4fa8bc2075cc80b520ddfab2d6caa0dc3d3084f6404071",
+            coinbaseProof: hex"ea6001f9fe4f34c0ff8e5a8db2e300435bacfc527d30028a292ca40f1c52cc08342aff5988ce69b99021feb3c1387de60e585b14efe7c9d957e7b83a99de1a128ce3348fc423345320af377822a9b3d9f051c39f125213ed2c48948b99b6afec9b063dce86ec68842cf1d80c9e84bcc9093ace888d4568e004eb8446ea1c8e35e7aecc56ba058845408c59d58e0f7719e68444690d5b358231e4c577996f0aa8b08c9dc1a2f87cdba5ad1017c70b4356ab86040538a60b8166afd59b185fa577a26a81b037de042f501d5a42a6efad1f2bf0d82208ebd3324b3923c9c358d7da5644be7757e3d5318ee584b01c31ae1f2f9c8edab8a87c0ebb6e3d7a4d7731138ef5f9f8d9de6ab54954f9f8eca8ad8b03a3d24b82ada0104944dfaf1752ac43abc2887f5fd3d6e03ce7fd819f6260d972adcbbdc35a41bffbc57c6647f1a054c220414f359dc95a81a3644d22f7b62b4f253b5b97a300f47a40a2a681cee1a3a1db92ab7b6c098bdc88b276695f5b52eff831c9678a6b20576814333943b0db"
         });
 
         BitcoinTx.UTXO memory utxo2;
@@ -112,7 +116,9 @@ contract OrdMarketPlaceTest is OrdMarketplace, Test {
             txIndexInBlock: 72,
             bitcoinHeaders: abi.encodePacked(
                 hex"0000002019ecad2d640319bad3cbe99dd2819fdba90023ccd6a479d31400000000000000f308f7de96bab7e11e64fdb06000e57806b7791b923cf0e8382547d3c609f2bf65438165ffff001d84cd32400000e0201a1e9727a2da2e112c761a0d3aa639c52e9b43c1e9d80bb0242632240000000056f577d01fbd2550679ced5da24291ec48bbb96a93f790349ac2f54fa075f90c64448165efdf2819529ec2d8"
-            )
+            ),
+            coinbasePreimage: hex"db8b9df9d23adac4493c616f25a29a45164503b18000200a23e6b4bf16969837",
+            coinbaseProof: hex"04b0d0e47ad8a98017de79cf51f2ca0fea7f5c677cf2cecfbf0cbeed19c1cde45273d5420bc16a3fd38f9d15939bbe5870c6013bd9dcf0450d0a4494d4a759ea0e8d0131fb97714cd3d2298954da0fe101fb6873723ed5559a685fa34b84c26b65c2283401ca1f1766ba599b1d7b0fce27a08ad0da7114bf14b52bcef7a85794687ebb428fceb01bb0a8da433d088d18361c85d19a70e7f9190a2f8c2da245157d1c5061b7bf6b65c0fbc9dbd71cc46d9a69b879d31f74d7752ba1388203b003bb94a1e8253b46f9aff127cdcf0b44f1a2f9ca5cb336e2824fec3c39e1e144806e6bdbd0630efb413b54c208c9465cc747701261978de3c8f3c6c33923242c67"
         });
 
         // https://mempool.space/testnet/tx/6e21808d026c3bca141825b3e684f2d11eb148a8cdf9c7e01e832fd3cede732c
