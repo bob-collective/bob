@@ -35,7 +35,7 @@ library WitnessTx {
         bytes32 witnessNonce;
         /// @notice The *witness* merkle root of the payment.
         bytes32 paymentMerkleRoot;
-        /// @notice Payment proof, includes the coinbase proof.
+        /// @notice Payment proof, includes the coinbase proof. The coinbasePreimage field can be left empty.
         BitcoinTx.Proof paymentProof;
         /// @notice Coinbase transaction.
         /// @dev Needed to extract the witness commitment.
