@@ -84,7 +84,7 @@ function handleGatewayMessageWithSlippageArgs(
 |----|----|-----------|
 |`tokenSent`|`IERC20`|The ERC20 token to deposit.|
 |`amountIn`|`uint256`|The amount to be deposited.|
-|`recipient`|`address`|The address to receive e.g. SolvBTC.BBN.|
+|`recipient`|`address`|The address to receive e.g. xSolvBTC.|
 |`args`|`StrategySlippageArgs`|Additional args for slippage protection.|
 
 
