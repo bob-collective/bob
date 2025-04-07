@@ -1,6 +1,6 @@
 import { assert, describe, expect, it } from 'vitest';
 import { GatewaySDK } from '../src/gateway';
-import { MAINNET_GATEWAY_BASE_URL, SIGNET_GATEWAY_BASE_URL } from '../src/gateway/client';
+import { MAINNET_GATEWAY_BASE_URL, SIGNET_GATEWAY_BASE_URL, toHexScriptPubKey } from '../src/gateway/client';
 import { SYMBOL_LOOKUP } from '../src/gateway/tokens';
 import {
     BuildStakeParams,
@@ -582,5 +582,37 @@ describe('Gateway Tests', () => {
 
         // Assertion
         expect(result).to.deep.equal(mockResponse);
+    });
+
+    it('should return valid btc pub key', async () => {
+        let userAddress = 'tb1qn40xpua4eskjgmueq6fwujex05wdtprh46vkpc'; //P2WPKH Native Segwit
+        let scriptPubKey = toHexScriptPubKey(userAddress, bitcoin.networks.testnet);
+        expect(scriptPubKey).to.deep.equal('0x1600149d5e60f3b5cc2d246f990692ee4b267d1cd58477');
+
+        userAddress = '2NEFg6PA1ZBkNC4dFhXf2uYrKuSxXwPiWEh'; //P2SH-P2WPKH Nested Segwit
+        scriptPubKey = toHexScriptPubKey(userAddress, bitcoin.networks.testnet);
+        expect(scriptPubKey).to.deep.equal('0x17a914e6706ed55fed3e5136644bf42e3a878371afd93187');
+
+        userAddress = 'mxd8LwdL2EMSNQ6RkxQedqdKkPskrRoYDx'; //P2PKH Legacy
+        scriptPubKey = toHexScriptPubKey(userAddress, bitcoin.networks.testnet);
+        expect(scriptPubKey).to.deep.equal('0x1976a914bba505f3a2730254053081318cade0672ffe31d888ac');
+    });
+
+    it('should return error for taproot address', async () => {
+        const gatewaySDK = new GatewaySDK('signet');
+        nock(`${SIGNET_GATEWAY_BASE_URL}`).get('/offramp-quote').query(true).reply(200, {
+            amountToLock: '0x5af3107a4000',
+            minimumFeesToPay: '0xdfa9b63e400',
+            gateway: '0x525b3d3c4a9f104c116fb4af9bbac94104879650',
+        });
+
+        await expect(
+            gatewaySDK.getOffRampQuoteAndRequest({
+                toToken: '0xda472456b1a6a2fc9ae7edb0e007064224d4284c',
+                amount: 100000000000000,
+                fromUserAddress: '0xFAEe001465dE6D7E8414aCDD9eF4aC5A35B2B808',
+                bitcoinUserAddress: 'tb1p5d2m6d7yje35xqnk2wczghak6q20c6rqw303p58wrlzhue8t4z9s9y304z', // P2TR taproot address
+            })
+        ).rejects.toThrowError('Only following bitcoin address types are supported P2PKH, P2WPKH, P2SH or P2WSH.');
     });
 });
