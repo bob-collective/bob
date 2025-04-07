@@ -72,6 +72,18 @@ export interface Token {
 
 export interface EnrichedToken extends Token {
     tvl: number;
+    apys: {
+        id: 'base' | 'op';
+        name: string;
+        logo: string;
+        apy: number;
+    }[];
+    incentives: {
+        id: 'spice' | 'solvXP' | 'babylonPoints' | 'avalonPoints' | 'vedaPoints' | 'segmentPoints' | 'bedrockDiamonds';
+        name: string;
+        logo: string;
+        amountPerBTCPerDay: number | null;
+    }[];
 }
 
 /**
