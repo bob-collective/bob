@@ -2,14 +2,7 @@ import { assert, describe, expect, it } from 'vitest';
 import { GatewaySDK } from '../src/gateway';
 import { MAINNET_GATEWAY_BASE_URL, SIGNET_GATEWAY_BASE_URL } from '../src/gateway/client';
 import { SYMBOL_LOOKUP } from '../src/gateway/tokens';
-import {
-    BuildStakeParams,
-    Chain,
-    ChainId,
-    GatewayOffRampOrder,
-    OffRampRequestPayload,
-    StakeTransactionParams,
-} from '../src/gateway/types';
+import { BuildStakeParams, Chain, ChainId, OfframpOrderDetails, StakeTransactionParams } from '../src/gateway/types';
 import { ZeroAddress } from 'ethers';
 import { bobSepolia } from 'viem/chains';
 import nock from 'nock';
@@ -24,18 +17,18 @@ const SOLVBTC_ADDRESS = SOLVBTC.address;
 
 describe('Gateway Tests', () => {
     it('should get chains', async () => {
-        const gatewaySDK = new GatewaySDK('bob');
+        const gatewaySDK = new GatewaySDK('bob', '0xD7b27b178f6Bf290155201109906Ad203B6d99B1' as Address);
         assert.deepEqual(gatewaySDK.getChains(), Object.values(Chain));
     });
 
     it('should reject invalid chain', async () => {
         expect(() => {
-            new GatewaySDK('bob-testnet');
+            new GatewaySDK('bob-testnet', '0xD7b27b178f6Bf290155201109906Ad203B6d99B1' as Address);
         }).toThrowError('Invalid chain');
     });
 
     it('should get quote', async () => {
-        const gatewaySDK = new GatewaySDK('mainnet');
+        const gatewaySDK = new GatewaySDK('mainnet', '0xD7b27b178f6Bf290155201109906Ad203B6d99B1' as Address);
 
         const mockQuote = {
             gatewayAddress: ZeroAddress,
@@ -112,7 +105,7 @@ describe('Gateway Tests', () => {
     });
 
     it('should throw error on invalid token', async () => {
-        const gatewaySDK = new GatewaySDK('mainnet');
+        const gatewaySDK = new GatewaySDK('mainnet', '0xD7b27b178f6Bf290155201109906Ad203B6d99B1' as Address);
         await expect(async () => {
             await gatewaySDK.getQuote({
                 toChain: 'BOB',
@@ -124,7 +117,7 @@ describe('Gateway Tests', () => {
     });
 
     it('should reject invalid network', async () => {
-        const gatewaySDK = new GatewaySDK('testnet');
+        const gatewaySDK = new GatewaySDK('testnet', '0xD7b27b178f6Bf290155201109906Ad203B6d99B1' as Address);
         await expect(async () => {
             await gatewaySDK.getQuote({
                 toChain: 'BOB',
@@ -145,7 +138,7 @@ describe('Gateway Tests', () => {
     });
 
     it('should start order', { timeout: 50000 }, async () => {
-        const gatewaySDK = new GatewaySDK('bob');
+        const gatewaySDK = new GatewaySDK('bob', '0xD7b27b178f6Bf290155201109906Ad203B6d99B1' as Address);
 
         const mockQuote = {
             gatewayAddress: ZeroAddress,
@@ -217,7 +210,7 @@ describe('Gateway Tests', () => {
                 strategyAddress: ZeroAddress,
             });
 
-        const gatewaySDK = new GatewaySDK('bob');
+        const gatewaySDK = new GatewaySDK('bob', '0xD7b27b178f6Bf290155201109906Ad203B6d99B1' as Address);
         const strategies = await gatewaySDK.getStrategies();
 
         assert.lengthOf(strategies, 1);
@@ -239,7 +232,7 @@ describe('Gateway Tests', () => {
     it('should get tokens', async () => {
         nock(`${MAINNET_GATEWAY_BASE_URL}`).get(`/tokens?includeStrategies=false`).reply(200, [ZeroAddress]);
 
-        const gatewaySDK = new GatewaySDK('bob');
+        const gatewaySDK = new GatewaySDK('bob', '0xD7b27b178f6Bf290155201109906Ad203B6d99B1' as Address);
         assert.deepEqual(await gatewaySDK.getTokenAddresses(false), [ZeroAddress]);
     });
 
@@ -316,7 +309,7 @@ describe('Gateway Tests', () => {
                 },
             ]);
 
-        const gatewaySDK = new GatewaySDK('bob');
+        const gatewaySDK = new GatewaySDK('bob', '0xD7b27b178f6Bf290155201109906Ad203B6d99B1' as Address);
         const orders = await gatewaySDK.getOrders(ZeroAddress);
         assert.lengthOf(orders, 7);
 
@@ -335,7 +328,7 @@ describe('Gateway Tests', () => {
     // Skipping this test as it is likely to fail on the testnet once the user transfers their funds
     // or if the strategy is removed from the testnet. Use nock for mocking the responses in the meantime for other test.
     it.skip('should correctly retrieve stake info and simulate call testnet strategy', async () => {
-        const gatewaySDK = new GatewaySDK('testnet');
+        const gatewaySDK = new GatewaySDK('testnet', '0xD7b27b178f6Bf290155201109906Ad203B6d99B1' as Address);
         const params: BuildStakeParams = {
             strategyAddress: '0x06cEA150E651236499319d78f92791f0FAe6FE67' as Address,
             token: '0x6744babdf02dcf578ea173a9f0637771a9e1c4d0' as Address,
@@ -423,7 +416,7 @@ describe('Gateway Tests', () => {
     });
 
     it('should throw error for invalid strategy address in buildStake', async () => {
-        const gatewaySDK = new GatewaySDK('testnet');
+        const gatewaySDK = new GatewaySDK('testnet', '0xD7b27b178f6Bf290155201109906Ad203B6d99B1' as Address);
         const params: BuildStakeParams = {
             strategyAddress: ZeroAddress as Address,
             token: '0x6744babdf02dcf578ea173a9f0637771a9e1c4d0' as Address,
@@ -449,7 +442,7 @@ describe('Gateway Tests', () => {
                     strategyType: 'staking',
                 },
             ]);
-        const gatewaySDK = new GatewaySDK('bob');
+        const gatewaySDK = new GatewaySDK('bob', '0xD7b27b178f6Bf290155201109906Ad203B6d99B1' as Address);
         const params: BuildStakeParams = {
             strategyAddress: ZeroAddress as Address,
             token: ZeroAddress as Address,
@@ -475,7 +468,7 @@ describe('Gateway Tests', () => {
                     strategyType: 'staking',
                 },
             ]);
-        const gatewaySDK = new GatewaySDK('bob');
+        const gatewaySDK = new GatewaySDK('bob', '0xD7b27b178f6Bf290155201109906Ad203B6d99B1' as Address);
         const params: BuildStakeParams = {
             strategyAddress: ZeroAddress as Address,
             token: TBTC_ADDRESS as Address,
@@ -498,7 +491,7 @@ describe('Gateway Tests', () => {
                     strategyType: 'staking',
                 },
             ]);
-        const gatewaySDK = new GatewaySDK('bob');
+        const gatewaySDK = new GatewaySDK('bob', '0xD7b27b178f6Bf290155201109906Ad203B6d99B1' as Address);
         const params: BuildStakeParams = {
             strategyAddress: ZeroAddress as Address,
             token: TBTC_ADDRESS as Address,
@@ -521,66 +514,65 @@ describe('Gateway Tests', () => {
         expect(result).toMatchObject(expected);
     });
 
-    it('should return valid offramp quote', async () => {
-        const gatewaySDK = new GatewaySDK('signet');
+    it('should get valid create offramp quote', async () => {
+        const gatewaySDK = new GatewaySDK('signet', '0xD7b27b178f6Bf290155201109906Ad203B6d99B1' as Address);
         nock(`${SIGNET_GATEWAY_BASE_URL}`).get('/offramp-quote').query(true).reply(200, {
-            amountToLock: '0x5af3107a4000',
-            minimumFeesToPay: '0xdfa9b63e400',
-            gateway: '0x525b3d3c4a9f104c116fb4af9bbac94104879650',
+            amountLockInSat: 10000000000000,
+            feesInSat: 385,
+            deadline: '0x67f024dc',
+            registryAddress: '0xd7b27b178f6bf290155201109906ad203b6d99b1',
+            feeRate: 1,
         });
 
-        const result: OffRampRequestPayload = await gatewaySDK.getOffRampQuoteAndRequest({
+        const result = await gatewaySDK.createOfframpOrder({
             toToken: '0xda472456b1a6a2fc9ae7edb0e007064224d4284c',
             amount: 100000000000000,
             fromUserAddress: '0xFAEe001465dE6D7E8414aCDD9eF4aC5A35B2B808',
             bitcoinUserAddress: 'tb1qn40xpua4eskjgmueq6fwujex05wdtprh46vkpc',
         });
 
-        expect(result.offRampArgs).to.deep.equal([
-            {
-                offRampAddress: '0x525b3d3c4a9f104c116fb4af9bbac94104879650',
-                amountLocked: BigInt(100000000000000),
-                maxFees: BigInt(15370000000000),
-                user: '0xFAEe001465dE6D7E8414aCDD9eF4aC5A35B2B808',
-                token: '0xda472456b1a6a2fc9ae7edb0e007064224d4284c',
-                userBtcAddress: '0x1600149d5e60f3b5cc2d246f990692ee4b267d1cd58477',
-            },
-        ]);
+        expect(result.offRampArgs[0]).to.deep.equal({
+            satAmountToLock: BigInt('10000000000000'),
+            satFeesMax: BigInt('385'),
+            orderCreationDeadline: BigInt('1743791324'),
+            outputScript: '0x1600149d5e60f3b5cc2d246f990692ee4b267d1cd58477',
+            token: '0xda472456b1a6a2fc9ae7edb0e007064224d4284c',
+        });
     });
 
     it('should return valid offramp orders', async () => {
-        const gatewaySDK = new GatewaySDK('signet');
+        const gatewaySDK = new GatewaySDK('signet', '0xD7b27b178f6Bf290155201109906Ad203B6d99B1' as Address);
         const userAddress = '0xFAEe001465dE6D7E8414aCDD9eF4aC5A35B2B808';
 
         // Mock response data
-        const mockResponse: GatewayOffRampOrder[] = [
+        const mockResponse = [
             {
-                requestId: '0x2',
-                offrampAddress: '0x525b3d3c4a9f104c116fb4af9bbac94104879650',
-                satoshisToGet: 1606,
-                evmTxHash: '0x2429589cc2456f882a26e1282b378f13c6284eaa494c4f1c7018a9f4a5ad6de4',
-                btcTxHash: '4a944bab27987ada4ab22afa5dbbc57f74559fef243dd094aac539509703a982',
-                timestamp: 1740476956,
-                done: false,
-                userAddress: userAddress.toLowerCase(),
-            },
-            {
-                requestId: '0x1',
-                offrampAddress: '0x525b3d3c4a9f104c116fb4af9bbac94104879650',
-                satoshisToGet: 1606,
-                evmTxHash: '0xb417e4547dedf78ad57389cee6731d416d43f633630daf99b6ace5a82ce1fe36',
-                btcTxHash: '4c6d4ec35469bbd82c5c533782f21a174d6947a72eddd87915c624dc473fc7cf',
-                timestamp: 1740476884,
-                done: false,
-                userAddress: userAddress.toLowerCase(),
+                orderId: '0x0',
+                token: '0xda472456b1a6a2fc9ae7edb0e007064224d4284c',
+                satAmountLocked: '0x3e8',
+                satFeesMax: '0x181',
+                status: 'Processed',
+                btcTx: 'e8d52d6ef6ebf079f2d082dc683c9455178b64e0685c10e93882effaedde4474',
+                evmTx: null,
+                orderTimestamp: '0x67ee6f6e',
             },
         ];
 
-        nock(`${SIGNET_GATEWAY_BASE_URL}`).get(`/offramp-orders/${userAddress}`).times(5).reply(200, mockResponse);
+        // Dynamically parse expected result from mockResponse
+        const expectedResult = mockResponse.map((order: any) => ({
+            ...order,
+            token: order.token as Address,
+            orderId: BigInt(order.orderId.toString()),
+            satAmountLocked: BigInt(order.satAmountLocked.toString()),
+            satFeesMax: BigInt(order.satFeesMax.toString()),
+            orderTimestamp: BigInt(order.orderTimestamp.toString()),
+        }));
 
-        const result: GatewayOffRampOrder[] = await gatewaySDK.getOffRampOrders(userAddress);
+        nock(SIGNET_GATEWAY_BASE_URL).get(`/offramp-orders/${userAddress}`).reply(200, mockResponse);
+
+        const result: OfframpOrderDetails[] = await gatewaySDK.getOfframpOrders(userAddress);
 
         // Assertion
-        expect(result).to.deep.equal(mockResponse);
+        expect(result).to.deep.equal(expectedResult);
     });
 });

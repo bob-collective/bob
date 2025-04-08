@@ -1,6 +1,6 @@
 import type { EsploraClient } from '../esplora';
 import { Address } from 'viem';
-import { offRampCaller, strategyCaller } from './abi';
+import { offrampBumpFeeCaller, offrampCreateOrderCaller, offrampUnlockFundsCaller, strategyCaller } from './abi';
 
 type ChainSlug = string | number;
 type TokenSymbol = string;
@@ -224,24 +224,6 @@ export type GatewayQuote = {
     strategyAddress?: EvmAddress;
 };
 
-export type OffRampRequestPayload = {
-    /** @description The ABI used to interact with the offRamp contract */
-    offRampABI: typeof offRampCaller;
-    /** @description The name of the function being called on the contract */
-    offRampFunctionName: string;
-    /** @description Arguments required for the offRamp contract call */
-    offRampArgs: [
-        {
-            offRampAddress: Address;
-            amountLocked: bigint;
-            maxFees: bigint;
-            user: Address;
-            token: Address;
-            userBtcAddress: string;
-        },
-    ];
-};
-
 /** @dev Internal */
 export type GatewayCreateOrderRequest = {
     gatewayAddress: EvmAddress;
@@ -359,24 +341,125 @@ export type GatewayStartOrder = GatewayCreateOrderResponse & {
     psbtBase64?: string;
 };
 
-export type GatewayOffRampOrder = {
-    /** @description Unique identifier for the off-ramp request */
-    requestId: string;
-    /** @description The gateway address handling the off-ramp */
-    offrampAddress: string;
-    /** @description The amount of satoshis to receive */
-    satoshisToGet: number;
-    /** @description The transaction hash on the EVM chain */
-    evmTxHash: string;
-    /** @description The transaction ID on the Bitcoin network */
-    btcTxHash: string;
-    /** @description The timestamp when the order was created */
-    timestamp: number;
-    /** @description Indicates if the off-ramp process is completed */
-    done: boolean;
-    /** @description The user's EVM address */
-    userAddress: string;
+/** @dev Offramp order quote returned by the quoting logic */
+export interface OfframpQuote {
+    /** @dev Amount to lock in satoshis */
+    amountLockInSat: bigint;
+    /** @dev Maximum fee paid in satoshis */
+    feesInSat: bigint;
+    /** @dev Deadline for order creation (unix timestamp) */
+    deadline: bigint;
+    /** @dev Address of the off-ramp registry handling the order */
+    registryAddress: Address;
+    /** @dev Fee rate used for calculating satoshi fee */
+    feeRate: bigint;
+    /** @dev Token address used for payment */
+    token: Address;
+}
+
+/** @dev Params used for createOrder call on the off-ramp contract */
+export type OfframpCreateOrderParams = {
+    offRampABI: typeof offrampCreateOrderCaller;
+    offRampFunctionName: 'createOrder';
+    offRampArgs: [
+        {
+            /** @dev Amount of sats to lock in the order */
+            satAmountToLock: bigint;
+            /** @dev Max sats to be paid as fees */
+            satFeesMax: bigint;
+            /** @dev Timestamp by which the order must be created */
+            orderCreationDeadline: bigint;
+            /** @dev Output script for Bitcoin settlement */
+            outputScript: string;
+            /** @dev Token to use for payment */
+            token: Address;
+        },
+    ];
 };
+
+/** @dev Params used to bump fee for an existing order */
+export type OfframpBumpFeeParams = {
+    offRampABI: typeof offrampBumpFeeCaller;
+    offRampFunctionName: 'bumpFeeOfExistingOrder';
+    offRampArgs: [
+        {
+            /** @dev The order ID to bump fee for */
+            orderId: bigint;
+            /** @dev The new fee amount in satoshis */
+            newFeeSat: bigint;
+        },
+    ];
+};
+
+/** @dev Params used to unlock funds after order completion or refund */
+export type OfframpUnlockFundsParams = {
+    offRampABI: typeof offrampUnlockFundsCaller;
+    offRampFunctionName: 'unlockFunds';
+    offRampArgs: [
+        {
+            /** @dev The order ID to unlock funds for */
+            orderId: bigint;
+            /** @dev Receiver address to send unlocked funds to */
+            receiver: Address;
+        },
+    ];
+};
+
+/** @dev Final state of an offramp order used in UI/backend */
+export type OfframpOrderDetails = {
+    /** @dev Unique identifier for the off-ramp order */
+    orderId: bigint;
+    /** @dev The token address */
+    token: Address;
+    /** @dev The amount of sats that is locked */
+    satAmountLocked: bigint;
+    /** @dev The amount of fees to pay in sat */
+    satFeesMax: bigint;
+    /** @dev The current status of the order */
+    status: 'Active' | 'Accepted' | 'Processed' | 'Refunded';
+    /** @dev The timestamp when the order was created or updated */
+    orderTimestamp: bigint;
+    /** @dev The transaction hash on the EVM chain */
+    evmTx: string;
+    /** @dev The transaction ID on the Bitcoin network */
+    btcTx: string;
+};
+
+/** @dev On-chain fetched state of an active/processed/refunded order */
+export type OnchainOfframpOrderDetails = {
+    /** @dev Unique identifier for the off-ramp order */
+    orderId: bigint;
+    /** @dev The token address used for payment */
+    token: Address;
+    /** @dev Amount locked in sats */
+    satAmountLocked: bigint;
+    /** @dev Max sats for fee */
+    satFeesMax: bigint;
+    /** @dev Address that created the order */
+    sender: Address;
+    /** @dev Optional receiver address for order payout */
+    receiver: Address | null;
+    /** @dev Optional owner address of the order */
+    owner: Address | null;
+    /** @dev Output script for Bitcoin tx */
+    outputScript: string;
+    /** @dev Order status */
+    status: 'Active' | 'Accepted' | 'Processed' | 'Refunded';
+    /** @dev When the order was created (unix timestamp) */
+    orderTimestamp: bigint;
+};
+
+/** @dev Internal */
+export interface RawOrder {
+    orderId: string; // hex string like "0x1"
+    token: string; // Address
+    satAmountLocked: string; // hex string
+    satFeesMax: string; // hex string
+    status: string; // you can expand this if more statuses exist
+    orderTimestamp: string; // hex string
+    btcTx: string | null;
+    evmTx: string | null;
+}
 
 /** @dev Internal */
 export interface GatewayStrategy {
