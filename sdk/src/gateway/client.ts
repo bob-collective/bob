@@ -301,8 +301,6 @@ export class GatewayApiClient {
         // check order status via viem should be Active/Accepted
         const orderDetails: OnchainOfframpOrderDetails = await this.fetchOfframpOrder(orderId);
 
-        console.log('orderDetails: ', orderDetails);
-
         if (orderDetails.status !== 'Active') {
             throw new Error(`Offramp order needs to be Active for accepting fees`);
         }
@@ -310,8 +308,6 @@ export class GatewayApiClient {
         // get amount in token decimals
         const decimals = getTokenDecimals(orderDetails.token); // e.g., 18
         const amountInToken = BigInt(orderDetails.satAmountLocked) * BigInt(10 ** (decimals - 8));
-
-        console.log('amountInToken: ', amountInToken);
 
         // get new quote for the amount
         const offrampQuote: OfframpQuote = await this.fetchOfframpQuote(orderDetails.token.toString(), amountInToken);
