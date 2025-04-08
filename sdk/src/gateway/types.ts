@@ -341,6 +341,8 @@ export type GatewayStartOrder = GatewayCreateOrderResponse & {
     psbtBase64?: string;
 };
 
+export type OfframpOrderStatus = 'Active' | 'Accepted' | 'Processed' | 'Refunded';
+
 /** @dev Offramp order quote returned by the quoting logic */
 export interface OfframpQuote {
     /** @dev Amount to lock in satoshis */
@@ -417,13 +419,17 @@ export type OfframpOrderDetails = {
     /** @dev The amount of fees to pay in sat */
     satFeesMax: bigint;
     /** @dev The current status of the order */
-    status: 'Active' | 'Accepted' | 'Processed' | 'Refunded';
+    status: OfframpOrderStatus;
     /** @dev The timestamp when the order was created or updated */
     orderTimestamp: bigint;
     /** @dev The transaction hash on the EVM chain */
     evmTx: string;
     /** @dev The transaction ID on the Bitcoin network */
     btcTx: string;
+    /** @dev Indicates whether the fees for this order should be bumped based on current network conditions */
+    shouldFeesBeBumped: boolean;
+    /** @dev Indicates whether the user can cancel this order (typically if it's still active) */
+    canOrderBeCancelled: boolean;
 };
 
 /** @dev On-chain fetched state of an active/processed/refunded order */
@@ -445,7 +451,7 @@ export type OnchainOfframpOrderDetails = {
     /** @dev Output script for Bitcoin tx */
     outputScript: string;
     /** @dev Order status */
-    status: 'Active' | 'Accepted' | 'Processed' | 'Refunded';
+    status: OfframpOrderStatus;
     /** @dev When the order was created (unix timestamp) */
     orderTimestamp: bigint;
 };

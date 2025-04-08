@@ -24,6 +24,7 @@ import {
     OnchainOfframpOrderDetails,
     OfframpUnlockFundsParams,
     RawOrder,
+    OfframpOrderStatus,
 } from './types';
 import { SYMBOL_LOOKUP, ADDRESS_LOOKUP, getTokenDecimals } from './tokens';
 import { createBitcoinPsbt } from '../wallet';
@@ -371,16 +372,46 @@ export class GatewayApiClient {
      */
     async getOfframpOrders(userAddress: EvmAddress): Promise<OfframpOrderDetails[]> {
         const response = await this.fetchGet(`${this.baseUrl}/offramp-orders/${userAddress}`);
-        const rawOrders = await response.json();
+        const rawOrders: RawOrder[] = await response.json();
 
-        return rawOrders.map((order: RawOrder) => ({
-            ...order,
-            token: order.token as Address,
-            orderId: BigInt(order.orderId.toString()),
-            satAmountLocked: BigInt(order.satAmountLocked.toString()),
-            satFeesMax: BigInt(order.satFeesMax.toString()),
-            orderTimestamp: BigInt(order.orderTimestamp.toString()),
-        }));
+        return Promise.all(
+            rawOrders.map(async (order) => {
+                const status = order.status as OfframpOrderStatus;
+                const shouldFeesBeBumped = await this.shouldFeesBeBumped(order);
+                const canOrderBeCancelled = this.canOrderBeCancelled(status);
+
+                return {
+                    ...order,
+                    status,
+                    token: order.token as Address,
+                    orderId: BigInt(order.orderId.toString()),
+                    satAmountLocked: BigInt(order.satAmountLocked.toString()),
+                    satFeesMax: BigInt(order.satFeesMax.toString()),
+                    orderTimestamp: BigInt(order.orderTimestamp.toString()),
+                    shouldFeesBeBumped,
+                    canOrderBeCancelled,
+                };
+            })
+        );
+    }
+
+    private async shouldFeesBeBumped(orderDetails: RawOrder): Promise<boolean> {
+        const decimals = getTokenDecimals(orderDetails.token as Address); // e.g., 18
+        const amountInToken = BigInt(orderDetails.satAmountLocked) * BigInt(10 ** (decimals - 8));
+
+        // get new quote for the amount
+        const offrampQuote: OfframpQuote = await this.fetchOfframpQuote(orderDetails.token.toString(), amountInToken);
+
+        if (BigInt(orderDetails.satFeesMax) >= offrampQuote.feesInSat) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private canOrderBeCancelled(status: OfframpOrderStatus): boolean {
+        return status === 'Active';
+        // TODO: order should also be able to cancel once 7 day claim period has passed
     }
 
     /**
@@ -811,7 +842,7 @@ function slugify(str: string): string {
         .replace(/[^\w-]+/g, '');
 }
 
-function parseOrderStatus(value: number): string {
+function parseOrderStatus(value: number): OfframpOrderStatus {
     switch (value) {
         case 0:
             return 'Active';
