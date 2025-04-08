@@ -73,6 +73,7 @@ library WitnessTx {
 
         bytes32 root = proof.paymentProof.bitcoinHeaders.extractMerkleRootLE();
 
+        // Coinbase tx always has an index of 0
         require(
             coinbaseTxHash.prove(root, proof.paymentProof.coinbaseProof, 0),
             "Coinbase merkle proof is not valid for provided header and hash"
