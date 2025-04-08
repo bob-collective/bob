@@ -108,9 +108,9 @@ You can get even more Spice points by completing these other tasks on BOB.
 
 <!-- TODO: Add links to other tasks -->
 
-1. Solv: Mint at least 0.0001 Solvbtc and deposit to Solvbtc.bbn on BOB.
+1. Solv: Mint at least 0.0001 Solvbtc and deposit to xSolvBTC on BOB.
 1. Bedrock: Mint uniBTC greater than 0.0001 on BOB.
-1. Pell: Deposit at least 0.0001 Solvbtc.BBN or uniBTC into Pell on BOB.
+1. Pell: Deposit at least 0.0001 xSolvBTC or uniBTC into Pell on BOB.
 
 We will add links to these tasks soon.
 
