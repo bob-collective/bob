@@ -277,6 +277,7 @@ export class GatewayApiClient {
         const receiverAddress = toHexScriptPubKey(params.bitcoinUserAddress, bitcoinNetwork);
 
         return {
+            quote: offrampQuote,
             offRampABI: offrampCreateOrderCaller,
             offRampFunctionName: 'createOrder' as const,
             offRampArgs: [

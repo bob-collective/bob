@@ -359,6 +359,7 @@ export interface OfframpQuote {
 
 /** @dev Params used for createOrder call on the off-ramp contract */
 export type OfframpCreateOrderParams = {
+    quote: OfframpQuote;
     offRampABI: typeof offrampCreateOrderCaller;
     offRampFunctionName: 'createOrder';
     offRampArgs: [
