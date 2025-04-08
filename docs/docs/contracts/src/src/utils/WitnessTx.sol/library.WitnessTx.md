@@ -122,7 +122,6 @@ Represents data needed to perform a Bitcoin SPV proof with witness data.
 struct WitnessProof {
     bytes32 witnessNonce;
     bytes32 paymentMerkleRoot;
-    BitcoinTx.Proof coinbaseProof;
     BitcoinTx.Proof paymentProof;
     BitcoinTx.Info coinbaseTx;
 }

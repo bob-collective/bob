@@ -47,15 +47,15 @@ const bobTokens = [
         logoURI: 'https://raw.githubusercontent.com/bob-collective/bob/master/assets/solvBTC.svg',
     },
     {
-        name: 'SolvBTC Babylon',
-        symbol: 'SolvBTC.BBN',
+        name: 'xSolvBTC',
+        symbol: 'xSolvBTC',
         decimals: 18,
         tokens: {
             bob: {
                 address: '0xCC0966D8418d412c599A6421b760a847eB169A8c',
             },
         },
-        logoURI: 'https://raw.githubusercontent.com/bob-collective/bob/master/assets/solvBTC.BBN.svg',
+        logoURI: 'https://raw.githubusercontent.com/bob-collective/bob/master/assets/xSolvBTC.svg',
     },
     {
         name: 'uniBTC',

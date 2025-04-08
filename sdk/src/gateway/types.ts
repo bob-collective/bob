@@ -342,7 +342,7 @@ export type GatewayOrder = Omit<
 export type GatewayTokensInfo = {
     /** @description The base token (e.g. wBTC or tBTC) */
     baseToken: Token;
-    /** @description The output token (e.g. uniBTC or SolvBTC.BBN) */
+    /** @description The output token (e.g. uniBTC or xSolvBTC) */
     outputToken?: Token;
 };
 

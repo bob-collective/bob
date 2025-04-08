@@ -24,22 +24,22 @@ No matter how sophisticated the strategy, everything is handled on the user's be
 
 We’ll build up to a complex, multi-step strategy by starting with a simple one that we later extend.
 
-### One-Intent Example: Staking WBTC into SolvBTC.BBN
+### One-Intent Example: Staking WBTC into xSolvBTC
 
 At this point in the P2P swap process, the Gateway relayer has already verified that the user sent BTC to the LP. Having trustlessly verified this, the relayer sets about manipulating the LP's wrapped BTC to accomplish the user's intent.
 
-[In this example](https://github.com/bob-collective/bob/blob/master/contracts/src/gateway/strategy/SolvStrategy.sol#L110) the relayer deposits WBTC to mint SolvBTC, which is then deposited to mint SolvBTC.BBN, the LST that receives yield from Babylon.
+[In this example](https://github.com/bob-collective/bob/blob/master/contracts/src/gateway/strategy/SolvStrategy.sol#L110) the relayer deposits WBTC to mint SolvBTC, which is then deposited to mint xSolvBTC, the LST that receives yield from Babylon.
 
 ```solidity title="SolvStrategy.sol"
 // Mint SolvBTC with the LP's WBTC
 uint256 shareValueBTC = solvBTCRouter.createSubscription(solvBTCPoolId, amountIn);
 
-// Mint SolvBTC.BBN with the SolvBTC created in the previous LP's WBTC
+// Mint xSolvBTC with the SolvBTC created in the previous LP's WBTC
 solvBTC.safeIncreaseAllowance(address(solvLSTRouter), shareValueBTC);
 uint256 shareValueLST = solvLSTRouter.createSubscription(solvLSTPoolId, shareValueBTC);
 require(shareValueLST >= args.amountOutMin, "Insufficient output amount");
 
-// Transfer the SolvBTC.BBN token to the user to complete the process
+// Transfer the xSolvBTC token to the user to complete the process
 solvLST.safeTransfer(recipient, shareValueLST);
 ```
 
@@ -47,11 +47,11 @@ solvLST.safeTransfer(recipient, shareValueLST);
 
 As we saw above, you are not limited to one smart contract call. You may wish to make several functions calls sequentially to accomplish a more sophisticated goal. This allows you to compose several DeFi protocols, such as staking, restaking, or lending.
 
-A user with a higher risk tolerance may want to seek even more yield by depositing their BTC LST in a lending protocol. To extend the staking example above, let's look at [a snippet from AvalonStrategy.sol](https://github.com/bob-collective/bob/blob/master/contracts/src/gateway/strategy/AvalonStrategy.sol#L66) that replaces the final `safeTransfer` function with an additional step to deposit the SolvBTC.BBN into the Avalon lending protocol.
+A user with a higher risk tolerance may want to seek even more yield by depositing their BTC LST in a lending protocol. To extend the staking example above, let's look at [a snippet from AvalonStrategy.sol](https://github.com/bob-collective/bob/blob/master/contracts/src/gateway/strategy/AvalonStrategy.sol#L66) that replaces the final `safeTransfer` function with an additional step to deposit the xSolvBTC into the Avalon lending protocol.
 
 ```solidity title="AvalonStrategy.sol"
 // tokenSent is solvLST, which identifies the correct Avalon lending pool
-// amountIn is the balanceOf SolvBTC.BBN from the previous step
+// amountIn is the balanceOf xSolvBTC from the previous step
 // recipient is the user's EVM address, so their wallet controls the output tokens
 pool.supply(address(tokenSent), amountIn, recipient, 0);
 ```
@@ -71,11 +71,11 @@ You're welcome to reach out to our Developer Relations Engineer, @DerrekWonders,
 
 At the moment, there is only one relayer for BOB Gateway. In addition to its other functionality, this relayer pays gas on the user's behalf so that the user doesn't need to make a transaction on BOB to complete the bridging process. Since a malicious actor could create a strategy designed to take advantage of the relayer (e.g. spend all of the funds available for gas fees), the process of adding new strategies to Gateway as well as decentralizing the relayer role are restricted by the BOB team until Gateway is upgraded as described [on this page](/learn/introduction/gateway/).
 
-### Example End-to-End Test: Staking SolvBTC.BBN
+### Example End-to-End Test: Staking xSolvBTC
 
 In addition to the strategy contract described above, you also need to create an end-to-end integration test using Foundry’s ability to simulate the transactions on a live fork of BOB mainnet. That’s why the e2e test files follow a `[ProtocolName]StrategyForked.sol` naming convention, such as [SolvStrategyForked.sol](https://github.com/bob-collective/bob/blob/master/contracts/test/gateway/e2e-strategy-tests/SolvStrategyForked.sol#L40).
 
-Returning to the [SolvBTC.BBN staking strategy](#one-intent-example-staking-wbtc-into-solvbtcbbn) from the beginning:
+Returning to the [xSolvBTC staking strategy](#one-intent-example-staking-wbtc-into-solvbtcbbn) from the beginning:
 
 ```solidity title="SolvStrategyForked.sol"
 function testSolvLSTStrategy() public {
