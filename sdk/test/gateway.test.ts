@@ -591,15 +591,17 @@ describe('Gateway Tests', () => {
     });
 
     it('should return error for taproot address', async () => {
-        const gatewaySDK = new GatewaySDK('signet');
+        const gatewaySDK = new GatewaySDK('signet', '0xD7b27b178f6Bf290155201109906Ad203B6d99B1' as Address);
         nock(`${SIGNET_GATEWAY_BASE_URL}`).get('/offramp-quote').query(true).reply(200, {
-            amountToLock: '0x5af3107a4000',
-            minimumFeesToPay: '0xdfa9b63e400',
-            gateway: '0x525b3d3c4a9f104c116fb4af9bbac94104879650',
+            amountLockInSat: 10000000000000,
+            feesInSat: 385,
+            deadline: '0x67f024dc',
+            registryAddress: '0xd7b27b178f6bf290155201109906ad203b6d99b1',
+            feeRate: 1,
         });
 
         await expect(
-            gatewaySDK.getOffRampQuoteAndRequest({
+            gatewaySDK.createOfframpOrder({
                 toToken: '0xda472456b1a6a2fc9ae7edb0e007064224d4284c',
                 amount: 100000000000000,
                 fromUserAddress: '0xFAEe001465dE6D7E8414aCDD9eF4aC5A35B2B808',
