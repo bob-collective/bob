@@ -15,3 +15,10 @@ function verifyProof(bytes calldata _header, bytes calldata _proof, bytes32 _txI
     view;
 ```
 
+### verifyHeaderHash
+
+
+```solidity
+function verifyHeaderHash(bytes32 _headerHash, uint8 _numConfs) external view;
+```
+
