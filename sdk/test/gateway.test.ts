@@ -566,9 +566,18 @@ describe('Gateway Tests', () => {
             satAmountLocked: BigInt(order.satAmountLocked.toString()),
             satFeesMax: BigInt(order.satFeesMax.toString()),
             orderTimestamp: BigInt(order.orderTimestamp.toString()),
+            canOrderBeCancelled: false,
+            shouldFeesBeBumped: false,
         }));
 
         nock(SIGNET_GATEWAY_BASE_URL).get(`/offramp-orders/${userAddress}`).reply(200, mockResponse);
+        nock(`${SIGNET_GATEWAY_BASE_URL}`).get('/offramp-quote').query(true).reply(200, {
+            amountLockInSat: 10000000000000,
+            feesInSat: 385,
+            deadline: '0x67f024dc',
+            registryAddress: '0xd7b27b178f6bf290155201109906ad203b6d99b1',
+            feeRate: 1,
+        });
 
         const result: OfframpOrderDetails[] = await gatewaySDK.getOfframpOrders(userAddress);
 
