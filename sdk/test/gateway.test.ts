@@ -531,7 +531,7 @@ describe('Gateway Tests', () => {
             bitcoinUserAddress: 'tb1qn40xpua4eskjgmueq6fwujex05wdtprh46vkpc',
         });
 
-        expect(result.offRampArgs[0]).to.deep.equal({
+        expect(result.offrampArgs[0]).to.deep.equal({
             satAmountToLock: BigInt('10000000000000'),
             satFeesMax: BigInt('385'),
             orderCreationDeadline: BigInt('1743791324'),

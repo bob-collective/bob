@@ -362,9 +362,9 @@ export interface OfframpQuote {
 /** @dev Params used for createOrder call on the off-ramp contract */
 export type OfframpCreateOrderParams = {
     quote: OfframpQuote;
-    offRampABI: typeof offrampCreateOrderCaller;
-    offRampFunctionName: 'createOrder';
-    offRampArgs: [
+    offrampABI: typeof offrampCreateOrderCaller;
+    offrampFunctionName: 'createOrder';
+    offrampArgs: [
         {
             /** @dev Amount of sats to lock in the order */
             satAmountToLock: bigint;
@@ -382,9 +382,9 @@ export type OfframpCreateOrderParams = {
 
 /** @dev Params used to bump fee for an existing order */
 export type OfframpBumpFeeParams = {
-    offRampABI: typeof offrampBumpFeeCaller;
-    offRampFunctionName: 'bumpFeeOfExistingOrder';
-    offRampArgs: [
+    offrampABI: typeof offrampBumpFeeCaller;
+    offrampFunctionName: 'bumpFeeOfExistingOrder';
+    offrampArgs: [
         {
             /** @dev The order ID to bump fee for */
             orderId: bigint;
@@ -396,9 +396,9 @@ export type OfframpBumpFeeParams = {
 
 /** @dev Params used to unlock funds after order completion or refund */
 export type OfframpUnlockFundsParams = {
-    offRampABI: typeof offrampUnlockFundsCaller;
-    offRampFunctionName: 'unlockFunds';
-    offRampArgs: [
+    offrampABI: typeof offrampUnlockFundsCaller;
+    offrampFunctionName: 'unlockFunds';
+    offrampArgs: [
         {
             /** @dev The order ID to unlock funds for */
             orderId: bigint;

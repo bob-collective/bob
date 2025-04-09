@@ -274,9 +274,9 @@ export class GatewayApiClient {
 
         return {
             quote: offrampQuote,
-            offRampABI: offrampCreateOrderCaller,
-            offRampFunctionName: 'createOrder' as const,
-            offRampArgs: [
+            offrampABI: offrampCreateOrderCaller,
+            offrampFunctionName: 'createOrder' as const,
+            offrampArgs: [
                 {
                     satAmountToLock: offrampQuote.amountLockInSat,
                     satFeesMax: offrampQuote.feesInSat,
@@ -318,9 +318,9 @@ export class GatewayApiClient {
         // check fees greater than new fees
         return [
             {
-                offRampABI: offrampBumpFeeCaller,
-                offRampFunctionName: 'bumpFeeOfExistingOrder',
-                offRampArgs: [
+                offrampABI: offrampBumpFeeCaller,
+                offrampFunctionName: 'bumpFeeOfExistingOrder',
+                offrampArgs: [
                     {
                         orderId: orderId,
                         newFeeSat: newFeeSat,
@@ -352,9 +352,9 @@ export class GatewayApiClient {
 
         return [
             {
-                offRampABI: offrampUnlockFundsCaller,
-                offRampFunctionName: 'unlockFunds',
-                offRampArgs: [
+                offrampABI: offrampUnlockFundsCaller,
+                offrampFunctionName: 'unlockFunds',
+                offrampArgs: [
                     {
                         orderId: orderId,
                         receiver: receiver,
