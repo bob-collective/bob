@@ -67,30 +67,25 @@ export const SIGNET_GATEWAY_BASE_URL = 'https://gateway-api-signet.gobob.xyz';
 export class GatewayApiClient {
     private chain: Chain.BOB | Chain.BOB_SEPOLIA;
     private baseUrl: string;
-    private offrampRegistryAddress: Address;
 
     /**
      * @constructor
      * @param chainName The chain name.
-     * @param setOfframpRegistryAddress The offramp registry address.
      */
-    constructor(chainName: string, setOfframpRegistryAddress: Address) {
+    constructor(chainName: string) {
         switch (chainName) {
             case 'mainnet':
             case Chain.BOB:
                 this.chain = Chain.BOB;
                 this.baseUrl = MAINNET_GATEWAY_BASE_URL;
-                this.offrampRegistryAddress = setOfframpRegistryAddress;
                 break;
             case 'testnet':
                 this.chain = Chain.BOB_SEPOLIA;
                 this.baseUrl = TESTNET_GATEWAY_BASE_URL;
-                this.offrampRegistryAddress = setOfframpRegistryAddress;
                 break;
             case 'signet':
                 this.chain = Chain.BOB_SEPOLIA; // Same chain as testnet
                 this.baseUrl = SIGNET_GATEWAY_BASE_URL;
-                this.offrampRegistryAddress = setOfframpRegistryAddress;
                 break;
             default:
                 throw new Error('Invalid chain');
@@ -297,11 +292,12 @@ export class GatewayApiClient {
      * Prepares calldata to bump fees for an active offramp order.
      *
      * @param orderId The ID of the existing order.
+     * @param offrampRegistryAddress The offramp registry address.
      * @returns Parameters for onchain `bumpFeeOfExistingOrder` call.
      */
-    async bumpFeeForOfframpOrder(orderId: bigint): Promise<OfframpBumpFeeParams[]> {
+    async bumpFeeForOfframpOrder(orderId: bigint, offrampRegistryAddress: Address): Promise<OfframpBumpFeeParams[]> {
         // check order status via viem should be Active/Accepted
-        const orderDetails: OnchainOfframpOrderDetails = await this.fetchOfframpOrder(orderId);
+        const orderDetails: OnchainOfframpOrderDetails = await this.fetchOfframpOrder(orderId, offrampRegistryAddress);
 
         if (orderDetails.status !== 'Active') {
             throw new Error(`Offramp order needs to be Active for accepting fees`);
@@ -340,11 +336,16 @@ export class GatewayApiClient {
      *
      * @param orderId The ID of the order to unlock.
      * @param receiver The address to receive the funds.
+     * @param offrampRegistryAddress The offramp registry address.
      * @returns Parameters for onchain `unlockFunds` call.
      */
-    async unlockOfframpOrder(orderId: bigint, receiver: Address): Promise<OfframpUnlockFundsParams[]> {
+    async unlockOfframpOrder(
+        orderId: bigint,
+        receiver: Address,
+        offrampRegistryAddress: Address
+    ): Promise<OfframpUnlockFundsParams[]> {
         // check order status via viem should be Active/Accepted
-        const orderDetails: OnchainOfframpOrderDetails = await this.fetchOfframpOrder(orderId);
+        const orderDetails: OnchainOfframpOrderDetails = await this.fetchOfframpOrder(orderId, offrampRegistryAddress);
 
         if (orderDetails.status == 'Processed' || orderDetails.status == 'Refunded') {
             throw new Error(`Offramp order already processed/refunded`);
@@ -418,13 +419,17 @@ export class GatewayApiClient {
      * Fetches onchain details for a specific offramp order.
      *
      * @param orderId The ID of the order to fetch.
+     * @param offrampRegistryAddress The offramp registry address.
      * @returns Onchain order details.
      */
-    private async fetchOfframpOrder(orderId: bigint): Promise<OnchainOfframpOrderDetails> {
+    private async fetchOfframpOrder(
+        orderId: bigint,
+        offrampRegistryAddress: Address
+    ): Promise<OnchainOfframpOrderDetails> {
         const publicClient = viemClient(this.chain) as PublicClient;
 
         const order = await publicClient.readContract({
-            address: this.offrampRegistryAddress,
+            address: offrampRegistryAddress,
             abi: offrampGetOrderCaller,
             functionName: 'getOfframpOrder',
             args: [orderId],
