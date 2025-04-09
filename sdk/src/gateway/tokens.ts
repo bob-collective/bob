@@ -1,4 +1,5 @@
 import { ChainId, Token } from './types';
+import { Address } from 'viem';
 
 // TODO: re-write to use superchain tokenlist
 const bobTokens = [
@@ -103,6 +104,17 @@ const bobSepoliaTokens = [
             },
         },
         logoURI: 'https://ethereum-optimism.github.io/data/WBTC/logo.svg',
+    },
+    {
+        name: 'Bob BTC',
+        symbol: 'bobBTC',
+        decimals: 18,
+        tokens: {
+            'bob-sepolia': {
+                address: '0xDA472456b1a6A2FC9AE7EDb0e007064224D4284c',
+            },
+        },
+        logoURI: 'https://raw.githubusercontent.com/bob-collective/bob/master/assets/bobBTC.svg',
     },
 ];
 
@@ -301,4 +313,14 @@ for (const token of TOKENS) {
     if (token.tokens['bob-sepolia']) {
         addToken(token.tokens['bob-sepolia'].address, token, ChainId.BOB_SEPOLIA);
     }
+}
+
+export function getTokenDecimals(tokenAddress: Address): number | undefined {
+    const normalizedAddress = tokenAddress.toString().toLowerCase();
+
+    const token =
+        bobTokens.find((t) => t.tokens.bob.address.toLowerCase() === normalizedAddress) ||
+        bobSepoliaTokens.find((t) => t.tokens['bob-sepolia'].address.toLowerCase() === normalizedAddress);
+
+    return token?.decimals;
 }

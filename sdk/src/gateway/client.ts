@@ -17,17 +17,29 @@ import {
     OrderStatus,
     StakeTransactionParams,
     BuildStakeParams,
-    OffRampRequestPayload,
-    OffRampGatewayCreateQuoteResponse,
-    GatewayOffRampOrder,
+    OfframpOrderDetails,
+    OfframpQuote,
+    OfframpCreateOrderParams,
+    OfframpBumpFeeParams,
+    OnchainOfframpOrderDetails,
+    OfframpUnlockFundsParams,
+    OfframpRawOrder,
+    OfframpOrderStatus,
 } from './types';
-import { SYMBOL_LOOKUP, ADDRESS_LOOKUP } from './tokens';
+import { SYMBOL_LOOKUP, ADDRESS_LOOKUP, getTokenDecimals } from './tokens';
 import { createBitcoinPsbt } from '../wallet';
 import { AddressType, getAddressInfo, Network } from 'bitcoin-address-validation';
 import { EsploraClient } from '../esplora';
-import { offRampCaller, strategyCaller } from './abi';
-import { isAddress, Address, isAddressEqual } from 'viem';
+import {
+    offrampBumpFeeCaller,
+    offrampCreateOrderCaller,
+    offrampGetOrderCaller,
+    offrampUnlockFundsCaller,
+    strategyCaller,
+} from './abi';
+import { isAddress, Address, isAddressEqual, createPublicClient, http, PublicClient } from 'viem';
 import * as bitcoin from 'bitcoinjs-lib';
+import { bob, bobSepolia } from 'viem/chains';
 
 type Optional<T, K extends keyof T> = Omit<T, K> & Partial<T>;
 
@@ -48,6 +60,7 @@ export const TESTNET_GATEWAY_BASE_URL = 'https://gateway-api-testnet.gobob.xyz';
  * @default "https://gateway-api-testnet.gobob.xyz"
  */
 export const SIGNET_GATEWAY_BASE_URL = 'https://gateway-api-signet.gobob.xyz';
+
 /**
  * Gateway REST HTTP API client
  */
@@ -161,22 +174,51 @@ export class GatewayApiClient {
     }
 
     /**
-     * **Note:** Before calling this method, the user must approve the spending of funds
-     * on the offramp contract to ensure the transaction can proceed successfully.
+     * Fetches an offramp quote for the given token and amount.
      *
-     * Retrieves an offramp quote and constructs the required request payload.
-     *
-     * @param {Optional<GatewayQuoteParams,
-     *   'toChain' | 'toToken' | 'toUserAddress' | 'affiliateId' | 'type' | 'fee' |
-     *   'feeRate' | 'gasRefill' | 'strategyAddress' | 'campaignId' | 'fromToken' |
-     *   'fromUserAddress' | 'maxSlippage'
-     * >} params - The parameters required for obtaining an offramp quote, with specific fields marked as optional.
-     *
-     * @returns {Promise<OffRampRequestPayload>} The constructed offramp request payload.
-     *
-     * @throws {Error} If the provided arguments are invalid or violate constraints.
+     * @param token ERC20 token address.
+     * @param amountInToken Amount specified in token decimals.
+     * @returns Offramp quote details.
      */
-    async getOffRampQuoteAndRequest(
+    async fetchOfframpQuote(token: string, amountInToken: bigint): Promise<OfframpQuote> {
+        const queryParams = new URLSearchParams({
+            amountInWrappedToken: amountInToken.toString(),
+            token,
+        });
+
+        const response = await fetch(`${this.baseUrl}/offramp-quote?${queryParams}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
+            },
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            const errorMessage = errorData?.message || 'Failed to get offramp quote';
+            throw new Error(`Offramp API Error: ${errorMessage}`);
+        }
+
+        const rawQuote = await response.json();
+
+        return {
+            amountLockInSat: BigInt(rawQuote.amountLockInSat.toString()),
+            feesInSat: BigInt(rawQuote.feesInSat.toString()),
+            feeRate: BigInt(rawQuote.feeRate.toString()),
+            deadline: BigInt(rawQuote.deadline.toString()),
+            registryAddress: rawQuote.registryAddress as Address,
+            token: token as Address,
+        };
+    }
+
+    /**
+     * Prepares calldata to create an offramp order for BTC.
+     *
+     * @param params Offramp order params, excluding auto-filled fields.
+     * @returns Parameters for onchain `createOrder` call.
+     */
+    async createOfframpOrder(
         params: Optional<
             GatewayQuoteParams,
             | 'toChain'
@@ -194,19 +236,13 @@ export class GatewayApiClient {
             | 'maxSlippage'
             | 'fromChain'
         >
-    ): Promise<OffRampRequestPayload> {
-        let bitcoinNetwork = bitcoin.networks.regtest;
-
+    ): Promise<OfframpCreateOrderParams> {
         const isMainnet =
             this.chainId === ChainId.BOB || (typeof this.chainId === 'string' && this.chainId === Chain.BOB);
 
         const isTestnet =
             this.chainId === ChainId.BOB_SEPOLIA ||
             (typeof this.chainId === 'string' && this.chainId === Chain.BOB_SEPOLIA);
-
-        const isInvalidNetwork = !isMainnet && !isTestnet;
-        const isMismatchMainnet = isMainnet && this.chain !== Chain.BOB;
-        const isMismatchTestnet = isTestnet && this.chain !== Chain.BOB_SEPOLIA;
 
         let outputTokenAddress = '';
         const toToken = params.toToken.toLowerCase();
@@ -221,17 +257,13 @@ export class GatewayApiClient {
             throw new Error('Unknown output token');
         }
 
-        if (isMismatchMainnet) {
-            throw new Error('OffRamp not enabled for mainnet');
-        }
+        const offrampQuote: OfframpQuote = await this.fetchOfframpQuote(outputTokenAddress, BigInt(params.amount));
 
-        if (isInvalidNetwork || isMismatchTestnet) {
-            throw new Error('Invalid output chain');
-        }
-
-        if (isMainnet) {
+        // get btc script pub key
+        let bitcoinNetwork = bitcoin.networks.regtest;
+        if (this.chain == Chain.BOB) {
             bitcoinNetwork = bitcoin.networks.bitcoin;
-        } else if (isTestnet) {
+        } else if (this.chain == Chain.BOB_SEPOLIA) {
             bitcoinNetwork = bitcoin.networks.testnet;
         }
 
@@ -240,59 +272,185 @@ export class GatewayApiClient {
         }
         const receiverAddress = toHexScriptPubKey(params.bitcoinUserAddress, bitcoinNetwork);
 
-        const queryParams = new URLSearchParams({
-            amountToLock: params.amount.toString(),
-            token: outputTokenAddress,
-        });
-
-        const response = await fetch(`${this.baseUrl}/offramp-quote?${queryParams}`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                Accept: 'application/json',
-            },
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            const errorMessage = errorData?.message || 'Failed to get offramp quote';
-            throw new Error(`Offramp API Error: ${errorMessage}`);
-        }
-
-        const data: OffRampGatewayCreateQuoteResponse = await response.json();
-
         return {
-            offRampABI: offRampCaller,
-            offRampFunctionName: 'createOffRampRequest' as const,
-            offRampArgs: [
+            quote: offrampQuote,
+            offrampABI: offrampCreateOrderCaller,
+            offrampFunctionName: 'createOrder' as const,
+            offrampArgs: [
                 {
-                    offRampAddress: data.gateway as Address,
-                    amountLocked: BigInt(data.amountToLock.toString()),
-                    maxFees: BigInt(data.minimumFeesToPay.toString()),
-                    user: params.fromUserAddress as Address,
-                    token: outputTokenAddress as Address,
-                    userBtcAddress: receiverAddress,
+                    satAmountToLock: offrampQuote.amountLockInSat,
+                    satFeesMax: offrampQuote.feesInSat,
+                    orderCreationDeadline: offrampQuote.deadline,
+                    outputScript: receiverAddress,
+                    token: offrampQuote.token,
                 },
             ],
         };
     }
 
     /**
-     * Returns all pending and completed offramp orders for this account.
+     * Prepares calldata to bump fees for an active offramp order.
      *
-     * @param userAddress The user's EVM address.
-     * @returns {Promise<GatewayOffRampOrder[]>} The array of account orders.
+     * @param orderId The ID of the existing order.
+     * @param offrampRegistryAddress The offramp registry address.
+     * @returns Parameters for onchain `bumpFeeOfExistingOrder` call.
      */
-    async getOffRampOrders(userAddress: EvmAddress): Promise<GatewayOffRampOrder[]> {
-        const isTestnet =
-            this.chainId === ChainId.BOB_SEPOLIA ||
-            (typeof this.chainId === 'string' && this.chainId === Chain.BOB_SEPOLIA);
-        if (!isTestnet) {
-            throw new Error('Invalid output chain offramp only enabled for testnet');
+    async bumpFeeForOfframpOrder(orderId: bigint, offrampRegistryAddress: Address): Promise<OfframpBumpFeeParams[]> {
+        // check order status via viem should be Active/Accepted
+        const orderDetails: OnchainOfframpOrderDetails = await this.fetchOfframpOrder(orderId, offrampRegistryAddress);
+
+        if (orderDetails.status !== 'Active') {
+            throw new Error(`Offramp order needs to be Active for accepting fees`);
         }
 
+        const [shouldFeesBeBumped, newFeeSat] = await this.checkFeeBumpRequirement(
+            orderDetails.token,
+            orderDetails.satAmountLocked,
+            orderDetails.satFeesMax
+        );
+
+        if (!shouldFeesBeBumped) {
+            throw new Error(
+                `Current fees (${orderDetails.satFeesMax.toString()} sat) are sufficient to satisfy the order, as the new required fees (${newFeeSat.toString()} sat) are lower or equal.`
+            );
+        }
+
+        // check fees greater than new fees
+        return [
+            {
+                offrampABI: offrampBumpFeeCaller,
+                offrampFunctionName: 'bumpFeeOfExistingOrder',
+                offrampArgs: [
+                    {
+                        orderId: orderId,
+                        newFeeSat: newFeeSat,
+                    },
+                ],
+            },
+        ];
+    }
+
+    /**
+     * Prepares calldata to unlock funds for an unprocessed offramp order.
+     *
+     * @param orderId The ID of the order to unlock.
+     * @param receiver The address to receive the funds.
+     * @param offrampRegistryAddress The offramp registry address.
+     * @returns Parameters for onchain `unlockFunds` call.
+     */
+    async unlockOfframpOrder(
+        orderId: bigint,
+        receiver: Address,
+        offrampRegistryAddress: Address
+    ): Promise<OfframpUnlockFundsParams[]> {
+        // check order status via viem should be Active/Accepted
+        const orderDetails: OnchainOfframpOrderDetails = await this.fetchOfframpOrder(orderId, offrampRegistryAddress);
+
+        if (orderDetails.status == 'Processed' || orderDetails.status == 'Refunded') {
+            throw new Error(`Offramp order already processed/refunded`);
+        }
+
+        return [
+            {
+                offrampABI: offrampUnlockFundsCaller,
+                offrampFunctionName: 'unlockFunds',
+                offrampArgs: [
+                    {
+                        orderId: orderId,
+                        receiver: receiver,
+                    },
+                ],
+            },
+        ];
+    }
+
+    /**
+     * Returns all offramp orders for this account.
+     *
+     * @param userAddress The user's EVM address.
+     * @returns {Promise<OfframpOrderDetails[]>} The array of account orders.
+     */
+    async getOfframpOrders(userAddress: EvmAddress): Promise<OfframpOrderDetails[]> {
         const response = await this.fetchGet(`${this.baseUrl}/offramp-orders/${userAddress}`);
-        return await response.json();
+        const rawOrders: OfframpRawOrder[] = await response.json();
+
+        return Promise.all(
+            rawOrders.map(async (order) => {
+                const status = order.status as OfframpOrderStatus;
+                const [shouldFeesBeBumped] = await this.checkFeeBumpRequirement(
+                    order.token as Address,
+                    BigInt(order.satAmountLocked),
+                    BigInt(order.satFeesMax)
+                );
+                const canOrderBeCancelled = this.canOrderBeCancelled(status);
+
+                return {
+                    ...order,
+                    status,
+                    token: order.token as Address,
+                    orderId: BigInt(order.orderId.toString()),
+                    satAmountLocked: BigInt(order.satAmountLocked.toString()),
+                    satFeesMax: BigInt(order.satFeesMax.toString()),
+                    orderTimestamp: BigInt(order.orderTimestamp.toString()),
+                    shouldFeesBeBumped,
+                    canOrderBeCancelled,
+                };
+            })
+        );
+    }
+
+    private async checkFeeBumpRequirement(
+        token: Address,
+        satAmountLocked: bigint,
+        satFeesMax: bigint
+    ): Promise<[boolean, bigint]> {
+        const decimals = getTokenDecimals(token);
+        const amountInToken = satAmountLocked * BigInt(10 ** (decimals - 8));
+
+        const offrampQuote: OfframpQuote = await this.fetchOfframpQuote(token.toString(), amountInToken);
+
+        const shouldBump = satFeesMax < offrampQuote.feesInSat;
+        return [shouldBump, offrampQuote.feesInSat];
+    }
+
+    private canOrderBeCancelled(status: OfframpOrderStatus): boolean {
+        return status === 'Active';
+        // TODO: order should also be able to cancel once 7 day claim period has passed
+    }
+
+    /**
+     * Fetches onchain details for a specific offramp order.
+     *
+     * @param orderId The ID of the order to fetch.
+     * @param offrampRegistryAddress The offramp registry address.
+     * @returns Onchain order details.
+     */
+    private async fetchOfframpOrder(
+        orderId: bigint,
+        offrampRegistryAddress: Address
+    ): Promise<OnchainOfframpOrderDetails> {
+        const publicClient = viemClient(this.chain) as PublicClient;
+
+        const order = await publicClient.readContract({
+            address: offrampRegistryAddress,
+            abi: offrampGetOrderCaller,
+            functionName: 'getOfframpOrder',
+            args: [orderId],
+        });
+
+        return {
+            orderId,
+            token: order.token as Address,
+            satAmountLocked: BigInt(order.satAmountLocked),
+            satFeesMax: BigInt(order.satFeesMax),
+            sender: order.sender as Address,
+            receiver:
+                order.receiver !== '0x0000000000000000000000000000000000000000' ? (order.receiver as Address) : null,
+            owner: order.owner !== '0x0000000000000000000000000000000000000000' ? (order.owner as Address) : null,
+            outputScript: order.outputScript,
+            status: parseOrderStatus(Number(order.status)) as OnchainOfframpOrderDetails['status'],
+            orderTimestamp: BigInt(order.timestamp),
+        };
     }
 
     // TODO: add error handling
@@ -690,4 +848,24 @@ function slugify(str: string): string {
         .toLowerCase()
         .replace(/ /g, '-')
         .replace(/[^\w-]+/g, '');
+}
+
+function parseOrderStatus(value: number): OfframpOrderStatus {
+    switch (value) {
+        case 0:
+            return 'Active';
+        case 1:
+            return 'Accepted';
+        case 2:
+            return 'Processed';
+        case 3:
+            return 'Refunded';
+        default:
+            throw new Error(`Invalid order status: ${value}`);
+    }
+}
+
+export function viemClient(chain) {
+    const chainIs = chain === Chain.BOB ? bob : bobSepolia;
+    return createPublicClient({ chain: chainIs, transport: http() });
 }
