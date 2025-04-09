@@ -468,7 +468,7 @@ describe('Gateway Tests', () => {
                     strategyType: 'staking',
                 },
             ]);
-        const gatewaySDK = new GatewaySDK('bob', '0xD7b27b178f6Bf290155201109906Ad203B6d99B1' as Address);
+        const gatewaySDK = new GatewaySDK('bob');
         const params: BuildStakeParams = {
             strategyAddress: ZeroAddress as Address,
             token: TBTC_ADDRESS as Address,
