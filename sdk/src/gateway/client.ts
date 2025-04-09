@@ -23,7 +23,7 @@ import {
     OfframpBumpFeeParams,
     OnchainOfframpOrderDetails,
     OfframpUnlockFundsParams,
-    RawOrder,
+    OfframpRawOrder,
     OfframpOrderStatus,
 } from './types';
 import { SYMBOL_LOOKUP, ADDRESS_LOOKUP, getTokenDecimals } from './tokens';
@@ -372,7 +372,7 @@ export class GatewayApiClient {
      */
     async getOfframpOrders(userAddress: EvmAddress): Promise<OfframpOrderDetails[]> {
         const response = await this.fetchGet(`${this.baseUrl}/offramp-orders/${userAddress}`);
-        const rawOrders: RawOrder[] = await response.json();
+        const rawOrders: OfframpRawOrder[] = await response.json();
 
         return Promise.all(
             rawOrders.map(async (order) => {

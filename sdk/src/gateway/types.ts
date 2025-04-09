@@ -457,13 +457,13 @@ export type OnchainOfframpOrderDetails = {
 };
 
 /** @dev Internal */
-export interface RawOrder {
-    orderId: string; // hex string like "0x1"
-    token: string; // Address
-    satAmountLocked: string; // hex string
-    satFeesMax: string; // hex string
-    status: string; // you can expand this if more statuses exist
-    orderTimestamp: string; // hex string
+export interface OfframpRawOrder {
+    orderId: string;
+    token: string;
+    satAmountLocked: string;
+    satFeesMax: string;
+    status: string;
+    orderTimestamp: string;
     btcTx: string | null;
     evmTx: string | null;
 }
