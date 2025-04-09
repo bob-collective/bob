@@ -491,7 +491,7 @@ describe('Gateway Tests', () => {
                     strategyType: 'staking',
                 },
             ]);
-        const gatewaySDK = new GatewaySDK('bob', '0xD7b27b178f6Bf290155201109906Ad203B6d99B1' as Address);
+        const gatewaySDK = new GatewaySDK('bob');
         const params: BuildStakeParams = {
             strategyAddress: ZeroAddress as Address,
             token: TBTC_ADDRESS as Address,
@@ -515,7 +515,7 @@ describe('Gateway Tests', () => {
     });
 
     it('should get valid create offramp quote', async () => {
-        const gatewaySDK = new GatewaySDK('signet', '0xD7b27b178f6Bf290155201109906Ad203B6d99B1' as Address);
+        const gatewaySDK = new GatewaySDK('signet');
         nock(`${SIGNET_GATEWAY_BASE_URL}`).get('/offramp-quote').query(true).reply(200, {
             amountLockInSat: 10000000000000,
             feesInSat: 385,
