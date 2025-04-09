@@ -303,16 +303,15 @@ export class GatewayApiClient {
             throw new Error(`Offramp order needs to be Active for accepting fees`);
         }
 
-        // get amount in token decimals
-        const decimals = getTokenDecimals(orderDetails.token); // e.g., 18
-        const amountInToken = BigInt(orderDetails.satAmountLocked) * BigInt(10 ** (decimals - 8));
+        const [shouldFeesBeBumped, newFeeSat] = await this.checkFeeBumpRequirement(
+            orderDetails.token,
+            orderDetails.satAmountLocked,
+            orderDetails.satFeesMax
+        );
 
-        // get new quote for the amount
-        const offrampQuote: OfframpQuote = await this.fetchOfframpQuote(orderDetails.token.toString(), amountInToken);
-
-        if (orderDetails.satFeesMax >= offrampQuote.feesInSat) {
+        if (!shouldFeesBeBumped) {
             throw new Error(
-                `Current fees (${orderDetails.satFeesMax.toString()} sat) are sufficient to satisfy the order, as the new required fees (${offrampQuote.feesInSat.toString()} sat) are lower or equal.`
+                `Current fees (${orderDetails.satFeesMax.toString()} sat) are sufficient to satisfy the order, as the new required fees (${newFeeSat.toString()} sat) are lower or equal.`
             );
         }
 
@@ -324,7 +323,7 @@ export class GatewayApiClient {
                 offRampArgs: [
                     {
                         orderId: orderId,
-                        newFeeSat: offrampQuote.feesInSat,
+                        newFeeSat: newFeeSat,
                     },
                 ],
             },
@@ -378,7 +377,11 @@ export class GatewayApiClient {
         return Promise.all(
             rawOrders.map(async (order) => {
                 const status = order.status as OfframpOrderStatus;
-                const shouldFeesBeBumped = await this.shouldFeesBeBumped(order);
+                const [shouldFeesBeBumped] = await this.checkFeeBumpRequirement(
+                    order.token as Address,
+                    BigInt(order.satAmountLocked),
+                    BigInt(order.satFeesMax)
+                );
                 const canOrderBeCancelled = this.canOrderBeCancelled(status);
 
                 return {
@@ -396,18 +399,18 @@ export class GatewayApiClient {
         );
     }
 
-    private async shouldFeesBeBumped(orderDetails: RawOrder): Promise<boolean> {
-        const decimals = getTokenDecimals(orderDetails.token as Address); // e.g., 18
-        const amountInToken = BigInt(orderDetails.satAmountLocked) * BigInt(10 ** (decimals - 8));
+    private async checkFeeBumpRequirement(
+        token: Address,
+        satAmountLocked: bigint,
+        satFeesMax: bigint
+    ): Promise<[boolean, bigint]> {
+        const decimals = getTokenDecimals(token);
+        const amountInToken = satAmountLocked * BigInt(10 ** (decimals - 8));
 
-        // get new quote for the amount
-        const offrampQuote: OfframpQuote = await this.fetchOfframpQuote(orderDetails.token.toString(), amountInToken);
+        const offrampQuote: OfframpQuote = await this.fetchOfframpQuote(token.toString(), amountInToken);
 
-        if (BigInt(orderDetails.satFeesMax) >= offrampQuote.feesInSat) {
-            return false;
-        }
-
-        return true;
+        const shouldBump = satFeesMax < offrampQuote.feesInSat;
+        return [shouldBump, offrampQuote.feesInSat];
     }
 
     private canOrderBeCancelled(status: OfframpOrderStatus): boolean {
