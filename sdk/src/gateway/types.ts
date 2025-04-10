@@ -70,6 +70,10 @@ export interface Token {
     logoURI: string;
 }
 
+export interface EnrichedToken extends Token {
+    tvl: number;
+}
+
 /**
  * Designed to be compatible with the Swing SDK.
  * https://developers.swing.xyz/reference/sdk/get-a-quote
@@ -387,4 +391,11 @@ export interface GatewayStrategy {
     projectLogo?: string;
     inputTokenAddress: string;
     outputTokenAddress?: string;
+}
+
+/** @dev Internal */
+
+export interface StrategyAssetState {
+    address: Address | 'usd';
+    totalUnderlying: bigint;
 }

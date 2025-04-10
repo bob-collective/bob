@@ -1,3 +1,5 @@
+import { parseAbi } from 'viem';
+
 export const strategyCaller = [
     {
         type: 'function',
@@ -83,3 +85,10 @@ export const offRampCaller = [
         stateMutability: 'nonpayable',
     },
 ] as const;
+
+export const compoundV2CTokenAbi = parseAbi([
+    'function exchangeRateCurrent() external returns (uint256)',
+    'function underlying() external view returns (address)',
+]);
+
+export const aaveV2AtokenAbi = parseAbi(['function UNDERLYING_ASSET_ADDRESS() external view returns (address)']);

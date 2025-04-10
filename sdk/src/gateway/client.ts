@@ -20,6 +20,7 @@ import {
     OffRampRequestPayload,
     OffRampGatewayCreateQuoteResponse,
     GatewayOffRampOrder,
+    EnrichedToken,
 } from './types';
 import { SYMBOL_LOOKUP, ADDRESS_LOOKUP } from './tokens';
 import { createBitcoinPsbt } from '../wallet';
@@ -28,6 +29,9 @@ import { EsploraClient } from '../esplora';
 import { offRampCaller, strategyCaller } from './abi';
 import { isAddress, Address, isAddressEqual } from 'viem';
 import * as bitcoin from 'bitcoinjs-lib';
+import { bob, bobSepolia } from 'viem/chains';
+import StrategyClient from './strategy';
+import { bigIntToFloatingNumber } from '../utils';
 
 type Optional<T, K extends keyof T> = Omit<T, K> & Partial<T>;
 
@@ -48,31 +52,36 @@ export const TESTNET_GATEWAY_BASE_URL = 'https://gateway-api-testnet.gobob.xyz';
  * @default "https://gateway-api-testnet.gobob.xyz"
  */
 export const SIGNET_GATEWAY_BASE_URL = 'https://gateway-api-signet.gobob.xyz';
+
 /**
  * Gateway REST HTTP API client
  */
 export class GatewayApiClient {
     private chain: Chain.BOB | Chain.BOB_SEPOLIA;
     private baseUrl: string;
+    private strategy: StrategyClient;
 
     /**
      * @constructor
      * @param chainName The chain name.
      */
-    constructor(chainName: string) {
+    constructor(chainName: string, options?: { rpcUrl?: string }) {
         switch (chainName) {
             case 'mainnet':
             case Chain.BOB:
                 this.chain = Chain.BOB;
                 this.baseUrl = MAINNET_GATEWAY_BASE_URL;
+                this.strategy = new StrategyClient(bob, options?.rpcUrl);
                 break;
             case 'testnet':
                 this.chain = Chain.BOB_SEPOLIA;
                 this.baseUrl = TESTNET_GATEWAY_BASE_URL;
+                this.strategy = new StrategyClient(bobSepolia, options?.rpcUrl);
                 break;
             case 'signet':
                 this.chain = Chain.BOB_SEPOLIA; // Same chain as testnet
                 this.baseUrl = SIGNET_GATEWAY_BASE_URL;
+                this.strategy = new StrategyClient(bobSepolia, options?.rpcUrl);
                 break;
             default:
                 throw new Error('Invalid chain');
@@ -555,6 +564,62 @@ export class GatewayApiClient {
         // https://github.com/ethereum-optimism/ecosystem/blob/c6faa01455f9e846f31c0343a0be4c03cbeb2a6d/packages/op-app/src/hooks/useOPTokens.ts#L10
         const tokens = await this.getTokenAddresses(includeStrategies);
         return tokens.map((token) => ADDRESS_LOOKUP[this.chainId][token]).filter((token) => token !== undefined);
+    }
+
+    // TODO: should get price from the gateway API
+    private async getPrices(): Promise<Map<string, number>> {
+        const response = await this.fetchGet('https://fusion-api.gobob.xyz/pricefeed');
+
+        if (!response.ok) {
+            console.error('Failed to fetch prices from Fusion API');
+            return new Map();
+        }
+
+        const list = await response.json();
+
+        return new Map(list.map((x) => [x.token_address.toLowerCase(), Number(x.price)]));
+    }
+
+    /**
+     * Same as {@link getTokens} but with additional info, like tvl.
+     *
+     * @param includeStrategies Also include output tokens via strategies (e.g. staking or lending).
+     * @returns {Promise<EnrichedToken[]>} The array of tokens.
+     */
+    async getEnrichedTokens(includeStrategies: boolean = true): Promise<EnrichedToken[]> {
+        const [tokens, prices] = await Promise.all([this.getTokenAddresses(includeStrategies), this.getPrices()]);
+
+        return Promise.all(
+            tokens.map(async (address) => {
+                const token = ADDRESS_LOOKUP[this.chainId][address];
+
+                const { address: underlyingAddress, totalUnderlying } =
+                    await this.strategy.getStrategyAssetState(token);
+
+                if (underlyingAddress === 'usd') {
+                    return {
+                        ...token,
+                        tvl: Number(totalUnderlying),
+                    };
+                }
+
+                const underlyingToken = ADDRESS_LOOKUP[this.chainId][underlyingAddress.toLowerCase()];
+
+                if (!underlyingToken) {
+                    return {
+                        ...token,
+                        tvl: 0,
+                    };
+                }
+
+                return {
+                    ...token,
+                    tvl:
+                        bigIntToFloatingNumber(totalUnderlying, underlyingToken.decimals) *
+                        (prices.get(underlyingAddress.toLowerCase()) ?? 0),
+                };
+            })
+        );
     }
 
     /**
