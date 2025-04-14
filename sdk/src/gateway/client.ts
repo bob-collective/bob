@@ -72,6 +72,12 @@ export const SIGNET_GATEWAY_BASE_URL = 'https://gateway-api-signet.gobob.xyz';
 export const OFFRAMP_ORDER_CLAIM_DELAY_IN_SECONDS = 7 * 24 * 60 * 60;
 
 /**
+ * Duration (in seconds) an offramp order remains valid before it can be finalized on-chain.
+ * This is calculated from the moment the quote is fetched.
+ */
+export const ORDER_DEADLINE_IN_SECONDS = 30 * 60; // 30 minutes
+
+/**
  * Gateway REST HTTP API client
  */
 export class GatewayApiClient {
@@ -226,12 +232,14 @@ export class GatewayApiClient {
         }
 
         const rawQuote = await response.json();
+        const currentUnixTimeInSec = Math.floor(Date.now() / 1000);
+        const deadline = currentUnixTimeInSec + ORDER_DEADLINE_IN_SECONDS;
 
         return {
             amountLockInSat: BigInt(rawQuote.amountLockInSat.toString()),
             feesInSat: BigInt(rawQuote.feesInSat.toString()),
             feeRate: BigInt(rawQuote.feeRate.toString()),
-            deadline: BigInt(rawQuote.deadline.toString()),
+            deadline,
             registryAddress: rawQuote.registryAddress as Address,
             token: token as Address,
         };

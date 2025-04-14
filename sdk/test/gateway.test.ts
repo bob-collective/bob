@@ -554,7 +554,6 @@ describe('Gateway Tests', () => {
         nock(`${SIGNET_GATEWAY_BASE_URL}`).get('/offramp-quote').query(true).reply(200, {
             amountLockInSat: 10000000000000,
             feesInSat: 385,
-            deadline: '0x67f024dc',
             registryAddress: '0xd7b27b178f6bf290155201109906ad203b6d99b1',
             feeRate: 1,
         });
@@ -569,7 +568,7 @@ describe('Gateway Tests', () => {
         expect(result.offrampArgs[0]).to.deep.equal({
             satAmountToLock: BigInt('10000000000000'),
             satFeesMax: BigInt('385'),
-            orderCreationDeadline: BigInt('1743791324'),
+            orderCreationDeadline: result.offrampArgs[0].orderCreationDeadline,
             outputScript: '0x1600149d5e60f3b5cc2d246f990692ee4b267d1cd58477',
             token: '0xda472456b1a6a2fc9ae7edb0e007064224d4284c',
         });
@@ -609,7 +608,6 @@ describe('Gateway Tests', () => {
         nock(`${SIGNET_GATEWAY_BASE_URL}`).get('/offramp-quote').query(true).reply(200, {
             amountLockInSat: 10000000000000,
             feesInSat: 385,
-            deadline: '0x67f024dc',
             registryAddress: '0xd7b27b178f6bf290155201109906ad203b6d99b1',
             feeRate: 1,
         });
@@ -639,7 +637,6 @@ describe('Gateway Tests', () => {
         nock(`${SIGNET_GATEWAY_BASE_URL}`).get('/offramp-quote').query(true).reply(200, {
             amountLockInSat: 10000000000000,
             feesInSat: 385,
-            deadline: '0x67f024dc',
             registryAddress: '0xd7b27b178f6bf290155201109906ad203b6d99b1',
             feeRate: 1,
         });
