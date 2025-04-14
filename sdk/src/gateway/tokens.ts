@@ -108,10 +108,10 @@ const bobSepoliaTokens = [
     {
         name: 'Bob BTC',
         symbol: 'bobBTC',
-        decimals: 18,
+        decimals: 8,
         tokens: {
             'bob-sepolia': {
-                address: '0xDA472456b1a6A2FC9AE7EDb0e007064224D4284c',
+                address: '0x4496ebE7C8666a8103713EE6e0c08cA0cD25b888',
             },
         },
         logoURI: 'https://raw.githubusercontent.com/bob-collective/bob/master/assets/bobBTC.svg',

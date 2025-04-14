@@ -59,7 +59,14 @@ export const TESTNET_GATEWAY_BASE_URL = 'https://gateway-api-testnet.gobob.xyz';
  * Base url for the Signet Gateway API.
  * @default "https://gateway-api-testnet.gobob.xyz"
  */
-export const SIGNET_GATEWAY_BASE_URL = 'https://gateway-api-signet.gobob.xyz';
+export const SIGNET_GATEWAY_BASE_URL = 'http://127.0.0.1:3030';
+
+/**
+ * The time duration (in seconds) that needs to pass before unlocking funds for an accepted order.
+ * Once an order's status is "Accepted", it will be locked for this period (7 days) before the funds can be claimed.
+ * @default 7 * 24 * 60 * 60 (7 days)
+ */
+export const OFFRAMP_ORDER_CLAIM_DELAY_IN_SECONDS = 7 * 24 * 60 * 60;
 
 /**
  * Gateway REST HTTP API client
@@ -171,6 +178,17 @@ export class GatewayApiClient {
             baseToken: ADDRESS_LOOKUP[chainId][quote.baseTokenAddress],
             outputToken: quote.strategyAddress ? ADDRESS_LOOKUP[chainId][outputTokenAddress] : undefined,
         };
+    }
+
+    /**
+     * Fetches the offramp registry address.
+     * This address is used to interact with the offramp registry contract.
+     *
+     * @returns The offramp registry address.
+     */
+    async fetchOfframpRegistryAddress(): Promise<Address> {
+        const response = await this.fetchGet(`${this.baseUrl}/offramp-registry-address`);
+        return JSON.parse(await response.text()) as Address;
     }
 
     /**
@@ -292,12 +310,11 @@ export class GatewayApiClient {
      * Prepares calldata to bump fees for an active offramp order.
      *
      * @param orderId The ID of the existing order.
-     * @param offrampRegistryAddress The offramp registry address.
      * @returns Parameters for onchain `bumpFeeOfExistingOrder` call.
      */
-    async bumpFeeForOfframpOrder(orderId: bigint, offrampRegistryAddress: Address): Promise<OfframpBumpFeeParams[]> {
+    async bumpFeeForOfframpOrder(orderId: bigint): Promise<OfframpBumpFeeParams[]> {
         // check order status via viem should be Active/Accepted
-        const orderDetails: OnchainOfframpOrderDetails = await this.fetchOfframpOrder(orderId, offrampRegistryAddress);
+        const orderDetails: OnchainOfframpOrderDetails = await this.fetchOfframpOrder(orderId);
 
         if (orderDetails.status !== 'Active') {
             throw new Error(`Offramp order needs to be Active for accepting fees`);
@@ -335,19 +352,18 @@ export class GatewayApiClient {
      *
      * @param orderId The ID of the order to unlock.
      * @param receiver The address to receive the funds.
-     * @param offrampRegistryAddress The offramp registry address.
      * @returns Parameters for onchain `unlockFunds` call.
      */
-    async unlockOfframpOrder(
-        orderId: bigint,
-        receiver: Address,
-        offrampRegistryAddress: Address
-    ): Promise<OfframpUnlockFundsParams[]> {
+    async unlockOfframpOrder(orderId: bigint, receiver: Address): Promise<OfframpUnlockFundsParams[]> {
         // check order status via viem should be Active/Accepted
-        const orderDetails: OnchainOfframpOrderDetails = await this.fetchOfframpOrder(orderId, offrampRegistryAddress);
+        const orderDetails: OnchainOfframpOrderDetails = await this.fetchOfframpOrder(orderId);
 
         if (orderDetails.status == 'Processed' || orderDetails.status == 'Refunded') {
             throw new Error(`Offramp order already processed/refunded`);
+        }
+
+        if (!hasOrderPassedClaimDelay(orderDetails.status, orderDetails.orderTimestamp)) {
+            throw new Error(`Offramp order is still within the 7-day claim delay and cannot be claimed yet.`);
         }
 
         return [
@@ -382,7 +398,7 @@ export class GatewayApiClient {
                     BigInt(order.satAmountLocked),
                     BigInt(order.satFeesMax)
                 );
-                const canOrderBeCancelled = this.canOrderBeCancelled(status);
+                const canOrderBeCancelled = this.canOrderBeCancelled(status, BigInt(order.orderTimestamp));
 
                 return {
                     ...order,
@@ -413,22 +429,21 @@ export class GatewayApiClient {
         return [shouldBump, offrampQuote.feesInSat];
     }
 
-    private canOrderBeCancelled(status: OfframpOrderStatus): boolean {
-        return status === 'Active';
-        // TODO: order should also be able to cancel once 7 day claim period has passed
+    private canOrderBeCancelled(status: OfframpOrderStatus, orderTimestamp: bigint): boolean {
+        if (status === 'Active') {
+            return true;
+        }
+        return hasOrderPassedClaimDelay(status, orderTimestamp);
     }
 
     /**
      * Fetches onchain details for a specific offramp order.
      *
      * @param orderId The ID of the order to fetch.
-     * @param offrampRegistryAddress The offramp registry address.
      * @returns Onchain order details.
      */
-    private async fetchOfframpOrder(
-        orderId: bigint,
-        offrampRegistryAddress: Address
-    ): Promise<OnchainOfframpOrderDetails> {
+    private async fetchOfframpOrder(orderId: bigint): Promise<OnchainOfframpOrderDetails> {
+        const offrampRegistryAddress: Address = await this.fetchOfframpRegistryAddress();
         const publicClient = viemClient(this.chain) as PublicClient;
 
         const order = await publicClient.readContract({
@@ -868,4 +883,12 @@ function parseOrderStatus(value: number): OfframpOrderStatus {
 export function viemClient(chain) {
     const chainIs = chain === Chain.BOB ? bob : bobSepolia;
     return createPublicClient({ chain: chainIs, transport: http() });
+}
+
+export function hasOrderPassedClaimDelay(status: OfframpOrderStatus, orderTimestamp: bigint): boolean {
+    if (status !== 'Accepted') {
+        return false;
+    }
+    const nowInSec = Math.floor(Date.now() / 1000);
+    return Number(orderTimestamp) + OFFRAMP_ORDER_CLAIM_DELAY_IN_SECONDS <= nowInSec;
 }

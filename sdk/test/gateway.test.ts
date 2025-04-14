@@ -1,8 +1,21 @@
 import { assert, describe, expect, it } from 'vitest';
 import { GatewaySDK } from '../src/gateway';
-import { MAINNET_GATEWAY_BASE_URL, SIGNET_GATEWAY_BASE_URL, toHexScriptPubKey } from '../src/gateway/client';
+import {
+    hasOrderPassedClaimDelay,
+    MAINNET_GATEWAY_BASE_URL,
+    OFFRAMP_ORDER_CLAIM_DELAY_IN_SECONDS,
+    SIGNET_GATEWAY_BASE_URL,
+    toHexScriptPubKey,
+} from '../src/gateway/client';
 import { SYMBOL_LOOKUP } from '../src/gateway/tokens';
-import { BuildStakeParams, Chain, ChainId, OfframpOrderDetails, StakeTransactionParams } from '../src/gateway/types';
+import {
+    BuildStakeParams,
+    Chain,
+    ChainId,
+    OfframpOrderDetails,
+    OfframpOrderStatus,
+    StakeTransactionParams,
+} from '../src/gateway/types';
 import { ZeroAddress } from 'ethers';
 import { bobSepolia } from 'viem/chains';
 import nock from 'nock';
@@ -617,5 +630,28 @@ describe('Gateway Tests', () => {
                 bitcoinUserAddress: 'tb1p5d2m6d7yje35xqnk2wczghak6q20c6rqw303p58wrlzhue8t4z9s9y304z', // P2TR taproot address
             })
         ).rejects.toThrowError('Only following bitcoin address types are supported P2PKH, P2WPKH, P2SH or P2WSH.');
+    });
+
+    it('fetches the correct offramp registry address', async () => {
+        const gatewaySDK = new GatewaySDK('signet');
+
+        nock(SIGNET_GATEWAY_BASE_URL)
+            .get('/offramp-registry-address')
+            .reply(200, '"0xb74a5af78520075f90f4be803153673a162a9776"');
+
+        const result = await gatewaySDK.fetchOfframpRegistryAddress();
+
+        expect(result).toBe('0xb74a5af78520075f90f4be803153673a162a9776');
+    });
+
+    it('should return true when the order has passed the claim delay', () => {
+        const status: OfframpOrderStatus = 'Accepted';
+        const orderTimestamp: bigint = BigInt(Math.floor(Date.now() / 1000) - OFFRAMP_ORDER_CLAIM_DELAY_IN_SECONDS - 1); // Ensure the timestamp is more than 7 days ago
+
+        // Run the function
+        const result = hasOrderPassedClaimDelay(status, orderTimestamp);
+
+        // Assert the result is true (claim delay has passed)
+        expect(result).toBe(true);
     });
 });
