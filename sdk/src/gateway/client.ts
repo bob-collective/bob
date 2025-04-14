@@ -239,7 +239,7 @@ export class GatewayApiClient {
             amountLockInSat: BigInt(rawQuote.amountLockInSat.toString()),
             feesInSat: BigInt(rawQuote.feesInSat.toString()),
             feeRate: BigInt(rawQuote.feeRate.toString()),
-            deadline,
+            deadline: BigInt(deadline.toString()),
             registryAddress: rawQuote.registryAddress as Address,
             token: token as Address,
         };
