@@ -583,7 +583,7 @@ describe('Gateway Tests', () => {
         const mockResponse = [
             {
                 orderId: '0x0',
-                token: '0xda472456b1a6a2fc9ae7edb0e007064224d4284c',
+                token: '0x4496ebE7C8666a8103713EE6e0c08cA0cD25b888',
                 satAmountLocked: '0x3e8',
                 satFeesMax: '0x181',
                 status: 'Processed',
