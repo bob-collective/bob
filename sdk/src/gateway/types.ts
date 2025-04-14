@@ -436,7 +436,7 @@ export type OfframpOrderDetails = {
     canOrderBeCancelled: boolean;
 };
 
-/** @dev On-chain fetched state of an active/processed/refunded order */
+/** @dev Internal, On-chain fetched state of an active/processed/refunded order */
 export type OnchainOfframpOrderDetails = {
     /** @dev Unique identifier for the off-ramp order */
     orderId: bigint;

@@ -347,7 +347,6 @@ export class GatewayApiClient {
             );
         }
 
-        // check fees greater than new fees
         return [
             {
                 offrampABI: offrampBumpFeeCaller,
@@ -430,6 +429,12 @@ export class GatewayApiClient {
         );
     }
 
+    // TODO: Remove this logic once the backend provides the `bumpFee` flag.
+    /**
+     * Checks whether the current fee cap (`satFeesMax`) is sufficient for processing
+     * the offramp order. If the current fee is too low compared to the latest quote,
+     * a fee bump is required.
+     */
     private async checkFeeBumpRequirement(
         token: Address,
         satAmountLocked: bigint,
