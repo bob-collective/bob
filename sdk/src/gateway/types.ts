@@ -70,6 +70,10 @@ export interface Token {
     logoURI: string;
 }
 
+export interface EnrichedToken extends Token {
+    tvl: number;
+}
+
 /**
  * Designed to be compatible with the Swing SDK.
  * https://developers.swing.xyz/reference/sdk/get-a-quote
@@ -324,7 +328,7 @@ export type GatewayOrder = Omit<
 export type GatewayTokensInfo = {
     /** @description The base token (e.g. wBTC or tBTC) */
     baseToken: Token;
-    /** @description The output token (e.g. uniBTC or SolvBTC.BBN) */
+    /** @description The output token (e.g. uniBTC or xSolvBTC) */
     outputToken?: Token;
 };
 
@@ -477,4 +481,11 @@ export interface GatewayStrategy {
     projectLogo?: string;
     inputTokenAddress: string;
     outputTokenAddress?: string;
+}
+
+/** @dev Internal */
+
+export interface StrategyAssetState {
+    address: Address | 'usd';
+    totalUnderlying: bigint;
 }

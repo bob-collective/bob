@@ -26,7 +26,6 @@ contract BitcoinTxTest is Test {
         bytes32 txHash =
             abi.encodePacked(txInfo.version, txInfo.inputVector, txInfo.outputVector, txInfo.locktime).hash256View();
 
-        console2.logBytes32(txHash);
         assertEq(txId, txHash);
     }
 

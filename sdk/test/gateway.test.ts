@@ -1,4 +1,4 @@
-import { assert, describe, expect, it } from 'vitest';
+import { afterEach, assert, describe, expect, it } from 'vitest';
 import { GatewaySDK } from '../src/gateway';
 import {
     hasOrderPassedClaimDelay,
@@ -27,6 +27,10 @@ const TBTC = SYMBOL_LOOKUP[ChainId.BOB]['tbtc'];
 const TBTC_ADDRESS = TBTC.address;
 const SOLVBTC = SYMBOL_LOOKUP[ChainId.BOB]['solvbtc'];
 const SOLVBTC_ADDRESS = SOLVBTC.address;
+
+afterEach(() => {
+    nock.cleanAll();
+});
 
 describe('Gateway Tests', () => {
     it('should get chains', async () => {
@@ -247,6 +251,24 @@ describe('Gateway Tests', () => {
 
         const gatewaySDK = new GatewaySDK('bob');
         assert.deepEqual(await gatewaySDK.getTokenAddresses(false), [ZeroAddress]);
+    });
+
+    it.skip('should get enriched tokens', async () => {
+        const gatewaySDK = new GatewaySDK('bob');
+
+        const tokens = await gatewaySDK.getTokens(true);
+        const enrichedTokens = await gatewaySDK.getEnrichedTokens(true);
+
+        assert.lengthOf(enrichedTokens, tokens.length);
+
+        enrichedTokens.forEach((enrichedToken, i) => {
+            assert.strictEqual(tokens[i].address, enrichedToken.address);
+            assert.strictEqual(tokens[i].name, enrichedToken.name);
+            assert.strictEqual(tokens[i].symbol, enrichedToken.symbol);
+            assert.strictEqual(tokens[i].decimals, enrichedToken.decimals);
+            assert.isDefined(enrichedToken.tvl);
+            assert.notEqual(enrichedToken.tvl, 0);
+        });
     });
 
     it('should get orders', async () => {
