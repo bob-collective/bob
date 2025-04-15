@@ -335,11 +335,15 @@ export class GatewayApiClient {
             throw new Error(`Offramp order needs to be Active for accepting fees`);
         }
 
-        const [shouldFeesBeBumped, newFeeSat] = await this.checkFeeBumpRequirement(
+        const [shouldFeesBeBumped, newFeeSat, error] = await this.checkFeeBumpRequirement(
             orderDetails.token,
             orderDetails.satAmountLocked,
             orderDetails.satFeesMax
         );
+
+        if (error) {
+            throw new Error(`Unable to calculate a new quote for the order. reason: (${error.toString()}).`);
+        }
 
         if (!shouldFeesBeBumped) {
             throw new Error(
@@ -439,11 +443,17 @@ export class GatewayApiClient {
         token: Address,
         satAmountLocked: bigint,
         satFeesMax: bigint
-    ): Promise<[boolean, bigint]> {
+    ): Promise<[boolean, bigint, string?]> {
         const decimals = getTokenDecimals(token);
         const amountInToken = satAmountLocked * BigInt(10 ** (decimals - 8));
 
-        const offrampQuote: OfframpQuote = await this.fetchOfframpQuote(token.toString(), amountInToken);
+        let offrampQuote: OfframpQuote;
+        try {
+            offrampQuote = await this.fetchOfframpQuote(token.toString(), amountInToken);
+        } catch (err) {
+            // Return false and 0n with an error message if fetching the quote fails
+            return [false, 0n, `Error fetching offramp quote: ${err.message || err}`];
+        }
 
         const shouldBump = satFeesMax < offrampQuote.feesInSat;
         return [shouldBump, offrampQuote.feesInSat];
