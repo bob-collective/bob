@@ -376,11 +376,16 @@ export class GatewayApiClient {
         // check order status via viem should be Active/Accepted
         const orderDetails: OnchainOfframpOrderDetails = await this.fetchOfframpOrder(orderId);
 
+        // Processed and refunded order can't be unlocked
         if (orderDetails.status == 'Processed' || orderDetails.status == 'Refunded') {
             throw new Error(`Offramp order already processed/refunded`);
         }
 
-        if (!hasOrderPassedClaimDelay(orderDetails.status, orderDetails.orderTimestamp)) {
+        // Active order can be unlocked and Accepted order can be unlocked after delay
+        if (
+            orderDetails.status !== 'Active' &&
+            !hasOrderPassedClaimDelay(orderDetails.status, orderDetails.orderTimestamp)
+        ) {
             throw new Error(`Offramp order is still within the 7-day claim delay and cannot be claimed yet.`);
         }
 
