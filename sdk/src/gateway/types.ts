@@ -432,8 +432,8 @@ export type OfframpOrderDetails = {
     btcTx: string;
     /** @dev Indicates whether the fees for this order should be bumped based on current network conditions */
     shouldFeesBeBumped: boolean;
-    /** @dev Indicates whether the user can cancel this order (typically if it's still active) */
-    canOrderBeCancelled: boolean;
+    /** @dev Indicates whether the user can unlock this order (typically if it's still active) */
+    canOrderBeUnlocked: boolean;
 };
 
 /** @dev Internal, On-chain fetched state of an active/processed/refunded order */

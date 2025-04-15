@@ -1,7 +1,6 @@
 import { afterEach, assert, describe, expect, it } from 'vitest';
 import { GatewaySDK } from '../src/gateway';
 import {
-    hasOrderPassedClaimDelay,
     MAINNET_GATEWAY_BASE_URL,
     OFFRAMP_ORDER_CLAIM_DELAY_IN_SECONDS,
     SIGNET_GATEWAY_BASE_URL,
@@ -600,7 +599,7 @@ describe('Gateway Tests', () => {
             satAmountLocked: BigInt(order.satAmountLocked.toString()),
             satFeesMax: BigInt(order.satFeesMax.toString()),
             orderTimestamp: BigInt(order.orderTimestamp.toString()),
-            canOrderBeCancelled: false,
+            canOrderBeUnlocked: false,
             shouldFeesBeBumped: false,
         }));
 
@@ -666,9 +665,10 @@ describe('Gateway Tests', () => {
     it('should return true when the order has passed the claim delay', () => {
         const status: OfframpOrderStatus = 'Accepted';
         const orderTimestamp: bigint = BigInt(Math.floor(Date.now() / 1000) - OFFRAMP_ORDER_CLAIM_DELAY_IN_SECONDS - 1); // Ensure the timestamp is more than 7 days ago
+        const gatewaySDK = new GatewaySDK('signet');
 
         // Run the function
-        const result = hasOrderPassedClaimDelay(status, orderTimestamp);
+        const result = gatewaySDK.canOrderBeUnlocked(status, orderTimestamp);
 
         // Assert the result is true (claim delay has passed)
         expect(result).toBe(true);

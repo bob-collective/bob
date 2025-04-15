@@ -332,7 +332,7 @@ export class GatewayApiClient {
         const orderDetails: OnchainOfframpOrderDetails = await this.fetchOfframpOrder(orderId);
 
         if (orderDetails.status !== 'Active') {
-            throw new Error(`Offramp order needs to be Active for accepting fees`);
+            throw new Error(`Offramp order needs to be Active for bumping fees`);
         }
 
         const [shouldFeesBeBumped, newFeeSat, error] = await this.checkFeeBumpRequirement(
@@ -382,11 +382,8 @@ export class GatewayApiClient {
         }
 
         // Active order can be unlocked and Accepted order can be unlocked after delay
-        if (
-            orderDetails.status !== 'Active' &&
-            !hasOrderPassedClaimDelay(orderDetails.status, orderDetails.orderTimestamp)
-        ) {
-            throw new Error(`Offramp order is still within the 7-day claim delay and cannot be claimed yet.`);
+        if (!this.canOrderBeUnlocked(orderDetails.status, orderDetails.orderTimestamp)) {
+            throw new Error(`Offramp order is still within the 7-day claim delay and cannot be unlock yet.`);
         }
 
         return [
@@ -421,7 +418,7 @@ export class GatewayApiClient {
                     BigInt(order.satAmountLocked),
                     BigInt(order.satFeesMax)
                 );
-                const canOrderBeCancelled = this.canOrderBeCancelled(status, BigInt(order.orderTimestamp));
+                const canOrderBeUnlocked = this.canOrderBeUnlocked(status, BigInt(order.orderTimestamp));
 
                 return {
                     ...order,
@@ -432,7 +429,7 @@ export class GatewayApiClient {
                     satFeesMax: BigInt(order.satFeesMax.toString()),
                     orderTimestamp: BigInt(order.orderTimestamp.toString()),
                     shouldFeesBeBumped,
-                    canOrderBeCancelled,
+                    canOrderBeUnlocked,
                 };
             })
         );
@@ -464,11 +461,16 @@ export class GatewayApiClient {
         return [shouldBump, offrampQuote.feesInSat];
     }
 
-    private canOrderBeCancelled(status: OfframpOrderStatus, orderTimestamp: bigint): boolean {
+    canOrderBeUnlocked(status: OfframpOrderStatus, orderTimestamp: bigint): boolean {
         if (status === 'Active') {
             return true;
         }
-        return hasOrderPassedClaimDelay(status, orderTimestamp);
+        if (status !== 'Accepted') {
+            return false;
+        }
+        // check if Accepted order has passed claim delay
+        const nowInSec = Math.floor(Date.now() / 1000);
+        return Number(orderTimestamp) + OFFRAMP_ORDER_CLAIM_DELAY_IN_SECONDS <= nowInSec;
     }
 
     /**
@@ -974,12 +976,4 @@ function parseOrderStatus(value: number): OfframpOrderStatus {
 export function viemClient(chain) {
     const chainIs = chain === Chain.BOB ? bob : bobSepolia;
     return createPublicClient({ chain: chainIs, transport: http() });
-}
-
-export function hasOrderPassedClaimDelay(status: OfframpOrderStatus, orderTimestamp: bigint): boolean {
-    if (status !== 'Accepted') {
-        return false;
-    }
-    const nowInSec = Math.floor(Date.now() / 1000);
-    return Number(orderTimestamp) + OFFRAMP_ORDER_CLAIM_DELAY_IN_SECONDS <= nowInSec;
 }
