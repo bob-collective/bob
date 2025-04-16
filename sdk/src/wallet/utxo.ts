@@ -12,6 +12,7 @@ export type BitcoinNetworkName = Exclude<Network, 'regtest'>;
 const bitcoinNetworks: Record<BitcoinNetworkName, typeof NETWORK> = {
     mainnet: NETWORK,
     testnet: TEST_NETWORK,
+    signet: TEST_NETWORK,
 };
 
 export const getBtcNetwork = (name: BitcoinNetworkName) => {
