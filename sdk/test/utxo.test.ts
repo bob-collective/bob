@@ -82,14 +82,7 @@ describe('UTXO Tests', () => {
                         }
                         // Note: it is possible that the above addresses have spent all of their funds
                         // and the transaction will fail.
-                        const psbtBase64 = await createBitcoinPsbt(
-                            paymentAddress,
-                            toAddress,
-                            amount,
-                            'mainnet' as BitcoinNetworkName,
-                            pubkey,
-                            opReturn
-                        );
+                        const psbtBase64 = await createBitcoinPsbt(paymentAddress, toAddress, amount, pubkey, opReturn);
                         const transaction = Transaction.fromPSBT(base64.decode(psbtBase64));
 
                         assert(transaction);
@@ -344,14 +337,7 @@ describe('UTXO Tests', () => {
                                 }
 
                                 // If the amount is undefined, the fee should be estimated
-                                const fee = await estimateTxFee(
-                                    paymentAddress,
-                                    'mainnet' as BitcoinNetworkName,
-                                    amount,
-                                    pubkey,
-                                    opReturn,
-                                    feeRate
-                                );
+                                const fee = await estimateTxFee(paymentAddress, amount, pubkey, opReturn, feeRate);
 
                                 expect(fee).toBeGreaterThan(0);
                             })
@@ -386,13 +372,7 @@ describe('UTXO Tests', () => {
             },
         }));
 
-        await createBitcoinPsbt(
-            paymentAddress,
-            paymentAddress,
-            maxSpendableBalance,
-            'mainnet' as BitcoinNetworkName,
-            pubkey
-        );
+        await createBitcoinPsbt(paymentAddress, paymentAddress, maxSpendableBalance, pubkey);
 
         const [possibleInputs] = (selectUTXO as Mock).mock.lastCall || [];
 
@@ -422,15 +402,15 @@ describe('UTXO Tests', () => {
 
         const totalBalance = allOutputs.reduce((acc, output) => acc + output.value, 0);
 
-        await expect(
-            createBitcoinPsbt(paymentAddress, paymentAddress, totalBalance, 'mainnet' as BitcoinNetworkName, pubkey)
-        ).rejects.toThrow('Failed to create transaction. Do you have enough funds?');
+        await expect(createBitcoinPsbt(paymentAddress, paymentAddress, totalBalance, pubkey)).rejects.toThrow(
+            'Failed to create transaction. Do you have enough funds?'
+        );
     });
 
     it('should return address balance', { timeout: 50000 }, async () => {
         const address = 'bc1peqr5a5kfufvsl66444jm9y8qq0s87ph0zv4lfkcs7h40ew02uvsqkhjav0';
 
-        const balance = await getBalance('mainnet' as BitcoinNetworkName, address);
+        const balance = await getBalance(address);
 
         assert(balance.confirmed);
         assert(balance.total);
@@ -440,7 +420,7 @@ describe('UTXO Tests', () => {
                 : balance.unconfirmed === balance.total - balance.confirmed
         );
 
-        const zeroBalance = await getBalance('mainnet' as BitcoinNetworkName);
+        const zeroBalance = await getBalance();
 
         assert(zeroBalance.confirmed === 0n, 'If no address specified confirmed must be 0');
         assert(zeroBalance.unconfirmed === 0n, 'If no address specified unconfirmed must be 0');
@@ -482,7 +462,7 @@ describe('UTXO Tests', () => {
             Array.from(outputs, () => ({ indexed: true, inscriptions: [], runes: {} }))
         );
 
-        const balanceData = await getBalance('mainnet' as BitcoinNetworkName, taprootAddress);
+        const balanceData = await getBalance(taprootAddress);
 
         expect(balanceData.total).toBeLessThan(BigInt(total));
         expect(balanceData.confirmed).toBeLessThan(BigInt(confirmed));
@@ -536,7 +516,7 @@ describe('UTXO Tests', () => {
                 vin: [],
             });
 
-            const balanceData = await getBalance('mainnet' as BitcoinNetworkName, taprootAddress);
+            const balanceData = await getBalance(taprootAddress);
 
             expect(balanceData.total).toBeLessThan(BigInt(total));
             expect(balanceData.confirmed).toBeLessThan(BigInt(confirmed));
@@ -591,7 +571,7 @@ describe('UTXO Tests', () => {
                 vin: [],
             });
 
-            const balanceData = await getBalance('mainnet' as BitcoinNetworkName, taprootAddress);
+            const balanceData = await getBalance(taprootAddress);
 
             expect(balanceData.total).toEqual(BigInt(total));
             expect(balanceData.confirmed).toEqual(BigInt(confirmed));
