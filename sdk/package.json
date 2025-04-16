@@ -30,7 +30,7 @@
     "eslint-config-prettier": "^10.1.1",
     "eslint-plugin-prettier": "^5.2.1",
     "mocha": "^11.1.0",
-    "nock": "^14.0.0",
+    "nock": "^14.0.3",
     "prettier": "^3.5.3",
     "tiny-secp256k1": "^2.2.3",
     "ts-node": "^10.0.0",
