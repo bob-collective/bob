@@ -39,7 +39,7 @@
     "yargs": "^17.5.1"
   },
   "dependencies": {
-    "@eslint/eslintrc": "^3.2.0",
+    "@eslint/eslintrc": "^3.3.1",
     "@eslint/js": "^9.19.0",
     "@magiceden-oss/runestone-lib": "^1.0.2",
     "@scure/base": "^1.2.4",
