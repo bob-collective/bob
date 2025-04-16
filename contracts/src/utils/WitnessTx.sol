@@ -8,7 +8,8 @@ import {SegWitUtils} from "@bob-collective/bitcoin-spv/SegWitUtils.sol";
 import {ValidateSPV} from "@bob-collective/bitcoin-spv/ValidateSPV.sol";
 
 import {BitcoinTx} from "./BitcoinTx.sol";
-import {IRelay} from "../relay/IRelay.sol";
+import {ILightRelay} from "../relay/ILightRelay.sol";
+import {IFullRelayWithVerify} from "../relay/IFullRelayWithVerify.sol";
 
 library WitnessTx {
     using BTCUtils for bytes;
@@ -34,9 +35,7 @@ library WitnessTx {
         bytes32 witnessNonce;
         /// @notice The *witness* merkle root of the payment.
         bytes32 paymentMerkleRoot;
-        /// @notice Coinbase proof.
-        BitcoinTx.Proof coinbaseProof;
-        /// @notice Payment proof.
+        /// @notice Payment proof, includes the coinbase proof. The coinbasePreimage field can be left empty.
         BitcoinTx.Proof paymentProof;
         /// @notice Coinbase transaction.
         /// @dev Needed to extract the witness commitment.
@@ -57,6 +56,14 @@ library WitnessTx {
         require(txInfo.info.inputVector.validateVin(), "Invalid payment input vector provided");
         require(txInfo.info.outputVector.validateVout(), "Invalid payment output vector provided");
 
+        // Due to a vulnerability in the Bitcoin SPV proof verification detailed here:
+        // https://bitslog.com/2018/06/09/leaf-node-weakness-in-bitcoin-merkle-tree-design/
+        // we must ensure that both the coinbase and payment tx are the same length.
+        require(
+            proof.paymentProof.merkleProof.length == proof.paymentProof.coinbaseProof.length,
+            "Tx not on same level of merkle tree as coinbase"
+        );
+
         bytes32 coinbaseTxHash = abi.encodePacked(
             proof.coinbaseTx.version,
             proof.coinbaseTx.inputVector,
@@ -64,13 +71,12 @@ library WitnessTx {
             proof.coinbaseTx.locktime
         ).hash256View();
 
+        bytes32 root = proof.paymentProof.bitcoinHeaders.extractMerkleRootLE();
+
+        // Coinbase tx always has an index of 0
         require(
-            coinbaseTxHash.prove(
-                proof.coinbaseProof.bitcoinHeaders.extractMerkleRootLE(),
-                proof.coinbaseProof.merkleProof,
-                proof.coinbaseProof.txIndexInBlock
-            ),
-            "Tx merkle proof is not valid for provided header and tx hash"
+            coinbaseTxHash.prove(root, proof.paymentProof.coinbaseProof, 0),
+            "Coinbase merkle proof is not valid for provided header and hash"
         );
 
         bytes32 paymentWTxId = abi.encodePacked(
@@ -100,19 +106,40 @@ library WitnessTx {
         return paymentWTxId;
     }
 
-    /// @notice Validates the witness SPV proof using the relay.
+    /// @notice Validates the witness SPV proof using the light relay.
     /// @param relay Bitcoin relay providing the current Bitcoin network difficulty.
     /// @param txProofDifficultyFactor The number of confirmations required on the Bitcoin chain.
     /// @param txInfo Bitcoin transaction data.
     /// @param proof Bitcoin proof data.
     /// @return wTxHash Proven 32-byte transaction hash.
-    function validateWitnessProofAndDifficulty(
-        IRelay relay,
+    function validateWitnessProof(
+        ILightRelay relay,
         uint256 txProofDifficultyFactor,
         WitnessInfo memory txInfo,
         WitnessProof memory proof
     ) internal view returns (bytes32 wTxHash) {
         wTxHash = validateWitnessProof(txInfo, proof);
-        BitcoinTx.evaluateProofDifficulty(relay, txProofDifficultyFactor, proof.coinbaseProof.bitcoinHeaders);
+
+        // Checks that the header chain is valid with respect to the difficulty stored in the light relay
+        BitcoinTx.evaluateProofDifficulty(relay, txProofDifficultyFactor, proof.paymentProof.bitcoinHeaders);
+    }
+
+    /// @notice Validates the witness SPV proof using the full relay.
+    /// @param relay Bitcoin full relay contract.
+    /// @param minConfirmations The minimum number of confirmations required on the Bitcoin chain.
+    /// @param txInfo Bitcoin transaction data.
+    /// @param proof Bitcoin proof data.
+    /// @return wTxHash Proven 32-byte transaction hash.
+    function validateWitnessProof(
+        IFullRelayWithVerify relay,
+        uint256 minConfirmations,
+        WitnessInfo memory txInfo,
+        WitnessProof memory proof
+    ) internal view returns (bytes32 wTxHash) {
+        wTxHash = validateWitnessProof(txInfo, proof);
+
+        // Checks that the header is valid with respect to the chain stored in the full relay
+        bytes32 headerHash = proof.paymentProof.bitcoinHeaders.hash256();
+        relay.verifyHeaderHash(headerHash, uint8(minConfirmations));
     }
 }

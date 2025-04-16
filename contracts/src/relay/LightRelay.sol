@@ -9,36 +9,13 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import {BytesLib} from "@bob-collective/bitcoin-spv/BytesLib.sol";
 import {BTCUtils} from "@bob-collective/bitcoin-spv/BTCUtils.sol";
 import {ValidateSPV} from "@bob-collective/bitcoin-spv/ValidateSPV.sol";
-
-import "./IRelay.sol";
+import {ILightRelay} from "./ILightRelay.sol";
 
 struct Epoch {
     uint32 timestamp;
     // By definition, bitcoin targets have at least 32 leading zero bits.
     // Thus we can only store the bits that aren't guaranteed to be 0.
     uint224 target;
-}
-
-interface ILightRelay is IRelay {
-    event Genesis(uint256 blockHeight);
-    event Retarget(uint256 oldDifficulty, uint256 newDifficulty);
-    event ProofLengthChanged(uint256 newLength);
-    event AuthorizationRequirementChanged(bool newStatus);
-    event SubmitterAuthorized(address submitter);
-    event SubmitterDeauthorized(address submitter);
-
-    function retarget(bytes memory headers) external;
-
-    function validateChain(bytes memory headers)
-        external
-        view
-        returns (uint256 startingHeaderTimestamp, uint256 headerCount);
-
-    function getBlockDifficulty(uint256 blockNumber) external view returns (uint256);
-
-    function getEpochDifficulty(uint256 epochNumber) external view returns (uint256);
-
-    function getRelayRange() external view returns (uint256 relayGenesis, uint256 currentEpochEnd);
 }
 
 library RelayUtils {

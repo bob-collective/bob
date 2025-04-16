@@ -1,6 +1,6 @@
 {
   "name": "@gobob/bob-sdk",
-  "version": "3.1.7-alpha0",
+  "version": "3.2.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -9,8 +9,8 @@
     "update-relay": "ts-node src/scripts/relay-retarget.ts",
     "build": "tsc -p tsconfig.json",
     "lint": "eslint .",
-    "format": "prettier --write {examples,src,test}",
-    "format:check": "prettier --check {examples,src,test}"
+    "format": "prettier --write examples src test",
+    "format:check": "prettier --check examples src test"
   },
   "files": [
     "dist/**/*",
@@ -21,17 +21,17 @@
     "README.md"
   ],
   "devDependencies": {
-    "@types/node": "^22.5.5",
+    "@types/node": "^22.14.0",
     "@types/yargs": "^17.0.33",
-    "@typescript-eslint/eslint-plugin": "^8.22.0",
+    "@typescript-eslint/eslint-plugin": "^8.29.0",
     "@typescript-eslint/parser": "^8.22.0",
     "ecpair": "^2.1.0",
     "eslint": "^9.19.0",
-    "eslint-config-prettier": "^9.1.0",
+    "eslint-config-prettier": "^10.1.1",
     "eslint-plugin-prettier": "^5.2.1",
     "mocha": "^11.1.0",
     "nock": "^14.0.0",
-    "prettier": "^3.3.3",
+    "prettier": "^3.5.3",
     "tiny-secp256k1": "^2.2.3",
     "ts-node": "^10.0.0",
     "typescript": "^5.6.2",
@@ -46,7 +46,7 @@
     "@scure/btc-signer": "^1.6.0",
     "bitcoin-address-validation": "^2.2.3",
     "bitcoinjs-lib": "^6.1.6",
-    "ethers": "^6.13.2",
+    "ethers": "^6.13.5",
     "viem": "^2.22.19",
     "global": "^4.4.0"
   }

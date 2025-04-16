@@ -4,6 +4,7 @@ on: [pull_request]
 
 env:
   FOUNDRY_PROFILE: ci
+  BOB_PROD_PUBLIC_RPC_URL: "https://rpc.gobob.xyz/"
 
 jobs:
   tests:
@@ -23,9 +24,8 @@ jobs:
       - name: Install deps
         run: forge install
       - name: Run forge tests
-        # Currently forked tests are disabled to increase reliability of CI builds
         run: |
-          forge test --no-match-contract Forked -vvv --deny-warnings
+          forge test -vvv --deny-warnings
 
   bindings:
     name: Bindings
@@ -51,12 +51,3 @@ jobs:
         run: |
           forge --version
           git submodule status
-      - name: Run forge docs
-        run: |
-          forge doc --out ../docs/docs/contracts
-          python3 ../docs/scripts/forge_doc_reformat.py
-      - name: Commit forge docs
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "chore: Generate Foundry docs"
-          file_pattern: "./docs/"
