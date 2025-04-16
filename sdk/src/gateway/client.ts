@@ -24,8 +24,6 @@ import {
 } from './types';
 import { SYMBOL_LOOKUP, ADDRESS_LOOKUP } from './tokens';
 import { BitcoinNetworkName, createBitcoinPsbt } from '../wallet';
-import { Network } from 'bitcoin-address-validation';
-import { createBitcoinPsbt } from '../wallet';
 import { AddressType, getAddressInfo, Network } from 'bitcoin-address-validation';
 import { EsploraClient } from '../esplora';
 import { offRampCaller, strategyCaller } from './abi';
