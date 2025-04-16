@@ -589,9 +589,12 @@ export class GatewayApiClient {
     async getEnrichedTokens(includeStrategies: boolean = true): Promise<EnrichedToken[]> {
         const [tokens, prices] = await Promise.all([this.getTokenAddresses(includeStrategies), this.getPrices()]);
 
+        const tokensIncentives = await this.strategy.getTokensIncentives(tokens);
+
         return Promise.all(
-            tokens.map(async (address) => {
+            tokens.map(async (address, i) => {
                 const token = ADDRESS_LOOKUP[this.chainId][address];
+                const tokenIncentives = tokensIncentives[i];
 
                 const { address: underlyingAddress, totalUnderlying } =
                     await this.strategy.getStrategyAssetState(token);
@@ -599,6 +602,7 @@ export class GatewayApiClient {
                 if (underlyingAddress === 'usd') {
                     return {
                         ...token,
+                        ...tokenIncentives,
                         tvl: Number(totalUnderlying),
                     };
                 }
@@ -608,12 +612,14 @@ export class GatewayApiClient {
                 if (!underlyingToken) {
                     return {
                         ...token,
+                        ...tokenIncentives,
                         tvl: 0,
                     };
                 }
 
                 return {
                     ...token,
+                    ...tokenIncentives,
                     tvl:
                         bigIntToFloatingNumber(totalUnderlying, underlyingToken.decimals) *
                         (prices.get(underlyingAddress.toLowerCase()) ?? 0),

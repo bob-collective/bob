@@ -70,8 +70,17 @@ export interface Token {
     logoURI: string;
 }
 
+export interface PointsIncentive {
+    id: string;
+    name: string;
+}
+
 export interface EnrichedToken extends Token {
     tvl: number;
+    baseApy: number;
+    rewardApy: number;
+    rewardTokens: Token[];
+    points: PointsIncentive[];
 }
 
 /**
