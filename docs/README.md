@@ -8,8 +8,6 @@ This website is built using [Docusaurus](https://docusaurus.io/), a modern stati
 $ yarn
 ```
 
-You also need to run `yarn` in the `/sdk` root folder (required for the the automatic generation of the API documentation).  
-
 ### Local Development
 
 ```
