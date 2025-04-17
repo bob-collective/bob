@@ -17,7 +17,7 @@ Gateway powers the [BOB BTC Bridge](https://app.gobob.xyz/en?type=deposit&networ
 :::info Bridge or Stake BTC on BOB
 Check our user guides to learn how to swap your BTC to wrapped BTC or staked BTC.
 - [Bridge BTC to BOB](/learn/user-guides/onboard-to-bob/bob-gateway/): Receive wBTC or tBTC on BOB.
-- [Stake BTC on BOB](/learn/user-guides/bob-stake): Receive xSolvBTC, uniBTC, or other staked BTC on BOB.
+- [Stake BTC on BOB](/learn/user-guides/stake-btc/): Receive xSolvBTC, uniBTC, or other staked BTC on BOB.
 :::
 
 ## Gateway for Builders

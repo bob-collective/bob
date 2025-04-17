@@ -18,7 +18,7 @@ Welcome to BOB, the Bitcoin-secured L2 that combines Bitcoin's security with Eth
 
 ## 1. Choose Your Wallet
 
-See our [Wallet Guide](/learn/user-guides/getting-started-with-bob/wallet-guide) for detailed information about:
+See our [Wallet Guide](/learn/user-guides/getting-started/wallet-guide/) for detailed information about:
 - Recommended EVM wallets
 - Recommended Bitcoin wallets
 - Hardware wallet setup
@@ -26,7 +26,7 @@ See our [Wallet Guide](/learn/user-guides/getting-started-with-bob/wallet-guide)
 
 ## 2. Connect to BOB Network
 
-See our [Networks Guide](/learn/user-guides/getting-started-with-bob/networks) for detailed information about:
+See our [Networks Guide](/learn/user-guides/getting-started/networks) for detailed information about:
 - BOB Mainnet and Testnet
 - Network details and RPC URLs
 - How to connect your wallet
