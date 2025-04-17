@@ -52,11 +52,15 @@ const config = {
           // Introduction section
           {
             from: "/docs/learn/guides/faq",
-            to: "/learn/user-guides/faq",
+            to: "/learn/user-guides/wallet-guide#faqs",
           },
           {
             from: "/learn/introduction/faq",
-            to: "/learn/user-guides/faq",
+            to: "/learn/user-guides/wallet-guide#faqs",
+          },
+          {
+            from: "/learn/user-guides/faq",
+            to: "/learn/user-guides/wallet-guide#faqs",
           },
           {
             from: "/docs/learn/bob-stack/merged-mining",
@@ -90,7 +94,7 @@ const config = {
           },
           {
             from: "/docs/learn/guides/bob-stake",
-            to: "/learn/user-guides/bob-stake",
+            to: "/learn/user-guides/stake-btc",
           },
           {
             from: "/docs/learn/guides/ethereum-bridge",
@@ -167,6 +171,14 @@ const config = {
           {
             from: "/docs/build/examples/zkvm-taproot",
             to: "/learn/reference/tools/rust-zkvm",
+          },
+          {
+            from: '/learn/user-guides/bob-stake',
+            to: '/learn/user-guides/stake-btc',
+          },
+          {
+            from: '/learn/user-guides/stake-with-ledger',
+            to: '/learn/user-guides/stake-btc#ledger-guide',
           },
         ],
       },

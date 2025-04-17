@@ -1,5 +1,5 @@
 ---
-sidebar_position: 6
+sidebar_position: 8
 sidebar_label: Send BTC to an Email Address
 ---
 
@@ -11,7 +11,7 @@ sidebar_label: Send BTC to an Email Address
 
 With BOB Pay, you can send Bitcoin and stablecoins to someone's email address. No wallet, no app, no seed phrase - just simple, cheap, non-custodial, and lightning-fast payments. BOB Pay showcases the power of wallet abstraction with [Dynamic](https://www.dynamic.xyz/), smart accounts from [ZeroDev](https://zerodev.app/), and paymasters from [Pimlico](https://www.pimlico.io/).
 
-We’re offering projects on BOB free access to Dynamic and Pimlico if you’d like to do the same.
+We're offering projects on BOB free access to Dynamic and Pimlico if you'd like to do the same.
 
 ## Video Tutorial
 
@@ -102,7 +102,7 @@ We’re offering projects on BOB free access to Dynamic and Pimlico if you’d l
 
 ## Conclusion
 
-BOB offers a complete package for builders looking to bring world-class UX to Bitcoin. We’re offering projects on BOB free access to Dynamic and Pimlico if you’d like to do the same.
+BOB offers a complete package for builders looking to bring world-class UX to Bitcoin. We're offering projects on BOB free access to Dynamic and Pimlico if you'd like to do the same.
 
 We look forward to seeing what you Build on Bitcoin!
 

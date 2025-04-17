@@ -1,63 +1,77 @@
 ---
-sidebar_position: 1
+sidebar_position: 2
 ---
 
 import AddToWallet from '@site/src/components/AddToWallet';
 
-# Connect to the BOB Network
+# BOB Networks
 
-## Mainnet Information
+This guide provides detailed information about the BOB network, its configuration, and how to connect to it.
 
-### BOB Mainnet
+## Network Information
+
+### Mainnet Details
+- **Network Name:** `BOB Mainnet`
+- **Chain ID:** `60808`
+- **Currency Symbol:** `ETH`
+- **RPC URL:** [`https://rpc.gobob.xyz/`](https://rpc.gobob.xyz/)
+- **Block Explorer URL:** [`https://explorer.gobob.xyz/`](https://explorer.gobob.xyz/)
+
+### Testnet Details
+- **Network Name:** `BOB Testnet`
+- **Chain ID:** `60808`
+- **Currency Symbol:** `ETH`
+- **RPC URL:** `https://testnet.rpc.gobob.xyz/`
+- **Block Explorer URL:** `https://testnet.explorer.gobob.xyz/`
+
+## Connect to BOB
+
+### Quick Connect
 
 <AddToWallet />
 
-- Chain ID: 60808
-- Gas Token: ETH
-- RPC URL: https://rpc.gobob.xyz/
-- WS URL: [wss://rpc.gobob.xyz](wss://rpc.gobob.xyz)
-- Explorer: https://explorer.gobob.xyz/
-- OKLink Explorer: https://www.oklink.com/bob
-- Bridge (BOB - Ethereum): https://app.gobob.xyz/bridge
+### Manual Connection
+1. Open your wallet → Click **Network Selector** → **Add Network**
+2. Enter the network details from above
+3. Click **Save** and switch to **BOB Mainnet**
 
-If you are having issues with your RPC connection to the network, try [BlastAPI's public endpoints for BOB](https://blastapi.io/public-api/bob).
+## Network Features
 
-- RPC URL: https://bob-mainnet.public.blastapi.io
-- WS URL: [wss://bob-mainnet.public.blastapi.io](wss://bob-mainnet.public.blastapi.io)
+### Gas Fees
 
-### Ethereum Mainnet
+- Gas is paid in ETH
+- Gas fees are dynamic and based on network utilization
+- Gas optimization tips:
+  - Use off-peak hours
+  - Monitor gas prices
+  - Consider batch transactions
 
-- Chain ID: 1
-- Gas Token: ETH
-- RPC URL: [wss://ethereum-rpc.publicnode.com](wss://ethereum-rpc.publicnode.com)
-- Explorer: https://etherscan.io/
+### Transaction Speeds
 
-### Bitcoin Mainnet
+- Block time: ~2 seconds
+- Finality: Bitcoin finality
+- Transaction limits: Based on gas limits
 
-- Ordinals API: https://ord-mainnet.gobob.xyz/docs/
-- Explorer: https://blockstream.info/
+### Network Status
 
-## Testnet Information
+- Check the BOB Sequencer status at [BOB Sequencer Status](https://conduit-bob.checkly-dashboards.com/)
+- Monitor network status at [BOB Explorer](https://explorer.gobob.xyz/)
 
-### BOB Sepolia (Testnet)
+## Troubleshooting
 
-- Chain ID: 808813
-- Gas Token: ETH
-- RPC URL: https://bob-sepolia.rpc.gobob.xyz/
-- WS URL: [wss://bob-sepolia.rpc.gobob.xyz](wss://bob-sepolia.rpc.gobob.xyz)
-- Explorer: https://bob-sepolia.explorer.gobob.xyz/
-- Bridge: https://bob-sepolia.gobob.xyz/
-- Faucet: https://console.optimism.io/faucet
+### Common Issues
 
-### Ethereum Sepolia (Testnet)
+#### Connection Problems
 
-- Chain ID: 11155111
-- Gas Token: ETH
-- RPC URL: [wss://ethereum-sepolia-rpc.publicnode.com/](wss://ethereum-sepolia-rpc.publicnode.com/)
-- Explorer: https://sepolia.etherscan.io/
-- Faucet: https://faucetlink.to/sepolia
+- Verify RPC URL is correct
+- Check network status
+- Try alternative RPC endpoints:
+  - `https://bob-mainnet.public.blastapi.io`
+  - `https://bob-mainnet.publicnode.com`
 
-### Bitcoin Testnet
+#### Transaction Issues
 
-- Ordinals API: https://ord-testnet.gobob.xyz/docs/
-- Explorer: https://blockstream.info/testnet/
+- Ensure sufficient ETH for gas
+- Check network congestion
+- Verify transaction parameters
+- Try increasing gas limit
