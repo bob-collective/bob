@@ -23,7 +23,7 @@ const ONE_PAGER =
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   title: "BOB - Build on Bitcoin",
-  tagline: "A hybrid layer-2 powered by Bitcoin and Ethereum.",
+  tagline: "A hybrid L2 powered by Bitcoin and Ethereum.",
   favicon: "img/favicon.ico",
   url: DOCS_PAGE,
   baseUrl: "/",
