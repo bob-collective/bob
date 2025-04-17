@@ -52,11 +52,15 @@ const config = {
           // Introduction section
           {
             from: "/docs/learn/guides/faq",
-            to: "/learn/user-guides/faq",
+            to: "/learn/user-guides/getting-started/wallet-guide/#faqs",
           },
           {
             from: "/learn/introduction/faq",
-            to: "/learn/user-guides/faq",
+            to: "/learn/user-guides/getting-started/wallet-guide/#faqs",
+          },
+          {
+            from: "/learn/user-guides/faq",
+            to: "/learn/user-guides/getting-started/wallet-guide/#faqs",
           },
           {
             from: "/docs/learn/bob-stack/merged-mining",
@@ -70,11 +74,39 @@ const config = {
             from: "/docs/learn/bob-stack/roadmap",
             to: "/learn/introduction/roadmap",
           },
+          {
+            from: "/learn/user-guides/wallet-guide",
+            to: "/learn/user-guides/getting-started/wallet-guide/",
+          },
+          {
+            from: "/learn/user-guides/networks",
+            to: "/learn/user-guides/getting-started/networks",
+          },
+          {
+            from: "/learn/user-guides/binance-wallet-gateway",
+            to: "/learn/user-guides/onboard-to-bob/binance-wallet-gateway/",
+          },
+          {
+            from: "/learn/user-guides/getting-started-with-bob/wallet-guide",
+            to: "/learn/user-guides/getting-started/wallet-guide/",
+          },
+          {
+            from: "/learn/user-guides/getting-started-with-bob/networks",
+            to: "/learn/user-guides/getting-started/networks",
+          },
+          {
+            from: "/learn/user-guides/bob-stake",
+            to: "/learn/user-guides/stake-btc/",
+          },
+          {
+            from: "/learn/user-guides/stake-with-ledger",
+            to: "/learn/user-guides/stake-btc/#ledger-guide",
+          },
 
           // User Guides
           {
             from: "/docs/learn/guides/binance-wallet-gateway",
-            to: "/learn/user-guides/binance-wallet-gateway",
+            to: "/learn/user-guides/onboard-to-bob/binance-wallet-gateway/",
           },
           {
             from: "/docs/learn/guides/bob-fusion",
@@ -90,7 +122,7 @@ const config = {
           },
           {
             from: "/docs/learn/guides/bob-stake",
-            to: "/learn/user-guides/bob-stake",
+            to: "/learn/user-guides/stake-btc/",
           },
           {
             from: "/docs/learn/guides/ethereum-bridge",
@@ -98,7 +130,7 @@ const config = {
           },
           {
             from: "/docs/build/getting-started/networks",
-            to: "/learn/user-guides/networks",
+            to: "/learn/user-guides/getting-started/networks",
           },
           {
             from: "/docs/learn/guides/onboard-to-bob",
@@ -174,8 +206,14 @@ const config = {
     [
       "@docusaurus/plugin-google-gtag",
       {
-        trackingID: ["GTM-NSJLJ9D5", "G-VX9XQWCCC5"],
+        trackingID: "G-VX9XQWCCC5",
         anonymizeIP: true,
+      },
+    ],
+    [
+      "@docusaurus/plugin-google-tag-manager",
+      {
+        containerId: "GTM-NSJLJ9D5",
       },
     ],
   ],
