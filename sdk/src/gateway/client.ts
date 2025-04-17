@@ -444,6 +444,10 @@ export class GatewayApiClient {
         satFeesMax: bigint
     ): Promise<[boolean, bigint, string?]> {
         const decimals = getTokenDecimals(token);
+        if (decimals === undefined) {
+            return [false, 0n, 'Tokens with less than 8 decimals are not supported'];
+        }
+
         const amountInToken = satAmountLocked * BigInt(10 ** (decimals - 8));
 
         let offrampQuote: OfframpQuote;
