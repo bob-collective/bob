@@ -162,3 +162,5 @@ export const offrampGetOrderCaller = [
         stateMutability: 'view',
     },
 ] as const;
+
+export const claimDelayAbi = parseAbi(['function CLAIM_DELAY() view returns (uint64)']);

@@ -470,6 +470,7 @@ export interface OfframpRawOrder {
     orderTimestamp: string;
     btcTx: string | null;
     evmTx: string | null;
+    shouldFeesBeBumped: boolean;
 }
 
 /** @dev Internal */

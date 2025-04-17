@@ -1,11 +1,6 @@
 import { afterEach, assert, describe, expect, it } from 'vitest';
 import { GatewaySDK } from '../src/gateway';
-import {
-    MAINNET_GATEWAY_BASE_URL,
-    OFFRAMP_ORDER_CLAIM_DELAY_IN_SECONDS,
-    SIGNET_GATEWAY_BASE_URL,
-    toHexScriptPubKey,
-} from '../src/gateway/client';
+import { MAINNET_GATEWAY_BASE_URL, SIGNET_GATEWAY_BASE_URL, toHexScriptPubKey } from '../src/gateway/client';
 import { SYMBOL_LOOKUP } from '../src/gateway/tokens';
 import {
     BuildStakeParams,
@@ -588,6 +583,7 @@ describe('Gateway Tests', () => {
                 btcTx: 'e8d52d6ef6ebf079f2d082dc683c9455178b64e0685c10e93882effaedde4474',
                 evmTx: null,
                 orderTimestamp: '0x67ee6f6e',
+                shouldFeesBeBumped: false,
             },
         ];
 
@@ -610,6 +606,9 @@ describe('Gateway Tests', () => {
             registryAddress: '0xd7b27b178f6bf290155201109906ad203b6d99b1',
             feeRate: 1,
         });
+        nock(SIGNET_GATEWAY_BASE_URL)
+            .get('/offramp-registry-address')
+            .reply(200, '"0xb74a5af78520075f90f4be803153673a162a9776"');
 
         const result: OfframpOrderDetails[] = await gatewaySDK.getOfframpOrders(userAddress);
 
@@ -662,13 +661,17 @@ describe('Gateway Tests', () => {
         expect(result).toBe('0xb74a5af78520075f90f4be803153673a162a9776');
     });
 
-    it('should return true when the order has passed the claim delay', () => {
+    it('should return true when the order has passed the claim delay', async () => {
         const status: OfframpOrderStatus = 'Accepted';
-        const orderTimestamp: bigint = BigInt(Math.floor(Date.now() / 1000) - OFFRAMP_ORDER_CLAIM_DELAY_IN_SECONDS - 1); // Ensure the timestamp is more than 7 days ago
+        const orderTimestamp: bigint = BigInt(Math.floor(Date.now() / 1000) - 7 * 24 * 60 * 60 - 1); // Ensure the timestamp is more than 7 days ago
         const gatewaySDK = new GatewaySDK('signet');
 
         // Run the function
-        const result = gatewaySDK.canOrderBeUnlocked(status, orderTimestamp);
+        const result = await gatewaySDK.canOrderBeUnlocked(
+            status,
+            orderTimestamp,
+            '0xb74a5af78520075f90f4be803153673a162a9776' as Address
+        );
 
         // Assert the result is true (claim delay has passed)
         expect(result).toBe(true);

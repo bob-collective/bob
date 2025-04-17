@@ -32,6 +32,7 @@ import { createBitcoinPsbt } from '../wallet';
 import { AddressType, getAddressInfo, Network } from 'bitcoin-address-validation';
 import { EsploraClient } from '../esplora';
 import {
+    claimDelayAbi,
     offrampBumpFeeCaller,
     offrampCreateOrderCaller,
     offrampGetOrderCaller,
@@ -63,13 +64,6 @@ export const TESTNET_GATEWAY_BASE_URL = 'https://gateway-api-testnet.gobob.xyz';
  * @default "https://gateway-api-testnet.gobob.xyz"
  */
 export const SIGNET_GATEWAY_BASE_URL = 'https://gateway-api-signet.gobob.xyz';
-
-/**
- * The time duration (in seconds) that needs to pass before unlocking funds for an accepted order.
- * Once an order's status is "Accepted", it will be locked for this period (7 days) before the funds can be claimed.
- * @default 7 * 24 * 60 * 60 (7 days)
- */
-export const OFFRAMP_ORDER_CLAIM_DELAY_IN_SECONDS = 7 * 24 * 60 * 60;
 
 /**
  * Duration (in seconds) an offramp order remains valid before it can be finalized on-chain.
@@ -335,7 +329,7 @@ export class GatewayApiClient {
             throw new Error(`Offramp order needs to be Active for bumping fees`);
         }
 
-        const [shouldFeesBeBumped, newFeeSat, error] = await this.checkFeeBumpRequirement(
+        const [shouldFeesBeBumped, newFeeSat, error] = await this.getBumpFeeRequirement(
             orderDetails.token,
             orderDetails.satAmountLocked,
             orderDetails.satFeesMax
@@ -381,9 +375,13 @@ export class GatewayApiClient {
             throw new Error(`Offramp order already processed/refunded`);
         }
 
+        const offrampRegistryAddress: Address = await this.fetchOfframpRegistryAddress();
+
         // Active order can be unlocked and Accepted order can be unlocked after delay
-        if (!this.canOrderBeUnlocked(orderDetails.status, orderDetails.orderTimestamp)) {
-            throw new Error(`Offramp order is still within the 7-day claim delay and cannot be unlock yet.`);
+        if (
+            !(await this.canOrderBeUnlocked(orderDetails.status, orderDetails.orderTimestamp, offrampRegistryAddress))
+        ) {
+            throw new Error(`Offramp order is still within the 7-day claim delay and cannot be unlocked yet.`);
         }
 
         return [
@@ -409,16 +407,16 @@ export class GatewayApiClient {
     async getOfframpOrders(userAddress: EvmAddress): Promise<OfframpOrderDetails[]> {
         const response = await this.fetchGet(`${this.baseUrl}/offramp-orders/${userAddress}`);
         const rawOrders: OfframpRawOrder[] = await response.json();
+        const offrampRegistryAddress: Address = await this.fetchOfframpRegistryAddress();
 
         return Promise.all(
             rawOrders.map(async (order) => {
                 const status = order.status as OfframpOrderStatus;
-                const [shouldFeesBeBumped] = await this.checkFeeBumpRequirement(
-                    order.token as Address,
-                    BigInt(order.satAmountLocked),
-                    BigInt(order.satFeesMax)
+                const canOrderBeUnlocked = await this.canOrderBeUnlocked(
+                    status,
+                    BigInt(order.orderTimestamp),
+                    offrampRegistryAddress
                 );
-                const canOrderBeUnlocked = this.canOrderBeUnlocked(status, BigInt(order.orderTimestamp));
 
                 return {
                     ...order,
@@ -428,20 +426,19 @@ export class GatewayApiClient {
                     satAmountLocked: BigInt(order.satAmountLocked.toString()),
                     satFeesMax: BigInt(order.satFeesMax.toString()),
                     orderTimestamp: BigInt(order.orderTimestamp.toString()),
-                    shouldFeesBeBumped,
+                    shouldFeesBeBumped: order.shouldFeesBeBumped,
                     canOrderBeUnlocked,
                 };
             })
         );
     }
 
-    // TODO: Remove this logic once the backend provides the `bumpFee` flag.
     /**
      * Checks whether the current fee cap (`satFeesMax`) is sufficient for processing
      * the offramp order. If the current fee is too low compared to the latest quote,
      * a fee bump is required.
      */
-    private async checkFeeBumpRequirement(
+    private async getBumpFeeRequirement(
         token: Address,
         satAmountLocked: bigint,
         satFeesMax: bigint
@@ -461,7 +458,11 @@ export class GatewayApiClient {
         return [shouldBump, offrampQuote.feesInSat];
     }
 
-    canOrderBeUnlocked(status: OfframpOrderStatus, orderTimestamp: bigint): boolean {
+    async canOrderBeUnlocked(
+        status: OfframpOrderStatus,
+        orderTimestamp: bigint,
+        offrampRegistryAddress: Address
+    ): Promise<boolean> {
         if (status === 'Active') {
             return true;
         }
@@ -470,7 +471,15 @@ export class GatewayApiClient {
         }
         // check if Accepted order has passed claim delay
         const nowInSec = Math.floor(Date.now() / 1000);
-        return Number(orderTimestamp) + OFFRAMP_ORDER_CLAIM_DELAY_IN_SECONDS <= nowInSec;
+
+        const publicClient = viemClient(this.chain) as PublicClient;
+        const claimDelay = await publicClient.readContract({
+            address: offrampRegistryAddress,
+            abi: claimDelayAbi,
+            functionName: 'CLAIM_DELAY',
+        });
+
+        return Number(orderTimestamp) + Number(claimDelay) <= nowInSec;
     }
 
     /**
@@ -496,9 +505,8 @@ export class GatewayApiClient {
             satAmountLocked: BigInt(order.satAmountLocked),
             satFeesMax: BigInt(order.satFeesMax),
             sender: order.sender as Address,
-            receiver:
-                order.receiver !== '0x0000000000000000000000000000000000000000' ? (order.receiver as Address) : null,
-            owner: order.owner !== '0x0000000000000000000000000000000000000000' ? (order.owner as Address) : null,
+            receiver: order.receiver !== (ethers.ZeroAddress as Address) ? (order.receiver as Address) : null,
+            owner: order.owner !== (ethers.ZeroAddress as Address) ? (order.owner as Address) : null,
             outputScript: order.outputScript,
             status: parseOrderStatus(Number(order.status)) as OnchainOfframpOrderDetails['status'],
             orderTimestamp: BigInt(order.timestamp),
