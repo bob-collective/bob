@@ -1,9 +1,8 @@
 ---
 sidebar_position: 2
-sidebar_label: "BOB Bitcoin Interoperability"
 ---
 
-# BOB Bitcoin Interoperability
+# BOB Gateway
 
 ## Introduction
 

@@ -1,5 +1,6 @@
 ---
 sidebar_position: 1
+sidebar_label: Getting Started
 ---
 
 import AddToWallet from '@site/src/components/AddToWallet';
@@ -17,52 +18,23 @@ Welcome to BOB, the Bitcoin-secured L2 that combines Bitcoin's security with Eth
 
 ## 1. Choose Your Wallet
 
-### For New Users
-If you're new to crypto, we recommend starting with:
-
-#### MetaMask (Easiest)
-- Most popular wallet
-- Great for beginners
-- [Install MetaMask](https://metamask.io/)
-
-#### Rabby (More Secure)
-- Enhanced security features
-- Better transaction previews
-- [Install Rabby](https://rabby.io/)
-
-### For Experienced Users
-If you already have experience with crypto:
-
-#### Hardware Wallet (Most Secure)
-- Use your existing Ledger or Trezor
-- Works with MetaMask/Rabby
-- [Get Ledger](https://www.ledger.com/)
-
-#### Multi-Sig (For Teams)
-- Safe (formerly Gnosis Safe)
-- Perfect for teams and institutions
-- [Create Safe Account](https://safe.gobob.xyz/welcome/accounts)
-
-### Other Wallets and Help
-
-See the full [Wallet](/learn/user-guides/wallet-guide) guides.
+See our [Wallet Guide](/learn/user-guides/getting-started-with-bob/wallet-guide) for detailed information about:
+- Recommended EVM wallets
+- Recommended Bitcoin wallets
+- Hardware wallet setup
+- Security best practices
 
 ## 2. Connect to BOB Network
+
+See our [Networks Guide](/learn/user-guides/getting-started-with-bob/networks) for detailed information about:
+- BOB Mainnet and Testnet
+- Network details and RPC URLs
+- How to connect your wallet
+- Getting testnet ETH
 
 ### Automatic Connection (Recommended)
 
 <AddToWallet />
-
-### Manual Connection
-1. Open your wallet settings
-2. Add network with these details:
-   - Network Name: `BOB Mainnet`
-   - Chain ID: `60808`
-   - Currency Symbol: `ETH`
-   - RPC URL: `https://rpc.gobob.xyz/`
-   - Block Explorer: `https://explorer.gobob.xyz/`
-
-If the RPC URL is not working, try this alternative: `https://bob-mainnet.public.blastapi.io`
 
 ## 3. Bridge Assets to BOB
 
@@ -103,20 +75,8 @@ See the full [Bridge to BOB](/learn/user-guides/onboard-to-bob) guides.
 - Use top-tier [DeFi protocols on BOB](https://app.gobob.xyz/en/apps?category=DeFi)
 - Build new Bitcoin-based apps using [BOB](/learn/builder-guides/hello-bitcoin/)
 
-## Security Tips
-
-### Wallet Security
-- Never share your private keys or recovery phrase
-- Use hardware wallets or multisigs for large amounts
-- Enable all available security features
-- Keep software updated
-
-### Transaction Safety
-- Always verify transaction details
-- Start with small test transactions
-- Use Rabby's transaction preview feature
-- Check recipient addresses carefully
-
 ## Need Help?
 
 - **Discord Support**: [Join our Discord](https://discord.gg/gobob)
+- **Telegram Support**: [Join our Telegram](https://t.me/+CyIcLW2nfaFlNDc1)
+- **Documentation**: Explore our [documentation](/)

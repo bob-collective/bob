@@ -1,9 +1,8 @@
 ---
 sidebar_position: 8
-sidebar_label: Send BTC to an Email Address
 ---
 
-# Send BTC to an Email Address
+# BOB Pay
 
 ## What is BOB Pay?
 
