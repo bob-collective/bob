@@ -474,16 +474,14 @@ export class GatewayApiClient {
             return false;
         }
         // check if Accepted order has passed claim delay
-        const nowInSec = Math.floor(Date.now() / 1000);
-
+        const nowInSec = BigInt(Math.floor(Date.now() / 1000));
         const publicClient = viemClient(this.chain) as PublicClient;
-        const claimDelay = await publicClient.readContract({
+        const claimDelay: bigint = await publicClient.readContract({
             address: offrampRegistryAddress,
             abi: claimDelayAbi,
             functionName: 'CLAIM_DELAY',
         });
-
-        return Number(orderTimestamp) + Number(claimDelay) <= nowInSec;
+        return orderTimestamp + claimDelay <= nowInSec;
     }
 
     /**
