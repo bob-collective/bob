@@ -75,7 +75,7 @@ At the moment, there is only one relayer for BOB Gateway. In addition to its oth
 
 In addition to the strategy contract described above, you also need to create an end-to-end integration test using Foundry’s ability to simulate the transactions on a live fork of BOB mainnet. That’s why the e2e test files follow a `[ProtocolName]StrategyForked.sol` naming convention, such as [SolvStrategyForked.sol](https://github.com/bob-collective/bob/blob/master/contracts/test/gateway/e2e-strategy-tests/SolvStrategyForked.sol#L40).
 
-Returning to the [xSolvBTC staking strategy](#one-intent-example-staking-wbtc-into-solvbtcbbn) from the beginning:
+Returning to the [xSolvBTC staking strategy](#one-intent-example-staking-wbtc-into-xsolvbtc) from the beginning:
 
 ```solidity title="SolvStrategyForked.sol"
 function testSolvLSTStrategy() public {

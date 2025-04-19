@@ -182,3 +182,12 @@ export function getMerkleProof(block: Block, txHash: string, forWitness?: boolea
         root: merkleAndRoot.root.toString('hex'),
     };
 }
+
+export function bigIntToFloatingNumber(value: bigint, decimals: number): number {
+    const valueStr = value.toString();
+
+    const integerPart = valueStr.slice(0, -decimals) || '0';
+    const decimalPart = valueStr.slice(-decimals).padStart(decimals, '0');
+
+    return Number(integerPart + '.' + decimalPart);
+}
