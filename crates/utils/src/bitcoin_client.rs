@@ -15,7 +15,7 @@ use bitcoincore_rpc::{
 };
 use num_derive::FromPrimitive;
 use serde::{Deserialize, Serialize};
-use serde_json::{error::Category as SerdeJsonCategory, json};
+use serde_json::error::Category as SerdeJsonCategory;
 use std::{sync::Arc, time::Duration};
 use tokio::time::{error::Elapsed, sleep, timeout};
 use tracing::*;
@@ -165,7 +165,7 @@ impl BumpFeeOptions {
     }
 }
 
-#[derive(Deserialize, Clone, PartialEq, Eq, Debug)]
+#[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct BumpFeeResult {
     /// The base64-encoded unsigned PSBT of the new transaction. Only returned when wallet private
@@ -173,8 +173,8 @@ pub struct BumpFeeResult {
     pub psbt: Option<String>,
     /// The id of the new transaction. Only returned when wallet private keys are enabled.
     pub txid: Option<bitcoin::Txid>,
-    pub origfee: Amount,
-    pub fee: Amount,
+    pub origfee: f64,
+    pub fee: f64,
     /// Errors encountered during processing.
     pub errors: Vec<String>,
 }
@@ -418,23 +418,39 @@ impl BitcoinClient {
         Ok(transaction)
     }
 
-    fn bump_fee(
+    pub fn bump_fee(
         &self,
         txid: &Txid,
         options: Option<&BumpFeeOptions>,
     ) -> Result<BumpFeeResult, Error> {
+        // Serialize options if provided
         let opts = match options {
             Some(options) => Some(options.to_serializable(self.rpc.version()?)),
             None => None,
         };
 
-        let params = match opts {
-            Some(o) => json!([txid, o]),
-            None => json!([txid]),
-        };
+        // Prepare arguments
+        let args = vec![serde_json::to_value(txid)?, serde_json::to_value(opts)?];
 
-        let result = self.rpc.call("bumpfee", &[params])?;
-        Ok(serde_json::from_value(result)?)
+        // Call the "bumpfee" RPC method with borrowed args
+        let result = self.rpc.call("bumpfee", &args);
+
+        // Handle the result
+        match result {
+            Ok(result_value) => {
+                // Try to deserialize the result into the expected BumpFeeResult
+                let result: Result<BumpFeeResult, _> = serde_json::from_value(result_value);
+
+                match result {
+                    Ok(bump_fee_result) => Ok(bump_fee_result),
+                    Err(err) => {
+                        println!("Failed to deserialize into BumpFeeResult");
+                        Err(err.into())
+                    }
+                }
+            }
+            Err(err) => Err(err.into()), // Handle the case where the RPC call fails
+        }
     }
 }
 
