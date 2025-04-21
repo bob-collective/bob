@@ -173,7 +173,9 @@ pub struct BumpFeeResult {
     pub psbt: Option<String>,
     /// The id of the new transaction. Only returned when wallet private keys are enabled.
     pub txid: Option<bitcoin::Txid>,
+    /// The fee of the original transaction (before bumping), denominated in BTC.
     pub origfee: f64,
+    /// The fee of the newly created bumped transaction, denominated in BTC.
     pub fee: f64,
     /// Errors encountered during processing.
     pub errors: Vec<String>,
