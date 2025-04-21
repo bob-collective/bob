@@ -282,23 +282,21 @@ mod tests {
         // Assert there are no errors when bumping the fee
         assert!(bump_fee.errors.is_empty());
 
-        // Step 4: Generate 100 blocks to confirm the transaction and bump fee transaction
+        // Step 4: Generate 100 blocks to confirm the bump fee transaction
         bitcoin_client.rpc.generate_to_address(100, &to_addr).unwrap();
 
-        // Check the original transaction's status
+        // Check the original transaction
         let tx_info = bitcoin_client.rpc.get_transaction(&txid, None).unwrap();
 
         // Assert that the original transaction has negative confirmations
         assert!(tx_info.info.confirmations.is_negative());
 
-        // Check the bumped fee transaction's status (should now be confirmed)
+        // Get the bumped fee transaction's
         let tx_info = bitcoin_client.rpc.get_transaction(&bump_fee.txid.unwrap(), None).unwrap();
 
-        // Assert that the bumped fee transaction has confirmations (i.e., it has been confirmed in
-        // the blockchain)
+        // Assert that the bumped fee transaction has confirmations
         assert!(tx_info.info.confirmations.is_positive());
 
-        // Test successfully passes if all assertions hold true
         Ok(())
     }
 }
