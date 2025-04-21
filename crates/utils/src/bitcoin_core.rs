@@ -234,7 +234,6 @@ mod tests {
         );
     }
 
-    // test async function with bitcoin client
     #[tokio::test]
     async fn test_bump_fee() -> Result<()> {
         // Step 1: Create and initialize BitcoinCore instance for test
