@@ -159,6 +159,7 @@ export interface Input {
  * @param opReturnData Optional OP_RETURN data to include in an output.
  * @param feeRate Optional fee rate in satoshis per byte.
  * @param confirmationTarget The number of blocks to include this tx (for fee estimation).
+ * @param isSignet True if using Bitcoin Signet.
  * @returns {Promise<string>} The Base64 encoded PSBT.
  *
  * @example
@@ -452,6 +453,7 @@ export async function estimateTxFee(
  * @typedef { {confirmed: BigInt, unconfirmed: BigInt, total: bigint} } Balance
  *
  * @param {string} [address] The Bitcoin address. If no address specified returning object will contain zeros.
+ * @param isSignet True if using Bitcoin Signet.
  * @returns {Promise<Balance>} The balance object of provided address in satoshis.
  *
  * @example
