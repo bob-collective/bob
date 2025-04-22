@@ -28,9 +28,9 @@
     "ecpair": "^2.1.0",
     "eslint": "^9.19.0",
     "eslint-config-prettier": "^10.1.1",
-    "eslint-plugin-prettier": "^5.2.1",
+    "eslint-plugin-prettier": "^5.2.6",
     "mocha": "^11.1.0",
-    "nock": "^14.0.0",
+    "nock": "^14.0.3",
     "prettier": "^3.5.3",
     "tiny-secp256k1": "^2.2.3",
     "ts-node": "^10.0.0",
@@ -39,7 +39,7 @@
     "yargs": "^17.5.1"
   },
   "dependencies": {
-    "@eslint/eslintrc": "^3.2.0",
+    "@eslint/eslintrc": "^3.3.1",
     "@eslint/js": "^9.19.0",
     "@magiceden-oss/runestone-lib": "^1.0.2",
     "@scure/base": "^1.2.4",

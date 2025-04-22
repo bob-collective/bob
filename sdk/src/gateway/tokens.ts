@@ -1,4 +1,5 @@
 import { ChainId, Token } from './types';
+import { Address } from 'viem';
 
 // TODO: re-write to use superchain tokenlist
 const bobTokens = [
@@ -96,13 +97,13 @@ const bobSepoliaTokens = [
     {
         name: 'Bob BTC',
         symbol: 'bobBTC',
-        decimals: 18,
+        decimals: 8,
         tokens: {
             'bob-sepolia': {
-                address: '0xda472456b1a6a2fc9ae7edb0e007064224d4284c',
+                address: '0x4496ebE7C8666a8103713EE6e0c08cA0cD25b888',
             },
         },
-        logoURI: 'https://app.gobob.xyz/apple-touch-icon.webp', // TODO: change logo latter
+        logoURI: 'https://raw.githubusercontent.com/bob-collective/bob/master/assets/bobBTC.svg',
     },
 ];
 
@@ -333,3 +334,13 @@ export const tokenToStrategyTypeMap = new Map([
     ...vedaTokens.map((token) => [token.tokens['bob'].address.toLowerCase(), 'veda'] as const),
     ...avalonTokens.map((token) => [token.tokens['bob'].address.toLowerCase(), 'avalon'] as const),
 ]);
+
+export function getTokenDecimals(tokenAddress: Address): number | undefined {
+    const normalizedAddress = tokenAddress.toString().toLowerCase();
+
+    const token =
+        bobTokens.find((t) => t.tokens.bob.address.toLowerCase() === normalizedAddress) ||
+        bobSepoliaTokens.find((t) => t.tokens['bob-sepolia'].address.toLowerCase() === normalizedAddress);
+
+    return token?.decimals;
+}
