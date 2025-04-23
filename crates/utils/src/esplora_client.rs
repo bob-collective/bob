@@ -8,8 +8,8 @@ use serde::Deserialize;
 use std::str::FromStr;
 use tracing::*;
 
-const ESPLORA_MAINNET_URL: &str = "https://blockstream.info/api/";
-const ESPLORA_TESTNET_URL: &str = "https://blockstream.info/testnet/api/";
+const ESPLORA_TESTNET_URL: &str = "https://btc-testnet.interlay.io";
+const ESPLORA_MAINNET_URL: &str = "https://btc-mainnet.interlay.io";
 const ESPLORA_LOCALHOST_URL: &str = "http://localhost:3002";
 const ESPLORA_SIGNET_URL: &str = "https://btc-signet.gobob.xyz";
 
