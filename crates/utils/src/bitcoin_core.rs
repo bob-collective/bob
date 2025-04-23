@@ -64,6 +64,12 @@ impl BitcoinCoreInstance {
         client.generate_to_address(101, &address)?;
         Ok(())
     }
+
+    pub fn fund_to_specific_address(&self, address: &bitcoin::Address) -> Result<()> {
+        let client = self.client(None)?;
+        client.generate_to_address(101, address)?;
+        Ok(())
+    }
 }
 
 impl Drop for BitcoinCoreInstance {
