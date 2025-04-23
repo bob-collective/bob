@@ -27,9 +27,9 @@ import {
     OfframpOrderStatus,
     EnrichedToken,
 } from './types';
+import { createBitcoinPsbt, getAddressInfo } from '../wallet';
 import { SYMBOL_LOOKUP, ADDRESS_LOOKUP, getTokenDecimals } from './tokens';
-import { createBitcoinPsbt } from '../wallet';
-import { AddressType, getAddressInfo, Network } from 'bitcoin-address-validation';
+import { AddressType, Network } from 'bitcoin-address-validation';
 import { EsploraClient } from '../esplora';
 import {
     claimDelayAbi,
@@ -78,6 +78,7 @@ export class GatewayApiClient {
     private chain: Chain.BOB | Chain.BOB_SEPOLIA;
     private baseUrl: string;
     private strategy: StrategyClient;
+    private isSignet: boolean = false;
 
     /**
      * @constructor
@@ -100,6 +101,7 @@ export class GatewayApiClient {
                 this.chain = Chain.BOB_SEPOLIA; // Same chain as testnet
                 this.baseUrl = SIGNET_GATEWAY_BASE_URL;
                 this.strategy = new StrategyClient(bobSepolia, options?.rpcUrl);
+                this.isSignet = true;
                 break;
             default:
                 throw new Error('Invalid chain');
@@ -294,7 +296,7 @@ export class GatewayApiClient {
             bitcoinNetwork = bitcoin.networks.testnet;
         }
 
-        if (getAddressInfo(params.bitcoinUserAddress).type === AddressType.p2tr) {
+        if (getAddressInfo(params.bitcoinUserAddress, this.isSignet).type === AddressType.p2tr) {
             throw new Error('Only following bitcoin address types are supported P2PKH, P2WPKH, P2SH or P2WSH.');
         }
         const receiverAddress = toHexScriptPubKey(params.bitcoinUserAddress, bitcoinNetwork);
@@ -576,7 +578,8 @@ export class GatewayApiClient {
                 params.fromUserPublicKey,
                 data.opReturnHash,
                 params.feeRate,
-                gatewayQuote.txProofDifficultyFactor
+                gatewayQuote.txProofDifficultyFactor,
+                this.isSignet
             );
         }
 
