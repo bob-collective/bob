@@ -270,7 +270,7 @@ export function getInputFromUtxoAndTx(
     addressType: AddressType,
     publicKey?: string
 ): Input {
-    // The output containts the necessary details to spend the UTXO based on the script type
+    // The output contains the necessary details to spend the UTXO based on the script type
     // Under the hood, @scure/btc-signer parses the output and extracts the script and amount
     const output = transaction.getOutput(utxo.vout);
 
