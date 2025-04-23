@@ -9,11 +9,12 @@ use bitcoin::{
 };
 use bitcoincore_rpc::{
     bitcoin::{BlockHash, Transaction},
-    json::TestMempoolAcceptResult,
+    json::{EstimateMode, TestMempoolAcceptResult},
     jsonrpc::{error::RpcError, Error as JsonRpcError},
     Auth, Client, Error as BitcoinError, RpcApi,
 };
 use num_derive::FromPrimitive;
+use serde::{Deserialize, Serialize};
 use serde_json::error::Category as SerdeJsonCategory;
 use std::{sync::Arc, time::Duration};
 use tokio::time::{error::Elapsed, sleep, timeout};
@@ -83,6 +84,101 @@ pub enum BitcoinRpcError {
 
     /// Unknown error code (not in spec).
     RpcUnknownError = 0,
+}
+
+/// A representation of a fee rate. Bitcoin Core uses different units in different
+/// versions. To avoid burdening the user with using the correct unit, this struct
+/// provides an umambiguous way to represent the fee rate, and the lib will perform
+/// the necessary conversions.
+#[derive(Copy, Clone, PartialEq, Eq, Debug, Default)]
+pub struct FeeRate(Amount);
+
+impl FeeRate {
+    /// Construct FeeRate from the amount per vbyte
+    pub fn per_vbyte(amount_per_vbyte: Amount) -> Self {
+        // internal representation is amount per vbyte
+        Self(amount_per_vbyte)
+    }
+
+    /// Construct FeeRate from the amount per kilo-vbyte
+    pub fn per_kvbyte(amount_per_kvbyte: Amount) -> Self {
+        // internal representation is amount per vbyte, so divide by 1000
+        Self::per_vbyte(amount_per_kvbyte / 1000)
+    }
+
+    pub fn to_sat_per_vbyte(&self) -> f64 {
+        // multiply by the number of decimals to get sat
+        self.0.to_sat() as f64 // TODO: Changed this
+    }
+
+    pub fn to_btc_per_kvbyte(&self) -> f64 {
+        // divide by 10^8 to get btc/vbyte, then multiply by 10^3 to get btc/kbyte
+        self.0.to_sat() as f64 / 100_000.0
+    }
+}
+
+#[derive(Clone, PartialEq, Eq, Debug, Default)]
+pub struct BumpFeeOptions {
+    /// Confirmation target in blocks.
+    pub conf_target: Option<u16>,
+    /// Specify a fee rate instead of relying on the built-in fee estimator.
+    pub fee_rate: Option<FeeRate>,
+    /// Whether this transaction could be replaced due to BIP125 (replace-by-fee)
+    pub replaceable: Option<bool>,
+    /// The fee estimate mode
+    pub estimate_mode: Option<EstimateMode>,
+}
+
+#[derive(Serialize, Clone, PartialEq, Debug, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct SerializableBumpFeeOptions {
+    #[serde(rename = "conf_target", skip_serializing_if = "Option::is_none")]
+    /// Confirmation target in blocks.
+    pub conf_target: Option<u16>,
+    /// Specify a fee rate instead of relying on the built-in fee estimator.
+    #[serde(rename = "fee_rate")]
+    pub fee_rate: Option<f64>,
+    /// Whether this transaction could be replaced due to BIP125 (replace-by-fee)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub replaceable: Option<bool>,
+    /// The fee estimate mode
+    #[serde(rename = "estimate_mode", skip_serializing_if = "Option::is_none")]
+    pub estimate_mode: Option<EstimateMode>,
+}
+
+impl BumpFeeOptions {
+    pub fn to_serializable(&self, version: usize) -> SerializableBumpFeeOptions {
+        let fee_rate = self.fee_rate.map(|x| {
+            if version < 210000 {
+                x.to_btc_per_kvbyte()
+            } else {
+                x.to_sat_per_vbyte()
+            }
+        });
+
+        SerializableBumpFeeOptions {
+            fee_rate,
+            conf_target: self.conf_target,
+            replaceable: self.replaceable,
+            estimate_mode: self.estimate_mode,
+        }
+    }
+}
+
+#[derive(Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct BumpFeeResult {
+    /// The base64-encoded unsigned PSBT of the new transaction. Only returned when wallet private
+    /// keys are disabled.
+    pub psbt: Option<String>,
+    /// The id of the new transaction. Only returned when wallet private keys are enabled.
+    pub txid: Option<bitcoin::Txid>,
+    /// The fee of the original transaction (before bumping), denominated in BTC.
+    pub origfee: f64,
+    /// The fee of the newly created bumped transaction, denominated in BTC.
+    pub fee: f64,
+    /// Errors encountered during processing.
+    pub errors: Vec<String>,
 }
 
 impl From<RpcError> for BitcoinRpcError {
@@ -322,6 +418,41 @@ impl BitcoinClient {
         let signed_tx = self.rpc.sign_raw_transaction_with_wallet(&tx, None, None)?;
         let transaction = signed_tx.transaction()?;
         Ok(transaction)
+    }
+
+    pub fn bump_fee(
+        &self,
+        txid: &Txid,
+        options: Option<&BumpFeeOptions>,
+    ) -> Result<BumpFeeResult, Error> {
+        // Serialize options if provided
+        let opts = match options {
+            Some(options) => Some(options.to_serializable(self.rpc.version()?)),
+            None => None,
+        };
+
+        // Prepare arguments
+        let args = vec![serde_json::to_value(txid)?, serde_json::to_value(opts)?];
+
+        // Call the "bumpfee" RPC method with borrowed args
+        let result = self.rpc.call("bumpfee", &args);
+
+        // Handle the result
+        match result {
+            Ok(result_value) => {
+                // Try to deserialize the result into the expected BumpFeeResult
+                let result: Result<BumpFeeResult, _> = serde_json::from_value(result_value);
+
+                match result {
+                    Ok(bump_fee_result) => Ok(bump_fee_result),
+                    Err(err) => {
+                        println!("Failed to deserialize into BumpFeeResult");
+                        Err(err.into())
+                    }
+                }
+            }
+            Err(err) => Err(err.into()), // Handle the case where the RPC call fails
+        }
     }
 }
 
