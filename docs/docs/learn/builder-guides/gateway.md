@@ -38,9 +38,9 @@ npm install @gobob/bob-sdk
 Import the `GatewaySDK` class from `@gobob/bob-sdk` and create an instance of it.
 
 ```ts title="/src/utils/gateway.ts"
-import { GatewayQuoteParams, GatewaySDK } from "@gobob/bob-sdk";
+import { GatewayQuoteParams, GatewaySDK } from '@gobob/bob-sdk';
 
-const gatewaySDK = new GatewaySDK("bob"); // or "bob-sepolia"
+const gatewaySDK = new GatewaySDK('bob'); // or "testnet"
 ```
 
 ### Get Available Tokens
@@ -61,12 +61,12 @@ We recommend rendering `quote.fee` and [its other fields](https://github.com/bob
 
 ```ts
 const quoteParams: GatewayQuoteParams = {
-  fromToken: "BTC",
-  fromChain: "Bitcoin",
-  fromUserAddress: "bc1qafk4yhqvj4wep57m62dgrmutldusqde8adh20d",
-  toChain: "BOB",
-  toUserAddress: "0x2D2E86236a5bC1c8a5e5499C517E17Fb88Dbc18c",
-  toToken: "tBTC", // or e.g. "SolvBTC"
+  fromToken: 'BTC',
+  fromChain: 'Bitcoin',
+  fromUserAddress: 'bc1qafk4yhqvj4wep57m62dgrmutldusqde8adh20d',
+  toChain: 'BOB',
+  toUserAddress: '0x2D2E86236a5bC1c8a5e5499C517E17Fb88Dbc18c',
+  toToken: 'tBTC', // or e.g. "SolvBTC"
   amount: 10000000, // 0.1 BTC
   gasRefill: 10000, // 0.0001 BTC. The amount of BTC to swap for ETH for tx fees.
 };
@@ -81,7 +81,7 @@ The SDK will handle automatically when the `toToken` has a fungible ERC20 token,
 ```ts
 const strategies = await gatewaySDK.getStrategies();
 const strategy = strategies.find(
-  (contract) => contract.integration.name === "pell-wbtc"
+  (contract) => contract.integration.name === 'pell-wbtc',
 )!;
 const quoteParamsStaking: GatewayQuoteParams = {
   ...quoteParams,
