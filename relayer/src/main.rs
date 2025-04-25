@@ -42,7 +42,10 @@ async fn main() -> Result<()> {
     let wallet = EthereumWallet::from(signer);
     let rpc_url: Url = app.eth_rpc_url.parse()?;
     let provider = ProviderBuilder::new().wallet(wallet).on_http(rpc_url);
-    let esplora_client = EsploraClient::new(app.esplora_url, bitcoin::Network::Bitcoin)?;
+    let esplora_client = app
+        .esplora_url
+        .map(EsploraClient::new_with_url)
+        .unwrap_or(EsploraClient::new(bitcoin::Network::Bitcoin))?;
 
     let relayer = Relayer::new(BitcoinRelay::new(app.relay_address, provider), esplora_client);
     relayer.run().await?;
@@ -71,7 +74,7 @@ mod tests {
 
         let provider = ProviderBuilder::new().wallet(wallet).on_http(rpc_url);
 
-        let esplora_client = EsploraClient::new(None, bitcoin::Network::Bitcoin)?;
+        let esplora_client = EsploraClient::new(bitcoin::Network::Bitcoin)?;
 
         let period_start_height = 201600;
         // change this to test different headers
