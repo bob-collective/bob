@@ -1,7 +1,7 @@
 import * as bitcoin from 'bitcoinjs-lib';
 import { Transaction, Script, selectUTXO, TEST_NETWORK, NETWORK, p2wpkh, p2sh, p2tr } from '@scure/btc-signer';
 import { hex, base64 } from '@scure/base';
-import { AddressType, getAddressInfo, Network } from 'bitcoin-address-validation';
+import { AddressType, getAddressInfo as getAddressInfoRaw, Network, AddressInfo } from 'bitcoin-address-validation';
 import { EsploraClient, UTXO } from '../esplora';
 import { OrdinalsClient, OutPoint, OutputJson } from '../ordinal-api';
 import { parseInscriptions } from '../inscription';
@@ -12,10 +12,15 @@ export type BitcoinNetworkName = Exclude<Network, 'regtest'>;
 const bitcoinNetworks: Record<BitcoinNetworkName, typeof NETWORK> = {
     mainnet: NETWORK,
     testnet: TEST_NETWORK,
+    signet: TEST_NETWORK,
 };
 
 export const getBtcNetwork = (name: BitcoinNetworkName) => {
     return bitcoinNetworks[name];
+};
+
+export const getAddressInfo = (address: string, isSignet: boolean): AddressInfo => {
+    return getAddressInfoRaw(address, isSignet ? { castTestnetTo: Network.signet } : undefined);
 };
 
 type Output = { address: string; amount: bigint } | { script: Uint8Array; amount: bigint };
@@ -100,8 +105,8 @@ const getSafeUtxos = async (
     return findSafeUtxos(utxos, cardinalOutputsSet, esploraClient, ordinalsClient);
 };
 
-const collectPossibleInputs = async (fromAddress: string, publicKey: string) => {
-    const addressInfo = getAddressInfo(fromAddress);
+const collectPossibleInputs = async (fromAddress: string, publicKey: string, isSignet: boolean) => {
+    const addressInfo = getAddressInfo(fromAddress, isSignet);
 
     const esploraClient = new EsploraClient(addressInfo.network);
     const ordinalsClient = new OrdinalsClient(addressInfo.network);
@@ -154,6 +159,7 @@ export interface Input {
  * @param opReturnData Optional OP_RETURN data to include in an output.
  * @param feeRate Optional fee rate in satoshis per byte.
  * @param confirmationTarget The number of blocks to include this tx (for fee estimation).
+ * @param isSignet True if using Bitcoin Signet.
  * @returns {Promise<string>} The Base64 encoded PSBT.
  *
  * @example
@@ -178,9 +184,10 @@ export async function createBitcoinPsbt(
     publicKey?: string,
     opReturnData?: string,
     feeRate?: number,
-    confirmationTarget: number = 3
+    confirmationTarget: number = 3,
+    isSignet: boolean = false
 ): Promise<string> {
-    const addressInfo = getAddressInfo(fromAddress);
+    const addressInfo = getAddressInfo(fromAddress, isSignet);
 
     // TODO: possibly, allow other strategies to be passed to this function
     const utxoSelectionStrategy: 'all' | 'default' = 'default';
@@ -205,7 +212,7 @@ export async function createBitcoinPsbt(
     let possibleInputs: Input[] = [];
     const esploraClient = new EsploraClient(addressInfo.network);
     [possibleInputs, feeRate] = await Promise.all([
-        collectPossibleInputs(fromAddress, publicKey),
+        collectPossibleInputs(fromAddress, publicKey, isSignet),
         feeRate === undefined ? esploraClient.getFeeEstimate(confirmationTarget) : feeRate,
     ]);
 
@@ -263,7 +270,7 @@ export function getInputFromUtxoAndTx(
     addressType: AddressType,
     publicKey?: string
 ): Input {
-    // The output containts the necessary details to spend the UTXO based on the script type
+    // The output contains the necessary details to spend the UTXO based on the script type
     // Under the hood, @scure/btc-signer parses the output and extracts the script and amount
     const output = transaction.getOutput(utxo.vout);
 
@@ -320,6 +327,7 @@ export function getInputFromUtxoAndTx(
  * @param opReturnData Optional OP_RETURN data to include in an output.
  * @param feeRate Optional fee rate in satoshis per byte.
  * @param confirmationTarget The number of blocks to include this tx (for fee estimation).
+ * @param isSignet True if using Bitcoin Signet
  * @returns {Promise<bigint>} The fee amount for estimated transaction inclusion in satoshis.
  *
  * @example
@@ -354,9 +362,10 @@ export async function estimateTxFee(
     publicKey?: string,
     opReturnData?: string,
     feeRate?: number,
-    confirmationTarget: number = 3
+    confirmationTarget: number = 3,
+    isSignet: boolean = false
 ): Promise<bigint> {
-    const addressInfo = getAddressInfo(fromAddress);
+    const addressInfo = getAddressInfo(fromAddress, isSignet);
 
     if (addressInfo.network === 'regtest') {
         throw new Error('Bitcoin regtest not supported');
@@ -381,7 +390,7 @@ export async function estimateTxFee(
     let possibleInputs: Input[] = [];
     const esploraClient = new EsploraClient(addressInfo.network);
     [possibleInputs, feeRate] = await Promise.all([
-        collectPossibleInputs(fromAddress, publicKey),
+        collectPossibleInputs(fromAddress, publicKey, isSignet),
         feeRate === undefined ? esploraClient.getFeeEstimate(confirmationTarget) : feeRate,
     ]);
 
@@ -444,6 +453,7 @@ export async function estimateTxFee(
  * @typedef { {confirmed: BigInt, unconfirmed: BigInt, total: bigint} } Balance
  *
  * @param {string} [address] The Bitcoin address. If no address specified returning object will contain zeros.
+ * @param isSignet True if using Bitcoin Signet.
  * @returns {Promise<Balance>} The balance object of provided address in satoshis.
  *
  * @example
@@ -456,12 +466,12 @@ export async function estimateTxFee(
  *
  * @dev UTXOs that contain inscriptions or runes will not be used to calculate balance.
  */
-export async function getBalance(address?: string) {
+export async function getBalance(address?: string, isSignet: boolean = false) {
     if (!address) {
         return { confirmed: BigInt(0), unconfirmed: BigInt(0), total: BigInt(0) };
     }
 
-    const addressInfo = getAddressInfo(address);
+    const addressInfo = getAddressInfo(address, isSignet);
 
     const esploraClient = new EsploraClient(addressInfo.network);
     const ordinalsClient = new OrdinalsClient(addressInfo.network);

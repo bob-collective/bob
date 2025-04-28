@@ -2,15 +2,16 @@ use bitcoin::{
     block::Header, consensus, hashes::hex::FromHex, BlockHash, CompactTarget, MerkleBlock, Network,
     Transaction, TxMerkleNode, Txid,
 };
-use eyre::Result;
+use eyre::{Error, Result};
 use reqwest::{Client, Url};
 use serde::Deserialize;
 use std::str::FromStr;
 use tracing::*;
 
-const ESPLORA_MAINNET_URL: &str = "https://blockstream.info/api/";
-const ESPLORA_TESTNET_URL: &str = "https://blockstream.info/testnet/api/";
+const ESPLORA_TESTNET_URL: &str = "https://btc-testnet.interlay.io";
+const ESPLORA_MAINNET_URL: &str = "https://btc-mainnet.interlay.io";
 const ESPLORA_LOCALHOST_URL: &str = "http://localhost:3002";
+const ESPLORA_SIGNET_URL: &str = "https://btc-signet.gobob.xyz";
 
 // https://github.com/Blockstream/electrs/blob/adedee15f1fe460398a7045b292604df2161adc0/src/util/transaction.rs#L17-L26
 #[derive(Debug, Deserialize)]
@@ -76,6 +77,7 @@ impl EsploraClient {
                     match network {
                         Network::Bitcoin => ESPLORA_MAINNET_URL,
                         Network::Testnet => ESPLORA_TESTNET_URL,
+                        Network::Signet => ESPLORA_SIGNET_URL,
                         _ => ESPLORA_LOCALHOST_URL,
                     }
                     .to_owned()
@@ -178,6 +180,18 @@ impl EsploraClient {
                 info!("Sending transaction");
                 self.send_transaction(tx).await
             }
+        }
+    }
+
+    pub async fn get_bitcoin_network(&self) -> Result<Network> {
+        let url_str = self.url.as_str();
+
+        match url_str {
+            _ if url_str.contains(ESPLORA_MAINNET_URL) => Ok(Network::Bitcoin),
+            _ if url_str.contains(ESPLORA_TESTNET_URL) => Ok(Network::Testnet),
+            _ if url_str.contains(ESPLORA_LOCALHOST_URL) => Ok(Network::Regtest),
+            _ if url_str.contains(ESPLORA_SIGNET_URL) => Ok(Network::Signet),
+            _ => Err(Error::msg("Unknown network for URL: {url_str}")),
         }
     }
 }

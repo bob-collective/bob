@@ -1,13 +1,18 @@
 /**
  * Base path for the mainnet Memopool API.
- * @default "https://btc-mainnet.gobob.xyz"
+ * @default "https://mempool.space/api/v1"
  */
 export const MAINNET_MEMPOOL_BASE_PATH = 'https://mempool.space/api/v1';
 /**
  * Base path for the testnet Memopool API.
- * @default "https://btc-testnet.gobob.xyz"
+ * @default "https://mempool.space/testnet4/api/v1"
  */
 export const TESTNET_MEMPOOL_BASE_PATH = 'https://mempool.space/testnet4/api/v1';
+/**
+ * Base path for the signet Memopool API.
+ * @default "https://mempool.space/signet/api/v1"
+ */
+export const SIGNET_MEMPOOL_BASE_PATH = 'https://mempool.space/signet/api/v1';
 /**
  * Base path for the regtest Memopool API.
  * @default "http://localhost:3003"
@@ -17,7 +22,7 @@ export const REGTEST_MEMPOOL_BASE_PATH = 'http://localhost:3003';
 /**
  * @ignore
  */
-export type MempoolRecomendedFee = {
+export type MempoolRecommendedFee = {
     fastestFee: number;
     halfHourFee: number;
     hourFee: number;
@@ -49,6 +54,9 @@ export class MempoolClient {
             case 'mainnet':
                 this.basePath = MAINNET_MEMPOOL_BASE_PATH;
                 break;
+            case 'signet':
+                this.basePath = SIGNET_MEMPOOL_BASE_PATH;
+                break;
             case 'testnet':
                 this.basePath = TESTNET_MEMPOOL_BASE_PATH;
                 break;
@@ -76,7 +84,7 @@ export class MempoolClient {
      *   in a longer period (low priority).
      * - `minimumFee`: The lowest fee rate that is still accepted by miners.
      *
-     * @returns {Promise<MempoolRecomendedFee>} A promise that resolves to an object containing
+     * @returns {Promise<MempoolRecommendedFee>} A promise that resolves to an object containing
      * the recommended fees for various confirmation times.
      *
      * @example
@@ -85,8 +93,8 @@ export class MempoolClient {
      *   .then(fees => console.log(fees))
      *   .catch(error => console.error('Failed to fetch fees:', error));
      */
-    async getRecommendedFees(): Promise<MempoolRecomendedFee> {
-        return this.getJson<MempoolRecomendedFee>(`${this.basePath}/fees/recommended`);
+    async getRecommendedFees(): Promise<MempoolRecommendedFee> {
+        return this.getJson<MempoolRecommendedFee>(`${this.basePath}/fees/recommended`);
     }
 
     /**
