@@ -95,6 +95,20 @@ const bobSepoliaTokens = [
     },
 ];
 
+const optimismTokens = [
+    {
+        name: 'Optimism',
+        symbol: 'OP',
+        decimals: 18,
+        tokens: {
+            optimism: {
+                address: '0x4200000000000000000000000000000000000042',
+            },
+        },
+        logoURI: 'https://optimistic.etherscan.io/token/images/optimism_32.png',
+    },
+];
+
 const shoebillTokens = [
     {
         name: 'sb tBTC v2',
@@ -267,11 +281,15 @@ const TOKENS: Array<{
         'bob-sepolia'?: {
             address: string;
         };
+        optimism?: {
+            address: string;
+        };
     };
     logoURI: string;
 }> = [
     ...bobTokens,
     ...bobSepoliaTokens,
+    ...optimismTokens,
     ...shoebillTokens,
     ...segmentTokens,
     ...avalonTokens,
@@ -285,14 +303,16 @@ export const ADDRESS_LOOKUP: { [key in number]: { [key in string]: Token } } = {
 
 SYMBOL_LOOKUP[ChainId.BOB] = {};
 SYMBOL_LOOKUP[ChainId.BOB_SEPOLIA] = {};
+SYMBOL_LOOKUP[ChainId.OPTIMISM] = {};
 
 ADDRESS_LOOKUP[ChainId.BOB] = {};
 ADDRESS_LOOKUP[ChainId.BOB_SEPOLIA] = {};
+ADDRESS_LOOKUP[ChainId.OPTIMISM] = {};
 
 function addToken(address: string, token: (typeof TOKENS)[number], chainId: ChainId) {
     const lowerAddress = address.toLowerCase();
     const lowerToken: Token = {
-        chainId: ChainId.BOB,
+        chainId,
         address: lowerAddress,
         name: token.name,
         symbol: token.symbol,
@@ -311,6 +331,10 @@ for (const token of TOKENS) {
 
     if (token.tokens['bob-sepolia']) {
         addToken(token.tokens['bob-sepolia'].address, token, ChainId.BOB_SEPOLIA);
+    }
+
+    if (token.tokens.optimism) {
+        addToken(token.tokens.optimism.address, token, ChainId.OPTIMISM);
     }
 }
 

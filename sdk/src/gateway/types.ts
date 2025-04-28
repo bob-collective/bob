@@ -17,6 +17,7 @@ export enum Chain {
 export enum ChainId {
     BOB = 60808,
     BOB_SEPOLIA = 808813,
+    OPTIMISM = 10,
 }
 
 /**
@@ -77,8 +78,8 @@ export interface PointsIncentive {
 
 export interface EnrichedToken extends Token {
     tvl: number;
-    baseApy: number;
-    rewardApy: number;
+    apyBase: number;
+    apyReward: number;
     rewardTokens: Token[];
     points: PointsIncentive[];
 }
@@ -407,4 +408,18 @@ export interface GatewayStrategy {
 export interface StrategyAssetState {
     address: Address | 'usd';
     totalUnderlying: bigint;
+}
+
+/** @dev Internal */
+
+export interface DefiLlamaPool {
+    pool: string;
+    chain: string;
+    project: string;
+    tvlUsd: number;
+    apy: number | null;
+    apyBase: number | null;
+    apyReward: number | null;
+    underlyingTokens: null | string[];
+    rewardTokens: null | string[];
 }
