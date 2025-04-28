@@ -149,23 +149,6 @@ const tokensPointsIncentives: Map<string, PointsIncentive[]> = new Map([
     ],
 ]);
 
-const rewardTokens = new Map<string, Token[]>([
-    [
-        // hybridBTC
-        '0x9998e05030aee3af9ad3df35a34f5c51e1628779',
-        [
-            {
-                chainId: 10,
-                address: '0x4200000000000000000000000000000000000042',
-                name: 'Optimism',
-                symbol: 'OP',
-                decimals: 18,
-                logoURI: 'https://ethereum-optimism.github.io/data/OP/logo.png',
-            },
-        ],
-    ],
-]);
-
 const tokenToDefiLlamaPoolIdMap = new Map<string, string>([
     [
         // hybridBTC
