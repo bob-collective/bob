@@ -254,7 +254,7 @@ console.log('Transaction Hash:', txHash);
 
 ### Monitor the User's Orders
 
-Get an array of pending and completed orders for a specific EVM address. It .
+Get an array of pending and completed orders for a specific EVM address.
 
 ```ts
 const orders: OfframpOrderDetails = await gatewaySDK.getOfframpOrders(userEvmAddress);
