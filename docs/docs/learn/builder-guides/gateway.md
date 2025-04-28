@@ -4,19 +4,28 @@ sidebar_position: 2
 
 # Integrate BOB Gateway in Your App
 
-[BOB Gateway](https://docs.gobob.xyz/learn/guides/bitcoin-bridge/) is a Bitcoin intent bridge that unlocks Bitcoin liquidity by reducing the number of steps to onboard users to your app, saving time and money. For example, users can go from **BTC** on Bitcoin to **staked BTC LSTs** with a single Bitcoin transaction.
+BOB Gateway is a Bitcoin intent bridge that unlocks Bitcoin liquidity by reducing the number of steps needed to onboard users to your app, saving time and money.
+For example, users can go from BTC on Bitcoin to staked BTC LSTs with a single Bitcoin transaction via the onramp.
+Users can also easily move from BOB back to Bitcoin using the offramp.
 
 Our SDK makes it possible for you to bring this UX directly into your app.
 
 ## How Gateway Works
-
-1. Liquidity providers (LPs) temporarily lock wrapped Bitcoin (WBTC or tBTC) in escrow smart contracts on BOB.
-1. A user makes a request for wrapped or staked Bitcoin (e.g. WBTC, tBTC, or a Bitcoin LST/LRT).
-1. The user sends BTC to the liquidity provider's Bitcoin address. A hash of the user's order is included in the `OP_RETURN` of the transaction.
-
-1. Gateway finalizes the transaction. After trustlessly verifying the user's Bitcoin transaction with an on-chain [Light Client](/learn/builder-guides/relay.md), Gateway sends the LP's wrapped Bitcoin to the user's EVM address. If the user requested a Bitcoin LST/LRT, that token is minted using the LP's wrapped Bitcoin before it is sent to the user.
+### Onramp (Bitcoin -> BOB)
+1. Liquidity providers (LPs) temporarily lock wrapped Bitcoin (WBTC or tBTC) in escrow smart contracts on BOB. 
+2. A user makes a request for wrapped or staked Bitcoin (e.g. WBTC, tBTC, or a Bitcoin LST/LRT). 
+3. The user sends BTC to the liquidity provider's Bitcoin address. A hash of the user's order is included in the `OP_RETURN` of the transaction. 
+4. Gateway finalizes the transaction. After trustlessly verifying the user's Bitcoin transaction with an on-chain [Light Client](/learn/builder-guides/relay.md), Gateway sends the LP's wrapped Bitcoin to the user's EVM address. If the user requested a Bitcoin LST/LRT, that token is minted using the LP's wrapped Bitcoin before it is sent to the user.
 
 This SDK exposes helper functions for steps 2, 3, and 4 to be used in your application's front end.
+
+### Offramp (BOB → Bitcoin)
+
+1. Users lock their wrapped Bitcoin (WBTC or tBTC) into a smart contract on BOB.
+2. Liquidity Providers (LPs) accept the user's order directly through the smart contract.
+3. The LP sends Bitcoin to the user's Bitcoin address, including proof in the transaction’s `OP_RETURN`.
+4. The Gateway finalizes the transaction by trustlessly verifying, using an on-chain [Light Client](/learn/builder-guides/relay.md), that the LP’s Bitcoin transfer matches the user's address and that the `OP_RETURN` matches the order data — unlocking the user's wrapped Bitcoin on BOB to the LP.
+
 :::info Learn More
 Discover the architecture of BOB Gateway and how it simplifies Bitcoin transactions by visiting our [BOB Gateway introduction page](../introduction/gateway).
 :::
@@ -40,7 +49,7 @@ Import the `GatewaySDK` class from `@gobob/bob-sdk` and create an instance of it
 ```ts title="/src/utils/gateway.ts"
 import { GatewayQuoteParams, GatewaySDK } from '@gobob/bob-sdk';
 
-const gatewaySDK = new GatewaySDK('bob'); // or "testnet"
+const gatewaySDK = new GatewaySDK('bob'); // or "signet"
 ```
 
 ### Get Available Tokens
@@ -50,6 +59,10 @@ Returns an array of available output tokens for you to offer the user. Typically
 ```ts
 const outputTokens = await gatewaySDK.getTokens();
 ```
+
+## Onramp Methods
+
+The following methods onboard users from Bitcoin to BOB through a simple and secure flow.
 
 ### Get a Quote
 
@@ -189,6 +202,90 @@ https://github.com/bob-collective/sats-wagmi/blob/ae876d96bb2e54e5a24e0f3e1aaa67
 
 </TabItem>
 </Tabs>
+
+## Offramp Methods
+
+The following methods allow users to transfer wrapped Bitcoin from BOB to Bitcoin through a seamless and secure process.
+
+### Get a Quote and Start an Order
+
+Call the `createOfframpOrder` method with your `quoteParams`. Example values are shown below:
+
+```ts
+const quoteParams: GatewayQuoteParams = {
+  bitcoinUserAddress: 'tb1qcwcjsc0mltyt293877552grdktjhnvnnqyv83c', 
+  fromUserAddress: '0x2D2E86236a5bC1c8a5e5499C517E17Fb88Dbc18c', 
+  toToken: 'bobBTC',
+  amount: 4000000, // Amount should be in token decimals
+};
+
+const quote: OfframpCreateOrderParams = await gatewaySDK.createOfframpOrder(quoteParams);
+```
+
+Next, sign and send the transaction using the received quote details along with the ABI.
+The example below shows how to do this using Viem.  
+See more documentation on creating a [Viem client](https://viem.sh/docs/clients/wallet).
+
+Example: 
+
+```ts
+import { createWalletClient, http, privateKeyToAccount } from 'viem';
+import { bobSepolia } from 'viem/chains';
+
+// create wallet client
+const PRIVATE_KEY = '0xYOUR_PRIVATE_KEY'; // Make sure it has the 0x prefix
+const account = privateKeyToAccount(PRIVATE_KEY);
+const walletClient = createWalletClient({
+    account,
+    chain: bobSepolia,
+    transport: http(), // or custom(yourProvider) if needed
+});
+
+// Send the transaction using the received quote
+const txHash = await walletClient.writeContract({
+    address: quote.quote.registryAddress as `0x${string}`, // The registryAddress from the quote
+    abi: quote.offrampABI,
+    functionName: quote.offrampFunctionName,
+    args: quote.offrampArgs,
+});
+
+console.log('Transaction Hash:', txHash);
+```
+
+### Monitor the User's Orders
+
+Get an array of pending and completed orders for a specific EVM address. It .
+
+```ts
+const orders: OfframpOrderDetails = await gatewaySDK.getOfframpOrders(userEvmAddress);
+```
+
+### Bump Fees for User Order
+
+When monitoring user orders, if `shouldFeesBeBumped` is set to `true`, it indicates that the transaction fees need to be increased.  
+This can happen if the fee rate increased between the time the original quote was created and when the Liquidity Provider (LP) was processing the order.
+
+Example:
+```ts
+const bumpFee: OfframpBumpFeeParams[] = await gatewaySDK.bumpFeeForOfframpOrder(orderId);
+
+// Next, create and send the updated transaction via Viem
+```
+
+### Unlock User Order
+
+When monitoring an offramp order, if `canOrderBeUnlocked` returns `true`, it means the order can now be unlocked.  
+This happens when the order is still `Active`, or `Accepted` but not processed within the claim delay period.  
+Unlocking refunds the user's funds.
+
+Example:
+
+```ts
+const orderUnlock: OfframpUnlockFundsParams[] = await gatewaySDK.unlockOfframpOrder(orderId, receiverEvmAddress);
+
+// Next, create and send the unlock transaction via Viem
+```
+
 
 ## Conclusion
 
