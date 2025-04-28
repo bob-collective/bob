@@ -83,7 +83,7 @@ alt="architecture"
 
 ### Gateway-Offramp Architecture
 <img
-src={require("./offramp.png").default}
+src={require("./offramp_architecture.png").default}
 style={{ width: "100%", maxWidth: "100%", height: "auto" }}
 alt="architecture"
 />
