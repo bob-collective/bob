@@ -23,7 +23,7 @@ This SDK exposes helper functions for steps 2, 3, and 4 to be used in your appli
 
 1. Users lock their wrapped Bitcoin (WBTC or tBTC) into a smart contract on BOB.
 2. Liquidity Providers (LPs) accept the user's order directly through the smart contract.
-3. The LP sends Bitcoin to the user's Bitcoin address, including proof in the transaction’s `OP_RETURN`.
+3. The LP sends Bitcoin to the user's Bitcoin address, including a unique order hash in the transaction’s `OP_RETURN`.
 4. The Gateway finalizes the transaction by trustlessly verifying, using an on-chain [Light Client](/learn/builder-guides/relay.md), that the LP’s Bitcoin transfer matches the user's address and that the `OP_RETURN` matches the order data — unlocking the user's wrapped Bitcoin on BOB to the LP.
 
 :::info Learn More
@@ -213,9 +213,9 @@ Call the `createOfframpOrder` method with your `quoteParams`. Example values are
 
 ```ts
 const quoteParams: GatewayQuoteParams = {
-  bitcoinUserAddress: 'tb1qcwcjsc0mltyt293877552grdktjhnvnnqyv83c', 
+  bitcoinUserAddress: 'tb1qcwcjsc0mltyt293877552grdktjhnvnnqyv83c', // user address to receive bitcoin on
   fromUserAddress: '0x2D2E86236a5bC1c8a5e5499C517E17Fb88Dbc18c', 
-  toToken: 'bobBTC',
+  toToken: 'bobBTC', // wrapped bitcoin token
   amount: 4000000, // Amount should be in token decimals
 };
 

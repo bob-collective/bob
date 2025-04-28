@@ -13,7 +13,7 @@ This page explains the technology behind BOB BTC Bridge and BOB Stake.
 It has two main components:
 
 - [**Gateway-Onramp**](https://app.gobob.xyz/en?type=deposit&network=bitcoin&receive=WBTC): Enables users to move from Bitcoin to BOB in a single transaction.
-- [**Gateway-Offramp**](https://app.gobob.xyz/en?type=withdraw): Allows users to move from BOB back to Bitcoin, unlocking wrapped Bitcoin (such as WBTC or tBTC).
+- [**Gateway-Offramp**](https://app.gobob.xyz/en?type=withdraw): Allows users to move from BOB back to Bitcoin, in a single transaction using wrapped Bitcoin (such as WBTC or tBTC).
 
 Cross-chain transfers are secured by verifying Bitcoin transaction proofs with an [on-chain light client](/learn/builder-guides/relay), avoiding the need for an external oracle.  
 Optional intents — such as staking, lending, and swapping tokens — can all be fulfilled with just a single Bitcoin transaction from the user.
@@ -60,11 +60,11 @@ alt="architecture"
 
 ### Gateway-Onramp User Flow
 
-1. A user requests to swap wrapped Bitcoin (e.g. tBTC, WBTC) for native Bitcoin (BTC).
-2. The user receives an "offramp quote," including estimated fees and available liquidity.
-3. The user creates an "offramp order" by interacting with the `OfframpRegistry` smart contract, locking their wrapped Bitcoin.
-4. The liquidity provider (LP) monitors the order, accepts it, and sends the corresponding BTC to the user's Bitcoin address. The Bitcoin transaction includes the order's metadata in the `OP_RETURN`, enabling trustless verification.
-5. If the order is not accepted in time, the user can either bump the transaction fee to attract solvers (LPs) or unlock their funds back to their EVM address after a claim delay.
+1. A user requests to swap BTC for wrapped BTC (e.g. WBTC, tBTC, or FBTC) or staked BTC (e.g. xSolvBTC, uniBTC).
+2. The user gets a "quote" of which Gateway smart contract is an available route (i.e. which LP they can swap with).
+3. The user creates an "order" with the relayer to reserve the LP's liquidity.
+4. The user creates a Bitcoin transaction, updating the order with their txid. Gateway's SDK creates a hash of the user's intent, which is included in the `OP_RETURN` of the transaction. This hash includes metadata such as the user's EVM address, which strategy they are using (i.e. their intent), and how many sats to convert to ETH for gas, among other data. By including a deterministic hash of the user's order, we lay the groundwork for making Gateway trustless in the future by decentralizing the relayer set.
+5. The relayer monitors the Bitcoin chain and sends the LP's wrapped BTC to the user after the txid is seen on Bitcoin. Specifically, the relayer submits a Merkle proof of the user's Bitcoin tx to an [on-chain light client](/learn/builder-guides/relay) for trustless verification of the user's intent. It accomplishes this by requiring that the recipient's EVM address, sequence of smart contract calls, and other order data exactly match the hash in the `OP_RETURN` of the user's Bitcoin transaction.
 
 ### Gateway-Onramp Liquidity Provider (LP) Flow
 
