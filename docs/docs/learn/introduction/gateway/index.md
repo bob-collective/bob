@@ -6,9 +6,17 @@ sidebar_position: 2
 
 ## Introduction
 
-Bitcoin users can easily onboard to the BOB Hybrid L2 without previously holding any Ethereum assets. This page explains the technology behind [BOB BTC Bridge](https://app.gobob.xyz/en?type=deposit&network=bitcoin&receive=WBTC) and [BOB Stake](https://app.gobob.xyz/en/stake): _BOB Gateway_ is an intent-based bridge that coordinates peer-to-peer swaps between users and liquidity providers (LPs).
+Bitcoin users can easily onboard to the BOB Hybrid L2 without needing to hold any Ethereum assets.  
+This page explains the technology behind BOB BTC Bridge and BOB Stake.
 
-Cross-chain transfers are secured by verifying Bitcoin transaction proofs with an [on-chain light client](/learn/builder-guides/relay), avoiding the need for an oracle. Optional intents, such as staking, lending, and swapping tokens can all be accomplished while only requiring a single Bitcoin transaction from the user.
+**BOB Gateway** is an intent-based bridge that coordinates peer-to-peer swaps between users and liquidity providers (LPs).  
+It has two main components:
+
+- [**Gateway-Onramp**](https://app.gobob.xyz/en?type=deposit&network=bitcoin&receive=WBTC): Enables users to move from Bitcoin to BOB in a single transaction.
+- [**Gateway-Offramp**](https://app.gobob.xyz/en?type=withdraw): Allows users to move from BOB back to Bitcoin, unlocking wrapped Bitcoin (such as WBTC or tBTC).
+
+Cross-chain transfers are secured by verifying Bitcoin transaction proofs with an [on-chain light client](/learn/builder-guides/relay), avoiding the need for an external oracle.  
+Optional intents — such as staking, lending, and swapping tokens — can all be fulfilled with just a single Bitcoin transaction from the user.
 
 ## Bridge or Stake BTC on BOB
 
@@ -34,15 +42,15 @@ These are some of the features we're working on for Gateway's next upgrade, with
 [See our Builder Guide](/learn/builder-guides/gateway) to learn more about our SDK and extending BOB Gateway's functionality to bring Bitcoiners one transaction away from your use-case.
 :::
 
-## How Gateway Works
+## How Gateway-Onramp Works
 
 1. Liquidity providers (LPs) temporarily lock wrapped Bitcoin (WBTC or tBTC) in escrow smart contracts on BOB.
-1. A user makes a request to the off-chain relayer to reserve some of the available liquidity.
-1. The user sends BTC to the liquidity provider's Bitcoin address. A hash of the user's order is included in the `OP_RETURN` of their transaction, including data such as the recipient's EVM address on BOB and their desired strategy (i.e. their intent).
-1. The relayer submits a Merkle proof of the user's Bitcoin transaction to an on-chain [Light Client](/learn/builder-guides/relay), granting the relayer permission to withdraw the LP's wrapped Bitcoin. **Encoding the user's order in their Bitcoin transaction makes it possible to trustlessly verify and complete the user's intent without using an oracle.**
-1. Gateway sends the LP's wrapped Bitcoin to the user's EVM address. If the user requested a Bitcoin LST/LRT, that token is minted using the LP's wrapped Bitcoin _before_ it is sent to the user.
+2. A user makes a request to the off-chain relayer to reserve some of the available liquidity.
+3. The user sends BTC to the liquidity provider's Bitcoin address. A hash of the user's order is included in the `OP_RETURN` of their transaction, including data such as the recipient's EVM address on BOB and their desired strategy (i.e. their intent).
+4. The relayer submits a Merkle proof of the user's Bitcoin transaction to an on-chain [Light Client](/learn/builder-guides/relay), granting the relayer permission to withdraw the LP's wrapped Bitcoin. **Encoding the user's order in their Bitcoin transaction makes it possible to trustlessly verify and complete the user's intent without using an oracle.**
+5. Gateway sends the LP's wrapped Bitcoin to the user's EVM address. If the user requested a Bitcoin LST/LRT, that token is minted using the LP's wrapped Bitcoin _before_ it is sent to the user.
 
-## Architecture
+### Gateway-Onramp Architecture
 
 <img
 src={require("./architecture.png").default}
@@ -50,19 +58,52 @@ style={{ width: "100%", maxWidth: "100%", height: "auto" }}
 alt="architecture"
 />
 
-### User Flow
+### Gateway-Onramp User Flow
 
-1. A user requests to swap BTC for wrapped BTC (e.g. WBTC, tBTC, or FBTC) or staked BTC (e.g. xSolvBTC, uniBTC).
-1. The user gets a "quote" of which Gateway smart contract is an available route (i.e. which LP they can swap with).
-1. The user creates an "order" with the relayer to reserve the LP's liquidity.
-1. The user creates a Bitcoin transaction, updating the order with their txid. Gateway's SDK creates a hash of the user's intent, which is included in the `OP_RETURN` of the transaction. This hash includes metadata such as the user's EVM address, which strategy they are using (i.e. their intent), and how many sats to convert to ETH for gas, among other data. By including a deterministic hash of the user's order, we lay the groundwork for making Gateway trustless in the future by decentralizing the relayer set.
-1. The relayer monitors the Bitcoin chain and sends the LP's wrapped BTC to the user after the txid is seen on Bitcoin. Specifically, the relayer submits a Merkle proof of the user's Bitcoin tx to an [on-chain light client](/learn/builder-guides/relay) for trustless verification of the user's intent. It accomplishes this by requiring that the recipient's EVM address, sequence of smart contract calls, and other order data exactly match the hash in the `OP_RETURN` of the user's Bitcoin transaction.
+1. A user requests to swap wrapped Bitcoin (e.g. tBTC, WBTC) for native Bitcoin (BTC).
+2. The user receives an "offramp quote," including estimated fees and available liquidity.
+3. The user creates an "offramp order" by interacting with the `OfframpRegistry` smart contract, locking their wrapped Bitcoin.
+4. The liquidity provider (LP) monitors the order, accepts it, and sends the corresponding BTC to the user's Bitcoin address. The Bitcoin transaction includes the order's metadata in the `OP_RETURN`, enabling trustless verification.
+5. If the order is not accepted in time, the user can either bump the transaction fee to attract solvers (LPs) or unlock their funds back to their EVM address after a claim delay.
 
-### Liquidity Provider (LP) Flow
+### Gateway-Onramp Liquidity Provider (LP) Flow
 
 1. An LP asks the relayer to deploy a new Gateway contract, which functions as an escrow for their funds. This is permissioned at the moment because BOB pays the transaction's gas. See the [Trust Assumptions](#trust-assumptions) section below for more information.
 2. The LP deposits wrapped Bitcoin (e.g. WBTC, tBTC, FBTC) in their Gateway contract.
 3. The LP can only withdraw their funds or update their swap fees after a delay so that the relayer has time to finish open orders. The relayer will not accept new orders during this delay until reset.
+
+## How Gateway-Offramp Works
+
+1. Liquidity providers (LPs) register their solver and fund them with native Bitcoin (BTC).
+2. A user requests a quote for swapping wrapped Bitcoin (e.g., tBTC, WBTC) to native Bitcoin.
+3. The user submits an "offramp order" to the `OfframpRegistry` smart contract, locking their wrapped Bitcoin and specifying their Bitcoin address.
+4. A solver (LP) monitors open orders, accepts one, and broadcasts a Bitcoin transaction to the user's specified address. The transaction includes metadata (e.g., order ID) in the `OP_RETURN` field to enable trustless verification.
+5. The solver notifies the relayer, which then submits a Merkle proof of the Bitcoin transaction to the on-chain `OfframpRegistry`. This proof unlocks the wrapped Bitcoin, transferring it to the solver as reimbursement.
+6. If the order is not fulfilled, users can bump transaction fees to incentivize LPs or unlock their locked assets after a claim delay period.
+
+### Gateway-Offramp Architecture
+<img
+src={require("./offramp.png").default}
+style={{ width: "100%", maxWidth: "100%", height: "auto" }}
+alt="architecture"
+/>
+
+### Gateway-Offramp User Flow
+
+1. A user requests to swap wrapped Bitcoin (e.g., tBTC, WBTC) for native Bitcoin (BTC).
+2. The user receives an "offramp quote," including estimated fees and liquidity availability.
+3. The user creates an offramp order by locking wrapped Bitcoin in `OfframpRegistry.sol`.
+4. A liquidity provider (solver) accepts the order, sends the Bitcoin transaction to the user’s Bitcoin address, and attaches the order metadata in `OP_RETURN`.
+5. If the order is not accepted within a reasonable time, the user can either bump transaction fees or unlock their funds.
+
+### Gateway-Offramp Liquidity Provider (LP) Flow
+
+1. An LP registers their solver address in `OfframpRegistry.sol` and configures it to accept user orders.
+2. The LP runs an `offramp-solver` binary and funds it with Bitcoin (BTC) to fulfill user requests.
+3. The solver continuously scans for open user orders and matches those that meet acceptable fee thresholds.
+4. Upon finding a matching order, the solver broadcasts a Bitcoin transaction to the user’s address, embedding the necessary metadata.
+5. After confirmation, the solver notifies the relayer via API. The relayer submits a Merkle proof to `OfframpRegistry.sol`, unlocking the user's locked wrapped Bitcoin and transferring it to the solver as settlement.
+
 
 ## Adoption and Fees
 

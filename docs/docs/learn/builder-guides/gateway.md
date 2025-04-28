@@ -11,7 +11,7 @@ Users can also easily move from BOB back to Bitcoin using the offramp.
 Our SDK makes it possible for you to bring this UX directly into your app.
 
 ## How Gateway Works
-### Onramp (Bitcoin -> BOB)
+### Gateway-Onramp (Bitcoin -> BOB)
 1. Liquidity providers (LPs) temporarily lock wrapped Bitcoin (WBTC or tBTC) in escrow smart contracts on BOB. 
 2. A user makes a request for wrapped or staked Bitcoin (e.g. WBTC, tBTC, or a Bitcoin LST/LRT). 
 3. The user sends BTC to the liquidity provider's Bitcoin address. A hash of the user's order is included in the `OP_RETURN` of the transaction. 
@@ -19,7 +19,7 @@ Our SDK makes it possible for you to bring this UX directly into your app.
 
 This SDK exposes helper functions for steps 2, 3, and 4 to be used in your application's front end.
 
-### Offramp (BOB → Bitcoin)
+### Gateway-Offramp (BOB → Bitcoin)
 
 1. Users lock their wrapped Bitcoin (WBTC or tBTC) into a smart contract on BOB.
 2. Liquidity Providers (LPs) accept the user's order directly through the smart contract.
@@ -60,7 +60,7 @@ Returns an array of available output tokens for you to offer the user. Typically
 const outputTokens = await gatewaySDK.getTokens();
 ```
 
-## Onramp Methods
+## Gateway-Onramp Methods
 
 The following methods onboard users from Bitcoin to BOB through a simple and secure flow.
 
@@ -203,7 +203,7 @@ https://github.com/bob-collective/sats-wagmi/blob/ae876d96bb2e54e5a24e0f3e1aaa67
 </TabItem>
 </Tabs>
 
-## Offramp Methods
+## Gateway-Offramp Methods
 
 The following methods allow users to transfer wrapped Bitcoin from BOB to Bitcoin through a seamless and secure process.
 
