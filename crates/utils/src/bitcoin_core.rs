@@ -1,6 +1,8 @@
+use crate::unused_port;
 use bitcoincore_rpc::{Auth, Client, RpcApi};
 use eyre::Result;
 use std::{
+    ffi::OsString,
     io::{BufRead, BufReader},
     path::PathBuf,
     process::{Child, Command},
@@ -8,20 +10,11 @@ use std::{
 };
 use tempfile::TempDir;
 
-fn unused_port() -> u16 {
-    let listener = std::net::TcpListener::bind("127.0.0.1:0")
-        .expect("Failed to create TCP listener to find unused port");
-
-    let local_addr =
-        listener.local_addr().expect("Failed to read TCP listener local_addr to find unused port");
-    local_addr.port()
-}
-
 /// How long we will wait for bitcoin to indicate that it is ready.
 const BITCOIN_STARTUP_TIMEOUT_MILLIS: u64 = 10_000;
 
-const BITCOIN_RPC_USER: &str = "rpcuser";
-const BITCOIN_RPC_PASSWORD: &str = "rpcpassword";
+pub(crate) const BITCOIN_RPC_USER: &str = "rpcuser";
+pub(crate) const BITCOIN_RPC_PASSWORD: &str = "rpcpassword";
 
 /// An bitcoind CLI instance. Will close the instance when dropped.
 ///
@@ -104,7 +97,7 @@ pub struct BitcoinCore {
     program: Option<PathBuf>,
     rpcport: Option<u16>,
     timeout: Option<u64>,
-    args: Vec<String>,
+    args: Vec<OsString>,
 }
 
 impl BitcoinCore {
@@ -162,6 +155,22 @@ impl BitcoinCore {
         self
     }
 
+    pub fn arg<T: Into<OsString>>(mut self, arg: T) -> Self {
+        self.args.push(arg.into());
+        self
+    }
+
+    pub fn args<I, S>(mut self, args: I) -> Self
+    where
+        I: IntoIterator<Item = S>,
+        S: Into<OsString>,
+    {
+        for arg in args {
+            self = self.arg(arg);
+        }
+        self
+    }
+
     /// Consumes the builder and spawns `bitcoind`.
     ///
     /// # Panics
@@ -185,7 +194,7 @@ impl BitcoinCore {
         let datadir = TempDir::new().expect("Couldn't create temp directory");
         cmd.arg(format!("-datadir={}", datadir.path().to_str().unwrap()));
 
-        let rpcport = if let Some(rpcport) = self.rpcport { rpcport } else { unused_port() };
+        let rpcport = self.rpcport.unwrap_or_else(|| unused_port());
         cmd.arg(format!("-rpcport={}", rpcport));
 
         cmd.arg(format!("-rpcuser={}", BITCOIN_RPC_USER));

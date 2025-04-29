@@ -70,21 +70,20 @@ pub struct EsploraClient {
 }
 
 impl EsploraClient {
-    pub fn new(esplora_url: Option<String>, network: Network) -> Result<Self> {
-        Ok(Self {
-            url: esplora_url
-                .unwrap_or_else(|| {
-                    match network {
-                        Network::Bitcoin => ESPLORA_MAINNET_URL,
-                        Network::Testnet => ESPLORA_TESTNET_URL,
-                        Network::Signet => ESPLORA_SIGNET_URL,
-                        _ => ESPLORA_LOCALHOST_URL,
-                    }
-                    .to_owned()
-                })
-                .parse()?,
-            cli: Client::new(),
-        })
+    pub fn new(network: Network) -> Result<Self> {
+        Self::new_with_url(
+            match network {
+                Network::Bitcoin => ESPLORA_MAINNET_URL,
+                Network::Testnet => ESPLORA_TESTNET_URL,
+                Network::Signet => ESPLORA_SIGNET_URL,
+                _ => ESPLORA_LOCALHOST_URL,
+            }
+            .to_owned(),
+        )
+    }
+
+    pub fn new_with_url(esplora_url: String) -> Result<Self> {
+        Ok(Self { url: esplora_url.parse()?, cli: Client::new() })
     }
 
     async fn get(&self, path: &str) -> Result<String> {
@@ -214,7 +213,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_esplora() -> Result<()> {
-        let esplora_client = EsploraClient::new(None, Network::Bitcoin)?;
+        let esplora_client = EsploraClient::new(Network::Bitcoin)?;
         let txid =
             Txid::from_str("aaddbc39689a3d63b3bcaafc6d1440ef911ac30bc0fe4679b891bf3e389fb053")?;
         let left = esplora_client.get_merkleblock_proof(&txid).await?;
@@ -241,7 +240,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_esplora_get_block_value() -> Result<()> {
-        let esplora_client = EsploraClient::new(None, Network::Bitcoin)?;
+        let esplora_client = EsploraClient::new(Network::Bitcoin)?;
 
         let block_hash = BlockHash::from_str(
             "00000000000000000000e4726002778d999b973fe138208ed5f6c23df0af7898",

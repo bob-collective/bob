@@ -1,12 +1,23 @@
 mod bitcoin_client;
 mod bitcoin_core;
+mod esplora;
 mod esplora_client;
 mod mempool_client;
 
 pub use bitcoin_client::*;
 pub use bitcoin_core::*;
+pub use esplora::*;
 pub use esplora_client::*;
 pub use mempool_client::*;
+
+pub(crate) fn unused_port() -> u16 {
+    let listener = std::net::TcpListener::bind("127.0.0.1:0")
+        .expect("Failed to create TCP listener to find unused port");
+
+    let local_addr =
+        listener.local_addr().expect("Failed to read TCP listener local_addr to find unused port");
+    local_addr.port()
+}
 
 #[cfg(test)]
 mod tests {
