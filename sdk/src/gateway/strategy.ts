@@ -10,8 +10,6 @@ import {
 } from './types';
 import { aaveV2AtokenAbi, compoundV2CTokenAbi } from './abi';
 
-
-
 const projectPointsIncentives: Map<string, PointsIncentive[]> = new Map([
     [
         'veda',
@@ -89,49 +87,32 @@ const tokensPointsIncentives: Map<string, PointsIncentive[]> = new Map([
     [
         // uniBTC
         '0x236f8c0a61da474db21b693fb2ea7aab0c803894',
-        [
-            berockPoints,
-            babylonPoints,
-        ],
+        [berockPoints, babylonPoints],
     ],
     [
         // Solv (xSolvBTC)
         '0x0bef2a8b771e37763c1ce02a88f404c6b2573843',
-        [
-            solvPoints,
-            babylonPoints,
-        ],
+        [solvPoints, babylonPoints],
     ],
     [
         // Segment xSolvBTC
         '0x5ef2b8fbcc8aea2a9dbe2729f0acf33e073fa43e',
-        [
-            solvPoints,
-            babylonPoints,
-        ],
+        [solvPoints, babylonPoints],
     ],
     [
         // Segment uniBTC
         '0x7848f0775eebabbf55cb74490ce6d3673e68773a',
-        [
-            berockPoints,
-            babylonPoints,
-        ],
+        [berockPoints, babylonPoints],
     ],
     [
         // Avalon xSolvBTC
         '0x2e6500a7add9a788753a897e4e3477f651c612eb',
-        [
-            solvPoints,
-            babylonPoints,
-        ],
+        [solvPoints, babylonPoints],
     ],
     [
         // hybridBTC
         '0x9998e05030aee3af9ad3df35a34f5c51e1628779',
-        [
-            opRewards,
-        ],
+        [opRewards],
     ],
 ]);
 
