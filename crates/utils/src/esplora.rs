@@ -1,11 +1,9 @@
-use crate::{unused_port, BitcoinCoreInstance};
-use crate::{BITCOIN_RPC_PASSWORD, BITCOIN_RPC_USER};
-use std::io::BufRead;
-use std::io::BufReader;
-use std::time::{Duration, Instant};
+use crate::{unused_port, BitcoinCoreInstance, BITCOIN_RPC_PASSWORD, BITCOIN_RPC_USER};
 use std::{
+    io::{BufRead, BufReader},
     path::PathBuf,
     process::{Child, Command},
+    time::{Duration, Instant},
 };
 use tempfile::TempDir;
 
