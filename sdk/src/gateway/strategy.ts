@@ -1,7 +1,164 @@
 import { createPublicClient, http, type PublicClient, type Chain, erc20Abi, Address } from 'viem';
-import { tokenToStrategyTypeMap } from './tokens';
-import type { StrategyAssetState, Token } from './types';
+import { ADDRESS_LOOKUP, tokenToStrategyTypeMap } from './tokens';
+import {
+    ChainId,
+    type DefiLlamaPool,
+    type EnrichedToken,
+    type PointsIncentive,
+    type StrategyAssetState,
+    type Token,
+} from './types';
 import { aaveV2AtokenAbi, compoundV2CTokenAbi } from './abi';
+
+const projectPointsIncentives: Map<string, PointsIncentive[]> = new Map([
+    [
+        'veda',
+        [
+            {
+                id: 'veda',
+                name: 'Veda Points',
+            },
+        ],
+    ],
+    [
+        'bob',
+        [
+            {
+                id: 'bob',
+                name: 'Bob Spice',
+            },
+        ],
+    ],
+    [
+        'segment',
+        [
+            {
+                id: 'bob',
+                name: 'Bob Spice',
+            },
+            {
+                id: 'segment',
+                name: 'Segment Finance Points',
+            },
+        ],
+    ],
+    [
+        'ionic',
+        [
+            {
+                id: 'bob',
+                name: 'Bob Spice',
+            },
+        ],
+    ],
+    [
+        'avalon',
+        [
+            {
+                id: 'bob',
+                name: 'Bob Spice',
+            },
+            {
+                id: 'avalon',
+                name: 'Avalon Points',
+            },
+        ],
+    ],
+]);
+
+const berockPoints = {
+    id: 'bedrock',
+    name: 'Bedrock Diamonds',
+};
+const babylonPoints = {
+    id: 'babylon',
+    name: 'Babylon Points',
+};
+const solvPoints = {
+    id: 'solv',
+    name: 'Solv XP',
+};
+const opRewards = {
+    id: 'op',
+    name: 'OP',
+};
+
+const tokensPointsIncentives: Map<string, PointsIncentive[]> = new Map([
+    [
+        // uniBTC
+        '0x236f8c0a61da474db21b693fb2ea7aab0c803894',
+        [berockPoints, babylonPoints],
+    ],
+    [
+        // Solv (xSolvBTC)
+        '0x0bef2a8b771e37763c1ce02a88f404c6b2573843',
+        [solvPoints, babylonPoints],
+    ],
+    [
+        // Segment xSolvBTC
+        '0x5ef2b8fbcc8aea2a9dbe2729f0acf33e073fa43e',
+        [solvPoints, babylonPoints],
+    ],
+    [
+        // Segment uniBTC
+        '0x7848f0775eebabbf55cb74490ce6d3673e68773a',
+        [berockPoints, babylonPoints],
+    ],
+    [
+        // Avalon xSolvBTC
+        '0x2e6500a7add9a788753a897e4e3477f651c612eb',
+        [solvPoints, babylonPoints],
+    ],
+    [
+        // hybridBTC
+        '0x9998e05030aee3af9ad3df35a34f5c51e1628779',
+        [opRewards],
+    ],
+]);
+
+const tokenToDefiLlamaPoolIdMap = new Map<string, string>([
+    [
+        // hybridBTC
+        '0x9998e05030aee3af9ad3df35a34f5c51e1628779',
+        'e8bfea35-ff6d-48db-aa08-51599b363219',
+    ],
+    [
+        // Segment xSolvBTC
+        '0x5ef2b8fbcc8aea2a9dbe2729f0acf33e073fa43e',
+        'a430e355-9a6d-4435-90e5-7e74c10f523c',
+    ],
+    [
+        // Segment wBTC
+        '0x6265c05158f672016b771d6fb7422823ed2cbcdd',
+        '56eed6bb-80ac-42e3-a7fb-f93c0438c72b',
+    ],
+    [
+        // Segment uniBTC
+        '0x7848f0775eebabbf55cb74490ce6d3673e68773a',
+        'a944439e-73ca-4de7-a48d-fe1e75e0b1f2',
+    ],
+    [
+        // Segment tBTC
+        '0xd30288ea9873f376016a0250433b7ea375676077',
+        'ecf4821d-b550-4d5f-b92f-b12d9c279271',
+    ],
+    [
+        // Avalon xSolvBTC
+        '0x2e6500a7add9a788753a897e4e3477f651c612eb',
+        '19c9b477-6ce9-4e59-897e-1b3ef76afa3a',
+    ],
+    [
+        // Avalon WBTC
+        '0xd6890176e8d912142ac489e8b5d8d93f8de74d60',
+        '8eb8b8bc-718c-41cf-9cd5-1a1c3c6045c1',
+    ],
+    // Not enough liquidity to be listest on DefiLlama
+    // [
+    //     // Avalon tBTC
+    //     '0x5e007ed35c7d89f5889eb6fd0cdcaa38059560ef',
+    //     ''
+    // ],
+]);
 
 export default class StrategyClient {
     private viemClient: PublicClient;
@@ -21,11 +178,46 @@ export default class StrategyClient {
         }) as PublicClient;
     }
 
+    async getTokensIncentives(
+        tokens: string[]
+    ): Promise<Pick<EnrichedToken, 'apyBase' | 'apyReward' | 'rewardTokens' | 'points'>[]> {
+        const res = await fetch('https://yields.llama.fi/pools');
+
+        const defillamaPools: DefiLlamaPool[] = res.ok ? (await res.json()).data : [];
+        const defillamaPoolMap = new Map<string, DefiLlamaPool>(
+            defillamaPools.filter((pool) => pool.chain === 'Bob').map((pool) => [pool.pool, pool])
+        );
+
+        return tokens.map((token) => {
+            const tokenAddress = token.toLowerCase();
+
+            const strategyType = tokenToStrategyTypeMap.get(tokenAddress) ?? 'bob';
+            const defillamaPoolId = tokenToDefiLlamaPoolIdMap.get(tokenAddress);
+            const defillamaPool = defillamaPoolMap.get(defillamaPoolId);
+
+            return {
+                apyBase: defillamaPool?.apyBase ?? 0,
+                apyReward: defillamaPool?.apyReward ?? 0,
+                rewardTokens: (defillamaPool?.rewardTokens ?? [])
+                    .map(
+                        (addr) =>
+                            ADDRESS_LOOKUP[ChainId.BOB][addr.toLowerCase()] ||
+                            ADDRESS_LOOKUP[ChainId.OPTIMISM][addr.toLowerCase()]
+                    )
+                    .filter(Boolean),
+                points: [
+                    ...(projectPointsIncentives.get(strategyType) ?? []),
+                    ...(tokensPointsIncentives.get(tokenAddress) ?? []),
+                ],
+            };
+        });
+    }
+
     async getStrategyAssetState(token: Token): Promise<StrategyAssetState> {
-        const strategyType = tokenToStrategyTypeMap.get(token.address.toLowerCase()) ?? 'none';
+        const strategyType = tokenToStrategyTypeMap.get(token.address.toLowerCase()) ?? 'bob';
 
         switch (strategyType) {
-            case 'none': {
+            case 'bob': {
                 return this.getTokenAssetState(token);
             }
 
