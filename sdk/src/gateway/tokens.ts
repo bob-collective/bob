@@ -351,8 +351,8 @@ for (const token of TOKENS) {
 }
 
 export const tokenToStrategyTypeMap = new Map([
-    ...bobTokens.map((token) => [token.tokens['bob'].address.toLowerCase(), 'none'] as const),
-    ...bobSepoliaTokens.map((token) => [token.tokens['bob-sepolia'].address.toLowerCase(), 'none'] as const),
+    ...bobTokens.map((token) => [token.tokens['bob'].address.toLowerCase(), 'bob'] as const),
+    ...bobSepoliaTokens.map((token) => [token.tokens['bob-sepolia'].address.toLowerCase(), 'bob'] as const),
     ...segmentTokens.map((token) => [token.tokens['bob'].address.toLowerCase(), 'segment'] as const),
     ...ionicTokens.map((token) => [token.tokens['bob'].address.toLowerCase(), 'ionic'] as const),
     ...vedaTokens.map((token) => [token.tokens['bob'].address.toLowerCase(), 'veda'] as const),

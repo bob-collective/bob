@@ -10,6 +10,8 @@ import {
 } from './types';
 import { aaveV2AtokenAbi, compoundV2CTokenAbi } from './abi';
 
+
+
 const projectPointsIncentives: Map<string, PointsIncentive[]> = new Map([
     [
         'veda',
@@ -21,7 +23,7 @@ const projectPointsIncentives: Map<string, PointsIncentive[]> = new Map([
         ],
     ],
     [
-        'none',
+        'bob',
         [
             {
                 id: 'bob',
@@ -66,85 +68,69 @@ const projectPointsIncentives: Map<string, PointsIncentive[]> = new Map([
     ],
 ]);
 
+const berockPoints = {
+    id: 'bedrock',
+    name: 'Bedrock Diamonds',
+};
+const babylonPoints = {
+    id: 'babylon',
+    name: 'Babylon Points',
+};
+const solvPoints = {
+    id: 'solv',
+    name: 'Solv XP',
+};
+const opRewards = {
+    id: 'op',
+    name: 'OP',
+};
+
 const tokensPointsIncentives: Map<string, PointsIncentive[]> = new Map([
     [
         // uniBTC
         '0x236f8c0a61da474db21b693fb2ea7aab0c803894',
         [
-            {
-                id: 'bedrock',
-                name: 'Bedrock Diamonds',
-            },
-            {
-                id: 'babylon',
-                name: 'Babylon Points',
-            },
+            berockPoints,
+            babylonPoints,
         ],
     ],
     [
         // Solv (xSolvBTC)
         '0x0bef2a8b771e37763c1ce02a88f404c6b2573843',
         [
-            {
-                id: 'solv',
-                name: 'Solv XP',
-            },
-            {
-                id: 'babylon',
-                name: 'Babylon Points',
-            },
+            solvPoints,
+            babylonPoints,
         ],
     ],
     [
         // Segment xSolvBTC
         '0x5ef2b8fbcc8aea2a9dbe2729f0acf33e073fa43e',
         [
-            {
-                id: 'solv',
-                name: 'Solv XP',
-            },
-            {
-                id: 'babylon',
-                name: 'Babylon Points',
-            },
+            solvPoints,
+            babylonPoints,
         ],
     ],
     [
         // Segment uniBTC
         '0x7848f0775eebabbf55cb74490ce6d3673e68773a',
         [
-            {
-                id: 'bedrock',
-                name: 'Bedrock Diamonds',
-            },
-            {
-                id: 'babylon',
-                name: 'Babylon Points',
-            },
+            berockPoints,
+            babylonPoints,
         ],
     ],
     [
         // Avalon xSolvBTC
         '0x2e6500a7add9a788753a897e4e3477f651c612eb',
         [
-            {
-                id: 'solv',
-                name: 'Solv XP',
-            },
-            {
-                id: 'babylon',
-                name: 'Babylon Points',
-            },
+            solvPoints,
+            babylonPoints,
         ],
     ],
     [
         // hybridBTC
         '0x9998e05030aee3af9ad3df35a34f5c51e1628779',
         [
-            {
-                id: 'op',
-                name: 'OP',
-            },
+            opRewards,
         ],
     ],
 ]);
@@ -224,7 +210,7 @@ export default class StrategyClient {
         return tokens.map((token) => {
             const tokenAddress = token.toLowerCase();
 
-            const strategyType = tokenToStrategyTypeMap.get(tokenAddress) ?? 'none';
+            const strategyType = tokenToStrategyTypeMap.get(tokenAddress) ?? 'bob';
             const defillamaPoolId = tokenToDefiLlamaPoolIdMap.get(tokenAddress);
             const defillamaPool = defillamaPoolMap.get(defillamaPoolId);
 
@@ -247,10 +233,10 @@ export default class StrategyClient {
     }
 
     async getStrategyAssetState(token: Token): Promise<StrategyAssetState> {
-        const strategyType = tokenToStrategyTypeMap.get(token.address.toLowerCase()) ?? 'none';
+        const strategyType = tokenToStrategyTypeMap.get(token.address.toLowerCase()) ?? 'bob';
 
         switch (strategyType) {
-            case 'none': {
+            case 'bob': {
                 return this.getTokenAssetState(token);
             }
 
