@@ -400,6 +400,8 @@ export type OfframpCreateOrderParams = {
             outputScript: string;
             /** @dev Token to use for payment */
             token: Address;
+            /** @dev EVM address of the user who can unlock the order or bump its fee */
+            orderOwner: Address;
         },
     ];
 };

@@ -565,6 +565,7 @@ describe('Gateway Tests', () => {
             orderCreationDeadline: result.offrampArgs[0].orderCreationDeadline,
             outputScript: '0x1600149d5e60f3b5cc2d246f990692ee4b267d1cd58477',
             token: '0xda472456b1a6a2fc9ae7edb0e007064224d4284c',
+            orderOwner: '0xFAEe001465dE6D7E8414aCDD9eF4aC5A35B2B808',
         });
     });
 

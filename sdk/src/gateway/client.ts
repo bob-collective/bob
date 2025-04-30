@@ -354,6 +354,7 @@ export class GatewayApiClient {
                     orderCreationDeadline: offrampQuote.deadline,
                     outputScript: receiverAddress,
                     token: offrampQuote.token,
+                    orderOwner: params.fromUserAddress as Address,
                 },
             ],
         };
