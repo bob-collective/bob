@@ -676,4 +676,30 @@ describe('Gateway Tests', () => {
         // Assert the result is true (claim delay has passed)
         expect(result).toBe(true);
     });
+
+    it('fetches the correct offramp liquidity', async () => {
+        const gatewaySDK = new GatewaySDK('signet');
+        const tokenAddress = '0x4496ebE7C8666a8103713EE6e0c08cA0cD25b888'.toLowerCase();
+        nock(SIGNET_GATEWAY_BASE_URL).persist().get(`/offramp-liquidity/${tokenAddress}`).reply(200, {
+            tokenAddress,
+            maxOrderAmount: '861588',
+            totalOfframpLiquidity: '861588',
+        });
+
+        const offrampLiquidityTokenAddressAsParam = await gatewaySDK.fetchOfframpLiquidity(tokenAddress);
+
+        expect(offrampLiquidityTokenAddressAsParam).toEqual({
+            token: tokenAddress,
+            maxOrderAmount: BigInt('861588'),
+            totalOfframpLiquidity: BigInt('861588'),
+        });
+
+        const offrampLiquidityTokenSymbolAsParam = await gatewaySDK.fetchOfframpLiquidity('bobBTC');
+
+        expect(offrampLiquidityTokenSymbolAsParam).toEqual({
+            token: tokenAddress,
+            maxOrderAmount: BigInt('861588'),
+            totalOfframpLiquidity: BigInt('861588'),
+        });
+    });
 });

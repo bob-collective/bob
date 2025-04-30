@@ -26,6 +26,7 @@ import {
     OfframpRawOrder,
     OfframpOrderStatus,
     EnrichedToken,
+    OfframpLiquidity,
 } from './types';
 import { createBitcoinPsbt, getAddressInfo } from '../wallet';
 import { SYMBOL_LOOKUP, ADDRESS_LOOKUP, getTokenDecimals } from './tokens';
@@ -198,6 +199,47 @@ export class GatewayApiClient {
     async fetchOfframpRegistryAddress(): Promise<Address> {
         const response = await this.fetchGet(`${this.baseUrl}/offramp-registry-address`);
         return JSON.parse(await response.text()) as Address;
+    }
+
+    /**
+     * Fetches an offramp liquidity for the given token.
+     *
+     * @param token ERC20 token address.
+     * @returns Offramp liquidity details.
+     */
+    async fetchOfframpLiquidity(token: string): Promise<OfframpLiquidity> {
+        let outputTokenAddress = '';
+        const toToken = token.toLowerCase();
+
+        if (toToken.startsWith('0x')) {
+            outputTokenAddress = toToken;
+        } else if (SYMBOL_LOOKUP[this.chainId][toToken]) {
+            outputTokenAddress = SYMBOL_LOOKUP[this.chainId][toToken].address;
+        } else {
+            throw new Error('Unknown output token');
+        }
+
+        const response = await fetch(`${this.baseUrl}/offramp-liquidity/${outputTokenAddress}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
+            },
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => null);
+            const errorMessage = errorData?.message || 'Failed to get offramp liquidity';
+            throw new Error(`Offramp liquidity API Error: ${errorMessage}`);
+        }
+
+        const rawLiquidity = await response.json();
+
+        return {
+            token: rawLiquidity.tokenAddress as Address,
+            maxOrderAmount: BigInt(rawLiquidity.maxOrderAmount),
+            totalOfframpLiquidity: BigInt(rawLiquidity.totalOfframpLiquidity),
+        };
     }
 
     /**
