@@ -211,7 +211,7 @@ export class GatewayApiClient {
         let outputTokenAddress = '';
         const toToken = token.toLowerCase();
 
-        if (toToken.startsWith('0x')) {
+        if (isAddress(toToken)) {
             outputTokenAddress = toToken;
         } else if (SYMBOL_LOOKUP[this.chainId][toToken]) {
             outputTokenAddress = SYMBOL_LOOKUP[this.chainId][toToken].address;
