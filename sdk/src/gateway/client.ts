@@ -26,6 +26,7 @@ import {
     OfframpRawOrder,
     OfframpOrderStatus,
     EnrichedToken,
+    OfframpLiquidity,
 } from './types';
 import { createBitcoinPsbt, getAddressInfo } from '../wallet';
 import { SYMBOL_LOOKUP, ADDRESS_LOOKUP, getTokenDecimals } from './tokens';
@@ -201,6 +202,47 @@ export class GatewayApiClient {
     }
 
     /**
+     * Fetches an offramp liquidity for the given token.
+     *
+     * @param token ERC20 token address.
+     * @returns Offramp liquidity details.
+     */
+    async fetchOfframpLiquidity(token: string): Promise<OfframpLiquidity> {
+        let outputTokenAddress = '';
+        const toToken = token.toLowerCase();
+
+        if (isAddress(toToken)) {
+            outputTokenAddress = toToken;
+        } else if (SYMBOL_LOOKUP[this.chainId][toToken]) {
+            outputTokenAddress = SYMBOL_LOOKUP[this.chainId][toToken].address;
+        } else {
+            throw new Error('Unknown output token');
+        }
+
+        const response = await fetch(`${this.baseUrl}/offramp-liquidity/${outputTokenAddress}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
+            },
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => null);
+            const errorMessage = errorData?.message || 'Failed to get offramp liquidity';
+            throw new Error(`Offramp liquidity API Error: ${errorMessage}`);
+        }
+
+        const rawLiquidity = await response.json();
+
+        return {
+            token: rawLiquidity.tokenAddress as Address,
+            maxOrderAmount: BigInt(rawLiquidity.maxOrderAmount),
+            totalOfframpLiquidity: BigInt(rawLiquidity.totalOfframpLiquidity),
+        };
+    }
+
+    /**
      * Fetches an offramp quote for the given token and amount.
      *
      * @param token ERC20 token address.
@@ -312,6 +354,7 @@ export class GatewayApiClient {
                     orderCreationDeadline: offrampQuote.deadline,
                     outputScript: receiverAddress,
                     token: offrampQuote.token,
+                    orderOwner: params.fromUserAddress as Address,
                 },
             ],
         };

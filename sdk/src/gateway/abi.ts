@@ -73,6 +73,11 @@ export const offrampCreateOrderCaller = [
                         type: 'address',
                         internalType: 'address',
                     },
+                    {
+                        name: 'orderOwner',
+                        type: 'address',
+                        internalType: 'address',
+                    },
                 ],
             },
         ],

@@ -373,6 +373,16 @@ export interface OfframpQuote {
     token: Address;
 }
 
+/** @dev Offramp Available Liquidity */
+export interface OfframpLiquidity {
+    /** @dev Token address used for payment */
+    token: Address;
+    /** @dev Max token amount a *single* order can be served with (in token decimals) */
+    maxOrderAmount: bigint;
+    /** @dev Total liquidity across all solver addresses (in token decimals) */
+    totalOfframpLiquidity: bigint;
+}
+
 /** @dev Params used for createOrder call on the off-ramp contract */
 export type OfframpCreateOrderParams = {
     quote: OfframpQuote;
@@ -390,6 +400,8 @@ export type OfframpCreateOrderParams = {
             outputScript: string;
             /** @dev Token to use for payment */
             token: Address;
+            /** @dev EVM address of the user who can unlock the order or bump its fee */
+            orderOwner: Address;
         },
     ];
 };
