@@ -15,7 +15,6 @@ contract BitcoinTxBuilder {
     }
 
     BitcoinTxConfig private config;
-    bytes private outputVector;
 
     function setScript(bytes memory _script) public returns (BitcoinTxBuilder) {
         config.script = _script;
@@ -33,17 +32,20 @@ contract BitcoinTxBuilder {
         return this;
     }
 
-    function build() public returns (BitcoinTx.Info memory) {
-        bytes memory value = abi.encodePacked(
-            bytes8(config.value.reverseUint64())
-        );
+    function build() public view returns (BitcoinTx.Info memory) {
+        require(config.script.length > 0, "Script cannot be empty");
+        if (config.hasOpReturn) {
+            require(config.opReturnData.length <= 80, "OP_RETURN data too large"); // Bitcoin standard limit
+        }
+
+        bytes memory value = abi.encodePacked(bytes8(config.value.reverseUint64()));
 
         uint8 numOutputs = 1;
         if (config.hasOpReturn) {
             numOutputs += 1;
         }
 
-        outputVector = abi.encodePacked(numOutputs, value, config.script);
+        bytes memory outputVector = abi.encodePacked(numOutputs, value, config.script);
 
         if (config.hasOpReturn) {
             outputVector = abi.encodePacked(
@@ -56,12 +58,6 @@ contract BitcoinTxBuilder {
             );
         }
 
-        return
-            BitcoinTx.Info({
-                version: "",
-                inputVector: "",
-                outputVector: outputVector,
-                locktime: ""
-            });
+        return BitcoinTx.Info({version: "", inputVector: "", outputVector: outputVector, locktime: ""});
     }
 }
