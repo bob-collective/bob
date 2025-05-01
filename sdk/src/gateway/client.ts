@@ -366,7 +366,7 @@ export class GatewayApiClient {
      * @param orderId The ID of the existing order.
      * @returns Parameters for onchain `bumpFeeOfExistingOrder` call.
      */
-    async bumpFeeForOfframpOrder(orderId: bigint): Promise<OfframpBumpFeeParams[]> {
+    async bumpFeeForOfframpOrder(orderId: bigint): Promise<OfframpBumpFeeParams> {
         // check order status via viem should be Active/Accepted
         const orderDetails: OnchainOfframpOrderDetails = await this.fetchOfframpOrder(orderId);
 
@@ -390,18 +390,14 @@ export class GatewayApiClient {
             );
         }
 
-        return [
-            {
-                offrampABI: offrampBumpFeeCaller,
-                offrampFunctionName: 'bumpFeeOfExistingOrder',
-                offrampArgs: [
-                    {
-                        orderId: orderId,
-                        newFeeSat: newFeeSat,
-                    },
-                ],
-            },
-        ];
+        const offrampRegistryAddress: Address = await this.fetchOfframpRegistryAddress();
+
+        return {
+            offrampABI: offrampBumpFeeCaller,
+            offrampRegistryAddress: offrampRegistryAddress,
+            offrampFunctionName: 'bumpFeeOfExistingOrder' as const,
+            offrampArgs: [orderId, newFeeSat],
+        };
     }
 
     /**
@@ -411,7 +407,7 @@ export class GatewayApiClient {
      * @param receiver The address to receive the funds.
      * @returns Parameters for onchain `unlockFunds` call.
      */
-    async unlockOfframpOrder(orderId: bigint, receiver: Address): Promise<OfframpUnlockFundsParams[]> {
+    async unlockOfframpOrder(orderId: bigint, receiver: Address): Promise<OfframpUnlockFundsParams> {
         // check order status via viem should be Active/Accepted
         const orderDetails: OnchainOfframpOrderDetails = await this.fetchOfframpOrder(orderId);
 
@@ -429,18 +425,12 @@ export class GatewayApiClient {
             throw new Error(`Offramp order is still within the 7-day claim delay and cannot be unlocked yet.`);
         }
 
-        return [
-            {
-                offrampABI: offrampUnlockFundsCaller,
-                offrampFunctionName: 'unlockFunds',
-                offrampArgs: [
-                    {
-                        orderId: orderId,
-                        receiver: receiver,
-                    },
-                ],
-            },
-        ];
+        return {
+            offrampABI: offrampUnlockFundsCaller,
+            offrampRegistryAddress: offrampRegistryAddress,
+            offrampFunctionName: 'unlockFunds',
+            offrampArgs: [orderId, receiver],
+        };
     }
 
     /**
