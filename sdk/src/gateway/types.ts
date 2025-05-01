@@ -409,29 +409,25 @@ export type OfframpCreateOrderParams = {
 /** @dev Params used to bump fee for an existing order */
 export type OfframpBumpFeeParams = {
     offrampABI: typeof offrampBumpFeeCaller;
+    offrampRegistryAddress: Address;
     offrampFunctionName: 'bumpFeeOfExistingOrder';
-    offrampArgs: [
-        {
-            /** @dev The order ID to bump fee for */
-            orderId: bigint;
-            /** @dev The new fee amount in satoshis */
-            newFeeSat: bigint;
-        },
-    ];
+    /**
+     * @param orderId The order ID to bump fee for
+     * @param newFeeSat The new fee amount in satoshis
+     */
+    offrampArgs: [orderId: bigint, newFeeSat: bigint];
 };
 
 /** @dev Params used to unlock funds after order completion or refund */
 export type OfframpUnlockFundsParams = {
     offrampABI: typeof offrampUnlockFundsCaller;
+    offrampRegistryAddress: Address;
     offrampFunctionName: 'unlockFunds';
-    offrampArgs: [
-        {
-            /** @dev The order ID to unlock funds for */
-            orderId: bigint;
-            /** @dev Receiver address to send unlocked funds to */
-            receiver: Address;
-        },
-    ];
+    /**
+     * @param orderId The order ID to bump fee for
+     * @param receiver address to send unlocked funds to
+     */
+    offrampArgs: [orderId: bigint, receiver: Address];
 };
 
 /** @dev Final state of an offramp order used in UI/backend */
