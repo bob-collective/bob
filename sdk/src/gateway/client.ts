@@ -85,7 +85,7 @@ export class GatewayApiClient {
      * @constructor
      * @param chainName The chain name.
      */
-    constructor(chainName: string, options?: { rpcUrl?: string }) {
+    constructor(chainName: 'mainnet' | 'testnet' | 'signet' | 'bob', options?: { rpcUrl?: string }) {
         switch (chainName) {
             case 'mainnet':
             case Chain.BOB:

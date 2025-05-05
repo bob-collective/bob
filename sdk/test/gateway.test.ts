@@ -34,6 +34,7 @@ describe('Gateway Tests', () => {
 
     it('should reject invalid chain', async () => {
         expect(() => {
+            // @ts-expect-error invalid chain id
             new GatewaySDK('bob-testnet');
         }).toThrowError('Invalid chain');
     });
