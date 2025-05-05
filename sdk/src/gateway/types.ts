@@ -1,6 +1,6 @@
 import type { EsploraClient } from '../esplora';
 import { Address } from 'viem';
-import { offrampBumpFeeCaller, offrampCreateOrderCaller, offrampUnlockFundsCaller, strategyCaller } from './abi';
+import { offrampCaller, strategyCaller } from './abi';
 
 type ChainSlug = string | number;
 type TokenSymbol = string;
@@ -386,7 +386,7 @@ export interface OfframpLiquidity {
 /** @dev Params used for createOrder call on the off-ramp contract */
 export type OfframpCreateOrderParams = {
     quote: OfframpQuote;
-    offrampABI: typeof offrampCreateOrderCaller;
+    offrampABI: (typeof offrampCaller)['createOrder'];
     offrampFunctionName: 'createOrder';
     offrampArgs: [
         {
@@ -408,7 +408,7 @@ export type OfframpCreateOrderParams = {
 
 /** @dev Params used to bump fee for an existing order */
 export type OfframpBumpFeeParams = {
-    offrampABI: typeof offrampBumpFeeCaller;
+    offrampABI: (typeof offrampCaller)['bumpFeeOfExistingOrder'];
     offrampRegistryAddress: Address;
     offrampFunctionName: 'bumpFeeOfExistingOrder';
     /**
@@ -420,7 +420,7 @@ export type OfframpBumpFeeParams = {
 
 /** @dev Params used to unlock funds after order completion or refund */
 export type OfframpUnlockFundsParams = {
-    offrampABI: typeof offrampUnlockFundsCaller;
+    offrampABI: (typeof offrampCaller)['unlockFunds'];
     offrampRegistryAddress: Address;
     offrampFunctionName: 'unlockFunds';
     /**
