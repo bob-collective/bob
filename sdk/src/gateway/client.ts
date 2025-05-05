@@ -32,14 +32,7 @@ import { createBitcoinPsbt, getAddressInfo } from '../wallet';
 import { SYMBOL_LOOKUP, ADDRESS_LOOKUP, getTokenDecimals } from './tokens';
 import { AddressType, Network } from 'bitcoin-address-validation';
 import { EsploraClient } from '../esplora';
-import {
-    claimDelayAbi,
-    offrampBumpFeeCaller,
-    offrampCreateOrderCaller,
-    offrampGetOrderCaller,
-    offrampUnlockFundsCaller,
-    strategyCaller,
-} from './abi';
+import { claimDelayAbi, offrampCaller, strategyCaller } from './abi';
 import { isAddress, Address, isAddressEqual, createPublicClient, http, PublicClient } from 'viem';
 import * as bitcoin from 'bitcoinjs-lib';
 import { bob, bobSepolia } from 'viem/chains';
@@ -85,7 +78,7 @@ export class GatewayApiClient {
      * @constructor
      * @param chainName The chain name.
      */
-    constructor(chainName: string, options?: { rpcUrl?: string }) {
+    constructor(chainName: 'mainnet' | 'testnet' | 'signet' | 'bob', options?: { rpcUrl?: string }) {
         switch (chainName) {
             case 'mainnet':
             case Chain.BOB:
@@ -345,7 +338,7 @@ export class GatewayApiClient {
 
         return {
             quote: offrampQuote,
-            offrampABI: offrampCreateOrderCaller,
+            offrampABI: offrampCaller['createOrder'],
             offrampFunctionName: 'createOrder' as const,
             offrampArgs: [
                 {
@@ -393,7 +386,7 @@ export class GatewayApiClient {
         const offrampRegistryAddress: Address = await this.fetchOfframpRegistryAddress();
 
         return {
-            offrampABI: offrampBumpFeeCaller,
+            offrampABI: offrampCaller['bumpFeeOfExistingOrder'],
             offrampRegistryAddress: offrampRegistryAddress,
             offrampFunctionName: 'bumpFeeOfExistingOrder' as const,
             offrampArgs: [orderId, newFeeSat],
@@ -426,7 +419,7 @@ export class GatewayApiClient {
         }
 
         return {
-            offrampABI: offrampUnlockFundsCaller,
+            offrampABI: offrampCaller['unlockFunds'],
             offrampRegistryAddress: offrampRegistryAddress,
             offrampFunctionName: 'unlockFunds',
             offrampArgs: [orderId, receiver],
@@ -531,7 +524,7 @@ export class GatewayApiClient {
 
         const order = await publicClient.readContract({
             address: offrampRegistryAddress,
-            abi: offrampGetOrderCaller,
+            abi: [offrampCaller['getOfframpOrder']],
             functionName: 'getOfframpOrder',
             args: [orderId],
         });
