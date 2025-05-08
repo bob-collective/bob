@@ -114,7 +114,7 @@ contract FullRelayWithVerifyThroughBitcoinTxTest is FullRelayWithVerifyTest {
         coinbaseProof: hex"dc20dadef477faab2852f2f8ae0c826aa7e05c4de0d36f0e63630429554884c371da5974b6f34fa2c3536738f031b49f34e0c9d084d7280f26212e39007ebe9ea0870c312745b58128a00a6557851e987ece02294d156f0020336e158928e8964292642c6c4dc469f34b7bacf2d8c42115bab6afc9067f2ed30e8749729b63e0889e203ee58e355903c1e71f78c008df6c3597b2cc66d0b8aae1a4a33caa775498e531cfb6af58e87db99e0f536dd226d18f43e3864148ba5b7faca5c775f10bc810c602e1af2195a34577976921ce009a4ddc0a07f605c96b0f5fcf580831ebbe01a31fa29bde884609d286dccfa5ba8e558ce3125bd4c3a19e888cf26852286202d2a7d302c75e0ff5ca8fe7299fb0d9d1132bf2c56c2e3b73df799286193d60c109b187d64571efbaa8047be85821f8e67e0e85f2f5894bc63d00c2ed9d64"
     });
 
-    function testSuccessfullyVerify() public {
+    function testSuccessfullyVerify() public view {
         bytes32 txHash = bitcoinTxTester.validateProof(
             IFullRelayWithVerify(address(relay)), minConfirmations, txInfoStruct, proofStruct
         );
@@ -230,7 +230,7 @@ contract FullRelayWithVerifyThroughWitnessTxTest is FullRelayWithVerifyTest {
         })
     });
 
-    function testSuccessfullyVerify() public {
+    function testSuccessfullyVerify() public view {
         bytes32 wTxHash = witnessTxTester.validateWitnessProof(
             IFullRelayWithVerify(address(relay)), minConfirmations, txInfoStruct, proofStruct
         );

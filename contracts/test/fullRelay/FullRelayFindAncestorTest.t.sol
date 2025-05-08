@@ -26,7 +26,7 @@ contract FullRelayFindAncestorTest is FullRelayTestUtils {
         relay.findAncestor(hex"00000000000000000000000000000000", 3);
     }
 
-    function testFindKnownAncestor() public {
+    function testFindKnownAncestor() public view {
         bytes32[] memory digestLes = getDigestLes("chain", 0, blockNumberAfterGenesis);
         for (uint256 i; i < blockNumberAfterGenesis; ++i) {
             assertEq(relay.findAncestor(digestLes[i], 0), digestLes[i]);
