@@ -36,7 +36,7 @@ contract FullRelayConstructionTest is FullRelayTestUtils {
         new TestRelay(genesisHex, genesisHeight, orphanDigestLe);
     }
 
-    function testStoresGenesisBlockInfo() external {
+    function testStoresGenesisBlockInfo() external view {
         assertEq(relay.getRelayGenesis(), genesisDigestLe);
 
         assertEq(relay.getBestKnownDigest(), genesisDigestLe);

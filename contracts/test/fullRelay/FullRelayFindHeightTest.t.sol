@@ -26,7 +26,7 @@ contract FullRelayFindHeightTest is FullRelayTestUtils {
         relay.findHeight(hex"00000000000000000000000000000000");
     }
 
-    function testFindHeightOfExistingBlocks() public {
+    function testFindHeightOfExistingBlocks() public view {
         bytes32[] memory digestLes = getDigestLes("chain", 0, blockNumberAfterGenesis);
         uint256[] memory blockHeights = getBlockHeights("chain", 0, blockNumberAfterGenesis);
         for (uint256 i; i < blockNumberAfterGenesis; ++i) {
