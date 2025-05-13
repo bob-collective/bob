@@ -17,6 +17,14 @@ contract IceCreamSwapStrategy is IStrategyWithSwapArgs, Context {
         iceCreamSwapAggregatorGuard = _iceCreamSwapAggregatorGuard;
     }
 
+    /**
+     * @notice Swaps the incoming token to the tokenOut address using the IceCreamSwap aggregator guard.
+     * @dev Requires that the strategy is approved to spend the incoming tokens.
+     * @param tokenSent The ERC20 token to deposit.
+     * @param amountIn The amount to be deposited.
+     * @param recipient The address to receive the shares.
+     * @param args Additional args containing the output token and the calldata for the swap.
+     */
     function handleGatewayMessageWithSwapArgs(
         IERC20 tokenSent,
         uint256 amountIn,

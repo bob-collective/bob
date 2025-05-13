@@ -16,7 +16,7 @@ contract CalldataDecoder {
     // function signature must be the same as the aggregator guard
     function IceCreamSwap()
         public
-        view
+        pure
         returns (
             uint256 id,
             address executor,
@@ -174,8 +174,6 @@ contract IceCreamSwapStrategyForkedWbtc is ForkedStrategyTemplateWbtc {
         (,,, uint256 _minAmountOut,,,,) = decodeSwapCalldata(swapCalldata);
 
         assertLt(_minAmountOut, amountOut, "Amount out is less than the minimum");
-
-        uint256 initialRecipientUsdcBalance = usdc.balanceOf(recipient);
 
         // before swap is submitted, another large swap is made which causes the market price to increase
         // so that the swap will revert due to slippage
