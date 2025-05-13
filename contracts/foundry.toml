@@ -20,7 +20,6 @@ optimizer_runs = 5_000
 auto_detect_solc = true
 via_ir = true
 
-# Compile only the production code with IR
 [profile.optimized]
 out = "optimized-out"
 test = "src"
