@@ -37,7 +37,7 @@ contract IceCreamSwapStrategy is IStrategyWithSwapArgs, Context {
 
         uint256 initialTokenOutBalance = IERC20(args.tokenOut).balanceOf(recipient);
 
-        // Using a low level call becuase the aggregator reads the calldata directly instead of from function arguments
+        // Using a low level call because the aggregator reads the calldata directly instead of from function arguments
         (bool success, bytes memory returnOrRevertData) = iceCreamSwapAggregatorGuard.call(args.routingData);
 
         // If the call was successful and the return data is a uint256 (which is 32 bytes) then the swap was successful
