@@ -111,10 +111,7 @@ contract IceCreamSwapStrategyForkedWbtc is ForkedStrategyTemplateWbtc {
         vm.expectEmit(address(iceCreamSwapStrategy));
         emit TokenOutput(address(lbtc), amountOut);
         iceCreamSwapStrategy.handleGatewayMessageWithSwapArgs(
-            wbtc,
-            amountIn,
-            recipient,
-            StrategySwapArgs({tokenOut: address(lbtc), amountOutMin: 0, routingData: swapCalldata})
+            wbtc, amountIn, recipient, StrategySwapArgs({tokenOut: address(lbtc), routingData: swapCalldata})
         );
         vm.stopPrank();
 
@@ -144,10 +141,7 @@ contract IceCreamSwapStrategyForkedWbtc is ForkedStrategyTemplateWbtc {
         vm.startPrank(sender);
         wbtc.approve(address(iceCreamSwapStrategy), amountIn);
         iceCreamSwapStrategy.handleGatewayMessageWithSwapArgs(
-            wbtc,
-            amountIn,
-            recipient,
-            StrategySwapArgs({tokenOut: address(usdc), amountOutMin: 0, routingData: swapCalldata})
+            wbtc, amountIn, recipient, StrategySwapArgs({tokenOut: address(usdc), routingData: swapCalldata})
         );
         vm.stopPrank();
 
@@ -157,16 +151,12 @@ contract IceCreamSwapStrategyForkedWbtc is ForkedStrategyTemplateWbtc {
     function testSwapNoCalldata() public {
         uint256 amountIn = 10000; // 0.0001 wbtc
         IERC20 lbtc = IERC20(0xA45d4121b3D47719FF57a947A9d961539Ba33204);
-        uint256 amountOutMin = 9900;
 
         vm.startPrank(sender);
         wbtc.approve(address(iceCreamSwapStrategy), amountIn);
         vm.expectRevert("Swap failed");
         iceCreamSwapStrategy.handleGatewayMessageWithSwapArgs(
-            wbtc,
-            amountIn,
-            recipient,
-            StrategySwapArgs({tokenOut: address(lbtc), amountOutMin: amountOutMin, routingData: ""})
+            wbtc, amountIn, recipient, StrategySwapArgs({tokenOut: address(lbtc), routingData: ""})
         );
         vm.stopPrank();
     }
@@ -197,20 +187,14 @@ contract IceCreamSwapStrategyForkedWbtc is ForkedStrategyTemplateWbtc {
         vm.startPrank(sender);
         wbtc.approve(address(iceCreamSwapStrategy), largeAmountIn);
         iceCreamSwapStrategy.handleGatewayMessageWithSwapArgs(
-            wbtc,
-            largeAmountIn,
-            recipient,
-            StrategySwapArgs({tokenOut: address(usdc), amountOutMin: 0, routingData: largeSwapCalldata})
+            wbtc, largeAmountIn, recipient, StrategySwapArgs({tokenOut: address(usdc), routingData: largeSwapCalldata})
         );
 
         // now try the swap, which will revert due to slippage exceeding 0.5%
         wbtc.approve(address(iceCreamSwapStrategy), amountIn);
         vm.expectRevert("Swap failed");
         iceCreamSwapStrategy.handleGatewayMessageWithSwapArgs(
-            wbtc,
-            amountIn,
-            recipient,
-            StrategySwapArgs({tokenOut: address(usdc), amountOutMin: 0, routingData: swapCalldata})
+            wbtc, amountIn, recipient, StrategySwapArgs({tokenOut: address(usdc), routingData: swapCalldata})
         );
         vm.stopPrank();
     }

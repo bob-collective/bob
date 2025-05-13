@@ -30,3 +30,25 @@ abstract contract IStrategyWithSlippageArgs is IStrategy {
 struct StrategySlippageArgs {
     uint256 amountOutMin;
 }
+
+abstract contract IStrategyWithSwapArgs is IStrategy {
+    function handleGatewayMessageWithSwapArgs(
+        IERC20 tokenSent,
+        uint256 amountIn,
+        address recipient,
+        StrategySwapArgs memory args
+    ) public virtual;
+
+    function handleGatewayMessage(IERC20 tokenSent, uint256 amountIn, address recipient, bytes memory message)
+        external
+    {
+        StrategySwapArgs memory args = abi.decode(message, (StrategySwapArgs));
+
+        handleGatewayMessageWithSwapArgs(tokenSent, amountIn, recipient, args);
+    }
+}
+
+struct StrategySwapArgs {
+    address tokenOut;
+    bytes routingData;
+}
