@@ -13,7 +13,7 @@ contract WitnessTxTest is Test {
     using BTCUtils for bytes;
     using ValidateSPV for bytes32;
 
-    function test_GetWitnessTxHash() public {
+    function test_GetWitnessTxHash() public view {
         bytes32 wTxId = hex"6b374690d8e2dbca4187f443cddd293536400d431f43a643b263ce59c4f9a3eb";
 
         WitnessTx.WitnessInfo memory txInfo = WitnessTx.WitnessInfo({
@@ -39,7 +39,7 @@ contract WitnessTxTest is Test {
         assertEq(wTxId, wTxHash);
     }
 
-    function test_ProveWitnessTx() public {
+    function test_ProveWitnessTx() public view {
         bytes32 txId = hex"6b374690d8e2dbca4187f443cddd293536400d431f43a643b263ce59c4f9a3eb";
 
         bytes32 witnessMerkleRoot = hex"7cee5e99c8f0fc25fb115b7d7d00befca61f59a8544adaf3980f52132baf61ae";

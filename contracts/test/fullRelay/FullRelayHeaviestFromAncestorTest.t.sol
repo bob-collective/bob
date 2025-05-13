@@ -65,15 +65,15 @@ contract FullRelayHeaviestFromAncestorTest is FullRelayTestUtils {
         relay.heaviestFromAncestor(digestLes[3], headersHexes[4], headersHexes[2]);
     }
 
-    function testLeftIsHeavier() public {
+    function testLeftIsHeavier() public view {
         assertEq(relay.heaviestFromAncestor(digestLes[3], headersHexes[5], headersHexes[4]), digestLes[5]);
     }
 
-    function testRightIsHeavier() public {
+    function testRightIsHeavier() public view {
         assertEq(relay.heaviestFromAncestor(digestLes[3], headersHexes[4], headersHexes[5]), digestLes[5]);
     }
 
-    function testEqualWeightsReturnsLeft() public {
+    function testEqualWeightsReturnsLeft() public view {
         bytes32 orpan562640DigestLe = json.readBytes32(".orphan_562630.digest_le");
         bytes memory orpan562640HeaderHex = json.readBytes(".orphan_562630.hex");
         bytes32 headerDigestLeMain = getDigestLes("chain", blockNumberAfterGenesis, blockNumberAfterGenesis + 1)[0];

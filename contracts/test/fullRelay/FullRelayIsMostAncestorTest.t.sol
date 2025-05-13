@@ -44,20 +44,20 @@ contract FullRelayIsMostAncestorTest is FullRelayTestUtils {
         relay.addHeadersWithRetarget(oldPeriodStartHex, preHeaderHexes[preLength - 1], postWithOrphan);
     }
 
-    function testReturnsFalseIfMoreRecentAncestorFound() public {
+    function testReturnsFalseIfMoreRecentAncestorFound() public view {
         assertFalse(relay.isMostRecentAncestor(postDigestLes[0], postDigestLes[3], postDigestLes[2], 5));
     }
 
-    function testReturnsFalseIfLimitExceeded() public {
+    function testReturnsFalseIfLimitExceeded() public view {
         assertFalse(relay.isMostRecentAncestor(postDigestLes[1], postDigestLes[3], postDigestLes[2], 1));
     }
 
-    function testReturnsTrueIfWithinLimit() public {
+    function testReturnsTrueIfWithinLimit() public view {
         assertTrue(relay.isMostRecentAncestor(postDigestLes[2], postDigestLes[3], postDigestLes[2], 5));
         assertTrue(relay.isMostRecentAncestor(postDigestLes[5], postDigestLes[6], orphanDigestLe, 5));
     }
 
-    function testLeftAndRightAndAncestorSame() public {
+    function testLeftAndRightAndAncestorSame() public view {
         assertTrue(relay.isMostRecentAncestor(postDigestLes[3], postDigestLes[3], postDigestLes[3], 5));
     }
 }
