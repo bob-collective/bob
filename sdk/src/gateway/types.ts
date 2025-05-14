@@ -444,7 +444,7 @@ export type OfframpOrderDetails = {
     status: OfframpOrderStatus;
     /** @dev The timestamp when the order was created or updated */
     orderTimestamp: bigint;
-    /** @dev The transaction hash on the EVM chain */
+    /** @dev The user submit order transaction hash on the EVM chain */
     submitOrderEvmTx: string;
     /** @dev The transaction ID on the Bitcoin network */
     btcTx: string;
