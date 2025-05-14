@@ -1,0 +1,8 @@
+query GetOrders {
+  submitOrders {
+    id
+    orderId
+    sender
+    amount
+  }
+}

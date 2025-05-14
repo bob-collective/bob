@@ -1,0 +1,11 @@
+type SubmitOrder {
+  id: ID!
+  orderId: String!
+  sender: String!
+  amount: String!
+}
+
+type Query {
+  submitOrders: [SubmitOrder!]!
+  submitOrder(id: ID!): SubmitOrder
+}
