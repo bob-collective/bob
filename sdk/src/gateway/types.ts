@@ -444,8 +444,8 @@ export type OfframpOrderDetails = {
     status: OfframpOrderStatus;
     /** @dev The timestamp when the order was created or updated */
     orderTimestamp: bigint;
-    /** @dev The transaction hash on the EVM chain */
-    evmTx: string;
+    /** @dev The user submit order transaction hash on the EVM chain */
+    submitOrderEvmTx: string;
     /** @dev The transaction ID on the Bitcoin network */
     btcTx: string;
     /** @dev Indicates whether the fees for this order should be bumped based on current network conditions */
@@ -487,7 +487,7 @@ export interface OfframpRawOrder {
     status: string;
     orderTimestamp: string;
     btcTx: string | null;
-    evmTx: string | null;
+    submitOrderEvmTx: string | null;
     shouldFeesBeBumped: boolean;
 }
 
