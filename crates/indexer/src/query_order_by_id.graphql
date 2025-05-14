@@ -1,0 +1,8 @@
+query GetOrderById($id: ID!) {
+  submitOrder(id: $id) {
+    id
+    orderId
+    sender
+    amount
+  }
+}
