@@ -122,9 +122,10 @@ You can finally start the node with `docker-compose up`.
 
 ## Resources
 
-Additional information on how to self-host a node for an OP Stack rollup is available on [Conduit's node documentation](https://docs.conduit.xyz/guides/run-a-node/op-stack-node). Conduit extends [Optimism's guide for running a node with Docker](https://docs.optimism.io/builders/node-operators/tutorials/node-from-docker), the source of the specific hardware and software dependencies above.
+Additional information on how to self-host a node for an OP Stack rollup is available on [Conduit's node documentation](https://docs.conduit.xyz/guides/run-a-node/op-stack-node). Conduit extends [Optimism's guide for running a node with Docker](https://docs.optimism.io/builders/node-operators/tutorials/node-from-docker), the source of the specific hardware and software dependencies above. Full details on the rollup configuration are available in the [Conduit's BOB Mainnet hub page](https://hub.conduit.xyz/bob-mainnet-0).
 
 ## External Links
 
+1. [BOB Mainnet rollup configuration](https://hub.conduit.xyz/bob-mainnet-0)
 1. [Conduit's node documentation](https://docs.conduit.xyz/guides/run-a-node/op-stack-node)
 1. [Optimism's guide for running a node with Docker](https://docs.optimism.io/builders/node-operators/tutorials/node-from-docker)
