@@ -47,7 +47,7 @@
         "bitcoin-address-validation": "^3.0.0",
         "bitcoinjs-lib": "^6.1.7",
         "ethers": "^6.13.5",
-        "viem": "^2.22.19",
+        "viem": "^2.29.2",
         "global": "^4.4.0"
     }
 }
