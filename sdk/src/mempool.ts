@@ -215,10 +215,13 @@ export class MempoolClient {
     /**
      * Estimate transaction time to be mined
      *
-     * This method returns estimated timestamp for given txid to be mined in seconds.
+     * This method returns estimated timestamp for given txid to be mined in seconds based on {@link getRecommendedFees}.
      *
      * @param {string} txid
      * @returns {Promise<number>} A timestamp when tx is expected to be mined in seconds
+     *
+     * - `0`: txid is already confirmed
+     * - `Infinity`: the fee rate is < economyFee
      *
      * @example
      * const mempoolClient = new MempoolClient();
@@ -233,7 +236,6 @@ export class MempoolClient {
             this.getTxInfo(txid),
         ]);
 
-        // NOTE: 0 indicates that there's no timestamp in the future when tx is expected to be mined
         if (txInfo.status.confirmed) return 0;
 
         const lastBlockDetails = await this.getBlock(lastBlockHash);
@@ -244,9 +246,7 @@ export class MempoolClient {
         if (feeRate >= recommendedFees.fastestFee) return lastBlockDetails.timestamp + blockTime;
         if (feeRate >= recommendedFees.halfHourFee) return lastBlockDetails.timestamp + 3 * blockTime;
         if (feeRate >= recommendedFees.hourFee) return lastBlockDetails.timestamp + 6 * blockTime;
-        // estimated to be mined in 24 hours
         if (feeRate >= recommendedFees.economyFee) return lastBlockDetails.timestamp + 144 * blockTime;
-        // minimum fee
         return Infinity;
     }
 
