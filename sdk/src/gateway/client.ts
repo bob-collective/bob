@@ -338,7 +338,7 @@ export class GatewayApiClient {
 
         return {
             quote: offrampQuote,
-            offrampABI: offrampCaller['createOrder'],
+            offrampABI: offrampCaller,
             offrampFunctionName: 'createOrder' as const,
             offrampArgs: [
                 {
@@ -386,7 +386,7 @@ export class GatewayApiClient {
         const offrampRegistryAddress: Address = await this.fetchOfframpRegistryAddress();
 
         return {
-            offrampABI: offrampCaller['bumpFeeOfExistingOrder'],
+            offrampABI: offrampCaller,
             offrampRegistryAddress: offrampRegistryAddress,
             offrampFunctionName: 'bumpFeeOfExistingOrder' as const,
             offrampArgs: [orderId, newFeeSat],
@@ -419,7 +419,7 @@ export class GatewayApiClient {
         }
 
         return {
-            offrampABI: offrampCaller['unlockFunds'],
+            offrampABI: offrampCaller,
             offrampRegistryAddress: offrampRegistryAddress,
             offrampFunctionName: 'unlockFunds',
             offrampArgs: [orderId, receiver],
@@ -524,7 +524,7 @@ export class GatewayApiClient {
 
         const order = await publicClient.readContract({
             address: offrampRegistryAddress,
-            abi: [offrampCaller['getOfframpOrder']],
+            abi: offrampCaller,
             functionName: 'getOfframpOrder',
             args: [orderId],
         });
