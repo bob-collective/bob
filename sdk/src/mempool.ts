@@ -220,7 +220,6 @@ export class MempoolClient {
      * @param {string} txid
      * @returns {Promise<number>} A timestamp when tx is expected to be mined in seconds
      *
-     * - `0`: txid is already confirmed
      * - `Infinity`: the fee rate is < economyFee
      *
      * @example
@@ -236,9 +235,9 @@ export class MempoolClient {
             this.getTxInfo(txid),
         ]);
 
-        if (txInfo.status.confirmed) return 0;
-
         const lastBlockDetails = await this.getBlock(lastBlockHash);
+
+        if (txInfo.status.confirmed) return txInfo.status.block_time;
 
         const blockTime = 10 * 60;
         const feeRate = txInfo.fee / txInfo.size;

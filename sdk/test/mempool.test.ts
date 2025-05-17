@@ -142,6 +142,7 @@ describe('Mempool Tests', () => {
                 timestamp: 0,
                 status: {
                     confirmed: true,
+                    block_time: 1234,
                 },
             },
         ];
@@ -163,11 +164,9 @@ describe('Mempool Tests', () => {
 
         const results = await Promise.all(mockData.map(({ txid }) => client.estimateTxTime(txid)));
 
-        mockData.forEach(({ timestamp }, index) => {
-            // NOTE: 0 indicates that there's no timestamp in the future when tx is expected to be mined
-            if (results[index] !== 0) {
-                expect(MOCKS.blockDetails.timestamp + timestamp).toEqual(results[index]);
-            }
+        mockData.forEach(({ timestamp, status }, index) => {
+            if (status.confirmed) expect(status.block_time).toEqual(results[index]);
+            else expect(MOCKS.blockDetails.timestamp + timestamp).toEqual(results[index]);
         });
     });
 });
