@@ -70,13 +70,13 @@ describe('Mempool Tests', () => {
         expect(fees).toEqual(MOCKS.fees.recommended);
     });
 
-    it('should get last block hash', async () => {
+    it('should get tx info', async () => {
         const txInfo = await client.getTxInfo(MOCKS.txInfo.txid);
 
         expect(txInfo).toEqual(MOCKS.txInfo);
     });
 
-    it('should get last block hash', async () => {
+    it('should get latest block hash', async () => {
         const tipBlockHash = await client.getBlocksTipHash();
 
         expect(tipBlockHash).toEqual(MOCKS.tipBlockHash);
@@ -142,6 +142,7 @@ describe('Mempool Tests', () => {
                 timestamp: 0,
                 status: {
                     confirmed: true,
+                    block_time: 1234,
                 },
             },
         ];
@@ -163,11 +164,9 @@ describe('Mempool Tests', () => {
 
         const results = await Promise.all(mockData.map(({ txid }) => client.estimateTxTime(txid)));
 
-        mockData.forEach(({ timestamp }, index) => {
-            // NOTE: 0 indicates that there's no timestamp in the future when tx is expected to be mined
-            if (results[index] !== 0) {
-                expect(MOCKS.blockDetails.timestamp + timestamp).toEqual(results[index]);
-            }
+        mockData.forEach(({ timestamp, status }, index) => {
+            if (status.confirmed) expect(status.block_time).toEqual(results[index]);
+            else expect(MOCKS.blockDetails.timestamp + timestamp).toEqual(results[index]);
         });
     });
 });
