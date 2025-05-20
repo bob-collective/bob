@@ -120,6 +120,22 @@ services:
 
 You can finally start the node with `docker-compose up`.
 
+## Rollup Configuration and Genesis
+
+If you want to download the rollup configuration and genesis file, you can access them on the [Conduit's BOB Mainnet hub page](https://app.conduit.xyz/view-network/bob-mainnet-0/overview).
+
+- [Rollup Configuration](https://api.conduit.xyz/file/getOptimismRollupJSON?network=036d1667-e469-424e-9db9-5b09cf4d460d&organization=610ec5c5-8b4c-444a-b2b4-a94c1835defe)
+- [Genesis](https://api.conduit.xyz/file/getOptimismGenesisJSON?network=036d1667-e469-424e-9db9-5b09cf4d460d&organization=610ec5c5-8b4c-444a-b2b4-a94c1835defe)
+- [Contracts](https://api.conduit.xyz/file/getOptimismContractsJSON?network=036d1667-e469-424e-9db9-5b09cf4d460d&organization=610ec5c5-8b4c-444a-b2b4-a94c1835defe)
+
+## BOB Sepolia (Testnet)
+
+You can also run a full for BOB Sepolia. Configuration information can be found on [Conduit's BOB Sepolia hub page](https://hub.conduit.xyz/bob-sepolia-dm6uw0yhh3).
+
+:::info
+We do not provide support for running a full node on the testnet. If you have any issues, please refer to the [Conduit's node documentation](https://docs.conduit.xyz/guides/run-a-node/op-stack-node) for more information.
+:::
+
 ## Resources
 
 Additional information on how to self-host a node for an OP Stack rollup is available on [Conduit's node documentation](https://docs.conduit.xyz/guides/run-a-node/op-stack-node). Conduit extends [Optimism's guide for running a node with Docker](https://docs.optimism.io/builders/node-operators/tutorials/node-from-docker), the source of the specific hardware and software dependencies above. Full details on the rollup configuration are available in the [Conduit's BOB Mainnet hub page](https://hub.conduit.xyz/bob-mainnet-0).
