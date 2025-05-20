@@ -160,13 +160,6 @@ Get started: https://docs.unisat.io/dev/unisat-developer-service
 - [Bitcoin Light Client](/learn/builder-guides/relay): Learn how to interact with Bitcoin by proving transaction inclusion on BOB.
 - [Use tBTC, wBTC, or other ERC20 Tokens as Fee Tokens on BOB](/learn/builder-guides/bridged-btc-gas-fee/index.md): Learn how to use tBTC and wBTC as fee tokens on BOB.
 
-### Third-Party Tools on BOB
-
-- [Wallets](/learn/reference/tools/wallets)
-- [UniSat Ordinals API](https://docs.unisat.io/dev/unisat-developer-service)
-- [Rust zkVM](/learn/reference/tools/rust-zkvm)
-- [Oracles](/learn/reference/tools/oracles)
-
 ### Collection of Bitcoin Tools
 
 [Lopp Development Tool List](https://www.lopp.net/bitcoin-information/developer-tools.html)
