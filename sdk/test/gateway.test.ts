@@ -742,7 +742,7 @@ describe('Gateway Tests', () => {
         const btcTxId = await gatewaySDK.executeQuote(
             {
                 type: 'onramp',
-                gateway: mockQuote as GatewayQuote & GatewayTokensInfo,
+                quote: mockQuote as GatewayQuote & GatewayTokensInfo,
                 params: {
                     toChain: 'BOB',
                     toToken: 'tBTC',
@@ -758,7 +758,7 @@ describe('Gateway Tests', () => {
             publicClient as Parameters<typeof gatewaySDK.executeQuote>[3]
         );
 
-        assert.isDefined(btcTxId);
+        expect(btcTxId).toBe('f8c934f181cb88ce910f31bda1a6a8c27fdf5fe9c650edad1ccf4c4e0c89f863');
         expect(startOrderSpy).toHaveBeenCalledOnce();
         expect(finalizeOrderSpy).toHaveBeenCalledOnce();
     });

@@ -615,7 +615,7 @@ export class GatewayApiClient {
      * Execute an order via the Gateway API.
      * This method invokes the {@link startOrder} and the {@link finalizeOrder} methods.
      *
-     * @param {{type: 'onramp' | 'offramp', params: GatewayQuoteParams}} quote - The params given by the {@link getQuote} method.
+     * @param {{type: 'onramp' | 'offramp', params: GatewayQuoteParams}} order - The params given by the {@link getQuote} method.
      * @param params The parameters for the quote, same as before.
      * @param {{ signAllInputs: (psbtBase64: string) => Promise<string> }} btcSigner Btc wallet connector
      * @param {WalletClient<Transport, ViemChain, Account>} walletClient Wallet client instance
@@ -624,14 +624,12 @@ export class GatewayApiClient {
      * @returns {Promise<GatewayStartOrder>} The success object.
      */
     async executeQuote(
-        quote:
+        order:
             | {
                   type: 'onramp';
-                  gateway: GatewayQuote & GatewayTokensInfo;
+                  quote: GatewayQuote & GatewayTokensInfo;
                   params: Optional<GatewayQuoteParams, 'toToken' | 'amount'> & {
                       toUserAddress: Address;
-                      //   toChain: 'bob' | 'bob-sepolia' | 60808 | 808813;
-                      //   fromChain: 'bitcoin';
                   };
               }
             | {
@@ -652,16 +650,14 @@ export class GatewayApiClient {
                       | 'fromChain'
                   > & {
                       toUserAddress: string;
-                      //   fromChain: 'bob' | 'bob-sepolia' | 60808 | 808813;
-                      //   toChain: 'bitcoin';
                   };
               },
         btcSigner: { signAllInputs: (psbtBase64: string) => Promise<string> },
         walletClient: WalletClient<Transport, ViemChain, Account>,
         publicClient: PublicClient<Transport>
     ): Promise<string> {
-        if (quote.type === 'onramp') {
-            const { uuid, psbtBase64 } = await this.startOrder(quote.gateway, quote.params);
+        if (order.type === 'onramp') {
+            const { uuid, psbtBase64 } = await this.startOrder(order.quote, order.params);
 
             const bitcoinTxHex = await btcSigner.signAllInputs(psbtBase64!);
 
@@ -671,9 +667,9 @@ export class GatewayApiClient {
 
             return txId;
         } else {
-            const tokenAddress = getTokenAddress(this.chainId, quote.params.toToken);
+            const tokenAddress = getTokenAddress(this.chainId, order.params.toToken);
             const [offrampOrder, offrampRegistryAddress] = await Promise.all([
-                this.createOfframpOrder(quote.params),
+                this.createOfframpOrder(order.params),
                 this.fetchOfframpRegistryAddress(),
             ]);
 
@@ -681,10 +677,10 @@ export class GatewayApiClient {
                 address: tokenAddress,
                 abi: erc20Abi,
                 functionName: 'allowance',
-                args: [quote.params.fromUserAddress as Address, offrampRegistryAddress],
+                args: [order.params.fromUserAddress as Address, offrampRegistryAddress],
             });
 
-            if (BigInt(quote.params.amount) > allowance) {
+            if (BigInt(order.params.amount) > allowance) {
                 const { request } = await publicClient.simulateContract({
                     account: walletClient.account,
                     address: tokenAddress,
