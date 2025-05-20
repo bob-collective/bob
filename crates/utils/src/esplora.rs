@@ -83,6 +83,8 @@ impl EsploraBuilder {
         cmd.arg(format!("[::0]:{}", http_port));
         cmd.arg("--index-unspendables");
         cmd.arg(format!("--db-dir={}", db_dir.path().to_str().unwrap()));
+        cmd.arg("--electrum-rpc-addr=127.0.0.1:0");
+        cmd.arg("--monitoring-addr=127.0.0.1:0");
 
         let mut child = cmd.spawn().expect("Couldn't start esplora");
 

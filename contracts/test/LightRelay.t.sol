@@ -172,7 +172,7 @@ contract LightRelayTest is Test {
         relay.genesis(genesisHeader.data, genesisHeader.height, 4);
     }
 
-    function test_RecordRelayReadyForuse() public {
+    function test_RecordRelayReadyForuse() public view {
         assertTrue(relay.ready());
     }
 
@@ -418,7 +418,7 @@ contract LightRelayTest is Test {
         );
     }
 
-    function test_ValidateHeaderChainsEpoch274() public {
+    function test_ValidateHeaderChainsEpoch274() public view {
         (, uint256 headerCount) = relay.validateChain(
             abi.encodePacked(
                 retargetHeaders[1].data, retargetHeaders[2].data, retargetHeaders[3].data, retargetHeaders[4].data
@@ -427,14 +427,14 @@ contract LightRelayTest is Test {
         assertEq(headerCount, 4);
     }
 
-    function test_ValidateShortHeaderChainsEpoch274() public {
+    function test_ValidateShortHeaderChainsEpoch274() public view {
         (, uint256 headerCount) = relay.validateChain(
             abi.encodePacked(retargetHeaders[1].data, retargetHeaders[2].data, retargetHeaders[3].data)
         );
         assertEq(headerCount, 3);
     }
 
-    function test_ValidateLongHeaderChainsEpoch274() public {
+    function test_ValidateLongHeaderChainsEpoch274() public view {
         (, uint256 headerCount) = relay.validateChain(
             bytes.concat(
                 abi.encodePacked(
@@ -753,7 +753,7 @@ contract LightRelayTest is Test {
         assertEq(currentEpochEnd, 554399);
     }
 
-    function test_GetRelayRangeAfterRetarget() public {
+    function test_GetRelayRangeAfterRetarget() public view {
         (uint256 relayGenesis, uint256 currentEpochEnd) = relay.getRelayRange();
         // should return two epochs
         assertEq(relayGenesis, genesisHeader.height);
@@ -770,7 +770,7 @@ contract LightRelayTest is Test {
         assertEq(relay.getCurrentEpochDifficulty(), genesisDifficulty);
     }
 
-    function test_GetCurrentEpochDifficultyAfterRetarget() public {
+    function test_GetCurrentEpochDifficultyAfterRetarget() public view {
         assertEq(relay.getCurrentEpochDifficulty(), nextDifficulty);
     }
 
@@ -784,7 +784,7 @@ contract LightRelayTest is Test {
         assertEq(relay.getPrevEpochDifficulty(), 0);
     }
 
-    function test_GetPrevEpochDifficultyAfterRetarget() public {
+    function test_GetPrevEpochDifficultyAfterRetarget() public view {
         assertEq(relay.getPrevEpochDifficulty(), genesisDifficulty);
     }
 
@@ -802,7 +802,7 @@ contract LightRelayTest is Test {
         assertEq(previous, 0);
     }
 
-    function test_GetCurrentAndPrevEpochDifficultyAfterRetarget() public {
+    function test_GetCurrentAndPrevEpochDifficultyAfterRetarget() public view {
         (uint256 current, uint256 previous) = relay.getCurrentAndPrevEpochDifficulty();
         assertEq(current, nextDifficulty);
         assertEq(previous, genesisDifficulty);

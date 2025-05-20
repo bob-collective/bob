@@ -23,11 +23,11 @@ contract FullRelayIsAncestorTest is FullRelayTestUtils {
         relay.addHeaders(json.readBytes(".genesis.hex"), getHeaders("chain", 0, blockNumberAfterGenesis));
     }
 
-    function testExceedSearchLimit() public {
+    function testExceedSearchLimit() public view {
         assertFalse(relay.isAncestor(genesisDigestLe, digestLes[3], 1));
     }
 
-    function testAncestorFound() public {
+    function testAncestorFound() public view {
         assertTrue(relay.isAncestor(genesisDigestLe, digestLes[3], 5));
     }
 }

@@ -38,8 +38,8 @@ export const strategyCaller = [
     },
 ] as const;
 
-export const offrampCreateOrderCaller = [
-    {
+export const offrampCaller = {
+    createOrder: {
         type: 'function',
         name: 'createOrder',
         inputs: [
@@ -84,10 +84,7 @@ export const offrampCreateOrderCaller = [
         outputs: [],
         stateMutability: 'nonpayable',
     },
-] as const;
-
-export const offrampBumpFeeCaller = [
-    {
+    bumpFeeOfExistingOrder: {
         type: 'function',
         name: 'bumpFeeOfExistingOrder',
         inputs: [
@@ -105,10 +102,7 @@ export const offrampBumpFeeCaller = [
         outputs: [],
         stateMutability: 'nonpayable',
     },
-] as const;
-
-export const offrampUnlockFundsCaller = [
-    {
+    unlockFunds: {
         type: 'function',
         name: 'unlockFunds',
         inputs: [
@@ -126,17 +120,7 @@ export const offrampUnlockFundsCaller = [
         outputs: [],
         stateMutability: 'nonpayable',
     },
-] as const;
-
-export const compoundV2CTokenAbi = parseAbi([
-    'function exchangeRateCurrent() external returns (uint256)',
-    'function underlying() external view returns (address)',
-]);
-
-export const aaveV2AtokenAbi = parseAbi(['function UNDERLYING_ASSET_ADDRESS() external view returns (address)']);
-
-export const offrampGetOrderCaller = [
-    {
+    getOfframpOrder: {
         type: 'function',
         name: 'getOfframpOrder',
         inputs: [
@@ -166,6 +150,13 @@ export const offrampGetOrderCaller = [
         ],
         stateMutability: 'view',
     },
-] as const;
+} as const;
+
+export const compoundV2CTokenAbi = parseAbi([
+    'function exchangeRateCurrent() external returns (uint256)',
+    'function underlying() external view returns (address)',
+]);
+
+export const aaveV2AtokenAbi = parseAbi(['function UNDERLYING_ASSET_ADDRESS() external view returns (address)']);
 
 export const claimDelayAbi = parseAbi(['function CLAIM_DELAY() view returns (uint64)']);

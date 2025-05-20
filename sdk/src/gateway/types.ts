@@ -1,6 +1,6 @@
 import type { EsploraClient } from '../esplora';
 import { Address } from 'viem';
-import { offrampBumpFeeCaller, offrampCreateOrderCaller, offrampUnlockFundsCaller, strategyCaller } from './abi';
+import { offrampCaller, strategyCaller } from './abi';
 
 type ChainSlug = string | number;
 type TokenSymbol = string;
@@ -386,7 +386,7 @@ export interface OfframpLiquidity {
 /** @dev Params used for createOrder call on the off-ramp contract */
 export type OfframpCreateOrderParams = {
     quote: OfframpQuote;
-    offrampABI: typeof offrampCreateOrderCaller;
+    offrampABI: (typeof offrampCaller)['createOrder'];
     offrampFunctionName: 'createOrder';
     offrampArgs: [
         {
@@ -408,7 +408,7 @@ export type OfframpCreateOrderParams = {
 
 /** @dev Params used to bump fee for an existing order */
 export type OfframpBumpFeeParams = {
-    offrampABI: typeof offrampBumpFeeCaller;
+    offrampABI: (typeof offrampCaller)['bumpFeeOfExistingOrder'];
     offrampRegistryAddress: Address;
     offrampFunctionName: 'bumpFeeOfExistingOrder';
     /**
@@ -420,7 +420,7 @@ export type OfframpBumpFeeParams = {
 
 /** @dev Params used to unlock funds after order completion or refund */
 export type OfframpUnlockFundsParams = {
-    offrampABI: typeof offrampUnlockFundsCaller;
+    offrampABI: (typeof offrampCaller)['unlockFunds'];
     offrampRegistryAddress: Address;
     offrampFunctionName: 'unlockFunds';
     /**
@@ -444,8 +444,8 @@ export type OfframpOrderDetails = {
     status: OfframpOrderStatus;
     /** @dev The timestamp when the order was created or updated */
     orderTimestamp: bigint;
-    /** @dev The transaction hash on the EVM chain */
-    evmTx: string;
+    /** @dev The user submit order transaction hash on the EVM chain */
+    submitOrderEvmTx: string;
     /** @dev The transaction ID on the Bitcoin network */
     btcTx: string;
     /** @dev Indicates whether the fees for this order should be bumped based on current network conditions */
@@ -487,7 +487,7 @@ export interface OfframpRawOrder {
     status: string;
     orderTimestamp: string;
     btcTx: string | null;
-    evmTx: string | null;
+    submitOrderEvmTx: string | null;
     shouldFeesBeBumped: boolean;
 }
 
