@@ -270,8 +270,8 @@ const config = {
         title: "",
         logo: {
           alt: "BOB Logo",
-          src: "img/logo.svg",
-          srcDark: "img/logo-light.svg",
+          src: "img/bob.png",
+          srcDark: "img/bob-light.png",
         },
         items: [
           {
