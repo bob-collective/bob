@@ -164,7 +164,6 @@ export default class StrategyClient {
     private viemClient: PublicClient;
 
     constructor(chain: Chain, rpcUrl?: string) {
-        // @ts-expect-error: prevent TS2589
         this.viemClient = createPublicClient({
             transport: http(),
             chain: {
@@ -192,7 +191,7 @@ export default class StrategyClient {
             const tokenAddress = token.toLowerCase();
 
             const strategyType = tokenToStrategyTypeMap.get(tokenAddress) ?? 'bob';
-            const defillamaPoolId = tokenToDefiLlamaPoolIdMap.get(tokenAddress);
+            const defillamaPoolId = tokenToDefiLlamaPoolIdMap.get(tokenAddress) as string;
             const defillamaPool = defillamaPoolMap.get(defillamaPoolId);
 
             return {
@@ -262,7 +261,7 @@ export default class StrategyClient {
 
         return {
             address: outputTokenAddress,
-            totalUnderlying: totalSupply,
+            totalUnderlying: totalSupply!,
         };
     }
 
@@ -294,8 +293,8 @@ export default class StrategyClient {
             });
 
         return {
-            address: underlyingAddress,
-            totalUnderlying: (exchangeRate * totalSupply) / 10n ** 18n,
+            address: underlyingAddress!,
+            totalUnderlying: (exchangeRate! * totalSupply!) / 10n ** 18n,
         };
     }
 
@@ -320,8 +319,8 @@ export default class StrategyClient {
         });
 
         return {
-            address: underlyingAddress,
-            totalUnderlying: totalSupply,
+            address: underlyingAddress!,
+            totalUnderlying: totalSupply!,
         };
     }
 

@@ -49,7 +49,7 @@ export type StakeTransactionParams = {
     /** @description The ABI used to interact with the staking contract */
     strategyABI: typeof strategyCaller;
     /** @description The name of the function being called on the contract */
-    strategyFunctionName: string;
+    strategyFunctionName: (typeof strategyCaller)[number]['name'];
     /** @description Arguments required for the staking contract call */
     strategyArgs: [Address, bigint, Address, { amountOutMin: bigint }];
     /** @description The wallet address executing the transaction */
@@ -125,8 +125,6 @@ export interface GatewayQuoteParams {
     strategyAddress?: string;
     /** @description Campaign id for tracking */
     campaignId?: string;
-    /** @description Users bitcoin Address */
-    bitcoinUserAddress?: string;
 }
 
 /**
@@ -397,7 +395,7 @@ export type OfframpCreateOrderParams = {
             /** @dev Timestamp by which the order must be created */
             orderCreationDeadline: bigint;
             /** @dev Output script for Bitcoin settlement */
-            outputScript: string;
+            outputScript: `0x${string}`;
             /** @dev Token to use for payment */
             token: Address;
             /** @dev EVM address of the user who can unlock the order or bump its fee */
@@ -445,9 +443,9 @@ export type OfframpOrderDetails = {
     /** @dev The timestamp when the order was created or updated */
     orderTimestamp: bigint;
     /** @dev The user submit order transaction hash on the EVM chain */
-    submitOrderEvmTx: string;
+    submitOrderEvmTx: string | null;
     /** @dev The transaction ID on the Bitcoin network */
-    btcTx: string;
+    btcTx: string | null;
     /** @dev Indicates whether the fees for this order should be bumped based on current network conditions */
     shouldFeesBeBumped: boolean;
     /** @dev Indicates whether the user can unlock this order (typically if it's still active) */

@@ -105,7 +105,7 @@ const getSafeUtxos = async (
     return findSafeUtxos(utxos, cardinalOutputsSet, esploraClient, ordinalsClient);
 };
 
-const collectPossibleInputs = async (fromAddress: string, publicKey: string, isSignet: boolean) => {
+const collectPossibleInputs = async (fromAddress: string, publicKey?: string, isSignet: boolean = false) => {
     const addressInfo = getAddressInfo(fromAddress, isSignet);
 
     const esploraClient = new EsploraClient(addressInfo.network);
@@ -287,6 +287,9 @@ export function getInputFromUtxoAndTx(
         const inner = p2wpkh(Buffer.from(publicKey!, 'hex'), getBtcNetwork(network));
         redeemScript = p2sh(inner);
     } else if (addressType === AddressType.p2tr) {
+        if (!publicKey) {
+            throw new Error('Bitcoin P2SH not supported without public key');
+        }
         const xOnlyPublicKey = Buffer.from(publicKey, 'hex').subarray(1, 33);
         redeemScript = p2tr(xOnlyPublicKey);
     }
@@ -364,7 +367,7 @@ export async function estimateTxFee(
     feeRate?: number,
     confirmationTarget: number = 3,
     isSignet: boolean = false
-): Promise<bigint> {
+): Promise<bigint | undefined> {
     const addressInfo = getAddressInfo(fromAddress, isSignet);
 
     if (addressInfo.network === 'regtest') {

@@ -1,4 +1,10 @@
-import { afterEach, assert, describe, expect, it } from 'vitest';
+import * as bitcoin from 'bitcoinjs-lib';
+import { ZeroAddress } from 'ethers';
+import nock from 'nock';
+import { createPublicClient, encodeAbiParameters, http, keccak256, maxUint256, numberToHex, zeroAddress } from 'viem';
+import { Address } from 'viem/accounts';
+import { bobSepolia } from 'viem/chains';
+import { afterEach, assert, describe, expect, it, vi } from 'vitest';
 import { GatewaySDK } from '../src/gateway';
 import { MAINNET_GATEWAY_BASE_URL, SIGNET_GATEWAY_BASE_URL, toHexScriptPubKey } from '../src/gateway/client';
 import { SYMBOL_LOOKUP } from '../src/gateway/tokens';
@@ -6,16 +12,12 @@ import {
     BuildStakeParams,
     Chain,
     ChainId,
+    GatewayQuote,
+    GatewayTokensInfo,
     OfframpOrderDetails,
     OfframpOrderStatus,
     StakeTransactionParams,
 } from '../src/gateway/types';
-import { ZeroAddress } from 'ethers';
-import { bobSepolia } from 'viem/chains';
-import nock from 'nock';
-import * as bitcoin from 'bitcoinjs-lib';
-import { createPublicClient, http, maxUint256, keccak256, numberToHex, encodeAbiParameters } from 'viem';
-import { Address } from 'viem/accounts';
 
 const TBTC = SYMBOL_LOOKUP[ChainId.BOB]['tbtc'];
 const TBTC_ADDRESS = TBTC.address;
@@ -374,7 +376,6 @@ describe('Gateway Tests', () => {
             strategyFunctionName: 'handleGatewayMessageWithSlippageArgs',
             strategyArgs: [params.token, params.amount, params.receiver, { amountOutMin: params.amountOutMin }],
             account: params.sender,
-            erc20ApproveFunctionName: 'approve',
             erc20ApproveArgs: [params.strategyAddress, params.amount],
         };
 
@@ -557,7 +558,7 @@ describe('Gateway Tests', () => {
             toToken: '0xda472456b1a6a2fc9ae7edb0e007064224d4284c',
             amount: 100000000000000,
             fromUserAddress: '0xFAEe001465dE6D7E8414aCDD9eF4aC5A35B2B808',
-            bitcoinUserAddress: 'tb1qn40xpua4eskjgmueq6fwujex05wdtprh46vkpc',
+            toUserAddress: 'tb1qn40xpua4eskjgmueq6fwujex05wdtprh46vkpc',
         });
 
         expect(result.offrampArgs[0]).to.deep.equal({
@@ -646,7 +647,7 @@ describe('Gateway Tests', () => {
                 toToken: '0xda472456b1a6a2fc9ae7edb0e007064224d4284c',
                 amount: 100000000000000,
                 fromUserAddress: '0xFAEe001465dE6D7E8414aCDD9eF4aC5A35B2B808',
-                bitcoinUserAddress: 'tb1p5d2m6d7yje35xqnk2wczghak6q20c6rqw303p58wrlzhue8t4z9s9y304z', // P2TR taproot address
+                toUserAddress: 'tb1p5d2m6d7yje35xqnk2wczghak6q20c6rqw303p58wrlzhue8t4z9s9y304z', // P2TR taproot address
             })
         ).rejects.toThrowError('Only following bitcoin address types are supported P2PKH, P2WPKH, P2SH or P2WSH.');
     });
@@ -656,7 +657,7 @@ describe('Gateway Tests', () => {
 
         nock(SIGNET_GATEWAY_BASE_URL)
             .get('/offramp-registry-address')
-            .reply(200, '"0xb74a5af78520075f90f4be803153673a162a9776"');
+            .reply(200, '0xb74a5af78520075f90f4be803153673a162a9776');
 
         const result = await gatewaySDK.fetchOfframpRegistryAddress();
 
@@ -703,5 +704,62 @@ describe('Gateway Tests', () => {
             maxOrderAmount: BigInt('861588'),
             totalOfframpLiquidity: BigInt('861588'),
         });
+    });
+
+    it('should return btc txid for onramp', async () => {
+        const gatewaySDK = new GatewaySDK('mainnet');
+
+        const testBtcSigner = {
+            signAllInputs: vi.fn((val) => val),
+        };
+
+        const walletClient = {};
+        const publicClient = {};
+
+        const startOrderSpy = vi.spyOn(gatewaySDK, 'startOrder');
+        const finalizeOrderSpy = vi.spyOn(gatewaySDK, 'finalizeOrder');
+
+        const mockQuote = {
+            gatewayAddress: ZeroAddress,
+            baseTokenAddress: TBTC_ADDRESS,
+            dustThreshold: 1000,
+            satoshis: 1000,
+            fee: 10,
+            bitcoinAddress: 'bc1qafk4yhqvj4wep57m62dgrmutldusqde8adh20d',
+            txProofDifficultyFactor: 3,
+            strategyAddress: ZeroAddress,
+        };
+
+        nock(`${MAINNET_GATEWAY_BASE_URL}`).post(`/order`).reply(201, {
+            uuid: '00000000-0000-0000-0000-000000000000',
+            opReturnHash: '0x8d0fd89210149d4219c87fa814a4bcde0c6a36b8fe2dff52b1d3eaa9e7cf0a9a',
+        });
+
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
+            .patch(`/order/00000000-0000-0000-0000-000000000000`)
+            .reply(201, '"f8c934f181cb88ce910f31bda1a6a8c27fdf5fe9c650edad1ccf4c4e0c89f863"');
+
+        const btcTxId = await gatewaySDK.executeQuote(
+            {
+                type: 'onramp',
+                gateway: mockQuote as GatewayQuote & GatewayTokensInfo,
+                params: {
+                    toChain: 'BOB',
+                    toToken: 'tBTC',
+                    toUserAddress: zeroAddress,
+                    amount: 1000,
+                    fromChain: 'Bitcoin',
+                    fromToken: 'BTC',
+                    fromUserAddress: 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq',
+                },
+            },
+            testBtcSigner,
+            walletClient as Parameters<typeof gatewaySDK.executeQuote>[2],
+            publicClient as Parameters<typeof gatewaySDK.executeQuote>[3]
+        );
+
+        assert.isDefined(btcTxId);
+        expect(startOrderSpy).toHaveBeenCalledOnce();
+        expect(finalizeOrderSpy).toHaveBeenCalledOnce();
     });
 });

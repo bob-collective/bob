@@ -1,4 +1,4 @@
-import { ethers, AbiCoder } from 'ethers';
+import { ethers, AbiCoder, MaxUint256 } from 'ethers';
 import {
     GatewayQuoteParams,
     GatewayQuote,
@@ -29,11 +29,23 @@ import {
     OfframpLiquidity,
 } from './types';
 import { createBitcoinPsbt, getAddressInfo } from '../wallet';
-import { SYMBOL_LOOKUP, ADDRESS_LOOKUP, getTokenDecimals } from './tokens';
+import { SYMBOL_LOOKUP, ADDRESS_LOOKUP, getTokenDecimals, getTokenAddress } from './tokens';
 import { AddressType, Network } from 'bitcoin-address-validation';
 import { EsploraClient } from '../esplora';
 import { claimDelayAbi, offrampCaller, strategyCaller } from './abi';
-import { isAddress, Address, isAddressEqual, createPublicClient, http, PublicClient } from 'viem';
+import {
+    isAddress,
+    Address,
+    isAddressEqual,
+    createPublicClient,
+    http,
+    PublicClient,
+    WalletClient,
+    Transport,
+    Account,
+    Chain as ViemChain,
+    erc20Abi,
+} from 'viem';
 import * as bitcoin from 'bitcoinjs-lib';
 import { bob, bobSepolia } from 'viem/chains';
 import StrategyClient from './strategy';
@@ -178,8 +190,8 @@ export class GatewayApiClient {
         return {
             ...quote,
             fee: quote.fee + (params.gasRefill || 0),
-            baseToken: ADDRESS_LOOKUP[chainId][quote.baseTokenAddress],
-            outputToken: quote.strategyAddress ? ADDRESS_LOOKUP[chainId][outputTokenAddress] : undefined,
+            baseToken: ADDRESS_LOOKUP[this.chainId][quote.baseTokenAddress],
+            outputToken: quote.strategyAddress ? ADDRESS_LOOKUP[this.chainId][outputTokenAddress] : undefined,
         };
     }
 
@@ -191,7 +203,7 @@ export class GatewayApiClient {
      */
     async fetchOfframpRegistryAddress(): Promise<Address> {
         const response = await this.fetchGet(`${this.baseUrl}/offramp-registry-address`);
-        return JSON.parse(await response.text()) as Address;
+        return response.text() as Promise<Address>;
     }
 
     /**
@@ -286,8 +298,6 @@ export class GatewayApiClient {
         params: Optional<
             GatewayQuoteParams,
             | 'toChain'
-            | 'toToken'
-            | 'toUserAddress'
             | 'affiliateId'
             | 'type'
             | 'fee'
@@ -296,30 +306,11 @@ export class GatewayApiClient {
             | 'strategyAddress'
             | 'campaignId'
             | 'fromToken'
-            | 'fromUserAddress'
             | 'maxSlippage'
             | 'fromChain'
         >
     ): Promise<OfframpCreateOrderParams> {
-        const isMainnet =
-            this.chainId === ChainId.BOB || (typeof this.chainId === 'string' && this.chainId === Chain.BOB);
-
-        const isTestnet =
-            this.chainId === ChainId.BOB_SEPOLIA ||
-            (typeof this.chainId === 'string' && this.chainId === Chain.BOB_SEPOLIA);
-
-        let outputTokenAddress = '';
-        const toToken = params.toToken.toLowerCase();
-
-        if (toToken.startsWith('0x')) {
-            outputTokenAddress = toToken;
-        } else if (isMainnet && SYMBOL_LOOKUP[this.chainId][toToken]) {
-            outputTokenAddress = SYMBOL_LOOKUP[this.chainId][toToken].address;
-        } else if (isTestnet && SYMBOL_LOOKUP[this.chainId][toToken]) {
-            outputTokenAddress = SYMBOL_LOOKUP[this.chainId][toToken].address;
-        } else {
-            throw new Error('Unknown output token');
-        }
+        const outputTokenAddress = getTokenAddress(this.chainId, params.toToken);
 
         const offrampQuote: OfframpQuote = await this.fetchOfframpQuote(outputTokenAddress, BigInt(params.amount));
 
@@ -331,10 +322,10 @@ export class GatewayApiClient {
             bitcoinNetwork = bitcoin.networks.testnet;
         }
 
-        if (getAddressInfo(params.bitcoinUserAddress, this.isSignet).type === AddressType.p2tr) {
+        if (getAddressInfo(params.toUserAddress, this.isSignet).type === AddressType.p2tr) {
             throw new Error('Only following bitcoin address types are supported P2PKH, P2WPKH, P2SH or P2WSH.');
         }
-        const receiverAddress = toHexScriptPubKey(params.bitcoinUserAddress, bitcoinNetwork);
+        const receiverAddress = toHexScriptPubKey(params.toUserAddress, bitcoinNetwork);
 
         return {
             quote: offrampQuote,
@@ -345,7 +336,7 @@ export class GatewayApiClient {
                     satAmountToLock: offrampQuote.amountLockInSat,
                     satFeesMax: offrampQuote.feesInSat,
                     orderCreationDeadline: offrampQuote.deadline,
-                    outputScript: receiverAddress,
+                    outputScript: receiverAddress as `0x${string}`,
                     token: offrampQuote.token,
                     orderOwner: params.fromUserAddress as Address,
                 },
@@ -607,15 +598,120 @@ export class GatewayApiClient {
                 gatewayQuote.txProofDifficultyFactor,
                 this.isSignet
             );
+
+            return {
+                uuid: data.uuid,
+                opReturnHash: data.opReturnHash,
+                bitcoinAddress: gatewayQuote.bitcoinAddress,
+                satoshis: gatewayQuote.satoshis,
+                psbtBase64,
+            };
         }
 
-        return {
-            uuid: data.uuid,
-            opReturnHash: data.opReturnHash,
-            bitcoinAddress: gatewayQuote.bitcoinAddress,
-            satoshis: gatewayQuote.satoshis,
-            psbtBase64,
-        };
+        throw new Error('Failed to create bitcoin psbt. Please check `fromChain` and `fromUserAddress` parameters.');
+    }
+
+    /**
+     * Execute an order via the Gateway API.
+     * This method invokes the {@link startOrder} and the {@link finalizeOrder} methods.
+     *
+     * @param {{type: 'onramp' | 'offramp', params: GatewayQuoteParams}} quote - The params given by the {@link getQuote} method.
+     * @param params The parameters for the quote, same as before.
+     * @param {{ signAllInputs: (psbtBase64: string) => Promise<string> }} btcSigner Btc wallet connector
+     * @param {WalletClient<Transport, ViemChain, Account>} walletClient Wallet client instance
+     * @param {PublicClient<Transport>} publicClient Public client instance
+     * @async
+     * @returns {Promise<GatewayStartOrder>} The success object.
+     */
+    async executeQuote(
+        quote:
+            | {
+                  type: 'onramp';
+                  gateway: GatewayQuote & GatewayTokensInfo;
+                  params: Optional<GatewayQuoteParams, 'toToken' | 'amount'> & {
+                      toUserAddress: Address;
+                      //   toChain: 'bob' | 'bob-sepolia' | 60808 | 808813;
+                      //   fromChain: 'bitcoin';
+                  };
+              }
+            | {
+                  type: 'offramp';
+                  params: Optional<
+                      GatewayQuoteParams,
+                      | 'toChain'
+                      | 'toUserAddress'
+                      | 'affiliateId'
+                      | 'type'
+                      | 'fee'
+                      | 'feeRate'
+                      | 'gasRefill'
+                      | 'strategyAddress'
+                      | 'campaignId'
+                      | 'fromToken'
+                      | 'maxSlippage'
+                      | 'fromChain'
+                  > & {
+                      toUserAddress: string;
+                      //   fromChain: 'bob' | 'bob-sepolia' | 60808 | 808813;
+                      //   toChain: 'bitcoin';
+                  };
+              },
+        btcSigner: { signAllInputs: (psbtBase64: string) => Promise<string> },
+        walletClient: WalletClient<Transport, ViemChain, Account>,
+        publicClient: PublicClient<Transport>
+    ): Promise<string> {
+        if (quote.type === 'onramp') {
+            const { uuid, psbtBase64 } = await this.startOrder(quote.gateway, quote.params);
+
+            const bitcoinTxHex = await btcSigner.signAllInputs(psbtBase64!);
+
+            if (!bitcoinTxHex) throw new Error('no psbt');
+
+            const txId = await this.finalizeOrder(uuid, bitcoinTxHex);
+
+            return txId;
+        } else {
+            const tokenAddress = getTokenAddress(this.chainId, quote.params.toToken);
+            const [offrampOrder, offrampRegistryAddress] = await Promise.all([
+                this.createOfframpOrder(quote.params),
+                this.fetchOfframpRegistryAddress(),
+            ]);
+
+            const allowance = await publicClient.readContract({
+                address: tokenAddress,
+                abi: erc20Abi,
+                functionName: 'allowance',
+                args: [quote.params.fromUserAddress as Address, offrampRegistryAddress],
+            });
+
+            if (BigInt(quote.params.amount) > allowance) {
+                const { request } = await publicClient.simulateContract({
+                    account: walletClient.account,
+                    address: tokenAddress,
+                    abi: erc20Abi,
+                    functionName: 'approve',
+                    args: [offrampRegistryAddress, MaxUint256],
+                });
+
+                const approveTxHash = await walletClient.writeContract(request);
+
+                await publicClient.waitForTransactionReceipt({ hash: approveTxHash });
+            }
+
+            const { request } = await publicClient.simulateContract({
+                account: walletClient.account,
+                address: offrampRegistryAddress,
+                abi: [offrampOrder.offrampABI],
+                functionName: offrampOrder.offrampFunctionName,
+                args: offrampOrder.offrampArgs,
+            });
+
+            const transactionHash = await walletClient.writeContract(request);
+
+            await publicClient?.waitForTransactionReceipt({ hash: transactionHash });
+
+            return transactionHash;
+        }
     }
 
     /**
@@ -651,7 +747,7 @@ export class GatewayApiClient {
             throw new Error('Failed to update order');
         }
 
-        return await response.json();
+        return response.json();
     }
 
     /**
@@ -665,18 +761,18 @@ export class GatewayApiClient {
         const response = await this.fetchGet(`${this.baseUrl}/orders/${userAddress}`);
         const orders: GatewayOrderResponse[] = await response.json();
         return orders.map((order) => {
-            function getFinal<L, R>(base?: L, output?: R) {
+            function getFinal<L, R>(base?: L, output?: R): NonNullable<L | R> {
                 return order.status
                     ? order.strategyAddress
                         ? output
                             ? output // success
-                            : base // failed
-                        : base // success
+                            : (base as NonNullable<typeof base>) // failed
+                        : (base as NonNullable<typeof base>) // success
                     : order.strategyAddress // pending
-                      ? output
-                      : base;
+                      ? (output as NonNullable<typeof output>)
+                      : (base as NonNullable<typeof base>);
             }
-            const getTokenAddress = (): string | undefined => {
+            const getTokenAddress = (): string => {
                 return getFinal(order.baseTokenAddress, order.outputTokenAddress);
             };
             const getToken = (): Token | undefined => {
@@ -693,7 +789,7 @@ export class GatewayApiClient {
                 gasRefill: order.satsToConvertToEth,
                 ...order,
                 baseToken: ADDRESS_LOOKUP[chainId][order.baseTokenAddress],
-                outputToken: ADDRESS_LOOKUP[chainId][order.outputTokenAddress],
+                outputToken: ADDRESS_LOOKUP[chainId][order.outputTokenAddress!],
                 getTokenAddress,
                 getToken,
                 getTokenAmount() {
@@ -950,8 +1046,8 @@ export class GatewayApiClient {
         };
     }
 
-    private async fetchGet(url: string) {
-        return await fetch(url, {
+    private fetchGet(url: string) {
+        return fetch(url, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -1018,7 +1114,7 @@ function parseOrderStatus(value: number): OfframpOrderStatus {
     }
 }
 
-export function viemClient(chain) {
+export function viemClient(chain: Chain) {
     const chainIs = chain === Chain.BOB ? bob : bobSepolia;
     return createPublicClient({ chain: chainIs, transport: http() });
 }
