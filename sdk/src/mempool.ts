@@ -237,7 +237,7 @@ export class MempoolClient {
 
         const lastBlockDetails = await this.getBlock(lastBlockHash);
 
-        if (txInfo.status.confirmed) return txInfo.status.block_time;
+        if (txInfo.status.confirmed) return txInfo.status.block_time || ~~(Date.now() / 1000);
 
         const blockTime = 10 * 60;
         const feeRate = txInfo.fee / txInfo.size;
@@ -246,6 +246,9 @@ export class MempoolClient {
         if (feeRate >= recommendedFees.halfHourFee) return lastBlockDetails.timestamp + 3 * blockTime;
         if (feeRate >= recommendedFees.hourFee) return lastBlockDetails.timestamp + 6 * blockTime;
         if (feeRate >= recommendedFees.economyFee) return lastBlockDetails.timestamp + 144 * blockTime;
+        console.warn(
+            `Fee rate (${feeRate.toFixed(2)} sat/vB) is too low. Consider using RBF (Replace-by-Fee) to increase the fee. Recommended minimum: ${recommendedFees.economyFee} sat/vB.`
+        );
         return Infinity;
     }
 

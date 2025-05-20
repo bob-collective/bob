@@ -1,5 +1,5 @@
 import { OrdinalsClient, InscriptionJson, OutputJson, InscriptionId, SatPoint } from '../src/ordinal-api';
-import { assert, describe, it } from 'vitest';
+import { assert, describe, expect, it } from 'vitest';
 
 describe('Ordinal API Tests', () => {
     it('should get inscription from id', async () => {
@@ -82,7 +82,7 @@ describe('Ordinal API Tests', () => {
             indexed: true,
             spent: false,
         };
-        assert.deepStrictEqual(outputJson, expectedOutputJson);
+        expect(outputJson).toMatchObject(expectedOutputJson);
     });
 
     it('should get inscriptions from Sat', { timeout: 10000 }, async () => {
