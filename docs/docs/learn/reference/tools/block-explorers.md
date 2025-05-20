@@ -16,7 +16,7 @@
 **Supported Networks**
 
 - [BOB Mainnet](https://explorer.gobob.xyz/)
-- [BOB Sepolia (Testnet)](https://explorer.sepolia.gobob.xyz/)
+- [BOB Sepolia (Testnet)](ttps://bob-sepolia.explorer.gobob.xyz/)
 
 ## OKX Explorer
 
