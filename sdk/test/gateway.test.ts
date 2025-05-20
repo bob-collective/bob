@@ -7,7 +7,7 @@ import { bobSepolia } from 'viem/chains';
 import { afterEach, assert, describe, expect, it, vi } from 'vitest';
 import { GatewaySDK } from '../src/gateway';
 import { MAINNET_GATEWAY_BASE_URL, SIGNET_GATEWAY_BASE_URL, toHexScriptPubKey } from '../src/gateway/client';
-import { SYMBOL_LOOKUP } from '../src/gateway/tokens';
+import { getTokenAddress, SYMBOL_LOOKUP } from '../src/gateway/tokens';
 import {
     BuildStakeParams,
     Chain,
@@ -555,7 +555,7 @@ describe('Gateway Tests', () => {
         });
 
         const result = await gatewaySDK.createOfframpOrder({
-            toToken: '0xda472456b1a6a2fc9ae7edb0e007064224d4284c',
+            fromToken: '0xda472456b1a6a2fc9ae7edb0e007064224d4284c',
             amount: 100000000000000,
             fromUserAddress: '0xFAEe001465dE6D7E8414aCDD9eF4aC5A35B2B808',
             toUserAddress: 'tb1qn40xpua4eskjgmueq6fwujex05wdtprh46vkpc',
@@ -644,7 +644,7 @@ describe('Gateway Tests', () => {
 
         await expect(
             gatewaySDK.createOfframpOrder({
-                toToken: '0xda472456b1a6a2fc9ae7edb0e007064224d4284c',
+                fromToken: '0xda472456b1a6a2fc9ae7edb0e007064224d4284c',
                 amount: 100000000000000,
                 fromUserAddress: '0xFAEe001465dE6D7E8414aCDD9eF4aC5A35B2B808',
                 toUserAddress: 'tb1p5d2m6d7yje35xqnk2wczghak6q20c6rqw303p58wrlzhue8t4z9s9y304z', // P2TR taproot address
@@ -761,5 +761,61 @@ describe('Gateway Tests', () => {
         expect(btcTxId).toBe('f8c934f181cb88ce910f31bda1a6a8c27fdf5fe9c650edad1ccf4c4e0c89f863');
         expect(startOrderSpy).toHaveBeenCalledOnce();
         expect(finalizeOrderSpy).toHaveBeenCalledOnce();
+    });
+
+    it('should return evm txid for offramp', async () => {
+        const gatewaySDK = new GatewaySDK('mainnet');
+
+        const testBtcSigner = {};
+
+        const walletClient = {
+            writeContract: () => Promise.resolve('0x35f5bca7f984f4ed97888944293b979f3abb198a5716d04e10c6bdc023080075'),
+        } as unknown as Parameters<typeof gatewaySDK.executeQuote>[2];
+
+        const publicClient = {
+            readContract: () => Promise.resolve(10_000n),
+            simulateContract: () => Promise.resolve({ request: '🎉' }),
+            waitForTransactionReceipt: () =>
+                Promise.resolve('0x35f5bca7f984f4ed97888944293b979f3abb198a5716d04e10c6bdc023080075'),
+        } as unknown as Parameters<typeof gatewaySDK.executeQuote>[3];
+
+        const createOfframpOrderSpy = vi.spyOn(gatewaySDK, 'createOfframpOrder');
+        const fetchOfframpRegistryAddressSpy = vi.spyOn(gatewaySDK, 'fetchOfframpRegistryAddress');
+
+        const outputTokenAddress = getTokenAddress(ChainId.BOB, 'bobbtc');
+        const searchParams = new URLSearchParams({
+            amountInWrappedToken: '1000',
+            token: outputTokenAddress,
+        });
+        nock(`${MAINNET_GATEWAY_BASE_URL}`).get(`/offramp-quote?${searchParams}`).reply(201, {
+            amountLockInSat: 10_000,
+            feesInSat: 932,
+            feeRate: 1000,
+            registryAddress: zeroAddress,
+        });
+
+        nock(`${MAINNET_GATEWAY_BASE_URL}`).get(`/offramp-registry-address`).reply(201, `"${zeroAddress}"`);
+
+        const evmTxId = await gatewaySDK.executeQuote(
+            {
+                type: 'offramp',
+                params: {
+                    toChain: 'bitcoin',
+                    toToken: 'BTC',
+                    toUserAddress: 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq',
+                    amount: 1000,
+                    fromChain: 'BOB',
+                    fromToken: 'bobBTC',
+                    fromUserAddress: zeroAddress,
+                },
+            },
+            testBtcSigner as Parameters<typeof gatewaySDK.executeQuote>[1],
+            walletClient as Parameters<typeof gatewaySDK.executeQuote>[2],
+            publicClient as Parameters<typeof gatewaySDK.executeQuote>[3]
+        );
+
+        expect(evmTxId).toBe('0x35f5bca7f984f4ed97888944293b979f3abb198a5716d04e10c6bdc023080075');
+        expect(createOfframpOrderSpy).toHaveBeenCalledOnce();
+        expect(fetchOfframpRegistryAddressSpy).toHaveBeenCalledOnce();
     });
 });

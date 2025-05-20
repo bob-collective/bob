@@ -58,6 +58,18 @@ const bobTokens = [
         },
         logoURI: 'https://raw.githubusercontent.com/bob-collective/bob/master/assets/uniBTC.svg',
     },
+    // FIXME update with mainnet deployment results
+    {
+        name: 'Bob BTC',
+        symbol: 'bobBTC',
+        decimals: 8,
+        tokens: {
+            bob: {
+                address: '0x4496ebE7C8666a8103713EE6e0c08cA0cD25b888',
+            },
+        },
+        logoURI: 'https://raw.githubusercontent.com/bob-collective/bob/master/assets/bobBTC.svg',
+    },
 ];
 
 const bobSepoliaTokens = [
@@ -369,17 +381,17 @@ export function getTokenDecimals(tokenAddress: Address): number | undefined {
     return token?.decimals;
 }
 
-export function getTokenAddress(chain: string | number, toToken: string): Address {
+export function getTokenAddress(chain: string | number, token: string): Address {
     const isMainnet = chain === ChainId.BOB || (typeof chain === 'string' && chain.toLowerCase() === Chain.BOB);
     const isTestnet =
         chain === ChainId.BOB_SEPOLIA || (typeof chain === 'string' && chain.toLowerCase() === Chain.BOB_SEPOLIA);
 
-    if (isAddress(toToken)) {
-        return toToken;
-    } else if (isMainnet && SYMBOL_LOOKUP[chain][toToken]) {
-        return SYMBOL_LOOKUP[chain][toToken].address;
-    } else if (isTestnet && SYMBOL_LOOKUP[chain][toToken]) {
-        return SYMBOL_LOOKUP[chain][toToken].address;
+    if (isAddress(token)) {
+        return token;
+    } else if (isMainnet && SYMBOL_LOOKUP[chain][token]) {
+        return SYMBOL_LOOKUP[chain][token].address;
+    } else if (isTestnet && SYMBOL_LOOKUP[chain][token]) {
+        return SYMBOL_LOOKUP[chain][token].address;
     } else {
         throw new Error('Unknown output token');
     }

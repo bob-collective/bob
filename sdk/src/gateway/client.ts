@@ -151,23 +151,12 @@ export class GatewayApiClient {
             throw new Error('Invalid output chain');
         }
 
-        let outputTokenAddress = '';
         let strategyAddress: string | undefined;
 
         const toToken = params.toToken.toLowerCase();
+        const outputTokenAddress = getTokenAddress(this.chainId, toToken);
         if (params.strategyAddress?.startsWith('0x')) {
             strategyAddress = params.strategyAddress;
-        }
-
-        const chainId = this.chainId;
-        if (toToken.startsWith('0x')) {
-            outputTokenAddress = toToken;
-        } else if (isMainnet && SYMBOL_LOOKUP[chainId][toToken]) {
-            outputTokenAddress = SYMBOL_LOOKUP[chainId][toToken].address;
-        } else if (isTestnet && SYMBOL_LOOKUP[chainId][toToken]) {
-            outputTokenAddress = SYMBOL_LOOKUP[chainId][toToken].address;
-        } else {
-            throw new Error('Unknown output token');
         }
 
         const url = new URL(`${this.baseUrl}/quote/${outputTokenAddress}`);
@@ -271,7 +260,7 @@ export class GatewayApiClient {
         if (!response.ok) {
             const errorData = await response.json();
             const errorMessage = errorData?.message || 'Failed to get offramp quote';
-            throw new Error(`Offramp API Error: ${errorMessage}`);
+            throw new Error(`Offramp API Error: ${errorMessage} ${queryParams}`);
         }
 
         const rawQuote = await response.json();
@@ -305,12 +294,12 @@ export class GatewayApiClient {
             | 'gasRefill'
             | 'strategyAddress'
             | 'campaignId'
-            | 'fromToken'
+            | 'toToken'
             | 'maxSlippage'
             | 'fromChain'
         >
     ): Promise<OfframpCreateOrderParams> {
-        const outputTokenAddress = getTokenAddress(this.chainId, params.toToken);
+        const outputTokenAddress = getTokenAddress(this.chainId, params.fromToken.toLowerCase());
 
         const offrampQuote: OfframpQuote = await this.fetchOfframpQuote(outputTokenAddress, BigInt(params.amount));
 
@@ -645,7 +634,7 @@ export class GatewayApiClient {
                       | 'gasRefill'
                       | 'strategyAddress'
                       | 'campaignId'
-                      | 'fromToken'
+                      | 'toToken'
                       | 'maxSlippage'
                       | 'fromChain'
                   > & {
@@ -667,7 +656,7 @@ export class GatewayApiClient {
 
             return txId;
         } else {
-            const tokenAddress = getTokenAddress(this.chainId, order.params.toToken);
+            const tokenAddress = getTokenAddress(this.chainId, order.params.fromToken.toLowerCase());
             const [offrampOrder, offrampRegistryAddress] = await Promise.all([
                 this.createOfframpOrder(order.params),
                 this.fetchOfframpRegistryAddress(),
