@@ -1107,9 +1107,17 @@ export class GatewayApiClient {
      * @param userAddress The user's EVM address.
      * @returns {Promise<Array<OnrampOrder | OfframpOrder>>} The array of account orders.
      */
-    async getOrders(userAddress: EvmAddress): Promise<Array<(OnrampOrder & GatewayTokensInfo) | OfframpOrder>> {
-        const orders = await Promise.all([this.getOnrampOrders(userAddress), this.getOfframpOrders(userAddress)]);
-        return orders.flat();
+    async getOrders(
+        userAddress: EvmAddress
+    ): Promise<Array<{ type: 'onramp'; order: OnrampOrder } | { type: 'offramp'; order: OfframpOrder }>> {
+        const [onrampOrders, offrampOrders] = await Promise.all([
+            this.getOnrampOrders(userAddress),
+            this.getOfframpOrders(userAddress),
+        ]);
+        return [
+            ...onrampOrders.map((order) => ({ type: 'onramp' as const, order })),
+            ...offrampOrders.map((order) => ({ type: 'offramp' as const, order })),
+        ];
     }
 
     private fetchGet(url: string) {
