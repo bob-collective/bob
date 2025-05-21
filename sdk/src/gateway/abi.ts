@@ -38,8 +38,8 @@ export const strategyCaller = [
     },
 ] as const;
 
-export const offrampCaller = {
-    createOrder: {
+export const offrampCaller = [
+    {
         type: 'function',
         name: 'createOrder',
         inputs: [
@@ -84,7 +84,7 @@ export const offrampCaller = {
         outputs: [],
         stateMutability: 'nonpayable',
     },
-    bumpFeeOfExistingOrder: {
+    {
         type: 'function',
         name: 'bumpFeeOfExistingOrder',
         inputs: [
@@ -102,7 +102,7 @@ export const offrampCaller = {
         outputs: [],
         stateMutability: 'nonpayable',
     },
-    unlockFunds: {
+    {
         type: 'function',
         name: 'unlockFunds',
         inputs: [
@@ -120,7 +120,7 @@ export const offrampCaller = {
         outputs: [],
         stateMutability: 'nonpayable',
     },
-    getOfframpOrder: {
+    {
         type: 'function',
         name: 'getOfframpOrder',
         inputs: [
@@ -150,7 +150,7 @@ export const offrampCaller = {
         ],
         stateMutability: 'view',
     },
-} as const;
+] as const;
 
 export const compoundV2CTokenAbi = parseAbi([
     'function exchangeRateCurrent() external returns (uint256)',
