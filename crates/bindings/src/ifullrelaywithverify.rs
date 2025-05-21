@@ -17,6 +17,7 @@ interface IFullRelayWithVerify {
     function getRelayGenesis() external view returns (bytes32);
     function isAncestor(bytes32 _ancestor, bytes32 _descendant, uint256 _limit) external view returns (bool);
     function markNewHeaviest(bytes32 _ancestor, bytes memory _currentBest, bytes memory _newBest, uint256 _limit) external returns (bool);
+    function verifyHeaderHash(bytes32 _headerHash, uint8 _numConfs) external view;
     function verifyProof(bytes memory _header, bytes memory _proof, bytes32 _txId, uint256 _index, uint8 _numConfs) external view;
 }
 ```
@@ -250,6 +251,24 @@ interface IFullRelayWithVerify {
   },
   {
     "type": "function",
+    "name": "verifyHeaderHash",
+    "inputs": [
+      {
+        "name": "_headerHash",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "_numConfs",
+        "type": "uint8",
+        "internalType": "uint8"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "verifyProof",
     "inputs": [
       {
@@ -357,6 +376,7 @@ pub mod IFullRelayWithVerify {
     pub static DEPLOYED_BYTECODE: alloy_sol_types::private::Bytes = alloy_sol_types::private::Bytes::from_static(
         b"",
     );
+    #[derive(Default, Debug, PartialEq, Eq, Hash)]
     /**Event with signature `Extension(bytes32,bytes32)` and selector `0xf90e4f1d9cd0dd55e339411cbc9b152482307c3a23ed64715e4a2858f641a3f5`.
 ```solidity
 event Extension(bytes32 indexed _first, bytes32 indexed _last);
@@ -395,38 +415,9 @@ event Extension(bytes32 indexed _first, bytes32 indexed _last);
             );
             const SIGNATURE: &'static str = "Extension(bytes32,bytes32)";
             const SIGNATURE_HASH: alloy_sol_types::private::B256 = alloy_sol_types::private::B256::new([
-                249u8,
-                14u8,
-                79u8,
-                29u8,
-                156u8,
-                208u8,
-                221u8,
-                85u8,
-                227u8,
-                57u8,
-                65u8,
-                28u8,
-                188u8,
-                155u8,
-                21u8,
-                36u8,
-                130u8,
-                48u8,
-                124u8,
-                58u8,
-                35u8,
-                237u8,
-                100u8,
-                113u8,
-                94u8,
-                74u8,
-                40u8,
-                88u8,
-                246u8,
-                65u8,
-                163u8,
-                245u8,
+                249u8, 14u8, 79u8, 29u8, 156u8, 208u8, 221u8, 85u8, 227u8, 57u8, 65u8,
+                28u8, 188u8, 155u8, 21u8, 36u8, 130u8, 48u8, 124u8, 58u8, 35u8, 237u8,
+                100u8, 113u8, 94u8, 74u8, 40u8, 88u8, 246u8, 65u8, 163u8, 245u8,
             ]);
             const ANONYMOUS: bool = false;
             #[allow(unused_variables)]
@@ -500,6 +491,7 @@ event Extension(bytes32 indexed _first, bytes32 indexed _last);
             }
         }
     };
+    #[derive(Default, Debug, PartialEq, Eq, Hash)]
     /**Event with signature `NewTip(bytes32,bytes32,bytes32)` and selector `0x3cc13de64df0f0239626235c51a2da251bbc8c85664ecce39263da3ee03f606c`.
 ```solidity
 event NewTip(bytes32 indexed _from, bytes32 indexed _to, bytes32 indexed _gcd);
@@ -541,38 +533,9 @@ event NewTip(bytes32 indexed _from, bytes32 indexed _to, bytes32 indexed _gcd);
             );
             const SIGNATURE: &'static str = "NewTip(bytes32,bytes32,bytes32)";
             const SIGNATURE_HASH: alloy_sol_types::private::B256 = alloy_sol_types::private::B256::new([
-                60u8,
-                193u8,
-                61u8,
-                230u8,
-                77u8,
-                240u8,
-                240u8,
-                35u8,
-                150u8,
-                38u8,
-                35u8,
-                92u8,
-                81u8,
-                162u8,
-                218u8,
-                37u8,
-                27u8,
-                188u8,
-                140u8,
-                133u8,
-                102u8,
-                78u8,
-                204u8,
-                227u8,
-                146u8,
-                99u8,
-                218u8,
-                62u8,
-                224u8,
-                63u8,
-                96u8,
-                108u8,
+                60u8, 193u8, 61u8, 230u8, 77u8, 240u8, 240u8, 35u8, 150u8, 38u8, 35u8,
+                92u8, 81u8, 162u8, 218u8, 37u8, 27u8, 188u8, 140u8, 133u8, 102u8, 78u8,
+                204u8, 227u8, 146u8, 99u8, 218u8, 62u8, 224u8, 63u8, 96u8, 108u8,
             ]);
             const ANONYMOUS: bool = false;
             #[allow(unused_variables)]
@@ -655,6 +618,7 @@ event NewTip(bytes32 indexed _from, bytes32 indexed _to, bytes32 indexed _gcd);
             }
         }
     };
+    #[derive(Default, Debug, PartialEq, Eq, Hash)]
     /**Function with signature `addHeaders(bytes,bytes)` and selector `0x65da41b9`.
 ```solidity
 function addHeaders(bytes memory _anchor, bytes memory _headers) external returns (bool);
@@ -667,6 +631,7 @@ function addHeaders(bytes memory _anchor, bytes memory _headers) external return
         #[allow(missing_docs)]
         pub _headers: alloy::sol_types::private::Bytes,
     }
+    #[derive(Default, Debug, PartialEq, Eq, Hash)]
     ///Container type for the return parameters of the [`addHeaders(bytes,bytes)`](addHeadersCall) function.
     #[allow(non_camel_case_types, non_snake_case, clippy::pub_underscore_fields)]
     #[derive(Clone)]
@@ -798,6 +763,7 @@ function addHeaders(bytes memory _anchor, bytes memory _headers) external return
             }
         }
     };
+    #[derive(Default, Debug, PartialEq, Eq, Hash)]
     /**Function with signature `addHeadersWithRetarget(bytes,bytes,bytes)` and selector `0x7fa637fc`.
 ```solidity
 function addHeadersWithRetarget(bytes memory _oldPeriodStartHeader, bytes memory _oldPeriodEndHeader, bytes memory _headers) external returns (bool);
@@ -812,6 +778,7 @@ function addHeadersWithRetarget(bytes memory _oldPeriodStartHeader, bytes memory
         #[allow(missing_docs)]
         pub _headers: alloy::sol_types::private::Bytes,
     }
+    #[derive(Default, Debug, PartialEq, Eq, Hash)]
     ///Container type for the return parameters of the [`addHeadersWithRetarget(bytes,bytes,bytes)`](addHeadersWithRetargetCall) function.
     #[allow(non_camel_case_types, non_snake_case, clippy::pub_underscore_fields)]
     #[derive(Clone)]
@@ -958,6 +925,7 @@ function addHeadersWithRetarget(bytes memory _oldPeriodStartHeader, bytes memory
             }
         }
     };
+    #[derive(Default, Debug, PartialEq, Eq, Hash)]
     /**Function with signature `findAncestor(bytes32,uint256)` and selector `0x30017b3b`.
 ```solidity
 function findAncestor(bytes32 _digest, uint256 _offset) external view returns (bytes32);
@@ -970,6 +938,7 @@ function findAncestor(bytes32 _digest, uint256 _offset) external view returns (b
         #[allow(missing_docs)]
         pub _offset: alloy::sol_types::private::primitives::aliases::U256,
     }
+    #[derive(Default, Debug, PartialEq, Eq, Hash)]
     ///Container type for the return parameters of the [`findAncestor(bytes32,uint256)`](findAncestorCall) function.
     #[allow(non_camel_case_types, non_snake_case, clippy::pub_underscore_fields)]
     #[derive(Clone)]
@@ -1101,6 +1070,7 @@ function findAncestor(bytes32 _digest, uint256 _offset) external view returns (b
             }
         }
     };
+    #[derive(Default, Debug, PartialEq, Eq, Hash)]
     /**Function with signature `findHeight(bytes32)` and selector `0x60b5c390`.
 ```solidity
 function findHeight(bytes32 _digest) external view returns (uint256);
@@ -1111,6 +1081,7 @@ function findHeight(bytes32 _digest) external view returns (uint256);
         #[allow(missing_docs)]
         pub _digest: alloy::sol_types::private::FixedBytes<32>,
     }
+    #[derive(Default, Debug, PartialEq, Eq, Hash)]
     ///Container type for the return parameters of the [`findHeight(bytes32)`](findHeightCall) function.
     #[allow(non_camel_case_types, non_snake_case, clippy::pub_underscore_fields)]
     #[derive(Clone)]
@@ -1229,6 +1200,7 @@ function findHeight(bytes32 _digest) external view returns (uint256);
             }
         }
     };
+    #[derive(Default, Debug, PartialEq, Eq, Hash)]
     /**Function with signature `getBestKnownDigest()` and selector `0x1910d973`.
 ```solidity
 function getBestKnownDigest() external view returns (bytes32);
@@ -1236,6 +1208,7 @@ function getBestKnownDigest() external view returns (bytes32);
     #[allow(non_camel_case_types, non_snake_case, clippy::pub_underscore_fields)]
     #[derive(Clone)]
     pub struct getBestKnownDigestCall {}
+    #[derive(Default, Debug, PartialEq, Eq, Hash)]
     ///Container type for the return parameters of the [`getBestKnownDigest()`](getBestKnownDigestCall) function.
     #[allow(non_camel_case_types, non_snake_case, clippy::pub_underscore_fields)]
     #[derive(Clone)]
@@ -1352,6 +1325,7 @@ function getBestKnownDigest() external view returns (bytes32);
             }
         }
     };
+    #[derive(Default, Debug, PartialEq, Eq, Hash)]
     /**Function with signature `getCurrentEpochDifficulty()` and selector `0x113764be`.
 ```solidity
 function getCurrentEpochDifficulty() external view returns (uint256);
@@ -1359,6 +1333,7 @@ function getCurrentEpochDifficulty() external view returns (uint256);
     #[allow(non_camel_case_types, non_snake_case, clippy::pub_underscore_fields)]
     #[derive(Clone)]
     pub struct getCurrentEpochDifficultyCall {}
+    #[derive(Default, Debug, PartialEq, Eq, Hash)]
     ///Container type for the return parameters of the [`getCurrentEpochDifficulty()`](getCurrentEpochDifficultyCall) function.
     #[allow(non_camel_case_types, non_snake_case, clippy::pub_underscore_fields)]
     #[derive(Clone)]
@@ -1477,6 +1452,7 @@ function getCurrentEpochDifficulty() external view returns (uint256);
             }
         }
     };
+    #[derive(Default, Debug, PartialEq, Eq, Hash)]
     /**Function with signature `getLastReorgCommonAncestor()` and selector `0xc58242cd`.
 ```solidity
 function getLastReorgCommonAncestor() external view returns (bytes32);
@@ -1484,6 +1460,7 @@ function getLastReorgCommonAncestor() external view returns (bytes32);
     #[allow(non_camel_case_types, non_snake_case, clippy::pub_underscore_fields)]
     #[derive(Clone)]
     pub struct getLastReorgCommonAncestorCall {}
+    #[derive(Default, Debug, PartialEq, Eq, Hash)]
     ///Container type for the return parameters of the [`getLastReorgCommonAncestor()`](getLastReorgCommonAncestorCall) function.
     #[allow(non_camel_case_types, non_snake_case, clippy::pub_underscore_fields)]
     #[derive(Clone)]
@@ -1600,6 +1577,7 @@ function getLastReorgCommonAncestor() external view returns (bytes32);
             }
         }
     };
+    #[derive(Default, Debug, PartialEq, Eq, Hash)]
     /**Function with signature `getPrevEpochDifficulty()` and selector `0x2b97be24`.
 ```solidity
 function getPrevEpochDifficulty() external view returns (uint256);
@@ -1607,6 +1585,7 @@ function getPrevEpochDifficulty() external view returns (uint256);
     #[allow(non_camel_case_types, non_snake_case, clippy::pub_underscore_fields)]
     #[derive(Clone)]
     pub struct getPrevEpochDifficultyCall {}
+    #[derive(Default, Debug, PartialEq, Eq, Hash)]
     ///Container type for the return parameters of the [`getPrevEpochDifficulty()`](getPrevEpochDifficultyCall) function.
     #[allow(non_camel_case_types, non_snake_case, clippy::pub_underscore_fields)]
     #[derive(Clone)]
@@ -1725,6 +1704,7 @@ function getPrevEpochDifficulty() external view returns (uint256);
             }
         }
     };
+    #[derive(Default, Debug, PartialEq, Eq, Hash)]
     /**Function with signature `getRelayGenesis()` and selector `0xe3d8d8d8`.
 ```solidity
 function getRelayGenesis() external view returns (bytes32);
@@ -1732,6 +1712,7 @@ function getRelayGenesis() external view returns (bytes32);
     #[allow(non_camel_case_types, non_snake_case, clippy::pub_underscore_fields)]
     #[derive(Clone)]
     pub struct getRelayGenesisCall {}
+    #[derive(Default, Debug, PartialEq, Eq, Hash)]
     ///Container type for the return parameters of the [`getRelayGenesis()`](getRelayGenesisCall) function.
     #[allow(non_camel_case_types, non_snake_case, clippy::pub_underscore_fields)]
     #[derive(Clone)]
@@ -1846,6 +1827,7 @@ function getRelayGenesis() external view returns (bytes32);
             }
         }
     };
+    #[derive(Default, Debug, PartialEq, Eq, Hash)]
     /**Function with signature `isAncestor(bytes32,bytes32,uint256)` and selector `0xb985621a`.
 ```solidity
 function isAncestor(bytes32 _ancestor, bytes32 _descendant, uint256 _limit) external view returns (bool);
@@ -1860,6 +1842,7 @@ function isAncestor(bytes32 _ancestor, bytes32 _descendant, uint256 _limit) exte
         #[allow(missing_docs)]
         pub _limit: alloy::sol_types::private::primitives::aliases::U256,
     }
+    #[derive(Default, Debug, PartialEq, Eq, Hash)]
     ///Container type for the return parameters of the [`isAncestor(bytes32,bytes32,uint256)`](isAncestorCall) function.
     #[allow(non_camel_case_types, non_snake_case, clippy::pub_underscore_fields)]
     #[derive(Clone)]
@@ -1998,6 +1981,7 @@ function isAncestor(bytes32 _ancestor, bytes32 _descendant, uint256 _limit) exte
             }
         }
     };
+    #[derive(Default, Debug, PartialEq, Eq, Hash)]
     /**Function with signature `markNewHeaviest(bytes32,bytes,bytes,uint256)` and selector `0x74c3a3a9`.
 ```solidity
 function markNewHeaviest(bytes32 _ancestor, bytes memory _currentBest, bytes memory _newBest, uint256 _limit) external returns (bool);
@@ -2014,6 +1998,7 @@ function markNewHeaviest(bytes32 _ancestor, bytes memory _currentBest, bytes mem
         #[allow(missing_docs)]
         pub _limit: alloy::sol_types::private::primitives::aliases::U256,
     }
+    #[derive(Default, Debug, PartialEq, Eq, Hash)]
     ///Container type for the return parameters of the [`markNewHeaviest(bytes32,bytes,bytes,uint256)`](markNewHeaviestCall) function.
     #[allow(non_camel_case_types, non_snake_case, clippy::pub_underscore_fields)]
     #[derive(Clone)]
@@ -2161,6 +2146,152 @@ function markNewHeaviest(bytes32 _ancestor, bytes memory _currentBest, bytes mem
             }
         }
     };
+    #[derive(Default, Debug, PartialEq, Eq, Hash)]
+    /**Function with signature `verifyHeaderHash(bytes32,uint8)` and selector `0xe471e72c`.
+```solidity
+function verifyHeaderHash(bytes32 _headerHash, uint8 _numConfs) external view;
+```*/
+    #[allow(non_camel_case_types, non_snake_case, clippy::pub_underscore_fields)]
+    #[derive(Clone)]
+    pub struct verifyHeaderHashCall {
+        #[allow(missing_docs)]
+        pub _headerHash: alloy::sol_types::private::FixedBytes<32>,
+        #[allow(missing_docs)]
+        pub _numConfs: u8,
+    }
+    ///Container type for the return parameters of the [`verifyHeaderHash(bytes32,uint8)`](verifyHeaderHashCall) function.
+    #[allow(non_camel_case_types, non_snake_case, clippy::pub_underscore_fields)]
+    #[derive(Clone)]
+    pub struct verifyHeaderHashReturn {}
+    #[allow(
+        non_camel_case_types,
+        non_snake_case,
+        clippy::pub_underscore_fields,
+        clippy::style
+    )]
+    const _: () = {
+        use alloy::sol_types as alloy_sol_types;
+        {
+            #[doc(hidden)]
+            type UnderlyingSolTuple<'a> = (
+                alloy::sol_types::sol_data::FixedBytes<32>,
+                alloy::sol_types::sol_data::Uint<8>,
+            );
+            #[doc(hidden)]
+            type UnderlyingRustTuple<'a> = (
+                alloy::sol_types::private::FixedBytes<32>,
+                u8,
+            );
+            #[cfg(test)]
+            #[allow(dead_code, unreachable_patterns)]
+            fn _type_assertion(
+                _t: alloy_sol_types::private::AssertTypeEq<UnderlyingRustTuple>,
+            ) {
+                match _t {
+                    alloy_sol_types::private::AssertTypeEq::<
+                        <UnderlyingSolTuple as alloy_sol_types::SolType>::RustType,
+                    >(_) => {}
+                }
+            }
+            #[automatically_derived]
+            #[doc(hidden)]
+            impl ::core::convert::From<verifyHeaderHashCall>
+            for UnderlyingRustTuple<'_> {
+                fn from(value: verifyHeaderHashCall) -> Self {
+                    (value._headerHash, value._numConfs)
+                }
+            }
+            #[automatically_derived]
+            #[doc(hidden)]
+            impl ::core::convert::From<UnderlyingRustTuple<'_>>
+            for verifyHeaderHashCall {
+                fn from(tuple: UnderlyingRustTuple<'_>) -> Self {
+                    Self {
+                        _headerHash: tuple.0,
+                        _numConfs: tuple.1,
+                    }
+                }
+            }
+        }
+        {
+            #[doc(hidden)]
+            type UnderlyingSolTuple<'a> = ();
+            #[doc(hidden)]
+            type UnderlyingRustTuple<'a> = ();
+            #[cfg(test)]
+            #[allow(dead_code, unreachable_patterns)]
+            fn _type_assertion(
+                _t: alloy_sol_types::private::AssertTypeEq<UnderlyingRustTuple>,
+            ) {
+                match _t {
+                    alloy_sol_types::private::AssertTypeEq::<
+                        <UnderlyingSolTuple as alloy_sol_types::SolType>::RustType,
+                    >(_) => {}
+                }
+            }
+            #[automatically_derived]
+            #[doc(hidden)]
+            impl ::core::convert::From<verifyHeaderHashReturn>
+            for UnderlyingRustTuple<'_> {
+                fn from(value: verifyHeaderHashReturn) -> Self {
+                    ()
+                }
+            }
+            #[automatically_derived]
+            #[doc(hidden)]
+            impl ::core::convert::From<UnderlyingRustTuple<'_>>
+            for verifyHeaderHashReturn {
+                fn from(tuple: UnderlyingRustTuple<'_>) -> Self {
+                    Self {}
+                }
+            }
+        }
+        #[automatically_derived]
+        impl alloy_sol_types::SolCall for verifyHeaderHashCall {
+            type Parameters<'a> = (
+                alloy::sol_types::sol_data::FixedBytes<32>,
+                alloy::sol_types::sol_data::Uint<8>,
+            );
+            type Token<'a> = <Self::Parameters<
+                'a,
+            > as alloy_sol_types::SolType>::Token<'a>;
+            type Return = verifyHeaderHashReturn;
+            type ReturnTuple<'a> = ();
+            type ReturnToken<'a> = <Self::ReturnTuple<
+                'a,
+            > as alloy_sol_types::SolType>::Token<'a>;
+            const SIGNATURE: &'static str = "verifyHeaderHash(bytes32,uint8)";
+            const SELECTOR: [u8; 4] = [228u8, 113u8, 231u8, 44u8];
+            #[inline]
+            fn new<'a>(
+                tuple: <Self::Parameters<'a> as alloy_sol_types::SolType>::RustType,
+            ) -> Self {
+                tuple.into()
+            }
+            #[inline]
+            fn tokenize(&self) -> Self::Token<'_> {
+                (
+                    <alloy::sol_types::sol_data::FixedBytes<
+                        32,
+                    > as alloy_sol_types::SolType>::tokenize(&self._headerHash),
+                    <alloy::sol_types::sol_data::Uint<
+                        8,
+                    > as alloy_sol_types::SolType>::tokenize(&self._numConfs),
+                )
+            }
+            #[inline]
+            fn abi_decode_returns(
+                data: &[u8],
+                validate: bool,
+            ) -> alloy_sol_types::Result<Self::Return> {
+                <Self::ReturnTuple<
+                    '_,
+                > as alloy_sol_types::SolType>::abi_decode_sequence(data, validate)
+                    .map(Into::into)
+            }
+        }
+    };
+    #[derive(Default, Debug, PartialEq, Eq, Hash)]
     /**Function with signature `verifyProof(bytes,bytes,bytes32,uint256,uint8)` and selector `0x05d09a70`.
 ```solidity
 function verifyProof(bytes memory _header, bytes memory _proof, bytes32 _txId, uint256 _index, uint8 _numConfs) external view;
@@ -2335,6 +2466,7 @@ function verifyProof(bytes memory _header, bytes memory _proof, bytes32 _txId, u
         }
     };
     ///Container for all the [`IFullRelayWithVerify`](self) function calls.
+    #[derive()]
     pub enum IFullRelayWithVerifyCalls {
         #[allow(missing_docs)]
         addHeaders(addHeadersCall),
@@ -2359,6 +2491,8 @@ function verifyProof(bytes memory _header, bytes memory _proof, bytes32 _txId, u
         #[allow(missing_docs)]
         markNewHeaviest(markNewHeaviestCall),
         #[allow(missing_docs)]
+        verifyHeaderHash(verifyHeaderHashCall),
+        #[allow(missing_docs)]
         verifyProof(verifyProofCall),
     }
     #[automatically_derived]
@@ -2382,13 +2516,14 @@ function verifyProof(bytes memory _header, bytes memory _proof, bytes32 _txId, u
             [185u8, 133u8, 98u8, 26u8],
             [197u8, 130u8, 66u8, 205u8],
             [227u8, 216u8, 216u8, 216u8],
+            [228u8, 113u8, 231u8, 44u8],
         ];
     }
     #[automatically_derived]
     impl alloy_sol_types::SolInterface for IFullRelayWithVerifyCalls {
         const NAME: &'static str = "IFullRelayWithVerifyCalls";
         const MIN_DATA_LENGTH: usize = 0usize;
-        const COUNT: usize = 12usize;
+        const COUNT: usize = 13usize;
         #[inline]
         fn selector(&self) -> [u8; 4] {
             match self {
@@ -2424,6 +2559,9 @@ function verifyProof(bytes memory _header, bytes memory _proof, bytes32 _txId, u
                 }
                 Self::markNewHeaviest(_) => {
                     <markNewHeaviestCall as alloy_sol_types::SolCall>::SELECTOR
+                }
+                Self::verifyHeaderHash(_) => {
+                    <verifyHeaderHashCall as alloy_sol_types::SolCall>::SELECTOR
                 }
                 Self::verifyProof(_) => {
                     <verifyProofCall as alloy_sol_types::SolCall>::SELECTOR
@@ -2605,6 +2743,19 @@ function verifyProof(bytes memory _header, bytes memory _proof, bytes32 _txId, u
                     }
                     getRelayGenesis
                 },
+                {
+                    fn verifyHeaderHash(
+                        data: &[u8],
+                        validate: bool,
+                    ) -> alloy_sol_types::Result<IFullRelayWithVerifyCalls> {
+                        <verifyHeaderHashCall as alloy_sol_types::SolCall>::abi_decode_raw(
+                                data,
+                                validate,
+                            )
+                            .map(IFullRelayWithVerifyCalls::verifyHeaderHash)
+                    }
+                    verifyHeaderHash
+                },
             ];
             let Ok(idx) = Self::SELECTORS.binary_search(&selector) else {
                 return Err(
@@ -2665,6 +2816,11 @@ function verifyProof(bytes memory _header, bytes memory _proof, bytes32 _txId, u
                 }
                 Self::markNewHeaviest(inner) => {
                     <markNewHeaviestCall as alloy_sol_types::SolCall>::abi_encoded_size(
+                        inner,
+                    )
+                }
+                Self::verifyHeaderHash(inner) => {
+                    <verifyHeaderHashCall as alloy_sol_types::SolCall>::abi_encoded_size(
                         inner,
                     )
                 }
@@ -2744,6 +2900,12 @@ function verifyProof(bytes memory _header, bytes memory _proof, bytes32 _txId, u
                         out,
                     )
                 }
+                Self::verifyHeaderHash(inner) => {
+                    <verifyHeaderHashCall as alloy_sol_types::SolCall>::abi_encode_raw(
+                        inner,
+                        out,
+                    )
+                }
                 Self::verifyProof(inner) => {
                     <verifyProofCall as alloy_sol_types::SolCall>::abi_encode_raw(
                         inner,
@@ -2754,6 +2916,7 @@ function verifyProof(bytes memory _header, bytes memory _proof, bytes32 _txId, u
         }
     }
     ///Container for all the [`IFullRelayWithVerify`](self) events.
+    #[derive(Debug, PartialEq, Eq, Hash)]
     pub enum IFullRelayWithVerifyEvents {
         #[allow(missing_docs)]
         Extension(Extension),
@@ -2770,72 +2933,14 @@ function verifyProof(bytes memory _header, bytes memory _proof, bytes32 _txId, u
         /// Prefer using `SolInterface` methods instead.
         pub const SELECTORS: &'static [[u8; 32usize]] = &[
             [
-                60u8,
-                193u8,
-                61u8,
-                230u8,
-                77u8,
-                240u8,
-                240u8,
-                35u8,
-                150u8,
-                38u8,
-                35u8,
-                92u8,
-                81u8,
-                162u8,
-                218u8,
-                37u8,
-                27u8,
-                188u8,
-                140u8,
-                133u8,
-                102u8,
-                78u8,
-                204u8,
-                227u8,
-                146u8,
-                99u8,
-                218u8,
-                62u8,
-                224u8,
-                63u8,
-                96u8,
-                108u8,
+                60u8, 193u8, 61u8, 230u8, 77u8, 240u8, 240u8, 35u8, 150u8, 38u8, 35u8,
+                92u8, 81u8, 162u8, 218u8, 37u8, 27u8, 188u8, 140u8, 133u8, 102u8, 78u8,
+                204u8, 227u8, 146u8, 99u8, 218u8, 62u8, 224u8, 63u8, 96u8, 108u8,
             ],
             [
-                249u8,
-                14u8,
-                79u8,
-                29u8,
-                156u8,
-                208u8,
-                221u8,
-                85u8,
-                227u8,
-                57u8,
-                65u8,
-                28u8,
-                188u8,
-                155u8,
-                21u8,
-                36u8,
-                130u8,
-                48u8,
-                124u8,
-                58u8,
-                35u8,
-                237u8,
-                100u8,
-                113u8,
-                94u8,
-                74u8,
-                40u8,
-                88u8,
-                246u8,
-                65u8,
-                163u8,
-                245u8,
+                249u8, 14u8, 79u8, 29u8, 156u8, 208u8, 221u8, 85u8, 227u8, 57u8, 65u8,
+                28u8, 188u8, 155u8, 21u8, 36u8, 130u8, 48u8, 124u8, 58u8, 35u8, 237u8,
+                100u8, 113u8, 94u8, 74u8, 40u8, 88u8, 246u8, 65u8, 163u8, 245u8,
             ],
         ];
     }
@@ -3177,6 +3282,19 @@ the bytecode concatenated with the constructor's ABI-encoded arguments.*/
                     _currentBest,
                     _newBest,
                     _limit,
+                },
+            )
+        }
+        ///Creates a new call builder for the [`verifyHeaderHash`] function.
+        pub fn verifyHeaderHash(
+            &self,
+            _headerHash: alloy::sol_types::private::FixedBytes<32>,
+            _numConfs: u8,
+        ) -> alloy_contract::SolCallBuilder<T, &P, verifyHeaderHashCall, N> {
+            self.call_builder(
+                &verifyHeaderHashCall {
+                    _headerHash,
+                    _numConfs,
                 },
             )
         }
