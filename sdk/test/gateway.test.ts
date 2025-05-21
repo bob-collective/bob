@@ -802,7 +802,7 @@ describe('Gateway Tests', () => {
                 params: {
                     toChain: 'bitcoin',
                     toToken: 'BTC',
-                    toUserAddress: 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq',
+                    toUserAddress: 'tb1qn40xpua4eskjgmueq6fwujex05wdtprh46vkpc',
                     amount: 1000,
                     fromChain: 'bob',
                     fromToken: 'bobBTC',
