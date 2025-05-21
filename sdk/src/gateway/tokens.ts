@@ -58,18 +58,6 @@ const bobTokens = [
         },
         logoURI: 'https://raw.githubusercontent.com/bob-collective/bob/master/assets/uniBTC.svg',
     },
-    // FIXME update with mainnet deployment results
-    {
-        name: 'Bob BTC',
-        symbol: 'bobBTC',
-        decimals: 8,
-        tokens: {
-            bob: {
-                address: '0x4496ebE7C8666a8103713EE6e0c08cA0cD25b888',
-            },
-        },
-        logoURI: 'https://raw.githubusercontent.com/bob-collective/bob/master/assets/bobBTC.svg',
-    },
 ];
 
 const bobSepoliaTokens = [

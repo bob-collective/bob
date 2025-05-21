@@ -764,7 +764,7 @@ describe('Gateway Tests', () => {
     });
 
     it('should return evm txid for offramp', async () => {
-        const gatewaySDK = new GatewaySDK('mainnet');
+        const gatewaySDK = new GatewaySDK('signet');
 
         const mockBtcSigner = {};
 
@@ -782,19 +782,19 @@ describe('Gateway Tests', () => {
         const createOfframpOrderSpy = vi.spyOn(gatewaySDK, 'createOfframpOrder');
         const fetchOfframpRegistryAddressSpy = vi.spyOn(gatewaySDK, 'fetchOfframpRegistryAddress');
 
-        const outputTokenAddress = getTokenAddress(ChainId.BOB, 'bobbtc');
+        const outputTokenAddress = getTokenAddress(ChainId.BOB_SEPOLIA, 'bobbtc');
         const searchParams = new URLSearchParams({
             amountInWrappedToken: '1000',
             token: outputTokenAddress,
         });
-        nock(`${MAINNET_GATEWAY_BASE_URL}`).get(`/offramp-quote?${searchParams}`).reply(201, {
+        nock(`${SIGNET_GATEWAY_BASE_URL}`).get(`/offramp-quote?${searchParams}`).reply(201, {
             amountLockInSat: 10_000,
             feesInSat: 932,
             feeRate: 1000,
             registryAddress: zeroAddress,
         });
 
-        nock(`${MAINNET_GATEWAY_BASE_URL}`).get(`/offramp-registry-address`).reply(201, `"${zeroAddress}"`);
+        nock(`${SIGNET_GATEWAY_BASE_URL}`).get(`/offramp-registry-address`).reply(201, `"${zeroAddress}"`);
 
         const evmTxId = await gatewaySDK.executeQuote(
             {
