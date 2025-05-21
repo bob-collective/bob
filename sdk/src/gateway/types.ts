@@ -23,7 +23,7 @@ export enum ChainId {
 /**
  * Parameters required to construct a staking transaction.
  */
-export type BuildStakeParams = {
+export type StakeParams = {
     /** @description The address of the staking strategy contract */
     strategyAddress: Address;
     /** @description The token address being staked */

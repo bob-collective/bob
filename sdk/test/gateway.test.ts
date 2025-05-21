@@ -9,7 +9,7 @@ import { GatewaySDK } from '../src/gateway';
 import { MAINNET_GATEWAY_BASE_URL, SIGNET_GATEWAY_BASE_URL, toHexScriptPubKey } from '../src/gateway/client';
 import { getTokenAddress, SYMBOL_LOOKUP } from '../src/gateway/tokens';
 import {
-    BuildStakeParams,
+    StakeParams,
     Chain,
     ChainId,
     GatewayQuote,
@@ -361,7 +361,7 @@ describe('Gateway Tests', () => {
     // or if the strategy is removed from the testnet. Use nock for mocking the responses in the meantime for other test.
     it.skip('should correctly retrieve stake info and simulate call testnet strategy', async () => {
         const gatewaySDK = new GatewaySDK('testnet');
-        const params: BuildStakeParams = {
+        const params: StakeParams = {
             strategyAddress: '0x06cEA150E651236499319d78f92791f0FAe6FE67' as Address,
             token: '0x6744babdf02dcf578ea173a9f0637771a9e1c4d0' as Address,
             sender: '0x5e46D220eC8B01f55B70Dbb503c697f6E231eb65' as Address, // sender needs to hold the input token
@@ -448,7 +448,7 @@ describe('Gateway Tests', () => {
 
     it('should throw error for invalid strategy address in buildStake', async () => {
         const gatewaySDK = new GatewaySDK('testnet');
-        const params: BuildStakeParams = {
+        const params: StakeParams = {
             strategyAddress: ZeroAddress as Address,
             token: '0x6744babdf02dcf578ea173a9f0637771a9e1c4d0' as Address,
             sender: '0x5e46D220eC8B01f55B70Dbb503c697f6E231eb65' as Address,
@@ -474,7 +474,7 @@ describe('Gateway Tests', () => {
                 },
             ]);
         const gatewaySDK = new GatewaySDK('bob');
-        const params: BuildStakeParams = {
+        const params: StakeParams = {
             strategyAddress: ZeroAddress as Address,
             token: ZeroAddress as Address,
             sender: '0x5e46D220eC8B01f55B70Dbb503c697f6E231eb65' as Address,
@@ -500,7 +500,7 @@ describe('Gateway Tests', () => {
                 },
             ]);
         const gatewaySDK = new GatewaySDK('bob');
-        const params: BuildStakeParams = {
+        const params: StakeParams = {
             strategyAddress: ZeroAddress as Address,
             token: TBTC_ADDRESS as Address,
             sender: 'ab5e46D220eC8B01f55B70Dbb503c697f6E231eb65' as Address,
@@ -523,7 +523,7 @@ describe('Gateway Tests', () => {
                 },
             ]);
         const gatewaySDK = new GatewaySDK('bob');
-        const params: BuildStakeParams = {
+        const params: StakeParams = {
             strategyAddress: ZeroAddress as Address,
             token: TBTC_ADDRESS as Address,
             sender: '0x5e46D220eC8B01f55B70Dbb503c697f6E231eb65' as Address,
@@ -709,12 +709,12 @@ describe('Gateway Tests', () => {
     it('should return btc txid for onramp', async () => {
         const gatewaySDK = new GatewaySDK('mainnet');
 
-        const testBtcSigner = {
+        const mockBtcSigner = {
             signAllInputs: vi.fn((val) => val),
         };
 
-        const walletClient = {};
-        const publicClient = {};
+        const mockWalletClient = {};
+        const mockPublicClient = {};
 
         const startOrderSpy = vi.spyOn(gatewaySDK, 'startOrder');
         const finalizeOrderSpy = vi.spyOn(gatewaySDK, 'finalizeOrder');
@@ -744,18 +744,18 @@ describe('Gateway Tests', () => {
                 type: 'onramp',
                 quote: mockQuote as GatewayQuote & GatewayTokensInfo,
                 params: {
-                    toChain: 'BOB',
+                    toChain: 'bob',
                     toToken: 'tBTC',
                     toUserAddress: zeroAddress,
                     amount: 1000,
-                    fromChain: 'Bitcoin',
+                    fromChain: 'bitcoin',
                     fromToken: 'BTC',
                     fromUserAddress: 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq',
                 },
             },
-            testBtcSigner,
-            walletClient as Parameters<typeof gatewaySDK.executeQuote>[2],
-            publicClient as Parameters<typeof gatewaySDK.executeQuote>[3]
+            mockBtcSigner,
+            mockWalletClient as Parameters<typeof gatewaySDK.executeQuote>[2],
+            mockPublicClient as Parameters<typeof gatewaySDK.executeQuote>[3]
         );
 
         expect(btcTxId).toBe('f8c934f181cb88ce910f31bda1a6a8c27fdf5fe9c650edad1ccf4c4e0c89f863');
@@ -766,13 +766,13 @@ describe('Gateway Tests', () => {
     it('should return evm txid for offramp', async () => {
         const gatewaySDK = new GatewaySDK('mainnet');
 
-        const testBtcSigner = {};
+        const mockBtcSigner = {};
 
-        const walletClient = {
+        const mockWalletClient = {
             writeContract: () => Promise.resolve('0x35f5bca7f984f4ed97888944293b979f3abb198a5716d04e10c6bdc023080075'),
         } as unknown as Parameters<typeof gatewaySDK.executeQuote>[2];
 
-        const publicClient = {
+        const mockPublicClient = {
             readContract: () => Promise.resolve(10_000n),
             simulateContract: () => Promise.resolve({ request: '🎉' }),
             waitForTransactionReceipt: () =>
@@ -804,18 +804,56 @@ describe('Gateway Tests', () => {
                     toToken: 'BTC',
                     toUserAddress: 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq',
                     amount: 1000,
-                    fromChain: 'BOB',
+                    fromChain: 'bob',
                     fromToken: 'bobBTC',
                     fromUserAddress: zeroAddress,
                 },
             },
-            testBtcSigner as Parameters<typeof gatewaySDK.executeQuote>[1],
-            walletClient as Parameters<typeof gatewaySDK.executeQuote>[2],
-            publicClient as Parameters<typeof gatewaySDK.executeQuote>[3]
+            mockBtcSigner as Parameters<typeof gatewaySDK.executeQuote>[1],
+            mockWalletClient as Parameters<typeof gatewaySDK.executeQuote>[2],
+            mockPublicClient as Parameters<typeof gatewaySDK.executeQuote>[3]
         );
 
         expect(evmTxId).toBe('0x35f5bca7f984f4ed97888944293b979f3abb198a5716d04e10c6bdc023080075');
         expect(createOfframpOrderSpy).toHaveBeenCalledOnce();
         expect(fetchOfframpRegistryAddressSpy).toHaveBeenCalledOnce();
+    });
+
+    it('should return evm txid for stake', async () => {
+        const params: StakeParams = {
+            strategyAddress: '0x06cEA150E651236499319d78f92791f0FAe6FE67' as Address,
+            token: '0x6744babdf02dcf578ea173a9f0637771a9e1c4d0' as Address,
+            sender: '0x5e46D220eC8B01f55B70Dbb503c697f6E231eb65' as Address, // sender needs to hold the input token
+            receiver: '0x5e46D220eC8B01f55B70Dbb503c697f6E231eb65' as Address,
+            amount: 100n,
+            amountOutMin: 0n,
+        };
+
+        const gatewaySDK = new GatewaySDK('testnet');
+
+        const mockBtcSigner = {};
+
+        const mockWalletClient = {
+            writeContract: () => Promise.resolve('0x35f5bca7f984f4ed97888944293b979f3abb198a5716d04e10c6bdc023080075'),
+        } as unknown as Parameters<typeof gatewaySDK.executeQuote>[2];
+
+        const mockPublicClient = {
+            readContract: () => Promise.resolve(10_000n),
+            simulateContract: () => Promise.resolve({ request: '🎉' }),
+            waitForTransactionReceipt: () =>
+                Promise.resolve('0x35f5bca7f984f4ed97888944293b979f3abb198a5716d04e10c6bdc023080075'),
+        } as unknown as Parameters<typeof gatewaySDK.executeQuote>[3];
+
+        const evmTxId = await gatewaySDK.executeQuote(
+            {
+                type: 'stake',
+                params,
+            },
+            mockBtcSigner as Parameters<typeof gatewaySDK.executeQuote>[1],
+            mockWalletClient as Parameters<typeof gatewaySDK.executeQuote>[2],
+            mockPublicClient as Parameters<typeof gatewaySDK.executeQuote>[3]
+        );
+
+        expect(evmTxId).toBe('0x35f5bca7f984f4ed97888944293b979f3abb198a5716d04e10c6bdc023080075');
     });
 });

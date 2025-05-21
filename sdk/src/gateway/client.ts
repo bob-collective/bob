@@ -16,7 +16,7 @@ import {
     GatewayTokensInfo,
     OrderStatus,
     StakeTransactionParams,
-    BuildStakeParams,
+    StakeParams,
     OfframpOrderDetails,
     OfframpQuote,
     OfframpCreateOrderParams,
@@ -45,6 +45,10 @@ import {
     Account,
     Chain as ViemChain,
     erc20Abi,
+    keccak256,
+    encodeAbiParameters,
+    numberToHex,
+    maxUint256,
 } from 'viem';
 import * as bitcoin from 'bitcoinjs-lib';
 import { bob, bobSepolia } from 'viem/chains';
@@ -604,8 +608,10 @@ export class GatewayApiClient {
      * Execute an order via the Gateway API.
      * This method invokes the {@link startOrder} and the {@link finalizeOrder} methods.
      *
-     * @param {{type: 'onramp' | 'offramp', params: GatewayQuoteParams}} order - The params given by the {@link getQuote} method.
-     * @param params The parameters for the quote, same as before.
+     * @typedef { Optional<GatewayQuoteParams, 'toToken' | 'amount'> & { toUserAddress: Address; fromUserAddress: string; fromChain: Chain.BITCOIN; toChain: Chain.BOB | Chain.BOB_SEPOLIA; } } OnrampParams
+     * @typedef { Optional< GatewayQuoteParams, | 'toChain' | 'toUserAddress' | 'affiliateId' | 'type' | 'fee' | 'feeRate' | 'gasRefill' | 'strategyAddress' | 'campaignId' | 'toToken' | 'maxSlippage' | 'fromChain'  > & { toUserAddress: string; fromUserAddress: Address; toChain: Chain.BITCOIN; fromChain: Chain.BOB | Chain.BOB_SEPOLIA;  } } OfframpParams
+     *
+     * @param {{type: 'onramp', quote: GatewayQuote & GatewayTokensInfo, params: OnrampParams } | {type: 'offramp', params: OfframpParams} | {type: 'stake', params: StakeParams}} order - The params given by the {@link getQuote} method.
      * @param {{ signAllInputs: (psbtBase64: string) => Promise<string> }} btcSigner Btc wallet connector
      * @param {WalletClient<Transport, ViemChain, Account>} walletClient Wallet client instance
      * @param {PublicClient<Transport>} publicClient Public client instance
@@ -619,6 +625,9 @@ export class GatewayApiClient {
                   quote: GatewayQuote & GatewayTokensInfo;
                   params: Optional<GatewayQuoteParams, 'toToken' | 'amount'> & {
                       toUserAddress: Address;
+                      fromUserAddress: string;
+                      fromChain: 'bitcoin';
+                      toChain: 'bob' | 'bob-sepolia';
                   };
               }
             | {
@@ -639,7 +648,14 @@ export class GatewayApiClient {
                       | 'fromChain'
                   > & {
                       toUserAddress: string;
+                      fromUserAddress: Address;
+                      fromChain: 'bob' | 'bob-sepolia';
+                      toChain: 'bitcoin';
                   };
+              }
+            | {
+                  type: 'stake';
+                  params: StakeParams;
               },
         btcSigner: { signAllInputs: (psbtBase64: string) => Promise<string> },
         walletClient: WalletClient<Transport, ViemChain, Account>,
@@ -655,7 +671,7 @@ export class GatewayApiClient {
             const txId = await this.finalizeOrder(uuid, bitcoinTxHex);
 
             return txId;
-        } else {
+        } else if (order.type === 'offramp') {
             const tokenAddress = getTokenAddress(this.chainId, order.params.fromToken.toLowerCase());
             const [offrampOrder, offrampRegistryAddress] = await Promise.all([
                 this.createOfframpOrder(order.params),
@@ -691,6 +707,59 @@ export class GatewayApiClient {
                 args: offrampOrder.offrampArgs,
             });
 
+            const transactionHash = await walletClient.writeContract(request);
+
+            await publicClient?.waitForTransactionReceipt({ hash: transactionHash });
+
+            return transactionHash;
+        } else {
+            const result = await this.buildStake(order.params);
+            // For the allowances mapping in OpenZeppelin ERC20, the base slot is 1.
+            const baseSlot = 1n;
+
+            // Compute the inner slot for the owner using viem's encodeAbiParameters.
+            const innerSlot = keccak256(
+                encodeAbiParameters(
+                    [
+                        { name: 'owner', type: 'address' },
+                        { name: 'slot', type: 'uint256' },
+                    ],
+                    [order.params.sender, baseSlot]
+                )
+            );
+
+            // Compute the final allowance storage key using the spender (strategyAddress) and the inner slot.
+            // The second parameter is encoded as bytes32.
+            const allowanceSlot = keccak256(
+                encodeAbiParameters(
+                    [
+                        { name: 'spender', type: 'address' },
+                        { name: 'innerSlot', type: 'bytes32' },
+                    ],
+                    [order.params.strategyAddress, innerSlot]
+                )
+            );
+
+            const maxAllowance = numberToHex(maxUint256);
+            const { request } = await publicClient.simulateContract({
+                address: result.strategyAddress, // Ensure correct type
+                abi: result.strategyABI,
+                functionName: result.strategyFunctionName,
+                args: result.strategyArgs,
+                account: result.account, // Ensure correct type
+                stateOverride: [
+                    // overriding token allowance
+                    {
+                        address: order.params.token,
+                        stateDiff: [
+                            {
+                                slot: allowanceSlot,
+                                value: maxAllowance,
+                            },
+                        ],
+                    },
+                ],
+            });
             const transactionHash = await walletClient.writeContract(request);
 
             await publicClient?.waitForTransactionReceipt({ hash: transactionHash });
@@ -952,7 +1021,7 @@ export class GatewayApiClient {
     /**
      * Builds the parameters required to stake ERC-20 tokens using the specified strategy.
      *
-     * @param {BuildStakeParams} stakeParams - The parameters required for staking.
+     * @param {StakeParams} stakeParams - The parameters required for staking.
      * @returns {Promise<StakeTransactionParams>} The constructed staking parameters.
      * @throws {Error} If the strategy or token does not match, or if any address is invalid.
      *
@@ -964,7 +1033,7 @@ export class GatewayApiClient {
      * import { erc20Abi } from 'viem';
      *
      * // Define staking parameters
-     * const params: BuildStakeParams = {
+     * const params: StakeParams = {
      *     strategyAddress: '0x06cEA150E651236499319d78f92791f0FAe6FE67' as Address,
      *     token: '0x6744babdf02dcf578ea173a9f0637771a9e1c4d0' as Address,
      *     sender: '0x5e46D220eC8B01f55B70Dbb503c697f6E231eb65' as Address, // Sender must hold the input token
@@ -997,13 +1066,14 @@ export class GatewayApiClient {
      * await walletClient.writeContract(stakeRequest);
      * ```
      */
-    async buildStake(stakeParams: BuildStakeParams): Promise<StakeTransactionParams> {
+    async buildStake(stakeParams: StakeParams): Promise<StakeTransactionParams> {
         const strategies = await this.getStrategies();
 
-        // Convert addresses to lowercase and check if strategy exists
         const strategy = strategies.find((s) => isAddressEqual(s.address as Address, stakeParams.strategyAddress));
         if (!strategy) {
-            throw new Error(`Strategy with address ${stakeParams.strategyAddress} not found.`);
+            throw new Error(
+                `Strategy with address ${stakeParams.strategyAddress} not found. ${JSON.stringify(strategies)}`
+            );
         }
 
         if (!isAddressEqual(strategy.inputToken.address as Address, stakeParams.token)) {
