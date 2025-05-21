@@ -16,14 +16,13 @@ Follow [Conduit's guide](https://docs.conduit.xyz/guides/run-a-node/op-stack-nod
 
 - BOB Mainnet
 
-## Tenderly Node
+## Tenderly
 
 [Tenderly Node](https://tenderly.co/web3-gateway) provides a fast and reliable hosted node solution with a built-in suite of developer tooling and infrastructure building blocks covering your whole development lifecycle. Develop, test, deploy, and monitor your app on BOB with their [free and paid plans](https://tenderly.co/pricing).
 
 **Supported Networks**
 
-- BOB Mainnet
-- BOB Sepolia (Testnet)
+- [BOB Mainnet](https://bob.gateway.tenderly.co)
 
 ## dRPC
 

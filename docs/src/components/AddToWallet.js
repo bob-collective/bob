@@ -50,7 +50,7 @@ const AddToWalletButton = () => {
               symbol: "ETH",
               decimals: 18,
             },
-            rpcUrls: ["https://rpc.gobob.xyz/"],
+            rpcUrls: ["https://rpc.gobob.xyz/", "https://bob.gateway.tenderly.co"],
             blockExplorerUrls: ["https://explorer.gobob.xyz/"],
           },
         ],

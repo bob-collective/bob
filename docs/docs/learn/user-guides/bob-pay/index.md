@@ -4,6 +4,10 @@ sidebar_position: 8
 
 # BOB Pay
 
+:::warning Deprecation Notice
+BOB Pay will be deprecated by May 22, 2025. Follow the steps to send your funds to a regular [wallet](/learn/user-guides/getting-started/wallet-guide): [Sending Bitcoin from an Email Address to a Wallet](#sending-bitcoin-from-an-email-address-to-a-wallet).
+:::
+
 ## What is BOB Pay?
 
 [BOB Pay](https://bob-pay.gobob.xyz/) aims to showcase how easy crypto UX can be by focusing on a simple use case popular within the Bitcoin ecosystem: payments.
