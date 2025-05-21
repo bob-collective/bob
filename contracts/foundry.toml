@@ -26,5 +26,6 @@ test = "src"
 # `viaIR` flag needs to enabled since `Lightrelay.t.sol` requires it
 via_ir = true
 
-# See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
-
+[rpc_endpoints]
+bob = "https://rpc.gobob.xyz"
+eth = "https://eth.llamarpc.com"
