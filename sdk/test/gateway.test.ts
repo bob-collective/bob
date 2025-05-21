@@ -856,4 +856,21 @@ describe('Gateway Tests', () => {
 
         expect(evmTxId).toBe('0x35f5bca7f984f4ed97888944293b979f3abb198a5716d04e10c6bdc023080075');
     });
+
+    it('should return onramp and offramp orders', async () => {
+        const gatewaySDK = new GatewaySDK('testnet');
+
+        const getOnrampOrdersSpy = vi
+            .spyOn(gatewaySDK, 'getOnrampOrders')
+            .mockImplementationOnce(() => Promise.resolve([]));
+        const getOfframpOrdersSpy = vi
+            .spyOn(gatewaySDK, 'getOfframpOrders')
+            .mockImplementationOnce(() => Promise.resolve([]));
+
+        const result = await gatewaySDK.getOrders(zeroAddress);
+
+        expect(result).toEqual([]);
+        expect(getOnrampOrdersSpy).toHaveBeenCalledOnce();
+        expect(getOfframpOrdersSpy).toHaveBeenCalledOnce();
+    });
 });
