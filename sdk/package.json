@@ -26,10 +26,10 @@
         "@typescript-eslint/eslint-plugin": "^8.29.0",
         "@typescript-eslint/parser": "^8.22.0",
         "ecpair": "^2.1.0",
-        "eslint": "^9.25.0",
+        "eslint": "^9.27.0",
         "eslint-config-prettier": "^10.1.2",
         "eslint-plugin-prettier": "^5.2.6",
-        "mocha": "^11.1.0",
+        "mocha": "^11.3.0",
         "nock": "^14.0.4",
         "prettier": "^3.5.3",
         "tiny-secp256k1": "^2.2.3",
@@ -47,7 +47,7 @@
         "bitcoin-address-validation": "^3.0.0",
         "bitcoinjs-lib": "^6.1.7",
         "ethers": "^6.13.5",
-        "viem": "^2.22.19",
+        "viem": "^2.29.4",
         "global": "^4.4.0"
     }
 }

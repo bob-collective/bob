@@ -161,6 +161,11 @@ export interface OutputJson {
     script_pubkey: string;
 
     /**
+     * Number of confirmations
+     */
+    confirmations: number;
+
+    /**
      * The spent value of the output.
      */
     spent: boolean;

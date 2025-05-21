@@ -384,7 +384,7 @@ export interface OfframpLiquidity {
 /** @dev Params used for createOrder call on the off-ramp contract */
 export type OfframpCreateOrderParams = {
     quote: OfframpQuote;
-    offrampABI: (typeof offrampCaller)['createOrder'];
+    offrampABI: typeof offrampCaller;
     offrampFunctionName: 'createOrder';
     offrampArgs: [
         {
@@ -406,7 +406,7 @@ export type OfframpCreateOrderParams = {
 
 /** @dev Params used to bump fee for an existing order */
 export type OfframpBumpFeeParams = {
-    offrampABI: (typeof offrampCaller)['bumpFeeOfExistingOrder'];
+    offrampABI: typeof offrampCaller;
     offrampRegistryAddress: Address;
     offrampFunctionName: 'bumpFeeOfExistingOrder';
     /**
@@ -418,7 +418,7 @@ export type OfframpBumpFeeParams = {
 
 /** @dev Params used to unlock funds after order completion or refund */
 export type OfframpUnlockFundsParams = {
-    offrampABI: (typeof offrampCaller)['unlockFunds'];
+    offrampABI: typeof offrampCaller;
     offrampRegistryAddress: Address;
     offrampFunctionName: 'unlockFunds';
     /**
