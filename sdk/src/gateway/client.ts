@@ -8,8 +8,8 @@ import {
     GatewayStrategyContract,
     GatewayCreateOrderRequest,
     GatewayCreateOrderResponse,
-    GatewayOrder,
-    GatewayOrderResponse,
+    OnrampOrder,
+    OnrampOrderResponse,
     GatewayStartOrder,
     GatewayStrategy,
     EvmAddress,
@@ -17,7 +17,7 @@ import {
     OrderStatus,
     StakeTransactionParams,
     StakeParams,
-    OfframpOrderDetails,
+    OfframpOrder,
     OfframpQuote,
     OfframpCreateOrderParams,
     OfframpBumpFeeParams,
@@ -414,9 +414,9 @@ export class GatewayApiClient {
      * Returns all offramp orders for this account.
      *
      * @param userAddress The user's EVM address.
-     * @returns {Promise<OfframpOrderDetails[]>} The array of account orders.
+     * @returns {Promise<OfframpOrder[]>} The array of account orders.
      */
-    async getOfframpOrders(userAddress: EvmAddress): Promise<OfframpOrderDetails[]> {
+    async getOfframpOrders(userAddress: EvmAddress): Promise<OfframpOrder[]> {
         const response = await this.fetchGet(`${this.baseUrl}/offramp-orders/${userAddress}`);
         const rawOrders: OfframpRawOrder[] = await response.json();
         const offrampRegistryAddress: Address = await this.fetchOfframpRegistryAddress();
@@ -426,7 +426,7 @@ export class GatewayApiClient {
                 const status = order.status as OfframpOrderStatus;
                 const canOrderBeUnlocked = await this.canOrderBeUnlocked(
                     status,
-                    BigInt(order.orderTimestamp),
+                    Number(order.orderTimestamp),
                     offrampRegistryAddress
                 );
 
@@ -437,7 +437,7 @@ export class GatewayApiClient {
                     orderId: BigInt(order.orderId.toString()),
                     satAmountLocked: BigInt(order.satAmountLocked.toString()),
                     satFeesMax: BigInt(order.satFeesMax.toString()),
-                    orderTimestamp: BigInt(order.orderTimestamp.toString()),
+                    orderTimestamp: Number(order.orderTimestamp),
                     shouldFeesBeBumped: order.shouldFeesBeBumped,
                     canOrderBeUnlocked,
                 };
@@ -476,7 +476,7 @@ export class GatewayApiClient {
 
     async canOrderBeUnlocked(
         status: OfframpOrderStatus,
-        orderTimestamp: bigint,
+        orderTimestamp: number,
         offrampRegistryAddress: Address
     ): Promise<boolean> {
         if (status === 'Active') {
@@ -486,14 +486,14 @@ export class GatewayApiClient {
             return false;
         }
         // check if Accepted order has passed claim delay
-        const nowInSec = BigInt(Math.floor(Date.now() / 1000));
+        const nowInSec = Math.floor(Date.now() / 1000);
         const publicClient = viemClient(this.chain) as PublicClient;
-        const claimDelay: bigint = await publicClient.readContract({
+        const claimDelay = await publicClient.readContract({
             address: offrampRegistryAddress,
             abi: claimDelayAbi,
             functionName: 'CLAIM_DELAY',
         });
-        return orderTimestamp + claimDelay <= nowInSec;
+        return orderTimestamp + Number(claimDelay) <= nowInSec;
     }
 
     /**
@@ -523,7 +523,7 @@ export class GatewayApiClient {
             owner: order.owner !== (ethers.ZeroAddress as Address) ? (order.owner as Address) : null,
             outputScript: order.outputScript,
             status: parseOrderStatus(Number(order.status)) as OnchainOfframpOrderDetails['status'],
-            orderTimestamp: BigInt(order.timestamp),
+            orderTimestamp: Number(order.timestamp),
         };
     }
 
@@ -702,7 +702,7 @@ export class GatewayApiClient {
             const { request } = await publicClient.simulateContract({
                 account: walletClient.account,
                 address: offrampRegistryAddress,
-                abi: [offrampOrder.offrampABI],
+                abi: offrampOrder.offrampABI,
                 functionName: offrampOrder.offrampFunctionName,
                 args: offrampOrder.offrampArgs,
             });
@@ -808,12 +808,12 @@ export class GatewayApiClient {
      * Returns all pending and completed orders for this account.
      *
      * @param userAddress The user's EVM address.
-     * @returns {Promise<GatewayOrder[]>} The array of account orders.
+     * @returns {Promise<OnrampOrder[]>} The array of account orders.
      */
-    async getOrders(userAddress: EvmAddress): Promise<(GatewayOrder & GatewayTokensInfo)[]> {
+    async getOnrampOrders(userAddress: EvmAddress): Promise<OnrampOrder[]> {
         const chainId = this.chainId;
         const response = await this.fetchGet(`${this.baseUrl}/orders/${userAddress}`);
-        const orders: GatewayOrderResponse[] = await response.json();
+        const orders: OnrampOrderResponse[] = await response.json();
         return orders.map((order) => {
             function getFinal<L, R>(base?: L, output?: R): NonNullable<L | R> {
                 return order.status
@@ -1099,6 +1099,17 @@ export class GatewayApiClient {
             erc20ApproveArgs: [stakeParams.strategyAddress, stakeParams.amount],
             account: stakeParams.sender,
         };
+    }
+
+    /**
+     * Returns all orders (onramp and offramp) for this account.
+     *
+     * @param userAddress The user's EVM address.
+     * @returns {Promise<Array<OnrampOrder | OfframpOrder>>} The array of account orders.
+     */
+    async getOrders(userAddress: EvmAddress): Promise<Array<(OnrampOrder & GatewayTokensInfo) | OfframpOrder>> {
+        const orders = await Promise.all([this.getOnrampOrders(userAddress), this.getOfframpOrders(userAddress)]);
+        return orders.flat();
     }
 
     private fetchGet(url: string) {

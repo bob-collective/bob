@@ -255,7 +255,7 @@ export type OffRampGatewayCreateQuoteResponse = {
     gateway: EvmAddress;
 };
 
-export interface GatewayOrderResponse {
+export interface OnrampOrderResponse {
     /** @description The gateway address */
     gatewayAddress: EvmAddress;
     /** @description The base token address (e.g. wBTC or tBTC) */
@@ -314,8 +314,8 @@ export type OrderStatus =
       };
 
 /** Order given by the Gateway API once the bitcoin tx is submitted */
-export type GatewayOrder = Omit<
-    GatewayOrderResponse & {
+export type OnrampOrder = Omit<
+    OnrampOrderResponse & {
         /** @description The gas refill in satoshis */
         gasRefill: number;
     },
@@ -331,7 +331,7 @@ export type GatewayOrder = Omit<
     getConfirmations(esploraClient: EsploraClient, latestHeight?: number): Promise<number>;
     /** @description Get the actual order status */
     getStatus(esploraClient: EsploraClient, latestHeight?: number): Promise<OrderStatus>;
-};
+} & GatewayTokensInfo;
 
 export type GatewayTokensInfo = {
     /** @description The base token (e.g. wBTC or tBTC) */
@@ -429,7 +429,7 @@ export type OfframpUnlockFundsParams = {
 };
 
 /** @dev Final state of an offramp order used in UI/backend */
-export type OfframpOrderDetails = {
+export type OfframpOrder = {
     /** @dev Unique identifier for the off-ramp order */
     orderId: bigint;
     /** @dev The token address */
@@ -441,7 +441,7 @@ export type OfframpOrderDetails = {
     /** @dev The current status of the order */
     status: OfframpOrderStatus;
     /** @dev The timestamp when the order was created or updated */
-    orderTimestamp: bigint;
+    orderTimestamp: number;
     /** @dev The user submit order transaction hash on the EVM chain */
     submitOrderEvmTx: string | null;
     /** @dev The transaction ID on the Bitcoin network */
@@ -473,7 +473,7 @@ export type OnchainOfframpOrderDetails = {
     /** @dev Order status */
     status: OfframpOrderStatus;
     /** @dev When the order was created (unix timestamp) */
-    orderTimestamp: bigint;
+    orderTimestamp: number;
 };
 
 /** @dev Internal */

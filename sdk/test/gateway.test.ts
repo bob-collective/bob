@@ -14,7 +14,7 @@ import {
     ChainId,
     GatewayQuote,
     GatewayTokensInfo,
-    OfframpOrderDetails,
+    OfframpOrder,
     OfframpOrderStatus,
     StakeTransactionParams,
 } from '../src/gateway/types';
@@ -342,7 +342,7 @@ describe('Gateway Tests', () => {
             ]);
 
         const gatewaySDK = new GatewaySDK('bob');
-        const orders = await gatewaySDK.getOrders(ZeroAddress);
+        const orders = await gatewaySDK.getOnrampOrders(ZeroAddress);
         assert.lengthOf(orders, 7);
 
         assert.strictEqual(orders[0].getTokenAmount(), '2000'); // success (staking)
@@ -585,7 +585,7 @@ describe('Gateway Tests', () => {
                 status: 'Processed',
                 btcTx: 'e8d52d6ef6ebf079f2d082dc683c9455178b64e0685c10e93882effaedde4474',
                 evmTx: null,
-                orderTimestamp: '0x67ee6f6e',
+                orderTimestamp: 1743679342,
                 shouldFeesBeBumped: false,
             },
         ];
@@ -597,7 +597,7 @@ describe('Gateway Tests', () => {
             orderId: BigInt(order.orderId.toString()),
             satAmountLocked: BigInt(order.satAmountLocked.toString()),
             satFeesMax: BigInt(order.satFeesMax.toString()),
-            orderTimestamp: BigInt(order.orderTimestamp.toString()),
+            orderTimestamp: order.orderTimestamp,
             canOrderBeUnlocked: false,
             shouldFeesBeBumped: false,
         }));
@@ -613,7 +613,7 @@ describe('Gateway Tests', () => {
             .get('/offramp-registry-address')
             .reply(200, '"0xb74a5af78520075f90f4be803153673a162a9776"');
 
-        const result: OfframpOrderDetails[] = await gatewaySDK.getOfframpOrders(userAddress);
+        const result: OfframpOrder[] = await gatewaySDK.getOfframpOrders(userAddress);
 
         // Assertion
         expect(result).to.deep.equal(expectedResult);
@@ -666,7 +666,7 @@ describe('Gateway Tests', () => {
 
     it('should return true when the order has passed the claim delay', async () => {
         const status: OfframpOrderStatus = 'Accepted';
-        const orderTimestamp: bigint = BigInt(Math.floor(Date.now() / 1000) - 7 * 24 * 60 * 60 - 1); // Ensure the timestamp is more than 7 days ago
+        const orderTimestamp = Math.floor(Date.now() / 1000) - 7 * 24 * 60 * 60 - 1; // Ensure the timestamp is more than 7 days ago
         const gatewaySDK = new GatewaySDK('signet');
 
         // Run the function
