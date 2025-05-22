@@ -904,4 +904,55 @@ describe('Gateway Tests', () => {
         expect(getOnrampOrdersSpy).toHaveBeenCalledOnce();
         expect(getOfframpOrdersSpy).toHaveBeenCalledOnce();
     });
+
+    it('test to check getQuote types', async () => {
+        const gatewaySDK = new GatewaySDK('mainnet');
+        const mockQuote = {
+            gatewayAddress: ZeroAddress,
+            baseTokenAddress: TBTC_ADDRESS,
+            dustThreshold: 1000,
+            satoshis: 1000,
+            fee: 10,
+            bitcoinAddress: '',
+            txProofDifficultyFactor: 3,
+            strategyAddress: ZeroAddress,
+            baseToken: TBTC,
+            outputToken: TBTC,
+        };
+        nock(`${MAINNET_GATEWAY_BASE_URL}`).get(`/quote/${TBTC_ADDRESS}?satoshis=1000`).times(5).reply(200, mockQuote);
+        const searchParams = new URLSearchParams({
+            amountInWrappedToken: '1000',
+            token: TBTC_ADDRESS,
+        });
+        nock(`${MAINNET_GATEWAY_BASE_URL}`).get(`/offramp-quote?${searchParams}`).reply(201, {
+            amountLockInSat: 1000,
+            feesInSat: 0,
+            feeRate: 0,
+            registryAddress: zeroAddress,
+        });
+
+        const result_onramp = await gatewaySDK.getQuote({
+            type: 'onramp',
+            params: {
+                toChain: 'BOB',
+                toToken: TBTC_ADDRESS,
+                toUserAddress: ZeroAddress,
+                amount: 1000,
+            },
+        });
+
+        // Optionally, print keys or typeof each field
+        console.log('Type keys offramp:', Object.keys(result_onramp));
+
+        const result_offramp = await gatewaySDK.getQuote({
+            type: 'offramp',
+            params: {
+                tokenAddress: TBTC_ADDRESS as Address,
+                amount: 1000,
+            },
+        });
+
+        // Optionally, print keys or typeof each field
+        console.log('Type keys offramp:', Object.keys(result_offramp));
+    });
 });
