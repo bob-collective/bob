@@ -931,7 +931,6 @@ describe('Gateway Tests', () => {
             registryAddress: zeroAddress,
         });
 
-
         const result_onramp = await gatewaySDK.getQuote({
             type: 'onramp',
             params: {
@@ -955,6 +954,5 @@ describe('Gateway Tests', () => {
 
         // Optionally, print keys or typeof each field
         console.log('Type keys offramp:', Object.keys(result_offramp));
-
     });
 });

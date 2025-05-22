@@ -143,8 +143,23 @@ export class GatewayApiClient {
         };
     }): Promise<OfframpQuote>;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async getQuote(params: any): Promise<any> {
+    async getQuote(
+        params:
+            | {
+                  type: 'onramp';
+                  params: Optional<
+                      GatewayQuoteParams,
+                      'amount' | 'fromChain' | 'fromToken' | 'fromUserAddress' | 'toUserAddress'
+                  >;
+              }
+            | {
+                  type: 'offramp';
+                  params: {
+                      tokenAddress: Address;
+                      amount: number;
+                  };
+              }
+    ): Promise<(GatewayQuote & GatewayTokensInfo) | OfframpQuote> {
         if (params.type === 'onramp') {
             return this.getOnrampQuote(params.params);
         } else {
@@ -153,10 +168,7 @@ export class GatewayApiClient {
     }
 
     private async getOnrampQuote(
-        params: Optional<
-            GatewayQuoteParams,
-            'amount' | 'fromChain' | 'fromToken' | 'fromUserAddress' | 'toUserAddress'
-        >
+        params: Optional<GatewayQuoteParams, 'amount' | 'fromChain' | 'fromToken' | 'fromUserAddress' | 'toUserAddress'>
     ): Promise<GatewayQuote & GatewayTokensInfo> {
         const isMainnet =
             params.toChain === ChainId.BOB ||
@@ -165,7 +177,11 @@ export class GatewayApiClient {
             params.toChain === ChainId.BOB_SEPOLIA ||
             (typeof params.toChain === 'string' && params.toChain.toLowerCase() === Chain.BOB_SEPOLIA);
 
-        if ((!isMainnet && !isTestnet) || (isMainnet && this.chain !== Chain.BOB) || (isTestnet && this.chain !== Chain.BOB_SEPOLIA)) {
+        if (
+            (!isMainnet && !isTestnet) ||
+            (isMainnet && this.chain !== Chain.BOB) ||
+            (isTestnet && this.chain !== Chain.BOB_SEPOLIA)
+        ) {
             throw new Error('Invalid output chain');
         }
 
@@ -192,7 +208,6 @@ export class GatewayApiClient {
             outputToken: quote.strategyAddress ? ADDRESS_LOOKUP[this.chainId][outputTokenAddress] : undefined,
         };
     }
-
 
     /**
      * Fetches the offramp registry address.
