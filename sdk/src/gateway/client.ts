@@ -622,12 +622,6 @@ export class GatewayApiClient {
             };
         }
 
-        if (!psbtBase64) {
-            throw new Error(
-                'Failed to create bitcoin psbt. Please check `fromChain` and `fromUserAddress` parameters.'
-            );
-        }
-
         throw new Error('Failed to create bitcoin psbt due to an unexpected error.');
     }
 
