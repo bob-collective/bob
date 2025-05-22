@@ -127,83 +127,72 @@ export class GatewayApiClient {
         return Object.values(Chain);
     }
 
-    /**
-     *
-     * Get a quote from the Gateway API for swapping or staking BTC.
-     *
-     * @param params The parameters for the quote.
-     */
+    async getQuote(params: {
+        type: 'onramp';
+        params: Optional<
+            GatewayQuoteParams,
+            'amount' | 'fromChain' | 'fromToken' | 'fromUserAddress' | 'toUserAddress'
+        >;
+    }): Promise<GatewayQuote & GatewayTokensInfo>;
 
-    async getQuote({
-        type,
-        params,
-    }:
-        | {
-              type: 'onramp';
-              params: Optional<
-                  GatewayQuoteParams,
-                  'amount' | 'fromChain' | 'fromToken' | 'fromUserAddress' | 'toUserAddress'
-              >;
-          }
-        | {
-              type: 'offramp';
-              params: {
-                  tokenAddress: Address;
-                  amount: bigint;
-              };
-          }): Promise<(GatewayQuote & GatewayTokensInfo) | OfframpQuote> {
-        if (type === 'onramp') {
-            const isMainnet =
-                params.toChain === ChainId.BOB ||
-                (typeof params.toChain === 'string' && params.toChain.toLowerCase() === Chain.BOB);
-            const isTestnet =
-                params.toChain === ChainId.BOB_SEPOLIA ||
-                (typeof params.toChain === 'string' && params.toChain.toLowerCase() === Chain.BOB_SEPOLIA);
+    async getQuote(params: {
+        type: 'offramp';
+        params: {
+            tokenAddress: Address;
+            amount: number;
+        };
+    }): Promise<OfframpQuote>;
 
-            const isInvalidNetwork = !isMainnet && !isTestnet;
-            const isMismatchMainnet = isMainnet && this.chain !== Chain.BOB;
-            const isMismatchTestnet = isTestnet && this.chain !== Chain.BOB_SEPOLIA;
-
-            // TODO: switch URL if `toChain` is different chain?
-            if (isInvalidNetwork || isMismatchMainnet || isMismatchTestnet) {
-                throw new Error('Invalid output chain');
-            }
-
-            let strategyAddress: string | undefined;
-
-            const toToken = params.toToken.toLowerCase();
-            const outputTokenAddress = getTokenAddress(this.chainId, toToken);
-            if (params.strategyAddress?.startsWith('0x')) {
-                strategyAddress = params.strategyAddress;
-            }
-
-            const url = new URL(`${this.baseUrl}/quote/${outputTokenAddress}`);
-            if (strategyAddress) {
-                url.searchParams.append('strategy', `${strategyAddress}`);
-            }
-            const atomicAmount = params.amount;
-            if (atomicAmount) {
-                url.searchParams.append('satoshis', `${atomicAmount}`);
-            }
-
-            const response = await fetch(url, {
-                headers: {
-                    'Content-Type': 'application/json',
-                    Accept: 'application/json',
-                },
-            });
-
-            const quote: GatewayQuote = await response.json();
-            return {
-                ...quote,
-                fee: quote.fee + (params.gasRefill || 0),
-                baseToken: ADDRESS_LOOKUP[this.chainId][quote.baseTokenAddress],
-                outputToken: quote.strategyAddress ? ADDRESS_LOOKUP[this.chainId][outputTokenAddress] : undefined,
-            };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    async getQuote(params: any): Promise<any> {
+        if (params.type === 'onramp') {
+            return this.getOnrampQuote(params.params);
         } else {
-            return this.fetchOfframpQuote(params.tokenAddress, params.amount);
+            return this.fetchOfframpQuote(params.params.tokenAddress, params.params.amount);
         }
     }
+
+    private async getOnrampQuote(
+        params: Optional<
+            GatewayQuoteParams,
+            'amount' | 'fromChain' | 'fromToken' | 'fromUserAddress' | 'toUserAddress'
+        >
+    ): Promise<GatewayQuote & GatewayTokensInfo> {
+        const isMainnet =
+            params.toChain === ChainId.BOB ||
+            (typeof params.toChain === 'string' && params.toChain.toLowerCase() === Chain.BOB);
+        const isTestnet =
+            params.toChain === ChainId.BOB_SEPOLIA ||
+            (typeof params.toChain === 'string' && params.toChain.toLowerCase() === Chain.BOB_SEPOLIA);
+
+        if ((!isMainnet && !isTestnet) || (isMainnet && this.chain !== Chain.BOB) || (isTestnet && this.chain !== Chain.BOB_SEPOLIA)) {
+            throw new Error('Invalid output chain');
+        }
+
+        const toToken = params.toToken.toLowerCase();
+        const outputTokenAddress = getTokenAddress(this.chainId, toToken);
+        const strategyAddress = params.strategyAddress?.startsWith('0x') ? params.strategyAddress : undefined;
+
+        const url = new URL(`${this.baseUrl}/quote/${outputTokenAddress}`);
+        if (strategyAddress) url.searchParams.append('strategy', strategyAddress);
+        if (params.amount) url.searchParams.append('satoshis', `${params.amount}`);
+
+        const response = await fetch(url, {
+            headers: {
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
+            },
+        });
+
+        const quote: GatewayQuote = await response.json();
+        return {
+            ...quote,
+            fee: quote.fee + (params.gasRefill || 0),
+            baseToken: ADDRESS_LOOKUP[this.chainId][quote.baseTokenAddress],
+            outputToken: quote.strategyAddress ? ADDRESS_LOOKUP[this.chainId][outputTokenAddress] : undefined,
+        };
+    }
+
 
     /**
      * Fetches the offramp registry address.
@@ -264,7 +253,7 @@ export class GatewayApiClient {
      * @param amountInToken Amount specified in token decimals.
      * @returns Offramp quote details.
      */
-    async fetchOfframpQuote(token: string, amountInToken: bigint): Promise<OfframpQuote> {
+    async fetchOfframpQuote(token: string, amountInToken: number): Promise<OfframpQuote> {
         const queryParams = new URLSearchParams({
             amountInWrappedToken: amountInToken.toString(),
             token,
@@ -322,7 +311,7 @@ export class GatewayApiClient {
     ): Promise<OfframpCreateOrderParams> {
         const tokenAddress = getTokenAddress(this.chainId, params.fromToken.toLowerCase());
 
-        const offrampQuote: OfframpQuote = await this.fetchOfframpQuote(tokenAddress, BigInt(params.amount));
+        const offrampQuote: OfframpQuote = await this.fetchOfframpQuote(tokenAddress, Number(params.amount));
 
         // get btc script pub key
         let bitcoinNetwork = bitcoin.networks.regtest;
@@ -481,7 +470,7 @@ export class GatewayApiClient {
 
         let offrampQuote: OfframpQuote;
         try {
-            offrampQuote = await this.fetchOfframpQuote(token.toString(), amountInToken);
+            offrampQuote = await this.fetchOfframpQuote(token.toString(), Number(amountInToken));
         } catch (err) {
             // Return false and 0n with an error message if fetching the quote fails
             return [false, 0n, `Error fetching offramp quote: ${err.message || err}`];
