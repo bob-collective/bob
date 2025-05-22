@@ -45,10 +45,6 @@ import {
     Account,
     Chain as ViemChain,
     erc20Abi,
-    keccak256,
-    encodeAbiParameters,
-    numberToHex,
-    maxUint256,
 } from 'viem';
 import * as bitcoin from 'bitcoinjs-lib';
 import { bob, bobSepolia } from 'viem/chains';
@@ -132,60 +128,81 @@ export class GatewayApiClient {
     }
 
     /**
+     *
      * Get a quote from the Gateway API for swapping or staking BTC.
      *
      * @param params The parameters for the quote.
      */
-    async getQuote(
-        params: Optional<GatewayQuoteParams, 'amount' | 'fromChain' | 'fromToken' | 'fromUserAddress' | 'toUserAddress'>
-    ): Promise<GatewayQuote & GatewayTokensInfo> {
-        const isMainnet =
-            params.toChain === ChainId.BOB ||
-            (typeof params.toChain === 'string' && params.toChain.toLowerCase() === Chain.BOB);
-        const isTestnet =
-            params.toChain === ChainId.BOB_SEPOLIA ||
-            (typeof params.toChain === 'string' && params.toChain.toLowerCase() === Chain.BOB_SEPOLIA);
 
-        const isInvalidNetwork = !isMainnet && !isTestnet;
-        const isMismatchMainnet = isMainnet && this.chain !== Chain.BOB;
-        const isMismatchTestnet = isTestnet && this.chain !== Chain.BOB_SEPOLIA;
+    async getQuote({
+        type,
+        params,
+    }:
+        | {
+              type: 'onramp';
+              params: Optional<
+                  GatewayQuoteParams,
+                  'amount' | 'fromChain' | 'fromToken' | 'fromUserAddress' | 'toUserAddress'
+              >;
+          }
+        | {
+              type: 'offramp';
+              params: {
+                  tokenAddress: Address;
+                  amount: bigint;
+              };
+          }): Promise<(GatewayQuote & GatewayTokensInfo) | OfframpQuote> {
+        if (type === 'onramp') {
+            const isMainnet =
+                params.toChain === ChainId.BOB ||
+                (typeof params.toChain === 'string' && params.toChain.toLowerCase() === Chain.BOB);
+            const isTestnet =
+                params.toChain === ChainId.BOB_SEPOLIA ||
+                (typeof params.toChain === 'string' && params.toChain.toLowerCase() === Chain.BOB_SEPOLIA);
 
-        // TODO: switch URL if `toChain` is different chain?
-        if (isInvalidNetwork || isMismatchMainnet || isMismatchTestnet) {
-            throw new Error('Invalid output chain');
+            const isInvalidNetwork = !isMainnet && !isTestnet;
+            const isMismatchMainnet = isMainnet && this.chain !== Chain.BOB;
+            const isMismatchTestnet = isTestnet && this.chain !== Chain.BOB_SEPOLIA;
+
+            // TODO: switch URL if `toChain` is different chain?
+            if (isInvalidNetwork || isMismatchMainnet || isMismatchTestnet) {
+                throw new Error('Invalid output chain');
+            }
+
+            let strategyAddress: string | undefined;
+
+            const toToken = params.toToken.toLowerCase();
+            const outputTokenAddress = getTokenAddress(this.chainId, toToken);
+            if (params.strategyAddress?.startsWith('0x')) {
+                strategyAddress = params.strategyAddress;
+            }
+
+            const url = new URL(`${this.baseUrl}/quote/${outputTokenAddress}`);
+            if (strategyAddress) {
+                url.searchParams.append('strategy', `${strategyAddress}`);
+            }
+            const atomicAmount = params.amount;
+            if (atomicAmount) {
+                url.searchParams.append('satoshis', `${atomicAmount}`);
+            }
+
+            const response = await fetch(url, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                },
+            });
+
+            const quote: GatewayQuote = await response.json();
+            return {
+                ...quote,
+                fee: quote.fee + (params.gasRefill || 0),
+                baseToken: ADDRESS_LOOKUP[this.chainId][quote.baseTokenAddress],
+                outputToken: quote.strategyAddress ? ADDRESS_LOOKUP[this.chainId][outputTokenAddress] : undefined,
+            };
+        } else {
+            return this.fetchOfframpQuote(params.tokenAddress, params.amount);
         }
-
-        let strategyAddress: string | undefined;
-
-        const toToken = params.toToken.toLowerCase();
-        const outputTokenAddress = getTokenAddress(this.chainId, toToken);
-        if (params.strategyAddress?.startsWith('0x')) {
-            strategyAddress = params.strategyAddress;
-        }
-
-        const url = new URL(`${this.baseUrl}/quote/${outputTokenAddress}`);
-        if (strategyAddress) {
-            url.searchParams.append('strategy', `${strategyAddress}`);
-        }
-        const atomicAmount = params.amount;
-        if (atomicAmount) {
-            url.searchParams.append('satoshis', `${atomicAmount}`);
-        }
-
-        const response = await fetch(url, {
-            headers: {
-                'Content-Type': 'application/json',
-                Accept: 'application/json',
-            },
-        });
-
-        const quote: GatewayQuote = await response.json();
-        return {
-            ...quote,
-            fee: quote.fee + (params.gasRefill || 0),
-            baseToken: ADDRESS_LOOKUP[this.chainId][quote.baseTokenAddress],
-            outputToken: quote.strategyAddress ? ADDRESS_LOOKUP[this.chainId][outputTokenAddress] : undefined,
-        };
     }
 
     /**
@@ -303,9 +320,9 @@ export class GatewayApiClient {
             | 'fromChain'
         >
     ): Promise<OfframpCreateOrderParams> {
-        const outputTokenAddress = getTokenAddress(this.chainId, params.fromToken.toLowerCase());
+        const tokenAddress = getTokenAddress(this.chainId, params.fromToken.toLowerCase());
 
-        const offrampQuote: OfframpQuote = await this.fetchOfframpQuote(outputTokenAddress, BigInt(params.amount));
+        const offrampQuote: OfframpQuote = await this.fetchOfframpQuote(tokenAddress, BigInt(params.amount));
 
         // get btc script pub key
         let bitcoinNetwork = bitcoin.networks.regtest;
@@ -714,52 +731,36 @@ export class GatewayApiClient {
             return transactionHash;
         } else {
             const result = await this.buildStake(order.params);
-            // For the allowances mapping in OpenZeppelin ERC20, the base slot is 1.
-            const baseSlot = 1n;
 
-            // Compute the inner slot for the owner using viem's encodeAbiParameters.
-            const innerSlot = keccak256(
-                encodeAbiParameters(
-                    [
-                        { name: 'owner', type: 'address' },
-                        { name: 'slot', type: 'uint256' },
-                    ],
-                    [order.params.sender, baseSlot]
-                )
-            );
+            const allowance = await publicClient.readContract({
+                address: order.params.token,
+                abi: erc20Abi,
+                functionName: 'allowance',
+                args: [walletClient.account.address as Address, result.strategyAddress],
+            });
 
-            // Compute the final allowance storage key using the spender (strategyAddress) and the inner slot.
-            // The second parameter is encoded as bytes32.
-            const allowanceSlot = keccak256(
-                encodeAbiParameters(
-                    [
-                        { name: 'spender', type: 'address' },
-                        { name: 'innerSlot', type: 'bytes32' },
-                    ],
-                    [order.params.strategyAddress, innerSlot]
-                )
-            );
+            if (BigInt(order.params.amount) > allowance) {
+                const { request } = await publicClient.simulateContract({
+                    account: walletClient.account,
+                    address: order.params.token,
+                    abi: erc20Abi,
+                    functionName: 'approve',
+                    args: [result.strategyAddress, MaxUint256],
+                });
 
-            const maxAllowance = numberToHex(maxUint256);
+                const approveTxHash = await walletClient.writeContract(request);
+
+                await publicClient.waitForTransactionReceipt({ hash: approveTxHash });
+            }
+
             const { request } = await publicClient.simulateContract({
                 address: result.strategyAddress, // Ensure correct type
                 abi: result.strategyABI,
                 functionName: result.strategyFunctionName,
                 args: result.strategyArgs,
-                account: result.account, // Ensure correct type
-                stateOverride: [
-                    // overriding token allowance
-                    {
-                        address: order.params.token,
-                        stateDiff: [
-                            {
-                                slot: allowanceSlot,
-                                value: maxAllowance,
-                            },
-                        ],
-                    },
-                ],
+                account: result.address,
             });
+
             const transactionHash = await walletClient.writeContract(request);
 
             await publicClient?.waitForTransactionReceipt({ hash: transactionHash });
@@ -1097,7 +1098,7 @@ export class GatewayApiClient {
                 { amountOutMin: stakeParams.amountOutMin },
             ],
             erc20ApproveArgs: [stakeParams.strategyAddress, stakeParams.amount],
-            account: stakeParams.sender,
+            address: stakeParams.sender,
         };
     }
 

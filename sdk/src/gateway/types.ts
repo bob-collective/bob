@@ -53,7 +53,7 @@ export type StakeTransactionParams = {
     /** @description Arguments required for the staking contract call */
     strategyArgs: [Address, bigint, Address, { amountOutMin: bigint }];
     /** @description The wallet address executing the transaction */
-    account: Address;
+    address: Address;
     /** @description  Arguments required for the token approval transaction */
     erc20ApproveArgs: [Address, bigint];
 };
