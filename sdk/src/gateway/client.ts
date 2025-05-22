@@ -592,7 +592,7 @@ export class GatewayApiClient {
             throw new Error('Invalid OP_RETURN hash');
         }
 
-        let psbtBase64: string;
+        let psbtBase64: string = '';
         if (
             params.fromUserAddress &&
             typeof params.fromChain === 'string' &&
@@ -618,7 +618,13 @@ export class GatewayApiClient {
             };
         }
 
-        throw new Error('Failed to create bitcoin psbt. Please check `fromChain` and `fromUserAddress` parameters.');
+        if (!psbtBase64) {
+            throw new Error(
+                'Failed to create bitcoin psbt. Please check `fromChain` and `fromUserAddress` parameters.'
+            );
+        }
+
+        throw new Error('Failed to create bitcoin psbt due to an unexpected error.');
     }
 
     /**
