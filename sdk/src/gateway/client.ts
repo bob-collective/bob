@@ -1051,7 +1051,7 @@ export class GatewayApiClient {
      *     address: params.token, // Ensure correct type
      *     abi: erc20Abi,
      *     functionName: 'approve',
-     *     args: result.erc20ApproveArgs,
+     *     args: [result.strategyAddress, MaxUint256],
      *     account: result.account, // Ensure correct type
      * });
      * await walletClient.writeContract(approveRequest);
@@ -1097,7 +1097,6 @@ export class GatewayApiClient {
                 stakeParams.receiver,
                 { amountOutMin: stakeParams.amountOutMin },
             ],
-            erc20ApproveArgs: [stakeParams.strategyAddress, stakeParams.amount],
             address: stakeParams.sender,
         };
     }

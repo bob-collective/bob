@@ -1,5 +1,5 @@
 import * as bitcoin from 'bitcoinjs-lib';
-import { ZeroAddress } from 'ethers';
+import { MaxUint256, ZeroAddress } from 'ethers';
 import nock from 'nock';
 import { createPublicClient, encodeAbiParameters, http, keccak256, maxUint256, numberToHex, zeroAddress } from 'viem';
 import { Address } from 'viem/accounts';
@@ -18,6 +18,7 @@ import {
     OfframpOrderStatus,
     StakeTransactionParams,
 } from '../src/gateway/types';
+import { access } from 'fs';
 
 const TBTC = SYMBOL_LOOKUP[ChainId.BOB]['tbtc'];
 const TBTC_ADDRESS = TBTC.address;
@@ -61,47 +62,62 @@ describe('Gateway Tests', () => {
 
         assert.deepEqual(
             await gatewaySDK.getQuote({
-                toChain: 'BOB',
-                toToken: 'tBTC',
-                toUserAddress: ZeroAddress,
-                amount: 1000,
+                type: 'onramp',
+                params: {
+                    toChain: 'BOB',
+                    toToken: 'tBTC',
+                    toUserAddress: ZeroAddress,
+                    amount: 1000,
+                },
             }),
             mockQuote
         );
         assert.deepEqual(
             await gatewaySDK.getQuote({
-                toChain: 'bob',
-                toToken: 'tbtc',
-                toUserAddress: ZeroAddress,
-                amount: 1000,
+                type: 'onramp',
+                params: {
+                    toChain: 'bob',
+                    toToken: 'tbtc',
+                    toUserAddress: ZeroAddress,
+                    amount: 1000,
+                },
             }),
             mockQuote
         );
         assert.deepEqual(
             await gatewaySDK.getQuote({
-                toChain: 60808,
-                toToken: 'tbtc',
-                toUserAddress: ZeroAddress,
-                amount: 1000,
+                type: 'onramp',
+                params: {
+                    toChain: 60808,
+                    toToken: 'tbtc',
+                    toUserAddress: ZeroAddress,
+                    amount: 1000,
+                },
             }),
             mockQuote
         );
         assert.deepEqual(
             await gatewaySDK.getQuote({
-                toChain: 'BOB',
-                toToken: TBTC_ADDRESS,
-                toUserAddress: ZeroAddress,
-                amount: 1000,
+                type: 'onramp',
+                params: {
+                    toChain: 'BOB',
+                    toToken: TBTC_ADDRESS,
+                    toUserAddress: ZeroAddress,
+                    amount: 1000,
+                },
             }),
             mockQuote
         );
         assert.deepEqual(
             await gatewaySDK.getQuote({
-                toChain: 'BOB',
-                toToken: 'tBTC',
-                toUserAddress: ZeroAddress,
-                amount: 1000,
-                gasRefill: 5,
+                type: 'onramp',
+                params: {
+                    toChain: 'BOB',
+                    toToken: 'tBTC',
+                    toUserAddress: ZeroAddress,
+                    amount: 1000,
+                    gasRefill: 5,
+                },
             }),
             { ...mockQuote, fee: 15 }
         );
@@ -110,9 +126,12 @@ describe('Gateway Tests', () => {
         nock(`${MAINNET_GATEWAY_BASE_URL}`).get(`/quote/${TBTC_ADDRESS}`).reply(200, mockQuote);
         assert.deepEqual(
             await gatewaySDK.getQuote({
-                toChain: 'BOB',
-                toToken: TBTC_ADDRESS,
-                toUserAddress: ZeroAddress,
+                type: 'onramp',
+                params: {
+                    toChain: 'BOB',
+                    toToken: TBTC_ADDRESS,
+                    toUserAddress: ZeroAddress,
+                },
             }),
             mockQuote
         );
@@ -122,10 +141,13 @@ describe('Gateway Tests', () => {
         const gatewaySDK = new GatewaySDK('mainnet');
         await expect(async () => {
             await gatewaySDK.getQuote({
-                toChain: 'BOB',
-                toToken: 'unknownToken',
-                toUserAddress: ZeroAddress,
-                amount: 1000,
+                type: 'onramp',
+                params: {
+                    toChain: 'BOB',
+                    toToken: 'unknownToken',
+                    toUserAddress: ZeroAddress,
+                    amount: 1000,
+                },
             });
         }).rejects.toThrowError('Unknown output token');
     });
@@ -134,19 +156,25 @@ describe('Gateway Tests', () => {
         const gatewaySDK = new GatewaySDK('testnet');
         await expect(async () => {
             await gatewaySDK.getQuote({
-                toChain: 'BOB',
-                toToken: 'tbtc',
-                toUserAddress: ZeroAddress,
-                amount: 1000,
+                type: 'onramp',
+                params: {
+                    toChain: 'BOB',
+                    toToken: 'tbtc',
+                    toUserAddress: ZeroAddress,
+                    amount: 1000,
+                },
             });
         }).rejects.toThrowError('Invalid output chain');
 
         await expect(async () => {
             await gatewaySDK.getQuote({
-                toChain: 'unknownChain',
-                toToken: 'tbtc',
-                toUserAddress: ZeroAddress,
-                amount: 1000,
+                type: 'onramp',
+                params: {
+                    toChain: 'unknownChain',
+                    toToken: 'tbtc',
+                    toUserAddress: ZeroAddress,
+                    amount: 1000,
+                },
             });
         }).rejects.toThrowError('Invalid output chain');
     });
@@ -234,12 +262,14 @@ describe('Gateway Tests', () => {
 
         const strategy = strategies[0];
         await gatewaySDK.getQuote({
-            toUserAddress: ZeroAddress,
-            amount: 1000,
-
-            toChain: strategy.chain.chainId,
-            toToken: strategy.inputToken.symbol,
-            strategyAddress: strategy.address,
+            type: 'onramp',
+            params: {
+                toUserAddress: ZeroAddress,
+                amount: 1000,
+                toChain: strategy.chain.chainId,
+                toToken: strategy.inputToken.symbol,
+                strategyAddress: strategy.address,
+            },
         });
     });
 
@@ -375,8 +405,7 @@ describe('Gateway Tests', () => {
             strategyABI: expect.any(Array), // Assuming ABI is an array
             strategyFunctionName: 'handleGatewayMessageWithSlippageArgs',
             strategyArgs: [params.token, params.amount, params.receiver, { amountOutMin: params.amountOutMin }],
-            account: params.sender,
-            erc20ApproveArgs: [params.strategyAddress, params.amount],
+            address: params.sender,
         };
 
         const result = await gatewaySDK.buildStake(params);
@@ -420,7 +449,7 @@ describe('Gateway Tests', () => {
             abi: result.strategyABI,
             functionName: result.strategyFunctionName,
             args: result.strategyArgs,
-            account: result.account, // Ensure correct type
+            account: result.address, // Ensure correct type
             stateOverride: [
                 // overriding token allowance
                 {
@@ -537,8 +566,7 @@ describe('Gateway Tests', () => {
             strategyABI: expect.any(Array), // Assuming ABI is an array
             strategyFunctionName: 'handleGatewayMessageWithSlippageArgs',
             strategyArgs: [params.token, params.amount, params.receiver, { amountOutMin: params.amountOutMin }],
-            account: params.sender,
-            erc20ApproveArgs: [params.strategyAddress, params.amount],
+            address: params.sender,
         };
 
         const result = await gatewaySDK.buildStake(params);
@@ -834,6 +862,9 @@ describe('Gateway Tests', () => {
         const mockBtcSigner = {};
 
         const mockWalletClient = {
+            account: {
+                address: zeroAddress,
+            },
             writeContract: () => Promise.resolve('0x35f5bca7f984f4ed97888944293b979f3abb198a5716d04e10c6bdc023080075'),
         } as unknown as Parameters<typeof gatewaySDK.executeQuote>[2];
 

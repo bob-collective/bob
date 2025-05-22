@@ -54,8 +54,6 @@ export type StakeTransactionParams = {
     strategyArgs: [Address, bigint, Address, { amountOutMin: bigint }];
     /** @description The wallet address executing the transaction */
     address: Address;
-    /** @description  Arguments required for the token approval transaction */
-    erc20ApproveArgs: [Address, bigint];
 };
 
 /**
