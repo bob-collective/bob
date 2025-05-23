@@ -41,7 +41,7 @@ export class Inscription {
 
     constructor(tags?: Map<number, Buffer>, body?: Buffer) {
         this.tags = tags ?? new Map();
-        this.body = body;
+        this.body = body ?? Buffer.alloc(0);
     }
 
     getContentType(): string | null {

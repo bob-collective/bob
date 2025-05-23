@@ -141,6 +141,11 @@ export interface OutputJson {
     };
 
     /**
+     * Number of confirmations
+     */
+    confirmations: number;
+
+    /**
      * The outpoint.
      */
     outpoint: string;
@@ -154,11 +159,6 @@ export interface OutputJson {
      * The scriptPubKey associated with the UTXO.
      */
     script_pubkey: string;
-
-    /**
-     * Number of confirmations
-     */
-    confirmations: number;
 
     /**
      * The spent value of the output.

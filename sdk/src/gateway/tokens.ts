@@ -1,5 +1,5 @@
-import { ChainId, Token } from './types';
-import { Address } from 'viem';
+import { Chain, ChainId, Token } from './types';
+import { Address, isAddress } from 'viem';
 
 // TODO: re-write to use superchain tokenlist
 const bobTokens = [
@@ -367,4 +367,20 @@ export function getTokenDecimals(tokenAddress: Address): number | undefined {
         bobSepoliaTokens.find((t) => t.tokens['bob-sepolia'].address.toLowerCase() === normalizedAddress);
 
     return token?.decimals;
+}
+
+export function getTokenAddress(chain: string | number, token: string): Address {
+    const isMainnet = chain === ChainId.BOB || (typeof chain === 'string' && chain.toLowerCase() === Chain.BOB);
+    const isTestnet =
+        chain === ChainId.BOB_SEPOLIA || (typeof chain === 'string' && chain.toLowerCase() === Chain.BOB_SEPOLIA);
+
+    if (isAddress(token)) {
+        return token;
+    } else if (isMainnet && SYMBOL_LOOKUP[chain][token]) {
+        return SYMBOL_LOOKUP[chain][token].address;
+    } else if (isTestnet && SYMBOL_LOOKUP[chain][token]) {
+        return SYMBOL_LOOKUP[chain][token].address;
+    } else {
+        throw new Error('Unknown output token');
+    }
 }

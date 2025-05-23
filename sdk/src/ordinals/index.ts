@@ -27,7 +27,7 @@ function estimateTxSize(
             value: amount,
             script: scriptTaproot.output!,
         },
-        tapLeafScript: [tapLeafScript],
+        tapLeafScript: tapLeafScript ? [tapLeafScript] : undefined,
     });
 
     psbt.addOutput({

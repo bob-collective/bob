@@ -70,7 +70,7 @@ describe('Ordinal API Tests', () => {
             txid: 'dfe942a58b7e29a3952d8d1ed6608086c66475d20bc7bdbc3d784d616f9a6a7a',
             vout: 0,
         });
-        const expectedOutputJson: OutputJson = {
+        const expectedOutputJson: Omit<OutputJson, 'confirmations'> = {
             value: 10737,
             script_pubkey: '5120e18a5367c5d11ee31d10bf4c53e743a7479c70e3336e70dbdea1fd927305c022',
             address: 'bc1pux99xe796y0wx8gshax98e6r5arecu8rxdh8pk77587eyuc9cq3q2e3nng',
