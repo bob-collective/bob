@@ -19,14 +19,18 @@ BOB Mainnet is the production network where real value is at stake. Use this net
 - Staking BTC
 
 ### Network Details
+
 - **Chain ID**: `60808`
 - **RPC URL**: `https://rpc.gobob.xyz/`
 - **Block Explorer**: `https://explorer.gobob.xyz/`
-- **Currency Symbol**: `ETH`
+- **Currency Symbol and Gas Token**: `ETH`
 
 ### Alternative RPC URLs
+
 If the main RPC URL is not working, try these alternatives:
-- `https://bob-mainnet.public.blastapi.io`
+
+- `https://bob.gateway.tenderly.co`
+- `https://bob.drpc.org`
 
 ## BOB Sepolia (Testnet)
 
@@ -38,10 +42,11 @@ BOB Sepolia is the test network where you can experiment without risking real as
 - Testing integrations
 
 ### Network Details
+
 - **Chain ID**: `808813`
-- **RPC URL**: `https://bob-sepolia.rpc.gobob.xyz/`
+- **RPC URL**: `https://bob-sepolia.rpc.gobob.xyz`
 - **Block Explorer**: `https://bob-sepolia.explorer.gobob.xyz/`
-- **Currency Symbol**: `ETH`
+- **Currency Symbol and Gas Token**: `Sepolia ETH`
 
 ## Connecting to BOB
 

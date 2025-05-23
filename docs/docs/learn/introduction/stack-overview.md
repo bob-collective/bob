@@ -99,9 +99,9 @@ By using the same EVM as Ethereum, teams building on BOB have access to familiar
 
 - [Data Analytics](/learn/reference/tools/data-indexers/) and [Node Providers](/learn/reference/tools/node-providers/)
 - [Cross-chain Messaging](/learn/reference/tools/cross-chain/) and [Oracles](/learn/reference/tools/oracles/)
-- [Wallets](/learn/reference/tools/wallets/), including [Account Abstraction](/learn/reference/tools/account-abstraction/) (AA), [Social Login](/learn/reference/tools/social-login/), and [our SDK for connecting to Bitcoin wallets](/learn/builder-guides/sats-wagmi/)
+- [Wallets](/learn/user-guides/getting-started/wallet-guide/), including [Account Abstraction](/learn/reference/tools/account-abstraction/) (AA), [Social Login](/learn/reference/tools/social-login/), and [our SDK for connecting to Bitcoin wallets](/learn/builder-guides/sats-wagmi/)
 
-We are particularly excited about AA providers like [Safe](/learn/reference/tools/account-abstraction#safe-wallet), [Pimlico](/learn/reference/tools/account-abstraction#pimlico), and [BTC Connect](/learn/reference/tools/account-abstraction#btc-connect) that make it possible to control funds on EVM chains from a Bitcoin wallet.
+We are particularly excited about AA providers like [Safe](/learn/reference/tools/account-abstraction#safe-wallet) and [BTC Connect](/learn/reference/tools/account-abstraction#btc-connect) that make it possible to control funds on EVM chains from a Bitcoin wallet.
 
 ## Conclusion
 
