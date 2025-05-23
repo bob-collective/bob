@@ -27,6 +27,9 @@ import {
     OfframpOrderStatus,
     EnrichedToken,
     OfframpLiquidity,
+    OnrampQuoteParams,
+    OfframpQuoteParams,
+    Optional,
 } from './types';
 import { createBitcoinPsbt, getAddressInfo } from '../wallet';
 import { SYMBOL_LOOKUP, ADDRESS_LOOKUP, getTokenDecimals, getTokenAddress } from './tokens';
@@ -50,8 +53,6 @@ import * as bitcoin from 'bitcoinjs-lib';
 import { bob, bobSepolia } from 'viem/chains';
 import StrategyClient from './strategy';
 import { bigIntToFloatingNumber } from '../utils';
-
-type Optional<T, K extends keyof T> = Omit<T, K> & Partial<T>;
 
 /**
  * Base url for the mainnet Gateway API.
@@ -127,38 +128,12 @@ export class GatewayApiClient {
         return Object.values(Chain);
     }
 
-    async getQuote(params: {
-        type: 'onramp';
-        params: Optional<
-            GatewayQuoteParams,
-            'amount' | 'fromChain' | 'fromToken' | 'fromUserAddress' | 'toUserAddress'
-        >;
-    }): Promise<GatewayQuote & GatewayTokensInfo>;
+    async getQuote(params: OnrampQuoteParams): Promise<GatewayQuote & GatewayTokensInfo>;
 
-    async getQuote(params: {
-        type: 'offramp';
-        params: {
-            tokenAddress: Address;
-            amount: number;
-        };
-    }): Promise<OfframpQuote>;
+    async getQuote(params: OfframpQuoteParams): Promise<OfframpQuote>;
 
     async getQuote(
-        params:
-            | {
-                  type: 'onramp';
-                  params: Optional<
-                      GatewayQuoteParams,
-                      'amount' | 'fromChain' | 'fromToken' | 'fromUserAddress' | 'toUserAddress'
-                  >;
-              }
-            | {
-                  type: 'offramp';
-                  params: {
-                      tokenAddress: Address;
-                      amount: number;
-                  };
-              }
+        params: OnrampQuoteParams | OfframpQuoteParams
     ): Promise<(GatewayQuote & GatewayTokensInfo) | OfframpQuote> {
         if (params.type === 'onramp') {
             return this.getOnrampQuote(params.params);

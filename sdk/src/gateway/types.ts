@@ -7,6 +7,8 @@ type TokenSymbol = string;
 
 export type EvmAddress = string;
 
+export type Optional<T, K extends keyof T> = Omit<T, K> & Partial<T>;
+
 export enum Chain {
     // NOTE: we also support Bitcoin testnet
     BITCOIN = 'bitcoin',
@@ -518,3 +520,16 @@ export interface DefiLlamaPool {
     underlyingTokens: null | string[];
     rewardTokens: null | string[];
 }
+
+export type OnrampQuoteParams = {
+    type: 'onramp';
+    params: Optional<GatewayQuoteParams, 'amount' | 'fromChain' | 'fromToken' | 'fromUserAddress' | 'toUserAddress'>;
+};
+
+export type OfframpQuoteParams = {
+    type: 'offramp';
+    params: {
+        tokenAddress: Address;
+        amount: number;
+    };
+};
