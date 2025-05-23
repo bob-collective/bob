@@ -61,7 +61,7 @@ Use the "Add to Wallet" button below to automatically add BOB to your wallet:
 1. Open your wallet settings
 2. Add network with these details:
    - Network Name: `BOB Mainnet` or `BOB Sepolia`
-   - Chain ID: `60808` (Mainnet) or `11155111` (Sepolia)
+   - Chain ID: `60808` (Mainnet) or `808813` (Sepolia)
    - Currency Symbol: `ETH`
    - RPC URL: See network details above
    - Block Explorer: See network details above
