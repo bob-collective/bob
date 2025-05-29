@@ -40,12 +40,12 @@ export function createCommitTxData(
         network,
     });
 
-    const cblock = scriptTaproot.witness?.[scriptTaproot.witness.length - 1];
+    const cblock = scriptTaproot.witness?.at(-1);
 
     const tapLeafScript = {
         leafVersion: scriptTaproot.redeemVersion!,
         script: outputScript,
-        controlBlock: cblock,
+        controlBlock: cblock || Buffer.alloc(0),
     };
 
     return {

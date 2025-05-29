@@ -141,6 +141,11 @@ export interface OutputJson {
     };
 
     /**
+     * Number of confirmations
+     */
+    confirmations: number;
+
+    /**
      * The outpoint.
      */
     outpoint: string;

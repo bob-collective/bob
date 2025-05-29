@@ -56,7 +56,8 @@ mod tests {
     use super::*;
 
     #[tokio::test]
-    async fn test_mempool_fees() -> Result<()> {
+    #[ignore]
+    async fn test_mempool_fees_e2e() -> Result<()> {
         let client = MempoolClient::new(None, bitcoin::Network::Signet)?;
         let fees = client.get_fee_estimates().await?;
         assert!(fees.fastest_fee > 0);

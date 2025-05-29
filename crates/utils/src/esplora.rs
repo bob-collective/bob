@@ -66,7 +66,7 @@ impl EsploraBuilder {
         let mut cmd = self.program.as_ref().map_or_else(|| Command::new("electrs"), Command::new);
         cmd.stdout(std::process::Stdio::piped()).stderr(std::process::Stdio::piped());
 
-        let http_port = self.port.unwrap_or_else(|| unused_port());
+        let http_port = self.port.unwrap_or_else(unused_port);
         let db_dir = TempDir::new().expect("Couldn't create temp directory");
 
         cmd.arg("-vvvv");
@@ -80,7 +80,7 @@ impl EsploraBuilder {
         cmd.arg("--daemon-rpc-addr");
         cmd.arg(format!("127.0.0.1:{bitcoin_port}"));
         cmd.arg("--http-addr");
-        cmd.arg(format!("[::0]:{}", http_port));
+        cmd.arg(format!("[::0]:{http_port}"));
         cmd.arg("--index-unspendables");
         cmd.arg(format!("--db-dir={}", db_dir.path().to_str().unwrap()));
         cmd.arg("--electrum-rpc-addr=127.0.0.1:0");
@@ -117,8 +117,10 @@ mod tests {
     use super::*;
     use crate::{BitcoinCore, EsploraClient};
     use eyre::Result;
+    use serial_test::serial;
 
     #[tokio::test]
+    #[serial]
     async fn can_launch_esplora() -> Result<()> {
         let bitcoin = BitcoinCore::new().spawn();
         bitcoin.fund_wallet("Alice").expect("Should fund Alice");

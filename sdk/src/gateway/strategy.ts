@@ -1,4 +1,4 @@
-import { createPublicClient, http, type PublicClient, type Chain, erc20Abi, Address } from 'viem';
+import { createPublicClient, http, type PublicClient, type Chain, erc20Abi, Address, zeroAddress } from 'viem';
 import { ADDRESS_LOOKUP, tokenToStrategyTypeMap } from './tokens';
 import {
     ChainId,
@@ -164,7 +164,6 @@ export default class StrategyClient {
     private viemClient: PublicClient;
 
     constructor(chain: Chain, rpcUrl?: string) {
-        // @ts-expect-error: prevent TS2589
         this.viemClient = createPublicClient({
             transport: http(),
             chain: {
@@ -192,7 +191,7 @@ export default class StrategyClient {
             const tokenAddress = token.toLowerCase();
 
             const strategyType = tokenToStrategyTypeMap.get(tokenAddress) ?? 'bob';
-            const defillamaPoolId = tokenToDefiLlamaPoolIdMap.get(tokenAddress);
+            const defillamaPoolId = tokenToDefiLlamaPoolIdMap.get(tokenAddress) || '';
             const defillamaPool = defillamaPoolMap.get(defillamaPoolId);
 
             return {
@@ -249,7 +248,8 @@ export default class StrategyClient {
     private async getTokenAssetState(token: Token): Promise<StrategyAssetState> {
         const outputTokenAddress = token.address as Address;
 
-        const [{ result: totalSupply }] = await this.viemClient.multicall({
+        const [totalSupply] = await this.viemClient.multicall({
+            allowFailure: false,
             contracts: [
                 {
                     address: outputTokenAddress,
@@ -262,47 +262,48 @@ export default class StrategyClient {
 
         return {
             address: outputTokenAddress,
-            totalUnderlying: totalSupply,
+            totalUnderlying: totalSupply!,
         };
     }
 
     private async getCompoundV2StrategyAssetState(token: Token): Promise<StrategyAssetState> {
         const outputTokenAddress = token.address as Address;
 
-        const [{ result: totalSupply }, { result: exchangeRate }, { result: underlyingAddress }] =
-            await this.viemClient.multicall({
-                contracts: [
-                    {
-                        address: outputTokenAddress,
-                        abi: erc20Abi,
-                        functionName: 'totalSupply',
-                        args: [],
-                    },
-                    {
-                        address: outputTokenAddress,
-                        abi: compoundV2CTokenAbi,
-                        functionName: 'exchangeRateCurrent',
-                        args: [],
-                    },
-                    {
-                        address: outputTokenAddress,
-                        abi: compoundV2CTokenAbi,
-                        functionName: 'underlying',
-                        args: [],
-                    },
-                ],
-            });
+        const [totalSupply, exchangeRate, underlyingAddress] = await this.viemClient.multicall({
+            allowFailure: false,
+            contracts: [
+                {
+                    address: outputTokenAddress,
+                    abi: erc20Abi,
+                    functionName: 'totalSupply',
+                    args: [],
+                },
+                {
+                    address: outputTokenAddress,
+                    abi: compoundV2CTokenAbi,
+                    functionName: 'exchangeRateCurrent',
+                    args: [],
+                },
+                {
+                    address: outputTokenAddress,
+                    abi: compoundV2CTokenAbi,
+                    functionName: 'underlying',
+                    args: [],
+                },
+            ],
+        });
 
         return {
-            address: underlyingAddress,
-            totalUnderlying: (exchangeRate * totalSupply) / 10n ** 18n,
+            address: underlyingAddress ?? zeroAddress,
+            totalUnderlying: exchangeRate && totalSupply ? (exchangeRate * totalSupply) / 10n ** 18n : 0n,
         };
     }
 
     private async getAAVEV2StrategyAssetState(token: Token): Promise<StrategyAssetState> {
         const outputTokenAddress = token.address as Address;
 
-        const [{ result: totalSupply }, { result: underlyingAddress }] = await this.viemClient.multicall({
+        const [totalSupply, underlyingAddress] = await this.viemClient.multicall({
+            allowFailure: false,
             contracts: [
                 {
                     address: outputTokenAddress,
@@ -320,8 +321,8 @@ export default class StrategyClient {
         });
 
         return {
-            address: underlyingAddress,
-            totalUnderlying: totalSupply,
+            address: underlyingAddress!,
+            totalUnderlying: totalSupply!,
         };
     }
 

@@ -19,14 +19,18 @@ BOB Mainnet is the production network where real value is at stake. Use this net
 - Staking BTC
 
 ### Network Details
+
 - **Chain ID**: `60808`
 - **RPC URL**: `https://rpc.gobob.xyz/`
 - **Block Explorer**: `https://explorer.gobob.xyz/`
-- **Currency Symbol**: `ETH`
+- **Currency Symbol and Gas Token**: `ETH`
 
 ### Alternative RPC URLs
+
 If the main RPC URL is not working, try these alternatives:
-- `https://bob-mainnet.public.blastapi.io`
+
+- `https://bob.gateway.tenderly.co`
+- `https://bob.drpc.org`
 
 ## BOB Sepolia (Testnet)
 
@@ -38,10 +42,11 @@ BOB Sepolia is the test network where you can experiment without risking real as
 - Testing integrations
 
 ### Network Details
-- **Chain ID**: `11155111`
-- **RPC URL**: `https://sepolia.rpc.gobob.xyz/`
-- **Block Explorer**: `https://sepolia.explorer.gobob.xyz/`
-- **Currency Symbol**: `ETH`
+
+- **Chain ID**: `808813`
+- **RPC URL**: `https://bob-sepolia.rpc.gobob.xyz`
+- **Block Explorer**: `https://bob-sepolia.explorer.gobob.xyz/`
+- **Currency Symbol and Gas Token**: `Sepolia ETH`
 
 ## Connecting to BOB
 
@@ -56,7 +61,7 @@ Use the "Add to Wallet" button below to automatically add BOB to your wallet:
 1. Open your wallet settings
 2. Add network with these details:
    - Network Name: `BOB Mainnet` or `BOB Sepolia`
-   - Chain ID: `60808` (Mainnet) or `11155111` (Sepolia)
+   - Chain ID: `60808` (Mainnet) or `808813` (Sepolia)
    - Currency Symbol: `ETH`
    - RPC URL: See network details above
    - Block Explorer: See network details above

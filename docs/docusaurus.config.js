@@ -136,6 +136,10 @@ const config = {
             from: "/docs/learn/guides/onboard-to-bob",
             to: "/learn/user-guides/onboard-to-bob",
           },
+          {
+            from: "/learn/reference/tools/wallets",
+            to: "/learn/user-guides/getting-started/wallet-guide/",
+          },
 
           // Builder Guides
           {
@@ -266,8 +270,8 @@ const config = {
         title: "",
         logo: {
           alt: "BOB Logo",
-          src: "img/logo.svg",
-          srcDark: "img/logo-light.svg",
+          src: "img/bob.png",
+          srcDark: "img/bob-light.png",
         },
         items: [
           {

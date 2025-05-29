@@ -1,25 +1,22 @@
 {
-  "compilerOptions": {
-    "module": "commonjs",
-    "target": "ES2020",
-    "sourceMap": true,
-    "esModuleInterop": true,
-    "composite": true,
-    "resolveJsonModule": true,
-    "declaration": true,
-    "noImplicitAny": false,
-    "removeComments": true,
-    "noLib": false,
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "rootDir": "./src",
-    "outDir": "./dist",
-    "skipLibCheck": true
-  },
-  "include": [
-    "src/**/*"
-  ],
-  "exclude": [
-    "./node_modules/*"
-  ]
+    "compilerOptions": {
+        "module": "commonjs",
+        "target": "ES2020",
+        "sourceMap": true,
+        "esModuleInterop": true,
+        "composite": true,
+        "resolveJsonModule": true,
+        "declaration": true,
+        "noImplicitAny": false,
+        "removeComments": true,
+        "noLib": false,
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
+        "strictNullChecks": true,
+        "rootDir": "./src",
+        "outDir": "./dist",
+        "skipLibCheck": true
+    },
+    "include": ["src/**/*"],
+    "exclude": ["./node_modules/*"]
 }

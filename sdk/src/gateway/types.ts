@@ -7,6 +7,8 @@ type TokenSymbol = string;
 
 export type EvmAddress = string;
 
+export type Optional<T, K extends keyof T> = Omit<T, K> & Partial<T>;
+
 export enum Chain {
     // NOTE: we also support Bitcoin testnet
     BITCOIN = 'bitcoin',
@@ -23,7 +25,7 @@ export enum ChainId {
 /**
  * Parameters required to construct a staking transaction.
  */
-export type BuildStakeParams = {
+export type StakeParams = {
     /** @description The address of the staking strategy contract */
     strategyAddress: Address;
     /** @description The token address being staked */
@@ -49,13 +51,11 @@ export type StakeTransactionParams = {
     /** @description The ABI used to interact with the staking contract */
     strategyABI: typeof strategyCaller;
     /** @description The name of the function being called on the contract */
-    strategyFunctionName: string;
+    strategyFunctionName: (typeof strategyCaller)[number]['name'];
     /** @description Arguments required for the staking contract call */
     strategyArgs: [Address, bigint, Address, { amountOutMin: bigint }];
     /** @description The wallet address executing the transaction */
-    account: Address;
-    /** @description  Arguments required for the token approval transaction */
-    erc20ApproveArgs: [Address, bigint];
+    address: Address;
 };
 
 /**
@@ -125,8 +125,6 @@ export interface GatewayQuoteParams {
     strategyAddress?: string;
     /** @description Campaign id for tracking */
     campaignId?: string;
-    /** @description Users bitcoin Address */
-    bitcoinUserAddress?: string;
 }
 
 /**
@@ -257,7 +255,7 @@ export type OffRampGatewayCreateQuoteResponse = {
     gateway: EvmAddress;
 };
 
-export interface GatewayOrderResponse {
+export interface OnrampOrderResponse {
     /** @description The gateway address */
     gatewayAddress: EvmAddress;
     /** @description The base token address (e.g. wBTC or tBTC) */
@@ -316,8 +314,8 @@ export type OrderStatus =
       };
 
 /** Order given by the Gateway API once the bitcoin tx is submitted */
-export type GatewayOrder = Omit<
-    GatewayOrderResponse & {
+export type OnrampOrder = Omit<
+    OnrampOrderResponse & {
         /** @description The gas refill in satoshis */
         gasRefill: number;
     },
@@ -333,7 +331,7 @@ export type GatewayOrder = Omit<
     getConfirmations(esploraClient: EsploraClient, latestHeight?: number): Promise<number>;
     /** @description Get the actual order status */
     getStatus(esploraClient: EsploraClient, latestHeight?: number): Promise<OrderStatus>;
-};
+} & GatewayTokensInfo;
 
 export type GatewayTokensInfo = {
     /** @description The base token (e.g. wBTC or tBTC) */
@@ -386,7 +384,7 @@ export interface OfframpLiquidity {
 /** @dev Params used for createOrder call on the off-ramp contract */
 export type OfframpCreateOrderParams = {
     quote: OfframpQuote;
-    offrampABI: (typeof offrampCaller)['createOrder'];
+    offrampABI: typeof offrampCaller;
     offrampFunctionName: 'createOrder';
     offrampArgs: [
         {
@@ -397,7 +395,7 @@ export type OfframpCreateOrderParams = {
             /** @dev Timestamp by which the order must be created */
             orderCreationDeadline: bigint;
             /** @dev Output script for Bitcoin settlement */
-            outputScript: string;
+            outputScript: `0x${string}`;
             /** @dev Token to use for payment */
             token: Address;
             /** @dev EVM address of the user who can unlock the order or bump its fee */
@@ -408,7 +406,7 @@ export type OfframpCreateOrderParams = {
 
 /** @dev Params used to bump fee for an existing order */
 export type OfframpBumpFeeParams = {
-    offrampABI: (typeof offrampCaller)['bumpFeeOfExistingOrder'];
+    offrampABI: typeof offrampCaller;
     offrampRegistryAddress: Address;
     offrampFunctionName: 'bumpFeeOfExistingOrder';
     /**
@@ -420,7 +418,7 @@ export type OfframpBumpFeeParams = {
 
 /** @dev Params used to unlock funds after order completion or refund */
 export type OfframpUnlockFundsParams = {
-    offrampABI: (typeof offrampCaller)['unlockFunds'];
+    offrampABI: typeof offrampCaller;
     offrampRegistryAddress: Address;
     offrampFunctionName: 'unlockFunds';
     /**
@@ -431,7 +429,7 @@ export type OfframpUnlockFundsParams = {
 };
 
 /** @dev Final state of an offramp order used in UI/backend */
-export type OfframpOrderDetails = {
+export type OfframpOrder = {
     /** @dev Unique identifier for the off-ramp order */
     orderId: bigint;
     /** @dev The token address */
@@ -443,11 +441,11 @@ export type OfframpOrderDetails = {
     /** @dev The current status of the order */
     status: OfframpOrderStatus;
     /** @dev The timestamp when the order was created or updated */
-    orderTimestamp: bigint;
-    /** @dev The transaction hash on the EVM chain */
-    evmTx: string;
+    orderTimestamp: number;
+    /** @dev The user submit order transaction hash on the EVM chain */
+    submitOrderEvmTx: string | null;
     /** @dev The transaction ID on the Bitcoin network */
-    btcTx: string;
+    btcTx: string | null;
     /** @dev Indicates whether the fees for this order should be bumped based on current network conditions */
     shouldFeesBeBumped: boolean;
     /** @dev Indicates whether the user can unlock this order (typically if it's still active) */
@@ -475,7 +473,7 @@ export type OnchainOfframpOrderDetails = {
     /** @dev Order status */
     status: OfframpOrderStatus;
     /** @dev When the order was created (unix timestamp) */
-    orderTimestamp: bigint;
+    orderTimestamp: number;
 };
 
 /** @dev Internal */
@@ -487,7 +485,7 @@ export interface OfframpRawOrder {
     status: string;
     orderTimestamp: string;
     btcTx: string | null;
-    evmTx: string | null;
+    submitOrderEvmTx: string | null;
     shouldFeesBeBumped: boolean;
 }
 
@@ -522,3 +520,16 @@ export interface DefiLlamaPool {
     underlyingTokens: null | string[];
     rewardTokens: null | string[];
 }
+
+export type OnrampQuoteParams = {
+    type: 'onramp';
+    params: Optional<GatewayQuoteParams, 'amount' | 'fromChain' | 'fromToken' | 'fromUserAddress' | 'toUserAddress'>;
+};
+
+export type OfframpQuoteParams = {
+    type: 'offramp';
+    params: {
+        tokenAddress: Address;
+        amount: number;
+    };
+};
