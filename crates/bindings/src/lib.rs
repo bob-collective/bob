@@ -19,5 +19,6 @@ pub mod r#fullrelaywithverify;
 pub mod r#fullrelaywithverifydirecttest;
 pub mod r#fullrelaywithverifytest;
 pub mod r#fullrelaywithverifythroughbitcointxtest;
+pub mod r#fullrelaywithverifythroughwitnesstxtest;
 pub mod r#ifullrelay;
 pub mod r#ifullrelaywithverify;

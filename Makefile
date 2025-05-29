@@ -17,7 +17,7 @@ bindings:
 	rm -rf $(BINDINGS_OUT_PATH)
 
 # Generate new bindings
-	@forge bind --root $(CONTRACTS_PATH) --crate-name $(BINDINGS_FOLDER) --select FullRelay
+	@forge bind --root $(CONTRACTS_PATH) --crate-name $(BINDINGS_FOLDER) --select FullRelay --alloy --force
 
 # Move bindings to the correct location
 	@mv -f $(BINDINGS_OUT_PATH) $(CRATES_FOLDER)

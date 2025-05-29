@@ -10,8 +10,8 @@ use utils::EsploraClient;
 
 const HEADERS_PER_BATCH: usize = 5;
 
-fn serialize_headers(headers: &Vec<RelayHeader>) -> Result<Vec<u8>> {
-    Ok(headers.iter().map(|header| consensus::serialize(&header.header)).flatten().collect())
+fn serialize_headers(headers: &[RelayHeader]) -> Result<Vec<u8>> {
+    Ok(headers.iter().flat_map(|header| consensus::serialize(&header.header)).collect())
 }
 
 #[derive(Clone)]
@@ -31,30 +31,21 @@ impl RelayHeader {
     }
 }
 
-pub struct Relayer<
-    T: alloy::contract::private::Transport + ::core::clone::Clone,
-    P: alloy::contract::private::Provider<T, N>,
-    N: alloy::contract::private::Network,
-> {
-    pub contract: BitcoinRelayInstance<T, P, N>,
+pub struct Relayer<P: alloy::contract::private::Provider<N>, N: alloy::contract::private::Network> {
+    pub contract: BitcoinRelayInstance<P, N>,
     pub esplora_client: EsploraClient,
 }
 
 // https://github.com/summa-tx/relays/tree/master/maintainer/maintainer/header_forwarder
-impl<
-        T: alloy::contract::private::Transport + ::core::clone::Clone,
-        P: alloy::contract::private::Provider<T, N>,
-        N: alloy::contract::private::Network,
-    > Relayer<T, P, N>
-{
-    pub fn new(contract: BitcoinRelayInstance<T, P, N>, esplora_client: EsploraClient) -> Self {
+impl<P: alloy::contract::private::Provider<N>, N: alloy::contract::private::Network> Relayer<P, N> {
+    pub fn new(contract: BitcoinRelayInstance<P, N>, esplora_client: EsploraClient) -> Self {
         Self { contract, esplora_client }
     }
 
     async fn find_latest_height(&self) -> Result<u32> {
-        let latest_digest = self.contract.getBestKnownDigest().call().await?._0;
+        let latest_digest = self.contract.getBestKnownDigest().call().await?;
         let mut latest_height: u32 =
-            self.contract.findHeight(latest_digest).call().await?._0.try_into().unwrap();
+            self.contract.findHeight(latest_digest).call().await?.try_into().unwrap();
 
         let mut latest = self
             .esplora_client
@@ -141,11 +132,11 @@ impl<
             let (pre_change, post_change): (Vec<RelayHeader>, Vec<RelayHeader>) =
                 headers.into_iter().partition(|header| header.height % 2016 >= start_mod);
 
-            if pre_change.len() != 0 {
+            if !pre_change.is_empty() {
                 self.add_headers(pre_change).await?;
             }
 
-            if post_change.len() != 0 {
+            if !post_change.is_empty() {
                 self.add_diff_change(post_change).await?;
             }
         }
@@ -213,7 +204,7 @@ impl<
                 .call()
                 .await?;
 
-            if is_ancestor._0 {
+            if is_ancestor {
                 return Ok(ancestor);
             }
 
@@ -231,7 +222,7 @@ impl<
     }
 
     async fn update_best_digest(&self, new_best: RelayHeader) -> Result<()> {
-        let current_best_digest_raw = self.contract.getBestKnownDigest().call().await?._0;
+        let current_best_digest_raw = self.contract.getBestKnownDigest().call().await?;
         let current_best_digest = BlockHash::from_byte_array(current_best_digest_raw.0);
         let current_best = RelayHeader {
             hash: current_best_digest,
@@ -241,7 +232,6 @@ impl<
                 .findHeight(current_best_digest_raw)
                 .call()
                 .await?
-                ._0
                 .try_into()
                 .unwrap(),
         };

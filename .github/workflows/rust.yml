@@ -1,0 +1,46 @@
+name: Rust
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+
+      - name: Install Bitcoin
+        run: |
+          sudo add-apt-repository ppa:luke-jr/bitcoincore
+          sudo apt-get update
+          sudo apt-get install -y bitcoind
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: rustfmt, clippy, rust-docs
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+
+      - name: Install Electrs
+        run: cargo install --git https://github.com/blockstream/electrs --rev 6d182d8d0801a40c44a26000ae731a38c1d96218 --bin electrs
+
+      - name: Format check
+        run: cargo fmt --all --check
+
+      - name: Clippy
+        run: cargo clippy --workspace --tests --all-features
+        env:
+          RUSTFLAGS: "-D warnings"
+
+      - name: Run tests
+        run: cargo test --workspace --all-features

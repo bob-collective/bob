@@ -194,11 +194,12 @@ impl BitcoinCore {
         let datadir = TempDir::new().expect("Couldn't create temp directory");
         cmd.arg(format!("-datadir={}", datadir.path().to_str().unwrap()));
 
-        let rpcport = self.rpcport.unwrap_or_else(|| unused_port());
-        cmd.arg(format!("-rpcport={}", rpcport));
+        let rpcport = self.rpcport.unwrap_or_else(unused_port);
 
-        cmd.arg(format!("-rpcuser={}", BITCOIN_RPC_USER));
-        cmd.arg(format!("-rpcpassword={}", BITCOIN_RPC_PASSWORD));
+        cmd.arg(format!("-rpcport={rpcport}"));
+
+        cmd.arg(format!("-rpcuser={BITCOIN_RPC_USER}"));
+        cmd.arg(format!("-rpcpassword={BITCOIN_RPC_PASSWORD}"));
 
         cmd.args(self.args);
 
