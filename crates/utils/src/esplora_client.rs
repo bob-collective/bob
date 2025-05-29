@@ -221,7 +221,7 @@ mod tests {
         let mut matches: Vec<Txid> = vec![];
         let mut index: Vec<u32> = vec![];
         left.extract_matches(&mut matches, &mut index)?;
-        matches.get(0).filter(|x| txid == **x).unwrap();
+        matches.first().filter(|x| txid == **x).unwrap();
 
         let right = build_merkle_block(
             &esplora_client,
