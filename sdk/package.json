@@ -42,7 +42,7 @@
         "@eslint/eslintrc": "^3.3.1",
         "@eslint/js": "^9.19.0",
         "@magiceden-oss/runestone-lib": "^1.0.2",
-        "@scure/base": "^1.2.4",
+        "@scure/base": "^1.2.6",
         "@scure/btc-signer": "^1.6.0",
         "bitcoin-address-validation": "^3.0.0",
         "bitcoinjs-lib": "^6.1.7",
