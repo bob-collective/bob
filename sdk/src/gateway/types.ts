@@ -358,15 +358,15 @@ export type OfframpOrderStatus = 'Active' | 'Accepted' | 'Processed' | 'Refunded
 /** @dev Detailed breakdown of fees associated with an offramp quote */
 export interface OfframpFeeBreakdown {
     /** @dev Total fees in satoshis */
-    overall_fee_sats: bigint;
+    overallFeeSats: bigint;
     /** @dev Fee for transaction inclusion */
-    inclusion_fee_sats: bigint;
+    inclusionFeeSats: bigint;
     /** @dev Protocol-specific fee */
-    protocol_fee_sats: bigint;
+    protocolFeeSats: bigint;
     /** @dev Affiliate-related fee */
-    affiliate_fee_sats: bigint;
+    affiliateFeeSats: bigint;
     /** @dev Fastest available fee rate (e.g., sat/vB) */
-    fastest_fee_rate: bigint;
+    fastestFeeRate: bigint;
 }
 
 /** @dev Offramp order quote returned by the quoting logic */
