@@ -355,20 +355,32 @@ export type GatewayStartOrder = GatewayCreateOrderResponse & {
 
 export type OfframpOrderStatus = 'Active' | 'Accepted' | 'Processed' | 'Refunded';
 
+/** @dev Detailed breakdown of fees associated with an offramp quote */
+export interface OfframpFeeBreakdown {
+    /** @dev Total fees in satoshis */
+    overallFeeSats: number;
+    /** @dev Fee for transaction inclusion */
+    inclusionFeeSats: number;
+    /** @dev Protocol-specific fee */
+    protocolFeeSats: number;
+    /** @dev Affiliate-related fee */
+    affiliateFeeSats: number;
+    /** @dev Fastest available fee rate (e.g., sat/vB) */
+    fastestFeeRate: number;
+}
+
 /** @dev Offramp order quote returned by the quoting logic */
 export interface OfframpQuote {
     /** @dev Amount to lock in satoshis */
-    amountLockInSat: bigint;
-    /** @dev Maximum fee paid in satoshis */
-    feesInSat: bigint;
+    amountLockInSat: number;
     /** @dev Deadline for order creation (unix timestamp) */
-    deadline: bigint;
+    deadline: number;
     /** @dev Address of the off-ramp registry handling the order */
     registryAddress: Address;
-    /** @dev Fee rate used for calculating satoshi fee */
-    feeRate: bigint;
     /** @dev Token address used for payment */
     token: Address;
+    /** @dev Detailed fee breakdown */
+    feeBreakdown: OfframpFeeBreakdown;
 }
 
 /** @dev Offramp Available Liquidity */
@@ -384,6 +396,7 @@ export interface OfframpLiquidity {
 /** @dev Params used for createOrder call on the off-ramp contract */
 export type OfframpCreateOrderParams = {
     quote: OfframpQuote;
+    feeBreakdown: OfframpFeeBreakdown;
     offrampABI: typeof offrampCaller;
     offrampFunctionName: 'createOrder';
     offrampArgs: [

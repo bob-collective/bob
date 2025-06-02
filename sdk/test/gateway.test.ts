@@ -575,12 +575,21 @@ describe('Gateway Tests', () => {
 
     it('should get valid create offramp quote', async () => {
         const gatewaySDK = new GatewaySDK('signet');
-        nock(`${SIGNET_GATEWAY_BASE_URL}`).get('/offramp-quote').query(true).reply(200, {
-            amountLockInSat: 10000000000000,
-            feesInSat: 385,
-            registryAddress: '0xd7b27b178f6bf290155201109906ad203b6d99b1',
-            feeRate: 1,
-        });
+
+        nock(`${SIGNET_GATEWAY_BASE_URL}`)
+            .get('/offramp-quote')
+            .query(true)
+            .reply(200, {
+                amountLockInSat: 10000000000000,
+                registryAddress: '0xd7b27b178f6bf290155201109906ad203b6d99b1',
+                feeBreakdown: {
+                    overallFeeSats: 385,
+                    inclusionFeeSats: 384,
+                    protocolFeeSats: 1,
+                    affiliateFeeSats: 0,
+                    fastestFeeRate: 1,
+                },
+            });
 
         const result = await gatewaySDK.createOfframpOrder({
             fromToken: '0xda472456b1a6a2fc9ae7edb0e007064224d4284c',
@@ -592,7 +601,7 @@ describe('Gateway Tests', () => {
         expect(result.offrampArgs[0]).to.deep.equal({
             satAmountToLock: BigInt('10000000000000'),
             satFeesMax: BigInt('385'),
-            orderCreationDeadline: result.offrampArgs[0].orderCreationDeadline,
+            orderCreationDeadline: result.offrampArgs[0].orderCreationDeadline, // timestamp is dynamic
             outputScript: '0x1600149d5e60f3b5cc2d246f990692ee4b267d1cd58477',
             token: '0xda472456b1a6a2fc9ae7edb0e007064224d4284c',
             orderOwner: '0xFAEe001465dE6D7E8414aCDD9eF4aC5A35B2B808',
@@ -639,7 +648,7 @@ describe('Gateway Tests', () => {
         });
         nock(SIGNET_GATEWAY_BASE_URL)
             .get('/offramp-registry-address')
-            .reply(200, '"0xb74a5af78520075f90f4be803153673a162a9776"');
+            .reply(200, '0xb74a5af78520075f90f4be803153673a162a9776');
 
         const result: OfframpOrder[] = await gatewaySDK.getOfframpOrders(userAddress);
 
@@ -663,12 +672,20 @@ describe('Gateway Tests', () => {
 
     it('should return error for taproot address', async () => {
         const gatewaySDK = new GatewaySDK('signet');
-        nock(`${SIGNET_GATEWAY_BASE_URL}`).get('/offramp-quote').query(true).reply(200, {
-            amountLockInSat: 10000000000000,
-            feesInSat: 385,
-            registryAddress: '0xd7b27b178f6bf290155201109906ad203b6d99b1',
-            feeRate: 1,
-        });
+        nock(`${SIGNET_GATEWAY_BASE_URL}`)
+            .get('/offramp-quote')
+            .query(true)
+            .reply(200, {
+                amountLockInSat: 10000000000000,
+                registryAddress: '0xd7b27b178f6bf290155201109906ad203b6d99b1',
+                feeBreakdown: {
+                    overallFeeSats: 385,
+                    inclusionFeeSats: 384,
+                    protocolFeeSats: 1,
+                    affiliateFeeSats: 0,
+                    fastestFeeRate: 1,
+                },
+            });
 
         await expect(
             gatewaySDK.createOfframpOrder({
@@ -815,14 +832,21 @@ describe('Gateway Tests', () => {
             amountInWrappedToken: '1000',
             token: outputTokenAddress,
         });
-        nock(`${SIGNET_GATEWAY_BASE_URL}`).get(`/offramp-quote?${searchParams}`).reply(201, {
-            amountLockInSat: 10_000,
-            feesInSat: 932,
-            feeRate: 1000,
-            registryAddress: zeroAddress,
-        });
+        nock(`${SIGNET_GATEWAY_BASE_URL}`)
+            .get(`/offramp-quote?${searchParams}`)
+            .reply(201, {
+                amountLockInSat: 10_000,
+                registryAddress: zeroAddress,
+                feeBreakdown: {
+                    overallFeeSats: 932,
+                    inclusionFeeSats: 930,
+                    protocolFeeSats: 1,
+                    affiliateFeeSats: 1,
+                    fastestFeeRate: 1000,
+                },
+            });
 
-        nock(`${SIGNET_GATEWAY_BASE_URL}`).get(`/offramp-registry-address`).reply(201, `"${zeroAddress}"`);
+        nock(`${SIGNET_GATEWAY_BASE_URL}`).get(`/offramp-registry-address`).reply(201, `${zeroAddress}`);
 
         const evmTxId = await gatewaySDK.executeQuote(
             {

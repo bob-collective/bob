@@ -263,17 +263,22 @@ export class GatewayApiClient {
             throw new Error(`Offramp API Error: ${errorMessage} ${queryParams}`);
         }
 
-        const rawQuote = await response.json();
+        const rawQuote: OfframpQuote = await response.json();
         const currentUnixTimeInSec = Math.floor(Date.now() / 1000);
         const deadline = currentUnixTimeInSec + ORDER_DEADLINE_IN_SECONDS;
 
         return {
-            amountLockInSat: BigInt(rawQuote.amountLockInSat.toString()),
-            feesInSat: BigInt(rawQuote.feesInSat.toString()),
-            feeRate: BigInt(rawQuote.feeRate.toString()),
-            deadline: BigInt(deadline.toString()),
+            amountLockInSat: rawQuote.amountLockInSat,
             registryAddress: rawQuote.registryAddress as Address,
+            deadline: deadline,
             token: token as Address,
+            feeBreakdown: {
+                overallFeeSats: rawQuote.feeBreakdown.overallFeeSats,
+                inclusionFeeSats: rawQuote.feeBreakdown.inclusionFeeSats,
+                protocolFeeSats: rawQuote.feeBreakdown.protocolFeeSats,
+                affiliateFeeSats: rawQuote.feeBreakdown.affiliateFeeSats,
+                fastestFeeRate: rawQuote.feeBreakdown.fastestFeeRate,
+            },
         };
     }
 
@@ -319,12 +324,13 @@ export class GatewayApiClient {
         return {
             quote: offrampQuote,
             offrampABI: offrampCaller,
+            feeBreakdown: offrampQuote.feeBreakdown,
             offrampFunctionName: 'createOrder' as const,
             offrampArgs: [
                 {
-                    satAmountToLock: offrampQuote.amountLockInSat,
-                    satFeesMax: offrampQuote.feesInSat,
-                    orderCreationDeadline: offrampQuote.deadline,
+                    satAmountToLock: BigInt(offrampQuote.amountLockInSat),
+                    satFeesMax: BigInt(offrampQuote.feeBreakdown.overallFeeSats),
+                    orderCreationDeadline: BigInt(offrampQuote.deadline),
                     outputScript: receiverAddress as `0x${string}`,
                     token: offrampQuote.token,
                     orderOwner: params.fromUserAddress as Address,
@@ -369,7 +375,7 @@ export class GatewayApiClient {
             offrampABI: offrampCaller,
             offrampRegistryAddress: offrampRegistryAddress,
             offrampFunctionName: 'bumpFeeOfExistingOrder' as const,
-            offrampArgs: [orderId, newFeeSat],
+            offrampArgs: [orderId, BigInt(newFeeSat)],
         };
     }
 
@@ -450,24 +456,22 @@ export class GatewayApiClient {
         token: Address,
         satAmountLocked: bigint,
         satFeesMax: bigint
-    ): Promise<[boolean, bigint, string?]> {
+    ): Promise<[boolean, number, string?]> {
         const decimals = getTokenDecimals(token);
         if (decimals === undefined) {
-            return [false, 0n, 'Tokens with less than 8 decimals are not supported'];
+            throw new Error('Tokens with less than 8 decimals are not supported');
         }
 
         const amountInToken = satAmountLocked * BigInt(10 ** (decimals - 8));
 
-        let offrampQuote: OfframpQuote;
         try {
-            offrampQuote = await this.fetchOfframpQuote(token.toString(), Number(amountInToken));
+            const offrampQuote = await this.fetchOfframpQuote(token.toString(), Number(amountInToken));
+            const shouldBump = satFeesMax < offrampQuote.feeBreakdown.overallFeeSats;
+            return [shouldBump, offrampQuote.feeBreakdown.overallFeeSats];
         } catch (err) {
             // Return false and 0n with an error message if fetching the quote fails
-            return [false, 0n, `Error fetching offramp quote: ${err.message || err}`];
+            throw new Error(`Error fetching offramp quote: ${err.message || err}`);
         }
-
-        const shouldBump = satFeesMax < offrampQuote.feesInSat;
-        return [shouldBump, offrampQuote.feesInSat];
     }
 
     async canOrderBeUnlocked(
@@ -512,8 +516,8 @@ export class GatewayApiClient {
         return {
             orderId,
             token: order.token as Address,
-            satAmountLocked: BigInt(order.satAmountLocked),
-            satFeesMax: BigInt(order.satFeesMax),
+            satAmountLocked: order.satAmountLocked,
+            satFeesMax: order.satFeesMax,
             sender: order.sender as Address,
             receiver: order.receiver !== (ethers.ZeroAddress as Address) ? (order.receiver as Address) : null,
             owner: order.owner !== (ethers.ZeroAddress as Address) ? (order.owner as Address) : null,
