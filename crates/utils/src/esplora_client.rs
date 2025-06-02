@@ -32,6 +32,39 @@ pub struct MerkleProof {
     pub pos: u32,
 }
 
+#[derive(Deserialize, Debug)]
+pub struct VoutFormat {
+    pub scriptpubkey: String,
+    pub scriptpubkey_asm: String,
+    pub scriptpubkey_type: String,
+    pub scriptpubkey_address: Option<String>,
+    pub value: u32,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct VinFormat {
+    pub txid: String,
+    pub vout: u32,
+    pub is_coinbase: bool,
+    pub scriptsig: String,
+    pub scriptsig_asm: String,
+    pub sequence: u32,
+    pub prevout: Option<VoutFormat>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct TransactionFormat {
+    pub txid: String,
+    pub version: u32,
+    pub locktime: u32,
+    pub size: u32,
+    pub weight: u32,
+    pub fee: u32,
+    pub vin: Vec<VinFormat>,
+    pub vout: Vec<VoutFormat>,
+    pub status: TransactionStatus,
+}
+
 impl MerkleProof {
     pub fn encode(self) -> Vec<u8> {
         // convert to little-endian
@@ -117,6 +150,13 @@ impl EsploraClient {
 
     pub async fn get_merkle_proof(&self, txid: &Txid) -> Result<MerkleProof> {
         self.get_and_decode(&format!("tx/{txid}/merkle-proof")).await
+    }
+
+    pub async fn get_transactions_by_scripthash(
+        &self,
+        scripthash: &str,
+    ) -> Result<Vec<TransactionFormat>> {
+        self.get_and_decode(&format!("scripthash/{scripthash}/txs")).await
     }
 
     pub async fn get_block_hash(&self, height: u32) -> Result<BlockHash> {
@@ -221,7 +261,7 @@ mod tests {
         let mut matches: Vec<Txid> = vec![];
         let mut index: Vec<u32> = vec![];
         left.extract_matches(&mut matches, &mut index)?;
-        matches.get(0).filter(|x| txid == **x).unwrap();
+        matches.first().filter(|x| txid == **x).unwrap();
 
         let right = build_merkle_block(
             &esplora_client,

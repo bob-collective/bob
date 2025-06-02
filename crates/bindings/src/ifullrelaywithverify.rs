@@ -17,6 +17,7 @@ interface IFullRelayWithVerify {
     function getRelayGenesis() external view returns (bytes32);
     function isAncestor(bytes32 _ancestor, bytes32 _descendant, uint256 _limit) external view returns (bool);
     function markNewHeaviest(bytes32 _ancestor, bytes memory _currentBest, bytes memory _newBest, uint256 _limit) external returns (bool);
+    function verifyHeaderHash(bytes32 _headerHash, uint8 _numConfs) external view;
     function verifyProof(bytes memory _header, bytes memory _proof, bytes32 _txId, uint256 _index, uint8 _numConfs) external view;
 }
 ```
@@ -250,6 +251,24 @@ interface IFullRelayWithVerify {
   },
   {
     "type": "function",
+    "name": "verifyHeaderHash",
+    "inputs": [
+      {
+        "name": "_headerHash",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "_numConfs",
+        "type": "uint8",
+        "internalType": "uint8"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "verifyProof",
     "inputs": [
       {
@@ -357,6 +376,8 @@ pub mod IFullRelayWithVerify {
     pub static DEPLOYED_BYTECODE: alloy_sol_types::private::Bytes = alloy_sol_types::private::Bytes::from_static(
         b"",
     );
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[derive(Default, Debug, PartialEq, Eq, Hash)]
     /**Event with signature `Extension(bytes32,bytes32)` and selector `0xf90e4f1d9cd0dd55e339411cbc9b152482307c3a23ed64715e4a2858f641a3f5`.
 ```solidity
 event Extension(bytes32 indexed _first, bytes32 indexed _last);
@@ -395,38 +416,9 @@ event Extension(bytes32 indexed _first, bytes32 indexed _last);
             );
             const SIGNATURE: &'static str = "Extension(bytes32,bytes32)";
             const SIGNATURE_HASH: alloy_sol_types::private::B256 = alloy_sol_types::private::B256::new([
-                249u8,
-                14u8,
-                79u8,
-                29u8,
-                156u8,
-                208u8,
-                221u8,
-                85u8,
-                227u8,
-                57u8,
-                65u8,
-                28u8,
-                188u8,
-                155u8,
-                21u8,
-                36u8,
-                130u8,
-                48u8,
-                124u8,
-                58u8,
-                35u8,
-                237u8,
-                100u8,
-                113u8,
-                94u8,
-                74u8,
-                40u8,
-                88u8,
-                246u8,
-                65u8,
-                163u8,
-                245u8,
+                249u8, 14u8, 79u8, 29u8, 156u8, 208u8, 221u8, 85u8, 227u8, 57u8, 65u8,
+                28u8, 188u8, 155u8, 21u8, 36u8, 130u8, 48u8, 124u8, 58u8, 35u8, 237u8,
+                100u8, 113u8, 94u8, 74u8, 40u8, 88u8, 246u8, 65u8, 163u8, 245u8,
             ]);
             const ANONYMOUS: bool = false;
             #[allow(unused_variables)]
@@ -500,6 +492,8 @@ event Extension(bytes32 indexed _first, bytes32 indexed _last);
             }
         }
     };
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[derive(Default, Debug, PartialEq, Eq, Hash)]
     /**Event with signature `NewTip(bytes32,bytes32,bytes32)` and selector `0x3cc13de64df0f0239626235c51a2da251bbc8c85664ecce39263da3ee03f606c`.
 ```solidity
 event NewTip(bytes32 indexed _from, bytes32 indexed _to, bytes32 indexed _gcd);
@@ -541,38 +535,9 @@ event NewTip(bytes32 indexed _from, bytes32 indexed _to, bytes32 indexed _gcd);
             );
             const SIGNATURE: &'static str = "NewTip(bytes32,bytes32,bytes32)";
             const SIGNATURE_HASH: alloy_sol_types::private::B256 = alloy_sol_types::private::B256::new([
-                60u8,
-                193u8,
-                61u8,
-                230u8,
-                77u8,
-                240u8,
-                240u8,
-                35u8,
-                150u8,
-                38u8,
-                35u8,
-                92u8,
-                81u8,
-                162u8,
-                218u8,
-                37u8,
-                27u8,
-                188u8,
-                140u8,
-                133u8,
-                102u8,
-                78u8,
-                204u8,
-                227u8,
-                146u8,
-                99u8,
-                218u8,
-                62u8,
-                224u8,
-                63u8,
-                96u8,
-                108u8,
+                60u8, 193u8, 61u8, 230u8, 77u8, 240u8, 240u8, 35u8, 150u8, 38u8, 35u8,
+                92u8, 81u8, 162u8, 218u8, 37u8, 27u8, 188u8, 140u8, 133u8, 102u8, 78u8,
+                204u8, 227u8, 146u8, 99u8, 218u8, 62u8, 224u8, 63u8, 96u8, 108u8,
             ]);
             const ANONYMOUS: bool = false;
             #[allow(unused_variables)]
@@ -655,6 +620,8 @@ event NewTip(bytes32 indexed _from, bytes32 indexed _to, bytes32 indexed _gcd);
             }
         }
     };
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[derive(Default, Debug, PartialEq, Eq, Hash)]
     /**Function with signature `addHeaders(bytes,bytes)` and selector `0x65da41b9`.
 ```solidity
 function addHeaders(bytes memory _anchor, bytes memory _headers) external returns (bool);
@@ -667,6 +634,8 @@ function addHeaders(bytes memory _anchor, bytes memory _headers) external return
         #[allow(missing_docs)]
         pub _headers: alloy::sol_types::private::Bytes,
     }
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[derive(Default, Debug, PartialEq, Eq, Hash)]
     ///Container type for the return parameters of the [`addHeaders(bytes,bytes)`](addHeadersCall) function.
     #[allow(non_camel_case_types, non_snake_case, clippy::pub_underscore_fields)]
     #[derive(Clone)]
@@ -762,7 +731,7 @@ function addHeaders(bytes memory _anchor, bytes memory _headers) external return
             type Token<'a> = <Self::Parameters<
                 'a,
             > as alloy_sol_types::SolType>::Token<'a>;
-            type Return = addHeadersReturn;
+            type Return = bool;
             type ReturnTuple<'a> = (alloy::sol_types::sol_data::Bool,);
             type ReturnToken<'a> = <Self::ReturnTuple<
                 'a,
@@ -787,17 +756,39 @@ function addHeaders(bytes memory _anchor, bytes memory _headers) external return
                 )
             }
             #[inline]
-            fn abi_decode_returns(
+            fn tokenize_returns(ret: &Self::Return) -> Self::ReturnToken<'_> {
+                (
+                    <alloy::sol_types::sol_data::Bool as alloy_sol_types::SolType>::tokenize(
+                        ret,
+                    ),
+                )
+            }
+            #[inline]
+            fn abi_decode_returns(data: &[u8]) -> alloy_sol_types::Result<Self::Return> {
+                <Self::ReturnTuple<
+                    '_,
+                > as alloy_sol_types::SolType>::abi_decode_sequence(data)
+                    .map(|r| {
+                        let r: addHeadersReturn = r.into();
+                        r._0
+                    })
+            }
+            #[inline]
+            fn abi_decode_returns_validate(
                 data: &[u8],
-                validate: bool,
             ) -> alloy_sol_types::Result<Self::Return> {
                 <Self::ReturnTuple<
                     '_,
-                > as alloy_sol_types::SolType>::abi_decode_sequence(data, validate)
-                    .map(Into::into)
+                > as alloy_sol_types::SolType>::abi_decode_sequence_validate(data)
+                    .map(|r| {
+                        let r: addHeadersReturn = r.into();
+                        r._0
+                    })
             }
         }
     };
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[derive(Default, Debug, PartialEq, Eq, Hash)]
     /**Function with signature `addHeadersWithRetarget(bytes,bytes,bytes)` and selector `0x7fa637fc`.
 ```solidity
 function addHeadersWithRetarget(bytes memory _oldPeriodStartHeader, bytes memory _oldPeriodEndHeader, bytes memory _headers) external returns (bool);
@@ -812,6 +803,8 @@ function addHeadersWithRetarget(bytes memory _oldPeriodStartHeader, bytes memory
         #[allow(missing_docs)]
         pub _headers: alloy::sol_types::private::Bytes,
     }
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[derive(Default, Debug, PartialEq, Eq, Hash)]
     ///Container type for the return parameters of the [`addHeadersWithRetarget(bytes,bytes,bytes)`](addHeadersWithRetargetCall) function.
     #[allow(non_camel_case_types, non_snake_case, clippy::pub_underscore_fields)]
     #[derive(Clone)]
@@ -919,7 +912,7 @@ function addHeadersWithRetarget(bytes memory _oldPeriodStartHeader, bytes memory
             type Token<'a> = <Self::Parameters<
                 'a,
             > as alloy_sol_types::SolType>::Token<'a>;
-            type Return = addHeadersWithRetargetReturn;
+            type Return = bool;
             type ReturnTuple<'a> = (alloy::sol_types::sol_data::Bool,);
             type ReturnToken<'a> = <Self::ReturnTuple<
                 'a,
@@ -947,17 +940,39 @@ function addHeadersWithRetarget(bytes memory _oldPeriodStartHeader, bytes memory
                 )
             }
             #[inline]
-            fn abi_decode_returns(
+            fn tokenize_returns(ret: &Self::Return) -> Self::ReturnToken<'_> {
+                (
+                    <alloy::sol_types::sol_data::Bool as alloy_sol_types::SolType>::tokenize(
+                        ret,
+                    ),
+                )
+            }
+            #[inline]
+            fn abi_decode_returns(data: &[u8]) -> alloy_sol_types::Result<Self::Return> {
+                <Self::ReturnTuple<
+                    '_,
+                > as alloy_sol_types::SolType>::abi_decode_sequence(data)
+                    .map(|r| {
+                        let r: addHeadersWithRetargetReturn = r.into();
+                        r._0
+                    })
+            }
+            #[inline]
+            fn abi_decode_returns_validate(
                 data: &[u8],
-                validate: bool,
             ) -> alloy_sol_types::Result<Self::Return> {
                 <Self::ReturnTuple<
                     '_,
-                > as alloy_sol_types::SolType>::abi_decode_sequence(data, validate)
-                    .map(Into::into)
+                > as alloy_sol_types::SolType>::abi_decode_sequence_validate(data)
+                    .map(|r| {
+                        let r: addHeadersWithRetargetReturn = r.into();
+                        r._0
+                    })
             }
         }
     };
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[derive(Default, Debug, PartialEq, Eq, Hash)]
     /**Function with signature `findAncestor(bytes32,uint256)` and selector `0x30017b3b`.
 ```solidity
 function findAncestor(bytes32 _digest, uint256 _offset) external view returns (bytes32);
@@ -970,6 +985,8 @@ function findAncestor(bytes32 _digest, uint256 _offset) external view returns (b
         #[allow(missing_docs)]
         pub _offset: alloy::sol_types::private::primitives::aliases::U256,
     }
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[derive(Default, Debug, PartialEq, Eq, Hash)]
     ///Container type for the return parameters of the [`findAncestor(bytes32,uint256)`](findAncestorCall) function.
     #[allow(non_camel_case_types, non_snake_case, clippy::pub_underscore_fields)]
     #[derive(Clone)]
@@ -1065,7 +1082,7 @@ function findAncestor(bytes32 _digest, uint256 _offset) external view returns (b
             type Token<'a> = <Self::Parameters<
                 'a,
             > as alloy_sol_types::SolType>::Token<'a>;
-            type Return = findAncestorReturn;
+            type Return = alloy::sol_types::private::FixedBytes<32>;
             type ReturnTuple<'a> = (alloy::sol_types::sol_data::FixedBytes<32>,);
             type ReturnToken<'a> = <Self::ReturnTuple<
                 'a,
@@ -1090,17 +1107,39 @@ function findAncestor(bytes32 _digest, uint256 _offset) external view returns (b
                 )
             }
             #[inline]
-            fn abi_decode_returns(
+            fn tokenize_returns(ret: &Self::Return) -> Self::ReturnToken<'_> {
+                (
+                    <alloy::sol_types::sol_data::FixedBytes<
+                        32,
+                    > as alloy_sol_types::SolType>::tokenize(ret),
+                )
+            }
+            #[inline]
+            fn abi_decode_returns(data: &[u8]) -> alloy_sol_types::Result<Self::Return> {
+                <Self::ReturnTuple<
+                    '_,
+                > as alloy_sol_types::SolType>::abi_decode_sequence(data)
+                    .map(|r| {
+                        let r: findAncestorReturn = r.into();
+                        r._0
+                    })
+            }
+            #[inline]
+            fn abi_decode_returns_validate(
                 data: &[u8],
-                validate: bool,
             ) -> alloy_sol_types::Result<Self::Return> {
                 <Self::ReturnTuple<
                     '_,
-                > as alloy_sol_types::SolType>::abi_decode_sequence(data, validate)
-                    .map(Into::into)
+                > as alloy_sol_types::SolType>::abi_decode_sequence_validate(data)
+                    .map(|r| {
+                        let r: findAncestorReturn = r.into();
+                        r._0
+                    })
             }
         }
     };
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[derive(Default, Debug, PartialEq, Eq, Hash)]
     /**Function with signature `findHeight(bytes32)` and selector `0x60b5c390`.
 ```solidity
 function findHeight(bytes32 _digest) external view returns (uint256);
@@ -1111,6 +1150,8 @@ function findHeight(bytes32 _digest) external view returns (uint256);
         #[allow(missing_docs)]
         pub _digest: alloy::sol_types::private::FixedBytes<32>,
     }
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[derive(Default, Debug, PartialEq, Eq, Hash)]
     ///Container type for the return parameters of the [`findHeight(bytes32)`](findHeightCall) function.
     #[allow(non_camel_case_types, non_snake_case, clippy::pub_underscore_fields)]
     #[derive(Clone)]
@@ -1196,7 +1237,7 @@ function findHeight(bytes32 _digest) external view returns (uint256);
             type Token<'a> = <Self::Parameters<
                 'a,
             > as alloy_sol_types::SolType>::Token<'a>;
-            type Return = findHeightReturn;
+            type Return = alloy::sol_types::private::primitives::aliases::U256;
             type ReturnTuple<'a> = (alloy::sol_types::sol_data::Uint<256>,);
             type ReturnToken<'a> = <Self::ReturnTuple<
                 'a,
@@ -1218,24 +1259,48 @@ function findHeight(bytes32 _digest) external view returns (uint256);
                 )
             }
             #[inline]
-            fn abi_decode_returns(
+            fn tokenize_returns(ret: &Self::Return) -> Self::ReturnToken<'_> {
+                (
+                    <alloy::sol_types::sol_data::Uint<
+                        256,
+                    > as alloy_sol_types::SolType>::tokenize(ret),
+                )
+            }
+            #[inline]
+            fn abi_decode_returns(data: &[u8]) -> alloy_sol_types::Result<Self::Return> {
+                <Self::ReturnTuple<
+                    '_,
+                > as alloy_sol_types::SolType>::abi_decode_sequence(data)
+                    .map(|r| {
+                        let r: findHeightReturn = r.into();
+                        r._0
+                    })
+            }
+            #[inline]
+            fn abi_decode_returns_validate(
                 data: &[u8],
-                validate: bool,
             ) -> alloy_sol_types::Result<Self::Return> {
                 <Self::ReturnTuple<
                     '_,
-                > as alloy_sol_types::SolType>::abi_decode_sequence(data, validate)
-                    .map(Into::into)
+                > as alloy_sol_types::SolType>::abi_decode_sequence_validate(data)
+                    .map(|r| {
+                        let r: findHeightReturn = r.into();
+                        r._0
+                    })
             }
         }
     };
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[derive(Default, Debug, PartialEq, Eq, Hash)]
     /**Function with signature `getBestKnownDigest()` and selector `0x1910d973`.
 ```solidity
 function getBestKnownDigest() external view returns (bytes32);
 ```*/
     #[allow(non_camel_case_types, non_snake_case, clippy::pub_underscore_fields)]
     #[derive(Clone)]
-    pub struct getBestKnownDigestCall {}
+    pub struct getBestKnownDigestCall;
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[derive(Default, Debug, PartialEq, Eq, Hash)]
     ///Container type for the return parameters of the [`getBestKnownDigest()`](getBestKnownDigestCall) function.
     #[allow(non_camel_case_types, non_snake_case, clippy::pub_underscore_fields)]
     #[derive(Clone)]
@@ -1280,7 +1345,7 @@ function getBestKnownDigest() external view returns (bytes32);
             impl ::core::convert::From<UnderlyingRustTuple<'_>>
             for getBestKnownDigestCall {
                 fn from(tuple: UnderlyingRustTuple<'_>) -> Self {
-                    Self {}
+                    Self
                 }
             }
         }
@@ -1323,7 +1388,7 @@ function getBestKnownDigest() external view returns (bytes32);
             type Token<'a> = <Self::Parameters<
                 'a,
             > as alloy_sol_types::SolType>::Token<'a>;
-            type Return = getBestKnownDigestReturn;
+            type Return = alloy::sol_types::private::FixedBytes<32>;
             type ReturnTuple<'a> = (alloy::sol_types::sol_data::FixedBytes<32>,);
             type ReturnToken<'a> = <Self::ReturnTuple<
                 'a,
@@ -1341,24 +1406,48 @@ function getBestKnownDigest() external view returns (bytes32);
                 ()
             }
             #[inline]
-            fn abi_decode_returns(
+            fn tokenize_returns(ret: &Self::Return) -> Self::ReturnToken<'_> {
+                (
+                    <alloy::sol_types::sol_data::FixedBytes<
+                        32,
+                    > as alloy_sol_types::SolType>::tokenize(ret),
+                )
+            }
+            #[inline]
+            fn abi_decode_returns(data: &[u8]) -> alloy_sol_types::Result<Self::Return> {
+                <Self::ReturnTuple<
+                    '_,
+                > as alloy_sol_types::SolType>::abi_decode_sequence(data)
+                    .map(|r| {
+                        let r: getBestKnownDigestReturn = r.into();
+                        r._0
+                    })
+            }
+            #[inline]
+            fn abi_decode_returns_validate(
                 data: &[u8],
-                validate: bool,
             ) -> alloy_sol_types::Result<Self::Return> {
                 <Self::ReturnTuple<
                     '_,
-                > as alloy_sol_types::SolType>::abi_decode_sequence(data, validate)
-                    .map(Into::into)
+                > as alloy_sol_types::SolType>::abi_decode_sequence_validate(data)
+                    .map(|r| {
+                        let r: getBestKnownDigestReturn = r.into();
+                        r._0
+                    })
             }
         }
     };
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[derive(Default, Debug, PartialEq, Eq, Hash)]
     /**Function with signature `getCurrentEpochDifficulty()` and selector `0x113764be`.
 ```solidity
 function getCurrentEpochDifficulty() external view returns (uint256);
 ```*/
     #[allow(non_camel_case_types, non_snake_case, clippy::pub_underscore_fields)]
     #[derive(Clone)]
-    pub struct getCurrentEpochDifficultyCall {}
+    pub struct getCurrentEpochDifficultyCall;
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[derive(Default, Debug, PartialEq, Eq, Hash)]
     ///Container type for the return parameters of the [`getCurrentEpochDifficulty()`](getCurrentEpochDifficultyCall) function.
     #[allow(non_camel_case_types, non_snake_case, clippy::pub_underscore_fields)]
     #[derive(Clone)]
@@ -1403,7 +1492,7 @@ function getCurrentEpochDifficulty() external view returns (uint256);
             impl ::core::convert::From<UnderlyingRustTuple<'_>>
             for getCurrentEpochDifficultyCall {
                 fn from(tuple: UnderlyingRustTuple<'_>) -> Self {
-                    Self {}
+                    Self
                 }
             }
         }
@@ -1448,7 +1537,7 @@ function getCurrentEpochDifficulty() external view returns (uint256);
             type Token<'a> = <Self::Parameters<
                 'a,
             > as alloy_sol_types::SolType>::Token<'a>;
-            type Return = getCurrentEpochDifficultyReturn;
+            type Return = alloy::sol_types::private::primitives::aliases::U256;
             type ReturnTuple<'a> = (alloy::sol_types::sol_data::Uint<256>,);
             type ReturnToken<'a> = <Self::ReturnTuple<
                 'a,
@@ -1466,24 +1555,48 @@ function getCurrentEpochDifficulty() external view returns (uint256);
                 ()
             }
             #[inline]
-            fn abi_decode_returns(
+            fn tokenize_returns(ret: &Self::Return) -> Self::ReturnToken<'_> {
+                (
+                    <alloy::sol_types::sol_data::Uint<
+                        256,
+                    > as alloy_sol_types::SolType>::tokenize(ret),
+                )
+            }
+            #[inline]
+            fn abi_decode_returns(data: &[u8]) -> alloy_sol_types::Result<Self::Return> {
+                <Self::ReturnTuple<
+                    '_,
+                > as alloy_sol_types::SolType>::abi_decode_sequence(data)
+                    .map(|r| {
+                        let r: getCurrentEpochDifficultyReturn = r.into();
+                        r._0
+                    })
+            }
+            #[inline]
+            fn abi_decode_returns_validate(
                 data: &[u8],
-                validate: bool,
             ) -> alloy_sol_types::Result<Self::Return> {
                 <Self::ReturnTuple<
                     '_,
-                > as alloy_sol_types::SolType>::abi_decode_sequence(data, validate)
-                    .map(Into::into)
+                > as alloy_sol_types::SolType>::abi_decode_sequence_validate(data)
+                    .map(|r| {
+                        let r: getCurrentEpochDifficultyReturn = r.into();
+                        r._0
+                    })
             }
         }
     };
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[derive(Default, Debug, PartialEq, Eq, Hash)]
     /**Function with signature `getLastReorgCommonAncestor()` and selector `0xc58242cd`.
 ```solidity
 function getLastReorgCommonAncestor() external view returns (bytes32);
 ```*/
     #[allow(non_camel_case_types, non_snake_case, clippy::pub_underscore_fields)]
     #[derive(Clone)]
-    pub struct getLastReorgCommonAncestorCall {}
+    pub struct getLastReorgCommonAncestorCall;
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[derive(Default, Debug, PartialEq, Eq, Hash)]
     ///Container type for the return parameters of the [`getLastReorgCommonAncestor()`](getLastReorgCommonAncestorCall) function.
     #[allow(non_camel_case_types, non_snake_case, clippy::pub_underscore_fields)]
     #[derive(Clone)]
@@ -1528,7 +1641,7 @@ function getLastReorgCommonAncestor() external view returns (bytes32);
             impl ::core::convert::From<UnderlyingRustTuple<'_>>
             for getLastReorgCommonAncestorCall {
                 fn from(tuple: UnderlyingRustTuple<'_>) -> Self {
-                    Self {}
+                    Self
                 }
             }
         }
@@ -1571,7 +1684,7 @@ function getLastReorgCommonAncestor() external view returns (bytes32);
             type Token<'a> = <Self::Parameters<
                 'a,
             > as alloy_sol_types::SolType>::Token<'a>;
-            type Return = getLastReorgCommonAncestorReturn;
+            type Return = alloy::sol_types::private::FixedBytes<32>;
             type ReturnTuple<'a> = (alloy::sol_types::sol_data::FixedBytes<32>,);
             type ReturnToken<'a> = <Self::ReturnTuple<
                 'a,
@@ -1589,24 +1702,48 @@ function getLastReorgCommonAncestor() external view returns (bytes32);
                 ()
             }
             #[inline]
-            fn abi_decode_returns(
+            fn tokenize_returns(ret: &Self::Return) -> Self::ReturnToken<'_> {
+                (
+                    <alloy::sol_types::sol_data::FixedBytes<
+                        32,
+                    > as alloy_sol_types::SolType>::tokenize(ret),
+                )
+            }
+            #[inline]
+            fn abi_decode_returns(data: &[u8]) -> alloy_sol_types::Result<Self::Return> {
+                <Self::ReturnTuple<
+                    '_,
+                > as alloy_sol_types::SolType>::abi_decode_sequence(data)
+                    .map(|r| {
+                        let r: getLastReorgCommonAncestorReturn = r.into();
+                        r._0
+                    })
+            }
+            #[inline]
+            fn abi_decode_returns_validate(
                 data: &[u8],
-                validate: bool,
             ) -> alloy_sol_types::Result<Self::Return> {
                 <Self::ReturnTuple<
                     '_,
-                > as alloy_sol_types::SolType>::abi_decode_sequence(data, validate)
-                    .map(Into::into)
+                > as alloy_sol_types::SolType>::abi_decode_sequence_validate(data)
+                    .map(|r| {
+                        let r: getLastReorgCommonAncestorReturn = r.into();
+                        r._0
+                    })
             }
         }
     };
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[derive(Default, Debug, PartialEq, Eq, Hash)]
     /**Function with signature `getPrevEpochDifficulty()` and selector `0x2b97be24`.
 ```solidity
 function getPrevEpochDifficulty() external view returns (uint256);
 ```*/
     #[allow(non_camel_case_types, non_snake_case, clippy::pub_underscore_fields)]
     #[derive(Clone)]
-    pub struct getPrevEpochDifficultyCall {}
+    pub struct getPrevEpochDifficultyCall;
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[derive(Default, Debug, PartialEq, Eq, Hash)]
     ///Container type for the return parameters of the [`getPrevEpochDifficulty()`](getPrevEpochDifficultyCall) function.
     #[allow(non_camel_case_types, non_snake_case, clippy::pub_underscore_fields)]
     #[derive(Clone)]
@@ -1651,7 +1788,7 @@ function getPrevEpochDifficulty() external view returns (uint256);
             impl ::core::convert::From<UnderlyingRustTuple<'_>>
             for getPrevEpochDifficultyCall {
                 fn from(tuple: UnderlyingRustTuple<'_>) -> Self {
-                    Self {}
+                    Self
                 }
             }
         }
@@ -1696,7 +1833,7 @@ function getPrevEpochDifficulty() external view returns (uint256);
             type Token<'a> = <Self::Parameters<
                 'a,
             > as alloy_sol_types::SolType>::Token<'a>;
-            type Return = getPrevEpochDifficultyReturn;
+            type Return = alloy::sol_types::private::primitives::aliases::U256;
             type ReturnTuple<'a> = (alloy::sol_types::sol_data::Uint<256>,);
             type ReturnToken<'a> = <Self::ReturnTuple<
                 'a,
@@ -1714,24 +1851,48 @@ function getPrevEpochDifficulty() external view returns (uint256);
                 ()
             }
             #[inline]
-            fn abi_decode_returns(
+            fn tokenize_returns(ret: &Self::Return) -> Self::ReturnToken<'_> {
+                (
+                    <alloy::sol_types::sol_data::Uint<
+                        256,
+                    > as alloy_sol_types::SolType>::tokenize(ret),
+                )
+            }
+            #[inline]
+            fn abi_decode_returns(data: &[u8]) -> alloy_sol_types::Result<Self::Return> {
+                <Self::ReturnTuple<
+                    '_,
+                > as alloy_sol_types::SolType>::abi_decode_sequence(data)
+                    .map(|r| {
+                        let r: getPrevEpochDifficultyReturn = r.into();
+                        r._0
+                    })
+            }
+            #[inline]
+            fn abi_decode_returns_validate(
                 data: &[u8],
-                validate: bool,
             ) -> alloy_sol_types::Result<Self::Return> {
                 <Self::ReturnTuple<
                     '_,
-                > as alloy_sol_types::SolType>::abi_decode_sequence(data, validate)
-                    .map(Into::into)
+                > as alloy_sol_types::SolType>::abi_decode_sequence_validate(data)
+                    .map(|r| {
+                        let r: getPrevEpochDifficultyReturn = r.into();
+                        r._0
+                    })
             }
         }
     };
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[derive(Default, Debug, PartialEq, Eq, Hash)]
     /**Function with signature `getRelayGenesis()` and selector `0xe3d8d8d8`.
 ```solidity
 function getRelayGenesis() external view returns (bytes32);
 ```*/
     #[allow(non_camel_case_types, non_snake_case, clippy::pub_underscore_fields)]
     #[derive(Clone)]
-    pub struct getRelayGenesisCall {}
+    pub struct getRelayGenesisCall;
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[derive(Default, Debug, PartialEq, Eq, Hash)]
     ///Container type for the return parameters of the [`getRelayGenesis()`](getRelayGenesisCall) function.
     #[allow(non_camel_case_types, non_snake_case, clippy::pub_underscore_fields)]
     #[derive(Clone)]
@@ -1774,7 +1935,7 @@ function getRelayGenesis() external view returns (bytes32);
             #[doc(hidden)]
             impl ::core::convert::From<UnderlyingRustTuple<'_>> for getRelayGenesisCall {
                 fn from(tuple: UnderlyingRustTuple<'_>) -> Self {
-                    Self {}
+                    Self
                 }
             }
         }
@@ -1817,7 +1978,7 @@ function getRelayGenesis() external view returns (bytes32);
             type Token<'a> = <Self::Parameters<
                 'a,
             > as alloy_sol_types::SolType>::Token<'a>;
-            type Return = getRelayGenesisReturn;
+            type Return = alloy::sol_types::private::FixedBytes<32>;
             type ReturnTuple<'a> = (alloy::sol_types::sol_data::FixedBytes<32>,);
             type ReturnToken<'a> = <Self::ReturnTuple<
                 'a,
@@ -1835,17 +1996,39 @@ function getRelayGenesis() external view returns (bytes32);
                 ()
             }
             #[inline]
-            fn abi_decode_returns(
+            fn tokenize_returns(ret: &Self::Return) -> Self::ReturnToken<'_> {
+                (
+                    <alloy::sol_types::sol_data::FixedBytes<
+                        32,
+                    > as alloy_sol_types::SolType>::tokenize(ret),
+                )
+            }
+            #[inline]
+            fn abi_decode_returns(data: &[u8]) -> alloy_sol_types::Result<Self::Return> {
+                <Self::ReturnTuple<
+                    '_,
+                > as alloy_sol_types::SolType>::abi_decode_sequence(data)
+                    .map(|r| {
+                        let r: getRelayGenesisReturn = r.into();
+                        r._0
+                    })
+            }
+            #[inline]
+            fn abi_decode_returns_validate(
                 data: &[u8],
-                validate: bool,
             ) -> alloy_sol_types::Result<Self::Return> {
                 <Self::ReturnTuple<
                     '_,
-                > as alloy_sol_types::SolType>::abi_decode_sequence(data, validate)
-                    .map(Into::into)
+                > as alloy_sol_types::SolType>::abi_decode_sequence_validate(data)
+                    .map(|r| {
+                        let r: getRelayGenesisReturn = r.into();
+                        r._0
+                    })
             }
         }
     };
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[derive(Default, Debug, PartialEq, Eq, Hash)]
     /**Function with signature `isAncestor(bytes32,bytes32,uint256)` and selector `0xb985621a`.
 ```solidity
 function isAncestor(bytes32 _ancestor, bytes32 _descendant, uint256 _limit) external view returns (bool);
@@ -1860,6 +2043,8 @@ function isAncestor(bytes32 _ancestor, bytes32 _descendant, uint256 _limit) exte
         #[allow(missing_docs)]
         pub _limit: alloy::sol_types::private::primitives::aliases::U256,
     }
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[derive(Default, Debug, PartialEq, Eq, Hash)]
     ///Container type for the return parameters of the [`isAncestor(bytes32,bytes32,uint256)`](isAncestorCall) function.
     #[allow(non_camel_case_types, non_snake_case, clippy::pub_underscore_fields)]
     #[derive(Clone)]
@@ -1959,7 +2144,7 @@ function isAncestor(bytes32 _ancestor, bytes32 _descendant, uint256 _limit) exte
             type Token<'a> = <Self::Parameters<
                 'a,
             > as alloy_sol_types::SolType>::Token<'a>;
-            type Return = isAncestorReturn;
+            type Return = bool;
             type ReturnTuple<'a> = (alloy::sol_types::sol_data::Bool,);
             type ReturnToken<'a> = <Self::ReturnTuple<
                 'a,
@@ -1987,17 +2172,39 @@ function isAncestor(bytes32 _ancestor, bytes32 _descendant, uint256 _limit) exte
                 )
             }
             #[inline]
-            fn abi_decode_returns(
+            fn tokenize_returns(ret: &Self::Return) -> Self::ReturnToken<'_> {
+                (
+                    <alloy::sol_types::sol_data::Bool as alloy_sol_types::SolType>::tokenize(
+                        ret,
+                    ),
+                )
+            }
+            #[inline]
+            fn abi_decode_returns(data: &[u8]) -> alloy_sol_types::Result<Self::Return> {
+                <Self::ReturnTuple<
+                    '_,
+                > as alloy_sol_types::SolType>::abi_decode_sequence(data)
+                    .map(|r| {
+                        let r: isAncestorReturn = r.into();
+                        r._0
+                    })
+            }
+            #[inline]
+            fn abi_decode_returns_validate(
                 data: &[u8],
-                validate: bool,
             ) -> alloy_sol_types::Result<Self::Return> {
                 <Self::ReturnTuple<
                     '_,
-                > as alloy_sol_types::SolType>::abi_decode_sequence(data, validate)
-                    .map(Into::into)
+                > as alloy_sol_types::SolType>::abi_decode_sequence_validate(data)
+                    .map(|r| {
+                        let r: isAncestorReturn = r.into();
+                        r._0
+                    })
             }
         }
     };
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[derive(Default, Debug, PartialEq, Eq, Hash)]
     /**Function with signature `markNewHeaviest(bytes32,bytes,bytes,uint256)` and selector `0x74c3a3a9`.
 ```solidity
 function markNewHeaviest(bytes32 _ancestor, bytes memory _currentBest, bytes memory _newBest, uint256 _limit) external returns (bool);
@@ -2014,6 +2221,8 @@ function markNewHeaviest(bytes32 _ancestor, bytes memory _currentBest, bytes mem
         #[allow(missing_docs)]
         pub _limit: alloy::sol_types::private::primitives::aliases::U256,
     }
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[derive(Default, Debug, PartialEq, Eq, Hash)]
     ///Container type for the return parameters of the [`markNewHeaviest(bytes32,bytes,bytes,uint256)`](markNewHeaviestCall) function.
     #[allow(non_camel_case_types, non_snake_case, clippy::pub_underscore_fields)]
     #[derive(Clone)]
@@ -2119,7 +2328,7 @@ function markNewHeaviest(bytes32 _ancestor, bytes memory _currentBest, bytes mem
             type Token<'a> = <Self::Parameters<
                 'a,
             > as alloy_sol_types::SolType>::Token<'a>;
-            type Return = markNewHeaviestReturn;
+            type Return = bool;
             type ReturnTuple<'a> = (alloy::sol_types::sol_data::Bool,);
             type ReturnToken<'a> = <Self::ReturnTuple<
                 'a,
@@ -2150,17 +2359,202 @@ function markNewHeaviest(bytes32 _ancestor, bytes memory _currentBest, bytes mem
                 )
             }
             #[inline]
-            fn abi_decode_returns(
+            fn tokenize_returns(ret: &Self::Return) -> Self::ReturnToken<'_> {
+                (
+                    <alloy::sol_types::sol_data::Bool as alloy_sol_types::SolType>::tokenize(
+                        ret,
+                    ),
+                )
+            }
+            #[inline]
+            fn abi_decode_returns(data: &[u8]) -> alloy_sol_types::Result<Self::Return> {
+                <Self::ReturnTuple<
+                    '_,
+                > as alloy_sol_types::SolType>::abi_decode_sequence(data)
+                    .map(|r| {
+                        let r: markNewHeaviestReturn = r.into();
+                        r._0
+                    })
+            }
+            #[inline]
+            fn abi_decode_returns_validate(
                 data: &[u8],
-                validate: bool,
             ) -> alloy_sol_types::Result<Self::Return> {
                 <Self::ReturnTuple<
                     '_,
-                > as alloy_sol_types::SolType>::abi_decode_sequence(data, validate)
+                > as alloy_sol_types::SolType>::abi_decode_sequence_validate(data)
+                    .map(|r| {
+                        let r: markNewHeaviestReturn = r.into();
+                        r._0
+                    })
+            }
+        }
+    };
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[derive(Default, Debug, PartialEq, Eq, Hash)]
+    /**Function with signature `verifyHeaderHash(bytes32,uint8)` and selector `0xe471e72c`.
+```solidity
+function verifyHeaderHash(bytes32 _headerHash, uint8 _numConfs) external view;
+```*/
+    #[allow(non_camel_case_types, non_snake_case, clippy::pub_underscore_fields)]
+    #[derive(Clone)]
+    pub struct verifyHeaderHashCall {
+        #[allow(missing_docs)]
+        pub _headerHash: alloy::sol_types::private::FixedBytes<32>,
+        #[allow(missing_docs)]
+        pub _numConfs: u8,
+    }
+    ///Container type for the return parameters of the [`verifyHeaderHash(bytes32,uint8)`](verifyHeaderHashCall) function.
+    #[allow(non_camel_case_types, non_snake_case, clippy::pub_underscore_fields)]
+    #[derive(Clone)]
+    pub struct verifyHeaderHashReturn {}
+    #[allow(
+        non_camel_case_types,
+        non_snake_case,
+        clippy::pub_underscore_fields,
+        clippy::style
+    )]
+    const _: () = {
+        use alloy::sol_types as alloy_sol_types;
+        {
+            #[doc(hidden)]
+            type UnderlyingSolTuple<'a> = (
+                alloy::sol_types::sol_data::FixedBytes<32>,
+                alloy::sol_types::sol_data::Uint<8>,
+            );
+            #[doc(hidden)]
+            type UnderlyingRustTuple<'a> = (
+                alloy::sol_types::private::FixedBytes<32>,
+                u8,
+            );
+            #[cfg(test)]
+            #[allow(dead_code, unreachable_patterns)]
+            fn _type_assertion(
+                _t: alloy_sol_types::private::AssertTypeEq<UnderlyingRustTuple>,
+            ) {
+                match _t {
+                    alloy_sol_types::private::AssertTypeEq::<
+                        <UnderlyingSolTuple as alloy_sol_types::SolType>::RustType,
+                    >(_) => {}
+                }
+            }
+            #[automatically_derived]
+            #[doc(hidden)]
+            impl ::core::convert::From<verifyHeaderHashCall>
+            for UnderlyingRustTuple<'_> {
+                fn from(value: verifyHeaderHashCall) -> Self {
+                    (value._headerHash, value._numConfs)
+                }
+            }
+            #[automatically_derived]
+            #[doc(hidden)]
+            impl ::core::convert::From<UnderlyingRustTuple<'_>>
+            for verifyHeaderHashCall {
+                fn from(tuple: UnderlyingRustTuple<'_>) -> Self {
+                    Self {
+                        _headerHash: tuple.0,
+                        _numConfs: tuple.1,
+                    }
+                }
+            }
+        }
+        {
+            #[doc(hidden)]
+            type UnderlyingSolTuple<'a> = ();
+            #[doc(hidden)]
+            type UnderlyingRustTuple<'a> = ();
+            #[cfg(test)]
+            #[allow(dead_code, unreachable_patterns)]
+            fn _type_assertion(
+                _t: alloy_sol_types::private::AssertTypeEq<UnderlyingRustTuple>,
+            ) {
+                match _t {
+                    alloy_sol_types::private::AssertTypeEq::<
+                        <UnderlyingSolTuple as alloy_sol_types::SolType>::RustType,
+                    >(_) => {}
+                }
+            }
+            #[automatically_derived]
+            #[doc(hidden)]
+            impl ::core::convert::From<verifyHeaderHashReturn>
+            for UnderlyingRustTuple<'_> {
+                fn from(value: verifyHeaderHashReturn) -> Self {
+                    ()
+                }
+            }
+            #[automatically_derived]
+            #[doc(hidden)]
+            impl ::core::convert::From<UnderlyingRustTuple<'_>>
+            for verifyHeaderHashReturn {
+                fn from(tuple: UnderlyingRustTuple<'_>) -> Self {
+                    Self {}
+                }
+            }
+        }
+        impl verifyHeaderHashReturn {
+            fn _tokenize(
+                &self,
+            ) -> <verifyHeaderHashCall as alloy_sol_types::SolCall>::ReturnToken<'_> {
+                ()
+            }
+        }
+        #[automatically_derived]
+        impl alloy_sol_types::SolCall for verifyHeaderHashCall {
+            type Parameters<'a> = (
+                alloy::sol_types::sol_data::FixedBytes<32>,
+                alloy::sol_types::sol_data::Uint<8>,
+            );
+            type Token<'a> = <Self::Parameters<
+                'a,
+            > as alloy_sol_types::SolType>::Token<'a>;
+            type Return = verifyHeaderHashReturn;
+            type ReturnTuple<'a> = ();
+            type ReturnToken<'a> = <Self::ReturnTuple<
+                'a,
+            > as alloy_sol_types::SolType>::Token<'a>;
+            const SIGNATURE: &'static str = "verifyHeaderHash(bytes32,uint8)";
+            const SELECTOR: [u8; 4] = [228u8, 113u8, 231u8, 44u8];
+            #[inline]
+            fn new<'a>(
+                tuple: <Self::Parameters<'a> as alloy_sol_types::SolType>::RustType,
+            ) -> Self {
+                tuple.into()
+            }
+            #[inline]
+            fn tokenize(&self) -> Self::Token<'_> {
+                (
+                    <alloy::sol_types::sol_data::FixedBytes<
+                        32,
+                    > as alloy_sol_types::SolType>::tokenize(&self._headerHash),
+                    <alloy::sol_types::sol_data::Uint<
+                        8,
+                    > as alloy_sol_types::SolType>::tokenize(&self._numConfs),
+                )
+            }
+            #[inline]
+            fn tokenize_returns(ret: &Self::Return) -> Self::ReturnToken<'_> {
+                verifyHeaderHashReturn::_tokenize(ret)
+            }
+            #[inline]
+            fn abi_decode_returns(data: &[u8]) -> alloy_sol_types::Result<Self::Return> {
+                <Self::ReturnTuple<
+                    '_,
+                > as alloy_sol_types::SolType>::abi_decode_sequence(data)
+                    .map(Into::into)
+            }
+            #[inline]
+            fn abi_decode_returns_validate(
+                data: &[u8],
+            ) -> alloy_sol_types::Result<Self::Return> {
+                <Self::ReturnTuple<
+                    '_,
+                > as alloy_sol_types::SolType>::abi_decode_sequence_validate(data)
                     .map(Into::into)
             }
         }
     };
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[derive(Default, Debug, PartialEq, Eq, Hash)]
     /**Function with signature `verifyProof(bytes,bytes,bytes32,uint256,uint8)` and selector `0x05d09a70`.
 ```solidity
 function verifyProof(bytes memory _header, bytes memory _proof, bytes32 _txId, uint256 _index, uint8 _numConfs) external view;
@@ -2277,6 +2671,13 @@ function verifyProof(bytes memory _header, bytes memory _proof, bytes32 _txId, u
                 }
             }
         }
+        impl verifyProofReturn {
+            fn _tokenize(
+                &self,
+            ) -> <verifyProofCall as alloy_sol_types::SolCall>::ReturnToken<'_> {
+                ()
+            }
+        }
         #[automatically_derived]
         impl alloy_sol_types::SolCall for verifyProofCall {
             type Parameters<'a> = (
@@ -2323,18 +2724,30 @@ function verifyProof(bytes memory _header, bytes memory _proof, bytes32 _txId, u
                 )
             }
             #[inline]
-            fn abi_decode_returns(
+            fn tokenize_returns(ret: &Self::Return) -> Self::ReturnToken<'_> {
+                verifyProofReturn::_tokenize(ret)
+            }
+            #[inline]
+            fn abi_decode_returns(data: &[u8]) -> alloy_sol_types::Result<Self::Return> {
+                <Self::ReturnTuple<
+                    '_,
+                > as alloy_sol_types::SolType>::abi_decode_sequence(data)
+                    .map(Into::into)
+            }
+            #[inline]
+            fn abi_decode_returns_validate(
                 data: &[u8],
-                validate: bool,
             ) -> alloy_sol_types::Result<Self::Return> {
                 <Self::ReturnTuple<
                     '_,
-                > as alloy_sol_types::SolType>::abi_decode_sequence(data, validate)
+                > as alloy_sol_types::SolType>::abi_decode_sequence_validate(data)
                     .map(Into::into)
             }
         }
     };
     ///Container for all the [`IFullRelayWithVerify`](self) function calls.
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[derive()]
     pub enum IFullRelayWithVerifyCalls {
         #[allow(missing_docs)]
         addHeaders(addHeadersCall),
@@ -2359,6 +2772,8 @@ function verifyProof(bytes memory _header, bytes memory _proof, bytes32 _txId, u
         #[allow(missing_docs)]
         markNewHeaviest(markNewHeaviestCall),
         #[allow(missing_docs)]
+        verifyHeaderHash(verifyHeaderHashCall),
+        #[allow(missing_docs)]
         verifyProof(verifyProofCall),
     }
     #[automatically_derived]
@@ -2382,13 +2797,14 @@ function verifyProof(bytes memory _header, bytes memory _proof, bytes32 _txId, u
             [185u8, 133u8, 98u8, 26u8],
             [197u8, 130u8, 66u8, 205u8],
             [227u8, 216u8, 216u8, 216u8],
+            [228u8, 113u8, 231u8, 44u8],
         ];
     }
     #[automatically_derived]
     impl alloy_sol_types::SolInterface for IFullRelayWithVerifyCalls {
         const NAME: &'static str = "IFullRelayWithVerifyCalls";
         const MIN_DATA_LENGTH: usize = 0usize;
-        const COUNT: usize = 12usize;
+        const COUNT: usize = 13usize;
         #[inline]
         fn selector(&self) -> [u8; 4] {
             match self {
@@ -2425,6 +2841,9 @@ function verifyProof(bytes memory _header, bytes memory _proof, bytes32 _txId, u
                 Self::markNewHeaviest(_) => {
                     <markNewHeaviestCall as alloy_sol_types::SolCall>::SELECTOR
                 }
+                Self::verifyHeaderHash(_) => {
+                    <verifyHeaderHashCall as alloy_sol_types::SolCall>::SELECTOR
+                }
                 Self::verifyProof(_) => {
                     <verifyProofCall as alloy_sol_types::SolCall>::SELECTOR
                 }
@@ -2443,20 +2862,16 @@ function verifyProof(bytes memory _header, bytes memory _proof, bytes32 _txId, u
         fn abi_decode_raw(
             selector: [u8; 4],
             data: &[u8],
-            validate: bool,
         ) -> alloy_sol_types::Result<Self> {
             static DECODE_SHIMS: &[fn(
                 &[u8],
-                bool,
             ) -> alloy_sol_types::Result<IFullRelayWithVerifyCalls>] = &[
                 {
                     fn verifyProof(
                         data: &[u8],
-                        validate: bool,
                     ) -> alloy_sol_types::Result<IFullRelayWithVerifyCalls> {
                         <verifyProofCall as alloy_sol_types::SolCall>::abi_decode_raw(
                                 data,
-                                validate,
                             )
                             .map(IFullRelayWithVerifyCalls::verifyProof)
                     }
@@ -2465,11 +2880,9 @@ function verifyProof(bytes memory _header, bytes memory _proof, bytes32 _txId, u
                 {
                     fn getCurrentEpochDifficulty(
                         data: &[u8],
-                        validate: bool,
                     ) -> alloy_sol_types::Result<IFullRelayWithVerifyCalls> {
                         <getCurrentEpochDifficultyCall as alloy_sol_types::SolCall>::abi_decode_raw(
                                 data,
-                                validate,
                             )
                             .map(IFullRelayWithVerifyCalls::getCurrentEpochDifficulty)
                     }
@@ -2478,11 +2891,9 @@ function verifyProof(bytes memory _header, bytes memory _proof, bytes32 _txId, u
                 {
                     fn getBestKnownDigest(
                         data: &[u8],
-                        validate: bool,
                     ) -> alloy_sol_types::Result<IFullRelayWithVerifyCalls> {
                         <getBestKnownDigestCall as alloy_sol_types::SolCall>::abi_decode_raw(
                                 data,
-                                validate,
                             )
                             .map(IFullRelayWithVerifyCalls::getBestKnownDigest)
                     }
@@ -2491,11 +2902,9 @@ function verifyProof(bytes memory _header, bytes memory _proof, bytes32 _txId, u
                 {
                     fn getPrevEpochDifficulty(
                         data: &[u8],
-                        validate: bool,
                     ) -> alloy_sol_types::Result<IFullRelayWithVerifyCalls> {
                         <getPrevEpochDifficultyCall as alloy_sol_types::SolCall>::abi_decode_raw(
                                 data,
-                                validate,
                             )
                             .map(IFullRelayWithVerifyCalls::getPrevEpochDifficulty)
                     }
@@ -2504,11 +2913,9 @@ function verifyProof(bytes memory _header, bytes memory _proof, bytes32 _txId, u
                 {
                     fn findAncestor(
                         data: &[u8],
-                        validate: bool,
                     ) -> alloy_sol_types::Result<IFullRelayWithVerifyCalls> {
                         <findAncestorCall as alloy_sol_types::SolCall>::abi_decode_raw(
                                 data,
-                                validate,
                             )
                             .map(IFullRelayWithVerifyCalls::findAncestor)
                     }
@@ -2517,11 +2924,9 @@ function verifyProof(bytes memory _header, bytes memory _proof, bytes32 _txId, u
                 {
                     fn findHeight(
                         data: &[u8],
-                        validate: bool,
                     ) -> alloy_sol_types::Result<IFullRelayWithVerifyCalls> {
                         <findHeightCall as alloy_sol_types::SolCall>::abi_decode_raw(
                                 data,
-                                validate,
                             )
                             .map(IFullRelayWithVerifyCalls::findHeight)
                     }
@@ -2530,11 +2935,9 @@ function verifyProof(bytes memory _header, bytes memory _proof, bytes32 _txId, u
                 {
                     fn addHeaders(
                         data: &[u8],
-                        validate: bool,
                     ) -> alloy_sol_types::Result<IFullRelayWithVerifyCalls> {
                         <addHeadersCall as alloy_sol_types::SolCall>::abi_decode_raw(
                                 data,
-                                validate,
                             )
                             .map(IFullRelayWithVerifyCalls::addHeaders)
                     }
@@ -2543,11 +2946,9 @@ function verifyProof(bytes memory _header, bytes memory _proof, bytes32 _txId, u
                 {
                     fn markNewHeaviest(
                         data: &[u8],
-                        validate: bool,
                     ) -> alloy_sol_types::Result<IFullRelayWithVerifyCalls> {
                         <markNewHeaviestCall as alloy_sol_types::SolCall>::abi_decode_raw(
                                 data,
-                                validate,
                             )
                             .map(IFullRelayWithVerifyCalls::markNewHeaviest)
                     }
@@ -2556,11 +2957,9 @@ function verifyProof(bytes memory _header, bytes memory _proof, bytes32 _txId, u
                 {
                     fn addHeadersWithRetarget(
                         data: &[u8],
-                        validate: bool,
                     ) -> alloy_sol_types::Result<IFullRelayWithVerifyCalls> {
                         <addHeadersWithRetargetCall as alloy_sol_types::SolCall>::abi_decode_raw(
                                 data,
-                                validate,
                             )
                             .map(IFullRelayWithVerifyCalls::addHeadersWithRetarget)
                     }
@@ -2569,11 +2968,9 @@ function verifyProof(bytes memory _header, bytes memory _proof, bytes32 _txId, u
                 {
                     fn isAncestor(
                         data: &[u8],
-                        validate: bool,
                     ) -> alloy_sol_types::Result<IFullRelayWithVerifyCalls> {
                         <isAncestorCall as alloy_sol_types::SolCall>::abi_decode_raw(
                                 data,
-                                validate,
                             )
                             .map(IFullRelayWithVerifyCalls::isAncestor)
                     }
@@ -2582,11 +2979,9 @@ function verifyProof(bytes memory _header, bytes memory _proof, bytes32 _txId, u
                 {
                     fn getLastReorgCommonAncestor(
                         data: &[u8],
-                        validate: bool,
                     ) -> alloy_sol_types::Result<IFullRelayWithVerifyCalls> {
                         <getLastReorgCommonAncestorCall as alloy_sol_types::SolCall>::abi_decode_raw(
                                 data,
-                                validate,
                             )
                             .map(IFullRelayWithVerifyCalls::getLastReorgCommonAncestor)
                     }
@@ -2595,15 +2990,24 @@ function verifyProof(bytes memory _header, bytes memory _proof, bytes32 _txId, u
                 {
                     fn getRelayGenesis(
                         data: &[u8],
-                        validate: bool,
                     ) -> alloy_sol_types::Result<IFullRelayWithVerifyCalls> {
                         <getRelayGenesisCall as alloy_sol_types::SolCall>::abi_decode_raw(
                                 data,
-                                validate,
                             )
                             .map(IFullRelayWithVerifyCalls::getRelayGenesis)
                     }
                     getRelayGenesis
+                },
+                {
+                    fn verifyHeaderHash(
+                        data: &[u8],
+                    ) -> alloy_sol_types::Result<IFullRelayWithVerifyCalls> {
+                        <verifyHeaderHashCall as alloy_sol_types::SolCall>::abi_decode_raw(
+                                data,
+                            )
+                            .map(IFullRelayWithVerifyCalls::verifyHeaderHash)
+                    }
+                    verifyHeaderHash
                 },
             ];
             let Ok(idx) = Self::SELECTORS.binary_search(&selector) else {
@@ -2614,7 +3018,170 @@ function verifyProof(bytes memory _header, bytes memory _proof, bytes32 _txId, u
                     ),
                 );
             };
-            DECODE_SHIMS[idx](data, validate)
+            DECODE_SHIMS[idx](data)
+        }
+        #[inline]
+        #[allow(non_snake_case)]
+        fn abi_decode_raw_validate(
+            selector: [u8; 4],
+            data: &[u8],
+        ) -> alloy_sol_types::Result<Self> {
+            static DECODE_VALIDATE_SHIMS: &[fn(
+                &[u8],
+            ) -> alloy_sol_types::Result<IFullRelayWithVerifyCalls>] = &[
+                {
+                    fn verifyProof(
+                        data: &[u8],
+                    ) -> alloy_sol_types::Result<IFullRelayWithVerifyCalls> {
+                        <verifyProofCall as alloy_sol_types::SolCall>::abi_decode_raw_validate(
+                                data,
+                            )
+                            .map(IFullRelayWithVerifyCalls::verifyProof)
+                    }
+                    verifyProof
+                },
+                {
+                    fn getCurrentEpochDifficulty(
+                        data: &[u8],
+                    ) -> alloy_sol_types::Result<IFullRelayWithVerifyCalls> {
+                        <getCurrentEpochDifficultyCall as alloy_sol_types::SolCall>::abi_decode_raw_validate(
+                                data,
+                            )
+                            .map(IFullRelayWithVerifyCalls::getCurrentEpochDifficulty)
+                    }
+                    getCurrentEpochDifficulty
+                },
+                {
+                    fn getBestKnownDigest(
+                        data: &[u8],
+                    ) -> alloy_sol_types::Result<IFullRelayWithVerifyCalls> {
+                        <getBestKnownDigestCall as alloy_sol_types::SolCall>::abi_decode_raw_validate(
+                                data,
+                            )
+                            .map(IFullRelayWithVerifyCalls::getBestKnownDigest)
+                    }
+                    getBestKnownDigest
+                },
+                {
+                    fn getPrevEpochDifficulty(
+                        data: &[u8],
+                    ) -> alloy_sol_types::Result<IFullRelayWithVerifyCalls> {
+                        <getPrevEpochDifficultyCall as alloy_sol_types::SolCall>::abi_decode_raw_validate(
+                                data,
+                            )
+                            .map(IFullRelayWithVerifyCalls::getPrevEpochDifficulty)
+                    }
+                    getPrevEpochDifficulty
+                },
+                {
+                    fn findAncestor(
+                        data: &[u8],
+                    ) -> alloy_sol_types::Result<IFullRelayWithVerifyCalls> {
+                        <findAncestorCall as alloy_sol_types::SolCall>::abi_decode_raw_validate(
+                                data,
+                            )
+                            .map(IFullRelayWithVerifyCalls::findAncestor)
+                    }
+                    findAncestor
+                },
+                {
+                    fn findHeight(
+                        data: &[u8],
+                    ) -> alloy_sol_types::Result<IFullRelayWithVerifyCalls> {
+                        <findHeightCall as alloy_sol_types::SolCall>::abi_decode_raw_validate(
+                                data,
+                            )
+                            .map(IFullRelayWithVerifyCalls::findHeight)
+                    }
+                    findHeight
+                },
+                {
+                    fn addHeaders(
+                        data: &[u8],
+                    ) -> alloy_sol_types::Result<IFullRelayWithVerifyCalls> {
+                        <addHeadersCall as alloy_sol_types::SolCall>::abi_decode_raw_validate(
+                                data,
+                            )
+                            .map(IFullRelayWithVerifyCalls::addHeaders)
+                    }
+                    addHeaders
+                },
+                {
+                    fn markNewHeaviest(
+                        data: &[u8],
+                    ) -> alloy_sol_types::Result<IFullRelayWithVerifyCalls> {
+                        <markNewHeaviestCall as alloy_sol_types::SolCall>::abi_decode_raw_validate(
+                                data,
+                            )
+                            .map(IFullRelayWithVerifyCalls::markNewHeaviest)
+                    }
+                    markNewHeaviest
+                },
+                {
+                    fn addHeadersWithRetarget(
+                        data: &[u8],
+                    ) -> alloy_sol_types::Result<IFullRelayWithVerifyCalls> {
+                        <addHeadersWithRetargetCall as alloy_sol_types::SolCall>::abi_decode_raw_validate(
+                                data,
+                            )
+                            .map(IFullRelayWithVerifyCalls::addHeadersWithRetarget)
+                    }
+                    addHeadersWithRetarget
+                },
+                {
+                    fn isAncestor(
+                        data: &[u8],
+                    ) -> alloy_sol_types::Result<IFullRelayWithVerifyCalls> {
+                        <isAncestorCall as alloy_sol_types::SolCall>::abi_decode_raw_validate(
+                                data,
+                            )
+                            .map(IFullRelayWithVerifyCalls::isAncestor)
+                    }
+                    isAncestor
+                },
+                {
+                    fn getLastReorgCommonAncestor(
+                        data: &[u8],
+                    ) -> alloy_sol_types::Result<IFullRelayWithVerifyCalls> {
+                        <getLastReorgCommonAncestorCall as alloy_sol_types::SolCall>::abi_decode_raw_validate(
+                                data,
+                            )
+                            .map(IFullRelayWithVerifyCalls::getLastReorgCommonAncestor)
+                    }
+                    getLastReorgCommonAncestor
+                },
+                {
+                    fn getRelayGenesis(
+                        data: &[u8],
+                    ) -> alloy_sol_types::Result<IFullRelayWithVerifyCalls> {
+                        <getRelayGenesisCall as alloy_sol_types::SolCall>::abi_decode_raw_validate(
+                                data,
+                            )
+                            .map(IFullRelayWithVerifyCalls::getRelayGenesis)
+                    }
+                    getRelayGenesis
+                },
+                {
+                    fn verifyHeaderHash(
+                        data: &[u8],
+                    ) -> alloy_sol_types::Result<IFullRelayWithVerifyCalls> {
+                        <verifyHeaderHashCall as alloy_sol_types::SolCall>::abi_decode_raw_validate(
+                                data,
+                            )
+                            .map(IFullRelayWithVerifyCalls::verifyHeaderHash)
+                    }
+                    verifyHeaderHash
+                },
+            ];
+            let Ok(idx) = Self::SELECTORS.binary_search(&selector) else {
+                return Err(
+                    alloy_sol_types::Error::unknown_selector(
+                        <Self as alloy_sol_types::SolInterface>::NAME,
+                        selector,
+                    ),
+                );
+            };
+            DECODE_VALIDATE_SHIMS[idx](data)
         }
         #[inline]
         fn abi_encoded_size(&self) -> usize {
@@ -2665,6 +3232,11 @@ function verifyProof(bytes memory _header, bytes memory _proof, bytes32 _txId, u
                 }
                 Self::markNewHeaviest(inner) => {
                     <markNewHeaviestCall as alloy_sol_types::SolCall>::abi_encoded_size(
+                        inner,
+                    )
+                }
+                Self::verifyHeaderHash(inner) => {
+                    <verifyHeaderHashCall as alloy_sol_types::SolCall>::abi_encoded_size(
                         inner,
                     )
                 }
@@ -2744,6 +3316,12 @@ function verifyProof(bytes memory _header, bytes memory _proof, bytes32 _txId, u
                         out,
                     )
                 }
+                Self::verifyHeaderHash(inner) => {
+                    <verifyHeaderHashCall as alloy_sol_types::SolCall>::abi_encode_raw(
+                        inner,
+                        out,
+                    )
+                }
                 Self::verifyProof(inner) => {
                     <verifyProofCall as alloy_sol_types::SolCall>::abi_encode_raw(
                         inner,
@@ -2754,6 +3332,8 @@ function verifyProof(bytes memory _header, bytes memory _proof, bytes32 _txId, u
         }
     }
     ///Container for all the [`IFullRelayWithVerify`](self) events.
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[derive(Debug, PartialEq, Eq, Hash)]
     pub enum IFullRelayWithVerifyEvents {
         #[allow(missing_docs)]
         Extension(Extension),
@@ -2770,72 +3350,14 @@ function verifyProof(bytes memory _header, bytes memory _proof, bytes32 _txId, u
         /// Prefer using `SolInterface` methods instead.
         pub const SELECTORS: &'static [[u8; 32usize]] = &[
             [
-                60u8,
-                193u8,
-                61u8,
-                230u8,
-                77u8,
-                240u8,
-                240u8,
-                35u8,
-                150u8,
-                38u8,
-                35u8,
-                92u8,
-                81u8,
-                162u8,
-                218u8,
-                37u8,
-                27u8,
-                188u8,
-                140u8,
-                133u8,
-                102u8,
-                78u8,
-                204u8,
-                227u8,
-                146u8,
-                99u8,
-                218u8,
-                62u8,
-                224u8,
-                63u8,
-                96u8,
-                108u8,
+                60u8, 193u8, 61u8, 230u8, 77u8, 240u8, 240u8, 35u8, 150u8, 38u8, 35u8,
+                92u8, 81u8, 162u8, 218u8, 37u8, 27u8, 188u8, 140u8, 133u8, 102u8, 78u8,
+                204u8, 227u8, 146u8, 99u8, 218u8, 62u8, 224u8, 63u8, 96u8, 108u8,
             ],
             [
-                249u8,
-                14u8,
-                79u8,
-                29u8,
-                156u8,
-                208u8,
-                221u8,
-                85u8,
-                227u8,
-                57u8,
-                65u8,
-                28u8,
-                188u8,
-                155u8,
-                21u8,
-                36u8,
-                130u8,
-                48u8,
-                124u8,
-                58u8,
-                35u8,
-                237u8,
-                100u8,
-                113u8,
-                94u8,
-                74u8,
-                40u8,
-                88u8,
-                246u8,
-                65u8,
-                163u8,
-                245u8,
+                249u8, 14u8, 79u8, 29u8, 156u8, 208u8, 221u8, 85u8, 227u8, 57u8, 65u8,
+                28u8, 188u8, 155u8, 21u8, 36u8, 130u8, 48u8, 124u8, 58u8, 35u8, 237u8,
+                100u8, 113u8, 94u8, 74u8, 40u8, 88u8, 246u8, 65u8, 163u8, 245u8,
             ],
         ];
     }
@@ -2846,23 +3368,17 @@ function verifyProof(bytes memory _header, bytes memory _proof, bytes32 _txId, u
         fn decode_raw_log(
             topics: &[alloy_sol_types::Word],
             data: &[u8],
-            validate: bool,
         ) -> alloy_sol_types::Result<Self> {
             match topics.first().copied() {
                 Some(<Extension as alloy_sol_types::SolEvent>::SIGNATURE_HASH) => {
                     <Extension as alloy_sol_types::SolEvent>::decode_raw_log(
                             topics,
                             data,
-                            validate,
                         )
                         .map(Self::Extension)
                 }
                 Some(<NewTip as alloy_sol_types::SolEvent>::SIGNATURE_HASH) => {
-                    <NewTip as alloy_sol_types::SolEvent>::decode_raw_log(
-                            topics,
-                            data,
-                            validate,
-                        )
+                    <NewTip as alloy_sol_types::SolEvent>::decode_raw_log(topics, data)
                         .map(Self::NewTip)
                 }
                 _ => {
@@ -2908,14 +3424,13 @@ function verifyProof(bytes memory _header, bytes memory _proof, bytes32 _txId, u
 See the [wrapper's documentation](`IFullRelayWithVerifyInstance`) for more details.*/
     #[inline]
     pub const fn new<
-        T: alloy_contract::private::Transport + ::core::clone::Clone,
-        P: alloy_contract::private::Provider<T, N>,
+        P: alloy_contract::private::Provider<N>,
         N: alloy_contract::private::Network,
     >(
         address: alloy_sol_types::private::Address,
         provider: P,
-    ) -> IFullRelayWithVerifyInstance<T, P, N> {
-        IFullRelayWithVerifyInstance::<T, P, N>::new(address, provider)
+    ) -> IFullRelayWithVerifyInstance<P, N> {
+        IFullRelayWithVerifyInstance::<P, N>::new(address, provider)
     }
     /**Deploys this contract using the given `provider` and constructor arguments, if any.
 
@@ -2924,15 +3439,14 @@ Returns a new instance of the contract, if the deployment was successful.
 For more fine-grained control over the deployment process, use [`deploy_builder`] instead.*/
     #[inline]
     pub fn deploy<
-        T: alloy_contract::private::Transport + ::core::clone::Clone,
-        P: alloy_contract::private::Provider<T, N>,
+        P: alloy_contract::private::Provider<N>,
         N: alloy_contract::private::Network,
     >(
         provider: P,
     ) -> impl ::core::future::Future<
-        Output = alloy_contract::Result<IFullRelayWithVerifyInstance<T, P, N>>,
+        Output = alloy_contract::Result<IFullRelayWithVerifyInstance<P, N>>,
     > {
-        IFullRelayWithVerifyInstance::<T, P, N>::deploy(provider)
+        IFullRelayWithVerifyInstance::<P, N>::deploy(provider)
     }
     /**Creates a `RawCallBuilder` for deploying this contract using the given `provider`
 and constructor arguments, if any.
@@ -2941,11 +3455,10 @@ This is a simple wrapper around creating a `RawCallBuilder` with the data set to
 the bytecode concatenated with the constructor's ABI-encoded arguments.*/
     #[inline]
     pub fn deploy_builder<
-        T: alloy_contract::private::Transport + ::core::clone::Clone,
-        P: alloy_contract::private::Provider<T, N>,
+        P: alloy_contract::private::Provider<N>,
         N: alloy_contract::private::Network,
-    >(provider: P) -> alloy_contract::RawCallBuilder<T, P, N> {
-        IFullRelayWithVerifyInstance::<T, P, N>::deploy_builder(provider)
+    >(provider: P) -> alloy_contract::RawCallBuilder<P, N> {
+        IFullRelayWithVerifyInstance::<P, N>::deploy_builder(provider)
     }
     /**A [`IFullRelayWithVerify`](self) instance.
 
@@ -2959,17 +3472,13 @@ be used to deploy a new instance of the contract.
 
 See the [module-level documentation](self) for all the available methods.*/
     #[derive(Clone)]
-    pub struct IFullRelayWithVerifyInstance<
-        T,
-        P,
-        N = alloy_contract::private::Ethereum,
-    > {
+    pub struct IFullRelayWithVerifyInstance<P, N = alloy_contract::private::Ethereum> {
         address: alloy_sol_types::private::Address,
         provider: P,
-        _network_transport: ::core::marker::PhantomData<(N, T)>,
+        _network: ::core::marker::PhantomData<N>,
     }
     #[automatically_derived]
-    impl<T, P, N> ::core::fmt::Debug for IFullRelayWithVerifyInstance<T, P, N> {
+    impl<P, N> ::core::fmt::Debug for IFullRelayWithVerifyInstance<P, N> {
         #[inline]
         fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
             f.debug_tuple("IFullRelayWithVerifyInstance").field(&self.address).finish()
@@ -2978,10 +3487,9 @@ See the [module-level documentation](self) for all the available methods.*/
     /// Instantiation and getters/setters.
     #[automatically_derived]
     impl<
-        T: alloy_contract::private::Transport + ::core::clone::Clone,
-        P: alloy_contract::private::Provider<T, N>,
+        P: alloy_contract::private::Provider<N>,
         N: alloy_contract::private::Network,
-    > IFullRelayWithVerifyInstance<T, P, N> {
+    > IFullRelayWithVerifyInstance<P, N> {
         /**Creates a new wrapper around an on-chain [`IFullRelayWithVerify`](self) contract instance.
 
 See the [wrapper's documentation](`IFullRelayWithVerifyInstance`) for more details.*/
@@ -2993,7 +3501,7 @@ See the [wrapper's documentation](`IFullRelayWithVerifyInstance`) for more detai
             Self {
                 address,
                 provider,
-                _network_transport: ::core::marker::PhantomData,
+                _network: ::core::marker::PhantomData,
             }
         }
         /**Deploys this contract using the given `provider` and constructor arguments, if any.
@@ -3004,7 +3512,7 @@ For more fine-grained control over the deployment process, use [`deploy_builder`
         #[inline]
         pub async fn deploy(
             provider: P,
-        ) -> alloy_contract::Result<IFullRelayWithVerifyInstance<T, P, N>> {
+        ) -> alloy_contract::Result<IFullRelayWithVerifyInstance<P, N>> {
             let call_builder = Self::deploy_builder(provider);
             let contract_address = call_builder.deploy().await?;
             Ok(Self::new(contract_address, call_builder.provider))
@@ -3015,7 +3523,7 @@ and constructor arguments, if any.
 This is a simple wrapper around creating a `RawCallBuilder` with the data set to
 the bytecode concatenated with the constructor's ABI-encoded arguments.*/
         #[inline]
-        pub fn deploy_builder(provider: P) -> alloy_contract::RawCallBuilder<T, P, N> {
+        pub fn deploy_builder(provider: P) -> alloy_contract::RawCallBuilder<P, N> {
             alloy_contract::RawCallBuilder::new_raw_deploy(
                 provider,
                 ::core::clone::Clone::clone(&BYTECODE),
@@ -3042,24 +3550,23 @@ the bytecode concatenated with the constructor's ABI-encoded arguments.*/
             &self.provider
         }
     }
-    impl<T, P: ::core::clone::Clone, N> IFullRelayWithVerifyInstance<T, &P, N> {
+    impl<P: ::core::clone::Clone, N> IFullRelayWithVerifyInstance<&P, N> {
         /// Clones the provider and returns a new instance with the cloned provider.
         #[inline]
-        pub fn with_cloned_provider(self) -> IFullRelayWithVerifyInstance<T, P, N> {
+        pub fn with_cloned_provider(self) -> IFullRelayWithVerifyInstance<P, N> {
             IFullRelayWithVerifyInstance {
                 address: self.address,
                 provider: ::core::clone::Clone::clone(&self.provider),
-                _network_transport: ::core::marker::PhantomData,
+                _network: ::core::marker::PhantomData,
             }
         }
     }
     /// Function calls.
     #[automatically_derived]
     impl<
-        T: alloy_contract::private::Transport + ::core::clone::Clone,
-        P: alloy_contract::private::Provider<T, N>,
+        P: alloy_contract::private::Provider<N>,
         N: alloy_contract::private::Network,
-    > IFullRelayWithVerifyInstance<T, P, N> {
+    > IFullRelayWithVerifyInstance<P, N> {
         /// Creates a new call builder using this contract instance's provider and address.
         ///
         /// Note that the call can be any function call, not just those defined in this
@@ -3067,7 +3574,7 @@ the bytecode concatenated with the constructor's ABI-encoded arguments.*/
         pub fn call_builder<C: alloy_sol_types::SolCall>(
             &self,
             call: &C,
-        ) -> alloy_contract::SolCallBuilder<T, &P, C, N> {
+        ) -> alloy_contract::SolCallBuilder<&P, C, N> {
             alloy_contract::SolCallBuilder::new_sol(&self.provider, &self.address, call)
         }
         ///Creates a new call builder for the [`addHeaders`] function.
@@ -3075,7 +3582,7 @@ the bytecode concatenated with the constructor's ABI-encoded arguments.*/
             &self,
             _anchor: alloy::sol_types::private::Bytes,
             _headers: alloy::sol_types::private::Bytes,
-        ) -> alloy_contract::SolCallBuilder<T, &P, addHeadersCall, N> {
+        ) -> alloy_contract::SolCallBuilder<&P, addHeadersCall, N> {
             self.call_builder(
                 &addHeadersCall {
                     _anchor,
@@ -3089,7 +3596,7 @@ the bytecode concatenated with the constructor's ABI-encoded arguments.*/
             _oldPeriodStartHeader: alloy::sol_types::private::Bytes,
             _oldPeriodEndHeader: alloy::sol_types::private::Bytes,
             _headers: alloy::sol_types::private::Bytes,
-        ) -> alloy_contract::SolCallBuilder<T, &P, addHeadersWithRetargetCall, N> {
+        ) -> alloy_contract::SolCallBuilder<&P, addHeadersWithRetargetCall, N> {
             self.call_builder(
                 &addHeadersWithRetargetCall {
                     _oldPeriodStartHeader,
@@ -3103,7 +3610,7 @@ the bytecode concatenated with the constructor's ABI-encoded arguments.*/
             &self,
             _digest: alloy::sol_types::private::FixedBytes<32>,
             _offset: alloy::sol_types::private::primitives::aliases::U256,
-        ) -> alloy_contract::SolCallBuilder<T, &P, findAncestorCall, N> {
+        ) -> alloy_contract::SolCallBuilder<&P, findAncestorCall, N> {
             self.call_builder(
                 &findAncestorCall {
                     _digest,
@@ -3115,38 +3622,38 @@ the bytecode concatenated with the constructor's ABI-encoded arguments.*/
         pub fn findHeight(
             &self,
             _digest: alloy::sol_types::private::FixedBytes<32>,
-        ) -> alloy_contract::SolCallBuilder<T, &P, findHeightCall, N> {
+        ) -> alloy_contract::SolCallBuilder<&P, findHeightCall, N> {
             self.call_builder(&findHeightCall { _digest })
         }
         ///Creates a new call builder for the [`getBestKnownDigest`] function.
         pub fn getBestKnownDigest(
             &self,
-        ) -> alloy_contract::SolCallBuilder<T, &P, getBestKnownDigestCall, N> {
-            self.call_builder(&getBestKnownDigestCall {})
+        ) -> alloy_contract::SolCallBuilder<&P, getBestKnownDigestCall, N> {
+            self.call_builder(&getBestKnownDigestCall)
         }
         ///Creates a new call builder for the [`getCurrentEpochDifficulty`] function.
         pub fn getCurrentEpochDifficulty(
             &self,
-        ) -> alloy_contract::SolCallBuilder<T, &P, getCurrentEpochDifficultyCall, N> {
-            self.call_builder(&getCurrentEpochDifficultyCall {})
+        ) -> alloy_contract::SolCallBuilder<&P, getCurrentEpochDifficultyCall, N> {
+            self.call_builder(&getCurrentEpochDifficultyCall)
         }
         ///Creates a new call builder for the [`getLastReorgCommonAncestor`] function.
         pub fn getLastReorgCommonAncestor(
             &self,
-        ) -> alloy_contract::SolCallBuilder<T, &P, getLastReorgCommonAncestorCall, N> {
-            self.call_builder(&getLastReorgCommonAncestorCall {})
+        ) -> alloy_contract::SolCallBuilder<&P, getLastReorgCommonAncestorCall, N> {
+            self.call_builder(&getLastReorgCommonAncestorCall)
         }
         ///Creates a new call builder for the [`getPrevEpochDifficulty`] function.
         pub fn getPrevEpochDifficulty(
             &self,
-        ) -> alloy_contract::SolCallBuilder<T, &P, getPrevEpochDifficultyCall, N> {
-            self.call_builder(&getPrevEpochDifficultyCall {})
+        ) -> alloy_contract::SolCallBuilder<&P, getPrevEpochDifficultyCall, N> {
+            self.call_builder(&getPrevEpochDifficultyCall)
         }
         ///Creates a new call builder for the [`getRelayGenesis`] function.
         pub fn getRelayGenesis(
             &self,
-        ) -> alloy_contract::SolCallBuilder<T, &P, getRelayGenesisCall, N> {
-            self.call_builder(&getRelayGenesisCall {})
+        ) -> alloy_contract::SolCallBuilder<&P, getRelayGenesisCall, N> {
+            self.call_builder(&getRelayGenesisCall)
         }
         ///Creates a new call builder for the [`isAncestor`] function.
         pub fn isAncestor(
@@ -3154,7 +3661,7 @@ the bytecode concatenated with the constructor's ABI-encoded arguments.*/
             _ancestor: alloy::sol_types::private::FixedBytes<32>,
             _descendant: alloy::sol_types::private::FixedBytes<32>,
             _limit: alloy::sol_types::private::primitives::aliases::U256,
-        ) -> alloy_contract::SolCallBuilder<T, &P, isAncestorCall, N> {
+        ) -> alloy_contract::SolCallBuilder<&P, isAncestorCall, N> {
             self.call_builder(
                 &isAncestorCall {
                     _ancestor,
@@ -3170,13 +3677,26 @@ the bytecode concatenated with the constructor's ABI-encoded arguments.*/
             _currentBest: alloy::sol_types::private::Bytes,
             _newBest: alloy::sol_types::private::Bytes,
             _limit: alloy::sol_types::private::primitives::aliases::U256,
-        ) -> alloy_contract::SolCallBuilder<T, &P, markNewHeaviestCall, N> {
+        ) -> alloy_contract::SolCallBuilder<&P, markNewHeaviestCall, N> {
             self.call_builder(
                 &markNewHeaviestCall {
                     _ancestor,
                     _currentBest,
                     _newBest,
                     _limit,
+                },
+            )
+        }
+        ///Creates a new call builder for the [`verifyHeaderHash`] function.
+        pub fn verifyHeaderHash(
+            &self,
+            _headerHash: alloy::sol_types::private::FixedBytes<32>,
+            _numConfs: u8,
+        ) -> alloy_contract::SolCallBuilder<&P, verifyHeaderHashCall, N> {
+            self.call_builder(
+                &verifyHeaderHashCall {
+                    _headerHash,
+                    _numConfs,
                 },
             )
         }
@@ -3188,7 +3708,7 @@ the bytecode concatenated with the constructor's ABI-encoded arguments.*/
             _txId: alloy::sol_types::private::FixedBytes<32>,
             _index: alloy::sol_types::private::primitives::aliases::U256,
             _numConfs: u8,
-        ) -> alloy_contract::SolCallBuilder<T, &P, verifyProofCall, N> {
+        ) -> alloy_contract::SolCallBuilder<&P, verifyProofCall, N> {
             self.call_builder(
                 &verifyProofCall {
                     _header,
@@ -3203,25 +3723,24 @@ the bytecode concatenated with the constructor's ABI-encoded arguments.*/
     /// Event filters.
     #[automatically_derived]
     impl<
-        T: alloy_contract::private::Transport + ::core::clone::Clone,
-        P: alloy_contract::private::Provider<T, N>,
+        P: alloy_contract::private::Provider<N>,
         N: alloy_contract::private::Network,
-    > IFullRelayWithVerifyInstance<T, P, N> {
+    > IFullRelayWithVerifyInstance<P, N> {
         /// Creates a new event filter using this contract instance's provider and address.
         ///
         /// Note that the type can be any event, not just those defined in this contract.
         /// Prefer using the other methods for building type-safe event filters.
         pub fn event_filter<E: alloy_sol_types::SolEvent>(
             &self,
-        ) -> alloy_contract::Event<T, &P, E, N> {
+        ) -> alloy_contract::Event<&P, E, N> {
             alloy_contract::Event::new_sol(&self.provider, &self.address)
         }
         ///Creates a new event filter for the [`Extension`] event.
-        pub fn Extension_filter(&self) -> alloy_contract::Event<T, &P, Extension, N> {
+        pub fn Extension_filter(&self) -> alloy_contract::Event<&P, Extension, N> {
             self.event_filter::<Extension>()
         }
         ///Creates a new event filter for the [`NewTip`] event.
-        pub fn NewTip_filter(&self) -> alloy_contract::Event<T, &P, NewTip, N> {
+        pub fn NewTip_filter(&self) -> alloy_contract::Event<&P, NewTip, N> {
             self.event_filter::<NewTip>()
         }
     }
