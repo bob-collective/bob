@@ -270,7 +270,7 @@ export class GatewayApiClient {
         return {
             amountLockInSat: rawQuote.amountLockInSat,
             registryAddress: rawQuote.registryAddress as Address,
-            deadline: BigInt(deadline),
+            deadline: deadline,
             token: token as Address,
             feeBreakdown: {
                 overallFeeSats: rawQuote.feeBreakdown.overallFeeSats,
@@ -328,8 +328,8 @@ export class GatewayApiClient {
             offrampFunctionName: 'createOrder' as const,
             offrampArgs: [
                 {
-                    satAmountToLock: offrampQuote.amountLockInSat,
-                    satFeesMax: offrampQuote.feeBreakdown.overallFeeSats,
+                    satAmountToLock: BigInt(offrampQuote.amountLockInSat),
+                    satFeesMax: BigInt(offrampQuote.feeBreakdown.overallFeeSats),
                     orderCreationDeadline: BigInt(offrampQuote.deadline),
                     outputScript: receiverAddress as `0x${string}`,
                     token: offrampQuote.token,
@@ -456,7 +456,7 @@ export class GatewayApiClient {
         token: Address,
         satAmountLocked: bigint,
         satFeesMax: bigint
-    ): Promise<[boolean, bigint, string?]> {
+    ): Promise<[boolean, number, string?]> {
         const decimals = getTokenDecimals(token);
         if (decimals === undefined) {
             throw new Error('Tokens with less than 8 decimals are not supported');
@@ -516,8 +516,8 @@ export class GatewayApiClient {
         return {
             orderId,
             token: order.token as Address,
-            satAmountLocked: BigInt(order.satAmountLocked),
-            satFeesMax: BigInt(order.satFeesMax),
+            satAmountLocked: order.satAmountLocked,
+            satFeesMax: order.satFeesMax,
             sender: order.sender as Address,
             receiver: order.receiver !== (ethers.ZeroAddress as Address) ? (order.receiver as Address) : null,
             owner: order.owner !== (ethers.ZeroAddress as Address) ? (order.owner as Address) : null,

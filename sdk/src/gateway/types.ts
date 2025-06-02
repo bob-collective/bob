@@ -358,23 +358,23 @@ export type OfframpOrderStatus = 'Active' | 'Accepted' | 'Processed' | 'Refunded
 /** @dev Detailed breakdown of fees associated with an offramp quote */
 export interface OfframpFeeBreakdown {
     /** @dev Total fees in satoshis */
-    overallFeeSats: bigint;
+    overallFeeSats: number;
     /** @dev Fee for transaction inclusion */
-    inclusionFeeSats: bigint;
+    inclusionFeeSats: number;
     /** @dev Protocol-specific fee */
-    protocolFeeSats: bigint;
+    protocolFeeSats: number;
     /** @dev Affiliate-related fee */
-    affiliateFeeSats: bigint;
+    affiliateFeeSats: number;
     /** @dev Fastest available fee rate (e.g., sat/vB) */
-    fastestFeeRate: bigint;
+    fastestFeeRate: number;
 }
 
 /** @dev Offramp order quote returned by the quoting logic */
 export interface OfframpQuote {
     /** @dev Amount to lock in satoshis */
-    amountLockInSat: bigint;
+    amountLockInSat: number;
     /** @dev Deadline for order creation (unix timestamp) */
-    deadline: bigint;
+    deadline: number;
     /** @dev Address of the off-ramp registry handling the order */
     registryAddress: Address;
     /** @dev Token address used for payment */

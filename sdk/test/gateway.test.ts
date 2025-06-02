@@ -583,11 +583,11 @@ describe('Gateway Tests', () => {
                 amountLockInSat: 10000000000000,
                 registryAddress: '0xd7b27b178f6bf290155201109906ad203b6d99b1',
                 feeBreakdown: {
-                    overall_fee_sats: 385,
-                    inclusion_fee_sats: 384,
-                    protocol_fee_sats: 1,
-                    affiliate_fee_sats: 0,
-                    fastest_fee_rate: 1,
+                    overallFeeSats: 385,
+                    inclusionFeeSats: 384,
+                    protocolFeeSats: 1,
+                    affiliateFeeSats: 0,
+                    fastestFeeRate: 1,
                 },
             });
 
@@ -679,11 +679,11 @@ describe('Gateway Tests', () => {
                 amountLockInSat: 10000000000000,
                 registryAddress: '0xd7b27b178f6bf290155201109906ad203b6d99b1',
                 feeBreakdown: {
-                    overall_fee_sats: 385,
-                    inclusion_fee_sats: 384,
-                    protocol_fee_sats: 1,
-                    affiliate_fee_sats: 0,
-                    fastest_fee_rate: 1,
+                    overallFeeSats: 385,
+                    inclusionFeeSats: 384,
+                    protocolFeeSats: 1,
+                    affiliateFeeSats: 0,
+                    fastestFeeRate: 1,
                 },
             });
 
@@ -838,11 +838,11 @@ describe('Gateway Tests', () => {
                 amountLockInSat: 10_000,
                 registryAddress: zeroAddress,
                 feeBreakdown: {
-                    overall_fee_sats: 932,
-                    inclusion_fee_sats: 930,
-                    protocol_fee_sats: 1,
-                    affiliate_fee_sats: 1,
-                    fastest_fee_rate: 1000,
+                    overallFeeSats: 932,
+                    inclusionFeeSats: 930,
+                    protocolFeeSats: 1,
+                    affiliateFeeSats: 1,
+                    fastestFeeRate: 1000,
                 },
             });
 
