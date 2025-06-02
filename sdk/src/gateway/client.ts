@@ -268,12 +268,17 @@ export class GatewayApiClient {
         const deadline = currentUnixTimeInSec + ORDER_DEADLINE_IN_SECONDS;
 
         return {
-            amountLockInSat: BigInt(rawQuote.amountLockInSat.toString()),
-            feesInSat: BigInt(rawQuote.feesInSat.toString()),
-            feeRate: BigInt(rawQuote.feeRate.toString()),
-            deadline: BigInt(deadline.toString()),
+            amountLockInSat: BigInt(rawQuote.amountLockInSat),
             registryAddress: rawQuote.registryAddress as Address,
+            deadline: BigInt(deadline.toString()),
             token: token as Address,
+            feeBreakdown: {
+                overall_fee_sats: BigInt(rawQuote.feeBreakdown.overall_fee_sats),
+                inclusion_fee_sats: BigInt(rawQuote.feeBreakdown.inclusion_fee_sats),
+                protocol_fee_sats: BigInt(rawQuote.feeBreakdown.protocol_fee_sats),
+                affiliate_fee_sats: BigInt(rawQuote.feeBreakdown.affiliate_fee_sats),
+                fastest_fee_rate: BigInt(rawQuote.feeBreakdown.fastest_fee_rate),
+            },
         };
     }
 
@@ -319,11 +324,12 @@ export class GatewayApiClient {
         return {
             quote: offrampQuote,
             offrampABI: offrampCaller,
+            feeBreakdown: offrampQuote.feeBreakdown,
             offrampFunctionName: 'createOrder' as const,
             offrampArgs: [
                 {
                     satAmountToLock: offrampQuote.amountLockInSat,
-                    satFeesMax: offrampQuote.feesInSat,
+                    satFeesMax: offrampQuote.feeBreakdown.overall_fee_sats,
                     orderCreationDeadline: offrampQuote.deadline,
                     outputScript: receiverAddress as `0x${string}`,
                     token: offrampQuote.token,
