@@ -260,7 +260,7 @@ export class MempoolClient {
         if (!response.ok) {
             throw new Error(response.statusText);
         }
-        return (await response.json()) as T;
+        return response.json() as Promise<T>;
     }
 
     /**
@@ -271,6 +271,6 @@ export class MempoolClient {
         if (!response.ok) {
             throw new Error(response.statusText);
         }
-        return (await response.text()) as T;
+        return response.text() as Promise<T>;
     }
 }

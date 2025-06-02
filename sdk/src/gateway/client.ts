@@ -263,7 +263,7 @@ export class GatewayApiClient {
             throw new Error(`Offramp API Error: ${errorMessage} ${queryParams}`);
         }
 
-        const rawQuote = (await response.json()) as OfframpQuote;
+        const rawQuote: OfframpQuote = await response.json();
         const currentUnixTimeInSec = Math.floor(Date.now() / 1000);
         const deadline = currentUnixTimeInSec + ORDER_DEADLINE_IN_SECONDS;
 
