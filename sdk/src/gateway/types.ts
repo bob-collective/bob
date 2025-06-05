@@ -107,8 +107,8 @@ export interface GatewayQuoteParams {
 
     /** @description Unique affiliate ID for tracking */
     affiliateId?: string;
-    /** @description Optionally filter the type of routes returned */
-    type?: 'swap' | 'deposit' | 'withdraw' | 'claim';
+    // /** @description Optionally filter the type of routes returned */
+    // type?: 'swap' | 'deposit' | 'withdraw' | 'claim';
     /** @description The percentage of fee charged by partners in Basis Points (BPS) units. This will override the default fee rate configured via platform. 1 BPS = 0.01%. The maximum value is 1000 (which equals 10%). The minimum value is 1 (which equals 0.01%). */
     fee?: number;
 
@@ -531,3 +531,48 @@ export interface DefiLlamaPool {
     underlyingTokens: null | string[];
     rewardTokens: null | string[];
 }
+
+export type OnrampQuoteParams = Omit<
+    Optional<GatewayQuoteParams, 'amount' | 'fromChain' | 'fromToken' | 'fromUserAddress' | 'toUserAddress'>,
+    'type'
+> & { type: 'onramp' };
+
+export type OfframpQuoteParams = Pick<GatewayQuoteParams, 'fromToken' | 'amount'> & { type: 'offramp' };
+
+export type ExecuteQuoteParams =
+    | {
+          type: 'onramp';
+          quote: GatewayQuote & GatewayTokensInfo;
+          params: Optional<GatewayQuoteParams, 'toToken' | 'amount'> & {
+              toUserAddress: Address;
+              fromUserAddress: string;
+              fromChain: 'bitcoin';
+              toChain: 'bob' | 'bob-sepolia';
+          };
+      }
+    | {
+          type: 'offramp';
+          params: Optional<
+              GatewayQuoteParams,
+              | 'toChain'
+              | 'toUserAddress'
+              | 'affiliateId'
+              | 'fee'
+              | 'feeRate'
+              | 'gasRefill'
+              | 'strategyAddress'
+              | 'campaignId'
+              | 'toToken'
+              | 'maxSlippage'
+              | 'fromChain'
+          > & {
+              toUserAddress: string;
+              fromUserAddress: Address;
+              fromChain: 'bob' | 'bob-sepolia';
+              toChain: 'bitcoin';
+          };
+      }
+    | {
+          type: 'stake';
+          params: StakeParams;
+      };

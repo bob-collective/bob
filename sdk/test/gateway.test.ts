@@ -62,6 +62,7 @@ describe('Gateway Tests', () => {
 
         assert.deepEqual(
             await gatewaySDK.getQuote({
+                type: 'onramp',
                 toChain: 'BOB',
                 toToken: 'tBTC',
                 toUserAddress: ZeroAddress,
@@ -71,6 +72,7 @@ describe('Gateway Tests', () => {
         );
         assert.deepEqual(
             await gatewaySDK.getQuote({
+                type: 'onramp',
                 toChain: 'bob',
                 toToken: 'tbtc',
                 toUserAddress: ZeroAddress,
@@ -80,6 +82,7 @@ describe('Gateway Tests', () => {
         );
         assert.deepEqual(
             await gatewaySDK.getQuote({
+                type: 'onramp',
                 toChain: 60808,
                 toToken: 'tbtc',
                 toUserAddress: ZeroAddress,
@@ -89,6 +92,7 @@ describe('Gateway Tests', () => {
         );
         assert.deepEqual(
             await gatewaySDK.getQuote({
+                type: 'onramp',
                 toChain: 'BOB',
                 toToken: TBTC_ADDRESS,
                 toUserAddress: ZeroAddress,
@@ -98,6 +102,7 @@ describe('Gateway Tests', () => {
         );
         assert.deepEqual(
             await gatewaySDK.getQuote({
+                type: 'onramp',
                 toChain: 'BOB',
                 toToken: 'tBTC',
                 toUserAddress: ZeroAddress,
@@ -111,6 +116,7 @@ describe('Gateway Tests', () => {
         nock(`${MAINNET_GATEWAY_BASE_URL}`).get(`/quote/${TBTC_ADDRESS}`).reply(200, mockQuote);
         assert.deepEqual(
             await gatewaySDK.getQuote({
+                type: 'onramp',
                 amount: 0,
                 toChain: 'BOB',
                 toToken: TBTC_ADDRESS,
@@ -124,6 +130,7 @@ describe('Gateway Tests', () => {
         const gatewaySDK = new GatewaySDK('mainnet');
         await expect(async () => {
             await gatewaySDK.getQuote({
+                type: 'onramp',
                 toChain: 'BOB',
                 toToken: 'unknownToken',
                 toUserAddress: ZeroAddress,
@@ -136,26 +143,13 @@ describe('Gateway Tests', () => {
         const gatewaySDK = new GatewaySDK('testnet');
         await expect(async () => {
             await gatewaySDK.getQuote({
+                type: 'onramp',
                 toChain: 'BOB',
                 toToken: 'tbtc',
                 toUserAddress: zeroAddress,
                 amount: 1000,
             });
         }).rejects.toThrowError('Invalid output chain');
-    });
-
-    it('should reject unknown output token', async () => {
-        const gatewaySDK = new GatewaySDK('testnet');
-
-        await expect(async () => {
-            await gatewaySDK.getQuote({
-                toChain: 'bitcoin',
-                toToken: 'tbtc',
-                toUserAddress: zeroAddress,
-                amount: 1000,
-                fromToken: 'bitcoin',
-            });
-        }).rejects.toThrowError('Unknown output token');
     });
 
     it('should start order', { timeout: 50000 }, async () => {
@@ -241,6 +235,7 @@ describe('Gateway Tests', () => {
 
         const strategy = strategies[0];
         await gatewaySDK.getQuote({
+            type: 'onramp',
             toUserAddress: ZeroAddress,
             amount: 1000,
             toChain: strategy.chain.chainId,
@@ -774,9 +769,9 @@ describe('Gateway Tests', () => {
                     fromUserAddress: 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq',
                 },
             },
-            mockBtcSigner,
-            mockWalletClient as Parameters<typeof gatewaySDK.executeQuote>[2],
-            mockPublicClient as Parameters<typeof gatewaySDK.executeQuote>[3]
+            mockWalletClient as Parameters<typeof gatewaySDK.executeQuote>[1],
+            mockPublicClient as Parameters<typeof gatewaySDK.executeQuote>[2],
+            mockBtcSigner
         );
 
         expect(btcTxId).toBe('f8c934f181cb88ce910f31bda1a6a8c27fdf5fe9c650edad1ccf4c4e0c89f863');
@@ -791,14 +786,14 @@ describe('Gateway Tests', () => {
 
         const mockWalletClient = {
             writeContract: () => Promise.resolve('0x35f5bca7f984f4ed97888944293b979f3abb198a5716d04e10c6bdc023080075'),
-        } as unknown as Parameters<typeof gatewaySDK.executeQuote>[2];
+        } as unknown as Parameters<typeof gatewaySDK.executeQuote>[1];
 
         const mockPublicClient = {
             readContract: () => Promise.resolve(10_000n),
             simulateContract: () => Promise.resolve({ request: '🎉' }),
             waitForTransactionReceipt: () =>
                 Promise.resolve('0x35f5bca7f984f4ed97888944293b979f3abb198a5716d04e10c6bdc023080075'),
-        } as unknown as Parameters<typeof gatewaySDK.executeQuote>[3];
+        } as unknown as Parameters<typeof gatewaySDK.executeQuote>[2];
 
         const createOfframpOrderSpy = vi.spyOn(gatewaySDK, 'createOfframpOrder');
         const fetchOfframpRegistryAddressSpy = vi.spyOn(gatewaySDK, 'fetchOfframpRegistryAddress');
@@ -837,9 +832,9 @@ describe('Gateway Tests', () => {
                     fromUserAddress: zeroAddress,
                 },
             },
-            mockBtcSigner as Parameters<typeof gatewaySDK.executeQuote>[1],
-            mockWalletClient as Parameters<typeof gatewaySDK.executeQuote>[2],
-            mockPublicClient as Parameters<typeof gatewaySDK.executeQuote>[3]
+            mockWalletClient as Parameters<typeof gatewaySDK.executeQuote>[1],
+            mockPublicClient as Parameters<typeof gatewaySDK.executeQuote>[2],
+            mockBtcSigner as Parameters<typeof gatewaySDK.executeQuote>[3]
         );
 
         expect(evmTxId).toBe('0x35f5bca7f984f4ed97888944293b979f3abb198a5716d04e10c6bdc023080075');
@@ -866,23 +861,23 @@ describe('Gateway Tests', () => {
                 address: zeroAddress,
             },
             writeContract: () => Promise.resolve('0x35f5bca7f984f4ed97888944293b979f3abb198a5716d04e10c6bdc023080075'),
-        } as unknown as Parameters<typeof gatewaySDK.executeQuote>[2];
+        } as unknown as Parameters<typeof gatewaySDK.executeQuote>[1];
 
         const mockPublicClient = {
             readContract: () => Promise.resolve(10_000n),
-            simulateContract: () => Promise.resolve({ request: '🎉' }),
+            simulateContract: () => Promise.resolve({ request: 'request' }),
             waitForTransactionReceipt: () =>
                 Promise.resolve('0x35f5bca7f984f4ed97888944293b979f3abb198a5716d04e10c6bdc023080075'),
-        } as unknown as Parameters<typeof gatewaySDK.executeQuote>[3];
+        } as unknown as Parameters<typeof gatewaySDK.executeQuote>[2];
 
         const evmTxId = await gatewaySDK.executeQuote(
             {
                 type: 'stake',
                 params,
             },
-            mockBtcSigner as Parameters<typeof gatewaySDK.executeQuote>[1],
-            mockWalletClient as Parameters<typeof gatewaySDK.executeQuote>[2],
-            mockPublicClient as Parameters<typeof gatewaySDK.executeQuote>[3]
+            mockWalletClient as Parameters<typeof gatewaySDK.executeQuote>[1],
+            mockPublicClient as Parameters<typeof gatewaySDK.executeQuote>[2],
+            mockBtcSigner as Parameters<typeof gatewaySDK.executeQuote>[3]
         );
 
         expect(evmTxId).toBe('0x35f5bca7f984f4ed97888944293b979f3abb198a5716d04e10c6bdc023080075');

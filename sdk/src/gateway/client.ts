@@ -24,6 +24,7 @@ import {
     Chain,
     ChainId,
     EnrichedToken,
+    ExecuteQuoteParams,
     GatewayCreateOrderRequest,
     GatewayCreateOrderResponse,
     GatewayQuote,
@@ -38,11 +39,13 @@ import {
     OfframpOrder,
     OfframpOrderStatus,
     OfframpQuote,
+    OfframpQuoteParams,
     OfframpRawOrder,
     OfframpUnlockFundsParams,
     OnchainOfframpOrderDetails,
     OnrampOrder,
     OnrampOrderResponse,
+    OnrampQuoteParams,
     Optional,
     OrderStatus,
     StakeParams,
@@ -132,6 +135,10 @@ export class GatewayApiClient {
         return Object.values(Chain);
     }
 
+    async getQuote(params: OnrampQuoteParams): Promise<GatewayQuote & GatewayTokensInfo>;
+
+    async getQuote(params: OfframpQuoteParams): Promise<OfframpQuote>;
+
     /**
      * Fetches quote for the given token and amount.
      *
@@ -140,24 +147,11 @@ export class GatewayApiClient {
      * @returns Offramp quote details.
      */
     async getQuote(
-        params: Optional<GatewayQuoteParams, 'fromChain' | 'fromToken' | 'fromUserAddress' | 'toUserAddress'>
+        params: OnrampQuoteParams | OfframpQuoteParams
     ): Promise<(GatewayQuote & GatewayTokensInfo) | OfframpQuote> {
-        const isOnramp =
-            typeof params.toChain === 'string'
-                ? params.toChain.toLowerCase() === Chain.BOB || params.toChain.toLowerCase() === Chain.BOB_SEPOLIA
-                : params.toChain === ChainId.BOB || params.toChain === ChainId.BOB_SEPOLIA;
-
-        const isOfframp =
-            typeof params.fromChain === 'string'
-                ? params.fromChain.toLowerCase() === Chain.BOB || params.fromChain.toLowerCase() === Chain.BOB_SEPOLIA
-                : params.fromChain === ChainId.BOB || params.fromChain === ChainId.BOB_SEPOLIA;
-
-        if (isOnramp) {
+        if (params.type === 'onramp') {
             return this.getOnrampQuote(params);
-        } else if (isOfframp) {
-            if (!params.fromToken) {
-                throw new Error('Missing `fromToken` parameter');
-            }
+        } else if (params.type === 'offramp') {
             const tokenAddress = getTokenAddress(this.chainId, params.fromToken.toLowerCase());
             return this.fetchOfframpQuote(tokenAddress, BigInt(params.amount));
         }
@@ -312,7 +306,6 @@ export class GatewayApiClient {
             GatewayQuoteParams,
             | 'toChain'
             | 'affiliateId'
-            | 'type'
             | 'fee'
             | 'feeRate'
             | 'gasRefill'
@@ -623,14 +616,18 @@ export class GatewayApiClient {
         throw new Error('Failed to create bitcoin psbt due to an unexpected error.');
     }
 
+    async executeQuote<T extends ExecuteQuoteParams>(
+        executeQuoteParams: T,
+        walletClient: WalletClient<Transport, ViemChain, Account>,
+        publicClient: PublicClient<Transport>,
+        btcSigner: { signAllInputs: (psbtBase64: string) => Promise<string> }
+    ): Promise<string>;
+
     /**
      * Execute an order via the Gateway API.
      * This method invokes the {@link startOrder} and the {@link finalizeOrder} methods.
      *
-     * @typedef { Optional<GatewayQuoteParams, 'toToken' | 'amount'> & { toUserAddress: Address; fromUserAddress: string; fromChain: Chain.BITCOIN; toChain: Chain.BOB | Chain.BOB_SEPOLIA; } } OnrampParams
-     * @typedef { Optional< GatewayQuoteParams, | 'toChain' | 'toUserAddress' | 'affiliateId' | 'type' | 'fee' | 'feeRate' | 'gasRefill' | 'strategyAddress' | 'campaignId' | 'toToken' | 'maxSlippage' | 'fromChain'  > & { toUserAddress: string; fromUserAddress: Address; toChain: Chain.BITCOIN; fromChain: Chain.BOB | Chain.BOB_SEPOLIA;  } } OfframpParams
-     *
-     * @param {{type: 'onramp', quote: GatewayQuote & GatewayTokensInfo, params: OnrampParams } | {type: 'offramp', params: OfframpParams} | {type: 'stake', params: StakeParams}} order - The params given by the {@link getQuote} method.
+     * @param {ExecuteQuoteParams} executeQuoteParams - The params given by the {@link getQuote} method.
      * @param {{ signAllInputs: (psbtBase64: string) => Promise<string> }} btcSigner Btc wallet connector
      * @param {WalletClient<Transport, ViemChain, Account>} walletClient Wallet client instance
      * @param {PublicClient<Transport>} publicClient Public client instance
@@ -638,50 +635,14 @@ export class GatewayApiClient {
      * @returns {Promise<GatewayStartOrder>} The success object.
      */
     async executeQuote(
-        order:
-            | {
-                  type: 'onramp';
-                  quote: GatewayQuote & GatewayTokensInfo;
-                  params: Optional<GatewayQuoteParams, 'toToken' | 'amount'> & {
-                      toUserAddress: Address;
-                      fromUserAddress: string;
-                      fromChain: 'bitcoin';
-                      toChain: 'bob' | 'bob-sepolia';
-                  };
-              }
-            | {
-                  type: 'offramp';
-                  params: Optional<
-                      GatewayQuoteParams,
-                      | 'toChain'
-                      | 'toUserAddress'
-                      | 'affiliateId'
-                      | 'type'
-                      | 'fee'
-                      | 'feeRate'
-                      | 'gasRefill'
-                      | 'strategyAddress'
-                      | 'campaignId'
-                      | 'toToken'
-                      | 'maxSlippage'
-                      | 'fromChain'
-                  > & {
-                      toUserAddress: string;
-                      fromUserAddress: Address;
-                      fromChain: 'bob' | 'bob-sepolia';
-                      toChain: 'bitcoin';
-                  };
-              }
-            | {
-                  type: 'stake';
-                  params: StakeParams;
-              },
-        btcSigner: { signAllInputs: (psbtBase64: string) => Promise<string> },
+        executeQuoteParams: ExecuteQuoteParams,
         walletClient: WalletClient<Transport, ViemChain, Account>,
-        publicClient: PublicClient<Transport>
+        publicClient: PublicClient<Transport>,
+        btcSigner: { signAllInputs: (psbtBase64: string) => Promise<string> }
     ): Promise<string> {
-        if (order.type === 'onramp') {
-            const { uuid, psbtBase64 } = await this.startOrder(order.quote, order.params);
+        if (executeQuoteParams.type === 'onramp') {
+            const { params, quote } = executeQuoteParams;
+            const { uuid, psbtBase64 } = await this.startOrder(quote, params);
 
             const bitcoinTxHex = await btcSigner.signAllInputs(psbtBase64!);
 
@@ -690,10 +651,11 @@ export class GatewayApiClient {
             const txId = await this.finalizeOrder(uuid, bitcoinTxHex);
 
             return txId;
-        } else if (order.type === 'offramp') {
-            const tokenAddress = getTokenAddress(this.chainId, order.params.fromToken.toLowerCase());
+        } else if (executeQuoteParams.type === 'offramp') {
+            const { params } = executeQuoteParams;
+            const tokenAddress = getTokenAddress(this.chainId, params.fromToken.toLowerCase());
             const [offrampOrder, offrampRegistryAddress] = await Promise.all([
-                this.createOfframpOrder(order.params),
+                this.createOfframpOrder(params),
                 this.fetchOfframpRegistryAddress(),
             ]);
 
@@ -701,10 +663,10 @@ export class GatewayApiClient {
                 address: tokenAddress,
                 abi: erc20Abi,
                 functionName: 'allowance',
-                args: [order.params.fromUserAddress as Address, offrampRegistryAddress],
+                args: [params.fromUserAddress as Address, offrampRegistryAddress],
             });
 
-            if (BigInt(order.params.amount) > allowance) {
+            if (BigInt(params.amount) > allowance) {
                 const { request } = await publicClient.simulateContract({
                     account: walletClient.account,
                     address: tokenAddress,
@@ -732,19 +694,20 @@ export class GatewayApiClient {
 
             return transactionHash;
         } else {
-            const result = await this.buildStake(order.params);
+            const { params } = executeQuoteParams;
+            const result = await this.buildStake(params);
 
             const allowance = await publicClient.readContract({
-                address: order.params.token,
+                address: params.token,
                 abi: erc20Abi,
                 functionName: 'allowance',
                 args: [walletClient.account.address as Address, result.strategyAddress],
             });
 
-            if (BigInt(order.params.amount) > allowance) {
+            if (BigInt(params.amount) > allowance) {
                 const { request } = await publicClient.simulateContract({
                     account: walletClient.account,
-                    address: order.params.token,
+                    address: params.token,
                     abi: erc20Abi,
                     functionName: 'approve',
                     args: [result.strategyAddress, MaxUint256],
