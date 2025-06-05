@@ -131,9 +131,8 @@ export class GatewayApiClient {
     /**
      * Fetches quote for the given token and amount.
      *
-     * @param {Address} token ERC20 token address.
-     * @param amountInToken Amount specified in token decimals.
-     * @returns Offramp quote details.
+     * @param {OnrampQuoteParams | OfframpQuoteParams} params parameters for quote.
+     * @returns quote details.
      */
     async getQuote(
         params: OnrampQuoteParams | OfframpQuoteParams
@@ -145,7 +144,7 @@ export class GatewayApiClient {
             return this.fetchOfframpQuote(tokenAddress, BigInt(params.amount));
         }
 
-        throw new Error('Ivalid quote arguments');
+        throw new Error('Invalid quote arguments');
     }
 
     /**
@@ -602,13 +601,6 @@ export class GatewayApiClient {
 
         throw new Error('Failed to create bitcoin psbt due to an unexpected error.');
     }
-
-    async executeQuote(
-        executeQuoteParams: ExecuteQuoteParams,
-        walletClient: WalletClient<Transport, ViemChain, Account>,
-        publicClient: PublicClient<Transport>,
-        btcSigner: { signAllInputs: (psbtBase64: string) => Promise<string> }
-    ): Promise<string>;
 
     /**
      * Execute an order via the Gateway API.

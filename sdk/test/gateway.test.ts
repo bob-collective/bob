@@ -1,5 +1,4 @@
 import * as bitcoin from 'bitcoinjs-lib';
-import { MaxUint256, ZeroAddress } from 'ethers';
 import nock from 'nock';
 import { createPublicClient, encodeAbiParameters, http, keccak256, maxUint256, numberToHex, zeroAddress } from 'viem';
 import { Address } from 'viem/accounts';
@@ -65,7 +64,7 @@ describe('Gateway Tests', () => {
                 type: 'onramp',
                 toChain: 'BOB',
                 toToken: 'tBTC',
-                toUserAddress: ZeroAddress,
+                toUserAddress: zeroAddress,
                 amount: 1000,
             }),
             mockQuote
@@ -75,7 +74,7 @@ describe('Gateway Tests', () => {
                 type: 'onramp',
                 toChain: 'bob',
                 toToken: 'tbtc',
-                toUserAddress: ZeroAddress,
+                toUserAddress: zeroAddress,
                 amount: 1000,
             }),
             mockQuote
@@ -85,7 +84,7 @@ describe('Gateway Tests', () => {
                 type: 'onramp',
                 toChain: 60808,
                 toToken: 'tbtc',
-                toUserAddress: ZeroAddress,
+                toUserAddress: zeroAddress,
                 amount: 1000,
             }),
             mockQuote
@@ -95,7 +94,7 @@ describe('Gateway Tests', () => {
                 type: 'onramp',
                 toChain: 'BOB',
                 toToken: TBTC_ADDRESS,
-                toUserAddress: ZeroAddress,
+                toUserAddress: zeroAddress,
                 amount: 1000,
             }),
             mockQuote
@@ -105,7 +104,7 @@ describe('Gateway Tests', () => {
                 type: 'onramp',
                 toChain: 'BOB',
                 toToken: 'tBTC',
-                toUserAddress: ZeroAddress,
+                toUserAddress: zeroAddress,
                 amount: 1000,
                 gasRefill: 5,
             }),
@@ -120,7 +119,7 @@ describe('Gateway Tests', () => {
                 amount: 0,
                 toChain: 'BOB',
                 toToken: TBTC_ADDRESS,
-                toUserAddress: ZeroAddress,
+                toUserAddress: zeroAddress,
             }),
             mockQuote
         );
@@ -133,7 +132,7 @@ describe('Gateway Tests', () => {
                 type: 'onramp',
                 toChain: 'BOB',
                 toToken: 'unknownToken',
-                toUserAddress: ZeroAddress,
+                toUserAddress: zeroAddress,
                 amount: 1000,
             });
         }).rejects.toThrowError('Unknown output token');
@@ -186,7 +185,7 @@ describe('Gateway Tests', () => {
         const result = await gatewaySDK.startOrder(mockQuote, {
             toChain: 'BOB',
             toToken: 'tBTC',
-            toUserAddress: ZeroAddress,
+            toUserAddress: zeroAddress,
             amount: 1000,
             fromChain: 'Bitcoin',
             fromToken: 'BTC',
@@ -206,23 +205,23 @@ describe('Gateway Tests', () => {
             .get(`/strategies`)
             .reply(200, [
                 {
-                    strategyAddress: ZeroAddress,
+                    strategyAddress: zeroAddress,
                     inputTokenAddress: TBTC_ADDRESS,
                     strategyName: 'Pell Network (tBTC)',
                     strategyType: 'staking',
                 },
             ]);
         nock(`${MAINNET_GATEWAY_BASE_URL}`)
-            .get(`/quote/${TBTC_ADDRESS}?satoshis=1000&strategy=${ZeroAddress}`)
+            .get(`/quote/${TBTC_ADDRESS}?satoshis=1000&strategy=${zeroAddress}`)
             .times(4)
             .reply(200, {
-                gatewayAddress: ZeroAddress,
+                gatewayAddress: zeroAddress,
                 dustThreshold: 1000,
                 satoshis: 1000,
                 fee: 10,
                 bitcoinAddress: '',
                 txProofDifficultyFactor: 3,
-                strategyAddress: ZeroAddress,
+                strategyAddress: zeroAddress,
             });
 
         const gatewaySDK = new GatewaySDK('bob');
@@ -236,7 +235,7 @@ describe('Gateway Tests', () => {
         const strategy = strategies[0];
         await gatewaySDK.getQuote({
             type: 'onramp',
-            toUserAddress: ZeroAddress,
+            toUserAddress: zeroAddress,
             amount: 1000,
             toChain: strategy.chain.chainId,
             toToken: strategy.inputToken.symbol,
@@ -245,10 +244,10 @@ describe('Gateway Tests', () => {
     });
 
     it('should get tokens', async () => {
-        nock(`${MAINNET_GATEWAY_BASE_URL}`).get(`/tokens?includeStrategies=false`).reply(200, [ZeroAddress]);
+        nock(`${MAINNET_GATEWAY_BASE_URL}`).get(`/tokens?includeStrategies=false`).reply(200, [zeroAddress]);
 
         const gatewaySDK = new GatewaySDK('bob');
-        assert.deepEqual(await gatewaySDK.getTokenAddresses(false), [ZeroAddress]);
+        assert.deepEqual(await gatewaySDK.getTokenAddresses(false), [zeroAddress]);
     });
 
     it.skip('should get enriched tokens', async () => {
@@ -271,7 +270,7 @@ describe('Gateway Tests', () => {
 
     it('should get orders', async () => {
         const mockOrder = {
-            gatewayAddress: ZeroAddress,
+            gatewayAddress: zeroAddress,
             baseTokenAddress: TBTC_ADDRESS,
             txid: '',
             status: false,
@@ -283,7 +282,7 @@ describe('Gateway Tests', () => {
             satsToConvertToEth: 0,
         };
         nock(`${MAINNET_GATEWAY_BASE_URL}`)
-            .get(`/orders/${ZeroAddress}`)
+            .get(`/orders/${zeroAddress}`)
             .reply(200, [
                 // staking - success
                 {
@@ -291,7 +290,7 @@ describe('Gateway Tests', () => {
                     satoshis: 1000,
                     fee: 0,
                     status: true,
-                    strategyAddress: ZeroAddress,
+                    strategyAddress: zeroAddress,
                     outputTokenAmount: '2000',
                     outputTokenAddress: SOLVBTC_ADDRESS,
                 },
@@ -300,7 +299,7 @@ describe('Gateway Tests', () => {
                     ...mockOrder,
                     satoshis: 1000,
                     fee: 0,
-                    strategyAddress: ZeroAddress,
+                    strategyAddress: zeroAddress,
                 },
                 // staking - failed
                 {
@@ -308,7 +307,7 @@ describe('Gateway Tests', () => {
                     satoshis: 1000,
                     fee: 0,
                     status: true,
-                    strategyAddress: ZeroAddress,
+                    strategyAddress: zeroAddress,
                 },
                 // swapping - pending
                 {
@@ -330,7 +329,7 @@ describe('Gateway Tests', () => {
                     satoshis: 1000,
                     fee: 0,
                     status: true,
-                    strategyAddress: ZeroAddress,
+                    strategyAddress: zeroAddress,
                 },
                 // swapping - success (wBTC)
                 {
@@ -449,7 +448,7 @@ describe('Gateway Tests', () => {
     it('should throw error for invalid strategy address in buildStake', async () => {
         const gatewaySDK = new GatewaySDK('signet');
         const params: StakeParams = {
-            strategyAddress: ZeroAddress as Address,
+            strategyAddress: zeroAddress as Address,
             token: '0x6744babdf02dcf578ea173a9f0637771a9e1c4d0' as Address,
             sender: '0x5e46D220eC8B01f55B70Dbb503c697f6E231eb65' as Address,
             receiver: '0x5e46D220eC8B01f55B70Dbb503c697f6E231eb65' as Address,
@@ -458,7 +457,7 @@ describe('Gateway Tests', () => {
         };
 
         await expect(gatewaySDK.buildStake(params)).rejects.toThrowError(
-            `Strategy with address ${ZeroAddress} not found.`
+            `Strategy with address ${zeroAddress} not found.`
         );
     });
 
@@ -467,7 +466,7 @@ describe('Gateway Tests', () => {
             .get(`/strategies`)
             .reply(200, [
                 {
-                    strategyAddress: ZeroAddress,
+                    strategyAddress: zeroAddress,
                     inputTokenAddress: TBTC_ADDRESS,
                     strategyName: 'Pell Network (tBTC)',
                     strategyType: 'staking',
@@ -475,8 +474,8 @@ describe('Gateway Tests', () => {
             ]);
         const gatewaySDK = new GatewaySDK('bob');
         const params: StakeParams = {
-            strategyAddress: ZeroAddress as Address,
-            token: ZeroAddress as Address,
+            strategyAddress: zeroAddress as Address,
+            token: zeroAddress as Address,
             sender: '0x5e46D220eC8B01f55B70Dbb503c697f6E231eb65' as Address,
             receiver: '0x5e46D220eC8B01f55B70Dbb503c697f6E231eb65' as Address,
             amount: 100n,
@@ -493,7 +492,7 @@ describe('Gateway Tests', () => {
             .get(`/strategies`)
             .reply(200, [
                 {
-                    strategyAddress: ZeroAddress,
+                    strategyAddress: zeroAddress,
                     inputTokenAddress: TBTC_ADDRESS,
                     strategyName: 'Pell Network (tBTC)',
                     strategyType: 'staking',
@@ -501,7 +500,7 @@ describe('Gateway Tests', () => {
             ]);
         const gatewaySDK = new GatewaySDK('bob');
         const params: StakeParams = {
-            strategyAddress: ZeroAddress as Address,
+            strategyAddress: zeroAddress as Address,
             token: TBTC_ADDRESS as Address,
             sender: 'ab5e46D220eC8B01f55B70Dbb503c697f6E231eb65' as Address,
             receiver: '0x5e46D220eC8B01f55B70Dbb503c697f6E231eb65' as Address,
@@ -516,7 +515,7 @@ describe('Gateway Tests', () => {
             .get(`/strategies`)
             .reply(200, [
                 {
-                    strategyAddress: ZeroAddress,
+                    strategyAddress: zeroAddress,
                     inputTokenAddress: TBTC_ADDRESS,
                     strategyName: 'Pell Network (tBTC)',
                     strategyType: 'staking',
@@ -524,7 +523,7 @@ describe('Gateway Tests', () => {
             ]);
         const gatewaySDK = new GatewaySDK('bob');
         const params: StakeParams = {
-            strategyAddress: ZeroAddress as Address,
+            strategyAddress: zeroAddress as Address,
             token: TBTC_ADDRESS as Address,
             sender: '0x5e46D220eC8B01f55B70Dbb503c697f6E231eb65' as Address,
             receiver: '0x5e46D220eC8B01f55B70Dbb503c697f6E231eb65' as Address,
@@ -735,15 +734,16 @@ describe('Gateway Tests', () => {
         const startOrderSpy = vi.spyOn(gatewaySDK, 'startOrder');
         const finalizeOrderSpy = vi.spyOn(gatewaySDK, 'finalizeOrder');
 
-        const mockQuote = {
-            gatewayAddress: ZeroAddress,
-            baseTokenAddress: TBTC_ADDRESS,
+        const mockQuote: GatewayQuote & GatewayTokensInfo = {
+            gatewayAddress: zeroAddress,
+            baseTokenAddress: TBTC_ADDRESS as Address,
             dustThreshold: 1000,
             satoshis: 1000,
             fee: 10,
             bitcoinAddress: 'bc1qafk4yhqvj4wep57m62dgrmutldusqde8adh20d',
             txProofDifficultyFactor: 3,
-            strategyAddress: ZeroAddress,
+            strategyAddress: zeroAddress,
+            baseToken: TBTC,
         };
 
         nock(`${MAINNET_GATEWAY_BASE_URL}`).post(`/order`).reply(201, {
