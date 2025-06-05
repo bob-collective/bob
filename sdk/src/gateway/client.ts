@@ -68,12 +68,6 @@ import {
 export const MAINNET_GATEWAY_BASE_URL = 'https://gateway-api-mainnet.gobob.xyz';
 
 /**
- * Base url for the testnet Gateway API.
- * @default "https://gateway-api-testnet.gobob.xyz"
- */
-export const TESTNET_GATEWAY_BASE_URL = 'https://gateway-api-testnet.gobob.xyz';
-
-/**
  * Base url for the Signet Gateway API.
  * @default "https://gateway-api-testnet.gobob.xyz"
  */
@@ -98,7 +92,7 @@ export class GatewayApiClient {
      * @constructor
      * @param chainName The chain name.
      */
-    constructor(chainName: 'mainnet' | 'testnet' | 'signet' | 'bob', options?: { rpcUrl?: string }) {
+    constructor(chainName: 'mainnet' | 'signet' | 'bob', options?: { rpcUrl?: string }) {
         switch (chainName) {
             case 'mainnet':
             case Chain.BOB:
@@ -106,13 +100,8 @@ export class GatewayApiClient {
                 this.baseUrl = MAINNET_GATEWAY_BASE_URL;
                 this.strategy = new StrategyClient(bob, options?.rpcUrl);
                 break;
-            case 'testnet':
-                this.chain = Chain.BOB_SEPOLIA;
-                this.baseUrl = TESTNET_GATEWAY_BASE_URL;
-                this.strategy = new StrategyClient(bobSepolia, options?.rpcUrl);
-                break;
             case 'signet':
-                this.chain = Chain.BOB_SEPOLIA; // Same chain as testnet
+                this.chain = Chain.BOB_SEPOLIA;
                 this.baseUrl = SIGNET_GATEWAY_BASE_URL;
                 this.strategy = new StrategyClient(bobSepolia, options?.rpcUrl);
                 this.isSignet = true;
