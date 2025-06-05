@@ -620,8 +620,7 @@ export class GatewayApiClient {
         btcSigner: { signAllInputs: (psbtBase64: string) => Promise<string> }
     ): Promise<string> {
         if (executeQuoteParams.type === 'onramp') {
-            const { params, quote } = executeQuoteParams;
-            const { uuid, psbtBase64 } = await this.startOrder(quote, params);
+            const { uuid, psbtBase64 } = await this.startOrder(executeQuoteParams, params);
 
             const bitcoinTxHex = await btcSigner.signAllInputs(psbtBase64!);
 

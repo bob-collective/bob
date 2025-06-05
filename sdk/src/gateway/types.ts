@@ -540,39 +540,25 @@ export type OnrampQuoteParams = Omit<
 export type OfframpQuoteParams = Pick<GatewayQuoteParams, 'fromToken' | 'amount'> & { type: 'offramp' };
 
 export type ExecuteQuoteParams =
-    | {
-          type: 'onramp';
-          quote: GatewayQuote & GatewayTokensInfo;
-          params: Optional<GatewayQuoteParams, 'toToken' | 'amount'> & {
-              toUserAddress: Address;
-              fromUserAddress: string;
-              fromChain: 'bitcoin';
-              toChain: 'bob' | 'bob-sepolia';
-          };
-      }
-    | {
+    | (GatewayQuote & GatewayTokensInfo & { type: 'onramp' })
+    | (Optional<
+          GatewayQuoteParams,
+          | 'toChain'
+          | 'toUserAddress'
+          | 'affiliateId'
+          | 'fee'
+          | 'feeRate'
+          | 'gasRefill'
+          | 'strategyAddress'
+          | 'campaignId'
+          | 'toToken'
+          | 'maxSlippage'
+          | 'fromChain'
+      > & {
+          toUserAddress: string;
+          fromUserAddress: Address;
+          fromChain: 'bob' | 'bob-sepolia';
+          toChain: 'bitcoin';
           type: 'offramp';
-          params: Optional<
-              GatewayQuoteParams,
-              | 'toChain'
-              | 'toUserAddress'
-              | 'affiliateId'
-              | 'fee'
-              | 'feeRate'
-              | 'gasRefill'
-              | 'strategyAddress'
-              | 'campaignId'
-              | 'toToken'
-              | 'maxSlippage'
-              | 'fromChain'
-          > & {
-              toUserAddress: string;
-              fromUserAddress: Address;
-              fromChain: 'bob' | 'bob-sepolia';
-              toChain: 'bitcoin';
-          };
-      }
-    | {
-          type: 'stake';
-          params: StakeParams;
-      };
+      })
+    | (StakeParams & { type: 'stake' });

@@ -21,7 +21,8 @@ export async function swapBtcForToken(evmAddress: Address) {
 
     const gatewaySDK = new GatewaySDK('bob'); // or "mainnet"
 
-    const quoteParams = {
+    // TODO: create a buildOnrampTransaction and buildOffRampTransactions
+    const args = {
         type: 'onramp',
         fromChain: 'bitcoin',
         fromToken: 'BTC',
@@ -32,18 +33,10 @@ export async function swapBtcForToken(evmAddress: Address) {
         amount: 10000000, // 0.1 BTC
         gasRefill: 10000, // 0.0001 BTC
     } as const;
-    const quote = await gatewaySDK.getQuote(quoteParams);
 
-    const txid = await gatewaySDK.executeQuote(
-        {
-            type: 'onramp',
-            quote,
-            params: quoteParams,
-        },
-        walletClient,
-        publicClient as PublicClient<Transport>,
-        btcSigner
-    );
+    const quote = await gatewaySDK.getQuote(args);
+
+    const txid = await gatewaySDK.executeQuote(quote, walletClient, publicClient as PublicClient<Transport>, btcSigner);
 
     console.log(`Success! Txid = ${txid}`);
 }
