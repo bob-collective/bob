@@ -153,9 +153,7 @@ export class GatewayApiClient {
      *
      * @param params The parameters for the quote.
      */
-    async getOnrampQuote(
-        params: Optional<GatewayQuoteParams, 'amount' | 'fromChain' | 'fromToken' | 'fromUserAddress' | 'toUserAddress'>
-    ): Promise<GatewayQuote & GatewayTokensInfo> {
+    async getOnrampQuote(params: OnrampQuoteParams): Promise<GatewayQuote & GatewayTokensInfo> {
         const isMainnet =
             params.toChain === ChainId.BOB ||
             (typeof params.toChain === 'string' && params.toChain.toLowerCase() === Chain.BOB);
@@ -605,8 +603,8 @@ export class GatewayApiClient {
         throw new Error('Failed to create bitcoin psbt due to an unexpected error.');
     }
 
-    async executeQuote<T extends ExecuteQuoteParams>(
-        executeQuoteParams: T,
+    async executeQuote(
+        executeQuoteParams: ExecuteQuoteParams,
         walletClient: WalletClient<Transport, ViemChain, Account>,
         publicClient: PublicClient<Transport>,
         btcSigner: { signAllInputs: (psbtBase64: string) => Promise<string> }
@@ -616,10 +614,10 @@ export class GatewayApiClient {
      * Execute an order via the Gateway API.
      * This method invokes the {@link startOrder} and the {@link finalizeOrder} methods.
      *
-     * @param {ExecuteQuoteParams} executeQuoteParams - The params given by the {@link getQuote} method.
-     * @param {{ signAllInputs: (psbtBase64: string) => Promise<string> }} btcSigner Btc wallet connector
+     * @param {ExecuteQuoteParams} executeQuoteParams - The params to initiate gateway or evm transaction.
      * @param {WalletClient<Transport, ViemChain, Account>} walletClient Wallet client instance
      * @param {PublicClient<Transport>} publicClient Public client instance
+     * @param {{ signAllInputs: (psbtBase64: string) => Promise<string> }} btcSigner - Btc wallet connector
      * @async
      * @returns {Promise<GatewayStartOrder>} The success object.
      */

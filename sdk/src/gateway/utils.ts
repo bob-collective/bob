@@ -63,6 +63,6 @@ export function parseOrderStatus(value: number): OfframpOrderStatus {
 }
 
 export function viemClient(chain: Chain) {
-    const chainIs = chain === Chain.BOB ? bob : bobSepolia;
-    return createPublicClient({ chain: chainIs, transport: http() });
+    const chainConfig = chain === Chain.BOB ? bob : bobSepolia;
+    return createPublicClient({ chain: chainConfig, transport: http() });
 }
