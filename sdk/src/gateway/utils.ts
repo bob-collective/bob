@@ -47,19 +47,12 @@ export function slugify(str: string): string {
         .replace(/[^\w-]+/g, '');
 }
 
+const STATUSES = ['Active', 'Accepted', 'Processed', 'Refunded'] as const;
+
 export function parseOrderStatus(value: number): OfframpOrderStatus {
-    switch (value) {
-        case 0:
-            return 'Active';
-        case 1:
-            return 'Accepted';
-        case 2:
-            return 'Processed';
-        case 3:
-            return 'Refunded';
-        default:
-            throw new Error(`Invalid order status: ${value}`);
-    }
+    const status = STATUSES[value];
+    if (status) return status;
+    throw new Error(`Invalid order status: ${value}`);
 }
 
 export function viemClient(chain: Chain) {
