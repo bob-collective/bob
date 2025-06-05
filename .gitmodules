@@ -1,9 +1,12 @@
 [submodule "lib/forge-std"]
 	path = contracts/lib/forge-std
 	url = https://github.com/foundry-rs/forge-std
+	ignore = dirty
 [submodule "lib/openzeppelin-contracts"]
 	path = contracts/lib/openzeppelin-contracts
 	url = https://github.com/OpenZeppelin/openzeppelin-contracts
+	ignore = dirty
 [submodule "lib/bitcoin-spv"]
 	path = contracts/lib/bitcoin-spv
 	url = https://github.com/bob-collective/bitcoin-spv
+	ignore = dirty
