@@ -200,6 +200,7 @@ impl BitcoinCore {
 
         cmd.arg(format!("-rpcuser={BITCOIN_RPC_USER}"));
         cmd.arg(format!("-rpcpassword={BITCOIN_RPC_PASSWORD}"));
+        cmd.arg("-txindex");
 
         cmd.args(self.args);
 
