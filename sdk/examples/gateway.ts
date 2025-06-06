@@ -1,29 +1,49 @@
-import { GatewayQuoteParams, GatewaySDK } from '../src/gateway';
-import { base64 } from '@scure/base';
-import { Transaction } from '@scure/btc-signer';
+import { Network, XverseConnector } from '@gobob/sats-wagmi';
+import { Address, createPublicClient, createWalletClient, http, PublicClient, Transport, zeroAddress } from 'viem';
+import { bob } from 'viem/chains';
+
+import { GatewaySDK } from '../src/gateway';
 
 const BOB_TBTC_V2_TOKEN_ADDRESS = '0xBBa2eF945D523C4e2608C9E1214C2Cc64D4fc2e2';
 
-export async function swapBtcForToken(evmAddress: string) {
+export async function swapBtcForToken(evmAddress: Address) {
+    const publicClient = createPublicClient({
+        chain: bob,
+        transport: http(),
+    });
+
+    const walletClient = createWalletClient({
+        chain: bob,
+        transport: http(),
+        account: zeroAddress, // Use connected address here
+    });
+    const btcSigner = new XverseConnector(Network.mainnet);
+
     const gatewaySDK = new GatewaySDK('bob'); // or "mainnet"
 
-    const quoteParams: GatewayQuoteParams = {
-        fromChain: 'Bitcoin',
+    const quoteParams = {
+        type: 'onramp',
+        fromChain: 'bitcoin',
         fromToken: 'BTC',
         fromUserAddress: 'bc1qafk4yhqvj4wep57m62dgrmutldusqde8adh20d',
-        toChain: 'BOB',
+        toChain: 'bob',
         toUserAddress: evmAddress,
         toToken: BOB_TBTC_V2_TOKEN_ADDRESS, // or "tBTC"
         amount: 10000000, // 0.1 BTC
         gasRefill: 10000, // 0.0001 BTC
-    };
+    } as const;
     const quote = await gatewaySDK.getQuote(quoteParams);
 
-    const { uuid, psbtBase64 } = await gatewaySDK.startOrder(quote, quoteParams);
+    const txid = await gatewaySDK.executeQuote(
+        {
+            type: 'onramp',
+            quote,
+            params: quoteParams,
+        },
+        walletClient,
+        publicClient as PublicClient<Transport>,
+        btcSigner
+    );
 
-    // NOTE: up to implementation to sign PSBT here!
-    const tx = Transaction.fromPSBT(base64.decode(psbtBase64!));
-
-    // NOTE: relayer broadcasts the tx
-    await gatewaySDK.finalizeOrder(uuid, tx.hex);
+    console.log(`Success! Txid = ${txid}`);
 }
