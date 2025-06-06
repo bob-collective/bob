@@ -39,16 +39,19 @@ import {
     OfframpOrder,
     OfframpOrderStatus,
     OfframpQuote,
+    OffRampExecuteQuoteParam,
     OfframpQuoteParams,
     OfframpRawOrder,
     OfframpUnlockFundsParams,
     OnchainOfframpOrderDetails,
     OnrampOrder,
     OnrampOrderResponse,
+    OnRampExecuteQuoteParam,
     OnrampQuoteParams,
     Optional,
     OrderStatus,
     StakeParams,
+    StakeExecuteQuoteParam,
     StakeTransactionParams,
     Token,
 } from './types';
@@ -602,6 +605,19 @@ export class GatewayApiClient {
         throw new Error('Failed to create bitcoin psbt due to an unexpected error.');
     }
 
+    async executeQuote<T extends OnRampExecuteQuoteParam>(
+        executeQuoteParams: T,
+        walletClient: WalletClient<Transport, ViemChain, Account>,
+        publicClient: PublicClient<Transport>,
+        btcSigner: { signAllInputs: (psbtBase64: string) => Promise<string> }
+    ): Promise<string>;
+
+    async executeQuote<T extends OffRampExecuteQuoteParam | StakeExecuteQuoteParam>(
+        executeQuoteParams: T,
+        walletClient: WalletClient<Transport, ViemChain, Account>,
+        publicClient: PublicClient<Transport>
+    ): Promise<string>;
+
     /**
      * Execute an order via the Gateway API.
      * This method invokes the {@link startOrder} and the {@link finalizeOrder} methods.
@@ -617,13 +633,17 @@ export class GatewayApiClient {
         executeQuoteParams: ExecuteQuoteParams,
         walletClient: WalletClient<Transport, ViemChain, Account>,
         publicClient: PublicClient<Transport>,
-        btcSigner: { signAllInputs: (psbtBase64: string) => Promise<string> }
+        btcSigner?: { signAllInputs: (psbtBase64: string) => Promise<string> }
     ): Promise<string> {
         if (executeQuoteParams.type === 'onramp') {
             const { params, quote } = executeQuoteParams;
             const { uuid, psbtBase64 } = await this.startOrder(quote, params);
 
-            const bitcoinTxHex = await btcSigner.signAllInputs(psbtBase64!);
+            if (!btcSigner) {
+                throw new Error(`btcSigner is required for onramp order`);
+            }
+
+            const bitcoinTxHex = await btcSigner?.signAllInputs(psbtBase64!);
 
             if (!bitcoinTxHex) throw new Error('no psbt');
 

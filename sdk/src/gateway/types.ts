@@ -539,40 +539,43 @@ export type OnrampQuoteParams = Omit<
 
 export type OfframpQuoteParams = Pick<GatewayQuoteParams, 'fromToken' | 'amount'> & { type: 'offramp' };
 
-export type ExecuteQuoteParams =
-    | {
-          type: 'onramp';
-          quote: GatewayQuote & GatewayTokensInfo;
-          params: Optional<GatewayQuoteParams, 'toToken' | 'amount'> & {
-              toUserAddress: Address;
-              fromUserAddress: string;
-              fromChain: 'bitcoin';
-              toChain: 'bob' | 'bob-sepolia';
-          };
-      }
-    | {
-          type: 'offramp';
-          params: Optional<
-              GatewayQuoteParams,
-              | 'toChain'
-              | 'toUserAddress'
-              | 'affiliateId'
-              | 'fee'
-              | 'feeRate'
-              | 'gasRefill'
-              | 'strategyAddress'
-              | 'campaignId'
-              | 'toToken'
-              | 'maxSlippage'
-              | 'fromChain'
-          > & {
-              toUserAddress: string;
-              fromUserAddress: Address;
-              fromChain: 'bob' | 'bob-sepolia';
-              toChain: 'bitcoin';
-          };
-      }
-    | {
-          type: 'stake';
-          params: StakeParams;
-      };
+export type OnRampExecuteQuoteParam = {
+    type: 'onramp';
+    quote: GatewayQuote & GatewayTokensInfo;
+    params: Optional<GatewayQuoteParams, 'toToken' | 'amount'> & {
+        toUserAddress: Address;
+        fromUserAddress: string;
+        fromChain: 'bitcoin';
+        toChain: 'bob' | 'bob-sepolia';
+    };
+};
+
+export type OffRampExecuteQuoteParam = {
+    type: 'offramp';
+    params: Optional<
+        GatewayQuoteParams,
+        | 'toChain'
+        | 'toUserAddress'
+        | 'affiliateId'
+        | 'fee'
+        | 'feeRate'
+        | 'gasRefill'
+        | 'strategyAddress'
+        | 'campaignId'
+        | 'toToken'
+        | 'maxSlippage'
+        | 'fromChain'
+    > & {
+        toUserAddress: string;
+        fromUserAddress: Address;
+        fromChain: 'bob' | 'bob-sepolia';
+        toChain: 'bitcoin';
+    };
+};
+
+export type StakeExecuteQuoteParam = {
+    type: 'stake';
+    params: StakeParams;
+};
+
+export type ExecuteQuoteParams = OnRampExecuteQuoteParam | OffRampExecuteQuoteParam | StakeExecuteQuoteParam;

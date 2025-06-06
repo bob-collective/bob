@@ -833,8 +833,7 @@ describe('Gateway Tests', () => {
                 },
             },
             mockWalletClient as Parameters<typeof gatewaySDK.executeQuote>[1],
-            mockPublicClient as Parameters<typeof gatewaySDK.executeQuote>[2],
-            mockBtcSigner as Parameters<typeof gatewaySDK.executeQuote>[3]
+            mockPublicClient as Parameters<typeof gatewaySDK.executeQuote>[2]
         );
 
         expect(evmTxId).toBe('0x35f5bca7f984f4ed97888944293b979f3abb198a5716d04e10c6bdc023080075');
@@ -877,8 +876,7 @@ describe('Gateway Tests', () => {
                 params,
             },
             mockWalletClient as Parameters<typeof gatewaySDK.executeQuote>[1],
-            mockPublicClient as Parameters<typeof gatewaySDK.executeQuote>[2],
-            mockBtcSigner as Parameters<typeof gatewaySDK.executeQuote>[3]
+            mockPublicClient as Parameters<typeof gatewaySDK.executeQuote>[2]
         );
 
         expect(evmTxId).toBe('0x35f5bca7f984f4ed97888944293b979f3abb198a5716d04e10c6bdc023080075');
