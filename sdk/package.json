@@ -23,12 +23,12 @@
     "devDependencies": {
         "@types/node": "^22.15.21",
         "@types/yargs": "^17.0.33",
-        "@typescript-eslint/eslint-plugin": "^8.29.0",
+        "@typescript-eslint/eslint-plugin": "^8.33.1",
         "@typescript-eslint/parser": "^8.33.0",
         "ecpair": "^2.1.0",
         "eslint": "^9.27.0",
         "eslint-config-prettier": "^10.1.2",
-        "eslint-plugin-prettier": "^5.2.6",
+        "eslint-plugin-prettier": "^5.4.1",
         "mocha": "^11.5.0",
         "nock": "^14.0.4",
         "prettier": "^3.5.3",
@@ -40,7 +40,7 @@
     },
     "dependencies": {
         "@eslint/eslintrc": "^3.3.1",
-        "@eslint/js": "^9.19.0",
+        "@eslint/js": "^9.28.0",
         "@gobob/sats-wagmi": "^0.3.23",
         "@magiceden-oss/runestone-lib": "^1.0.2",
         "@scure/base": "^1.2.4",
@@ -48,7 +48,7 @@
         "bitcoin-address-validation": "^3.0.0",
         "bitcoinjs-lib": "^6.1.7",
         "ethers": "^6.14.1",
-        "viem": "^2.29.4",
+        "viem": "^2.31.0",
         "global": "^4.4.0"
     }
 }
