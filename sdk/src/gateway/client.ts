@@ -54,6 +54,7 @@ import {
     StakeExecuteQuoteParam,
     StakeTransactionParams,
     Token,
+    chainIdMapping,
 } from './types';
 import {
     calculateOpReturnHash,
@@ -637,6 +638,9 @@ export class GatewayApiClient {
     ): Promise<string> {
         if (executeQuoteParams.type === 'onramp') {
             const { params, quote } = executeQuoteParams;
+            if (typeof params.toChain === 'number') {
+                params.toChain = chainIdMapping[params.toChain];
+            }
             const { uuid, psbtBase64 } = await this.startOrder(quote, params);
 
             if (!btcSigner) {
@@ -652,6 +656,9 @@ export class GatewayApiClient {
             return txId;
         } else if (executeQuoteParams.type === 'offramp') {
             const { params } = executeQuoteParams;
+            if (typeof params.fromChain === 'number') {
+                params.fromChain = chainIdMapping[params.fromChain];
+            }
             const tokenAddress = getTokenAddress(this.chainId, params.fromToken.toLowerCase());
             const [offrampOrder, offrampRegistryAddress] = await Promise.all([
                 this.createOfframpOrder(params),

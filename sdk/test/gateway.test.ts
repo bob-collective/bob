@@ -760,7 +760,7 @@ describe('Gateway Tests', () => {
                 type: 'onramp',
                 quote: mockQuote as GatewayQuote & GatewayTokensInfo,
                 params: {
-                    toChain: 'bob',
+                    toChain: 60808,
                     toToken: 'tBTC',
                     toUserAddress: zeroAddress,
                     amount: 1000,

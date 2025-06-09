@@ -20,6 +20,11 @@ export enum ChainId {
     OPTIMISM = 10,
 }
 
+export const chainIdMapping = {
+    [ChainId.BOB]: Chain.BOB,
+    [ChainId.BOB_SEPOLIA]: Chain.BOB_SEPOLIA,
+} as const;
+
 /**
  * Parameters required to construct a staking transaction.
  */
@@ -546,7 +551,7 @@ export type OnRampExecuteQuoteParam = {
         toUserAddress: Address;
         fromUserAddress: string;
         fromChain: 'bitcoin';
-        toChain: 'bob' | 'bob-sepolia';
+        toChain: 'bob' | 'bob-sepolia' | ChainId.BOB | ChainId.BOB_SEPOLIA;
     };
 };
 
@@ -568,7 +573,7 @@ export type OffRampExecuteQuoteParam = {
     > & {
         toUserAddress: string;
         fromUserAddress: Address;
-        fromChain: 'bob' | 'bob-sepolia';
+        fromChain: 'bob' | 'bob-sepolia' | ChainId.BOB | ChainId.BOB_SEPOLIA;
         toChain: 'bitcoin';
     };
 };
