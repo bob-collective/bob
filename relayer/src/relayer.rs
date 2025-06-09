@@ -86,6 +86,9 @@ impl<
             }
 
             println!("Found fork: {actual_hash} at height {height}");
+            if height == 0 {
+                return Err(eyre!("No common height found before reaching 0"));
+            }
             height -= 1;
         }
     }
