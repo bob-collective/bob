@@ -128,9 +128,13 @@ export class GatewayApiClient {
         return Object.values(Chain);
     }
 
-    async getQuote(params: OnrampQuoteParams): Promise<GatewayQuote & GatewayTokensInfo>;
+    async getQuote(
+        params: OnrampQuoteParams
+    ): Promise<{ type: 'onramp'; params: OnrampQuoteParams; quote: GatewayQuote & GatewayTokensInfo }>;
 
-    async getQuote(params: OfframpQuoteParams): Promise<OfframpQuote>;
+    async getQuote(
+        params: OfframpQuoteParams
+    ): Promise<{ type: 'offramp'; params: OfframpQuoteParams; quote: OfframpQuote }>;
 
     /**
      * Fetches quote for the given token and amount.
@@ -140,12 +144,19 @@ export class GatewayApiClient {
      */
     async getQuote(
         params: OnrampQuoteParams | OfframpQuoteParams
-    ): Promise<(GatewayQuote & GatewayTokensInfo) | OfframpQuote> {
+    ): Promise<
+        | { type: 'onramp'; params: OnrampQuoteParams; quote: GatewayQuote & GatewayTokensInfo }
+        | { type: 'offramp'; params: OfframpQuoteParams; quote: OfframpQuote }
+    > {
         if (params.type === 'onramp') {
-            return this.getOnrampQuote(params);
+            return { type: 'onramp', params, quote: await this.getOnrampQuote(params) };
         } else if (params.type === 'offramp') {
             const tokenAddress = getTokenAddress(this.chainId, params.fromToken.toLowerCase());
-            return this.fetchOfframpQuote(tokenAddress, BigInt(params.amount));
+            return {
+                type: 'offramp',
+                params,
+                quote: await this.fetchOfframpQuote(tokenAddress, BigInt(params.amount)),
+            };
         }
 
         throw new Error('Invalid quote arguments');
@@ -637,11 +648,10 @@ export class GatewayApiClient {
         btcSigner?: { signAllInputs: (psbtBase64: string) => Promise<string> }
     ): Promise<string> {
         if (executeQuoteParams.type === 'onramp') {
-            const { params, quote } = executeQuoteParams;
-            if (typeof params.toChain === 'number') {
-                params.toChain = chainIdMapping[params.toChain];
+            if (typeof executeQuoteParams.params.toChain === 'number') {
+                executeQuoteParams.params.toChain = chainIdMapping[executeQuoteParams.params.toChain];
             }
-            const { uuid, psbtBase64 } = await this.startOrder(quote, params);
+            const { uuid, psbtBase64 } = await this.startOrder(executeQuoteParams.quote, params);
 
             if (!btcSigner) {
                 throw new Error(`btcSigner is required for onramp order`);
@@ -699,45 +709,9 @@ export class GatewayApiClient {
             await publicClient?.waitForTransactionReceipt({ hash: transactionHash });
 
             return transactionHash;
-        } else {
-            const { params } = executeQuoteParams;
-            const result = await this.buildStake(params);
-
-            const allowance = await publicClient.readContract({
-                address: params.token,
-                abi: erc20Abi,
-                functionName: 'allowance',
-                args: [walletClient.account.address as Address, result.strategyAddress],
-            });
-
-            if (BigInt(params.amount) > allowance) {
-                const { request } = await publicClient.simulateContract({
-                    account: walletClient.account,
-                    address: params.token,
-                    abi: erc20Abi,
-                    functionName: 'approve',
-                    args: [result.strategyAddress, MaxUint256],
-                });
-
-                const approveTxHash = await walletClient.writeContract(request);
-
-                await publicClient.waitForTransactionReceipt({ hash: approveTxHash });
-            }
-
-            const { request } = await publicClient.simulateContract({
-                address: result.strategyAddress, // Ensure correct type
-                abi: result.strategyABI,
-                functionName: result.strategyFunctionName,
-                args: result.strategyArgs,
-                account: result.address,
-            });
-
-            const transactionHash = await walletClient.writeContract(request);
-
-            await publicClient?.waitForTransactionReceipt({ hash: transactionHash });
-
-            return transactionHash;
         }
+
+        return undefined;
     }
 
     /**
