@@ -245,7 +245,7 @@ export class GatewayApiClient {
      * @param amountInToken Amount specified in token decimals.
      * @returns Offramp quote details.
      */
-    async fetchOfframpQuote(token: string, amountInToken: bigint): Promise<OfframpQuote> {
+    async fetchOfframpQuote(token: Address, amountInToken: bigint): Promise<OfframpQuote> {
         const queryParams = new URLSearchParams({
             amountInWrappedToken: amountInToken.toString(),
             token,
@@ -466,7 +466,7 @@ export class GatewayApiClient {
         const amountInToken = satAmountLocked * BigInt(10 ** (decimals - 8));
 
         try {
-            const offrampQuote = await this.fetchOfframpQuote(token.toString(), amountInToken);
+            const offrampQuote = await this.fetchOfframpQuote(token, amountInToken);
             const shouldBump = satFeesMax < offrampQuote.feeBreakdown.overallFeeSats;
             return [shouldBump, offrampQuote.feeBreakdown.overallFeeSats];
         } catch (err) {
