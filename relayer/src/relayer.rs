@@ -73,8 +73,9 @@ impl<
     }
 
     async fn latest_common_height(&self) -> Result<u32> {
-        // Start at the tip of the relayed chain, then move back until we find a block that matches bitcoin chain.
-        // We do it like this because calling esplora.get_block_hash for a block in a fork will fail.
+        // Start at the tip of the relayed chain, then move back until we find a block that matches
+        // bitcoin chain. We do it like this because calling esplora.get_block_hash for a
+        // block in a fork will fail.
         let mut height = self.relayed_height().await?;
 
         loop {
@@ -334,8 +335,8 @@ impl<
 #[cfg(test)]
 mod tests {
     use super::*;
-    use alloy::hex;
     use alloy::{
+        hex,
         network::EthereumWallet,
         primitives::TxHash,
         providers::{Provider, ProviderBuilder},
@@ -349,12 +350,9 @@ mod tests {
         let relayer = Relayer::new(
             BitcoinRelayInstance::new(
                 "0xaAD39528eB8b3c70b613C442F351610969974fDF".parse()?,
-                ProviderBuilder::new().on_http("https://bob-sepolia.rpc.gobob.xyz/".parse()?),
+                ProviderBuilder::new().connect_http("https://bob-sepolia.rpc.gobob.xyz/".parse()?),
             ),
-            EsploraClient::new(
-                Some("https://btc-signet.gobob.xyz/".to_string()),
-                bitcoin::Network::Bitcoin,
-            )?,
+            EsploraClient::new(bitcoin::Network::Signet)?,
         );
 
         assert!(!relayer.has_relayed(BlockHash::from_slice(&[1u8; 32])?).await?);
@@ -370,17 +368,15 @@ mod tests {
     }
 
     #[tokio::test]
-    #[ignore] // Run this manually with anvil --fork-url wss://bob-sepolia.rpc.gobob.xyz --fork-block-number 9563094
+    #[ignore] // Run this manually with anvil --fork-url wss://bob-sepolia.rpc.gobob.xyz --fork-block-number
+              // 9563094
     async fn test_latest_common_height() -> Result<()> {
         let relayer = Relayer::new(
             BitcoinRelayInstance::new(
                 "0xaAD39528eB8b3c70b613C442F351610969974fDF".parse()?,
-                ProviderBuilder::new().on_http("http://127.0.0.1:8545".parse()?),
+                ProviderBuilder::new().connect_http("http://127.0.0.1:8545".parse()?),
             ),
-            EsploraClient::new(
-                Some("https://btc-signet.gobob.xyz/".to_string()),
-                bitcoin::Network::Bitcoin,
-            )?,
+            EsploraClient::new(bitcoin::Network::Signet)?,
         );
 
         assert_eq!(relayer.relayed_height().await?, 238513);
@@ -393,12 +389,9 @@ mod tests {
         let relayer = Relayer::new(
             BitcoinRelayInstance::new(
                 "0xaAD39528eB8b3c70b613C442F351610969974fDF".parse()?,
-                ProviderBuilder::new().on_http("https://bob-sepolia.rpc.gobob.xyz/".parse()?),
+                ProviderBuilder::new().connect_http("https://bob-sepolia.rpc.gobob.xyz/".parse()?),
             ),
-            EsploraClient::new(
-                Some("https://btc-signet.gobob.xyz/".to_string()),
-                bitcoin::Network::Bitcoin,
-            )?,
+            EsploraClient::new(bitcoin::Network::Bitcoin)?,
         );
 
         // Not much we can easily test except that we find an actual block header
