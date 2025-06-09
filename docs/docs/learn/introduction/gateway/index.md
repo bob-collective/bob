@@ -1,9 +1,8 @@
 ---
 sidebar_position: 2
-sidebar_label: "BOB Bitcoin Interoperability"
 ---
 
-# BOB Bitcoin Interoperability
+# BOB Gateway
 
 ## Introduction
 
@@ -18,7 +17,7 @@ Gateway powers the [BOB BTC Bridge](https://app.gobob.xyz/en?type=deposit&networ
 :::info Bridge or Stake BTC on BOB
 Check our user guides to learn how to swap your BTC to wrapped BTC or staked BTC.
 - [Bridge BTC to BOB](/learn/user-guides/onboard-to-bob/bob-gateway/): Receive wBTC or tBTC on BOB.
-- [Stake BTC on BOB](/learn/user-guides/bob-stake): Receive SolvBTC.BBN, uniBTC, or other staked BTC on BOB.
+- [Stake BTC on BOB](/learn/user-guides/stake-btc/): Receive xSolvBTC, uniBTC, or other staked BTC on BOB.
 :::
 
 ## Gateway for Builders
@@ -53,7 +52,7 @@ alt="architecture"
 
 ### User Flow
 
-1. A user requests to swap BTC for wrapped BTC (e.g. WBTC, tBTC, or FBTC) or staked BTC (e.g. SolvBTC.BBN, uniBTC).
+1. A user requests to swap BTC for wrapped BTC (e.g. WBTC, tBTC, or FBTC) or staked BTC (e.g. xSolvBTC, uniBTC).
 1. The user gets a "quote" of which Gateway smart contract is an available route (i.e. which LP they can swap with).
 1. The user creates an "order" with the relayer to reserve the LP's liquidity.
 1. The user creates a Bitcoin transaction, updating the order with their txid. Gateway's SDK creates a hash of the user's intent, which is included in the `OP_RETURN` of the transaction. This hash includes metadata such as the user's EVM address, which strategy they are using (i.e. their intent), and how many sats to convert to ETH for gas, among other data. By including a deterministic hash of the user's order, we lay the groundwork for making Gateway trustless in the future by decentralizing the relayer set.

@@ -1,6 +1,8 @@
+use crate::unused_port;
 use bitcoincore_rpc::{Auth, Client, RpcApi};
 use eyre::Result;
 use std::{
+    ffi::OsString,
     io::{BufRead, BufReader},
     path::PathBuf,
     process::{Child, Command},
@@ -8,20 +10,11 @@ use std::{
 };
 use tempfile::TempDir;
 
-fn unused_port() -> u16 {
-    let listener = std::net::TcpListener::bind("127.0.0.1:0")
-        .expect("Failed to create TCP listener to find unused port");
-
-    let local_addr =
-        listener.local_addr().expect("Failed to read TCP listener local_addr to find unused port");
-    local_addr.port()
-}
-
 /// How long we will wait for bitcoin to indicate that it is ready.
 const BITCOIN_STARTUP_TIMEOUT_MILLIS: u64 = 10_000;
 
-const BITCOIN_RPC_USER: &str = "rpcuser";
-const BITCOIN_RPC_PASSWORD: &str = "rpcpassword";
+pub(crate) const BITCOIN_RPC_USER: &str = "rpcuser";
+pub(crate) const BITCOIN_RPC_PASSWORD: &str = "rpcpassword";
 
 /// An bitcoind CLI instance. Will close the instance when dropped.
 ///
@@ -64,6 +57,12 @@ impl BitcoinCoreInstance {
         client.generate_to_address(101, &address)?;
         Ok(())
     }
+
+    pub fn fund_to_specific_address(&self, address: &bitcoin::Address) -> Result<()> {
+        let client = self.client(None)?;
+        client.generate_to_address(101, address)?;
+        Ok(())
+    }
 }
 
 impl Drop for BitcoinCoreInstance {
@@ -98,7 +97,7 @@ pub struct BitcoinCore {
     program: Option<PathBuf>,
     rpcport: Option<u16>,
     timeout: Option<u64>,
-    args: Vec<String>,
+    args: Vec<OsString>,
 }
 
 impl BitcoinCore {
@@ -156,6 +155,22 @@ impl BitcoinCore {
         self
     }
 
+    pub fn arg<T: Into<OsString>>(mut self, arg: T) -> Self {
+        self.args.push(arg.into());
+        self
+    }
+
+    pub fn args<I, S>(mut self, args: I) -> Self
+    where
+        I: IntoIterator<Item = S>,
+        S: Into<OsString>,
+    {
+        for arg in args {
+            self = self.arg(arg);
+        }
+        self
+    }
+
     /// Consumes the builder and spawns `bitcoind`.
     ///
     /// # Panics
@@ -179,11 +194,13 @@ impl BitcoinCore {
         let datadir = TempDir::new().expect("Couldn't create temp directory");
         cmd.arg(format!("-datadir={}", datadir.path().to_str().unwrap()));
 
-        let rpcport = if let Some(rpcport) = self.rpcport { rpcport } else { unused_port() };
-        cmd.arg(format!("-rpcport={}", rpcport));
+        let rpcport = self.rpcport.unwrap_or_else(unused_port);
 
-        cmd.arg(format!("-rpcuser={}", BITCOIN_RPC_USER));
-        cmd.arg(format!("-rpcpassword={}", BITCOIN_RPC_PASSWORD));
+        cmd.arg(format!("-rpcport={rpcport}"));
+
+        cmd.arg(format!("-rpcuser={BITCOIN_RPC_USER}"));
+        cmd.arg(format!("-rpcpassword={BITCOIN_RPC_PASSWORD}"));
+        cmd.arg("-txindex");
 
         cmd.args(self.args);
 
@@ -215,6 +232,8 @@ impl BitcoinCore {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::{BitcoinClient, BumpFeeOptions};
+    use bitcoin::Amount;
 
     #[test]
     fn can_launch_bitcoin() {
@@ -230,5 +249,147 @@ mod tests {
             bitcoin.client(Some("Bob")).unwrap().get_balance(None, None).unwrap().to_sat(),
             5000000000
         );
+    }
+
+    #[tokio::test]
+    async fn test_psbt_bump_fee() -> Result<()> {
+        // Step 1: Create and initialize BitcoinCore instance for test
+        let bitcoin = BitcoinCore::new().spawn();
+
+        // Fund Alice's wallet
+        bitcoin.fund_wallet("Alice").expect("Should fund Alice");
+
+        // Fund Bob's wallet
+        bitcoin.fund_wallet("Bob").expect("Should fund Alice");
+
+        // Check that Bob's balance is 5000000000 satoshis (i.e., 5 BTC)
+        assert_eq!(
+            bitcoin.client(Some("Bob")).unwrap().get_balance(None, None).unwrap().to_sat(),
+            5000000000
+        );
+
+        // Initialize BitcoinClient for Alice (make sure Alice's wallet is used)
+        let bitcoin_client = BitcoinClient::from(bitcoin.client(Some("Alice"))?);
+
+        let to_addr = bitcoin_client.rpc.get_new_address(None, None).unwrap().assume_checked();
+
+        // Set the amount to send
+        let amount = Amount::from_sat(100_000); // 0.001 BTC (adjust as necessary)
+
+        // Send the transaction (low fee expected)
+        let txid = bitcoin_client
+            .rpc
+            .send_to_address(&to_addr, amount, None, None, None, Some(true), None, None)
+            .unwrap();
+
+        // Step 3: Psbt Bump the fee for the low-fee transaction by calling bump_fee
+        let psbt_bump_fee = bitcoin_client
+            .psbt_bump_fee(
+                &txid,
+                Some(&BumpFeeOptions {
+                    conf_target: None,
+                    fee_rate: None,
+                    replaceable: Some(true), // Allow the transaction to be replaceable
+                    estimate_mode: None,
+                }),
+            )
+            .unwrap();
+
+        // the previous tx fee should be less than the newly created tx fee
+        assert!(psbt_bump_fee.origfee < psbt_bump_fee.fee);
+
+        // Sign and finalize the PSBT
+        let tx = bitcoin_client.sign_and_finalize_psbt(
+            &psbt_bump_fee.psbt.unwrap(),
+            None,
+            None,
+            None,
+        )?;
+
+        // broadcast the bumped fee transaction
+        bitcoin_client.validate_and_send_raw_transaction(&tx).unwrap();
+
+        // Step 4: Generate 100 blocks to confirm the bump fee transaction
+        bitcoin_client.rpc.generate_to_address(100, &to_addr).unwrap();
+
+        // Check the original transaction
+        let tx_info = bitcoin_client.rpc.get_transaction(&txid, None).unwrap();
+
+        // Assert that the original transaction has negative confirmations
+        assert!(tx_info.info.confirmations.is_negative());
+
+        // Get the psbt bumped fee transaction's
+        let tx_info = bitcoin_client.rpc.get_transaction(&tx.compute_txid(), None).unwrap();
+
+        // Assert that the psbt bumped fee transaction has confirmations
+        assert!(tx_info.info.confirmations.is_positive());
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_bump_fee() -> Result<()> {
+        // Step 1: Create and initialize BitcoinCore instance for test
+        let bitcoin = BitcoinCore::new().spawn();
+
+        // Fund Alice's wallet
+        bitcoin.fund_wallet("Alice").expect("Should fund Alice");
+
+        // Fund Bob's wallet
+        bitcoin.fund_wallet("Bob").expect("Should fund Alice");
+
+        // Check that Bob's balance is 5000000000 satoshis (i.e., 5 BTC)
+        assert_eq!(
+            bitcoin.client(Some("Bob")).unwrap().get_balance(None, None).unwrap().to_sat(),
+            5000000000
+        );
+
+        // Initialize BitcoinClient for Alice (make sure Alice's wallet is used)
+        let bitcoin_client = BitcoinClient::from(bitcoin.client(Some("Alice"))?);
+
+        // Step 2: Send to yourself with very low fee (simulate low fee transaction)
+        let to_addr = bitcoin_client.rpc.get_new_address(None, None).unwrap().assume_checked();
+
+        // Set the amount to send (you can adjust the amount as needed)
+        let amount = Amount::from_sat(100_000); // 0.001 BTC (adjust as necessary)
+
+        // Send the transaction to yourself (low fee expected)
+        let txid = bitcoin_client
+            .rpc
+            .send_to_address(&to_addr, amount, None, None, None, Some(true), None, None)
+            .unwrap();
+
+        // Step 3: Bump the fee for the low-fee transaction by calling bump_fee
+        let bump_fee = bitcoin_client
+            .bump_fee(
+                &txid,
+                Some(&BumpFeeOptions {
+                    conf_target: None,
+                    fee_rate: None,
+                    replaceable: Some(true), // Allow the transaction to be replaceable
+                    estimate_mode: None,
+                }),
+            )
+            .unwrap();
+
+        // Assert there are no errors when bumping the fee
+        assert!(bump_fee.errors.is_empty());
+
+        // Step 4: Generate 100 blocks to confirm the bump fee transaction
+        bitcoin_client.rpc.generate_to_address(100, &to_addr).unwrap();
+
+        // Check the original transaction
+        let tx_info = bitcoin_client.rpc.get_transaction(&txid, None).unwrap();
+
+        // Assert that the original transaction has negative confirmations
+        assert!(tx_info.info.confirmations.is_negative());
+
+        // Get the bumped fee transaction's
+        let tx_info = bitcoin_client.rpc.get_transaction(&bump_fee.txid.unwrap(), None).unwrap();
+
+        // Assert that the bumped fee transaction has confirmations
+        assert!(tx_info.info.confirmations.is_positive());
+
+        Ok(())
     }
 }

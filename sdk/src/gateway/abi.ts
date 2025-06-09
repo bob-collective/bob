@@ -1,3 +1,5 @@
+import { parseAbi } from 'viem';
+
 export const strategyCaller = [
     {
         type: 'function',
@@ -36,45 +38,45 @@ export const strategyCaller = [
     },
 ] as const;
 
-export const offRampCaller = [
+export const offrampCaller = [
     {
         type: 'function',
-        name: 'createOffRampRequest',
+        name: 'createOrder',
         inputs: [
             {
-                name: '_offRampRequestArgs',
+                name: 'offrampOrderArgs',
                 type: 'tuple',
-                internalType: 'struct OffRampRequestArgs',
+                internalType: 'struct OfframpOrderArgs',
                 components: [
                     {
-                        name: 'offRampAddress',
-                        type: 'address',
-                        internalType: 'contract IGateway',
-                    },
-                    {
-                        name: 'amountLocked',
+                        name: 'satAmountToLock',
                         type: 'uint256',
                         internalType: 'uint256',
                     },
                     {
-                        name: 'maxFees',
+                        name: 'satFeesMax',
                         type: 'uint256',
                         internalType: 'uint256',
                     },
                     {
-                        name: 'user',
-                        type: 'address',
-                        internalType: 'address',
+                        name: 'orderCreationDeadline',
+                        type: 'uint256',
+                        internalType: 'uint256',
+                    },
+                    {
+                        name: 'outputScript',
+                        type: 'bytes',
+                        internalType: 'bytes',
                     },
                     {
                         name: 'token',
                         type: 'address',
-                        internalType: 'contract IERC20Ext',
+                        internalType: 'address',
                     },
                     {
-                        name: 'userBtcAddress',
-                        type: 'bytes',
-                        internalType: 'bytes',
+                        name: 'orderOwner',
+                        type: 'address',
+                        internalType: 'address',
                     },
                 ],
             },
@@ -82,4 +84,79 @@ export const offRampCaller = [
         outputs: [],
         stateMutability: 'nonpayable',
     },
+    {
+        type: 'function',
+        name: 'bumpFeeOfExistingOrder',
+        inputs: [
+            {
+                name: 'orderId',
+                type: 'uint256',
+                internalType: 'uint256',
+            },
+            {
+                name: 'newFeeSat',
+                type: 'uint256',
+                internalType: 'uint256',
+            },
+        ],
+        outputs: [],
+        stateMutability: 'nonpayable',
+    },
+    {
+        type: 'function',
+        name: 'unlockFunds',
+        inputs: [
+            {
+                name: 'orderId',
+                type: 'uint256',
+                internalType: 'uint256',
+            },
+            {
+                name: 'receiver',
+                type: 'address',
+                internalType: 'address',
+            },
+        ],
+        outputs: [],
+        stateMutability: 'nonpayable',
+    },
+    {
+        type: 'function',
+        name: 'getOfframpOrder',
+        inputs: [
+            {
+                name: 'orderId',
+                type: 'uint256',
+                internalType: 'uint256',
+            },
+        ],
+        outputs: [
+            {
+                name: '',
+                type: 'tuple',
+                internalType: 'struct OfframpOrderDetails',
+                components: [
+                    { name: 'satAmountLocked', type: 'uint256', internalType: 'uint256' },
+                    { name: 'satFeesMax', type: 'uint256', internalType: 'uint256' },
+                    { name: 'sender', type: 'address', internalType: 'address' },
+                    { name: 'receiver', type: 'address', internalType: 'address' },
+                    { name: 'outputScript', type: 'bytes', internalType: 'bytes' },
+                    { name: 'status', type: 'uint8', internalType: 'enum OfframpOrderStatus' },
+                    { name: 'timestamp', type: 'uint256', internalType: 'uint256' },
+                    { name: 'token', type: 'address', internalType: 'address' },
+                    { name: 'owner', type: 'address', internalType: 'address' },
+                ],
+            },
+        ],
+        stateMutability: 'view',
+    },
 ] as const;
+
+export const compoundV2CTokenAbi = parseAbi([
+    'function exchangeRateCurrent() external returns (uint256)',
+    'function underlying() external view returns (address)',
+]);
+
+export const aaveV2AtokenAbi = parseAbi(['function UNDERLYING_ASSET_ADDRESS() external view returns (address)']);
+
+export const claimDelayAbi = parseAbi(['function CLAIM_DELAY() view returns (uint64)']);

@@ -87,7 +87,7 @@ The majority of Bitcoin's stack and applications built around it are implemented
 
 [BOB Bridge](/learn/user-guides/onboard-to-bob/bob-gateway/) is our intent-based Bitcoin bridge built on the light client verification mentioned above. It is optimized to be fast, inexpensive, and programmable. As of this writing, 30,000 users have swapped a total of 75 BTC in a trust-minimized, peer-to-peer way.
 
-[BOB Stake](/learn/user-guides/bob-stake/) extends this idea by executing users' "intents" to stake, restake, or lend their BTC automatically during the bridge process. There are [more than a dozen options available](https://app.gobob.xyz/en/stake) at the moment, some offering five different sources of yield. All options are BTC-denominated and have no risk of impermanent loss.
+[BOB Stake](/learn/user-guides/stake-btc/) extends this idea by executing users' "intents" to stake, restake, or lend their BTC automatically during the bridge process. There are [more than a dozen options available](https://app.gobob.xyz/en/stake) at the moment, some offering five different sources of yield. All options are BTC-denominated and have no risk of impermanent loss.
 
 We built the [BOB Gateway SDK](/learn/builder-guides/gateway/) to make it possible for any frontend to offer its users these options by plugging into our infrastructure. Using the BOB Gateway SDK with [Dynamic's](https://www.dynamic.xyz/) wallet abstraction, you can even send native BTC to someone's email address via [BOB Pay](/learn/user-guides/bob-pay/#what-is-bob-pay).
 
@@ -99,9 +99,9 @@ By using the same EVM as Ethereum, teams building on BOB have access to familiar
 
 - [Data Analytics](/learn/reference/tools/data-indexers/) and [Node Providers](/learn/reference/tools/node-providers/)
 - [Cross-chain Messaging](/learn/reference/tools/cross-chain/) and [Oracles](/learn/reference/tools/oracles/)
-- [Wallets](/learn/reference/tools/wallets/), including [Account Abstraction](/learn/reference/tools/account-abstraction/) (AA), [Social Login](/learn/reference/tools/social-login/), and [our SDK for connecting to Bitcoin wallets](/learn/builder-guides/sats-wagmi/)
+- [Wallets](/learn/user-guides/getting-started/wallet-guide/), including [Account Abstraction](/learn/reference/tools/account-abstraction/) (AA), [Social Login](/learn/reference/tools/social-login/), and [our SDK for connecting to Bitcoin wallets](/learn/builder-guides/sats-wagmi/)
 
-We are particularly excited about AA providers like [Safe](/learn/reference/tools/account-abstraction#safe-wallet), [Pimlico](/learn/reference/tools/account-abstraction#pimlico), and [BTC Connect](/learn/reference/tools/account-abstraction#btc-connect) that make it possible to control funds on EVM chains from a Bitcoin wallet.
+We are particularly excited about AA providers like [Safe](/learn/reference/tools/account-abstraction#safe-wallet) and [BTC Connect](/learn/reference/tools/account-abstraction#btc-connect) that make it possible to control funds on EVM chains from a Bitcoin wallet.
 
 ## Conclusion
 

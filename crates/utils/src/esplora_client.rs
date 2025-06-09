@@ -2,15 +2,16 @@ use bitcoin::{
     block::Header, consensus, hashes::hex::FromHex, BlockHash, CompactTarget, MerkleBlock, Network,
     Transaction, TxMerkleNode, Txid,
 };
-use eyre::Result;
+use eyre::{Error, Result};
 use reqwest::{Client, Url};
 use serde::Deserialize;
 use std::str::FromStr;
 use tracing::*;
 
-const ESPLORA_MAINNET_URL: &str = "https://blockstream.info/api/";
-const ESPLORA_TESTNET_URL: &str = "https://blockstream.info/testnet/api/";
+const ESPLORA_TESTNET_URL: &str = "https://btc-testnet.interlay.io";
+const ESPLORA_MAINNET_URL: &str = "https://btc-mainnet.interlay.io";
 const ESPLORA_LOCALHOST_URL: &str = "http://localhost:3002";
+const ESPLORA_SIGNET_URL: &str = "https://btc-signet.gobob.xyz";
 
 // https://github.com/Blockstream/electrs/blob/adedee15f1fe460398a7045b292604df2161adc0/src/util/transaction.rs#L17-L26
 #[derive(Debug, Deserialize)]
@@ -29,6 +30,39 @@ pub struct MerkleProof {
     pub block_height: u32,
     pub merkle: Vec<String>,
     pub pos: u32,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct VoutFormat {
+    pub scriptpubkey: String,
+    pub scriptpubkey_asm: String,
+    pub scriptpubkey_type: String,
+    pub scriptpubkey_address: Option<String>,
+    pub value: u32,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct VinFormat {
+    pub txid: String,
+    pub vout: u32,
+    pub is_coinbase: bool,
+    pub scriptsig: String,
+    pub scriptsig_asm: String,
+    pub sequence: u32,
+    pub prevout: Option<VoutFormat>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct TransactionFormat {
+    pub txid: String,
+    pub version: u32,
+    pub locktime: u32,
+    pub size: u32,
+    pub weight: u32,
+    pub fee: u32,
+    pub vin: Vec<VinFormat>,
+    pub vout: Vec<VoutFormat>,
+    pub status: TransactionStatus,
 }
 
 impl MerkleProof {
@@ -69,20 +103,20 @@ pub struct EsploraClient {
 }
 
 impl EsploraClient {
-    pub fn new(esplora_url: Option<String>, network: Network) -> Result<Self> {
-        Ok(Self {
-            url: esplora_url
-                .unwrap_or_else(|| {
-                    match network {
-                        Network::Bitcoin => ESPLORA_MAINNET_URL,
-                        Network::Testnet => ESPLORA_TESTNET_URL,
-                        _ => ESPLORA_LOCALHOST_URL,
-                    }
-                    .to_owned()
-                })
-                .parse()?,
-            cli: Client::new(),
-        })
+    pub fn new(network: Network) -> Result<Self> {
+        Self::new_with_url(
+            match network {
+                Network::Bitcoin => ESPLORA_MAINNET_URL,
+                Network::Testnet => ESPLORA_TESTNET_URL,
+                Network::Signet => ESPLORA_SIGNET_URL,
+                _ => ESPLORA_LOCALHOST_URL,
+            }
+            .to_owned(),
+        )
+    }
+
+    pub fn new_with_url(esplora_url: String) -> Result<Self> {
+        Ok(Self { url: esplora_url.parse()?, cli: Client::new() })
     }
 
     async fn get(&self, path: &str) -> Result<String> {
@@ -116,6 +150,13 @@ impl EsploraClient {
 
     pub async fn get_merkle_proof(&self, txid: &Txid) -> Result<MerkleProof> {
         self.get_and_decode(&format!("tx/{txid}/merkle-proof")).await
+    }
+
+    pub async fn get_transactions_by_scripthash(
+        &self,
+        scripthash: &str,
+    ) -> Result<Vec<TransactionFormat>> {
+        self.get_and_decode(&format!("scripthash/{scripthash}/txs")).await
     }
 
     pub async fn get_block_hash(&self, height: u32) -> Result<BlockHash> {
@@ -180,6 +221,18 @@ impl EsploraClient {
             }
         }
     }
+
+    pub async fn get_bitcoin_network(&self) -> Result<Network> {
+        let url_str = self.url.as_str();
+
+        match url_str {
+            _ if url_str.contains(ESPLORA_MAINNET_URL) => Ok(Network::Bitcoin),
+            _ if url_str.contains(ESPLORA_TESTNET_URL) => Ok(Network::Testnet),
+            _ if url_str.contains(ESPLORA_LOCALHOST_URL) => Ok(Network::Regtest),
+            _ if url_str.contains(ESPLORA_SIGNET_URL) => Ok(Network::Signet),
+            _ => Err(Error::msg("Unknown network for URL: {url_str}")),
+        }
+    }
 }
 
 #[cfg(test)]
@@ -200,7 +253,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_esplora() -> Result<()> {
-        let esplora_client = EsploraClient::new(None, Network::Bitcoin)?;
+        let esplora_client = EsploraClient::new(Network::Bitcoin)?;
         let txid =
             Txid::from_str("aaddbc39689a3d63b3bcaafc6d1440ef911ac30bc0fe4679b891bf3e389fb053")?;
         let left = esplora_client.get_merkleblock_proof(&txid).await?;
@@ -208,7 +261,7 @@ mod tests {
         let mut matches: Vec<Txid> = vec![];
         let mut index: Vec<u32> = vec![];
         left.extract_matches(&mut matches, &mut index)?;
-        matches.get(0).filter(|x| txid == **x).unwrap();
+        matches.first().filter(|x| txid == **x).unwrap();
 
         let right = build_merkle_block(
             &esplora_client,
@@ -227,7 +280,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_esplora_get_block_value() -> Result<()> {
-        let esplora_client = EsploraClient::new(None, Network::Bitcoin)?;
+        let esplora_client = EsploraClient::new(Network::Bitcoin)?;
 
         let block_hash = BlockHash::from_str(
             "00000000000000000000e4726002778d999b973fe138208ed5f6c23df0af7898",

@@ -1,53 +1,53 @@
 {
-  "name": "@gobob/bob-sdk",
-  "version": "3.1.6",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "scripts": {
-    "test": "vitest run test/*.ts",
-    "deploy-relay": "ts-node src/scripts/relay-genesis.ts",
-    "update-relay": "ts-node src/scripts/relay-retarget.ts",
-    "build": "tsc -p tsconfig.json",
-    "lint": "eslint .",
-    "format": "prettier --write {examples,src,test}",
-    "format:check": "prettier --check {examples,src,test}"
-  },
-  "files": [
-    "dist/**/*",
-    "!**/*.spec.*",
-    "!**/*.json",
-    "CHANGELOG.md",
-    "LICENSE",
-    "README.md"
-  ],
-  "devDependencies": {
-    "@types/node": "^22.5.5",
-    "@types/yargs": "^17.0.33",
-    "@typescript-eslint/eslint-plugin": "^8.22.0",
-    "@typescript-eslint/parser": "^8.22.0",
-    "ecpair": "^2.1.0",
-    "eslint": "^9.19.0",
-    "eslint-config-prettier": "^9.1.0",
-    "eslint-plugin-prettier": "^5.2.1",
-    "mocha": "^11.1.0",
-    "nock": "^14.0.0",
-    "prettier": "^3.3.3",
-    "tiny-secp256k1": "^2.2.3",
-    "ts-node": "^10.0.0",
-    "typescript": "^5.6.2",
-    "vitest": "^3.0.4",
-    "yargs": "^17.5.1"
-  },
-  "dependencies": {
-    "@eslint/eslintrc": "^3.2.0",
-    "@eslint/js": "^9.19.0",
-    "@magiceden-oss/runestone-lib": "^1.0.2",
-    "@scure/base": "^1.2.4",
-    "@scure/btc-signer": "^1.6.0",
-    "bitcoin-address-validation": "^2.2.3",
-    "bitcoinjs-lib": "^6.1.6",
-    "ethers": "^6.13.2",
-    "viem": "^2.22.19",
-    "global": "^4.4.0"
-  }
+    "name": "@gobob/bob-sdk",
+    "version": "3.3.3",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "scripts": {
+        "test": "vitest run test/*.ts",
+        "deploy-relay": "ts-node src/scripts/relay-genesis.ts",
+        "update-relay": "ts-node src/scripts/relay-retarget.ts",
+        "build": "tsc -p tsconfig.json",
+        "lint": "eslint .",
+        "format": "prettier --write examples src test",
+        "format:check": "prettier --check examples src test"
+    },
+    "files": [
+        "dist/**/*",
+        "!**/*.spec.*",
+        "!**/*.json",
+        "CHANGELOG.md",
+        "LICENSE",
+        "README.md"
+    ],
+    "devDependencies": {
+        "@types/node": "^22.15.21",
+        "@types/yargs": "^17.0.33",
+        "@typescript-eslint/eslint-plugin": "^8.33.1",
+        "@typescript-eslint/parser": "^8.33.0",
+        "ecpair": "^2.1.0",
+        "eslint": "^9.27.0",
+        "eslint-config-prettier": "^10.1.2",
+        "eslint-plugin-prettier": "^5.4.1",
+        "mocha": "^11.5.0",
+        "nock": "^14.0.4",
+        "prettier": "^3.5.3",
+        "tiny-secp256k1": "^2.2.3",
+        "ts-node": "^10.0.0",
+        "typescript": "^5.7.3",
+        "vitest": "^3.1.4",
+        "yargs": "^17.5.1"
+    },
+    "dependencies": {
+        "@eslint/eslintrc": "^3.3.1",
+        "@eslint/js": "^9.28.0",
+        "@magiceden-oss/runestone-lib": "^1.0.2",
+        "@scure/base": "^1.2.4",
+        "@scure/btc-signer": "^1.6.0",
+        "bitcoin-address-validation": "^3.0.0",
+        "bitcoinjs-lib": "^6.1.7",
+        "ethers": "^6.14.1",
+        "viem": "^2.31.0",
+        "global": "^4.4.0"
+    }
 }

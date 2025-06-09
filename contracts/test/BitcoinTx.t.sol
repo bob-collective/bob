@@ -12,7 +12,7 @@ contract BitcoinTxTest is Test {
     using BTCUtils for bytes;
     using ValidateSPV for bytes32;
 
-    function test_GetTxHash() public {
+    function test_GetTxHash() public view {
         // b61b0172d95e266c18aea0c624db987e971a5d6d4ebc2aaed85da4642d635735
         bytes32 txId = hex"3557632d64a45dd8ae2abc4e6d5d1a977e98db24c6a0ae186c265ed972011bb6";
 
@@ -26,7 +26,6 @@ contract BitcoinTxTest is Test {
         bytes32 txHash =
             abi.encodePacked(txInfo.version, txInfo.inputVector, txInfo.outputVector, txInfo.locktime).hash256View();
 
-        console2.logBytes32(txHash);
         assertEq(txId, txHash);
     }
 
@@ -43,7 +42,7 @@ contract BitcoinTxTest is Test {
         );
     }
 
-    function test_ReverseEndianness() public {
+    function test_ReverseEndianness() public pure {
         bytes32 b = hex"db8e78d32300052aa487e3bfb9d9713d23023ecd08b5398e931b827dd151f276";
         (bytes32 txHash) = BitcoinTx.reverseEndianness(b);
         assertEq(txHash, hex"76f251d17d821b938e39b508cd3e02233d71d9b9bfe387a42a050023d3788edb");
@@ -96,7 +95,7 @@ contract BitcoinTxTest is Test {
         assertFalse(success);
     }
 
-    function test_ProcessTxOutputs() public {
+    function test_ProcessTxOutputs() public pure {
         // b1273a6c00eba20ee8837e445599d1362e005f6e1a8525802ba57bc515461a3a
         uint64 value = BitcoinTx.processTxOutputs(
             hex"02c67d16000000000016001493adab0a7a8cb7675db135c9c97e81942025c2c9aea79b4200000000160014f60834ef165253c571b11ce9fa74e46692fc5ec1",
@@ -105,7 +104,7 @@ contract BitcoinTxTest is Test {
         assertEq(value, 1473990);
     }
 
-    function test_ProcessTxOutputsSingleOutputTransaction() public {
+    function test_ProcessTxOutputsSingleOutputTransaction() public pure {
         // tx api: https://btc-testnet.gobob.xyz/tx/b0fe4bd36b17be89f131c2e652578def3cc0c3d5aa9e7a3f972365a8dc46dba8
         uint64 value = BitcoinTx.processTxOutputs(
             hex"01ab9ab90800000000160014d127b24a7e2aad2ddf21d4d940f6202158aa507d",
@@ -114,7 +113,7 @@ contract BitcoinTxTest is Test {
         assertEq(value, 146381483);
     }
 
-    function test_ProcessTxOutputsMaxTransactionValue() public {
+    function test_ProcessTxOutputsMaxTransactionValue() public pure {
         // tx api: https://api.blockcypher.com/v1/btc/main/txs/d486aeb0e59181fd1addb4aa69ce04d638188fc1125c424899267e8ed6a8af24?limit=50&includeHex=true/
         uint64 value = BitcoinTx.processTxOutputs(
             hex"0260536280ed03000017a9148e097444bb754122652208bf00f71a87b177b700874b5a115e2704000017a914ed498d84acb4532656fcf6947d0ceab6c77188bc87",
@@ -156,7 +155,7 @@ contract BitcoinTxTest is Test {
         assertFalse(success);
     }
 
-    function test_ProcessTxOutputsWithOpReturnAddress() public {
+    function test_ProcessTxOutputsWithOpReturnAddress() public pure {
         BitcoinTx.TxOutputsInfo memory resultInfo = BitcoinTx.processTxOutputs(
             hex"02983a000000000000146142b39c0073672dc382b89a42b29e06368bcabd0000000000000000166a14675ca18a04027fd50c88ccd03939e0e5c97b795f",
             keccak256(hex"146142b39c0073672dc382b89a42b29e06368bcabd")
@@ -165,7 +164,7 @@ contract BitcoinTxTest is Test {
         assertEq(resultInfo.evmAddress, 0x675Ca18A04027fd50C88CcD03939E0e5C97b795f);
     }
 
-    function test_ProcessTxOutputsWithOpReturnBytes32() public {
+    function test_ProcessTxOutputsWithOpReturnBytes32() public pure {
         BitcoinTx.TxOutputsInfo memory resultInfo = BitcoinTx.processTxOutputs(
             hex"02983a000000000000146142b39c0073672dc382b89a42b29e06368bcabd0000000000000000166a2000112233445566778899001122334455667788990011",
             keccak256(hex"146142b39c0073672dc382b89a42b29e06368bcabd")

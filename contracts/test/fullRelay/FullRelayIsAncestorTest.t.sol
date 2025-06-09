@@ -2,7 +2,7 @@
 pragma solidity ^0.8.17;
 
 import {FullRelayTestUtils} from "./FullRelayTestUtils.sol";
-import {IFullRelay} from "../../src/relay/FullRelayInterfaces.sol";
+import {IFullRelay} from "../../src/relay/IFullRelay.sol";
 import {FullRelay} from "../../src/relay/FullRelay.sol";
 
 import {stdJson} from "forge-std/StdJson.sol";
@@ -23,11 +23,11 @@ contract FullRelayIsAncestorTest is FullRelayTestUtils {
         relay.addHeaders(json.readBytes(".genesis.hex"), getHeaders("chain", 0, blockNumberAfterGenesis));
     }
 
-    function testExceedSearchLimit() public {
+    function testExceedSearchLimit() public view {
         assertFalse(relay.isAncestor(genesisDigestLe, digestLes[3], 1));
     }
 
-    function testAncestorFound() public {
+    function testAncestorFound() public view {
         assertTrue(relay.isAncestor(genesisDigestLe, digestLes[3], 5));
     }
 }

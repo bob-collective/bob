@@ -2,7 +2,7 @@
 pragma solidity ^0.8.17;
 
 import {FullRelayTestUtils} from "./FullRelayTestUtils.sol";
-import {IFullRelay} from "../../src/relay/FullRelayInterfaces.sol";
+import {IFullRelay} from "../../src/relay/IFullRelay.sol";
 import {FullRelay} from "../../src/relay/FullRelay.sol";
 
 import {stdJson} from "forge-std/StdJson.sol";
@@ -44,20 +44,20 @@ contract FullRelayIsMostAncestorTest is FullRelayTestUtils {
         relay.addHeadersWithRetarget(oldPeriodStartHex, preHeaderHexes[preLength - 1], postWithOrphan);
     }
 
-    function testReturnsFalseIfMoreRecentAncestorFound() public {
+    function testReturnsFalseIfMoreRecentAncestorFound() public view {
         assertFalse(relay.isMostRecentAncestor(postDigestLes[0], postDigestLes[3], postDigestLes[2], 5));
     }
 
-    function testReturnsFalseIfLimitExceeded() public {
+    function testReturnsFalseIfLimitExceeded() public view {
         assertFalse(relay.isMostRecentAncestor(postDigestLes[1], postDigestLes[3], postDigestLes[2], 1));
     }
 
-    function testReturnsTrueIfWithinLimit() public {
+    function testReturnsTrueIfWithinLimit() public view {
         assertTrue(relay.isMostRecentAncestor(postDigestLes[2], postDigestLes[3], postDigestLes[2], 5));
         assertTrue(relay.isMostRecentAncestor(postDigestLes[5], postDigestLes[6], orphanDigestLe, 5));
     }
 
-    function testLeftAndRightAndAncestorSame() public {
+    function testLeftAndRightAndAncestorSame() public view {
         assertTrue(relay.isMostRecentAncestor(postDigestLes[3], postDigestLes[3], postDigestLes[3], 5));
     }
 }

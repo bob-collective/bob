@@ -14,7 +14,6 @@ tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 
 # Bitcoin
 bitcoin = { workspace = true, features = ["serde"] }
-bitcoincore-rpc.workspace = true
 
 # Ethereum
 alloy = { workspace = true, features = ["full", "providers", "node-bindings"] }

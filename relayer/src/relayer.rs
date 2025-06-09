@@ -15,8 +15,8 @@ use utils::EsploraClient;
 
 const HEADERS_PER_BATCH: usize = 5;
 
-fn serialize_headers(headers: &Vec<RelayHeader>) -> Result<Vec<u8>> {
-    Ok(headers.iter().map(|header| consensus::serialize(&header.header)).flatten().collect())
+fn serialize_headers(headers: &[RelayHeader]) -> Result<Vec<u8>> {
+    Ok(headers.iter().flat_map(|header| consensus::serialize(&header.header)).collect())
 }
 
 #[derive(Clone)]
@@ -36,30 +36,25 @@ impl RelayHeader {
     }
 }
 
-pub struct Relayer<
-    T: alloy::contract::private::Transport + ::core::clone::Clone,
-    P: alloy::contract::private::Provider<T, N>,
-    N: alloy::contract::private::Network,
-> {
-    pub contract: BitcoinRelayInstance<T, P, N>,
+pub struct Relayer<P: alloy::providers::Provider<N>, N: alloy::providers::Network> {
+    pub contract: BitcoinRelayInstance<P, N>,
     pub esplora_client: EsploraClient,
 }
 
 // https://github.com/summa-tx/relays/tree/master/maintainer/maintainer/header_forwarder
 impl<
-        T: alloy::contract::private::Transport + ::core::clone::Clone,
-        P: alloy::contract::private::Provider<T, N>,
-        N: alloy::contract::private::Network<TransactionResponse = Transaction>,
-    > Relayer<T, P, N>
+        P: alloy::providers::Provider<N>,
+        N: alloy::providers::Network<TransactionResponse = Transaction>,
+    > Relayer<P, N>
 {
-    pub fn new(contract: BitcoinRelayInstance<T, P, N>, esplora_client: EsploraClient) -> Self {
+    pub fn new(contract: BitcoinRelayInstance<P, N>, esplora_client: EsploraClient) -> Self {
         Self { contract, esplora_client }
     }
 
     async fn relayed_height(&self) -> Result<u32> {
-        let relayer_blockhash = self.contract.getBestKnownDigest().call().await?._0;
+        let relayer_blockhash = self.contract.getBestKnownDigest().call().await?;
         let relayed_height: u32 =
-            self.contract.findHeight(relayer_blockhash).call().await?._0.try_into().unwrap();
+            self.contract.findHeight(relayer_blockhash).call().await?.try_into().unwrap();
 
         Ok(relayed_height)
     }
@@ -162,11 +157,11 @@ impl<
             let (pre_change, post_change): (Vec<RelayHeader>, Vec<RelayHeader>) =
                 headers.into_iter().partition(|header| header.height % 2016 >= start_mod);
 
-            if pre_change.len() != 0 {
+            if !pre_change.is_empty() {
                 self.add_headers(pre_change).await?;
             }
 
-            if post_change.len() != 0 {
+            if !post_change.is_empty() {
                 self.add_diff_change(post_change).await?;
             }
         }
@@ -234,7 +229,7 @@ impl<
                 .call()
                 .await?;
 
-            if is_ancestor._0 {
+            if is_ancestor {
                 return Ok(ancestor);
             }
 
@@ -281,7 +276,7 @@ impl<
     /// the blockheader directly - something we might do in the future. That would come at the
     /// cost of additional gas usage though.
     async fn get_heaviest_relayed_block_header(&self) -> Result<RelayHeader> {
-        let relayer_blockhash = self.contract.getBestKnownDigest().call().await?._0;
+        let relayer_blockhash = self.contract.getBestKnownDigest().call().await?;
 
         let query = format!(
             r#"
@@ -324,10 +319,10 @@ impl<
 
         use bindings::fullrelaywithverify::FullRelayWithVerify::markNewHeaviestCall;
 
-        let decoded = markNewHeaviestCall::abi_decode(&input, true)?;
+        let decoded = markNewHeaviestCall::abi_decode(&input)?;
         let header: bitcoin::block::Header = bitcoin::consensus::deserialize(&decoded._newBest.0)?;
 
-        let height = self.contract.findHeight(relayer_blockhash).call().await?._0;
+        let height = self.contract.findHeight(relayer_blockhash).call().await?;
         let hash = bitcoin::BlockHash::from_slice(&relayer_blockhash.0)?;
         Ok(RelayHeader { hash, header, height: height.try_into()? })
     }

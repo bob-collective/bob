@@ -2,7 +2,7 @@
 pragma solidity ^0.8.17;
 
 import {FullRelayTestUtils} from "./FullRelayTestUtils.sol";
-import {IFullRelay} from "../../src/relay/FullRelayInterfaces.sol";
+import {IFullRelay} from "../../src/relay/IFullRelay.sol";
 import {FullRelay} from "../../src/relay/FullRelay.sol";
 
 import {stdJson} from "forge-std/StdJson.sol";
@@ -26,7 +26,7 @@ contract FullRelayFindHeightTest is FullRelayTestUtils {
         relay.findHeight(hex"00000000000000000000000000000000");
     }
 
-    function testFindHeightOfExistingBlocks() public {
+    function testFindHeightOfExistingBlocks() public view {
         bytes32[] memory digestLes = getDigestLes("chain", 0, blockNumberAfterGenesis);
         uint256[] memory blockHeights = getBlockHeights("chain", 0, blockNumberAfterGenesis);
         for (uint256 i; i < blockNumberAfterGenesis; ++i) {

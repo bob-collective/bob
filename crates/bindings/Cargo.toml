@@ -1,7 +1,8 @@
 [package]
-name = "bob-bindings"
+name = "bindings"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-alloy = { workspace = true, features = ["sol-types", "contract"] }
+alloy = { workspace = true }
+serde = { workspace = true }

@@ -4,8 +4,6 @@ pragma solidity ^0.8.17;
 import {Test, console2} from "forge-std/Test.sol";
 
 import {LightRelay} from "../src/relay/LightRelay.sol";
-import {ILightRelay} from "../src/relay/LightRelay.sol";
-import {IRelay} from "../src/relay/IRelay.sol";
 import {BitcoinTx} from "../src/utils/BitcoinTx.sol";
 
 // Light relay test cases imported from: https://github.com/keep-network/tbtc-v2/blob/cadead9ecd6005325ace4d64288c20733b058352/solidity/test/relay/LightRelay.test.ts
@@ -174,7 +172,7 @@ contract LightRelayTest is Test {
         relay.genesis(genesisHeader.data, genesisHeader.height, 4);
     }
 
-    function test_RecordRelayReadyForuse() public {
+    function test_RecordRelayReadyForuse() public view {
         assertTrue(relay.ready());
     }
 
@@ -420,7 +418,7 @@ contract LightRelayTest is Test {
         );
     }
 
-    function test_ValidateHeaderChainsEpoch274() public {
+    function test_ValidateHeaderChainsEpoch274() public view {
         (, uint256 headerCount) = relay.validateChain(
             abi.encodePacked(
                 retargetHeaders[1].data, retargetHeaders[2].data, retargetHeaders[3].data, retargetHeaders[4].data
@@ -429,14 +427,14 @@ contract LightRelayTest is Test {
         assertEq(headerCount, 4);
     }
 
-    function test_ValidateShortHeaderChainsEpoch274() public {
+    function test_ValidateShortHeaderChainsEpoch274() public view {
         (, uint256 headerCount) = relay.validateChain(
             abi.encodePacked(retargetHeaders[1].data, retargetHeaders[2].data, retargetHeaders[3].data)
         );
         assertEq(headerCount, 3);
     }
 
-    function test_ValidateLongHeaderChainsEpoch274() public {
+    function test_ValidateLongHeaderChainsEpoch274() public view {
         (, uint256 headerCount) = relay.validateChain(
             bytes.concat(
                 abi.encodePacked(
@@ -755,7 +753,7 @@ contract LightRelayTest is Test {
         assertEq(currentEpochEnd, 554399);
     }
 
-    function test_GetRelayRangeAfterRetarget() public {
+    function test_GetRelayRangeAfterRetarget() public view {
         (uint256 relayGenesis, uint256 currentEpochEnd) = relay.getRelayRange();
         // should return two epochs
         assertEq(relayGenesis, genesisHeader.height);
@@ -772,7 +770,7 @@ contract LightRelayTest is Test {
         assertEq(relay.getCurrentEpochDifficulty(), genesisDifficulty);
     }
 
-    function test_GetCurrentEpochDifficultyAfterRetarget() public {
+    function test_GetCurrentEpochDifficultyAfterRetarget() public view {
         assertEq(relay.getCurrentEpochDifficulty(), nextDifficulty);
     }
 
@@ -786,7 +784,7 @@ contract LightRelayTest is Test {
         assertEq(relay.getPrevEpochDifficulty(), 0);
     }
 
-    function test_GetPrevEpochDifficultyAfterRetarget() public {
+    function test_GetPrevEpochDifficultyAfterRetarget() public view {
         assertEq(relay.getPrevEpochDifficulty(), genesisDifficulty);
     }
 
@@ -804,7 +802,7 @@ contract LightRelayTest is Test {
         assertEq(previous, 0);
     }
 
-    function test_GetCurrentAndPrevEpochDifficultyAfterRetarget() public {
+    function test_GetCurrentAndPrevEpochDifficultyAfterRetarget() public view {
         (uint256 current, uint256 previous) = relay.getCurrentAndPrevEpochDifficulty();
         assertEq(current, nextDifficulty);
         assertEq(previous, genesisDifficulty);
@@ -825,7 +823,9 @@ contract LightRelayTest is Test {
             BitcoinTx.Proof({
                 merkleProof: hex"180011aff0b64a62d2587d6d1b47d4049b77940222084640d71e3af330f1ed7a463219df439dadf415f9e9e0c3887bf25658ccdd75df8226affdb9e85708c6220f043131ee89dc6b9a2791827a62132348204b681e5801c85ffc5bf8857f1ae481210664933aeb429aeaef433148b9c8deb20ff31189ffcf10e940788897fa2ff4ebf1173c5b7eff6b3cf10e0b55bd59e8375ac1717eb2dc5c0eda687f4d4e3db16ec84a99bbda99dd161e44f8830944e052832d8adc56b73bad0ba280b07d491bf705b5562190e01e49f7dcbe40b35d1f0780f10bd69d5c7b6d5739f46ae6302e37fbe381a82a5a11c5436e6432554b46b93fee53da85109f062fa6e07e070bc2bce25a294949d50baccb0fb46b822d4d203e6784065b233e81f3c52e4ca9a538180159cc5864497e9b2ef9a7412e49d6fb724e13d709b50c1fd97306e255296e77523b15bfd67423e801fb428d40597bbeffda818d15759c9dd89b4bac4e87438fff12f1390e675092e1c8a446347c06026ee2b35f5b140b40b8acbb88ee7d",
                 txIndexInBlock: 1,
-                bitcoinHeaders: abi.encodePacked(proofHeader.data)
+                bitcoinHeaders: abi.encodePacked(proofHeader.data),
+                coinbasePreimage: hex"fbf1967e6a1c2f10bb1ff1864cd19a430a19fe80a5c1cc3379acd50e68eb81a8",
+                coinbaseProof: hex"f9489420c4177fa58e5ad791271a0c216fbdf0e73375553401cf68f450e5af15463219df439dadf415f9e9e0c3887bf25658ccdd75df8226affdb9e85708c6220f043131ee89dc6b9a2791827a62132348204b681e5801c85ffc5bf8857f1ae481210664933aeb429aeaef433148b9c8deb20ff31189ffcf10e940788897fa2ff4ebf1173c5b7eff6b3cf10e0b55bd59e8375ac1717eb2dc5c0eda687f4d4e3db16ec84a99bbda99dd161e44f8830944e052832d8adc56b73bad0ba280b07d491bf705b5562190e01e49f7dcbe40b35d1f0780f10bd69d5c7b6d5739f46ae6302e37fbe381a82a5a11c5436e6432554b46b93fee53da85109f062fa6e07e070bc2bce25a294949d50baccb0fb46b822d4d203e6784065b233e81f3c52e4ca9a538180159cc5864497e9b2ef9a7412e49d6fb724e13d709b50c1fd97306e255296e77523b15bfd67423e801fb428d40597bbeffda818d15759c9dd89b4bac4e87438fff12f1390e675092e1c8a446347c06026ee2b35f5b140b40b8acbb88ee7d"
             })
         );
     }
@@ -847,7 +847,9 @@ contract LightRelayTest is Test {
             BitcoinTx.Proof({
                 merkleProof: hex"180011aff0b64a62d2587d6d1b47d4049b77940222084640d71e3af330f1ed7a463219df439dadf415f9e9e0c3887bf25658ccdd75df8226affdb9e85708c6220f043131ee89dc6b9a2791827a62132348204b681e5801c85ffc5bf8857f1ae481210664933aeb429aeaef433148b9c8deb20ff31189ffcf10e940788897fa2ff4ebf1173c5b7eff6b3cf10e0b55bd59e8375ac1717eb2dc5c0eda687f4d4e3db16ec84a99bbda99dd161e44f8830944e052832d8adc56b73bad0ba280b07d491bf705b5562190e01e49f7dcbe40b35d1f0780f10bd69d5c7b6d5739f46ae6302e37fbe381a82a5a11c5436e6432554b46b93fee53da85109f062fa6e07e070bc2bce25a294949d50baccb0fb46b822d4d203e6784065b233e81f3c52e4ca9a538180159cc5864497e9b2ef9a7412e49d6fb724e13d709b50c1fd97306e255296e77523b15bfd67423e801fb428d40597bbeffda818d15759c9dd89b4bac4e87438fff12f1390e675092e1c8a446347c06026ee2b35f5b140b40b8acbb88ee7d",
                 txIndexInBlock: 1,
-                bitcoinHeaders: abi.encodePacked(proofHeader.data)
+                bitcoinHeaders: abi.encodePacked(proofHeader.data),
+                coinbasePreimage: hex"fbf1967e6a1c2f10bb1ff1864cd19a430a19fe80a5c1cc3379acd50e68eb81a8",
+                coinbaseProof: hex"f9489420c4177fa58e5ad791271a0c216fbdf0e73375553401cf68f450e5af15463219df439dadf415f9e9e0c3887bf25658ccdd75df8226affdb9e85708c6220f043131ee89dc6b9a2791827a62132348204b681e5801c85ffc5bf8857f1ae481210664933aeb429aeaef433148b9c8deb20ff31189ffcf10e940788897fa2ff4ebf1173c5b7eff6b3cf10e0b55bd59e8375ac1717eb2dc5c0eda687f4d4e3db16ec84a99bbda99dd161e44f8830944e052832d8adc56b73bad0ba280b07d491bf705b5562190e01e49f7dcbe40b35d1f0780f10bd69d5c7b6d5739f46ae6302e37fbe381a82a5a11c5436e6432554b46b93fee53da85109f062fa6e07e070bc2bce25a294949d50baccb0fb46b822d4d203e6784065b233e81f3c52e4ca9a538180159cc5864497e9b2ef9a7412e49d6fb724e13d709b50c1fd97306e255296e77523b15bfd67423e801fb428d40597bbeffda818d15759c9dd89b4bac4e87438fff12f1390e675092e1c8a446347c06026ee2b35f5b140b40b8acbb88ee7d"
             })
         );
 
@@ -865,7 +867,29 @@ contract LightRelayTest is Test {
             BitcoinTx.Proof({
                 merkleProof: hex"180011aff0b64a62d2587d6d1b47d4049b77940222084640d71e3af330f1ed7a463219df439dadf415f9e9e0c3887bf25658ccdd75df8226affdb9e85708c6220f043131ee89dc6b9a2791827a62132348204b681e5801c85ffc5bf8857f1ae481210664933aeb429aeaef433148b9c8deb20ff31189ffcf10e940788897fa2ff4ebf1173c5b7eff6b3cf10e0b55bd59e8375ac1717eb2dc5c0eda687f4d4e3db16ec84a99bbda99dd161e44f8830944e052832d8adc56b73bad0ba280b07d491bf705b5562190e01e49f7dcbe40b35d1f0780f10bd69d5c7b6d5739f46ae6302e37fbe381a82a5a11c5436e6432554b46b93fee53da85109f062fa6e07e070bc2bce25a294949d50baccb0fb46b822d4d203e6784065b233e81f3c52e4ca9a538180159cc5864497e9b2ef9a7412e49d6fb724e13d709b50c1fd97306e255296e77523b15bfd67423e801fb428d40597bbeffda818d15759c9dd89b4bac4e87438fff12f1390e675092e1c8a446347c06026ee2b35f5b140b40b8acbb88ee7d",
                 txIndexInBlock: 1,
-                bitcoinHeaders: abi.encodePacked(proofHeader.data)
+                bitcoinHeaders: abi.encodePacked(proofHeader.data),
+                coinbasePreimage: hex"fbf1967e6a1c2f10bb1ff1864cd19a430a19fe80a5c1cc3379acd50e68eb81a8",
+                coinbaseProof: hex"f9489420c4177fa58e5ad791271a0c216fbdf0e73375553401cf68f450e5af15463219df439dadf415f9e9e0c3887bf25658ccdd75df8226affdb9e85708c6220f043131ee89dc6b9a2791827a62132348204b681e5801c85ffc5bf8857f1ae481210664933aeb429aeaef433148b9c8deb20ff31189ffcf10e940788897fa2ff4ebf1173c5b7eff6b3cf10e0b55bd59e8375ac1717eb2dc5c0eda687f4d4e3db16ec84a99bbda99dd161e44f8830944e052832d8adc56b73bad0ba280b07d491bf705b5562190e01e49f7dcbe40b35d1f0780f10bd69d5c7b6d5739f46ae6302e37fbe381a82a5a11c5436e6432554b46b93fee53da85109f062fa6e07e070bc2bce25a294949d50baccb0fb46b822d4d203e6784065b233e81f3c52e4ca9a538180159cc5864497e9b2ef9a7412e49d6fb724e13d709b50c1fd97306e255296e77523b15bfd67423e801fb428d40597bbeffda818d15759c9dd89b4bac4e87438fff12f1390e675092e1c8a446347c06026ee2b35f5b140b40b8acbb88ee7d"
+            })
+        );
+
+        // Invalid Coinbase Proof
+        vm.expectRevert("Coinbase merkle proof is not valid for provided header and hash");
+        relay.validateProof(
+            txProofDifficultyFactor,
+            BitcoinTx.Info({
+                version: hex"02000000",
+                inputVector: hex"01123c43f161517343e93191e838b2f04356665ff526bf95cfe6c9986de7a10a3e010000001716001402c8f68bb02b257de42f5ca11b525bd3b47a0369feffffff",
+                // invalid output
+                outputVector: hex"0285943285fae498b08e00f90ac9e403e1bb8760d360020000000017a914f9b4725bd496b113d44be16f92d14df62096387387",
+                locktime: hex"76750800"
+            }),
+            BitcoinTx.Proof({
+                merkleProof: hex"180011aff0b64a62d2587d6d1b47d4049b77940222084640d71e3af330f1ed7a463219df439dadf415f9e9e0c3887bf25658ccdd75df8226affdb9e85708c6220f043131ee89dc6b9a2791827a62132348204b681e5801c85ffc5bf8857f1ae481210664933aeb429aeaef433148b9c8deb20ff31189ffcf10e940788897fa2ff4ebf1173c5b7eff6b3cf10e0b55bd59e8375ac1717eb2dc5c0eda687f4d4e3db16ec84a99bbda99dd161e44f8830944e052832d8adc56b73bad0ba280b07d491bf705b5562190e01e49f7dcbe40b35d1f0780f10bd69d5c7b6d5739f46ae6302e37fbe381a82a5a11c5436e6432554b46b93fee53da85109f062fa6e07e070bc2bce25a294949d50baccb0fb46b822d4d203e6784065b233e81f3c52e4ca9a538180159cc5864497e9b2ef9a7412e49d6fb724e13d709b50c1fd97306e255296e77523b15bfd67423e801fb428d40597bbeffda818d15759c9dd89b4bac4e87438fff12f1390e675092e1c8a446347c06026ee2b35f5b140b40b8acbb88ee7d",
+                txIndexInBlock: 1,
+                bitcoinHeaders: abi.encodePacked(proofHeader.data),
+                coinbasePreimage: hex"fbf1967e6a1c2f10bb1ff1864cd19a430a19fe80a5c1cc3379acd50e68eb81a8",
+                coinbaseProof: hex"00"
             })
         );
 

@@ -16,6 +16,12 @@ export const MAINNET_ORD_BASE_PATH = 'https://ordinals-mainnet.gobob.xyz';
  */
 export const TESTNET_ORD_BASE_PATH = 'https://ordinals-testnet.gobob.xyz';
 
+/**
+ * Base path for Ordinals signet Explorer.
+ * @default "https://ordinals-signet.gobob.xyz"
+ */
+export const SIGNET_ORD_BASE_PATH = 'https://ordinals-signet.gobob.xyz';
+
 // https://github.com/ordinals/ord/blob/e39031a46531696e5dd0c853146f8bfab5b7582c/src/inscription_id.rs#L4-L7
 export type InscriptionId = {
     txid: string;
@@ -133,6 +139,11 @@ export interface OutputJson {
             symbol: string | null;
         };
     };
+
+    /**
+     * Number of confirmations
+     */
+    confirmations: number;
 
     /**
      * The outpoint.
@@ -367,6 +378,9 @@ export class OrdinalsClient {
         switch (networkOrUrl) {
             case 'mainnet':
                 this.basePath = MAINNET_ORD_BASE_PATH;
+                break;
+            case 'signet':
+                this.basePath = SIGNET_ORD_BASE_PATH;
                 break;
             case 'testnet':
                 this.basePath = TESTNET_ORD_BASE_PATH;

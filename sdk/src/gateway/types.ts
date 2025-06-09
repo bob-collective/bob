@@ -1,11 +1,13 @@
 import type { EsploraClient } from '../esplora';
 import { Address } from 'viem';
-import { offRampCaller, strategyCaller } from './abi';
+import { offrampCaller, strategyCaller } from './abi';
 
 type ChainSlug = string | number;
 type TokenSymbol = string;
 
 export type EvmAddress = string;
+
+export type Optional<T, K extends keyof T> = Omit<T, K> & Partial<T>;
 
 export enum Chain {
     // NOTE: we also support Bitcoin testnet
@@ -17,12 +19,13 @@ export enum Chain {
 export enum ChainId {
     BOB = 60808,
     BOB_SEPOLIA = 808813,
+    OPTIMISM = 10,
 }
 
 /**
  * Parameters required to construct a staking transaction.
  */
-export type BuildStakeParams = {
+export type StakeParams = {
     /** @description The address of the staking strategy contract */
     strategyAddress: Address;
     /** @description The token address being staked */
@@ -48,13 +51,11 @@ export type StakeTransactionParams = {
     /** @description The ABI used to interact with the staking contract */
     strategyABI: typeof strategyCaller;
     /** @description The name of the function being called on the contract */
-    strategyFunctionName: string;
+    strategyFunctionName: (typeof strategyCaller)[number]['name'];
     /** @description Arguments required for the staking contract call */
     strategyArgs: [Address, bigint, Address, { amountOutMin: bigint }];
     /** @description The wallet address executing the transaction */
-    account: Address;
-    /** @description  Arguments required for the token approval transaction */
-    erc20ApproveArgs: [Address, bigint];
+    address: Address;
 };
 
 /**
@@ -68,6 +69,19 @@ export interface Token {
     symbol: string;
     decimals: number;
     logoURI: string;
+}
+
+export interface PointsIncentive {
+    id: string;
+    name: string;
+}
+
+export interface EnrichedToken extends Token {
+    tvl: number;
+    apyBase: number;
+    apyReward: number;
+    rewardTokens: Token[];
+    points: PointsIncentive[];
 }
 
 /**
@@ -111,8 +125,6 @@ export interface GatewayQuoteParams {
     strategyAddress?: string;
     /** @description Campaign id for tracking */
     campaignId?: string;
-    /** @description Users bitcoin Address */
-    bitcoinUserAddress?: string;
 }
 
 /**
@@ -224,24 +236,6 @@ export type GatewayQuote = {
     strategyAddress?: EvmAddress;
 };
 
-export type OffRampRequestPayload = {
-    /** @description The ABI used to interact with the offRamp contract */
-    offRampABI: typeof offRampCaller;
-    /** @description The name of the function being called on the contract */
-    offRampFunctionName: string;
-    /** @description Arguments required for the offRamp contract call */
-    offRampArgs: [
-        {
-            offRampAddress: Address;
-            amountLocked: bigint;
-            maxFees: bigint;
-            user: Address;
-            token: Address;
-            userBtcAddress: string;
-        },
-    ];
-};
-
 /** @dev Internal */
 export type GatewayCreateOrderRequest = {
     gatewayAddress: EvmAddress;
@@ -261,7 +255,7 @@ export type OffRampGatewayCreateQuoteResponse = {
     gateway: EvmAddress;
 };
 
-export interface GatewayOrderResponse {
+export interface OnrampOrderResponse {
     /** @description The gateway address */
     gatewayAddress: EvmAddress;
     /** @description The base token address (e.g. wBTC or tBTC) */
@@ -320,8 +314,8 @@ export type OrderStatus =
       };
 
 /** Order given by the Gateway API once the bitcoin tx is submitted */
-export type GatewayOrder = Omit<
-    GatewayOrderResponse & {
+export type OnrampOrder = Omit<
+    OnrampOrderResponse & {
         /** @description The gas refill in satoshis */
         gasRefill: number;
     },
@@ -337,12 +331,12 @@ export type GatewayOrder = Omit<
     getConfirmations(esploraClient: EsploraClient, latestHeight?: number): Promise<number>;
     /** @description Get the actual order status */
     getStatus(esploraClient: EsploraClient, latestHeight?: number): Promise<OrderStatus>;
-};
+} & GatewayTokensInfo;
 
 export type GatewayTokensInfo = {
     /** @description The base token (e.g. wBTC or tBTC) */
     baseToken: Token;
-    /** @description The output token (e.g. uniBTC or SolvBTC.BBN) */
+    /** @description The output token (e.g. uniBTC or xSolvBTC) */
     outputToken?: Token;
 };
 
@@ -359,24 +353,154 @@ export type GatewayStartOrder = GatewayCreateOrderResponse & {
     psbtBase64?: string;
 };
 
-export type GatewayOffRampOrder = {
-    /** @description Unique identifier for the off-ramp request */
-    requestId: string;
-    /** @description The gateway address handling the off-ramp */
-    offrampAddress: string;
-    /** @description The amount of satoshis to receive */
-    satoshisToGet: number;
-    /** @description The transaction hash on the EVM chain */
-    evmTxHash: string;
-    /** @description The transaction ID on the Bitcoin network */
-    btcTxHash: string;
-    /** @description The timestamp when the order was created */
-    timestamp: number;
-    /** @description Indicates if the off-ramp process is completed */
-    done: boolean;
-    /** @description The user's EVM address */
-    userAddress: string;
+export type OfframpOrderStatus = 'Active' | 'Accepted' | 'Processed' | 'Refunded';
+
+/** @dev Detailed breakdown of fees associated with an offramp quote */
+export interface OfframpFeeBreakdown {
+    /** @dev Total fees in satoshis */
+    overallFeeSats: number;
+    /** @dev Fee for transaction inclusion */
+    inclusionFeeSats: number;
+    /** @dev Protocol-specific fee */
+    protocolFeeSats: number;
+    /** @dev Affiliate-related fee */
+    affiliateFeeSats: number;
+    /** @dev Fastest available fee rate (e.g., sat/vB) */
+    fastestFeeRate: number;
+}
+
+/** @dev Offramp order quote returned by the quoting logic */
+export interface OfframpQuote {
+    /** @dev Amount to lock in satoshis */
+    amountLockInSat: number;
+    /** @dev Deadline for order creation (unix timestamp) */
+    deadline: number;
+    /** @dev Address of the off-ramp registry handling the order */
+    registryAddress: Address;
+    /** @dev Token address used for payment */
+    token: Address;
+    /** @dev Detailed fee breakdown */
+    feeBreakdown: OfframpFeeBreakdown;
+}
+
+/** @dev Offramp Available Liquidity */
+export interface OfframpLiquidity {
+    /** @dev Token address used for payment */
+    token: Address;
+    /** @dev Max token amount a *single* order can be served with (in token decimals) */
+    maxOrderAmount: bigint;
+    /** @dev Total liquidity across all solver addresses (in token decimals) */
+    totalOfframpLiquidity: bigint;
+}
+
+/** @dev Params used for createOrder call on the off-ramp contract */
+export type OfframpCreateOrderParams = {
+    quote: OfframpQuote;
+    feeBreakdown: OfframpFeeBreakdown;
+    offrampABI: typeof offrampCaller;
+    offrampFunctionName: 'createOrder';
+    offrampArgs: [
+        {
+            /** @dev Amount of sats to lock in the order */
+            satAmountToLock: bigint;
+            /** @dev Max sats to be paid as fees */
+            satFeesMax: bigint;
+            /** @dev Timestamp by which the order must be created */
+            orderCreationDeadline: bigint;
+            /** @dev Output script for Bitcoin settlement */
+            outputScript: `0x${string}`;
+            /** @dev Token to use for payment */
+            token: Address;
+            /** @dev EVM address of the user who can unlock the order or bump its fee */
+            orderOwner: Address;
+        },
+    ];
 };
+
+/** @dev Params used to bump fee for an existing order */
+export type OfframpBumpFeeParams = {
+    offrampABI: typeof offrampCaller;
+    offrampRegistryAddress: Address;
+    offrampFunctionName: 'bumpFeeOfExistingOrder';
+    /**
+     * @param orderId The order ID to bump fee for
+     * @param newFeeSat The new fee amount in satoshis
+     */
+    offrampArgs: [orderId: bigint, newFeeSat: bigint];
+};
+
+/** @dev Params used to unlock funds after order completion or refund */
+export type OfframpUnlockFundsParams = {
+    offrampABI: typeof offrampCaller;
+    offrampRegistryAddress: Address;
+    offrampFunctionName: 'unlockFunds';
+    /**
+     * @param orderId The order ID to bump fee for
+     * @param receiver address to send unlocked funds to
+     */
+    offrampArgs: [orderId: bigint, receiver: Address];
+};
+
+/** @dev Final state of an offramp order used in UI/backend */
+export type OfframpOrder = {
+    /** @dev Unique identifier for the off-ramp order */
+    orderId: bigint;
+    /** @dev The token address */
+    token: Address;
+    /** @dev The amount of sats that is locked */
+    satAmountLocked: bigint;
+    /** @dev The amount of fees to pay in sat */
+    satFeesMax: bigint;
+    /** @dev The current status of the order */
+    status: OfframpOrderStatus;
+    /** @dev The timestamp when the order was created or updated */
+    orderTimestamp: number;
+    /** @dev The user submit order transaction hash on the EVM chain */
+    submitOrderEvmTx: string | null;
+    /** @dev The transaction ID on the Bitcoin network */
+    btcTx: string | null;
+    /** @dev Indicates whether the fees for this order should be bumped based on current network conditions */
+    shouldFeesBeBumped: boolean;
+    /** @dev Indicates whether the user can unlock this order (typically if it's still active) */
+    canOrderBeUnlocked: boolean;
+};
+
+/** @dev Internal, On-chain fetched state of an active/processed/refunded order */
+export type OnchainOfframpOrderDetails = {
+    /** @dev Unique identifier for the off-ramp order */
+    orderId: bigint;
+    /** @dev The token address used for payment */
+    token: Address;
+    /** @dev Amount locked in sats */
+    satAmountLocked: bigint;
+    /** @dev Max sats for fee */
+    satFeesMax: bigint;
+    /** @dev Address that created the order */
+    sender: Address;
+    /** @dev Optional receiver address for order payout */
+    receiver: Address | null;
+    /** @dev Optional owner address of the order */
+    owner: Address | null;
+    /** @dev Output script for Bitcoin tx */
+    outputScript: string;
+    /** @dev Order status */
+    status: OfframpOrderStatus;
+    /** @dev When the order was created (unix timestamp) */
+    orderTimestamp: number;
+};
+
+/** @dev Internal */
+export interface OfframpRawOrder {
+    orderId: string;
+    token: string;
+    satAmountLocked: string;
+    satFeesMax: string;
+    status: string;
+    orderTimestamp: string;
+    btcTx: string | null;
+    submitOrderEvmTx: string | null;
+    shouldFeesBeBumped: boolean;
+}
 
 /** @dev Internal */
 export interface GatewayStrategy {
@@ -388,3 +512,37 @@ export interface GatewayStrategy {
     inputTokenAddress: string;
     outputTokenAddress?: string;
 }
+
+/** @dev Internal */
+
+export interface StrategyAssetState {
+    address: Address | 'usd';
+    totalUnderlying: bigint;
+}
+
+/** @dev Internal */
+
+export interface DefiLlamaPool {
+    pool: string;
+    chain: string;
+    project: string;
+    tvlUsd: number;
+    apy: number | null;
+    apyBase: number | null;
+    apyReward: number | null;
+    underlyingTokens: null | string[];
+    rewardTokens: null | string[];
+}
+
+export type OnrampQuoteParams = {
+    type: 'onramp';
+    params: Optional<GatewayQuoteParams, 'amount' | 'fromChain' | 'fromToken' | 'fromUserAddress' | 'toUserAddress'>;
+};
+
+export type OfframpQuoteParams = {
+    type: 'offramp';
+    params: {
+        tokenAddress: Address;
+        amount: number;
+    };
+};

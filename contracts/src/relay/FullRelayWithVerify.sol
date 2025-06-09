@@ -22,8 +22,8 @@ contract FullRelayWithVerify is FullRelay {
         FullRelay(_genesisHeader, _height, _periodStart)
     {}
 
-    /// @notice                 Provide a proof of a tx that satisfies some request
-    /// @dev                    The caller must specify which inputs, which outputs, and which request
+    /// @notice                 Verifies an SPV proof of a tx by checking that the tx is valid with respect
+    ///                         to a header and the header is valid with respect to the chain
     /// @param  _header         The header containing the merkleroot committing to the tx
     /// @param  _proof          The merkle proof intermediate nodes
     /// @param  _txId           The transaction id to verify
@@ -39,8 +39,14 @@ contract FullRelayWithVerify is FullRelay {
         require(ValidateSPV.prove(_txId, _header.extractMerkleRootLE(), _proof, _index), "Bad inclusion proof");
 
         bytes32 _headerHash = _header.hash256();
-        bytes32 _GCD = getLastReorgCommonAncestor();
+        verifyHeaderHash(_headerHash, _numConfs);
+    }
 
+    /// @notice              Verifies that a given block hash is part of the chain and is sufficiently deep
+    /// @param  _headerHash  The header hash to verify
+    /// @param  _numConfs    Number of confirmations required
+    function verifyHeaderHash(bytes32 _headerHash, uint8 _numConfs) public view {
+        bytes32 _GCD = getLastReorgCommonAncestor();
         require(_isAncestor(_headerHash, _GCD, 2048), "GCD does not confirm header");
         require(_getConfs(_headerHash) >= _numConfs, "Insufficient confirmations");
     }

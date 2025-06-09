@@ -17,7 +17,7 @@ pragma solidity ^0.8.17;
  * 3. solidity compiler version upgraded to 0.8.17
  * 4. OnDemandSPV was gutted and only the verification part was kept
  */
-import {IFullRelay} from "./FullRelayInterfaces.sol";
+import {IFullRelay} from "./IFullRelay.sol";
 
 import {BytesLib} from "@bob-collective/bitcoin-spv/BytesLib.sol";
 import {BTCUtils} from "@bob-collective/bitcoin-spv/BTCUtils.sol";

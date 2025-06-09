@@ -2,7 +2,7 @@
 pragma solidity ^0.8.17;
 
 import {FullRelayTestUtils} from "./FullRelayTestUtils.sol";
-import {IFullRelay} from "../../src/relay/FullRelayInterfaces.sol";
+import {IFullRelay} from "../../src/relay/IFullRelay.sol";
 import {FullRelay} from "../../src/relay/FullRelay.sol";
 
 import {stdJson} from "forge-std/StdJson.sol";
@@ -46,12 +46,12 @@ contract FullRelayHeaviestFromAncestorWithRetargetTest is FullRelayTestUtils {
         relay.addHeadersWithRetarget(oldPeriodStartHex, preHeaderHexes[preLength - 1], postWithOrphan);
     }
 
-    function testHandlingDescendantsAtDifferentDifficultyPeriod() public {
+    function testHandlingDescendantsAtDifferentDifficultyPeriod() public view {
         assertEq(relay.heaviestFromAncestor(genesisDigestLe, orphanHex, preHeaderHexes[3]), orphanDigestLe);
         assertEq(relay.heaviestFromAncestor(genesisDigestLe, preHeaderHexes[3], orphanHex), orphanDigestLe);
     }
 
-    function testHandlingDescendantsWhenBothAtDifferentNewDifficultyPeriod() public {
+    function testHandlingDescendantsWhenBothAtDifferentNewDifficultyPeriod() public view {
         assertEq(relay.heaviestFromAncestor(genesisDigestLe, orphanHex, postHeaderHexes[3]), orphanDigestLe);
         assertEq(relay.heaviestFromAncestor(genesisDigestLe, postHeaderHexes[3], orphanHex), orphanDigestLe);
     }

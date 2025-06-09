@@ -13,6 +13,11 @@ export const TESTNET_ESPLORA_BASE_PATH = 'https://btc-testnet.gobob.xyz';
  * @default "http://localhost:3003"
  */
 export const REGTEST_ESPLORA_BASE_PATH = 'http://localhost:3003';
+/**
+ * Base path for the signet Esplora API.
+ * @default "https://btc-signet.gobob.xyz"
+ */
+export const SIGNET_ESPLORA_BASE_PATH = 'https://btc-signet.gobob.xyz';
 
 /**
  * @ignore
@@ -153,7 +158,7 @@ export class EsploraClient {
      * Create an instance of the `EsploraClient` with the specified network or URL.
      * If the `networkOrUrl` parameter is omitted, it defaults to "mainnet."
      *
-     * @param networkOrUrl The Bitcoin network (e.g., "mainnet," "testnet," "regtest")
+     * @param chainName The Bitcoin network (e.g., "mainnet," "testnet," "regtest")
      *
      * @returns An instance of the `EsploraClient` configured for the specified network or URL.
      *
@@ -165,10 +170,13 @@ export class EsploraClient {
      * // Create a client for the mainnet using the default URL.
      * const esploraClientMainnet = new EsploraClient();
      */
-    constructor(networkOrUrl: string = 'mainnet') {
-        switch (networkOrUrl) {
+    constructor(chainName: 'mainnet' | 'signet' | 'testnet' | 'regtest' = 'mainnet') {
+        switch (chainName) {
             case 'mainnet':
                 this.basePath = MAINNET_ESPLORA_BASE_PATH;
+                break;
+            case 'signet':
+                this.basePath = SIGNET_ESPLORA_BASE_PATH;
                 break;
             case 'testnet':
                 this.basePath = TESTNET_ESPLORA_BASE_PATH;
@@ -177,7 +185,7 @@ export class EsploraClient {
                 this.basePath = REGTEST_ESPLORA_BASE_PATH;
                 break;
             default:
-                this.basePath = networkOrUrl;
+                throw new Error('Invalid chain');
         }
     }
 
