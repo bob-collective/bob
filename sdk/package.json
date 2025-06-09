@@ -28,7 +28,7 @@
         "ecpair": "^2.1.0",
         "eslint": "^9.27.0",
         "eslint-config-prettier": "^10.1.2",
-        "eslint-plugin-prettier": "^5.2.6",
+        "eslint-plugin-prettier": "^5.4.1",
         "mocha": "^11.5.0",
         "nock": "^14.0.4",
         "prettier": "^3.5.3",
