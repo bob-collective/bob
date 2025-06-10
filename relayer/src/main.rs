@@ -5,11 +5,10 @@ use alloy::{
 use bindings::fullrelaywithverify::FullRelayWithVerify as BitcoinRelay;
 use clap::Parser;
 use eyre::Result;
-use relayer::Relayer;
 use reqwest::Url;
 use utils::EsploraClient;
 
-mod relayer;
+use bob_relayer::Relayer;
 
 /// Relayer
 #[derive(Debug, Parser)]
