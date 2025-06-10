@@ -66,7 +66,7 @@ impl<
             Ok(_) => Ok(true),
             Err(alloy::contract::Error::TransportError(RpcError::ErrorResp(_e))) => {
                 // If the block is not relayed, the findHeight call reverts.
-                return Ok(false);
+                Ok(false)
             }
             Err(e) => Err(e)?, // something else went wrong (e.g. network issues)
         }
@@ -323,7 +323,7 @@ impl<
 
         use bindings::fullrelaywithverify::FullRelayWithVerify::markNewHeaviestCall;
 
-        let decoded = markNewHeaviestCall::abi_decode(&input)?;
+        let decoded = markNewHeaviestCall::abi_decode(input)?;
         let header: bitcoin::block::Header = bitcoin::consensus::deserialize(&decoded._newBest.0)?;
 
         let height = self.contract.findHeight(relayer_blockhash).call().await?;
@@ -335,15 +335,7 @@ impl<
 #[cfg(test)]
 mod tests {
     use super::*;
-    use alloy::{
-        hex,
-        network::EthereumWallet,
-        primitives::TxHash,
-        providers::{Provider, ProviderBuilder},
-        signers::local::PrivateKeySigner,
-        sol_types::SolCall,
-    };
-    use reqwest::Url;
+    use alloy::{hex, providers::ProviderBuilder};
 
     #[tokio::test]
     async fn test_has_relayed() -> Result<()> {
