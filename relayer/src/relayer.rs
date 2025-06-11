@@ -83,6 +83,32 @@ impl Relayer {
         Self::new(bob_url, relay_address, esplora_client, wallet)
     }
 
+    /// Helper function to deploy relay contract.
+    pub async fn deploy_contract(
+        rpc_url: &Url,
+        wallet: &EthereumWallet,
+        esplora_client: &EsploraClient,
+        genesis_height: u32,
+        period_start_height: u32,
+    ) -> Result<Address> {
+        let provider = ProviderBuilder::new().wallet(wallet.clone()).connect_http(rpc_url.clone());
+
+        let period_start_block_hash = esplora_client.get_block_hash(period_start_height).await?;
+        let genesis_block_header = esplora_client
+            .get_raw_block_header(&esplora_client.get_block_hash(genesis_height).await?)
+            .await?;
+
+        let contract = BitcoinRelay::deploy(
+            provider.clone(),
+            Bytes::from(genesis_block_header.clone()),
+            U256::from(genesis_height),
+            FixedBytes::new(period_start_block_hash.to_byte_array()),
+        )
+        .await?;
+
+        Ok(*contract.address())
+    }
+
     async fn relayed_height(&self) -> Result<u32> {
         let relayer_blockhash = self.contract.getBestKnownDigest().call().await?;
         let relayed_height: u32 =
