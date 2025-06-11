@@ -12,7 +12,7 @@ use alloy::{
     sol_types::SolCall,
     transports::RpcError,
 };
-use bindings::fullrelaywithverify::{
+use bindings::full_relay_with_verify::{
     FullRelayWithVerify as BitcoinRelay,
     FullRelayWithVerify::FullRelayWithVerifyInstance as BitcoinRelayInstance,
 };
@@ -383,7 +383,7 @@ impl Relayer {
 
         let input = tx.as_ref().input();
 
-        use bindings::fullrelaywithverify::FullRelayWithVerify::markNewHeaviestCall;
+        use bindings::full_relay_with_verify::FullRelayWithVerify::markNewHeaviestCall;
 
         let decoded = markNewHeaviestCall::abi_decode(input)?;
         let header: bitcoin::block::Header = bitcoin::consensus::deserialize(&decoded._newBest.0)?;
