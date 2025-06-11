@@ -368,6 +368,7 @@ impl BitcoinClient {
         replaceable: Option<bool>,
         confirmation_target: Option<u32>,
         estimate_mode: Option<bitcoincore_rpc::json::EstimateMode>,
+        fee_rate: Option<Amount>,
     ) -> Result<Txid, Error> {
         let tx = self.create_and_sign_tx(
             address,
@@ -376,6 +377,7 @@ impl BitcoinClient {
             replaceable,
             confirmation_target,
             estimate_mode,
+            fee_rate,
         )?;
         let txid = self.validate_and_send_raw_transaction(&tx)?;
         Ok(txid)
@@ -389,6 +391,7 @@ impl BitcoinClient {
         replaceable: Option<bool>,
         confirmation_target: Option<u32>,
         estimate_mode: Option<bitcoincore_rpc::json::EstimateMode>,
+        fee_rate: Option<Amount>,
     ) -> Result<Transaction, Error> {
         match (address, amount, op_return_data) {
             // txs must have at least one output
@@ -423,7 +426,7 @@ impl BitcoinClient {
                     change_type: None,
                     include_watching: None,
                     lock_unspents: None,
-                    fee_rate: None,
+                    fee_rate,
                     subtract_fee_from_outputs: None,
                     replaceable,
                     conf_target: confirmation_target,
