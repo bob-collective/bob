@@ -283,7 +283,11 @@ impl Relayer {
     }
 
     async fn update_best_digest(&self, new_best: RelayHeader) -> Result<()> {
-        let current_best = self.get_heaviest_relayed_block_header().await?;
+        let current_best = if self.contract.provider().client().is_local() {
+            self.get_heaviest_relayed_block_header_regtest().await?
+        } else {
+            self.get_heaviest_relayed_block_header().await?
+        };
 
         let ancestor = self.find_lca(&new_best, current_best.clone()).await?;
         let delta = new_best.height - ancestor.height + 1;
@@ -361,6 +365,22 @@ impl Relayer {
         let height = self.contract.findHeight(relayer_blockhash).call().await?;
         let hash = bitcoin::BlockHash::from_slice(&relayer_blockhash.0)?;
         Ok(RelayHeader { hash, header, height: height.try_into()? })
+    }
+
+    async fn get_heaviest_relayed_block_header_regtest(&self) -> Result<RelayHeader> {
+        let current_best_digest_raw = self.contract.getBestKnownDigest().call().await?;
+        let current_best_digest = BlockHash::from_byte_array(current_best_digest_raw.0);
+        Ok(RelayHeader {
+            hash: current_best_digest,
+            header: self.esplora_client.get_block_header(&current_best_digest).await?,
+            height: self
+                .contract
+                .findHeight(current_best_digest_raw)
+                .call()
+                .await?
+                .try_into()
+                .expect("height larger than u32::MAX"),
+        })
     }
 }
 

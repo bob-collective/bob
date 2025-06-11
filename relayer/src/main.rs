@@ -103,10 +103,7 @@ mod tests {
 
         // assert!(receipt.status());
 
-        let relayer = Relayer::new(rpc_url, *contract.address(), esplora_client, wallet);
-        // TODO: test again after using the contract instead of goldsky for regtest at
-        // `Relayer:get_heaviest_relayed_block_header()`
-        // relayer.run_once().await?;
+        Relayer::new(rpc_url, *contract.address(), esplora_client, wallet).run_once().await?;
 
         Ok(())
     }
