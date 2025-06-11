@@ -11,12 +11,12 @@ bitcoin = "0.32.5"
 bitcoincore-rpc = "0.19.0"
 
 # Ethereum
-alloy = { version = "1.0.7", features = [
+alloy = { version = "1.0.9", features = [
     "full",
     "node-bindings",
     "sol-types",
     "contract",
-    "serde"
+    "serde",
 ] }
 serde = "1.0.139"
 
