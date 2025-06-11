@@ -537,50 +537,42 @@ export interface DefiLlamaPool {
     rewardTokens: null | string[];
 }
 
-export type OnrampQuoteParams = Omit<
-    Optional<GatewayQuoteParams, 'amount' | 'fromChain' | 'fromToken' | 'fromUserAddress' | 'toUserAddress'>,
-    'type'
-> & { type: 'onramp' };
+export type GetQuoteParams = Optional<GatewayQuoteParams, 'amount' | 'fromUserAddress' | 'toUserAddress' | 'fromToken'>;
 
-export type OfframpQuoteParams = Pick<GatewayQuoteParams, 'fromToken' | 'amount'> & { type: 'offramp' };
+export type OnRampQuoteParams = Optional<
+    GatewayQuoteParams,
+    'amount' | 'fromChain' | 'fromToken' | 'fromUserAddress' | 'toUserAddress'
+>;
 
-export type OnRampExecuteQuoteParam = {
-    type: 'onramp';
-    quote: GatewayQuote & GatewayTokensInfo;
-    params: Optional<GatewayQuoteParams, 'toToken' | 'amount'> & {
-        toUserAddress: Address;
-        fromUserAddress: string;
-        fromChain: 'bitcoin';
-        toChain: 'bob' | 'bob-sepolia' | ChainId.BOB | ChainId.BOB_SEPOLIA;
-    };
+export type OffRampQuoteParams = Pick<GatewayQuoteParams, 'fromToken' | 'amount'>;
+
+export type OnRampExecuteQuoteParams = GatewayQuoteParams & {
+    toUserAddress: Address;
+    fromUserAddress: string;
+    fromChain: 'bitcoin';
+    toChain: 'bob' | 'bob-sepolia' | ChainId.BOB | ChainId.BOB_SEPOLIA;
 };
 
-export type OffRampExecuteQuoteParam = {
-    type: 'offramp';
-    params: Optional<
-        GatewayQuoteParams,
-        | 'toChain'
-        | 'toUserAddress'
-        | 'affiliateId'
-        | 'fee'
-        | 'feeRate'
-        | 'gasRefill'
-        | 'strategyAddress'
-        | 'campaignId'
-        | 'toToken'
-        | 'maxSlippage'
-        | 'fromChain'
-    > & {
-        toUserAddress: string;
-        fromUserAddress: Address;
-        fromChain: 'bob' | 'bob-sepolia' | ChainId.BOB | ChainId.BOB_SEPOLIA;
-        toChain: 'bitcoin';
-    };
+export type OffRampExecuteQuoteParams = Optional<
+    GatewayQuoteParams,
+    | 'toChain'
+    | 'toUserAddress'
+    | 'affiliateId'
+    | 'fee'
+    | 'feeRate'
+    | 'gasRefill'
+    | 'strategyAddress'
+    | 'campaignId'
+    | 'toToken'
+    | 'maxSlippage'
+    | 'fromChain'
+> & {
+    toUserAddress: string;
+    fromUserAddress: Address;
+    fromChain: 'bob' | 'bob-sepolia' | ChainId.BOB | ChainId.BOB_SEPOLIA;
+    toChain: 'bitcoin';
 };
 
-export type StakeExecuteQuoteParam = {
-    type: 'stake';
-    params: StakeParams;
-};
+export type ExecuteStakeParam = StakeParams;
 
-export type ExecuteQuoteParams = OnRampExecuteQuoteParam | OffRampExecuteQuoteParam | StakeExecuteQuoteParam;
+export type ExecuteQuoteParams = OnRampExecuteQuoteParams | OffRampExecuteQuoteParams;
