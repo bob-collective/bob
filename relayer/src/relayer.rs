@@ -1,19 +1,40 @@
 use alloy::{
-    network::ReceiptResponse,
-    primitives::{Bytes, FixedBytes, U256},
-    rpc::types::Transaction,
+    network::EthereumWallet,
+    primitives::{Address, Bytes, FixedBytes, U256},
+    providers::{
+        fillers::{
+            BlobGasFiller, ChainIdFiller, FillProvider, GasFiller, JoinFill, NonceFiller,
+            WalletFiller,
+        },
+        Identity, Provider, ProviderBuilder, RootProvider,
+    },
+    signers::local::PrivateKeySigner,
     sol_types::SolCall,
     transports::RpcError,
 };
-use bindings::fullrelaywithverify::FullRelayWithVerify::FullRelayWithVerifyInstance as BitcoinRelayInstance;
+use bindings::fullrelaywithverify::{
+    FullRelayWithVerify as BitcoinRelay,
+    FullRelayWithVerify::FullRelayWithVerifyInstance as BitcoinRelayInstance,
+};
 use bitcoin::{block::Header as BitcoinHeader, consensus, hashes::Hash, BlockHash};
 use eyre::{eyre, Result};
-use reqwest::Client;
+use reqwest::{Client, Url};
 use serde_json::Value;
 use std::time::Duration;
 use utils::EsploraClient;
 
 const HEADERS_PER_BATCH: usize = 5;
+
+type ContractProvider = FillProvider<
+    JoinFill<
+        JoinFill<
+            Identity,
+            JoinFill<GasFiller, JoinFill<BlobGasFiller, JoinFill<NonceFiller, ChainIdFiller>>>,
+        >,
+        WalletFiller<EthereumWallet>,
+    >,
+    RootProvider,
+>;
 
 fn serialize_headers(headers: &[RelayHeader]) -> Result<Vec<u8>> {
     Ok(headers.iter().flat_map(|header| consensus::serialize(&header.header)).collect())
@@ -36,19 +57,30 @@ impl RelayHeader {
     }
 }
 
-pub struct Relayer<P: alloy::providers::Provider<N>, N: alloy::providers::Network> {
-    pub contract: BitcoinRelayInstance<P, N>,
+pub struct Relayer {
+    pub contract: BitcoinRelayInstance<ContractProvider>,
     pub esplora_client: EsploraClient,
 }
 
 // https://github.com/summa-tx/relays/tree/master/maintainer/maintainer/header_forwarder
-impl<
-        P: alloy::providers::Provider<N>,
-        N: alloy::providers::Network<TransactionResponse = Transaction>,
-    > Relayer<P, N>
-{
-    pub fn new(contract: BitcoinRelayInstance<P, N>, esplora_client: EsploraClient) -> Self {
+impl Relayer {
+    pub fn new(
+        bob_url: Url,
+        relay_address: Address,
+        esplora_client: EsploraClient,
+        wallet: EthereumWallet,
+    ) -> Self {
+        let provider = ProviderBuilder::new().wallet(wallet).connect_http(bob_url);
+        let contract = BitcoinRelay::new(relay_address, provider);
+
         Self { contract, esplora_client }
+    }
+
+    pub fn read_only(bob_url: Url, relay_address: Address, esplora_client: EsploraClient) -> Self {
+        let signer = PrivateKeySigner::random();
+        let wallet = EthereumWallet::from(signer);
+
+        Self::new(bob_url, relay_address, esplora_client, wallet)
     }
 
     async fn relayed_height(&self) -> Result<u32> {
@@ -335,15 +367,13 @@ impl<
 #[cfg(test)]
 mod tests {
     use super::*;
-    use alloy::{hex, providers::ProviderBuilder};
+    use alloy::hex;
 
     #[tokio::test]
     async fn test_has_relayed() -> Result<()> {
-        let relayer = Relayer::new(
-            BitcoinRelayInstance::new(
-                "0xaAD39528eB8b3c70b613C442F351610969974fDF".parse()?,
-                ProviderBuilder::new().connect_http("https://bob-sepolia.rpc.gobob.xyz/".parse()?),
-            ),
+        let relayer = Relayer::read_only(
+            "https://bob-sepolia.rpc.gobob.xyz/".parse()?,
+            "0xaAD39528eB8b3c70b613C442F351610969974fDF".parse()?,
             EsploraClient::new(bitcoin::Network::Signet)?,
         );
 
@@ -363,11 +393,9 @@ mod tests {
     #[ignore] // Run this manually with anvil --fork-url wss://bob-sepolia.rpc.gobob.xyz --fork-block-number
               // 9563094
     async fn test_latest_common_height() -> Result<()> {
-        let relayer = Relayer::new(
-            BitcoinRelayInstance::new(
-                "0xaAD39528eB8b3c70b613C442F351610969974fDF".parse()?,
-                ProviderBuilder::new().connect_http("http://127.0.0.1:8545".parse()?),
-            ),
+        let relayer = Relayer::read_only(
+            "http://127.0.0.1:8545".parse()?,
+            "0xaAD39528eB8b3c70b613C442F351610969974fDF".parse()?,
             EsploraClient::new(bitcoin::Network::Signet)?,
         );
 
@@ -378,11 +406,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_heaviest_relayed_block_header() -> Result<()> {
-        let relayer = Relayer::new(
-            BitcoinRelayInstance::new(
-                "0xaAD39528eB8b3c70b613C442F351610969974fDF".parse()?,
-                ProviderBuilder::new().connect_http("https://bob-sepolia.rpc.gobob.xyz/".parse()?),
-            ),
+        let relayer = Relayer::read_only(
+            "https://bob-sepolia.rpc.gobob.xyz/".parse()?,
+            "0xaAD39528eB8b3c70b613C442F351610969974fDF".parse()?,
             EsploraClient::new(bitcoin::Network::Bitcoin)?,
         );
 

@@ -1,8 +1,4 @@
-use alloy::{
-    network::EthereumWallet, primitives::Address, providers::ProviderBuilder,
-    signers::local::PrivateKeySigner,
-};
-use bindings::fullrelaywithverify::FullRelayWithVerify as BitcoinRelay;
+use alloy::{network::EthereumWallet, primitives::Address, signers::local::PrivateKeySigner};
 use clap::Parser;
 use eyre::Result;
 use reqwest::Url;
@@ -42,13 +38,12 @@ async fn main() -> Result<()> {
     let signer: PrivateKeySigner = privk.parse().expect("should parse private key");
     let wallet = EthereumWallet::from(signer);
     let rpc_url: Url = app.eth_rpc_url.parse()?;
-    let provider = ProviderBuilder::new().wallet(wallet).connect_http(rpc_url);
     let esplora_client = app
         .esplora_url
         .map(EsploraClient::new_with_url)
         .unwrap_or(EsploraClient::new(bitcoin::Network::Bitcoin))?;
 
-    let relayer = Relayer::new(BitcoinRelay::new(app.relay_address, provider), esplora_client);
+    let relayer = Relayer::new(rpc_url, app.relay_address, esplora_client, wallet);
     relayer.run().await?;
 
     Ok(())
@@ -64,6 +59,7 @@ mod tests {
         providers::ProviderBuilder,
         signers::local::PrivateKeySigner,
     };
+    use bindings::fullrelaywithverify::FullRelayWithVerify as BitcoinRelay;
     use bitcoin::hashes::Hash;
 
     #[tokio::test]
@@ -73,7 +69,7 @@ mod tests {
         let wallet = EthereumWallet::from(signer.clone());
         let rpc_url = anvil.endpoint_url();
 
-        let provider = ProviderBuilder::new().wallet(wallet).connect_http(rpc_url);
+        let provider = ProviderBuilder::new().wallet(wallet.clone()).connect_http(rpc_url.clone());
 
         let esplora_client = EsploraClient::new(bitcoin::Network::Bitcoin)?;
 
@@ -107,7 +103,10 @@ mod tests {
 
         // assert!(receipt.status());
 
-        Relayer::new(contract, esplora_client).run_once().await?;
+        let relayer = Relayer::new(rpc_url, *contract.address(), esplora_client, wallet);
+        // TODO: test again after using the contract instead of goldsky for regtest at
+        // `Relayer:get_heaviest_relayed_block_header()`
+        // relayer.run_once().await?;
 
         Ok(())
     }
