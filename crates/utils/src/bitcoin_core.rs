@@ -232,7 +232,7 @@ impl BitcoinCore {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{BitcoinClient, BumpFeeOptions};
+    use crate::{BitcoinClient, BumpFeeOptions, FeeRate};
     use bitcoin::Amount;
 
     #[test]
@@ -249,6 +249,55 @@ mod tests {
             bitcoin.client(Some("Bob")).unwrap().get_balance(None, None).unwrap().to_sat(),
             5000000000
         );
+    }
+
+    #[tokio::test]
+    async fn test_create_and_send_tx_with_fee_rate() -> Result<()> {
+        // Start a Bitcoin regtest node instance
+        let bitcoin = BitcoinCore::new().spawn();
+
+        // Fund Alice's wallet with some BTC
+        bitcoin.fund_wallet("Alice").expect("Failed to fund Alice's wallet");
+
+        // Create a Bitcoin client for Alice
+        let alice_client = BitcoinClient::from(bitcoin.client(Some("Alice"))?);
+
+        // Generate a recipient address
+        let recipient = alice_client.rpc.get_new_address(None, None).unwrap().assume_checked();
+
+        // Attempt to send with zero fee rate (should fail)
+        let zero_fee_result = alice_client.send_to_address_with_op_return(
+            Some(&recipient),
+            Some(Amount::from_btc(0.1).expect("Invalid BTC amount")),
+            None,
+            None,
+            None,
+            None,
+            Some(FeeRate::per_vbyte(Amount::ZERO)),
+        );
+        assert!(zero_fee_result.is_err(), "Zero fee tx should be rejected");
+
+        // Send it with minimal valid fee rate (1 sat/vB)
+        let txid = alice_client.send_to_address_with_op_return(
+            Some(&recipient),
+            Some(Amount::from_btc(0.1).expect("Invalid BTC amount")),
+            None,
+            None,
+            None,
+            None,
+            Some(FeeRate::per_vbyte(Amount::ONE_SAT)),
+        )?;
+
+        // Mine 100 blocks to confirm the transaction
+        alice_client.rpc.generate_to_address(100, &recipient).unwrap();
+
+        // Fetch transaction info
+        let tx_info = alice_client.rpc.get_transaction(&txid, None).unwrap();
+
+        // Ensure the transaction is confirmed
+        assert!(tx_info.info.confirmations > 0, "Transaction should be confirmed");
+
+        Ok(())
     }
 
     #[tokio::test]
