@@ -59,8 +59,8 @@ impl RelayHeader {
 
 #[derive(Clone)]
 pub struct Relayer {
-    pub contract: BitcoinRelayInstance<ContractProvider>,
-    pub esplora_client: EsploraClient,
+    contract: BitcoinRelayInstance<ContractProvider>,
+    esplora_client: EsploraClient,
 }
 
 // https://github.com/summa-tx/relays/tree/master/maintainer/maintainer/header_forwarder
@@ -117,6 +117,10 @@ impl Relayer {
         .await?;
 
         Ok(*contract.address())
+    }
+
+    pub fn contract_address(&self) -> Address {
+        *self.contract.address()
     }
 
     async fn relayed_height(&self) -> Result<u32> {
