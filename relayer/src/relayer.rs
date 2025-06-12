@@ -57,6 +57,7 @@ impl RelayHeader {
     }
 }
 
+#[derive(Clone)]
 pub struct Relayer {
     pub contract: BitcoinRelayInstance<ContractProvider>,
     pub esplora_client: EsploraClient,
@@ -93,10 +94,19 @@ impl Relayer {
     ) -> Result<Address> {
         let provider = ProviderBuilder::new().wallet(wallet.clone()).connect_http(rpc_url.clone());
 
-        let period_start_block_hash = esplora_client.get_block_hash(period_start_height).await?;
-        let genesis_block_header = esplora_client
-            .get_raw_block_header(&esplora_client.get_block_hash(genesis_height).await?)
-            .await?;
+        let period_start_block_hash = esplora_client
+            .get_block_hash(period_start_height)
+            .await
+            .map_err(|_| eyre!("Couldn't find block hash at period_start_height"))?;
+        let genesis_block_hash = esplora_client
+            .get_block_hash(genesis_height)
+            .await
+            .map_err(|_| eyre!("Couldn't find block hash at genesis_height"))?;
+        let genesis_block_header =
+            esplora_client
+                .get_raw_block_header(&genesis_block_hash)
+                .await
+                .map_err(|_| eyre!("Couldn't find block header at genesis_height"))?;
 
         let contract = BitcoinRelay::deploy(
             provider.clone(),
@@ -170,7 +180,12 @@ impl Relayer {
 
             if headers.is_empty() {
                 // we are up to date, sleep for a bit
-                tokio::time::sleep(Duration::from_secs(15)).await;
+                tokio::time::sleep(if self.is_regtest() {
+                    Duration::from_millis(15)
+                } else {
+                    Duration::from_secs(15)
+                })
+                .await;
             } else {
                 self.push_headers(headers).await?;
             }
@@ -204,6 +219,10 @@ impl Relayer {
     }
 
     async fn push_headers(&self, headers: Vec<RelayHeader>) -> Result<()> {
+        if headers.is_empty() {
+            return Ok(());
+        }
+
         let start_mod = headers.first().unwrap().height % 2016;
         let end_header = headers.last().unwrap().clone();
         let end_mod = end_header.height % 2016;
@@ -309,11 +328,7 @@ impl Relayer {
     }
 
     async fn update_best_digest(&self, new_best: RelayHeader) -> Result<()> {
-        let current_best = if self.contract.provider().client().is_local() {
-            self.get_heaviest_relayed_block_header_regtest().await?
-        } else {
-            self.get_heaviest_relayed_block_header().await?
-        };
+        let current_best = self.get_heaviest_relayed_block_header().await?;
 
         let ancestor = self.find_lca(&new_best, current_best.clone()).await?;
         let delta = new_best.height - ancestor.height + 1;
@@ -335,13 +350,21 @@ impl Relayer {
         Ok(())
     }
 
+    async fn get_heaviest_relayed_block_header(&self) -> Result<RelayHeader> {
+        if self.is_regtest() {
+            self.get_heaviest_relayed_block_header_regtest().await
+        } else {
+            self.get_heaviest_relayed_block_header_goldsky().await
+        }
+    }
+
     /// Fetch the block header from the contract. We used to fetch from esplora but that would
     /// fail if there was a fork. This function is currently a bit over engineered - it uses
     /// a subgraph to find the tx that submitted the heaviest block, then takes the blockheader
     /// from its calldata. It would have been a lot easier if the smart contract were to store
     /// the blockheader directly - something we might do in the future. That would come at the
     /// cost of additional gas usage though.
-    async fn get_heaviest_relayed_block_header(&self) -> Result<RelayHeader> {
+    async fn get_heaviest_relayed_block_header_goldsky(&self) -> Result<RelayHeader> {
         let relayer_blockhash = self.contract.getBestKnownDigest().call().await?;
 
         let query = format!(
@@ -407,6 +430,10 @@ impl Relayer {
                 .try_into()
                 .expect("height larger than u32::MAX"),
         })
+    }
+
+    fn is_regtest(&self) -> bool {
+        self.contract.provider().client().is_local()
     }
 }
 
