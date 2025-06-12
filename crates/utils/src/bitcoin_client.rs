@@ -116,6 +116,12 @@ impl FeeRate {
         // divide by 10^8 to get btc/vbyte, then multiply by 10^3 to get btc/kbyte
         self.0.to_sat() as f64 / 100_000.0
     }
+
+    /// Converts the internal fee rate (per vB) to BTC/kvB for RPC compatibility.
+    pub fn to_btc_per_kvbyte_amount(&self) -> Amount {
+        // 1000 vB in 1 kvB → multiply the per-vB amount by 1000
+        Amount::from_sat(self.0.to_sat() * 1000)
+    }
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, Default)]
@@ -368,7 +374,7 @@ impl BitcoinClient {
         replaceable: Option<bool>,
         confirmation_target: Option<u32>,
         estimate_mode: Option<bitcoincore_rpc::json::EstimateMode>,
-        fee_rate: Option<Amount>,
+        fee_rate: Option<FeeRate>,
     ) -> Result<Txid, Error> {
         let tx = self.create_and_sign_tx(
             address,
@@ -391,7 +397,7 @@ impl BitcoinClient {
         replaceable: Option<bool>,
         confirmation_target: Option<u32>,
         estimate_mode: Option<bitcoincore_rpc::json::EstimateMode>,
-        fee_rate: Option<Amount>,
+        fee_rate: Option<FeeRate>,
     ) -> Result<Transaction, Error> {
         match (address, amount, op_return_data) {
             // txs must have at least one output
@@ -426,7 +432,7 @@ impl BitcoinClient {
                     change_type: None,
                     include_watching: None,
                     lock_unspents: None,
-                    fee_rate,
+                    fee_rate: fee_rate.map(|fr| fr.to_btc_per_kvbyte_amount()),
                     subtract_fee_from_outputs: None,
                     replaceable,
                     conf_target: confirmation_target,
