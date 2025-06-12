@@ -432,7 +432,7 @@ impl BitcoinClient {
                     change_type: None,
                     include_watching: None,
                     lock_unspents: None,
-                    fee_rate: fee_rate.map(|fr| fr.to_btc_per_kvbyte_amount()),
+                    fee_rate: fee_rate.map(|fr| fr.to_btc_per_kvbyte_amount()), // `fee_rate` must be in BTC/kvB as expected by `fundrawtransaction`,
                     subtract_fee_from_outputs: None,
                     replaceable,
                     conf_target: confirmation_target,
