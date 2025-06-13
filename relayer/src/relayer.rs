@@ -23,7 +23,7 @@ use serde_json::Value;
 use std::time::Duration;
 use utils::EsploraClient;
 
-const HEADERS_PER_BATCH: usize = 5;
+const HEADERS_PER_BATCH: u32 = 5;
 
 type ContractProvider = FillProvider<
     JoinFill<
@@ -123,7 +123,7 @@ impl Relayer {
         *self.contract.address()
     }
 
-    // Returns the height relayed to the smart contract so far.
+    /// Returns the height relayed to the smart contract so far.
     pub async fn relayed_height(&self) -> Result<u32> {
         let relayer_blockhash = self.contract.getBestKnownDigest().call().await?;
         let relayed_height: u32 =
@@ -132,7 +132,17 @@ impl Relayer {
         Ok(relayed_height)
     }
 
-    // Returns true if the block with this hash was relayed to the contract.
+    /// Returns the block hash of the most recent relayed block.
+    pub async fn relayed_blockhash(&self) -> Result<BlockHash> {
+        Ok(self
+            .contract
+            .getBestKnownDigest()
+            .call()
+            .await
+            .map(|bytes| BlockHash::from_byte_array(bytes.into()))?)
+    }
+
+    /// Returns true if the block with this hash was relayed to the contract.
     pub async fn has_relayed(&self, blockhash: BlockHash) -> Result<bool> {
         let result = self.contract.findHeight(blockhash.to_byte_array().into()).call().await;
 
@@ -171,11 +181,7 @@ impl Relayer {
     pub async fn run_once(&self) -> Result<()> {
         let latest_height = self.latest_common_height().await?;
         let headers: Vec<RelayHeader> = self.pull_headers(latest_height).await?;
-        if !headers.is_empty() {
-            self.push_headers(headers).await?;
-        } else {
-            tracing::debug!("No headers to push...");
-        }
+        self.push_headers(headers).await?;
         Ok(())
     }
 
@@ -187,25 +193,25 @@ impl Relayer {
 
             latest_height += headers.len() as u32;
 
-            if headers.is_empty() {
-                tracing::debug!("No headers to push...");
-                // we are up to date, sleep for a bit
-                tokio::time::sleep(if self.is_regtest() {
-                    Duration::from_millis(150)
-                } else {
-                    Duration::from_secs(15)
-                })
-                .await;
+            self.push_headers(headers).await?;
+
+            tokio::time::sleep(if self.is_regtest() {
+                Duration::from_millis(10)
             } else {
-                self.push_headers(headers).await?;
-            }
+                Duration::from_secs(15)
+            })
+            .await;
         }
     }
 
     async fn pull_headers(&self, mut latest_height: u32) -> Result<Vec<RelayHeader>> {
         latest_height += 1;
 
-        // let futures = (latest_height..latest_height + HEADERS_PER_BATCH as u32)
+        // Larger batches are more convenient for integration tests
+        let headers_per_patch =
+            if self.is_regtest() { HEADERS_PER_BATCH * 10 } else { HEADERS_PER_BATCH };
+
+        // let futures = (latest_height..latest_height + headers_per_patch )
         //     .map(|height| async move {
         //         tracing::debug!("fetching height {}", height);
         //         let hash = self.esplora_client.get_block_hash(height).await?;
@@ -216,11 +222,10 @@ impl Relayer {
         // Ok(try_join_all(futures).await?)
 
         let bitcoin_height = self.esplora_client.get_chain_height().await?;
+        tracing::debug!("bitcoin_height {bitcoin_height}");
 
         let mut relay_headers = Vec::new();
-        for height in
-            latest_height..(latest_height + HEADERS_PER_BATCH as u32).min(bitcoin_height + 1)
-        {
+        for height in latest_height..(latest_height + headers_per_patch).min(bitcoin_height + 1) {
             tracing::debug!("fetching height {}", height);
             let hash = self.esplora_client.get_block_hash(height).await?;
             let header = self.esplora_client.get_block_header(&hash).await?;
@@ -230,6 +235,12 @@ impl Relayer {
     }
 
     async fn push_headers(&self, headers: Vec<RelayHeader>) -> Result<()> {
+        if headers.is_empty() {
+            tracing::debug!("No headers to push..");
+
+            return Ok(());
+        };
+
         let start_mod = headers.first().unwrap().height % 2016;
         let end_header = headers.last().unwrap().clone();
         let end_mod = end_header.height % 2016;
@@ -261,6 +272,12 @@ impl Relayer {
 
         tracing::debug!("updating head");
         self.update_best_digest(end_header).await?;
+
+        tracing::info!(
+            "Relayed until height {}, with hash {}",
+            self.relayed_height().await?,
+            self.relayed_blockhash().await?
+        );
 
         Ok(())
     }
