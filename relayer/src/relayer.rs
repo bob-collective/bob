@@ -123,7 +123,8 @@ impl Relayer {
         *self.contract.address()
     }
 
-    async fn relayed_height(&self) -> Result<u32> {
+    // Returns the height relayed to the smart contract so far.
+    pub async fn relayed_height(&self) -> Result<u32> {
         let relayer_blockhash = self.contract.getBestKnownDigest().call().await?;
         let relayed_height: u32 =
             self.contract.findHeight(relayer_blockhash).call().await?.try_into().unwrap();
@@ -131,7 +132,8 @@ impl Relayer {
         Ok(relayed_height)
     }
 
-    async fn has_relayed(&self, blockhash: BlockHash) -> Result<bool> {
+    // Returns true if the block with this hash was relayed to the contract.
+    pub async fn has_relayed(&self, blockhash: BlockHash) -> Result<bool> {
         let result = self.contract.findHeight(blockhash.to_byte_array().into()).call().await;
 
         match result {
@@ -166,11 +168,14 @@ impl Relayer {
         }
     }
 
-    #[allow(unused)]
     pub async fn run_once(&self) -> Result<()> {
         let latest_height = self.latest_common_height().await?;
         let headers: Vec<RelayHeader> = self.pull_headers(latest_height).await?;
-        self.push_headers(headers).await?;
+        if !headers.is_empty() {
+            self.push_headers(headers).await?;
+        } else {
+            tracing::debug!("No headers to push...");
+        }
         Ok(())
     }
 
@@ -183,9 +188,10 @@ impl Relayer {
             latest_height += headers.len() as u32;
 
             if headers.is_empty() {
+                tracing::debug!("No headers to push...");
                 // we are up to date, sleep for a bit
                 tokio::time::sleep(if self.is_regtest() {
-                    Duration::from_millis(15)
+                    Duration::from_millis(150)
                 } else {
                     Duration::from_secs(15)
                 })
@@ -224,10 +230,6 @@ impl Relayer {
     }
 
     async fn push_headers(&self, headers: Vec<RelayHeader>) -> Result<()> {
-        if headers.is_empty() {
-            return Ok(());
-        }
-
         let start_mod = headers.first().unwrap().height % 2016;
         let end_header = headers.last().unwrap().clone();
         let end_mod = end_header.height % 2016;
