@@ -158,7 +158,7 @@ impl Relayer {
                 return Ok(height);
             }
 
-            println!("Found fork: {actual_hash} at height {height}");
+            tracing::debug!("Found fork: {actual_hash} at height {height}");
             if height == 0 {
                 return Err(eyre!("No common height found before reaching 0"));
             }
@@ -201,7 +201,7 @@ impl Relayer {
 
         // let futures = (latest_height..latest_height + HEADERS_PER_BATCH as u32)
         //     .map(|height| async move {
-        //         println!("fetching height {}", height);
+        //         tracing::debug!("fetching height {}", height);
         //         let hash = self.esplora_client.get_block_hash(height).await?;
         //         let header = self.esplora_client.get_block_header(&hash).await?;
         //         Ok(RelayHeader { hash, header, height }) as Result<RelayHeader>
@@ -215,6 +215,7 @@ impl Relayer {
         for height in
             latest_height..(latest_height + HEADERS_PER_BATCH as u32).min(bitcoin_height + 1)
         {
+            tracing::debug!("fetching height {}", height);
             let hash = self.esplora_client.get_block_hash(height).await?;
             let header = self.esplora_client.get_block_header(&hash).await?;
             relay_headers.push(RelayHeader { hash, header, height });
@@ -233,12 +234,12 @@ impl Relayer {
 
         // difficulty change first
         if start_mod == 0 {
-            println!("difficulty change first");
+            tracing::debug!("difficulty change first");
             self.add_diff_change(headers).await?;
         }
         // spanning difficulty change
         else if start_mod > end_mod {
-            println!("spanning difficulty change");
+            tracing::debug!("spanning difficulty change");
             let (pre_change, post_change): (Vec<RelayHeader>, Vec<RelayHeader>) =
                 headers.into_iter().partition(|header| header.height % 2016 >= start_mod);
 
@@ -252,11 +253,11 @@ impl Relayer {
         }
         // no difficulty change
         else {
-            println!("adding headers");
+            tracing::debug!("adding headers");
             self.add_headers(headers).await?;
         }
 
-        println!("updating head");
+        tracing::debug!("updating head");
         self.update_best_digest(end_header).await?;
 
         Ok(())
