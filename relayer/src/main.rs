@@ -1,15 +1,10 @@
-use alloy::{
-    network::EthereumWallet, primitives::Address, providers::ProviderBuilder,
-    signers::local::PrivateKeySigner,
-};
-use bindings::fullrelaywithverify::FullRelayWithVerify as BitcoinRelay;
+use alloy::{network::EthereumWallet, primitives::Address, signers::local::PrivateKeySigner};
 use clap::Parser;
 use eyre::Result;
-use relayer::Relayer;
 use reqwest::Url;
 use utils::EsploraClient;
 
-mod relayer;
+use bob_relayer::Relayer;
 
 /// Relayer
 #[derive(Debug, Parser)]
@@ -43,13 +38,12 @@ async fn main() -> Result<()> {
     let signer: PrivateKeySigner = privk.parse().expect("should parse private key");
     let wallet = EthereumWallet::from(signer);
     let rpc_url: Url = app.eth_rpc_url.parse()?;
-    let provider = ProviderBuilder::new().wallet(wallet).connect_http(rpc_url);
     let esplora_client = app
         .esplora_url
         .map(EsploraClient::new_with_url)
         .unwrap_or(EsploraClient::new(bitcoin::Network::Bitcoin))?;
 
-    let relayer = Relayer::new(BitcoinRelay::new(app.relay_address, provider), esplora_client);
+    let relayer = Relayer::new(rpc_url, app.relay_address, esplora_client, wallet);
     relayer.run().await?;
 
     Ok(())
@@ -58,14 +52,7 @@ async fn main() -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use alloy::{
-        network::EthereumWallet,
-        node_bindings::Anvil,
-        primitives::{Bytes, FixedBytes, U256},
-        providers::ProviderBuilder,
-        signers::local::PrivateKeySigner,
-    };
-    use bitcoin::hashes::Hash;
+    use alloy::{network::EthereumWallet, node_bindings::Anvil, signers::local::PrivateKeySigner};
 
     #[tokio::test]
     async fn test() -> Result<()> {
@@ -74,24 +61,18 @@ mod tests {
         let wallet = EthereumWallet::from(signer.clone());
         let rpc_url = anvil.endpoint_url();
 
-        let provider = ProviderBuilder::new().wallet(wallet).connect_http(rpc_url);
-
         let esplora_client = EsploraClient::new(bitcoin::Network::Bitcoin)?;
 
         let period_start_height = 201600;
         // change this to test different headers
         let genesis_height = period_start_height + 2014;
 
-        let period_start_block_hash = esplora_client.get_block_hash(period_start_height).await?;
-        let genesis_block_header = esplora_client
-            .get_raw_block_header(&esplora_client.get_block_hash(genesis_height).await?)
-            .await?;
-
-        let contract = BitcoinRelay::deploy(
-            provider.clone(),
-            Bytes::from(genesis_block_header.clone()),
-            U256::from(genesis_height),
-            FixedBytes::new(period_start_block_hash.to_byte_array()),
+        let contract_address = Relayer::deploy_contract(
+            &rpc_url,
+            &wallet,
+            &esplora_client,
+            genesis_height,
+            period_start_height,
         )
         .await?;
 
@@ -108,7 +89,7 @@ mod tests {
 
         // assert!(receipt.status());
 
-        Relayer::new(contract, esplora_client).run_once().await?;
+        Relayer::new(rpc_url, contract_address, esplora_client, wallet).run_once().await?;
 
         Ok(())
     }
