@@ -1,11 +1,9 @@
 import type { EsploraClient } from '../esplora';
-import { Address } from 'viem';
+import { Address, Hex } from 'viem';
 import { offrampCaller, strategyCaller } from './abi';
 
 type ChainSlug = string | number;
 type TokenSymbol = string;
-
-export type EvmAddress = string;
 
 export type Optional<T, K extends keyof T> = Omit<T, K> & Partial<T>;
 
@@ -21,6 +19,11 @@ export enum ChainId {
     BOB_SEPOLIA = 808813,
     OPTIMISM = 10,
 }
+
+export const chainIdMapping = {
+    [ChainId.BOB]: Chain.BOB,
+    [ChainId.BOB_SEPOLIA]: Chain.BOB_SEPOLIA,
+} as const;
 
 /**
  * Parameters required to construct a staking transaction.
@@ -109,8 +112,8 @@ export interface GatewayQuoteParams {
 
     /** @description Unique affiliate ID for tracking */
     affiliateId?: string;
-    /** @description Optionally filter the type of routes returned */
-    type?: 'swap' | 'deposit' | 'withdraw' | 'claim';
+    // /** @description Optionally filter the type of routes returned */
+    // type?: 'swap' | 'deposit' | 'withdraw' | 'claim';
     /** @description The percentage of fee charged by partners in Basis Points (BPS) units. This will override the default fee rate configured via platform. 1 BPS = 0.01%. The maximum value is 1000 (which equals 10%). The minimum value is 1 (which equals 0.01%). */
     fee?: number;
 
@@ -219,9 +222,9 @@ export interface GatewayStrategyContract {
 
 export type GatewayQuote = {
     /** @description The gateway address */
-    gatewayAddress: EvmAddress;
+    gatewayAddress: Address;
     /** @description The base token address (e.g. wBTC or tBTC) */
-    baseTokenAddress: EvmAddress;
+    baseTokenAddress: Address;
     /** @description The minimum amount of Bitcoin to send */
     dustThreshold: number;
     /** @description The satoshi output amount */
@@ -233,17 +236,17 @@ export type GatewayQuote = {
     /** @description The number of confirmations required to confirm the Bitcoin tx */
     txProofDifficultyFactor: number;
     /** @description The optional strategy address */
-    strategyAddress?: EvmAddress;
+    strategyAddress?: Address;
 };
 
 /** @dev Internal */
 export type GatewayCreateOrderRequest = {
-    gatewayAddress: EvmAddress;
-    strategyAddress?: EvmAddress;
+    gatewayAddress: Address;
+    strategyAddress?: Address;
     satsToConvertToEth: number;
-    userAddress: EvmAddress;
-    gatewayExtraData?: string;
-    strategyExtraData?: string;
+    userAddress: Address;
+    gatewayExtraData?: Hex;
+    strategyExtraData?: Hex;
     satoshis: number;
     campaignId?: string;
 };
@@ -252,14 +255,14 @@ export type GatewayCreateOrderRequest = {
 export type OffRampGatewayCreateQuoteResponse = {
     amountToLock: string;
     minimumFeesToPay: string;
-    gateway: EvmAddress;
+    gateway: Address;
 };
 
 export interface OnrampOrderResponse {
     /** @description The gateway address */
-    gatewayAddress: EvmAddress;
+    gatewayAddress: Address;
     /** @description The base token address (e.g. wBTC or tBTC) */
-    baseTokenAddress: EvmAddress;
+    baseTokenAddress: Address;
     /** @description The Bitcoin txid */
     txid: string;
     /** @description True when the order was executed on BOB */
@@ -276,13 +279,13 @@ export interface OnrampOrderResponse {
     /** @description The number of confirmations required to confirm the Bitcoin tx */
     txProofDifficultyFactor: number;
     /** @description The optional strategy address */
-    strategyAddress?: EvmAddress;
+    strategyAddress?: Address;
     /** @description The gas refill in satoshis */
     satsToConvertToEth: number;
     /** @description The amount of ETH received */
     outputEthAmount?: string;
     /** @description The output token (from strategies) */
-    outputTokenAddress?: EvmAddress;
+    outputTokenAddress?: Address;
     /** @description The output amount (from strategies) */
     outputTokenAmount?: string;
     /** @description The tx hash on the EVM chain */
@@ -534,15 +537,42 @@ export interface DefiLlamaPool {
     rewardTokens: null | string[];
 }
 
-export type OnrampQuoteParams = {
-    type: 'onramp';
-    params: Optional<GatewayQuoteParams, 'amount' | 'fromChain' | 'fromToken' | 'fromUserAddress' | 'toUserAddress'>;
+export type GetQuoteParams = Optional<GatewayQuoteParams, 'amount' | 'fromUserAddress' | 'toUserAddress' | 'fromToken'>;
+
+export type OnRampQuoteParams = Optional<
+    GatewayQuoteParams,
+    'amount' | 'fromChain' | 'fromToken' | 'fromUserAddress' | 'toUserAddress'
+>;
+
+export type OffRampQuoteParams = Pick<GatewayQuoteParams, 'fromToken' | 'amount'>;
+
+export type OnRampExecuteQuoteParams = GatewayQuoteParams & {
+    toUserAddress: Address;
+    fromUserAddress: string;
+    fromChain: 'bitcoin';
+    toChain: 'bob' | 'bob-sepolia' | ChainId.BOB | ChainId.BOB_SEPOLIA;
 };
 
-export type OfframpQuoteParams = {
-    type: 'offramp';
-    params: {
-        tokenAddress: Address;
-        amount: number;
-    };
+export type OffRampExecuteQuoteParams = Optional<
+    GatewayQuoteParams,
+    | 'toChain'
+    | 'toUserAddress'
+    | 'affiliateId'
+    | 'fee'
+    | 'feeRate'
+    | 'gasRefill'
+    | 'strategyAddress'
+    | 'campaignId'
+    | 'toToken'
+    | 'maxSlippage'
+    | 'fromChain'
+> & {
+    toUserAddress: string;
+    fromUserAddress: Address;
+    fromChain: 'bob' | 'bob-sepolia' | ChainId.BOB | ChainId.BOB_SEPOLIA;
+    toChain: 'bitcoin';
 };
+
+export type ExecuteStakeParam = StakeParams;
+
+export type ExecuteQuoteParams = OnRampExecuteQuoteParams | OffRampExecuteQuoteParams;
