@@ -133,7 +133,7 @@ export class GatewayApiClient {
      * @param {GetQuoteParams} params parameters for quote.
      * @returns quote details.
      *
-     * @description use as drop-in replacement. Type safety is not guaranteed. Instead we do runtime checks.
+     * @dev use as drop-in replacement. Type safety is not guaranteed. Instead we do runtime checks.
      */
     async getQuote(params: GetQuoteParams): Promise<(GatewayQuote & GatewayTokensInfo) | OfframpQuote> {
         // NOTE: fromChain must be spicified if you do onramp
