@@ -67,7 +67,16 @@ describe('Gateway Tests', () => {
                 toUserAddress: zeroAddress,
                 amount: 1000,
             }),
-            mockQuote
+            {
+                quote: mockQuote,
+                params: {
+                    fromChain: 'Bitcoin',
+                    toChain: 'BOB',
+                    toToken: 'tBTC',
+                    toUserAddress: zeroAddress,
+                    amount: 1000,
+                },
+            }
         );
         assert.deepEqual(
             await gatewaySDK.getQuote({
@@ -77,7 +86,16 @@ describe('Gateway Tests', () => {
                 toUserAddress: zeroAddress,
                 amount: 1000,
             }),
-            mockQuote
+            {
+                quote: mockQuote,
+                params: {
+                    fromChain: 'Bitcoin',
+                    toChain: 'bob',
+                    toToken: 'tbtc',
+                    toUserAddress: zeroAddress,
+                    amount: 1000,
+                },
+            }
         );
         assert.deepEqual(
             await gatewaySDK.getQuote({
@@ -87,7 +105,16 @@ describe('Gateway Tests', () => {
                 toUserAddress: zeroAddress,
                 amount: 1000,
             }),
-            mockQuote
+            {
+                quote: mockQuote,
+                params: {
+                    fromChain: 'Bitcoin',
+                    toChain: 60808,
+                    toToken: 'tbtc',
+                    toUserAddress: zeroAddress,
+                    amount: 1000,
+                },
+            }
         );
         assert.deepEqual(
             await gatewaySDK.getQuote({
@@ -97,7 +124,16 @@ describe('Gateway Tests', () => {
                 toUserAddress: zeroAddress,
                 amount: 1000,
             }),
-            mockQuote
+            {
+                quote: mockQuote,
+                params: {
+                    fromChain: 'Bitcoin',
+                    toChain: 'BOB',
+                    toToken: TBTC_ADDRESS,
+                    toUserAddress: zeroAddress,
+                    amount: 1000,
+                },
+            }
         );
         assert.deepEqual(
             await gatewaySDK.getQuote({
@@ -108,7 +144,17 @@ describe('Gateway Tests', () => {
                 amount: 1000,
                 gasRefill: 5,
             }),
-            { ...mockQuote, fee: 15 }
+            {
+                quote: { ...mockQuote, fee: 15 },
+                params: {
+                    fromChain: 'Bitcoin',
+                    toChain: 'BOB',
+                    toToken: 'tBTC',
+                    toUserAddress: zeroAddress,
+                    amount: 1000,
+                    gasRefill: 5,
+                },
+            }
         );
 
         // get the total available without amount
@@ -121,7 +167,16 @@ describe('Gateway Tests', () => {
                 toToken: TBTC_ADDRESS,
                 toUserAddress: zeroAddress,
             }),
-            mockQuote
+            {
+                quote: mockQuote,
+                params: {
+                    fromChain: 'Bitcoin',
+                    amount: 0,
+                    toChain: 'BOB',
+                    toToken: TBTC_ADDRESS,
+                    toUserAddress: zeroAddress,
+                },
+            }
         );
     });
 
@@ -561,16 +616,31 @@ describe('Gateway Tests', () => {
                 },
             });
 
-        const result = await gatewaySDK.createOfframpOrder({
-            fromToken: '0xda472456b1a6a2fc9ae7edb0e007064224d4284c',
-            amount: 100000000000000,
-            fromUserAddress: '0xFAEe001465dE6D7E8414aCDD9eF4aC5A35B2B808',
-            toUserAddress: 'tb1qn40xpua4eskjgmueq6fwujex05wdtprh46vkpc',
-        });
+        const result = await gatewaySDK.createOfframpOrder(
+            {
+                amountLockInSat: 10,
+                deadline: 0,
+                feeBreakdown: {
+                    affiliateFeeSats: 0,
+                    overallFeeSats: 100,
+                    inclusionFeeSats: 0,
+                    protocolFeeSats: 0,
+                    fastestFeeRate: 0,
+                },
+                registryAddress: '0x',
+                token: '0xda472456b1a6a2fc9ae7edb0e007064224d4284c',
+            },
+            {
+                fromToken: '0xda472456b1a6a2fc9ae7edb0e007064224d4284c',
+                amount: 100000000000000,
+                fromUserAddress: '0xFAEe001465dE6D7E8414aCDD9eF4aC5A35B2B808',
+                toUserAddress: 'tb1qn40xpua4eskjgmueq6fwujex05wdtprh46vkpc',
+            }
+        );
 
         expect(result.offrampArgs[0]).to.deep.equal({
-            satAmountToLock: BigInt('10000000000000'),
-            satFeesMax: BigInt('385'),
+            satAmountToLock: BigInt('10'),
+            satFeesMax: BigInt('100'),
             orderCreationDeadline: result.offrampArgs[0].orderCreationDeadline, // timestamp is dynamic
             outputScript: '0x1600149d5e60f3b5cc2d246f990692ee4b267d1cd58477',
             token: '0xda472456b1a6a2fc9ae7edb0e007064224d4284c',
@@ -658,12 +728,27 @@ describe('Gateway Tests', () => {
             });
 
         await expect(
-            gatewaySDK.createOfframpOrder({
-                fromToken: '0xda472456b1a6a2fc9ae7edb0e007064224d4284c',
-                amount: 100000000000000,
-                fromUserAddress: '0xFAEe001465dE6D7E8414aCDD9eF4aC5A35B2B808',
-                toUserAddress: 'tb1p5d2m6d7yje35xqnk2wczghak6q20c6rqw303p58wrlzhue8t4z9s9y304z', // P2TR taproot address
-            })
+            gatewaySDK.createOfframpOrder(
+                {
+                    amountLockInSat: 0,
+                    deadline: 0,
+                    registryAddress: '0x',
+                    token: '0x',
+                    feeBreakdown: {
+                        overallFeeSats: 0,
+                        inclusionFeeSats: 0,
+                        protocolFeeSats: 0,
+                        affiliateFeeSats: 0,
+                        fastestFeeRate: 0,
+                    },
+                },
+                {
+                    fromToken: '0xda472456b1a6a2fc9ae7edb0e007064224d4284c',
+                    amount: 100000000000000,
+                    fromUserAddress: '0xFAEe001465dE6D7E8414aCDD9eF4aC5A35B2B808',
+                    toUserAddress: 'tb1p5d2m6d7yje35xqnk2wczghak6q20c6rqw303p58wrlzhue8t4z9s9y304z', // P2TR taproot address
+                }
+            )
         ).rejects.toThrowError('Only following bitcoin address types are supported P2PKH, P2WPKH, P2SH or P2WSH.');
     });
 
@@ -728,8 +813,13 @@ describe('Gateway Tests', () => {
             signAllInputs: vi.fn((val) => val),
         };
 
-        const mockWalletClient = {};
-        const mockPublicClient = {};
+        const mockWalletClient = {} as Parameters<typeof gatewaySDK.executeQuote>[1]['walletClient'];
+        const mockPublicClient = {
+            readContract: () => Promise.resolve(10_000n),
+            simulateContract: () => Promise.resolve({ request: '🎉' }),
+            waitForTransactionReceipt: () =>
+                Promise.resolve('0x35f5bca7f984f4ed97888944293b979f3abb198a5716d04e10c6bdc023080075'),
+        } as Parameters<typeof gatewaySDK.executeQuote>[1]['publicClient'];
 
         const startOrderSpy = vi.spyOn(gatewaySDK, 'startOrder');
         const finalizeOrderSpy = vi.spyOn(gatewaySDK, 'finalizeOrder');
@@ -768,9 +858,7 @@ describe('Gateway Tests', () => {
                     fromUserAddress: 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq',
                 },
             },
-            mockWalletClient as Parameters<typeof gatewaySDK.executeQuote>[1],
-            mockPublicClient as Parameters<typeof gatewaySDK.executeQuote>[2],
-            mockBtcSigner
+            { walletClient: mockWalletClient, publicClient: mockPublicClient, btcSigner: mockBtcSigner }
         );
 
         expect(btcTxId).toBe('f8c934f181cb88ce910f31bda1a6a8c27fdf5fe9c650edad1ccf4c4e0c89f863');
@@ -790,7 +878,7 @@ describe('Gateway Tests', () => {
             simulateContract: () => Promise.resolve({ request: '🎉' }),
             waitForTransactionReceipt: () =>
                 Promise.resolve('0x35f5bca7f984f4ed97888944293b979f3abb198a5716d04e10c6bdc023080075'),
-        } as unknown as Parameters<typeof gatewaySDK.executeQuote>[2];
+        } as unknown as Parameters<typeof gatewaySDK.executeQuote>[1]['publicClient'];
 
         const createOfframpOrderSpy = vi.spyOn(gatewaySDK, 'createOfframpOrder');
         const fetchOfframpRegistryAddressSpy = vi.spyOn(gatewaySDK, 'fetchOfframpRegistryAddress');
@@ -818,6 +906,19 @@ describe('Gateway Tests', () => {
 
         const evmTxId = await gatewaySDK.executeQuote(
             {
+                quote: {
+                    amountLockInSat: 0,
+                    deadline: 0,
+                    registryAddress: '0x',
+                    token: '0x',
+                    feeBreakdown: {
+                        affiliateFeeSats: 0,
+                        fastestFeeRate: 0,
+                        inclusionFeeSats: 0,
+                        overallFeeSats: 0,
+                        protocolFeeSats: 0,
+                    },
+                },
                 params: {
                     toChain: 'bitcoin',
                     toToken: 'BTC',
@@ -828,8 +929,10 @@ describe('Gateway Tests', () => {
                     fromUserAddress: zeroAddress,
                 },
             },
-            mockWalletClient as Parameters<typeof gatewaySDK.executeQuote>[1],
-            mockPublicClient as Parameters<typeof gatewaySDK.executeQuote>[2]
+            {
+                walletClient: mockWalletClient,
+                publicClient: mockPublicClient,
+            }
         );
 
         expect(evmTxId).toBe('0x35f5bca7f984f4ed97888944293b979f3abb198a5716d04e10c6bdc023080075');

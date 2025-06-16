@@ -252,7 +252,7 @@ export type GatewayCreateOrderRequest = {
 };
 
 /** @dev Internal */
-export type OffRampGatewayCreateQuoteResponse = {
+export type OfframpGatewayCreateQuoteResponse = {
     amountToLock: string;
     minimumFeesToPay: string;
     gateway: Address;
@@ -546,12 +546,13 @@ export type OnrampQuoteParams = Optional<
 
 export type OfframpQuoteParams = Pick<GatewayQuoteParams, 'fromToken' | 'amount'>;
 
-export type OnRampExecuteQuoteParams = {
+export type OnrampExecuteQuoteParams = {
     quote: GatewayQuote & GatewayTokensInfo;
     params: GatewayQuoteParams;
 };
 
-export type OffRampExecuteQuoteParams = {
+export type OfframpExecuteQuoteParams = {
+    quote: OfframpQuote;
     params: Optional<
         GatewayQuoteParams,
         | 'toChain'
@@ -569,4 +570,4 @@ export type OffRampExecuteQuoteParams = {
 
 export type ExecuteStakeParam = StakeParams;
 
-export type ExecuteQuoteParams = OnRampExecuteQuoteParams | OffRampExecuteQuoteParams;
+export type ExecuteQuoteParams = OnrampExecuteQuoteParams | OfframpExecuteQuoteParams;

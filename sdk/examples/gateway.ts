@@ -3,7 +3,7 @@ import { Address, createPublicClient, createWalletClient, http, PublicClient, Tr
 import { bob } from 'viem/chains';
 
 import { GatewaySDK } from '../src/gateway';
-import { OnRampExecuteQuoteParams } from '../src/gateway/types';
+import { ExecuteQuoteParams } from '../src/gateway/types';
 
 const BOB_TBTC_V2_TOKEN_ADDRESS = '0xBBa2eF945D523C4e2608C9E1214C2Cc64D4fc2e2';
 
@@ -22,7 +22,7 @@ export async function swapBtcForToken(evmAddress: Address) {
 
     const gatewaySDK = new GatewaySDK('bob'); // or "mainnet"
 
-    const quoteParams: OnRampExecuteQuoteParams = {
+    const quoteParams = {
         fromChain: 'bitcoin',
         fromToken: 'BTC',
         fromUserAddress: 'bc1qafk4yhqvj4wep57m62dgrmutldusqde8adh20d',
@@ -33,12 +33,18 @@ export async function swapBtcForToken(evmAddress: Address) {
         gasRefill: 10000, // 0.0001 BTC,
     };
 
-    const txid = await gatewaySDK.executeQuote(
-        quoteParams,
+    const quote = await gatewaySDK.getQuote(quoteParams);
+
+    const exectueQuoteParams: ExecuteQuoteParams = {
+        quote: quote as unknown as Parameters<(typeof gatewaySDK)['executeQuote']>[0]['quote'],
+        params: quoteParams,
+    };
+
+    const txid = await gatewaySDK.executeQuote(exectueQuoteParams, {
         walletClient,
-        publicClient as PublicClient<Transport>,
-        btcSigner
-    );
+        publicClient: publicClient as PublicClient<Transport>,
+        btcSigner,
+    });
 
     console.log(`Success! Txid = ${txid}`);
 }
