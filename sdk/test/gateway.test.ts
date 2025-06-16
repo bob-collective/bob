@@ -733,7 +733,7 @@ describe('Gateway Tests', () => {
 
         const startOrderSpy = vi.spyOn(gatewaySDK, 'startOrder');
         const finalizeOrderSpy = vi.spyOn(gatewaySDK, 'finalizeOrder');
-        const getQuoteSpy = vi.spyOn(gatewaySDK, 'getOnRampQuote').mockResolvedValue({
+        const getQuoteSpy = vi.spyOn(gatewaySDK, 'getOnrampQuote').mockResolvedValue({
             fee: 10,
             gatewayAddress: zeroAddress,
             baseTokenAddress: zeroAddress,

@@ -112,8 +112,8 @@ export interface GatewayQuoteParams {
 
     /** @description Unique affiliate ID for tracking */
     affiliateId?: string;
-    // /** @description Optionally filter the type of routes returned */
-    // type?: 'swap' | 'deposit' | 'withdraw' | 'claim';
+    /** @description Optionally filter the type of routes returned */
+    type?: 'swap' | 'deposit' | 'withdraw' | 'claim';
     /** @description The percentage of fee charged by partners in Basis Points (BPS) units. This will override the default fee rate configured via platform. 1 BPS = 0.01%. The maximum value is 1000 (which equals 10%). The minimum value is 1 (which equals 0.01%). */
     fee?: number;
 
@@ -539,12 +539,12 @@ export interface DefiLlamaPool {
 
 export type GetQuoteParams = Optional<GatewayQuoteParams, 'amount' | 'fromUserAddress' | 'toUserAddress' | 'fromToken'>;
 
-export type OnRampQuoteParams = Optional<
+export type OnrampQuoteParams = Optional<
     GatewayQuoteParams,
     'amount' | 'fromChain' | 'fromToken' | 'fromUserAddress' | 'toUserAddress'
 >;
 
-export type OffRampQuoteParams = Pick<GatewayQuoteParams, 'fromToken' | 'amount'>;
+export type OfframpQuoteParams = Pick<GatewayQuoteParams, 'fromToken' | 'amount'>;
 
 export type OnRampExecuteQuoteParams = GatewayQuoteParams & {
     toUserAddress: Address;

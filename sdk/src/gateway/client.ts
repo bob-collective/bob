@@ -48,7 +48,7 @@ import {
     OnRampExecuteQuoteParams,
     OnrampOrder,
     OnrampOrderResponse,
-    OnRampQuoteParams,
+    OnrampQuoteParams,
     Optional,
     OrderStatus,
     StakeParams,
@@ -98,7 +98,7 @@ export class GatewayApiClient {
     constructor(chainName: 'mainnet' | 'signet' | 'bob', options?: { rpcUrl?: string }) {
         switch (chainName) {
             case 'mainnet':
-            case Chain.BOB:
+            case 'bob':
                 this.chain = Chain.BOB;
                 this.baseUrl = MAINNET_GATEWAY_BASE_URL;
                 this.strategy = new StrategyClient(bob, options?.rpcUrl);
@@ -136,16 +136,16 @@ export class GatewayApiClient {
      * @dev use as drop-in replacement. Type safety is not guaranteed. Instead we do runtime checks.
      */
     async getQuote(params: GetQuoteParams): Promise<(GatewayQuote & GatewayTokensInfo) | OfframpQuote> {
-        // NOTE: fromChain must be spicified if you do onramp
+        // NOTE: fromChain must be specified if you do onramp
         if (params.fromChain?.toString().toLowerCase() === 'bitcoin') {
-            // NOTE: toChain validation is performed inside `getOnRampQuote` method
-            return this.getOnRampQuote(params);
+            // NOTE: toChain validation is performed inside `getOnrampQuote` method
+            return this.getOnrampQuote(params);
         } else if (params.toChain.toString().toLowerCase() === 'bitcoin') {
             if (!params.fromToken) {
                 throw new Error('`fromToken` must be specified for off ramp');
             }
             const tokenAddress = getTokenAddress(this.chainId, params.fromToken.toLowerCase());
-            return this.fetchOffRampQuote(tokenAddress, BigInt(params.amount || 0));
+            return this.fetchOfframpQuote(tokenAddress, BigInt(params.amount || 0));
         }
 
         throw new Error('Invalid quote arguments');
@@ -156,7 +156,7 @@ export class GatewayApiClient {
      *
      * @param params The parameters for the quote.
      */
-    async getOnRampQuote(params: OnRampQuoteParams): Promise<GatewayQuote & GatewayTokensInfo> {
+    async getOnrampQuote(params: OnrampQuoteParams): Promise<GatewayQuote & GatewayTokensInfo> {
         const isMainnet =
             params.toChain === ChainId.BOB ||
             (typeof params.toChain === 'string' && params.toChain.toLowerCase() === Chain.BOB);
@@ -246,7 +246,7 @@ export class GatewayApiClient {
      * @param amountInToken Amount specified in token decimals.
      * @returns Offramp quote details.
      */
-    async fetchOffRampQuote(token: Address, amountInToken: bigint): Promise<OfframpQuote> {
+    async fetchOfframpQuote(token: Address, amountInToken: bigint): Promise<OfframpQuote> {
         const queryParams = new URLSearchParams({
             amountInWrappedToken: amountInToken.toString(),
             token,
@@ -308,7 +308,7 @@ export class GatewayApiClient {
     ): Promise<OfframpCreateOrderParams> {
         const tokenAddress = getTokenAddress(this.chainId, params.fromToken.toLowerCase());
 
-        const offrampQuote: OfframpQuote = await this.fetchOffRampQuote(tokenAddress, BigInt(params.amount));
+        const offrampQuote: OfframpQuote = await this.fetchOfframpQuote(tokenAddress, BigInt(params.amount));
 
         // get btc script pub key
         let bitcoinNetwork = bitcoin.networks.regtest;
@@ -467,7 +467,7 @@ export class GatewayApiClient {
         const amountInToken = satAmountLocked * BigInt(10 ** (decimals - 8));
 
         try {
-            const offrampQuote = await this.fetchOffRampQuote(token, amountInToken);
+            const offrampQuote = await this.fetchOfframpQuote(token, amountInToken);
             const shouldBump = satFeesMax < offrampQuote.feeBreakdown.overallFeeSats;
             return [shouldBump, offrampQuote.feeBreakdown.overallFeeSats];
         } catch (err) {
@@ -623,11 +623,11 @@ export class GatewayApiClient {
         publicClient: PublicClient<Transport>,
         btcSigner?: { signAllInputs: (psbtBase64: string) => Promise<string> }
     ): Promise<string> {
-        const isOnRampQuoteParams = (args: ExecuteQuoteParams): args is OnRampExecuteQuoteParams => {
+        const isOnrampQuoteParams = (args: ExecuteQuoteParams): args is OnRampExecuteQuoteParams => {
             return args.fromChain.toString().toLowerCase() === 'bitcoin';
         };
 
-        if (isOnRampQuoteParams(executeQuoteParams)) {
+        if (isOnrampQuoteParams(executeQuoteParams)) {
             const quote = (await this.getQuote(executeQuoteParams)) as GatewayQuote & GatewayTokensInfo;
 
             if (typeof executeQuoteParams.toChain === 'number') {
