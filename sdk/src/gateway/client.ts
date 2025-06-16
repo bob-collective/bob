@@ -144,6 +144,9 @@ export class GatewayApiClient {
             if (!params.fromToken) {
                 throw new Error('`fromToken` must be specified for off ramp');
             }
+            if (params.amount === undefined) {
+                throw new Error('`amount` must be specified for off ramp');
+            }
             const tokenAddress = getTokenAddress(this.chainId, params.fromToken.toLowerCase());
             return this.fetchOfframpQuote(tokenAddress, BigInt(params.amount || 0));
         }
