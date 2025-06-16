@@ -273,7 +273,7 @@ impl Relayer {
         tracing::debug!("updating head");
         self.update_best_digest(end_header).await?;
 
-        tracing::info!(
+        tracing::debug!(
             "Relayed until height {}, with hash {}",
             self.relayed_height().await?,
             self.relayed_blockhash().await?
