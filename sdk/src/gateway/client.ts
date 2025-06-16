@@ -624,16 +624,16 @@ export class GatewayApiClient {
         btcSigner?: { signAllInputs: (psbtBase64: string) => Promise<string> }
     ): Promise<string> {
         const isOnrampQuoteParams = (args: ExecuteQuoteParams): args is OnRampExecuteQuoteParams => {
-            return args.fromChain.toString().toLowerCase() === 'bitcoin';
+            return args.params.fromChain?.toString().toLowerCase() === 'bitcoin';
         };
 
         if (isOnrampQuoteParams(executeQuoteParams)) {
-            const quote = (await this.getQuote(executeQuoteParams)) as GatewayQuote & GatewayTokensInfo;
+            const { quote, params } = executeQuoteParams;
 
-            if (typeof executeQuoteParams.toChain === 'number') {
-                executeQuoteParams.toChain = chainIdMapping[executeQuoteParams.toChain];
+            if (typeof params.toChain === 'number') {
+                params.toChain = chainIdMapping[params.toChain];
             }
-            const { uuid, psbtBase64 } = await this.startOrder(quote, executeQuoteParams);
+            const { uuid, psbtBase64 } = await this.startOrder(quote, params);
 
             if (!btcSigner) {
                 throw new Error(`btcSigner is required for onramp order`);
@@ -647,12 +647,13 @@ export class GatewayApiClient {
 
             return txId;
         } else {
-            if (typeof executeQuoteParams.fromChain === 'number') {
-                executeQuoteParams.fromChain = chainIdMapping[executeQuoteParams.fromChain];
+            const { params } = executeQuoteParams;
+            if (typeof params.fromChain === 'number') {
+                params.fromChain = chainIdMapping[params.fromChain];
             }
-            const tokenAddress = getTokenAddress(this.chainId, executeQuoteParams.fromToken.toLowerCase());
+            const tokenAddress = getTokenAddress(this.chainId, params.fromToken.toLowerCase());
             const [offrampOrder, offrampRegistryAddress] = await Promise.all([
-                this.createOfframpOrder(executeQuoteParams),
+                this.createOfframpOrder(params),
                 this.fetchOfframpRegistryAddress(),
             ]);
 
@@ -660,10 +661,10 @@ export class GatewayApiClient {
                 address: tokenAddress,
                 abi: erc20Abi,
                 functionName: 'allowance',
-                args: [executeQuoteParams.fromUserAddress as Address, offrampRegistryAddress],
+                args: [params.fromUserAddress as Address, offrampRegistryAddress],
             });
 
-            if (BigInt(executeQuoteParams.amount) > allowance) {
+            if (BigInt(params.amount) > allowance) {
                 const { request } = await publicClient.simulateContract({
                     account: walletClient.account,
                     address: tokenAddress,

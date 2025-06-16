@@ -546,31 +546,25 @@ export type OnrampQuoteParams = Optional<
 
 export type OfframpQuoteParams = Pick<GatewayQuoteParams, 'fromToken' | 'amount'>;
 
-export type OnRampExecuteQuoteParams = GatewayQuoteParams & {
-    toUserAddress: Address;
-    fromUserAddress: string;
-    fromChain: 'bitcoin';
-    toChain: 'bob' | 'bob-sepolia' | ChainId.BOB | ChainId.BOB_SEPOLIA;
+export type OnRampExecuteQuoteParams = {
+    quote: GatewayQuote & GatewayTokensInfo;
+    params: GatewayQuoteParams;
 };
 
-export type OffRampExecuteQuoteParams = Optional<
-    GatewayQuoteParams,
-    | 'toChain'
-    | 'toUserAddress'
-    | 'affiliateId'
-    | 'fee'
-    | 'feeRate'
-    | 'gasRefill'
-    | 'strategyAddress'
-    | 'campaignId'
-    | 'toToken'
-    | 'maxSlippage'
-    | 'fromChain'
-> & {
-    toUserAddress: string;
-    fromUserAddress: Address;
-    fromChain: 'bob' | 'bob-sepolia' | ChainId.BOB | ChainId.BOB_SEPOLIA;
-    toChain: 'bitcoin';
+export type OffRampExecuteQuoteParams = {
+    params: Optional<
+        GatewayQuoteParams,
+        | 'toChain'
+        | 'affiliateId'
+        | 'fee'
+        | 'feeRate'
+        | 'gasRefill'
+        | 'strategyAddress'
+        | 'campaignId'
+        | 'toToken'
+        | 'maxSlippage'
+        | 'fromChain'
+    >;
 };
 
 export type ExecuteStakeParam = StakeParams;

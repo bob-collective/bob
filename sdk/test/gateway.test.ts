@@ -733,23 +733,18 @@ describe('Gateway Tests', () => {
 
         const startOrderSpy = vi.spyOn(gatewaySDK, 'startOrder');
         const finalizeOrderSpy = vi.spyOn(gatewaySDK, 'finalizeOrder');
-        const getQuoteSpy = vi.spyOn(gatewaySDK, 'getOnrampQuote').mockResolvedValue({
-            fee: 10,
+
+        const mockQuote: GatewayQuote & GatewayTokensInfo = {
             gatewayAddress: zeroAddress,
-            baseTokenAddress: zeroAddress,
-            dustThreshold: 1,
-            satoshis: 100,
-            bitcoinAddress: 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq',
-            txProofDifficultyFactor: 1,
-            baseToken: {
-                address: zeroAddress,
-                chainId: ChainId.BOB,
-                name: 'wBTC',
-                symbol: 'wBTC',
-                decimals: 8,
-                logoURI: '',
-            },
-        });
+            baseTokenAddress: TBTC_ADDRESS as Address,
+            dustThreshold: 1000,
+            satoshis: 1000,
+            fee: 10,
+            bitcoinAddress: 'bc1qafk4yhqvj4wep57m62dgrmutldusqde8adh20d',
+            txProofDifficultyFactor: 3,
+            strategyAddress: zeroAddress,
+            baseToken: TBTC,
+        };
 
         nock(`${MAINNET_GATEWAY_BASE_URL}`).post(`/order`).reply(201, {
             uuid: '00000000-0000-0000-0000-000000000000',
@@ -762,13 +757,16 @@ describe('Gateway Tests', () => {
 
         const btcTxId = await gatewaySDK.executeQuote(
             {
-                toChain: 60808,
-                toToken: 'tBTC',
-                toUserAddress: zeroAddress,
-                amount: 1000,
-                fromChain: 'bitcoin',
-                fromToken: 'BTC',
-                fromUserAddress: 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq',
+                quote: mockQuote,
+                params: {
+                    toChain: 60808,
+                    toToken: 'tBTC',
+                    toUserAddress: zeroAddress,
+                    amount: 1000,
+                    fromChain: 'bitcoin',
+                    fromToken: 'BTC',
+                    fromUserAddress: 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq',
+                },
             },
             mockWalletClient as Parameters<typeof gatewaySDK.executeQuote>[1],
             mockPublicClient as Parameters<typeof gatewaySDK.executeQuote>[2],
@@ -778,7 +776,6 @@ describe('Gateway Tests', () => {
         expect(btcTxId).toBe('f8c934f181cb88ce910f31bda1a6a8c27fdf5fe9c650edad1ccf4c4e0c89f863');
         expect(startOrderSpy).toHaveBeenCalledOnce();
         expect(finalizeOrderSpy).toHaveBeenCalledOnce();
-        expect(getQuoteSpy).toHaveBeenCalledOnce();
     });
 
     it('should return evm txid for offramp', async () => {
@@ -821,13 +818,15 @@ describe('Gateway Tests', () => {
 
         const evmTxId = await gatewaySDK.executeQuote(
             {
-                toChain: 'bitcoin',
-                toToken: 'BTC',
-                toUserAddress: 'tb1qn40xpua4eskjgmueq6fwujex05wdtprh46vkpc',
-                amount: 1000,
-                fromChain: 'bob',
-                fromToken: 'bobBTC',
-                fromUserAddress: zeroAddress,
+                params: {
+                    toChain: 'bitcoin',
+                    toToken: 'BTC',
+                    toUserAddress: 'tb1qn40xpua4eskjgmueq6fwujex05wdtprh46vkpc',
+                    amount: 1000,
+                    fromChain: 'bob',
+                    fromToken: 'bobBTC',
+                    fromUserAddress: zeroAddress,
+                },
             },
             mockWalletClient as Parameters<typeof gatewaySDK.executeQuote>[1],
             mockPublicClient as Parameters<typeof gatewaySDK.executeQuote>[2]
