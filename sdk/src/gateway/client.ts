@@ -50,6 +50,7 @@ import {
     OnrampOrder,
     OnrampOrderResponse,
     OnrampQuoteParams,
+    OfframpQuoteParams,
     Optional,
     OrderStatus,
     StakeParams,
@@ -138,23 +139,24 @@ export class GatewayApiClient {
      */
     async getQuote(
         params: GetQuoteParams
-    ): Promise<{ params: GetQuoteParams; quote: (GatewayQuote & GatewayTokensInfo) | OfframpQuote }> {
+    ): Promise<{ params: GetQuoteParams; onrampQuote?: (GatewayQuote & GatewayTokensInfo), offrampQuote?: OfframpQuote }> {
+
         // NOTE: fromChain must be specified if you do onramp
         if (params.fromChain?.toString().toLowerCase() === 'bitcoin') {
             // NOTE: toChain validation is performed inside `getOnrampQuote` method
             const onrampQuote = await this.getOnrampQuote(params);
-            return { params, quote: onrampQuote };
+            return { params, onrampQuote };
         } else if (params.toChain.toString().toLowerCase() === 'bitcoin') {
             if (!params.fromToken) {
-                throw new Error('`fromToken` must be specified for off ramp');
+                throw new Error('`fromToken` must be specified for offramp');
             }
-            if (params.amount === undefined) {
-                throw new Error('`amount` must be specified for off ramp');
+            if (!params.amount) {
+                throw new Error('`amount` must be specified for offramp');
             }
             const tokenAddress = getTokenAddress(this.chainId, params.fromToken.toLowerCase());
-            const offrampQuoteParams = await this.fetchOfframpQuote(tokenAddress, BigInt(params.amount || 0));
+            const offrampQuote = await this.fetchOfframpQuote(tokenAddress, BigInt(params.amount || 0));
 
-            return { params, quote: offrampQuoteParams };
+            return { params, offrampQuote };
         }
 
         throw new Error('Invalid quote arguments');
@@ -165,7 +167,7 @@ export class GatewayApiClient {
      *
      * @param params The parameters for the quote.
      */
-    async getOnrampQuote(params: OnrampQuoteParams): Promise<GatewayQuote & GatewayTokensInfo> {
+    async getOnrampQuote(params: GetQuoteParams): Promise<GatewayQuote & GatewayTokensInfo> {
         const isMainnet =
             params.toChain === ChainId.BOB ||
             (typeof params.toChain === 'string' && params.toChain.toLowerCase() === Chain.BOB);
@@ -302,19 +304,7 @@ export class GatewayApiClient {
      */
     async createOfframpOrder(
         quote: OfframpQuote,
-        params: Optional<
-            GatewayQuoteParams,
-            | 'toChain'
-            | 'affiliateId'
-            | 'fee'
-            | 'feeRate'
-            | 'gasRefill'
-            | 'strategyAddress'
-            | 'campaignId'
-            | 'toToken'
-            | 'maxSlippage'
-            | 'fromChain'
-        >
+        params: GetQuoteParams
     ): Promise<OfframpCreateOrderParams> {
         // get btc script pub key
         let bitcoinNetwork = bitcoin.networks.regtest;
@@ -324,7 +314,7 @@ export class GatewayApiClient {
             bitcoinNetwork = bitcoin.networks.testnet;
         }
 
-        if (getAddressInfo(params.toUserAddress, this.isSignet).type === AddressType.p2tr) {
+        if (!params.toUserAddress || getAddressInfo(params.toUserAddress, this.isSignet).type === AddressType.p2tr) {
             throw new Error('Only following bitcoin address types are supported P2PKH, P2WPKH, P2SH or P2WSH.');
         }
         const receiverAddress = toHexScriptPubKey(params.toUserAddress, bitcoinNetwork);
@@ -545,9 +535,9 @@ export class GatewayApiClient {
      */
     async startOrder(
         gatewayQuote: GatewayQuote,
-        params: Optional<GatewayQuoteParams, 'toToken' | 'amount'>
+        params: GetQuoteParams
     ): Promise<GatewayStartOrder> {
-        if (!isAddress(params.toUserAddress)) {
+        if (!params.toUserAddress || !isAddress(params.toUserAddress)) {
             throw new Error('Invalid user address');
         }
 
@@ -612,8 +602,8 @@ export class GatewayApiClient {
         throw new Error('Failed to create bitcoin psbt due to an unexpected error.');
     }
 
-    async executeQuote(exectueQuoteParams: OnrampExecuteQuoteParams, clients): Promise<string>;
-    async executeQuote(exectueQuoteParams: OfframpExecuteQuoteParams, clients): Promise<string>;
+    async executeQuote(executeQuoteParams: OnrampExecuteQuoteParams, clients): Promise<string>;
+    async executeQuote(executeQuoteParams: OfframpExecuteQuoteParams, clients): Promise<string>;
 
     /**
      * Execute an order via the Gateway API.
@@ -643,7 +633,8 @@ export class GatewayApiClient {
         };
 
         if (isOnrampQuoteParams(executeQuoteParams)) {
-            const { quote, params } = executeQuoteParams;
+            const { onrampQuote, params } = executeQuoteParams;
+            const quote = onrampQuote!;
 
             if (typeof params.toChain === 'number') {
                 params.toChain = chainIdMapping[params.toChain];
@@ -662,7 +653,9 @@ export class GatewayApiClient {
 
             return txId;
         } else {
-            const { params, quote } = executeQuoteParams;
+            const { params, offrampQuote } = executeQuoteParams;
+            const quote = offrampQuote!;
+
             if (typeof params.fromChain === 'number') {
                 params.fromChain = chainIdMapping[params.fromChain];
             }
@@ -679,7 +672,8 @@ export class GatewayApiClient {
                 args: [params.fromUserAddress as Address, offrampRegistryAddress],
             });
 
-            if (BigInt(params.amount) > allowance) {
+            // TODO: is this sat or token amount?
+            if (BigInt(quote.amountLockInSat) > allowance) {
                 const { request } = await publicClient.simulateContract({
                     account: walletClient.account,
                     address: tokenAddress,
@@ -807,8 +801,8 @@ export class GatewayApiClient {
                             : (base as NonNullable<typeof base>) // failed
                         : (base as NonNullable<typeof base>) // success
                     : order.strategyAddress // pending
-                      ? (output as NonNullable<typeof output>)
-                      : (base as NonNullable<typeof base>);
+                        ? (output as NonNullable<typeof output>)
+                        : (base as NonNullable<typeof base>);
             }
             const getTokenAddress = (): string => {
                 return getFinal(order.baseTokenAddress, order.outputTokenAddress);
@@ -846,12 +840,12 @@ export class GatewayApiClient {
                     return !hasEnoughConfirmations
                         ? { confirmed: false, data }
                         : order.status
-                          ? order.strategyAddress
-                              ? order.outputTokenAddress
-                                  ? { success: true, data }
-                                  : { success: false, data }
-                              : { success: true, data }
-                          : { pending: true, data };
+                            ? order.strategyAddress
+                                ? order.outputTokenAddress
+                                    ? { success: true, data }
+                                    : { success: false, data }
+                                : { success: true, data }
+                            : { pending: true, data };
                 },
             };
         });
@@ -906,12 +900,12 @@ export class GatewayApiClient {
                 },
                 outputToken: outputToken
                     ? {
-                          symbol: outputToken.symbol,
-                          address: outputToken.address,
-                          logo: outputToken.logoURI,
-                          decimals: outputToken.decimals,
-                          chain: chainName,
-                      }
+                        symbol: outputToken.symbol,
+                        address: outputToken.address,
+                        logo: outputToken.logoURI,
+                        decimals: outputToken.decimals,
+                        chain: chainName,
+                    }
                     : null,
             };
         });

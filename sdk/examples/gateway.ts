@@ -21,7 +21,16 @@ export async function swapBtcForToken(evmAddress: Address) {
 
     const gatewaySDK = new GatewaySDK('bob'); // or "mainnet"
 
-    const quoteParams = {
+    const _quoteMaxOnramp = await gatewaySDK.getQuote({
+        fromChain: 'bitcoin',
+        fromToken: 'BTC',
+        fromUserAddress: 'bc1qafk4yhqvj4wep57m62dgrmutldusqde8adh20d',
+        toChain: 'bob',
+        toUserAddress: evmAddress,
+        toToken: BOB_TBTC_V2_TOKEN_ADDRESS, // or "tBTC"
+    });
+
+    const quote = await gatewaySDK.getQuote({
         fromChain: 'bitcoin',
         fromToken: 'BTC',
         fromUserAddress: 'bc1qafk4yhqvj4wep57m62dgrmutldusqde8adh20d',
@@ -30,15 +39,31 @@ export async function swapBtcForToken(evmAddress: Address) {
         toToken: BOB_TBTC_V2_TOKEN_ADDRESS, // or "tBTC"
         amount: 10000000, // 0.1 BTC
         gasRefill: 10000, // 0.0001 BTC,
-    };
+    });
 
-    const quote = (await gatewaySDK.getQuote(quoteParams)) as Parameters<(typeof gatewaySDK)['executeQuote']>[0];
-
-    const txid = await gatewaySDK.executeQuote(quote, {
+    const onrampTx = await gatewaySDK.executeQuote(quote, {
         walletClient,
         publicClient: publicClient as PublicClient<Transport>,
         btcSigner,
     });
 
-    console.log(`Success! Txid = ${txid}`);
+    console.log(`Success! Txid = ${onrampTx}`);
+
+    const offrampQuote = await gatewaySDK.getQuote({
+        fromChain: 'bob',
+        fromToken: BOB_TBTC_V2_TOKEN_ADDRESS, // or "tBTC"
+        toChain: 'bitcoin',
+        toUserAddress: 'bc1qafk4yhqvj4wep57m62dgrmutldusqde8adh20d',
+        toToken: 'BTC',
+        amount: 10000000, // 0.1 BTC
+    });
+
+    const offrampTx = await gatewaySDK.executeQuote(offrampQuote, {
+        walletClient,
+        publicClient: publicClient as PublicClient<Transport>,
+    });
+
+    console.log(`Success! Txid = ${offrampTx}`);
+
+
 }

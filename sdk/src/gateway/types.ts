@@ -298,23 +298,23 @@ export type OrderStatusData = {
 
 export type OrderStatus =
     | {
-          confirmed: false;
-          pending?: never;
-          success?: never;
-          data: OrderStatusData;
-      }
+        confirmed: false;
+        pending?: never;
+        success?: never;
+        data: OrderStatusData;
+    }
     | {
-          confirmed?: never;
-          pending: true;
-          success?: never;
-          data: OrderStatusData;
-      }
+        confirmed?: never;
+        pending: true;
+        success?: never;
+        data: OrderStatusData;
+    }
     | {
-          confirmed?: never;
-          pending?: never;
-          success: boolean;
-          data: OrderStatusData;
-      };
+        confirmed?: never;
+        pending?: never;
+        success: boolean;
+        data: OrderStatusData;
+    };
 
 /** Order given by the Gateway API once the bitcoin tx is submitted */
 export type OnrampOrder = Omit<
@@ -537,35 +537,23 @@ export interface DefiLlamaPool {
     rewardTokens: null | string[];
 }
 
-export type GetQuoteParams = Optional<GatewayQuoteParams, 'amount' | 'fromUserAddress' | 'toUserAddress' | 'fromToken'>;
-
 export type OnrampQuoteParams = Optional<
     GatewayQuoteParams,
-    'amount' | 'fromChain' | 'fromToken' | 'fromUserAddress' | 'toUserAddress'
+    'toUserAddress'
 >;
 
-export type OfframpQuoteParams = Pick<GatewayQuoteParams, 'fromToken' | 'amount'>;
+export type OfframpQuoteParams = Optional<GatewayQuoteParams, 'fromUserAddress'>;
+
+export type GetQuoteParams = Optional<OnrampQuoteParams | OfframpQuoteParams, 'amount'>;
 
 export type OnrampExecuteQuoteParams = {
-    quote: GatewayQuote & GatewayTokensInfo;
-    params: GatewayQuoteParams;
+    onrampQuote?: GatewayQuote & GatewayTokensInfo;
+    params: GetQuoteParams;
 };
 
 export type OfframpExecuteQuoteParams = {
-    quote: OfframpQuote;
-    params: Optional<
-        GatewayQuoteParams,
-        | 'toChain'
-        | 'affiliateId'
-        | 'fee'
-        | 'feeRate'
-        | 'gasRefill'
-        | 'strategyAddress'
-        | 'campaignId'
-        | 'toToken'
-        | 'maxSlippage'
-        | 'fromChain'
-    >;
+    offrampQuote?: OfframpQuote;
+    params: GetQuoteParams;
 };
 
 export type ExecuteStakeParam = StakeParams;
