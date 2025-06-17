@@ -62,15 +62,17 @@ describe('Gateway Tests', () => {
         assert.deepEqual(
             await gatewaySDK.getQuote({
                 fromChain: 'Bitcoin',
+                fromToken: 'bitcoin',
                 toChain: 'BOB',
                 toToken: 'tBTC',
                 toUserAddress: zeroAddress,
                 amount: 1000,
             }),
             {
-                quote: mockQuote,
+                onrampQuote: mockQuote,
                 params: {
                     fromChain: 'Bitcoin',
+                    fromToken: 'bitcoin',
                     toChain: 'BOB',
                     toToken: 'tBTC',
                     toUserAddress: zeroAddress,
@@ -81,15 +83,17 @@ describe('Gateway Tests', () => {
         assert.deepEqual(
             await gatewaySDK.getQuote({
                 fromChain: 'Bitcoin',
+                fromToken: 'bitcoin',
                 toChain: 'bob',
                 toToken: 'tbtc',
                 toUserAddress: zeroAddress,
                 amount: 1000,
             }),
             {
-                quote: mockQuote,
+                onrampQuote: mockQuote,
                 params: {
                     fromChain: 'Bitcoin',
+                    fromToken: 'bitcoin',
                     toChain: 'bob',
                     toToken: 'tbtc',
                     toUserAddress: zeroAddress,
@@ -100,15 +104,17 @@ describe('Gateway Tests', () => {
         assert.deepEqual(
             await gatewaySDK.getQuote({
                 fromChain: 'Bitcoin',
+                fromToken: 'bitcoin',
                 toChain: 60808,
                 toToken: 'tbtc',
                 toUserAddress: zeroAddress,
                 amount: 1000,
             }),
             {
-                quote: mockQuote,
+                onrampQuote: mockQuote,
                 params: {
                     fromChain: 'Bitcoin',
+                    fromToken: 'bitcoin',
                     toChain: 60808,
                     toToken: 'tbtc',
                     toUserAddress: zeroAddress,
@@ -119,15 +125,17 @@ describe('Gateway Tests', () => {
         assert.deepEqual(
             await gatewaySDK.getQuote({
                 fromChain: 'Bitcoin',
+                fromToken: 'bitcoin',
                 toChain: 'BOB',
                 toToken: TBTC_ADDRESS,
                 toUserAddress: zeroAddress,
                 amount: 1000,
             }),
             {
-                quote: mockQuote,
+                onrampQuote: mockQuote,
                 params: {
                     fromChain: 'Bitcoin',
+                    fromToken: 'bitcoin',
                     toChain: 'BOB',
                     toToken: TBTC_ADDRESS,
                     toUserAddress: zeroAddress,
@@ -138,6 +146,7 @@ describe('Gateway Tests', () => {
         assert.deepEqual(
             await gatewaySDK.getQuote({
                 fromChain: 'Bitcoin',
+                fromToken: 'bitcoin',
                 toChain: 'BOB',
                 toToken: 'tBTC',
                 toUserAddress: zeroAddress,
@@ -145,9 +154,10 @@ describe('Gateway Tests', () => {
                 gasRefill: 5,
             }),
             {
-                quote: { ...mockQuote, fee: 15 },
+                onrampQuote: { ...mockQuote, fee: 15 },
                 params: {
                     fromChain: 'Bitcoin',
+                    fromToken: 'bitcoin',
                     toChain: 'BOB',
                     toToken: 'tBTC',
                     toUserAddress: zeroAddress,
@@ -162,15 +172,17 @@ describe('Gateway Tests', () => {
         assert.deepEqual(
             await gatewaySDK.getQuote({
                 fromChain: 'Bitcoin',
+                fromToken: 'bitcoin',
                 amount: 0,
                 toChain: 'BOB',
                 toToken: TBTC_ADDRESS,
                 toUserAddress: zeroAddress,
             }),
             {
-                quote: mockQuote,
+                onrampQuote: mockQuote,
                 params: {
                     fromChain: 'Bitcoin',
+                    fromToken: 'bitcoin',
                     amount: 0,
                     toChain: 'BOB',
                     toToken: TBTC_ADDRESS,
@@ -189,6 +201,7 @@ describe('Gateway Tests', () => {
                 toToken: 'unknownToken',
                 toUserAddress: zeroAddress,
                 amount: 1000,
+                fromToken: 'bitcoin',
             });
         }).rejects.toThrowError('Unknown output token');
     });
@@ -202,6 +215,7 @@ describe('Gateway Tests', () => {
                 toToken: 'tbtc',
                 toUserAddress: zeroAddress,
                 amount: 1000,
+                fromToken: 'bitcoin',
             });
         }).rejects.toThrowError('Invalid output chain');
     });
@@ -290,6 +304,7 @@ describe('Gateway Tests', () => {
         const strategy = strategies[0];
         await gatewaySDK.getQuote({
             fromChain: 'Bitcoin',
+            fromToken: 'bitcoin',
             toUserAddress: zeroAddress,
             amount: 1000,
             toChain: strategy.chain.chainId,
@@ -635,6 +650,9 @@ describe('Gateway Tests', () => {
                 amount: 100000000000000,
                 fromUserAddress: '0xFAEe001465dE6D7E8414aCDD9eF4aC5A35B2B808',
                 toUserAddress: 'tb1qn40xpua4eskjgmueq6fwujex05wdtprh46vkpc',
+                fromChain: 'bob',
+                toChain: 'bitcoin',
+                toToken: 'bitcoin',
             }
         );
 
@@ -747,6 +765,9 @@ describe('Gateway Tests', () => {
                     amount: 100000000000000,
                     fromUserAddress: '0xFAEe001465dE6D7E8414aCDD9eF4aC5A35B2B808',
                     toUserAddress: 'tb1p5d2m6d7yje35xqnk2wczghak6q20c6rqw303p58wrlzhue8t4z9s9y304z', // P2TR taproot address
+                    fromChain: 'bob',
+                    toChain: 'bitcoin',
+                    toToken: 'bitcoin',
                 }
             )
         ).rejects.toThrowError('Only following bitcoin address types are supported P2PKH, P2WPKH, P2SH or P2WSH.');
@@ -847,7 +868,7 @@ describe('Gateway Tests', () => {
 
         const btcTxId = await gatewaySDK.executeQuote(
             {
-                quote: mockQuote,
+                onrampQuote: mockQuote,
                 params: {
                     toChain: 60808,
                     toToken: 'tBTC',
@@ -906,7 +927,7 @@ describe('Gateway Tests', () => {
 
         const evmTxId = await gatewaySDK.executeQuote(
             {
-                quote: {
+                offrampQuote: {
                     amountLockInSat: 0,
                     deadline: 0,
                     registryAddress: '0x',

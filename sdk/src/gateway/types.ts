@@ -298,23 +298,23 @@ export type OrderStatusData = {
 
 export type OrderStatus =
     | {
-        confirmed: false;
-        pending?: never;
-        success?: never;
-        data: OrderStatusData;
-    }
+          confirmed: false;
+          pending?: never;
+          success?: never;
+          data: OrderStatusData;
+      }
     | {
-        confirmed?: never;
-        pending: true;
-        success?: never;
-        data: OrderStatusData;
-    }
+          confirmed?: never;
+          pending: true;
+          success?: never;
+          data: OrderStatusData;
+      }
     | {
-        confirmed?: never;
-        pending?: never;
-        success: boolean;
-        data: OrderStatusData;
-    };
+          confirmed?: never;
+          pending?: never;
+          success: boolean;
+          data: OrderStatusData;
+      };
 
 /** Order given by the Gateway API once the bitcoin tx is submitted */
 export type OnrampOrder = Omit<
@@ -537,10 +537,7 @@ export interface DefiLlamaPool {
     rewardTokens: null | string[];
 }
 
-export type OnrampQuoteParams = Optional<
-    GatewayQuoteParams,
-    'toUserAddress'
->;
+export type OnrampQuoteParams = Optional<GatewayQuoteParams, 'toUserAddress'>;
 
 export type OfframpQuoteParams = Optional<GatewayQuoteParams, 'fromUserAddress'>;
 

@@ -21,15 +21,6 @@ export async function swapBtcForToken(evmAddress: Address) {
 
     const gatewaySDK = new GatewaySDK('bob'); // or "mainnet"
 
-    const _quoteMaxOnramp = await gatewaySDK.getQuote({
-        fromChain: 'bitcoin',
-        fromToken: 'BTC',
-        fromUserAddress: 'bc1qafk4yhqvj4wep57m62dgrmutldusqde8adh20d',
-        toChain: 'bob',
-        toUserAddress: evmAddress,
-        toToken: BOB_TBTC_V2_TOKEN_ADDRESS, // or "tBTC"
-    });
-
     const quote = await gatewaySDK.getQuote({
         fromChain: 'bitcoin',
         fromToken: 'BTC',
@@ -64,6 +55,4 @@ export async function swapBtcForToken(evmAddress: Address) {
     });
 
     console.log(`Success! Txid = ${offrampTx}`);
-
-
 }

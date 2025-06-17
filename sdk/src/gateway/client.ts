@@ -30,7 +30,6 @@ import {
     GatewayCreateOrderRequest,
     GatewayCreateOrderResponse,
     GatewayQuote,
-    GatewayQuoteParams,
     GatewayStartOrder,
     GatewayStrategy,
     GatewayStrategyContract,
@@ -49,9 +48,6 @@ import {
     OnrampExecuteQuoteParams,
     OnrampOrder,
     OnrampOrderResponse,
-    OnrampQuoteParams,
-    OfframpQuoteParams,
-    Optional,
     OrderStatus,
     StakeParams,
     StakeTransactionParams,
@@ -137,10 +133,11 @@ export class GatewayApiClient {
      *
      * @dev use as drop-in replacement. Type safety is not guaranteed. Instead we do runtime checks.
      */
-    async getQuote(
-        params: GetQuoteParams
-    ): Promise<{ params: GetQuoteParams; onrampQuote?: (GatewayQuote & GatewayTokensInfo), offrampQuote?: OfframpQuote }> {
-
+    async getQuote(params: GetQuoteParams): Promise<{
+        params: GetQuoteParams;
+        onrampQuote?: GatewayQuote & GatewayTokensInfo;
+        offrampQuote?: OfframpQuote;
+    }> {
         // NOTE: fromChain must be specified if you do onramp
         if (params.fromChain?.toString().toLowerCase() === 'bitcoin') {
             // NOTE: toChain validation is performed inside `getOnrampQuote` method
@@ -302,10 +299,7 @@ export class GatewayApiClient {
      * @param params Offramp order params, excluding auto-filled fields.
      * @returns Parameters for onchain `createOrder` call.
      */
-    async createOfframpOrder(
-        quote: OfframpQuote,
-        params: GetQuoteParams
-    ): Promise<OfframpCreateOrderParams> {
+    async createOfframpOrder(quote: OfframpQuote, params: GetQuoteParams): Promise<OfframpCreateOrderParams> {
         // get btc script pub key
         let bitcoinNetwork = bitcoin.networks.regtest;
         if (this.chain == Chain.BOB) {
@@ -533,10 +527,7 @@ export class GatewayApiClient {
      * @param params The parameters for the quote, same as before.
      * @returns {Promise<GatewayStartOrder>} The success object.
      */
-    async startOrder(
-        gatewayQuote: GatewayQuote,
-        params: GetQuoteParams
-    ): Promise<GatewayStartOrder> {
+    async startOrder(gatewayQuote: GatewayQuote, params: GetQuoteParams): Promise<GatewayStartOrder> {
         if (!params.toUserAddress || !isAddress(params.toUserAddress)) {
             throw new Error('Invalid user address');
         }
@@ -801,8 +792,8 @@ export class GatewayApiClient {
                             : (base as NonNullable<typeof base>) // failed
                         : (base as NonNullable<typeof base>) // success
                     : order.strategyAddress // pending
-                        ? (output as NonNullable<typeof output>)
-                        : (base as NonNullable<typeof base>);
+                      ? (output as NonNullable<typeof output>)
+                      : (base as NonNullable<typeof base>);
             }
             const getTokenAddress = (): string => {
                 return getFinal(order.baseTokenAddress, order.outputTokenAddress);
@@ -840,12 +831,12 @@ export class GatewayApiClient {
                     return !hasEnoughConfirmations
                         ? { confirmed: false, data }
                         : order.status
-                            ? order.strategyAddress
-                                ? order.outputTokenAddress
-                                    ? { success: true, data }
-                                    : { success: false, data }
-                                : { success: true, data }
-                            : { pending: true, data };
+                          ? order.strategyAddress
+                              ? order.outputTokenAddress
+                                  ? { success: true, data }
+                                  : { success: false, data }
+                              : { success: true, data }
+                          : { pending: true, data };
                 },
             };
         });
@@ -900,12 +891,12 @@ export class GatewayApiClient {
                 },
                 outputToken: outputToken
                     ? {
-                        symbol: outputToken.symbol,
-                        address: outputToken.address,
-                        logo: outputToken.logoURI,
-                        decimals: outputToken.decimals,
-                        chain: chainName,
-                    }
+                          symbol: outputToken.symbol,
+                          address: outputToken.address,
+                          logo: outputToken.logoURI,
+                          decimals: outputToken.decimals,
+                          chain: chainName,
+                      }
                     : null,
             };
         });
