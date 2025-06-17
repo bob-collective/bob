@@ -448,7 +448,7 @@ export class GatewayApiClient {
         token: Address,
         satAmountLocked: bigint,
         satFeesMax: bigint
-    ): Promise<[boolean, number, string?]> {
+    ): Promise<[boolean, bigint, string?]> {
         const decimals = getTokenDecimals(token);
         if (decimals === undefined) {
             throw new Error('Tokens with less than 8 decimals are not supported');
@@ -459,7 +459,7 @@ export class GatewayApiClient {
         try {
             const offrampQuote = await this.fetchOfframpQuote(token, amountInToken);
             const shouldBump = satFeesMax < offrampQuote.feeBreakdown.overallFeeSats;
-            return [shouldBump, offrampQuote.feeBreakdown.overallFeeSats];
+            return [shouldBump, BigInt(offrampQuote.feeBreakdown.overallFeeSats)];
         } catch (err) {
             // Return false and 0n with an error message if fetching the quote fails
             throw new Error(`Error fetching offramp quote: ${err.message || err}`);
@@ -627,10 +627,11 @@ export class GatewayApiClient {
             const { onrampQuote, params } = executeQuoteParams;
             const quote = onrampQuote!;
 
-            if (typeof params.toChain === 'number') {
-                params.toChain = chainIdMapping[params.toChain];
+            const localParams = { ...params };
+            if (typeof localParams.toChain === 'number') {
+                localParams.toChain = chainIdMapping[localParams.toChain];
             }
-            const { uuid, psbtBase64 } = await this.startOrder(quote, params);
+            const { uuid, psbtBase64 } = await this.startOrder(quote, localParams);
 
             if (!btcSigner) {
                 throw new Error(`btcSigner is required for onramp order`);

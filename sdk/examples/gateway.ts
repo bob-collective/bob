@@ -12,10 +12,11 @@ export async function swapBtcForToken(evmAddress: Address) {
         transport: http(),
     });
 
+    // Example – replace with the EOA you want to sign with
     const walletClient = createWalletClient({
         chain: bob,
         transport: http(),
-        account: zeroAddress, // Use connected address here
+        account: zeroAddress, // Use connected account here
     });
     const btcSigner = new XverseConnector(Network.mainnet);
 
