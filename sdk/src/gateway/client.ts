@@ -37,7 +37,6 @@ import {
     GetQuoteParams,
     OfframpBumpFeeParams,
     OfframpCreateOrderParams,
-    OfframpExecuteQuoteParams,
     OfframpLiquidity,
     OfframpOrder,
     OfframpOrderStatus,
@@ -593,17 +592,15 @@ export class GatewayApiClient {
         throw new Error('Failed to create bitcoin psbt due to an unexpected error.');
     }
 
-    async executeQuote(executeQuoteParams: OnrampExecuteQuoteParams, clients): Promise<string>;
-    async executeQuote(executeQuoteParams: OfframpExecuteQuoteParams, clients): Promise<string>;
-
     /**
      * Execute an order via the Gateway API.
      * This method invokes the {@link startOrder} and the {@link finalizeOrder} methods.
      *
      * @param {ExecuteQuoteParams} executeQuoteParams - The params to initiate gateway or evm transaction.
-     * @param {WalletClient<Transport, ViemChain, Account>} walletClient Wallet client instance
-     * @param {PublicClient<Transport>} publicClient Public client instance
-     * @param {{ signAllInputs: (psbtBase64: string) => Promise<string> }} btcSigner - Btc wallet connector
+     * @param options - Configuration object containing client instances and optional signer.
+     * @param {WalletClient<Transport, ViemChain, Account>} options.walletClient - The wallet client for interacting with the blockchain.
+     * @param {PublicClient<Transport>} options.publicClient - The public client for reading blockchain data.
+     * @param {{ signAllInputs: (psbtBase64: string) => Promise<string> }} options.btcSigner - Optional Bitcoin signer for signing transaction inputs.
      * @async
      * @returns {Promise<GatewayStartOrder>} The success object.
      */
