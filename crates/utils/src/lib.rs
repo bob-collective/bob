@@ -90,12 +90,20 @@ mod tests {
         let address = alice.rpc.get_new_address(None, None)?.assume_checked();
 
         assert!(matches!(
-            alice.send_to_address_with_op_return(None, None, None, None, None, None),
+            alice.send_to_address_with_op_return(None, None, None, None, None, None, None),
             Err(bitcoin_client::Error::InvalidRecipient)
         ));
 
         assert!(matches!(
-            alice.send_to_address_with_op_return(Some(&address), None, None, None, None, None),
+            alice.send_to_address_with_op_return(
+                Some(&address),
+                None,
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
             Err(bitcoin_client::Error::InvalidRecipient)
         ));
 
@@ -104,6 +112,7 @@ mod tests {
             Some(&address),
             Some(Amount::from_btc(0.1).expect("Invalid BTC amount")),
             Some(&op_return_data),
+            None,
             None,
             None,
             None,
