@@ -62,6 +62,17 @@ const bobTokens = [
 
 const bobSepoliaTokens = [
     {
+        name: 'BTC',
+        symbol: 'BTC',
+        decimals: 18,
+        tokens: {
+            'bob-sepolia': {
+                address: '0xAdCE1AB74C8e64c155953A8BdE37cBB06Cf7086D',
+            },
+        },
+        logoURI: 'https://ethereum-optimism.github.io/data/tBTC/btc.svg',
+    },
+    {
         name: 'Staked mtBTC',
         symbol: 'stmtBTC',
         decimals: 18,
