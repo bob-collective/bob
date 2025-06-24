@@ -196,7 +196,8 @@ export default class StrategyClient {
             const defillamaPool = defillamaPoolMap.get(defillamaPoolId);
 
             return {
-                apyBase: defillamaPool?.apyBase ?? 0,
+                // HACK: set HybridBTC APY to 2%
+                apyBase: defillamaPoolId === 'e8bfea35-ff6d-48db-aa08-51599b363219' ? 2 : (defillamaPool?.apyBase ?? 0),
                 apyReward: defillamaPool?.apyReward ?? 0,
                 rewardTokens: (defillamaPool?.rewardTokens ?? [])
                     .map(
