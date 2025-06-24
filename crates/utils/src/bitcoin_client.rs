@@ -9,6 +9,7 @@ use bitcoin::{
 };
 use bitcoincore_rpc::{
     bitcoin::{BlockHash, Transaction},
+    json,
     json::{EstimateMode, TestMempoolAcceptResult},
     jsonrpc::{error::RpcError, Error as JsonRpcError},
     Auth, Client, Error as BitcoinError, RpcApi,
@@ -115,6 +116,12 @@ impl FeeRate {
         // divide by 10^8 to get btc/vbyte, then multiply by 10^3 to get btc/kbyte
         self.0.to_sat() as f64 / 100_000.0
     }
+
+    /// Converts the internal fee rate (per vB) to BTC/kvB for RPC compatibility.
+    pub fn to_btc_per_kvbyte_amount(&self) -> Amount {
+        // 1000 vB in 1 kvB → multiply the per-vB amount by 1000
+        Amount::from_sat(self.0.to_sat() * 1000)
+    }
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, Default)]
@@ -181,6 +188,20 @@ pub struct BumpFeeResult {
     pub errors: Vec<String>,
 }
 
+#[derive(Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct PsbtBumpFeeResult {
+    /// The base64-encoded unsigned PSBT of the new transaction. Only returned when wallet private
+    /// keys are disabled.
+    pub psbt: Option<String>,
+    /// The fee of the original transaction (before bumping), denominated in BTC.
+    pub origfee: f64,
+    /// The fee of the newly created bumped transaction, denominated in BTC.
+    pub fee: f64,
+    /// Errors encountered during processing.
+    pub errors: Vec<String>,
+}
+
 impl From<RpcError> for BitcoinRpcError {
     fn from(err: RpcError) -> Self {
         match num::FromPrimitive::from_i32(err.code) {
@@ -216,6 +237,8 @@ pub enum Error {
     InvalidRecipient,
     #[error("Hex decoding error: {0}")]
     HexDecodeError(#[from] hex::FromHexError),
+    #[error("Finalized PSBT did not return a raw transaction hex")]
+    MissingRawTxHex,
 }
 
 #[derive(Clone)]
@@ -351,6 +374,7 @@ impl BitcoinClient {
         replaceable: Option<bool>,
         confirmation_target: Option<u32>,
         estimate_mode: Option<bitcoincore_rpc::json::EstimateMode>,
+        fee_rate: Option<FeeRate>,
     ) -> Result<Txid, Error> {
         let tx = self.create_and_sign_tx(
             address,
@@ -359,6 +383,7 @@ impl BitcoinClient {
             replaceable,
             confirmation_target,
             estimate_mode,
+            fee_rate,
         )?;
         let txid = self.validate_and_send_raw_transaction(&tx)?;
         Ok(txid)
@@ -372,6 +397,7 @@ impl BitcoinClient {
         replaceable: Option<bool>,
         confirmation_target: Option<u32>,
         estimate_mode: Option<bitcoincore_rpc::json::EstimateMode>,
+        fee_rate: Option<FeeRate>,
     ) -> Result<Transaction, Error> {
         match (address, amount, op_return_data) {
             // txs must have at least one output
@@ -406,7 +432,7 @@ impl BitcoinClient {
                     change_type: None,
                     include_watching: None,
                     lock_unspents: None,
-                    fee_rate: None,
+                    fee_rate: fee_rate.map(|fr| fr.to_btc_per_kvbyte_amount()), // `fee_rate` must be in BTC/kvB as expected by `fundrawtransaction`,
                     subtract_fee_from_outputs: None,
                     replaceable,
                     conf_target: confirmation_target,
@@ -453,6 +479,54 @@ impl BitcoinClient {
             }
             Err(err) => Err(err.into()), // Handle the case where the RPC call fails
         }
+    }
+
+    pub fn psbt_bump_fee(
+        &self,
+        txid: &Txid,
+        options: Option<&BumpFeeOptions>,
+    ) -> Result<PsbtBumpFeeResult, Error> {
+        // Serialize options if provided
+        let opts = match options {
+            Some(options) => Some(options.to_serializable(self.rpc.version()?)),
+            None => None,
+        };
+
+        // Prepare arguments
+        let args = vec![serde_json::to_value(txid)?, serde_json::to_value(opts)?];
+
+        // Call the "psbtbumpfee" RPC method
+        let result = self.rpc.call("psbtbumpfee", &args);
+
+        // Handle the result
+        match result {
+            Ok(result_value) => {
+                let result: Result<PsbtBumpFeeResult, _> = serde_json::from_value(result_value);
+                match result {
+                    Ok(bump_fee_result) => Ok(bump_fee_result),
+                    Err(err) => {
+                        println!("Failed to deserialize into PsbtBumpFeeResult");
+                        Err(err.into())
+                    }
+                }
+            }
+            Err(err) => Err(err.into()),
+        }
+    }
+
+    pub fn sign_and_finalize_psbt(
+        &self,
+        psbt: &str,
+        sign: Option<bool>,
+        sighash_type: Option<json::SigHashType>,
+        bip32derivs: Option<bool>,
+    ) -> Result<Transaction, Error> {
+        let wallet_process_psbt =
+            self.rpc.wallet_process_psbt(psbt, sign, sighash_type, bip32derivs)?;
+        let finalized = self.rpc.finalize_psbt(&wallet_process_psbt.psbt, Some(true))?;
+        let tx_bytes = finalized.hex.ok_or(Error::MissingRawTxHex)?;
+        let tx: Transaction = consensus::deserialize(&tx_bytes)?;
+        Ok(tx)
     }
 }
 

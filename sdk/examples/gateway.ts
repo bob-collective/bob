@@ -1,29 +1,59 @@
-import { GatewayQuoteParams, GatewaySDK } from '../src/gateway';
-import { base64 } from '@scure/base';
-import { Transaction } from '@scure/btc-signer';
+import { Network, XverseConnector } from '@gobob/sats-wagmi';
+import { Address, createPublicClient, createWalletClient, http, PublicClient, Transport, zeroAddress } from 'viem';
+import { bob } from 'viem/chains';
+
+import { GatewaySDK } from '../src/gateway';
 
 const BOB_TBTC_V2_TOKEN_ADDRESS = '0xBBa2eF945D523C4e2608C9E1214C2Cc64D4fc2e2';
 
-export async function swapBtcForToken(evmAddress: string) {
+export async function swapBtcForToken(evmAddress: Address) {
+    const publicClient = createPublicClient({
+        chain: bob,
+        transport: http(),
+    });
+
+    // Example – replace with the EOA you want to sign with
+    const walletClient = createWalletClient({
+        chain: bob,
+        transport: http(),
+        account: zeroAddress, // Use connected account here
+    });
+    const btcSigner = new XverseConnector(Network.mainnet);
+
     const gatewaySDK = new GatewaySDK('bob'); // or "mainnet"
 
-    const quoteParams: GatewayQuoteParams = {
-        fromChain: 'Bitcoin',
+    const quote = await gatewaySDK.getQuote({
+        fromChain: 'bitcoin',
         fromToken: 'BTC',
         fromUserAddress: 'bc1qafk4yhqvj4wep57m62dgrmutldusqde8adh20d',
-        toChain: 'BOB',
+        toChain: 'bob',
         toUserAddress: evmAddress,
         toToken: BOB_TBTC_V2_TOKEN_ADDRESS, // or "tBTC"
         amount: 10000000, // 0.1 BTC
-        gasRefill: 10000, // 0.0001 BTC
-    };
-    const quote = await gatewaySDK.getQuote(quoteParams);
+        gasRefill: 10000, // 0.0001 BTC,
+    });
 
-    const { uuid, psbtBase64 } = await gatewaySDK.startOrder(quote, quoteParams);
+    const onrampTx = await gatewaySDK.executeQuote(quote, {
+        walletClient,
+        publicClient: publicClient as PublicClient<Transport>,
+        btcSigner,
+    });
 
-    // NOTE: up to implementation to sign PSBT here!
-    const tx = Transaction.fromPSBT(base64.decode(psbtBase64!));
+    console.log(`Success! Txid = ${onrampTx}`);
 
-    // NOTE: relayer broadcasts the tx
-    await gatewaySDK.finalizeOrder(uuid, tx.hex);
+    const offrampQuote = await gatewaySDK.getQuote({
+        fromChain: 'bob',
+        fromToken: BOB_TBTC_V2_TOKEN_ADDRESS, // or "tBTC"
+        toChain: 'bitcoin',
+        toUserAddress: 'bc1qafk4yhqvj4wep57m62dgrmutldusqde8adh20d',
+        toToken: 'BTC',
+        amount: 10000000, // 0.1 BTC
+    });
+
+    const offrampTx = await gatewaySDK.executeQuote(offrampQuote, {
+        walletClient,
+        publicClient: publicClient as PublicClient<Transport>,
+    });
+
+    console.log(`Success! Txid = ${offrampTx}`);
 }
