@@ -70,7 +70,7 @@ const bobSepoliaTokens = [
                 address: '0xAdCE1AB74C8e64c155953A8BdE37cBB06Cf7086D',
             },
         },
-        logoURI: 'https://ethereum-optimism.github.io/data/tBTC/btc.svg',
+        logoURI: 'https://raw.githubusercontent.com/bob-collective/bob/master/assets/btc.svg',
     },
     {
         name: 'Staked mtBTC',
