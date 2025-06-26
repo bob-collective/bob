@@ -22,3 +22,11 @@ To get started, visit the [documentation](https://docs.sqd.dev/) or see [EVM exa
 **Supported Networks**
 
 - BOB Mainnet
+
+## SubQuery
+
+[SubQuery SDK](https://subquery.network/) allows developers to get rich indexed data and build intuitive and immersive decentralised applications in a faster and more efficient way. Another one of SubQuery's competitive advantages is the ability to aggregate data not only within a chain but across multiple blockchains all within a single project. This allows the creation of feature-rich dashboard analytics and multi-chain block scanners. Other advantages include superior performance with multiple RPC endpoint configurations, multi-worker capabilities and a configurable caching architecture.
+
+**Supported Networks**
+
+- BOB Mainnet
