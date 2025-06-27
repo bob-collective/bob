@@ -22,3 +22,25 @@ To get started, visit the [documentation](https://docs.sqd.dev/) or see [EVM exa
 **Supported Networks**
 
 - BOB Mainnet
+
+## Sim IDX
+
+[Sim IDX](https://sim.dune.com/) is a blockchain indexing framework centered around a Solidity listener contract that runs in an instrumented EVM. Developers define their data requirements using Solidity in a listener contract, specifying triggers for on-chain events or function calls. The framework then handles the entire indexing pipeline, from efficient historical backfilling to real-time data ingestion. The resulting data is stored in a dedicated PostgreSQL instance, with a schema derived directly from the events defined in the listener contract.
+
+The Sim IDX framework provides a complete development environment, including a CLI for project management, a managed database, and a serverless API layer using Cloudflare Workers, Hono, and Drizzle.
+
+To get started, visit the [developer docs](https://docs.sim.dune.com/idx).
+
+**Supported Networks**
+
+- BOB Mainnet
+- Ethereum
+- Base
+- Unichain
+- World
+- Zora
+- Ink
+- Soneium
+- Mode
+- Sepolia
+- Base Sepolia
