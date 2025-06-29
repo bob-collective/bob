@@ -4,7 +4,7 @@ sidebar_position: 2
 
 # Integrate BOB Gateway in Your App
 
-[BOB Gateway](https://docs.gobob.xyz/learn/guides/bitcoin-bridge/) is a Bitcoin intent bridge that unlocks Bitcoin liquidity by reducing the number of steps to onboard users to your app, saving time and money. For example, users can go from **BTC** on Bitcoin to **staked BTC LSTs** with a single Bitcoin transaction.
+[BOB Gateway](https://docs.gobob.xyz/learn/introduction/gateway/) is a Bitcoin intent bridge that unlocks Bitcoin liquidity by reducing the number of steps to onboard users to your app, saving time and money. For example, users can go from **BTC** on Bitcoin to **staked BTC LSTs** with a single Bitcoin transaction.
 
 Our SDK makes it possible for you to bring this UX directly into your app.
 
