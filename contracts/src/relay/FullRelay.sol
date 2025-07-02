@@ -49,11 +49,6 @@ contract FullRelay is IFullRelay {
         require(isHeaderValidLength(_genesisHeader), "Bad genesis block");
         bytes32 _genesisDigest = _genesisHeader.hash256();
 
-        require(
-            _periodStart & bytes32(0x0000000000000000000000000000000000000000000000000000000000ffffff) == bytes32(0),
-            "Period start hash does not have work. Hint: wrong byte order?"
-        );
-
         relayGenesis = _genesisDigest;
         bestKnownDigest = _genesisDigest;
         lastReorgCommonAncestor = _genesisDigest;

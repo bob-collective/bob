@@ -533,11 +533,11 @@ fn create_merkle_branch_and_root(
 ) -> (Vec<Sha256dHash>, Sha256dHash) {
     let mut merkle = vec![];
     while hashes.len() > 1 {
-        if hashes.len() % 2 != 0 {
+        if !hashes.len().is_multiple_of(2) {
             let last = *hashes.last().unwrap();
             hashes.push(last);
         }
-        index = if index % 2 == 0 { index + 1 } else { index - 1 };
+        index = if index.is_multiple_of(2) { index + 1 } else { index - 1 };
         merkle.push(hashes[index]);
         index /= 2;
         hashes = hashes.chunks(2).map(|pair| merklize(pair[0], pair[1])).collect()
