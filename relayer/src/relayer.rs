@@ -170,7 +170,7 @@ impl Relayer {
                 return Ok(height);
             }
 
-            tracing::debug!("Found fork: {actual_hash} at height {height}");
+            tracing::info!("Found fork: {actual_hash} at height {height}");
             if height == 0 {
                 return Err(eyre!("No common height found before reaching 0"));
             }
@@ -196,7 +196,7 @@ impl Relayer {
             self.push_headers(headers).await?;
 
             tokio::time::sleep(if self.is_regtest() {
-                Duration::from_millis(10)
+                Duration::from_millis(150)
             } else {
                 Duration::from_secs(15)
             })
@@ -276,7 +276,7 @@ impl Relayer {
         tracing::debug!(
             "Relayed until height {}, with hash {}",
             self.relayed_height().await?,
-            self.relayed_blockhash().await?
+            self.best_blockhash().await?
         );
 
         Ok(())
