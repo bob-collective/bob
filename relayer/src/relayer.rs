@@ -133,7 +133,7 @@ impl Relayer {
     }
 
     /// Returns the block hash of the most recent relayed block.
-    pub async fn relayed_blockhash(&self) -> Result<BlockHash> {
+    pub async fn best_blockhash(&self) -> Result<BlockHash> {
         Ok(self
             .contract
             .getBestKnownDigest()
