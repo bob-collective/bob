@@ -1,4 +1,5 @@
 use crate::unused_port;
+use bitcoin::{Address, KnownHrp, ScriptBuf};
 use bitcoincore_rpc::{Auth, Client, RpcApi};
 use eyre::Result;
 use std::{
@@ -51,10 +52,24 @@ impl BitcoinCoreInstance {
 
     /// Helper to automatically create and fund wallet
     pub fn fund_wallet(&self, name: &str) -> Result<()> {
-        let client = self.client(Some(name))?;
-        client.create_wallet(name, None, None, None, None)?;
-        let address = client.get_new_address(None, None)?.assume_checked();
-        client.generate_to_address(101, &address)?;
+        self.fund_wallets(&[name])
+    }
+
+    pub fn fund_wallets(&self, wallet_names: &[&str]) -> Result<()> {
+        for &name in wallet_names {
+            let client = self.client(Some(name))?;
+            client.create_wallet(name, None, None, None, None)?;
+            let address = client.get_new_address(None, None)?.assume_checked();
+            client.generate_to_address(1, &address)?;
+        }
+
+        // we need 100 confirmations before the funding is considered valid. By funding to
+        // an address that is in none of the wallets, the wallet balances won't increase
+        // in every subsequent block, which is a useful property in tests.
+        let temp_address = Address::p2wsh(ScriptBuf::new().as_script(), KnownHrp::Regtest);
+        let client = self.client(None)?;
+        client.generate_to_address(100, &temp_address)?;
+
         Ok(())
     }
 
