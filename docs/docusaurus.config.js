@@ -182,6 +182,14 @@ const config = {
             from: "/docs/build/how-to/metamask-snap",
             to: "/learn/builder-guides/metamask-snap",
           },
+          {
+            from: "/learn/builder-guides/gateway",
+            to: "/learn/gateway/introduction",
+          },
+          {
+            from: "/learn/builder-guides/create-strategy",
+            to: "/learn/gateway/strategy",
+          },
 
           // Reference section
           {
