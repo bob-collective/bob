@@ -76,7 +76,7 @@ contract FullRelayWithVerifyDirectTest is FullRelayWithVerifyTest {
 
     function testGCDDoesntConfirmHeader() public {
         relay.setAncestorOverride(false, false);
-        vm.expectRevert(bytes("GCD does not confirm header"));
+        vm.expectRevert(bytes("Block is not in longest chain"));
         relay.verifyProof(header, proof, txToVerify, txId, 0);
     }
 
@@ -179,7 +179,7 @@ contract FullRelayWithVerifyThroughBitcoinTxTest is FullRelayWithVerifyTest {
 
     function testGCDDoesntConfirmHeader() public {
         relay.setAncestorOverride(false, false);
-        vm.expectRevert(bytes("GCD does not confirm header"));
+        vm.expectRevert(bytes("Block is not in longest chain"));
         bitcoinTxTester.validateProof(IFullRelayWithVerify(address(relay)), minConfirmations, txInfoStruct, proofStruct);
     }
 
@@ -270,7 +270,7 @@ contract FullRelayWithVerifyThroughWitnessTxTest is FullRelayWithVerifyTest {
 
     function testGCDDoesntConfirmHeader() public {
         relay.setAncestorOverride(false, false);
-        vm.expectRevert(bytes("GCD does not confirm header"));
+        vm.expectRevert(bytes("Block is not in longest chain"));
         witnessTxTester.validateWitnessProof(
             IFullRelayWithVerify(address(relay)), minConfirmations, txInfoStruct, proofStruct
         );
