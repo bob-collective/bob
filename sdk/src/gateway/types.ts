@@ -1,11 +1,9 @@
 import type { EsploraClient } from '../esplora';
-import { Address } from 'viem';
+import { Address, Hex } from 'viem';
 import { offrampCaller, strategyCaller } from './abi';
 
 type ChainSlug = string | number;
 type TokenSymbol = string;
-
-export type EvmAddress = string;
 
 export type Optional<T, K extends keyof T> = Omit<T, K> & Partial<T>;
 
@@ -21,6 +19,11 @@ export enum ChainId {
     BOB_SEPOLIA = 808813,
     OPTIMISM = 10,
 }
+
+export const chainIdMapping = {
+    [ChainId.BOB]: Chain.BOB,
+    [ChainId.BOB_SEPOLIA]: Chain.BOB_SEPOLIA,
+} as const;
 
 /**
  * Parameters required to construct a staking transaction.
@@ -219,9 +222,9 @@ export interface GatewayStrategyContract {
 
 export type GatewayQuote = {
     /** @description The gateway address */
-    gatewayAddress: EvmAddress;
+    gatewayAddress: Address;
     /** @description The base token address (e.g. wBTC or tBTC) */
-    baseTokenAddress: EvmAddress;
+    baseTokenAddress: Address;
     /** @description The minimum amount of Bitcoin to send */
     dustThreshold: number;
     /** @description The satoshi output amount */
@@ -233,33 +236,33 @@ export type GatewayQuote = {
     /** @description The number of confirmations required to confirm the Bitcoin tx */
     txProofDifficultyFactor: number;
     /** @description The optional strategy address */
-    strategyAddress?: EvmAddress;
+    strategyAddress?: Address;
 };
 
 /** @dev Internal */
 export type GatewayCreateOrderRequest = {
-    gatewayAddress: EvmAddress;
-    strategyAddress?: EvmAddress;
+    gatewayAddress: Address;
+    strategyAddress?: Address;
     satsToConvertToEth: number;
-    userAddress: EvmAddress;
-    gatewayExtraData?: string;
-    strategyExtraData?: string;
+    userAddress: Address;
+    gatewayExtraData?: Hex;
+    strategyExtraData?: Hex;
     satoshis: number;
     campaignId?: string;
 };
 
 /** @dev Internal */
-export type OffRampGatewayCreateQuoteResponse = {
+export type OfframpGatewayCreateQuoteResponse = {
     amountToLock: string;
     minimumFeesToPay: string;
-    gateway: EvmAddress;
+    gateway: Address;
 };
 
 export interface OnrampOrderResponse {
     /** @description The gateway address */
-    gatewayAddress: EvmAddress;
+    gatewayAddress: Address;
     /** @description The base token address (e.g. wBTC or tBTC) */
-    baseTokenAddress: EvmAddress;
+    baseTokenAddress: Address;
     /** @description The Bitcoin txid */
     txid: string;
     /** @description True when the order was executed on BOB */
@@ -276,13 +279,13 @@ export interface OnrampOrderResponse {
     /** @description The number of confirmations required to confirm the Bitcoin tx */
     txProofDifficultyFactor: number;
     /** @description The optional strategy address */
-    strategyAddress?: EvmAddress;
+    strategyAddress?: Address;
     /** @description The gas refill in satoshis */
     satsToConvertToEth: number;
     /** @description The amount of ETH received */
     outputEthAmount?: string;
     /** @description The output token (from strategies) */
-    outputTokenAddress?: EvmAddress;
+    outputTokenAddress?: Address;
     /** @description The output amount (from strategies) */
     outputTokenAmount?: string;
     /** @description The tx hash on the EVM chain */
@@ -534,15 +537,22 @@ export interface DefiLlamaPool {
     rewardTokens: null | string[];
 }
 
-export type OnrampQuoteParams = {
-    type: 'onramp';
-    params: Optional<GatewayQuoteParams, 'amount' | 'fromChain' | 'fromToken' | 'fromUserAddress' | 'toUserAddress'>;
+export type OnrampQuoteParams = Optional<GatewayQuoteParams, 'toUserAddress'>;
+
+export type OfframpQuoteParams = Optional<GatewayQuoteParams, 'fromUserAddress'>;
+
+export type GetQuoteParams = Optional<OnrampQuoteParams | OfframpQuoteParams, 'amount'>;
+
+export type OnrampExecuteQuoteParams = {
+    onrampQuote?: GatewayQuote & GatewayTokensInfo;
+    params: GetQuoteParams;
 };
 
-export type OfframpQuoteParams = {
-    type: 'offramp';
-    params: {
-        tokenAddress: Address;
-        amount: number;
-    };
+export type OfframpExecuteQuoteParams = {
+    offrampQuote?: OfframpQuote;
+    params: GetQuoteParams;
 };
+
+export type ExecuteStakeParam = StakeParams;
+
+export type ExecuteQuoteParams = OnrampExecuteQuoteParams | OfframpExecuteQuoteParams;
