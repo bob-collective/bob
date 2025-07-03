@@ -366,6 +366,7 @@ impl BitcoinClient {
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn send_to_address_with_op_return(
         &self,
         address: Option<&Address<NetworkChecked>>,
@@ -389,6 +390,7 @@ impl BitcoinClient {
         Ok(txid)
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn create_and_sign_tx(
         &self,
         address: Option<&Address<NetworkChecked>>,
