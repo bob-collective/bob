@@ -17,10 +17,13 @@ bindings:
 	rm -rf $(BINDINGS_OUT_PATH)
 
 # Generate new bindings
-	@forge bind --root $(CONTRACTS_PATH) --crate-name $(BINDINGS_FOLDER) --select FullRelay --alloy --force
+	@forge bind --root $(CONTRACTS_PATH) --crate-name $(BINDINGS_FOLDER) --select "(FullRelay\$$)|(FullRelayWithVerify\$$)" --alloy --force
 
 # Move bindings to the correct location
 	@mv -f $(BINDINGS_OUT_PATH) $(CRATES_FOLDER)
+
+# undo changes to the Cargo.toml file
+	git checkout $(BINDINGS_CRATES_FOLDER)/Cargo.toml
 
 # Target for building the project
 build: bindings
