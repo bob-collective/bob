@@ -2,7 +2,7 @@
 sidebar_position: 4
 ---
 
-# sats-wagmi - Reactive primitives for Bitcoin apps
+# Reactive primitives for Bitcoin apps (sats-wagmi)
 
 sats-wagmi is a library with a handful of BTC wallet connectors, leaving aside the need of the developer to integrate each one individually. The library also exports useful React hooks that mimic the standard followed in the EVM [wagmi](https://wagmi.sh/react/getting-started) library.
 

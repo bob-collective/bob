@@ -2,7 +2,7 @@
 sidebar_position: 3
 ---
 
-# Create a New Strategy for BOB Gateway
+# Strategies
 
 ## Introduction
 

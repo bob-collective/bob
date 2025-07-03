@@ -1,10 +1,10 @@
 ---
-sidebar_position: 2
+sidebar_position: 1
 ---
 
-# Integrate BOB Gateway in Your App
+# Introduction 🚀
 
-[BOB Gateway](https://docs.gobob.xyz/learn/guides/bitcoin-bridge/) is a Bitcoin intent bridge that unlocks Bitcoin liquidity by reducing the number of steps to onboard users to your app, saving time and money. For example, users can go from **BTC** on Bitcoin to **staked BTC LSTs** with a single Bitcoin transaction.
+[BOB Gateway](/learn/introduction/gateway/) is a Bitcoin intent bridge that unlocks Bitcoin liquidity by reducing the number of steps to onboard users to your app, saving time and money. For example, users can go from **BTC** on Bitcoin to **staked BTC LSTs** with a single Bitcoin transaction.
 
 Our SDK makes it possible for you to bring this UX directly into your app.
 
@@ -74,7 +74,11 @@ const quoteParams: GatewayQuoteParams = {
 const quote = await gatewaySDK.getQuote(quoteParams);
 ```
 
-#### Get available staking or lending contracts
+### Get available staking or lending contracts
+
+:::tip One-Click Staking
+By specifying the strategy in the quote we will automatically execute additional calls on behalf of the user, for example the user can request their wBTC to be deposited into a Babylon LST.
+:::
 
 The SDK will handle automatically when the `toToken` has a fungible ERC20 token, but sometimes there is no representation. In that case we can list the available integrations and specify that in the quote.
 
@@ -106,7 +110,43 @@ const { uuid, psbtBase64 } = await gatewaySDK.startOrder(quote, quoteParams);
 Create a Bitcoin transaction that sends the quoted `amount` of BTC to the LP's `bitcoinAddress`. This also publishes a hash of the order's parameters in the `OP_RETURN` of the transaction so the Gateway can trustlessly verify the order on BOB.
 
 <Tabs>
-<TabItem value="sats-wagmi" label="sats-wagmi (Recommended)">
+
+<TabItem value="Reown" label="Reown (Recommended)">
+
+```ts
+import { Transaction } from '@scure/btc-signer';
+import { base64 } from '@scure/base';
+import { useAppKitProvider } from '@reown/appkit/react';
+import { BitcoinConnector } from '@reown/appkit-adapter-bitcoin';
+
+const { walletProvider } = useAppKitProvider<BitcoinConnector>('bip122');
+const unsignedTx = Transaction.fromPSBT(base64.decode(psbtBase64));
+
+const inputLength = unsignedTx.inputsLength;
+const inputsToSign = Array.from({ length: inputLength }, (_, i) => i);
+
+const { uuid, psbtBase64 } = await gatewaySDK.startOrder(quote, quoteParams);
+const bitcoinTxHex = await connector.signAllInputs(psbtBase64!);
+
+const result = await walletProvider.signPSBT({
+  psbt: psbtBase64,
+  broadcast: false,
+  signInputs: inputsToSign.map((input) => ({
+    index: input,
+    address: quoteParams.fromUserAddress,
+    sighashTypes: [0]
+  }))
+});
+
+const signedTx = Transaction.fromPSBT(base64.decode(result.psbt));
+signedTx.finalize();
+
+await gatewaySDK.finalizeOrder(uuid, signedTx.hex);
+```
+
+</TabItem>
+
+<TabItem value="sats-wagmi" label="sats-wagmi">
 
 Please follow the [guide here](/learn/builder-guides/sats-wagmi.md) to install and use sats-wagmi. In this example, we sign the `psbtBase64` using sats-wagmi which abstracts the complex wallet logic for multiple connectors (including OKX, UniSat and Xverse).
 
@@ -141,12 +181,6 @@ await gatewaySDK.finalizeOrder(uuid, txhash);
 <TabItem value="dynamic" label="Dynamic">
 
 Please refer to the Dynamic guide on [PSBT signing](https://docs.dynamic.xyz/wallets/using-wallets/bitcoin/sign-a-psbt).
-
-</TabItem>
-
-<TabItem value="particle" label="Particle">
-
-Please refer to the Particle guide on [BTC Connect](https://developers.particle.network/guides/integrations/partners/bob#connecting-bitcoin-wallets-to-bob-using-btc-connect).
 
 </TabItem>
 
