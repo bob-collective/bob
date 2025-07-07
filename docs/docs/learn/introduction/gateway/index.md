@@ -31,7 +31,7 @@ These are some of the features we're working on for Gateway's next upgrade, with
 - Swapping from BTC to any ERC20 through a DEX (already possible, not fully implemented yet)
 
 :::info Integrate BOB Gateway Into your App
-[See our Builder Guide](/learn/builder-guides/gateway) to learn more about our SDK and extending BOB Gateway's functionality to bring Bitcoiners one transaction away from your use-case.
+[See our Builder Guide](/learn/gateway/introduction) to learn more about our SDK and extending BOB Gateway's functionality to bring Bitcoiners one transaction away from your use-case.
 :::
 
 ## How Gateway Works

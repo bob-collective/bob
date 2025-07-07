@@ -17,7 +17,7 @@ All you need is a Bitcoin wallet with some BTC to send and an EVM-compatible wal
 
 :::tip Want to add BOB Gateway to your dapp?
 
-Check out our guide to see how you can [integrate BOB Gateway into your dapp](/learn/builder-guides/gateway.md).
+Check out our guide to see how you can [integrate BOB Gateway into your dapp](/learn/gateway/introduction.md).
 
 :::
 

@@ -160,7 +160,7 @@ const config = {
           },
           {
             from: "/docs/build/bob-sdk/gateway",
-            to: "/learn/builder-guides/gateway",
+            to: "/learn/gateway/introduction",
           },
           {
             from: "/docs/build/getting-started/helloworld",
@@ -181,6 +181,11 @@ const config = {
           {
             from: "/docs/build/how-to/metamask-snap",
             to: "/learn/builder-guides/metamask-snap",
+          },
+
+          {
+            from: "/learn/builder-guides/create-strategy",
+            to: "/learn/gateway/strategy",
           },
 
           // Reference section
