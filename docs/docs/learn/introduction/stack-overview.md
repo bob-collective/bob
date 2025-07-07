@@ -89,7 +89,7 @@ The majority of Bitcoin's stack and applications built around it are implemented
 
 [BOB Stake](/learn/user-guides/stake-btc/) extends this idea by executing users' "intents" to stake, restake, or lend their BTC automatically during the bridge process. There are [more than a dozen options available](https://app.gobob.xyz/en/stake) at the moment, some offering five different sources of yield. All options are BTC-denominated and have no risk of impermanent loss.
 
-We built the [BOB Gateway SDK](/learn/gateway/introduction) to make it possible for any frontend to offer its users these options by plugging into our infrastructure. Using the BOB Gateway SDK with [Dynamic's](https://www.dynamic.xyz/) wallet abstraction, you can even send native BTC to someone's email address via [BOB Pay](/learn/user-guides/bob-pay/#what-is-bob-pay).
+We built the [BOB Gateway SDK](/learn/gateway/introduction) to make it possible for any frontend to offer its users these options by plugging into our infrastructure.
 
 BOB also supports [third-party bridges](https://app.gobob.xyz/bridge/) to many chains. Developers working on cross-chain protocols can leverage [Chainlink CCIP](/learn/reference/tools/cross-chain#chainlink-ccip), [LayerZero](/learn/reference/tools/cross-chain#layerzero), and [Hyperlane](https://docs.hyperlane.xyz/docs/reference/contract-addresses/) on BOB.
 

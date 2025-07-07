@@ -2,6 +2,11 @@
   display: none !important;
 }
 
+/* Hide deprecated items from sidebar */
+.sidebar-hidden {
+  display: none !important;
+}
+
 @font-face {
   font-family: "IBM Plex Sans";
   src: url("/fonts/IBMPlexSans-Regular.ttf") format("truetype");

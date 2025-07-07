@@ -59,10 +59,6 @@ const config = {
             to: "/learn/user-guides/getting-started/wallet-guide/#faqs",
           },
           {
-            from: "/learn/user-guides/faq",
-            to: "/learn/user-guides/getting-started/wallet-guide/#faqs",
-          },
-          {
             from: "/docs/learn/bob-stack/merged-mining",
             to: "/learn/introduction/roadmap",
           },
@@ -79,20 +75,8 @@ const config = {
             to: "/learn/user-guides/getting-started/wallet-guide/",
           },
           {
-            from: "/learn/user-guides/networks",
-            to: "/learn/user-guides/getting-started/networks",
-          },
-          {
             from: "/learn/user-guides/binance-wallet-gateway",
             to: "/learn/user-guides/onboard-to-bob/binance-wallet-gateway/",
-          },
-          {
-            from: "/learn/user-guides/getting-started-with-bob/wallet-guide",
-            to: "/learn/user-guides/getting-started/wallet-guide/",
-          },
-          {
-            from: "/learn/user-guides/getting-started-with-bob/networks",
-            to: "/learn/user-guides/getting-started/networks",
           },
           {
             from: "/learn/user-guides/bob-stake",
@@ -118,7 +102,7 @@ const config = {
           },
           {
             from: "/docs/learn/guides/bob-pay",
-            to: "/learn/user-guides/bob-pay",
+            to: "/learn/deprecated/bob-pay",
           },
           {
             from: "/docs/learn/guides/bob-stake",
