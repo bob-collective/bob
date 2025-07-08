@@ -6,7 +6,7 @@ sidebar_position: 4
 
 ## One-Click BTC Staking
 
-[BOB Stake](https://app.gobob.xyz/stake?type=stake&stakeWith=solv-solvbtcbbn) is a new 1-click Bitcoin staking portal and [BOB Gateway](/docs/gateway/) for Bitcoin liquid staking. Harvest BOB Spice points in the final season of BOB Fusion by using BOB Stake and exploring the growing Bitcoin staking ecosystem on BOB.
+[BOB Earn](https://app.gobob.xyz/stake?type=stake&stakeWith=solv-solvbtcbbn) is a new 1-click Bitcoin staking portal and [BOB Gateway](/docs/gateway/) for Bitcoin liquid staking. Harvest BOB Spice points in the final season of BOB Fusion by using BOB Earn and exploring the growing Bitcoin staking ecosystem on BOB.
 
 It's built on a trustless, RFQ-based cross-chain swap protocol that connects professional LPs with users through a seamless swapping experience. LPs handle the complexities of bridging and staking on behalf of users in exchange for a fee.
 
@@ -22,7 +22,7 @@ If you're using a Ledger hardware wallet, follow the [Ledger Guide](#ledger-guid
 
 ## Standard Guide
 
-1. Open the [BOB Stake website](https://app.gobob.xyz/stake?type=stake&stakeWith=solv-solvbtcbbn).
+1. Open the [BOB Earn website](https://app.gobob.xyz/stake?type=stake&stakeWith=solv-solvbtcbbn).
 
 1. Click `Connect Wallet` in the top-right corner.
 
@@ -108,7 +108,7 @@ That's it! You do not need any tokens on any EVM chain, including BOB. If you do
 
 ### Part Two: Stake
 
-1. [Open the BOB Stake page](https://app.gobob.xyz/en/stake).
+1. [Open the BOB Earn page](https://app.gobob.xyz/en/stake).
 
 ![BOB Stake app page](./images/01-stake-with-ledger.png)
 

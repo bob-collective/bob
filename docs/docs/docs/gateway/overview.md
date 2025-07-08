@@ -6,13 +6,13 @@ sidebar_position: 1
 
 ## Introduction
 
-Bitcoin users can easily onboard to the BOB Hybrid Chain without previously holding any Ethereum assets. This page explains the technology behind [BOB BTC Bridge](https://app.gobob.xyz/en?type=deposit&network=bitcoin&receive=WBTC) and [BOB Stake](https://app.gobob.xyz/en/stake): _BOB Gateway_ is an intent-based bridge that coordinates peer-to-peer swaps between users and liquidity providers (LPs).
+Bitcoin users can easily onboard to the BOB Hybrid Chain without previously holding any Ethereum assets. This page explains the technology behind [BOB BTC Bridge](https://app.gobob.xyz/en?type=deposit&network=bitcoin&receive=WBTC) and [BOB Earn](https://app.gobob.xyz/en/stake): _BOB Gateway_ is an intent-based bridge that coordinates peer-to-peer swaps between users and liquidity providers (LPs).
 
 Cross-chain transfers are secured by verifying Bitcoin transaction proofs with an [on-chain light client](/docs/bob-chain/relay), avoiding the need for an oracle. Optional intents, such as staking, lending, and swapping tokens can all be accomplished while only requiring a single Bitcoin transaction from the user.
 
 ## Bridge or Stake BTC on BOB
 
-Gateway powers the [BOB BTC Bridge](https://app.gobob.xyz/en?type=deposit&network=bitcoin&receive=WBTC) and [BOB Stake](https://app.gobob.xyz/en/stake).
+Gateway powers the [BOB BTC Bridge](https://app.gobob.xyz/en?type=deposit&network=bitcoin&receive=WBTC) and [BOB Earn](https://app.gobob.xyz/en/stake).
 
 :::info Bridge or Stake BTC on BOB
 Check our user guides to learn how to swap your BTC to wrapped BTC or staked BTC.

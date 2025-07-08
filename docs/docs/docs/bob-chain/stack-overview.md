@@ -87,7 +87,7 @@ The majority of Bitcoin's stack and applications built around it are implemented
 
 [BOB Bridge](/docs/user-hub/onboard-to-bob/bob-gateway) is our intent-based Bitcoin bridge built on the light client verification mentioned above. It is optimized to be fast, inexpensive, and programmable. As of this writing, 30,000 users have swapped a total of 75 BTC in a trust-minimized, peer-to-peer way.
 
-[BOB Stake](/docs/user-hub/stake-btc) extends this idea by executing users' "intents" to stake, restake, or lend their BTC automatically during the bridge process. There are [more than a dozen options available](https://app.gobob.xyz/en/stake) at the moment, some offering five different sources of yield. All options are BTC-denominated and have no risk of impermanent loss.
+[BOB Earn](/docs/user-hub/stake-btc) extends this idea by executing users' "intents" to stake, restake, or lend their BTC automatically during the bridge process. There are [more than a dozen options available](https://app.gobob.xyz/en/stake) at the moment, some offering five different sources of yield. All options are BTC-denominated and have no risk of impermanent loss.
 
 We built the [BOB Gateway SDK](/docs/gateway) to make it possible for any frontend to offer its users these options by plugging into our infrastructure.
 
