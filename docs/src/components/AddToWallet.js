@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import BrowserOnly from "@docusaurus/BrowserOnly";
 
 const AddToWalletButton = () => {
@@ -10,26 +10,6 @@ const AddToWalletButton = () => {
     }, 2000);
   };
 
-  useEffect(() => {
-    const checkIfNetworkExists = async () => {
-      if (!window.ethereum) return;
-
-      try {
-        const chainId = await window.ethereum.request({
-          method: "eth_chainId",
-        });
-        if (chainId === "0xED88") {
-          setIsAlreadyAdded(true);
-          resetButtonState();
-        }
-      } catch (error) {
-        console.error("Error checking network:", error);
-      }
-    };
-
-    checkIfNetworkExists();
-  }, []);
-
   const addNetwork = async () => {
     if (!window.ethereum) {
       alert(
@@ -39,6 +19,18 @@ const AddToWalletButton = () => {
     }
 
     try {
+      // First check if the network already exists
+      const chainId = await window.ethereum.request({
+        method: "eth_chainId",
+      });
+      
+      if (chainId === "0xED88") {
+        setIsAlreadyAdded(true);
+        resetButtonState();
+        return;
+      }
+
+      // If not already added, try to add it
       await window.ethereum.request({
         method: "wallet_addEthereumChain",
         params: [
