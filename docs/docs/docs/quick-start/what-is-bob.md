@@ -4,39 +4,34 @@ sidebar_position: 1
 
 # What is BOB?
 
-BOB is the Gateway to Bitcoin DeFi, putting Bitcoin at the heart of DeFi innovation.
-
 ## The Vision: Putting Bitcoin at the Heart of DeFi
 
 Bitcoin represents the world's largest and most valuable digital asset, yet it remains largely untapped in DeFi. While Ethereum has achieved ~30% DeFi TVL penetration, Bitcoin sits at just 0.3%. BOB exists to bridge this gap, giving everyone access to Bitcoin's potential.
 
-**The Problem:** Users and institutions want sustainable returns on their Bitcoin holdings, while projects and apps need liquidity in the world's most trusted asset.
+The Problem: Users and institutions want sustainable returns on their Bitcoin holdings, while projects and apps need liquidity in the world's most trusted asset.
 
-**The Solution:** BOB - The Gateway to Bitcoin DeFi.
-
-## The Mission: Give everyone access to Bitcoin's potential
+## The Solution: BOB - The Gateway to Bitcoin DeFi
 
 BOB combines the security of Bitcoin with the DeFi innovation of Ethereum, creating the best place to build and earn yield with BTC.
 
-**For Users:** 1-click Bitcoin staking, cross-chain BTC swaps, and seamless DeFi access
-**For Developers:** "Integrate BOB EVM, get native BTC access"
+For Users: 1-click Bitcoin staking, cross-chain BTC swaps, and seamless DeFi access
 
-## The Product: The Gateway to Bitcoin DeFi
-
-BOB is a an optimistic rollup with ZK proofs on Ethereum secured by billions of dollars of staked Bitcoin, serviced by a hybrid BitVM bridge for native BTC integration.
+For Developers: "Integrate BOB EVM, get native BTC access"
 
 **Key Innovation:** "BTC on BOB is BTC" - The first chain to achieve finality from both Ethereum and Bitcoin.
 
-### Core Architecture
-
-- **Bitcoin Security:** All BTC on BOB is protected by Bitcoin's security model via BitVM
-- **Ethereum Compatibility:** Full EVM compatibility with ZK fraud proofs
-- **Hybrid Finality:** Finality secured by both Bitcoin and Ethereum networks
-- **Native BTC Integration:** Direct Bitcoin access without wrapping or synthetic assets
-
 ## The Technology: The Hybrid Chain
 
-An optimistic rollup on Ethereum secured with ZK proofs, finalized by billions of dollars of staked BTC, serviced by a hybrid BitVM bridge for native BTC. BTC on BOB is BTC. First chain to have finality from both Ethereum and Bitcoin.
+BOB is an optimistic rollup with ZK proofs on Ethereum secured by billions of dollars of staked Bitcoin, serviced by a hybrid BitVM bridge for native BTC integration.
+
+### Core Architecture
+
+- **Bitcoin Security**: BTC on BOB is protected by Bitcoin's security model via BitVM
+- **Ethereum Compatibility**: Full EVM compatibility with ZK fraud proofs
+- **Hybrid Finality**: Finality secured by both Bitcoin and Ethereum networks
+- **Native BTC Integration**: Direct BTC access with a single transaction
+
+## Why build on BOB?
 
 ### Gateway (to BTC DeFi)
 
