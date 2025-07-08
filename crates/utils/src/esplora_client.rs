@@ -224,7 +224,7 @@ impl EsploraClient {
         index: usize,
     ) -> Result<Txid> {
         // 1. Get the txid at the index in the block
-        let path = format!("block/{}/txid/{}", block_hash, index);
+        let path = format!("block/{block_hash}/txid/{index}");
         let txid_str = self.get(&path).await?;
         let txid = Txid::from_str(&txid_str)?;
         Ok(txid)
