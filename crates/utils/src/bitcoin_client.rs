@@ -295,6 +295,22 @@ impl BitcoinClient {
         .await?.map_err(Error::BitcoinError)
     }
 
+    /// Fetch the transaction ID at a specific index in the block (like esplora's
+    /// `/block/:hash/txid/:index`).
+    pub fn get_block_txid_by_index(
+        &self,
+        block_hash: &BlockHash,
+        index: usize,
+    ) -> Result<Txid, Error> {
+        let block = self.rpc.get_block(block_hash)?;
+        block.txdata.get(index).map(|tx| tx.compute_txid()).ok_or(Error::MissingTxId)
+    }
+
+    pub fn get_block_hash_from_txid(&self, txid: &Txid) -> Result<BlockHash, Error> {
+        let result = self.rpc.get_transaction(txid, None)?;
+        result.info.blockhash.ok_or(Error::MissingTxId)
+    }
+
     pub fn network(&self) -> Result<Network, Error> {
         let info = self.rpc.get_blockchain_info()?;
         Ok(info.chain)
