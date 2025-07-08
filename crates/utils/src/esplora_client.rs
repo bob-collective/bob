@@ -13,6 +13,21 @@ const ESPLORA_MAINNET_URL: &str = "https://btc-mainnet.interlay.io";
 const ESPLORA_LOCALHOST_URL: &str = "http://localhost:3002";
 const ESPLORA_SIGNET_URL: &str = "https://btc-signet.gobob.xyz";
 
+#[derive(Deserialize, Debug)]
+pub struct Tx {
+    pub txid: Txid,
+    pub version: i32,
+    pub locktime: u32,
+    pub vin: Vec<VinFormat>,
+    pub vout: Vec<VoutFormat>,
+    /// Transaction size in raw bytes (NOT virtual bytes).
+    pub size: usize,
+    /// Transaction weight units.
+    pub weight: u64,
+    pub status: TransactionStatus,
+    pub fee: u64,
+}
+
 // https://github.com/Blockstream/electrs/blob/adedee15f1fe460398a7045b292604df2161adc0/src/util/transaction.rs#L17-L26
 #[derive(Debug, Deserialize)]
 pub struct TransactionStatus {
@@ -136,6 +151,12 @@ impl EsploraClient {
 
     pub async fn get_tx_hex(&self, txid: &Txid) -> Result<String> {
         self.get(&format!("/tx/{txid}/hex")).await
+    }
+
+    pub async fn get_tx_info(&self, txid: &Txid) -> Result<Tx, Error> {
+        let path = format!("/tx/{txid}");
+        let tx = self.get_and_decode::<Tx>(&path).await?;
+        Ok(tx)
     }
 
     pub async fn get_raw_tx(&self, txid: &Txid) -> Result<Vec<u8>> {
@@ -287,6 +308,18 @@ mod tests {
         )?;
 
         assert_eq!(esplora_client.get_block_value(&block_hash).await.unwrap().height, 884457);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_esplora_get_tx_info() -> Result<()> {
+        let esplora_client = EsploraClient::new(Network::Bitcoin)?;
+
+        let txid =
+            Txid::from_str("7d572189e512cf1660abe079adde55ab38c61a714c622121756d062ee4934416")?;
+        let tx = esplora_client.get_tx_info(&txid).await?;
+
+        assert!(tx.status.confirmed);
         Ok(())
     }
 }
