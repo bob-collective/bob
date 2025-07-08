@@ -37,8 +37,7 @@ Find more information on [how to bridge to BOB](/docs/user-hub/onboard-to-bob/).
 ### Staking live on BOB
 
 - [BOB Earn](https://app.gobob.xyz/en/earn)
-- [Explore the ecosystem](https://app.gobob.xyz/en/apss)
-
+- [Explore the ecosystem](https://app.gobob.xyz/en/apps)
 ## DeFi Apps on BOB
 
 **Explore the Ecosystem** - Access a growing suite of DeFi applications.
