@@ -571,9 +571,6 @@ export class GatewayApiClient {
 
         const data: GatewayCreateOrderResponse = await response.json();
         // NOTE: could remove this check but good for sanity
-        if (data.opReturnHash != calculateOpReturnHash(request)) {
-            throw new Error('Invalid OP_RETURN hash');
-        }
 
         let psbtBase64: string = '';
         if (
@@ -1112,27 +1109,6 @@ export class GatewayApiClient {
             },
         });
     }
-}
-
-/**
- * Should compute the same OP_RETURN hash as the Gateway API and smart contracts.
- * This is used for data integrity checking.
- */
-function calculateOpReturnHash(req: GatewayCreateOrderRequest) {
-    const abiCoder = new AbiCoder();
-    return ethers.keccak256(
-        abiCoder.encode(
-            ['address', 'address', 'uint256', 'address', 'bytes', 'bytes'],
-            [
-                req.gatewayAddress,
-                req.strategyAddress || ethers.ZeroAddress,
-                req.satsToConvertToEth,
-                req.userAddress,
-                req.gatewayExtraData || '0x',
-                req.strategyExtraData || '0x',
-            ]
-        )
-    );
 }
 
 export function toHexScriptPubKey(userAddress: string, network: bitcoin.Network): string {
