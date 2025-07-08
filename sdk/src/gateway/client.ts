@@ -52,14 +52,7 @@ import {
     StakeTransactionParams,
     Token,
 } from './types';
-import {
-    calculateOpReturnHash,
-    parseOrderStatus,
-    slugify,
-    stripHexPrefix,
-    toHexScriptPubKey,
-    viemClient,
-} from './utils';
+import { parseOrderStatus, slugify, stripHexPrefix, toHexScriptPubKey, viemClient } from './utils';
 
 /**
  * Base url for the mainnet Gateway API.
@@ -559,9 +552,6 @@ export class GatewayApiClient {
 
         const data: GatewayCreateOrderResponse = await response.json();
         // NOTE: could remove this check but good for sanity
-        if (data.opReturnHash != calculateOpReturnHash(request)) {
-            throw new Error('Invalid OP_RETURN hash');
-        }
 
         let psbtBase64: string = '';
         if (
