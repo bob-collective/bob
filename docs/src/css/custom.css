@@ -328,3 +328,46 @@
     background-color: rgba(0, 0, 0, 0.75);
   }
 }
+
+/* Sidebar: smaller text */
+.menu__link {
+  font-size: 0.92em;
+}
+
+/* Sidebar: top-level items (categories) remain white, sub-items light grey */
+.menu__list-item > .menu__link {
+  color: #fff;
+  font-weight: 600;
+}
+.menu__list .menu__list .menu__link {
+  color: #b0b3b8;
+  font-weight: 400;
+}
+.menu__list .menu__list .menu__link:hover, .menu__list .menu__list .menu__link--active {
+  color: #fff;
+}
+
+/* Sidebar: vertical spacing only between top-level groups */
+.menu__list > .theme-doc-sidebar-item-category:not(:last-child) {
+  margin-bottom: 1.5em;
+}
+
+/* Remove extra margin between items within a group */
+.menu__list .menu__list-item {
+  margin-bottom: 0;
+}
+
+/* Remove spacing between subsections within categories */
+.menu__list .menu__list .theme-doc-sidebar-item-category {
+  margin-bottom: 0;
+}
+
+.menu__list .menu__list .theme-doc-sidebar-item-category:not(:last-child) {
+  margin-bottom: 0;
+}
+
+/* Optional: slightly reduce padding for compactness */
+.menu__list .menu__link {
+  padding-top: 0.35em;
+  padding-bottom: 0.35em;
+}

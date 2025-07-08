@@ -23,7 +23,7 @@ const ONE_PAGER =
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   title: "BOB - Build on Bitcoin",
-  tagline: "A hybrid L2 powered by Bitcoin and Ethereum.",
+  tagline: "A Hybrid Chain powered by Bitcoin and Ethereum.",
   favicon: "img/favicon.ico",
   url: DOCS_PAGE,
   baseUrl: "/",
@@ -49,149 +49,43 @@ const config = {
       "@docusaurus/plugin-client-redirects",
       {
         redirects: [
-          // Introduction section
+          // Folder-level redirects for docs migration
           {
-            from: "/docs/learn/guides/faq",
-            to: "/learn/user-guides/getting-started/wallet-guide/#faqs",
+            from: "/learn/introduction",
+            to: "/docs/reference",
           },
           {
-            from: "/learn/introduction/faq",
-            to: "/learn/user-guides/getting-started/wallet-guide/#faqs",
+            from: "/learn/user-guides",
+            to: "/docs/user-hub",
           },
           {
-            from: "/docs/learn/bob-stack/merged-mining",
-            to: "/learn/introduction/roadmap",
+            from: "/learn/builder-guides/full-node",
+            to: "/docs/bob-chain/full-node",
           },
           {
-            from: "/docs/learn/bob-stack/op-stack",
-            to: "/learn/introduction/roadmap",
+            from: "/learn/builder-guides/gateway",
+            to: "/docs/gateway",
           },
-          {
-            from: "/docs/learn/bob-stack/roadmap",
-            to: "/learn/introduction/roadmap",
-          },
-          {
-            from: "/learn/user-guides/wallet-guide",
-            to: "/learn/user-guides/getting-started/wallet-guide/",
-          },
-          {
-            from: "/learn/user-guides/binance-wallet-gateway",
-            to: "/learn/user-guides/onboard-to-bob/binance-wallet-gateway/",
-          },
-          {
-            from: "/learn/user-guides/bob-stake",
-            to: "/learn/user-guides/stake-btc/",
-          },
-          {
-            from: "/learn/user-guides/stake-with-ledger",
-            to: "/learn/user-guides/stake-btc/#ledger-guide",
-          },
-
-          // User Guides
-          {
-            from: "/docs/learn/guides/binance-wallet-gateway",
-            to: "/learn/user-guides/onboard-to-bob/binance-wallet-gateway/",
-          },
-          {
-            from: "/docs/learn/guides/bob-fusion",
-            to: "/learn/user-guides/bob-fusion",
-          },
-          {
-            from: "/docs/learn/guides/bob-gateway",
-            to: "/learn/user-guides/onboard-to-bob/bob-gateway",
-          },
-          {
-            from: "/docs/learn/guides/bob-pay",
-            to: "/learn/deprecated/bob-pay",
-          },
-          {
-            from: "/docs/learn/guides/bob-stake",
-            to: "/learn/user-guides/stake-btc/",
-          },
-          {
-            from: "/docs/learn/guides/ethereum-bridge",
-            to: "/learn/user-guides/onboard-to-bob/ethereum-bridge",
-          },
-          {
-            from: "/docs/build/getting-started/networks",
-            to: "/learn/user-guides/getting-started/networks",
-          },
-          {
-            from: "/docs/learn/guides/onboard-to-bob",
-            to: "/learn/user-guides/onboard-to-bob",
-          },
-          {
-            from: "/learn/reference/tools/wallets",
-            to: "/learn/user-guides/getting-started/wallet-guide/",
-          },
-
-          // Builder Guides
-          {
-            from: "/docs/build/bob-sdk/bridged-btc-gas-fee/account-abstraction",
-            to: "/learn/builder-guides/bridged-btc-gas-fee/account-abstraction",
-          },
-          {
-            from: "/docs/build/bob-sdk/bridged-btc-gas-fee",
-            to: "/learn/builder-guides/bridged-btc-gas-fee",
-          },
-          {
-            from: "/docs/build/bob-sdk/bridged-btc-gas-fee/meta-transactions",
-            to: "/learn/builder-guides/bridged-btc-gas-fee/meta-transactions",
-          },
-          {
-            from: "/docs/build/how-to/full-node",
-            to: "/learn/builder-guides/full-node",
-          },
-          {
-            from: "/docs/build/bob-sdk/gateway",
-            to: "/learn/gateway/introduction",
-          },
-          {
-            from: "/docs/build/getting-started/helloworld",
-            to: "/learn/builder-guides/hello-bitcoin",
-          },
-          {
-            from: "/docs/build/getting-started/local-development",
-            to: "/learn/builder-guides/local-development",
-          },
-          {
-            from: "/docs/build/bob-sdk/relay",
-            to: "/learn/builder-guides/relay",
-          },
-          {
-            from: "/docs/build/bob-sdk/sats-wagmi",
-            to: "/learn/builder-guides/sats-wagmi",
-          },
-          {
-            from: "/docs/build/how-to/metamask-snap",
-            to: "/learn/builder-guides/metamask-snap",
-          },
-
           {
             from: "/learn/builder-guides/create-strategy",
-            to: "/learn/gateway/strategy",
-          },
-
-          // Reference section
-          {
-            from: "/docs/learn/security/audits",
-            to: "/learn/reference/audits",
+            to: "/docs/gateway",
           },
           {
-            from: "/docs/build/bridged-token-addresses",
-            to: "/learn/reference/bridged-token-addresses",
+            from: "/learn/builder-guides/bob-chain",
+            to: "/docs/bob-chain",
           },
           {
-            from: "/docs/build/contracts",
-            to: "/learn/reference/contracts",
+            from: "/learn/reference/tools",
+            to: "/docs/tools/",
           },
           {
-            from: "/docs/learn/security/privileged-roles",
-            to: "/learn/reference/privileged-roles",
+            from: "/learn/reference",
+            to: "/docs/reference",
           },
+          // Deprecated features
           {
-            from: "/docs/build/examples/zkvm-taproot",
-            to: "/learn/reference/tools/rust-zkvm",
+            from: "/learn/user-guides/bob-pay",
+            to: "/docs/deprecated/bob-pay",
           },
         ],
       },
@@ -252,7 +146,7 @@ const config = {
         {
           name: "keywords",
           content:
-            "bitcoin, layer 2, scaling, rollup, rust, smart contracts, evm, solidity, collective, open source, blockchain",
+            "bitcoin, layer 2, scaling, rollup, bitvm, rust, smart contracts, evm, solidity, collective, open source, blockchain",
         },
       ],
       navbar: {
@@ -265,9 +159,9 @@ const config = {
         items: [
           {
             type: "docSidebar",
-            sidebarId: "learnSidebar",
+            sidebarId: "docsSidebar",
             position: "left",
-            label: "Learn",
+            label: "Docs",
           },
           {
             href: DISCORD,
@@ -353,43 +247,19 @@ const config = {
         disableSwitch: true,
         respectPrefersColorScheme: false,
       },
-      // Docusaurus x Algolia documentation: https://docusaurus.io/docs/search#connecting-algolia
       algolia: {
         appId: "AO8XE1SP27",
-
-        // Public API key (safe to commit)
         apiKey: "c9e55704810dd96a5013d44fb439186b",
-
         indexName: "BOB Docs",
         contextualSearch: true,
-
-        // Optional: Replace parts of the item URLs from Algolia.
-        // Useful when using the same search index for multiple deployments using a different baseUrl.
-        // You can use regexp or string in the `from` param. For example: localhost:3000 vs myCompany.com/docs
         replaceSearchResultPathname: {
           from: "localhost:3000",
           to: "docs.gobob.xyz",
         },
-
-        // Optional: path for dedicated search page (`false` to disable it)
         searchPagePath: "search",
-
-        // Collect data on user events, such as search queries
         insights: true,
-
-        // Other parameters: https://www.algolia.com/doc/api-reference/search-api-parameters/
         searchParameters: {},
-
-        // Other options: https://docsearch.algolia.com/docs/api/
       },
-      // announcementBar: {
-      //   id: "sign_up",
-      //   content:
-      //     'Missing something? Want to know more? <a target="_blank" rel="noopener noreferrer" href="https://forms.gle/etYqChR3aahUFuEZ9">Provide feedback</a>.',
-      //   backgroundColor: "#f58b00",
-      //   textColor: "#fff",
-      //   isCloseable: true,
-      // },
     }),
 
   markdown: {
