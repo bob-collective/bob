@@ -217,6 +217,19 @@ impl EsploraClient {
         self.get_and_decode(&format!("tx/{txid}/status")).await
     }
 
+    /// Fetch the transaction at the specified index within the given block.
+    pub async fn get_block_txid_by_index(
+        &self,
+        block_hash: &BlockHash,
+        index: usize,
+    ) -> Result<Txid> {
+        // 1. Get the txid at the index in the block
+        let path = format!("block/{}/txid/{}", block_hash, index);
+        let txid_str = self.get(&path).await?;
+        let txid = Txid::from_str(&txid_str)?;
+        Ok(txid)
+    }
+
     pub async fn send_transaction(&self, tx: &Transaction) -> Result<Txid> {
         let url = self.url.join("tx")?;
         let txid = self
@@ -320,6 +333,22 @@ mod tests {
         let tx = esplora_client.get_tx_info(&txid).await?;
 
         assert!(tx.status.confirmed);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_esplora_fetch_coinbase_tx() -> Result<()> {
+        let esplora_client = EsploraClient::new(Network::Bitcoin)?;
+
+        let block_hash = BlockHash::from_str(
+            "000000000000000000007baa43da74c78fbb7dc6b4bf5f1ef16d800a3b884051",
+        )?;
+        let coinbase_tx = esplora_client.get_block_txid_by_index(&block_hash, 0).await?;
+
+        assert_eq!(
+            coinbase_tx,
+            Txid::from_str("33b36c41948b549159a200e9fed5027ef9a3fd5737a6bfe91094a61c8124c722")?
+        );
         Ok(())
     }
 }
