@@ -738,7 +738,7 @@ export class GatewayApiClient {
 
         let bitcoinTxHex: string;
         if (bitcoinTxOrId.length === 64) {
-            const esploraClient = new EsploraClient(this.chain === Chain.BOB ? Network.mainnet : Network.testnet);
+            const esploraClient = new EsploraClient(this.chain === Chain.BOB ? Network.mainnet : Network.signet);
             bitcoinTxHex = await esploraClient.getTransactionHex(bitcoinTxOrId);
         } else {
             bitcoinTxHex = bitcoinTxOrId;
