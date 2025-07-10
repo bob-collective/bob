@@ -965,4 +965,21 @@ describe('Gateway Tests', () => {
         expect(createOfframpOrderSpy).toHaveBeenCalledOnce();
         expect(fetchOfframpRegistryAddressSpy).toHaveBeenCalledOnce();
     });
+
+    it('should return onramp and offramp orders', async () => {
+        const gatewaySDK = new GatewaySDK('signet');
+
+        const getOnrampOrdersSpy = vi
+            .spyOn(gatewaySDK, 'getOnrampOrders')
+            .mockImplementationOnce(() => Promise.resolve([]));
+        const getOfframpOrdersSpy = vi
+            .spyOn(gatewaySDK, 'getOfframpOrders')
+            .mockImplementationOnce(() => Promise.resolve([]));
+
+        const result = await gatewaySDK.getOrders(zeroAddress);
+
+        expect(result).toEqual([]);
+        expect(getOnrampOrdersSpy).toHaveBeenCalledOnce();
+        expect(getOfframpOrdersSpy).toHaveBeenCalledOnce();
+    });
 });
