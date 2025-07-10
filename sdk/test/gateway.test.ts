@@ -17,14 +17,28 @@ import {
     OfframpOrderStatus,
     StakeTransactionParams,
     OrderDetailsRaw,
-    convertOrderDetailsRawToOrderDetails,
 } from '../src/gateway/types';
-import { toHexScriptPubKey } from '../src/gateway/utils';
+import { toHexScriptPubKey, convertOrderDetailsRawToOrderDetails } from '../src/gateway/utils';
 
 const TBTC = SYMBOL_LOOKUP[ChainId.BOB]['tbtc'];
 const TBTC_ADDRESS = TBTC.address;
 const SOLVBTC = SYMBOL_LOOKUP[ChainId.BOB]['solvbtc'];
 const SOLVBTC_ADDRESS = SOLVBTC.address;
+
+const MOCK_ORDER_DETAILS_RAW: OrderDetailsRaw = {
+    version: 'v4',
+    data: {
+        ethAmountToReceive: '0x0',
+        maxSatsToSwapToEth: 0,
+        ethTransferGasLimit: '0x8fc',
+        strategyGasLimit: '0x0',
+        totalUserGasLimit: '0x30d40',
+        userGasPriceLimit: '0x100699',
+        l1DataFee: '0x18187',
+        extraSatsFee: null,
+        extraSatsFeeRecipient: null,
+    },
+};
 
 afterEach(() => {
     nock.cleanAll();
@@ -46,22 +60,7 @@ describe('Gateway Tests', () => {
     it('should get quote', async () => {
         const gatewaySDK = new GatewaySDK('mainnet');
 
-        const mockOrderDetailsRaw: OrderDetailsRaw = {
-            version: 'v4',
-            data: {
-                ethAmountToReceive: '0x0',
-                maxSatsToSwapToEth: 0,
-                ethTransferGasLimit: '0x8fc',
-                strategyGasLimit: '0x0',
-                totalUserGasLimit: '0x30d40',
-                userGasPriceLimit: '0x100699',
-                l1DataFee: '0x18187',
-                extraSatsFee: null,
-                extraSatsFeeRecipient: null,
-            },
-        };
-
-        const orderDetails = convertOrderDetailsRawToOrderDetails(mockOrderDetailsRaw);
+        const orderDetails = convertOrderDetailsRawToOrderDetails(MOCK_ORDER_DETAILS_RAW);
 
         const mockQuote = {
             gatewayAddress: zeroAddress,
@@ -72,7 +71,7 @@ describe('Gateway Tests', () => {
             bitcoinAddress: '',
             txProofDifficultyFactor: 3,
             strategyAddress: zeroAddress,
-            orderDetails: mockOrderDetailsRaw,
+            orderDetails: MOCK_ORDER_DETAILS_RAW,
             baseToken: TBTC,
             outputToken: TBTC,
         };
@@ -227,21 +226,6 @@ describe('Gateway Tests', () => {
 
     it('should start order', { timeout: 50000 }, async () => {
         const gatewaySDK = new GatewaySDK('bob');
-        const mockOrderDetailsRaw: OrderDetailsRaw = {
-            version: 'v4',
-            data: {
-                ethAmountToReceive: '0x0',
-                maxSatsToSwapToEth: 0,
-                ethTransferGasLimit: '0x8fc',
-                strategyGasLimit: '0x0',
-                totalUserGasLimit: '0x30d40',
-                userGasPriceLimit: '0x100699',
-                l1DataFee: '0x18187',
-                extraSatsFee: null,
-                extraSatsFeeRecipient: null,
-            },
-        };
-
         const mockQuote = {
             gatewayAddress: zeroAddress,
             baseTokenAddress: TBTC_ADDRESS as Address,
@@ -251,7 +235,7 @@ describe('Gateway Tests', () => {
             bitcoinAddress: 'bc1qafk4yhqvj4wep57m62dgrmutldusqde8adh20d',
             txProofDifficultyFactor: 3,
             strategyAddress: zeroAddress,
-            orderDetails: convertOrderDetailsRawToOrderDetails(mockOrderDetailsRaw),
+            orderDetails: convertOrderDetailsRawToOrderDetails(MOCK_ORDER_DETAILS_RAW),
         };
 
         nock(`${MAINNET_GATEWAY_BASE_URL}`).post(`/order/v4`).reply(201, {
@@ -290,21 +274,6 @@ describe('Gateway Tests', () => {
     });
 
     it('should get strategies', async () => {
-        const mockOrderDetailsRaw: OrderDetailsRaw = {
-            version: 'v4',
-            data: {
-                ethAmountToReceive: '0x0',
-                maxSatsToSwapToEth: 0,
-                ethTransferGasLimit: '0x8fc',
-                strategyGasLimit: '0x0',
-                totalUserGasLimit: '0x30d40',
-                userGasPriceLimit: '0x100699',
-                l1DataFee: '0x18187',
-                extraSatsFee: null,
-                extraSatsFeeRecipient: null,
-            },
-        };
-
         nock(`${MAINNET_GATEWAY_BASE_URL}`)
             .get(`/strategies`)
             .reply(200, [
@@ -326,7 +295,7 @@ describe('Gateway Tests', () => {
                 bitcoinAddress: '',
                 txProofDifficultyFactor: 3,
                 strategyAddress: zeroAddress,
-                orderDetails: mockOrderDetailsRaw,
+                orderDetails: MOCK_ORDER_DETAILS_RAW,
             });
 
         const gatewaySDK = new GatewaySDK('bob');
@@ -865,21 +834,6 @@ describe('Gateway Tests', () => {
 
     it('should return btc txid for onramp', async () => {
         const gatewaySDK = new GatewaySDK('mainnet');
-        const mockOrderDetailsRaw: OrderDetailsRaw = {
-            version: 'v4',
-            data: {
-                ethAmountToReceive: '0x0',
-                maxSatsToSwapToEth: 0,
-                ethTransferGasLimit: '0x8fc',
-                strategyGasLimit: '0x0',
-                totalUserGasLimit: '0x30d40',
-                userGasPriceLimit: '0x100699',
-                l1DataFee: '0x18187',
-                extraSatsFee: null,
-                extraSatsFeeRecipient: null,
-            },
-        };
-
         const mockBtcSigner = {
             signAllInputs: vi.fn((val) => val),
         };
@@ -905,7 +859,7 @@ describe('Gateway Tests', () => {
             txProofDifficultyFactor: 3,
             strategyAddress: zeroAddress,
             baseToken: TBTC,
-            orderDetails: convertOrderDetailsRawToOrderDetails(mockOrderDetailsRaw),
+            orderDetails: convertOrderDetailsRawToOrderDetails(MOCK_ORDER_DETAILS_RAW),
         };
 
         nock(`${MAINNET_GATEWAY_BASE_URL}`).post(`/order/v4`).reply(201, {

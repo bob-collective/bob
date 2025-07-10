@@ -24,8 +24,6 @@ import {
     Chain,
     ChainId,
     chainIdMapping,
-    convertOrderDetailsRawToOrderDetails,
-    convertOrderDetailsToRaw,
     EnrichedToken,
     ExecuteQuoteParams,
     ExecuteStakeParam,
@@ -54,7 +52,15 @@ import {
     StakeTransactionParams,
     Token,
 } from './types';
-import { parseOrderStatus, slugify, stripHexPrefix, toHexScriptPubKey, viemClient } from './utils';
+import {
+    parseOrderStatus,
+    slugify,
+    stripHexPrefix,
+    toHexScriptPubKey,
+    viemClient,
+    convertOrderDetailsRawToOrderDetails,
+    convertOrderDetailsToRaw,
+} from './utils';
 
 /**
  * Base url for the mainnet Gateway API.
@@ -191,6 +197,10 @@ export class GatewayApiClient {
         });
 
         const jsonResponse = await response.json();
+
+        if (!jsonResponse.orderDetails) {
+            throw new Error('Missing orderDetails in quote response');
+        }
 
         const quote: GatewayQuote = {
             ...jsonResponse,
