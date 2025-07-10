@@ -27,7 +27,7 @@ import {
     EnrichedToken,
     ExecuteQuoteParams,
     ExecuteStakeParam,
-    GatewayCreateOrderRequest,
+    GatewayCreateOrderRequestPayload,
     GatewayCreateOrderResponse,
     GatewayQuote,
     GatewayStartOrder,
@@ -52,7 +52,15 @@ import {
     StakeTransactionParams,
     Token,
 } from './types';
-import { parseOrderStatus, slugify, stripHexPrefix, toHexScriptPubKey, viemClient } from './utils';
+import {
+    parseOrderStatus,
+    slugify,
+    stripHexPrefix,
+    toHexScriptPubKey,
+    viemClient,
+    convertOrderDetailsRawToOrderDetails,
+    convertOrderDetailsToRaw,
+} from './utils';
 
 /**
  * Base url for the mainnet Gateway API.
@@ -176,9 +184,10 @@ export class GatewayApiClient {
         const outputTokenAddress = getTokenAddress(this.chainId, toToken);
         const strategyAddress = params.strategyAddress?.startsWith('0x') ? params.strategyAddress : undefined;
 
-        const url = new URL(`${this.baseUrl}/quote/${outputTokenAddress}`);
+        const url = new URL(`${this.baseUrl}/v4/quote/${outputTokenAddress}`);
         if (strategyAddress) url.searchParams.append('strategy', strategyAddress);
         if (params.amount) url.searchParams.append('satoshis', `${params.amount}`);
+        if (params.gasRefill) url.searchParams.append('ethAmountToReceive', `${params.gasRefill}`);
 
         const response = await fetch(url, {
             headers: {
@@ -187,10 +196,19 @@ export class GatewayApiClient {
             },
         });
 
-        const quote: GatewayQuote = await response.json();
+        const jsonResponse = await response.json();
+
+        if (!jsonResponse.orderDetails) {
+            throw new Error('Missing orderDetails in quote response');
+        }
+
+        const quote: GatewayQuote = {
+            ...jsonResponse,
+            orderDetails: convertOrderDetailsRawToOrderDetails(jsonResponse.orderDetails),
+        };
+
         return {
             ...quote,
-            fee: quote.fee + (params.gasRefill || 0),
             baseToken: ADDRESS_LOOKUP[this.chainId][quote.baseTokenAddress],
             outputToken: quote.strategyAddress ? ADDRESS_LOOKUP[this.chainId][outputTokenAddress] : undefined,
         };
@@ -525,7 +543,7 @@ export class GatewayApiClient {
         }
 
         const abiCoder = new AbiCoder();
-        const request: GatewayCreateOrderRequest = {
+        const request: GatewayCreateOrderRequestPayload = {
             gatewayAddress: gatewayQuote.gatewayAddress,
             strategyAddress: gatewayQuote.strategyAddress,
             satsToConvertToEth: params.gasRefill || 0,
@@ -535,9 +553,10 @@ export class GatewayApiClient {
             strategyExtraData: abiCoder.encode(['uint256'], [0]) as Hex,
             satoshis: gatewayQuote.satoshis,
             campaignId: params.campaignId,
+            orderDetails: convertOrderDetailsToRaw(gatewayQuote.orderDetails),
         };
 
-        const response = await fetch(`${this.baseUrl}/order`, {
+        const response = await fetch(`${this.baseUrl}/v4/order`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
