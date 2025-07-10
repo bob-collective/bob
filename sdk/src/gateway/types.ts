@@ -229,7 +229,7 @@ export type GatewayQuote = {
     dustThreshold: number;
     /** @description The satoshi output amount */
     satoshis: number;
-    /** @description The fee paid in satoshis (includes gas refill) */
+    /** @description The fee paid in satoshis (includes gas refill, l1 data fee and estimated prove tx fee) */
     fee: number;
     /** @description The Bitcoin address to send BTC */
     bitcoinAddress: string;
@@ -237,7 +237,87 @@ export type GatewayQuote = {
     txProofDifficultyFactor: number;
     /** @description The optional strategy address */
     strategyAddress?: Address;
+    /** @description V4 order details */
+    orderDetails: OrderDetails;
 };
+
+export type OrderDetailsRaw = {
+    version: string;
+    data: {
+        ethAmountToReceive: string;
+        maxSatsToSwapToEth: number;
+        ethTransferGasLimit: string;
+        strategyGasLimit: string;
+        totalUserGasLimit: string;
+        userGasPriceLimit: string;
+        l1DataFee: string;
+        extraSatsFee: string | null;
+        extraSatsFeeRecipient: Address | null;
+    };
+};
+
+export type OrderDetails = {
+    /** @description Order version identifier */
+    version: string;
+    data: {
+        /** @description The amount of ETH (in wei) that the user will receive */
+        ethAmountToReceive: bigint;
+        /** @description Maximum amount of satoshis allowed to be swapped to ETH */
+        maxSatsToSwapToEth: number;
+        /** @description Estimated gas limit for the ETH transfer step */
+        ethTransferGasLimit: bigint;
+        /** @description Estimated gas limit for executing the strategy logic */
+        strategyGasLimit: bigint;
+        /** @description User gas limit to finalize transaction */
+        totalUserGasLimit: bigint;
+        /** @description Maximum gas price (in wei) the user is willing to pay */
+        userGasPriceLimit: bigint;
+        /** @description The estimated Layer 1 (L1) calldata cost in wei */
+        l1DataFee: bigint;
+        /** @description Optional additional fee in satoshis to be included */
+        extraSatsFee: bigint | null;
+        /** @description Optional recipient address for the extra fee (if any) */
+        extraSatsFeeRecipient: Address | null;
+    };
+};
+
+function parseU256(value: string | null): bigint | null {
+    if (value === null) return null;
+    return BigInt(value);
+}
+
+export function convertOrderDetailsRawToOrderDetails(order: OrderDetailsRaw): OrderDetails {
+    return {
+        version: order.version,
+        data: {
+            ethAmountToReceive: parseU256(order.data.ethAmountToReceive),
+            maxSatsToSwapToEth: order.data.maxSatsToSwapToEth,
+            ethTransferGasLimit: parseU256(order.data.ethTransferGasLimit)!,
+            strategyGasLimit: parseU256(order.data.strategyGasLimit)!,
+            totalUserGasLimit: parseU256(order.data.totalUserGasLimit)!,
+            userGasPriceLimit: parseU256(order.data.userGasPriceLimit)!,
+            l1DataFee: parseU256(order.data.l1DataFee)!,
+            extraSatsFee: parseU256(order.data.extraSatsFee),
+            extraSatsFeeRecipient: order.data.extraSatsFeeRecipient,
+        },
+    };
+}
+export function convertOrderDetailsToRaw(order: OrderDetails): OrderDetailsRaw {
+    return {
+        version: order.version,
+        data: {
+            ethAmountToReceive: order.data.ethAmountToReceive.toString(), // bigint to string
+            maxSatsToSwapToEth: order.data.maxSatsToSwapToEth,
+            ethTransferGasLimit: order.data.ethTransferGasLimit.toString(),
+            strategyGasLimit: order.data.strategyGasLimit.toString(),
+            totalUserGasLimit: order.data.totalUserGasLimit.toString(),
+            userGasPriceLimit: order.data.userGasPriceLimit.toString(),
+            l1DataFee: order.data.l1DataFee.toString(),
+            extraSatsFee: order.data.extraSatsFee !== null ? order.data.extraSatsFee.toString() : null,
+            extraSatsFeeRecipient: order.data.extraSatsFeeRecipient,
+        },
+    };
+}
 
 /** @dev Internal */
 export type GatewayCreateOrderRequest = {
@@ -249,6 +329,19 @@ export type GatewayCreateOrderRequest = {
     strategyExtraData?: Hex;
     satoshis: number;
     campaignId?: string;
+    orderDetails?: OrderDetails;
+};
+
+export type GatewayCreateOrderRequestPayload = {
+    gatewayAddress: Address;
+    strategyAddress?: Address;
+    satsToConvertToEth: number;
+    userAddress: Address;
+    gatewayExtraData?: Hex;
+    strategyExtraData?: Hex;
+    satoshis: number;
+    campaignId?: string;
+    orderDetails?: OrderDetailsRaw;
 };
 
 /** @dev Internal */

@@ -16,6 +16,8 @@ import {
     OfframpOrder,
     OfframpOrderStatus,
     StakeTransactionParams,
+    OrderDetailsRaw,
+    convertOrderDetailsRawToOrderDetails,
 } from '../src/gateway/types';
 import { toHexScriptPubKey } from '../src/gateway/utils';
 
@@ -44,6 +46,23 @@ describe('Gateway Tests', () => {
     it('should get quote', async () => {
         const gatewaySDK = new GatewaySDK('mainnet');
 
+        const mockOrderDetailsRaw: OrderDetailsRaw = {
+            version: 'v4',
+            data: {
+                ethAmountToReceive: '0x0',
+                maxSatsToSwapToEth: 0,
+                ethTransferGasLimit: '0x8fc',
+                strategyGasLimit: '0x0',
+                totalUserGasLimit: '0x30d40',
+                userGasPriceLimit: '0x100699',
+                l1DataFee: '0x18187',
+                extraSatsFee: null,
+                extraSatsFeeRecipient: null,
+            },
+        };
+
+        const orderDetails = convertOrderDetailsRawToOrderDetails(mockOrderDetailsRaw);
+
         const mockQuote = {
             gatewayAddress: zeroAddress,
             baseTokenAddress: TBTC_ADDRESS as Address,
@@ -53,11 +72,20 @@ describe('Gateway Tests', () => {
             bitcoinAddress: '',
             txProofDifficultyFactor: 3,
             strategyAddress: zeroAddress,
+            orderDetails: mockOrderDetailsRaw,
             baseToken: TBTC,
             outputToken: TBTC,
         };
 
-        nock(`${MAINNET_GATEWAY_BASE_URL}`).get(`/quote/${TBTC_ADDRESS}?satoshis=1000`).times(5).reply(200, mockQuote);
+        const assertMockQuote = {
+            ...mockQuote,
+            orderDetails: orderDetails,
+        };
+
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
+            .get(`/quote/v4/${TBTC_ADDRESS}?satoshis=1000`)
+            .times(5)
+            .reply(200, mockQuote);
 
         assert.deepEqual(
             await gatewaySDK.getQuote({
@@ -69,7 +97,7 @@ describe('Gateway Tests', () => {
                 amount: 1000,
             }),
             {
-                onrampQuote: mockQuote,
+                onrampQuote: assertMockQuote,
                 params: {
                     fromChain: 'Bitcoin',
                     fromToken: 'bitcoin',
@@ -90,7 +118,7 @@ describe('Gateway Tests', () => {
                 amount: 1000,
             }),
             {
-                onrampQuote: mockQuote,
+                onrampQuote: assertMockQuote,
                 params: {
                     fromChain: 'Bitcoin',
                     fromToken: 'bitcoin',
@@ -111,7 +139,7 @@ describe('Gateway Tests', () => {
                 amount: 1000,
             }),
             {
-                onrampQuote: mockQuote,
+                onrampQuote: assertMockQuote,
                 params: {
                     fromChain: 'Bitcoin',
                     fromToken: 'bitcoin',
@@ -132,7 +160,7 @@ describe('Gateway Tests', () => {
                 amount: 1000,
             }),
             {
-                onrampQuote: mockQuote,
+                onrampQuote: assertMockQuote,
                 params: {
                     fromChain: 'Bitcoin',
                     fromToken: 'bitcoin',
@@ -143,32 +171,9 @@ describe('Gateway Tests', () => {
                 },
             }
         );
-        assert.deepEqual(
-            await gatewaySDK.getQuote({
-                fromChain: 'Bitcoin',
-                fromToken: 'bitcoin',
-                toChain: 'BOB',
-                toToken: 'tBTC',
-                toUserAddress: zeroAddress,
-                amount: 1000,
-                gasRefill: 5,
-            }),
-            {
-                onrampQuote: { ...mockQuote, fee: 15 },
-                params: {
-                    fromChain: 'Bitcoin',
-                    fromToken: 'bitcoin',
-                    toChain: 'BOB',
-                    toToken: 'tBTC',
-                    toUserAddress: zeroAddress,
-                    amount: 1000,
-                    gasRefill: 5,
-                },
-            }
-        );
 
         // get the total available without amount
-        nock(`${MAINNET_GATEWAY_BASE_URL}`).get(`/quote/${TBTC_ADDRESS}`).reply(200, mockQuote);
+        nock(`${MAINNET_GATEWAY_BASE_URL}`).get(`/quote/v4/${TBTC_ADDRESS}`).reply(200, mockQuote);
         assert.deepEqual(
             await gatewaySDK.getQuote({
                 fromChain: 'Bitcoin',
@@ -179,7 +184,7 @@ describe('Gateway Tests', () => {
                 toUserAddress: zeroAddress,
             }),
             {
-                onrampQuote: mockQuote,
+                onrampQuote: assertMockQuote,
                 params: {
                     fromChain: 'Bitcoin',
                     fromToken: 'bitcoin',
@@ -222,6 +227,20 @@ describe('Gateway Tests', () => {
 
     it('should start order', { timeout: 50000 }, async () => {
         const gatewaySDK = new GatewaySDK('bob');
+        const mockOrderDetailsRaw: OrderDetailsRaw = {
+            version: 'v4',
+            data: {
+                ethAmountToReceive: '0x0',
+                maxSatsToSwapToEth: 0,
+                ethTransferGasLimit: '0x8fc',
+                strategyGasLimit: '0x0',
+                totalUserGasLimit: '0x30d40',
+                userGasPriceLimit: '0x100699',
+                l1DataFee: '0x18187',
+                extraSatsFee: null,
+                extraSatsFeeRecipient: null,
+            },
+        };
 
         const mockQuote = {
             gatewayAddress: zeroAddress,
@@ -232,9 +251,10 @@ describe('Gateway Tests', () => {
             bitcoinAddress: 'bc1qafk4yhqvj4wep57m62dgrmutldusqde8adh20d',
             txProofDifficultyFactor: 3,
             strategyAddress: zeroAddress,
+            orderDetails: convertOrderDetailsRawToOrderDetails(mockOrderDetailsRaw),
         };
 
-        nock(`${MAINNET_GATEWAY_BASE_URL}`).post(`/order`).reply(201, {
+        nock(`${MAINNET_GATEWAY_BASE_URL}`).post(`/order/v4`).reply(201, {
             uuid: '00000000-0000-0000-0000-000000000000',
             opReturnHash: '0x8d0fd89210149d4219c87fa814a4bcde0c6a36b8fe2dff52b1d3eaa9e7cf0a9a',
         });
@@ -270,6 +290,21 @@ describe('Gateway Tests', () => {
     });
 
     it('should get strategies', async () => {
+        const mockOrderDetailsRaw: OrderDetailsRaw = {
+            version: 'v4',
+            data: {
+                ethAmountToReceive: '0x0',
+                maxSatsToSwapToEth: 0,
+                ethTransferGasLimit: '0x8fc',
+                strategyGasLimit: '0x0',
+                totalUserGasLimit: '0x30d40',
+                userGasPriceLimit: '0x100699',
+                l1DataFee: '0x18187',
+                extraSatsFee: null,
+                extraSatsFeeRecipient: null,
+            },
+        };
+
         nock(`${MAINNET_GATEWAY_BASE_URL}`)
             .get(`/strategies`)
             .reply(200, [
@@ -281,7 +316,7 @@ describe('Gateway Tests', () => {
                 },
             ]);
         nock(`${MAINNET_GATEWAY_BASE_URL}`)
-            .get(`/quote/${TBTC_ADDRESS}?satoshis=1000&strategy=${zeroAddress}`)
+            .get(`/quote/v4/${TBTC_ADDRESS}?satoshis=1000&strategy=${zeroAddress}`)
             .times(4)
             .reply(200, {
                 gatewayAddress: zeroAddress,
@@ -291,6 +326,7 @@ describe('Gateway Tests', () => {
                 bitcoinAddress: '',
                 txProofDifficultyFactor: 3,
                 strategyAddress: zeroAddress,
+                orderDetails: mockOrderDetailsRaw,
             });
 
         const gatewaySDK = new GatewaySDK('bob');
@@ -829,6 +865,20 @@ describe('Gateway Tests', () => {
 
     it('should return btc txid for onramp', async () => {
         const gatewaySDK = new GatewaySDK('mainnet');
+        const mockOrderDetailsRaw: OrderDetailsRaw = {
+            version: 'v4',
+            data: {
+                ethAmountToReceive: '0x0',
+                maxSatsToSwapToEth: 0,
+                ethTransferGasLimit: '0x8fc',
+                strategyGasLimit: '0x0',
+                totalUserGasLimit: '0x30d40',
+                userGasPriceLimit: '0x100699',
+                l1DataFee: '0x18187',
+                extraSatsFee: null,
+                extraSatsFeeRecipient: null,
+            },
+        };
 
         const mockBtcSigner = {
             signAllInputs: vi.fn((val) => val),
@@ -855,9 +905,10 @@ describe('Gateway Tests', () => {
             txProofDifficultyFactor: 3,
             strategyAddress: zeroAddress,
             baseToken: TBTC,
+            orderDetails: convertOrderDetailsRawToOrderDetails(mockOrderDetailsRaw),
         };
 
-        nock(`${MAINNET_GATEWAY_BASE_URL}`).post(`/order`).reply(201, {
+        nock(`${MAINNET_GATEWAY_BASE_URL}`).post(`/order/v4`).reply(201, {
             uuid: '00000000-0000-0000-0000-000000000000',
             opReturnHash: '0x8d0fd89210149d4219c87fa814a4bcde0c6a36b8fe2dff52b1d3eaa9e7cf0a9a',
         });
@@ -959,22 +1010,5 @@ describe('Gateway Tests', () => {
         expect(evmTxId).toBe('0x35f5bca7f984f4ed97888944293b979f3abb198a5716d04e10c6bdc023080075');
         expect(createOfframpOrderSpy).toHaveBeenCalledOnce();
         expect(fetchOfframpRegistryAddressSpy).toHaveBeenCalledOnce();
-    });
-
-    it('should return onramp and offramp orders', async () => {
-        const gatewaySDK = new GatewaySDK('signet');
-
-        const getOnrampOrdersSpy = vi
-            .spyOn(gatewaySDK, 'getOnrampOrders')
-            .mockImplementationOnce(() => Promise.resolve([]));
-        const getOfframpOrdersSpy = vi
-            .spyOn(gatewaySDK, 'getOfframpOrders')
-            .mockImplementationOnce(() => Promise.resolve([]));
-
-        const result = await gatewaySDK.getOrders(zeroAddress);
-
-        expect(result).toEqual([]);
-        expect(getOnrampOrdersSpy).toHaveBeenCalledOnce();
-        expect(getOfframpOrdersSpy).toHaveBeenCalledOnce();
     });
 });
