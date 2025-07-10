@@ -82,7 +82,7 @@ describe('Gateway Tests', () => {
         };
 
         nock(`${MAINNET_GATEWAY_BASE_URL}`)
-            .get(`/quote/v4/${TBTC_ADDRESS}?satoshis=1000`)
+            .get(`/v4/quote/${TBTC_ADDRESS}?satoshis=1000`)
             .times(5)
             .reply(200, mockQuote);
 
@@ -172,7 +172,7 @@ describe('Gateway Tests', () => {
         );
 
         // get the total available without amount
-        nock(`${MAINNET_GATEWAY_BASE_URL}`).get(`/quote/v4/${TBTC_ADDRESS}`).reply(200, mockQuote);
+        nock(`${MAINNET_GATEWAY_BASE_URL}`).get(`/v4/quote/${TBTC_ADDRESS}`).reply(200, mockQuote);
         assert.deepEqual(
             await gatewaySDK.getQuote({
                 fromChain: 'Bitcoin',
@@ -238,7 +238,7 @@ describe('Gateway Tests', () => {
             orderDetails: convertOrderDetailsRawToOrderDetails(MOCK_ORDER_DETAILS_RAW),
         };
 
-        nock(`${MAINNET_GATEWAY_BASE_URL}`).post(`/order/v4`).reply(201, {
+        nock(`${MAINNET_GATEWAY_BASE_URL}`).post(`/v4/order`).reply(201, {
             uuid: '00000000-0000-0000-0000-000000000000',
             opReturnHash: '0x8d0fd89210149d4219c87fa814a4bcde0c6a36b8fe2dff52b1d3eaa9e7cf0a9a',
         });
@@ -285,7 +285,7 @@ describe('Gateway Tests', () => {
                 },
             ]);
         nock(`${MAINNET_GATEWAY_BASE_URL}`)
-            .get(`/quote/v4/${TBTC_ADDRESS}?satoshis=1000&strategy=${zeroAddress}`)
+            .get(`/v4/quote/${TBTC_ADDRESS}?satoshis=1000&strategy=${zeroAddress}`)
             .times(4)
             .reply(200, {
                 gatewayAddress: zeroAddress,
@@ -862,7 +862,7 @@ describe('Gateway Tests', () => {
             orderDetails: convertOrderDetailsRawToOrderDetails(MOCK_ORDER_DETAILS_RAW),
         };
 
-        nock(`${MAINNET_GATEWAY_BASE_URL}`).post(`/order/v4`).reply(201, {
+        nock(`${MAINNET_GATEWAY_BASE_URL}`).post(`/v4/order`).reply(201, {
             uuid: '00000000-0000-0000-0000-000000000000',
             opReturnHash: '0x8d0fd89210149d4219c87fa814a4bcde0c6a36b8fe2dff52b1d3eaa9e7cf0a9a',
         });

@@ -184,7 +184,7 @@ export class GatewayApiClient {
         const outputTokenAddress = getTokenAddress(this.chainId, toToken);
         const strategyAddress = params.strategyAddress?.startsWith('0x') ? params.strategyAddress : undefined;
 
-        const url = new URL(`${this.baseUrl}/quote/v4/${outputTokenAddress}`);
+        const url = new URL(`${this.baseUrl}/v4/quote/${outputTokenAddress}`);
         if (strategyAddress) url.searchParams.append('strategy', strategyAddress);
         if (params.amount) url.searchParams.append('satoshis', `${params.amount}`);
         if (params.gasRefill) url.searchParams.append('ethAmountToReceive', `${params.gasRefill}`);
@@ -556,7 +556,7 @@ export class GatewayApiClient {
             orderDetails: convertOrderDetailsToRaw(gatewayQuote.orderDetails),
         };
 
-        const response = await fetch(`${this.baseUrl}/order/v4`, {
+        const response = await fetch(`${this.baseUrl}/v4/order`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

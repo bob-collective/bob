@@ -60,8 +60,7 @@ export function viemClient(chain: Chain) {
     return createPublicClient({ chain: chainConfig, transport: http() });
 }
 
-function parseU256(value: string | null): bigint | null {
-    if (value === null) return null;
+function parseU256(value: string): bigint {
     return BigInt(value);
 }
 
@@ -76,7 +75,7 @@ export function convertOrderDetailsRawToOrderDetails(order: OrderDetailsRaw): Or
             totalUserGasLimit: parseU256(order.data.totalUserGasLimit)!,
             userGasPriceLimit: parseU256(order.data.userGasPriceLimit)!,
             l1DataFee: parseU256(order.data.l1DataFee)!,
-            extraSatsFee: parseU256(order.data.extraSatsFee),
+            extraSatsFee: order.data.extraSatsFee !== null ? parseU256(order.data.extraSatsFee) : null,
             extraSatsFeeRecipient: order.data.extraSatsFeeRecipient,
         },
     };
