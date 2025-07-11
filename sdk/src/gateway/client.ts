@@ -144,14 +144,7 @@ export class GatewayApiClient {
             const onrampQuote = await this.getOnrampQuote(params);
             return { params, onrampQuote };
         } else if (params.toChain.toString().toLowerCase() === 'bitcoin') {
-            if (!params.fromToken) {
-                throw new Error('`fromToken` must be specified for offramp');
-            }
-            if (!params.amount) {
-                throw new Error('`amount` must be specified for offramp');
-            }
-            const tokenAddress = getTokenAddress(this.chainId, params.fromToken.toLowerCase());
-            const offrampQuote = await this.fetchOfframpQuote(tokenAddress, BigInt(params.amount || 0));
+            const offrampQuote = await this.getOfframpQuote(params);
 
             return { params, offrampQuote };
         }
@@ -212,6 +205,22 @@ export class GatewayApiClient {
             baseToken: ADDRESS_LOOKUP[this.chainId][quote.baseTokenAddress],
             outputToken: quote.strategyAddress ? ADDRESS_LOOKUP[this.chainId][outputTokenAddress] : undefined,
         };
+    }
+
+    /**
+     * Get a quote from the Gateway API for swapping or staking BTC.
+     *
+     * @param params The parameters for the quote.
+     */
+    async getOfframpQuote(params: GetQuoteParams) {
+        if (!params.fromToken) {
+            throw new Error('`fromToken` must be specified for offramp');
+        }
+
+        const tokenAddress = getTokenAddress(this.chainId, params.fromToken.toLowerCase());
+        const quote = await this.fetchOfframpQuote(tokenAddress, BigInt(params.amount || 0));
+
+        return quote;
     }
 
     /**
