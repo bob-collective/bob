@@ -345,6 +345,8 @@ export interface OnrampOrderResponse {
     outputTokenAmount?: string;
     /** @description The tx hash on the EVM chain */
     txHash?: string;
+    /** @description V4 order details */
+    orderDetails?: OrderDetails;
 }
 
 export type OrderStatusData = {

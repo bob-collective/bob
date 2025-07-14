@@ -46,7 +46,7 @@ import {
     OnchainOfframpOrderDetails,
     OnrampExecuteQuoteParams,
     OnrampOrder,
-    OnrampOrderResponse,
+    OrderDetails,
     OrderStatus,
     StakeParams,
     StakeTransactionParams,
@@ -797,7 +797,7 @@ export class GatewayApiClient {
     async getOnrampOrders(userAddress: Address): Promise<OnrampOrder[]> {
         const chainId = this.chainId;
         const response = await this.fetchGet(`${this.baseUrl}/orders/${userAddress}`);
-        const orders: OnrampOrderResponse[] = await response.json();
+        const orders = await response.json();
         return orders.map((order) => {
             function getFinal<L, R>(base?: L, output?: R): NonNullable<L | R> {
                 return order.status
@@ -823,9 +823,15 @@ export class GatewayApiClient {
                 }
                 return txStatus.confirmed ? latestHeight - txStatus.block_height! + 1 : 0;
             };
+
+            const orderDetails = order.orderDetails
+                ? convertOrderDetailsRawToOrderDetails(order.orderDetails)
+                : undefined;
+
             return {
-                gasRefill: order.satsToConvertToEth,
                 ...order,
+                orderDetails,
+                gasRefill: order.satsToConvertToEth,
                 baseToken: ADDRESS_LOOKUP[chainId][order.baseTokenAddress],
                 outputToken: ADDRESS_LOOKUP[chainId][order.outputTokenAddress!],
                 getTokenAddress,
