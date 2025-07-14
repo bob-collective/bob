@@ -824,8 +824,9 @@ export class GatewayApiClient {
                 return txStatus.confirmed ? latestHeight - txStatus.block_height! + 1 : 0;
             };
 
-            const orderDetails: OrderDetails | null =
-                order.orderDetails != null ? convertOrderDetailsRawToOrderDetails(order.orderDetails) : null;
+            const orderDetails = order.orderDetails
+                ? convertOrderDetailsRawToOrderDetails(order.orderDetails)
+                : undefined;
 
             return {
                 ...order,
