@@ -1,17 +1,17 @@
 import { AddressType, Network } from 'bitcoin-address-validation';
 import * as bitcoin from 'bitcoinjs-lib';
-import { AbiCoder, ethers, MaxUint256 } from 'ethers';
 import {
     Account,
     Address,
     erc20Abi,
-    Hex,
     isAddress,
     isAddressEqual,
     PublicClient,
     Transport,
     Chain as ViemChain,
     WalletClient,
+    zeroAddress,
+    maxUint256,
 } from 'viem';
 import { bob, bobSepolia } from 'viem/chains';
 import { EsploraClient } from '../esplora';
@@ -21,9 +21,6 @@ import { claimDelayAbi, offrampCaller, strategyCaller } from './abi';
 import StrategyClient from './strategy';
 import { ADDRESS_LOOKUP, getTokenAddress, getTokenDecimals } from './tokens';
 import {
-    Chain,
-    ChainId,
-    chainIdMapping,
     EnrichedToken,
     ExecuteQuoteParams,
     ExecuteStakeParam,
@@ -84,8 +81,7 @@ export const ORDER_DEADLINE_IN_SECONDS = 30 * 60; // 30 minutes
  * Gateway REST HTTP API client
  */
 export class GatewayApiClient {
-    private chain: Chain.BOB | Chain.BOB_SEPOLIA;
-    private baseUrl: string;
+    private chain: ViemChain;
     private strategy: StrategyClient;
     private isSignet: boolean = false;
 
@@ -93,17 +89,14 @@ export class GatewayApiClient {
      * @constructor
      * @param chainName The chain name.
      */
-    constructor(chainName: 'mainnet' | 'signet' | 'bob', options?: { rpcUrl?: string }) {
-        switch (chainName) {
-            case 'mainnet':
-            case 'bob':
-                this.chain = Chain.BOB;
-                this.baseUrl = MAINNET_GATEWAY_BASE_URL;
+    constructor(chainId: number, options?: { rpcUrl?: string }) {
+        switch (chainId) {
+            case bob.id:
+                this.chain = bob;
                 this.strategy = new StrategyClient(bob, options?.rpcUrl);
                 break;
-            case 'signet':
-                this.chain = Chain.BOB_SEPOLIA;
-                this.baseUrl = SIGNET_GATEWAY_BASE_URL;
+            case bobSepolia.id:
+                this.chain = bobSepolia;
                 this.strategy = new StrategyClient(bobSepolia, options?.rpcUrl);
                 this.isSignet = true;
                 break;
@@ -112,17 +105,12 @@ export class GatewayApiClient {
         }
     }
 
-    private get chainId(): ChainId {
-        return this.chain === Chain.BOB ? ChainId.BOB : ChainId.BOB_SEPOLIA;
+    private get baseUrl(): string {
+        return this.chain.id === bob.id ? MAINNET_GATEWAY_BASE_URL : SIGNET_GATEWAY_BASE_URL;
     }
 
-    /**
-     * Returns all chains supported by the SDK.
-     *
-     * @returns {string[]} The array of chain names.
-     */
-    getChains(): string[] {
-        return Object.values(Chain);
+    private get chainId(): number {
+        return this.chain.id;
     }
 
     /**
@@ -166,16 +154,16 @@ export class GatewayApiClient {
      */
     async getOnrampQuote(params: GetQuoteParams): Promise<GatewayQuote & GatewayTokensInfo> {
         const isMainnet =
-            params.toChain === ChainId.BOB ||
-            (typeof params.toChain === 'string' && params.toChain.toLowerCase() === Chain.BOB);
+            params.toChain === bob.id ||
+            (typeof params.toChain === 'string' && params.toChain.toLowerCase() === bob.name.toLowerCase());
         const isTestnet =
-            params.toChain === ChainId.BOB_SEPOLIA ||
-            (typeof params.toChain === 'string' && params.toChain.toLowerCase() === Chain.BOB_SEPOLIA);
+            params.toChain === bobSepolia.id ||
+            (typeof params.toChain === 'string' && params.toChain.toLowerCase() === bobSepolia.name.toLowerCase());
 
         if (
             (!isMainnet && !isTestnet) ||
-            (isMainnet && this.chain !== Chain.BOB) ||
-            (isTestnet && this.chain !== Chain.BOB_SEPOLIA)
+            (isMainnet && this.chain.id !== bob.id) ||
+            (isTestnet && this.chain.id !== bobSepolia.id)
         ) {
             throw new Error('Invalid output chain');
         }
@@ -189,6 +177,7 @@ export class GatewayApiClient {
         if (params.amount) url.searchParams.append('satoshis', `${params.amount}`);
         if (params.gasRefill) url.searchParams.append('ethAmountToReceive', `${params.gasRefill}`);
 
+        // TODO: add stragegy data / message
         const response = await fetch(url, {
             headers: {
                 'Content-Type': 'application/json',
@@ -312,9 +301,9 @@ export class GatewayApiClient {
     async createOfframpOrder(quote: OfframpQuote, params: GetQuoteParams): Promise<OfframpCreateOrderParams> {
         // get btc script pub key
         let bitcoinNetwork = bitcoin.networks.regtest;
-        if (this.chain == Chain.BOB) {
+        if (this.chain.id == bob.id) {
             bitcoinNetwork = bitcoin.networks.bitcoin;
-        } else if (this.chain == Chain.BOB_SEPOLIA) {
+        } else if (this.chain.id == bobSepolia.id) {
             bitcoinNetwork = bitcoin.networks.testnet;
         }
 
@@ -489,7 +478,7 @@ export class GatewayApiClient {
         }
         // check if Accepted order has passed claim delay
         const nowInSec = Math.floor(Date.now() / 1000);
-        const publicClient = viemClient(this.chain) as PublicClient;
+        const publicClient = viemClient(this.chain);
         const claimDelay = await publicClient.readContract({
             address: offrampRegistryAddress,
             abi: claimDelayAbi,
@@ -506,7 +495,7 @@ export class GatewayApiClient {
      */
     private async fetchOfframpOrder(orderId: bigint): Promise<OnchainOfframpOrderDetails> {
         const offrampRegistryAddress: Address = await this.fetchOfframpRegistryAddress();
-        const publicClient = viemClient(this.chain) as PublicClient;
+        const publicClient = viemClient(this.chain);
 
         const order = await publicClient.readContract({
             address: offrampRegistryAddress,
@@ -521,8 +510,8 @@ export class GatewayApiClient {
             satAmountLocked: order.satAmountLocked,
             satFeesMax: order.satFeesMax,
             sender: order.sender as Address,
-            receiver: order.receiver !== (ethers.ZeroAddress as Address) ? (order.receiver as Address) : null,
-            owner: order.owner !== (ethers.ZeroAddress as Address) ? (order.owner as Address) : null,
+            receiver: order.receiver !== (zeroAddress as Address) ? (order.receiver as Address) : null,
+            owner: order.owner !== (zeroAddress as Address) ? (order.owner as Address) : null,
             outputScript: order.outputScript,
             status: parseOrderStatus(Number(order.status)) as OnchainOfframpOrderDetails['status'],
             orderTimestamp: Number(order.timestamp),
@@ -542,15 +531,13 @@ export class GatewayApiClient {
             throw new Error('Invalid user address');
         }
 
-        const abiCoder = new AbiCoder();
         const request: GatewayCreateOrderRequestPayload = {
             gatewayAddress: gatewayQuote.gatewayAddress,
             strategyAddress: gatewayQuote.strategyAddress,
             satsToConvertToEth: params.gasRefill || 0,
             userAddress: params.toUserAddress,
             gatewayExtraData: undefined,
-            // TODO: update strategy data
-            strategyExtraData: abiCoder.encode(['uint256'], [0]) as Hex,
+            strategyExtraData: params.message,
             satoshis: gatewayQuote.satoshis,
             campaignId: params.campaignId,
             orderDetails: convertOrderDetailsToRaw(gatewayQuote.orderDetails),
@@ -575,7 +562,7 @@ export class GatewayApiClient {
         if (
             params.fromUserAddress &&
             typeof params.fromChain === 'string' &&
-            params.fromChain.toLowerCase() === Chain.BITCOIN
+            params.fromChain.toLowerCase() === 'bitcoin'
         ) {
             psbtBase64 = await createBitcoinPsbt(
                 params.fromUserAddress,
@@ -632,11 +619,7 @@ export class GatewayApiClient {
             const { onrampQuote, params } = executeQuoteParams;
             const quote = onrampQuote!;
 
-            const localParams = { ...params };
-            if (typeof localParams.toChain === 'number') {
-                localParams.toChain = chainIdMapping[localParams.toChain];
-            }
-            const { uuid, psbtBase64 } = await this.startOrder(quote, localParams);
+            const { uuid, psbtBase64 } = await this.startOrder(quote, params);
 
             if (!btcSigner) {
                 throw new Error(`btcSigner is required for onramp order`);
@@ -653,30 +636,37 @@ export class GatewayApiClient {
             const { params, offrampQuote } = executeQuoteParams;
             const quote = offrampQuote!;
 
-            if (typeof params.fromChain === 'number') {
-                params.fromChain = chainIdMapping[params.fromChain];
-            }
             const tokenAddress = getTokenAddress(this.chainId, params.fromToken.toLowerCase());
             const [offrampOrder, offrampRegistryAddress] = await Promise.all([
                 this.createOfframpOrder(quote, params),
                 this.fetchOfframpRegistryAddress(),
             ]);
 
-            const allowance = await publicClient.readContract({
-                address: tokenAddress,
-                abi: erc20Abi,
-                functionName: 'allowance',
-                args: [params.fromUserAddress as Address, offrampRegistryAddress],
+            const [allowance, decimals] = await publicClient.multicall({
+                allowFailure: false,
+                contracts: [
+                    {
+                        address: tokenAddress,
+                        abi: erc20Abi,
+                        functionName: 'allowance',
+                        args: [params.fromUserAddress as Address, offrampRegistryAddress],
+                    },
+                    {
+                        address: tokenAddress,
+                        abi: erc20Abi,
+                        functionName: 'decimals',
+                    },
+                ],
             });
 
-            // TODO: is this sat or token amount?
-            if (BigInt(quote.amountLockInSat) > allowance) {
+            const multiplier = 10 ** (decimals - 8);
+            if (BigInt(quote.amountLockInSat * multiplier) > allowance) {
                 const { request } = await publicClient.simulateContract({
                     account: walletClient.account,
                     address: tokenAddress,
                     abi: erc20Abi,
                     functionName: 'approve',
-                    args: [offrampRegistryAddress, MaxUint256],
+                    args: [offrampRegistryAddress, maxUint256],
                 });
 
                 const approveTxHash = await walletClient.writeContract(request);
@@ -720,7 +710,7 @@ export class GatewayApiClient {
                 address: params.token,
                 abi: erc20Abi,
                 functionName: 'approve',
-                args: [result.strategyAddress, MaxUint256],
+                args: [result.strategyAddress, maxUint256],
             });
 
             const approveTxHash = await walletClient.writeContract(request);
@@ -757,7 +747,7 @@ export class GatewayApiClient {
 
         let bitcoinTxHex: string;
         if (bitcoinTxOrId.length === 64) {
-            const esploraClient = new EsploraClient(this.chain === Chain.BOB ? Network.mainnet : Network.signet);
+            const esploraClient = new EsploraClient(this.chain.id === bob.id ? Network.mainnet : Network.signet);
             bitcoinTxHex = await esploraClient.getTransactionHex(bitcoinTxOrId);
         } else {
             bitcoinTxHex = bitcoinTxOrId;
@@ -1025,7 +1015,7 @@ export class GatewayApiClient {
      *     address: params.token, // Ensure correct type
      *     abi: erc20Abi,
      *     functionName: 'approve',
-     *     args: [result.strategyAddress, MaxUint256],
+     *     args: [result.strategyAddress, maxUint256],
      *     account: result.account, // Ensure correct type
      * });
      * await walletClient.writeContract(approveRequest);

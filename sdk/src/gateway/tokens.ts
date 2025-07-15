@@ -1,5 +1,6 @@
-import { Chain, ChainId, Token } from './types';
+import { Token } from './types';
 import { Address, isAddress } from 'viem';
+import { bob, bobSepolia, optimism } from 'viem/chains';
 
 // TODO: re-write to use superchain tokenlist
 const bobTokens = [
@@ -324,15 +325,15 @@ const TOKENS: Array<{
 export const SYMBOL_LOOKUP: { [key in number]: { [key in string]: Token } } = {};
 export const ADDRESS_LOOKUP: { [key in number]: { [key in string]: Token } } = {};
 
-SYMBOL_LOOKUP[ChainId.BOB] = {};
-SYMBOL_LOOKUP[ChainId.BOB_SEPOLIA] = {};
-SYMBOL_LOOKUP[ChainId.OPTIMISM] = {};
+SYMBOL_LOOKUP[bob.id] = {};
+SYMBOL_LOOKUP[bobSepolia.id] = {};
+SYMBOL_LOOKUP[optimism.id] = {};
 
-ADDRESS_LOOKUP[ChainId.BOB] = {};
-ADDRESS_LOOKUP[ChainId.BOB_SEPOLIA] = {};
-ADDRESS_LOOKUP[ChainId.OPTIMISM] = {};
+ADDRESS_LOOKUP[bob.id] = {};
+ADDRESS_LOOKUP[bobSepolia.id] = {};
+ADDRESS_LOOKUP[optimism.id] = {};
 
-function addToken(address: string, token: (typeof TOKENS)[number], chainId: ChainId) {
+function addToken(address: string, token: (typeof TOKENS)[number], chainId: number) {
     const lowerAddress = address.toLowerCase();
     const lowerToken: Token = {
         chainId,
@@ -349,15 +350,15 @@ function addToken(address: string, token: (typeof TOKENS)[number], chainId: Chai
 
 for (const token of TOKENS) {
     if (token.tokens.bob) {
-        addToken(token.tokens.bob.address, token, ChainId.BOB);
+        addToken(token.tokens.bob.address, token, bob.id);
     }
 
     if (token.tokens['bob-sepolia']) {
-        addToken(token.tokens['bob-sepolia'].address, token, ChainId.BOB_SEPOLIA);
+        addToken(token.tokens['bob-sepolia'].address, token, bobSepolia.id);
     }
 
     if (token.tokens.optimism) {
-        addToken(token.tokens.optimism.address, token, ChainId.OPTIMISM);
+        addToken(token.tokens.optimism.address, token, optimism.id);
     }
 }
 
@@ -381,9 +382,9 @@ export function getTokenDecimals(tokenAddress: Address): number | undefined {
 }
 
 export function getTokenAddress(chain: string | number, token: string): Address {
-    const isMainnet = chain === ChainId.BOB || (typeof chain === 'string' && chain.toLowerCase() === Chain.BOB);
+    const isMainnet = chain === bob.id || (typeof chain === 'string' && chain.toLowerCase() === bob.name.toLowerCase());
     const isTestnet =
-        chain === ChainId.BOB_SEPOLIA || (typeof chain === 'string' && chain.toLowerCase() === Chain.BOB_SEPOLIA);
+        chain === bobSepolia.id || (typeof chain === 'string' && chain.toLowerCase() === bobSepolia.name.toLowerCase());
 
     if (isAddress(token)) {
         return token;

@@ -7,24 +7,6 @@ type TokenSymbol = string;
 
 export type Optional<T, K extends keyof T> = Omit<T, K> & Partial<T>;
 
-export enum Chain {
-    // NOTE: we also support Bitcoin testnet
-    BITCOIN = 'bitcoin',
-    BOB = 'bob',
-    BOB_SEPOLIA = 'bob-sepolia',
-}
-
-export enum ChainId {
-    BOB = 60808,
-    BOB_SEPOLIA = 808813,
-    OPTIMISM = 10,
-}
-
-export const chainIdMapping = {
-    [ChainId.BOB]: Chain.BOB,
-    [ChainId.BOB_SEPOLIA]: Chain.BOB_SEPOLIA,
-} as const;
-
 /**
  * Parameters required to construct a staking transaction.
  */
@@ -128,6 +110,9 @@ export interface GatewayQuoteParams {
     strategyAddress?: string;
     /** @description Campaign id for tracking */
     campaignId?: string;
+
+    /** @description Cross chain message - strategy data */
+    message?: Hex;
 }
 
 /**

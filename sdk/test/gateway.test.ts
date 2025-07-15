@@ -2,15 +2,13 @@ import * as bitcoin from 'bitcoinjs-lib';
 import nock from 'nock';
 import { createPublicClient, encodeAbiParameters, http, keccak256, maxUint256, numberToHex, zeroAddress } from 'viem';
 import { Address } from 'viem/accounts';
-import { bobSepolia } from 'viem/chains';
+import { bob, bobSepolia } from 'viem/chains';
 import { afterEach, assert, describe, expect, it, vi } from 'vitest';
 import { GatewaySDK } from '../src/gateway';
 import { MAINNET_GATEWAY_BASE_URL, SIGNET_GATEWAY_BASE_URL } from '../src/gateway/client';
 import { getTokenAddress, SYMBOL_LOOKUP } from '../src/gateway/tokens';
 import {
     StakeParams,
-    Chain,
-    ChainId,
     GatewayQuote,
     GatewayTokensInfo,
     OfframpOrder,
@@ -20,9 +18,9 @@ import {
 } from '../src/gateway/types';
 import { toHexScriptPubKey, convertOrderDetailsRawToOrderDetails } from '../src/gateway/utils';
 
-const TBTC = SYMBOL_LOOKUP[ChainId.BOB]['tbtc'];
+const TBTC = SYMBOL_LOOKUP[bob.id]['tbtc'];
 const TBTC_ADDRESS = TBTC.address;
-const SOLVBTC = SYMBOL_LOOKUP[ChainId.BOB]['solvbtc'];
+const SOLVBTC = SYMBOL_LOOKUP[bob.id]['solvbtc'];
 const SOLVBTC_ADDRESS = SOLVBTC.address;
 
 const MOCK_ORDER_DETAILS_RAW: OrderDetailsRaw = {
@@ -45,20 +43,14 @@ afterEach(() => {
 });
 
 describe('Gateway Tests', () => {
-    it('should get chains', async () => {
-        const gatewaySDK = new GatewaySDK('bob');
-        assert.deepEqual(gatewaySDK.getChains(), Object.values(Chain));
-    });
-
     it('should reject invalid chain', async () => {
         expect(() => {
-            // @ts-expect-error invalid chain id
-            new GatewaySDK('bob-testnet');
+            new GatewaySDK(109209);
         }).toThrowError('Invalid chain');
     });
 
     it('should get quote', async () => {
-        const gatewaySDK = new GatewaySDK('mainnet');
+        const gatewaySDK = new GatewaySDK(bob.id);
 
         const orderDetails = convertOrderDetailsRawToOrderDetails(MOCK_ORDER_DETAILS_RAW);
 
@@ -197,7 +189,7 @@ describe('Gateway Tests', () => {
     });
 
     it('should throw error on invalid token', async () => {
-        const gatewaySDK = new GatewaySDK('mainnet');
+        const gatewaySDK = new GatewaySDK(bob.id);
         await expect(async () => {
             await gatewaySDK.getQuote({
                 fromChain: 'Bitcoin',
@@ -211,7 +203,7 @@ describe('Gateway Tests', () => {
     });
 
     it('should reject invalid network', async () => {
-        const gatewaySDK = new GatewaySDK('signet');
+        const gatewaySDK = new GatewaySDK(bobSepolia.id);
         await expect(async () => {
             await gatewaySDK.getQuote({
                 fromChain: 'Bitcoin',
@@ -225,7 +217,7 @@ describe('Gateway Tests', () => {
     });
 
     it('should start order', { timeout: 50000 }, async () => {
-        const gatewaySDK = new GatewaySDK('bob');
+        const gatewaySDK = new GatewaySDK(bob.id);
         const mockQuote = {
             gatewayAddress: zeroAddress,
             baseTokenAddress: TBTC_ADDRESS as Address,
@@ -298,7 +290,7 @@ describe('Gateway Tests', () => {
                 orderDetails: MOCK_ORDER_DETAILS_RAW,
             });
 
-        const gatewaySDK = new GatewaySDK('bob');
+        const gatewaySDK = new GatewaySDK(bob.id);
         const strategies = await gatewaySDK.getStrategies();
 
         assert.lengthOf(strategies, 1);
@@ -321,12 +313,12 @@ describe('Gateway Tests', () => {
     it('should get tokens', async () => {
         nock(`${MAINNET_GATEWAY_BASE_URL}`).get(`/tokens?includeStrategies=false`).reply(200, [zeroAddress]);
 
-        const gatewaySDK = new GatewaySDK('bob');
+        const gatewaySDK = new GatewaySDK(bob.id);
         assert.deepEqual(await gatewaySDK.getTokenAddresses(false), [zeroAddress]);
     });
 
     it.skip('should get enriched tokens', async () => {
-        const gatewaySDK = new GatewaySDK('bob');
+        const gatewaySDK = new GatewaySDK(bob.id);
 
         const tokens = await gatewaySDK.getTokens(true);
         const enrichedTokens = await gatewaySDK.getEnrichedTokens(true);
@@ -400,7 +392,7 @@ describe('Gateway Tests', () => {
                 // staking - failed (wBTC)
                 {
                     ...mockOrder,
-                    baseTokenAddress: SYMBOL_LOOKUP[ChainId.BOB]['wbtc'],
+                    baseTokenAddress: SYMBOL_LOOKUP[bob.id]['wbtc'],
                     satoshis: 1000,
                     fee: 0,
                     status: true,
@@ -409,14 +401,14 @@ describe('Gateway Tests', () => {
                 // swapping - success (wBTC)
                 {
                     ...mockOrder,
-                    baseTokenAddress: SYMBOL_LOOKUP[ChainId.BOB]['wbtc'],
+                    baseTokenAddress: SYMBOL_LOOKUP[bob.id]['wbtc'],
                     satoshis: 1000,
                     fee: 0,
                     status: true,
                 },
             ]);
 
-        const gatewaySDK = new GatewaySDK('bob');
+        const gatewaySDK = new GatewaySDK(bob.id);
         const orders = await gatewaySDK.getOnrampOrders(zeroAddress);
         assert.lengthOf(orders, 7);
 
@@ -435,7 +427,7 @@ describe('Gateway Tests', () => {
     // Skipping this test as it is likely to fail on the testnet once the user transfers their funds
     // or if the strategy is removed from the testnet. Use nock for mocking the responses in the meantime for other test.
     it.skip('should correctly retrieve stake info and simulate call testnet strategy', async () => {
-        const gatewaySDK = new GatewaySDK('signet');
+        const gatewaySDK = new GatewaySDK(bobSepolia.id);
         const params: StakeParams = {
             strategyAddress: '0x06cEA150E651236499319d78f92791f0FAe6FE67' as Address,
             token: '0x6744babdf02dcf578ea173a9f0637771a9e1c4d0' as Address,
@@ -521,7 +513,7 @@ describe('Gateway Tests', () => {
     });
 
     it('should throw error for invalid strategy address in buildStake', async () => {
-        const gatewaySDK = new GatewaySDK('signet');
+        const gatewaySDK = new GatewaySDK(bobSepolia.id);
         const params: StakeParams = {
             strategyAddress: zeroAddress as Address,
             token: '0x6744babdf02dcf578ea173a9f0637771a9e1c4d0' as Address,
@@ -547,7 +539,7 @@ describe('Gateway Tests', () => {
                     strategyType: 'staking',
                 },
             ]);
-        const gatewaySDK = new GatewaySDK('bob');
+        const gatewaySDK = new GatewaySDK(bob.id);
         const params: StakeParams = {
             strategyAddress: zeroAddress as Address,
             token: zeroAddress as Address,
@@ -573,7 +565,7 @@ describe('Gateway Tests', () => {
                     strategyType: 'staking',
                 },
             ]);
-        const gatewaySDK = new GatewaySDK('bob');
+        const gatewaySDK = new GatewaySDK(bob.id);
         const params: StakeParams = {
             strategyAddress: zeroAddress as Address,
             token: TBTC_ADDRESS as Address,
@@ -596,7 +588,7 @@ describe('Gateway Tests', () => {
                     strategyType: 'staking',
                 },
             ]);
-        const gatewaySDK = new GatewaySDK('bob');
+        const gatewaySDK = new GatewaySDK(bob.id);
         const params: StakeParams = {
             strategyAddress: zeroAddress as Address,
             token: TBTC_ADDRESS as Address,
@@ -619,7 +611,7 @@ describe('Gateway Tests', () => {
     });
 
     it('should get valid create offramp quote', async () => {
-        const gatewaySDK = new GatewaySDK('signet');
+        const gatewaySDK = new GatewaySDK(bobSepolia.id);
 
         nock(`${SIGNET_GATEWAY_BASE_URL}`)
             .get('/offramp-quote')
@@ -672,7 +664,7 @@ describe('Gateway Tests', () => {
     });
 
     it('should return valid offramp orders', async () => {
-        const gatewaySDK = new GatewaySDK('signet');
+        const gatewaySDK = new GatewaySDK(bobSepolia.id);
         const userAddress = '0xFAEe001465dE6D7E8414aCDD9eF4aC5A35B2B808';
 
         // Mock response data
@@ -734,7 +726,7 @@ describe('Gateway Tests', () => {
     });
 
     it('should return error for taproot address', async () => {
-        const gatewaySDK = new GatewaySDK('signet');
+        const gatewaySDK = new GatewaySDK(bobSepolia.id);
         nock(`${SIGNET_GATEWAY_BASE_URL}`)
             .get('/offramp-quote')
             .query(true)
@@ -779,7 +771,7 @@ describe('Gateway Tests', () => {
     });
 
     it('fetches the correct offramp registry address', async () => {
-        const gatewaySDK = new GatewaySDK('signet');
+        const gatewaySDK = new GatewaySDK(bobSepolia.id);
 
         nock(SIGNET_GATEWAY_BASE_URL)
             .get('/offramp-registry-address')
@@ -793,7 +785,7 @@ describe('Gateway Tests', () => {
     it('should return true when the order has passed the claim delay', async () => {
         const status: OfframpOrderStatus = 'Accepted';
         const orderTimestamp = Math.floor(Date.now() / 1000) - 7 * 24 * 60 * 60 - 1; // Ensure the timestamp is more than 7 days ago
-        const gatewaySDK = new GatewaySDK('signet');
+        const gatewaySDK = new GatewaySDK(bobSepolia.id);
 
         // Run the function
         const result = await gatewaySDK.canOrderBeUnlocked(
@@ -807,7 +799,7 @@ describe('Gateway Tests', () => {
     });
 
     it('fetches the correct offramp liquidity', async () => {
-        const gatewaySDK = new GatewaySDK('signet');
+        const gatewaySDK = new GatewaySDK(bobSepolia.id);
         const tokenAddress = '0x4496ebE7C8666a8103713EE6e0c08cA0cD25b888'.toLowerCase();
         nock(SIGNET_GATEWAY_BASE_URL).persist().get(`/offramp-liquidity/${tokenAddress}`).reply(200, {
             tokenAddress,
@@ -833,7 +825,7 @@ describe('Gateway Tests', () => {
     });
 
     it('should return btc txid for onramp', async () => {
-        const gatewaySDK = new GatewaySDK('mainnet');
+        const gatewaySDK = new GatewaySDK(bob.id);
         const mockBtcSigner = {
             signAllInputs: vi.fn((val) => val),
         };
@@ -844,7 +836,7 @@ describe('Gateway Tests', () => {
             simulateContract: () => Promise.resolve({ request: '🎉' }),
             waitForTransactionReceipt: () =>
                 Promise.resolve('0x35f5bca7f984f4ed97888944293b979f3abb198a5716d04e10c6bdc023080075'),
-        } as Parameters<typeof gatewaySDK.executeQuote>[1]['publicClient'];
+        } as unknown as Parameters<typeof gatewaySDK.executeQuote>[1]['publicClient'];
 
         const startOrderSpy = vi.spyOn(gatewaySDK, 'startOrder');
         const finalizeOrderSpy = vi.spyOn(gatewaySDK, 'finalizeOrder');
@@ -893,13 +885,14 @@ describe('Gateway Tests', () => {
     });
 
     it('should return evm txid for offramp', async () => {
-        const gatewaySDK = new GatewaySDK('signet');
+        const gatewaySDK = new GatewaySDK(bobSepolia.id);
 
         const mockWalletClient = {
             writeContract: () => Promise.resolve('0x35f5bca7f984f4ed97888944293b979f3abb198a5716d04e10c6bdc023080075'),
         } as unknown as Parameters<typeof gatewaySDK.executeQuote>[1];
 
         const mockPublicClient = {
+            multicall: () => Promise.resolve([10_000n, 8]),
             readContract: () => Promise.resolve(10_000n),
             simulateContract: () => Promise.resolve({ request: '🎉' }),
             waitForTransactionReceipt: () =>
@@ -909,7 +902,7 @@ describe('Gateway Tests', () => {
         const createOfframpOrderSpy = vi.spyOn(gatewaySDK, 'createOfframpOrder');
         const fetchOfframpRegistryAddressSpy = vi.spyOn(gatewaySDK, 'fetchOfframpRegistryAddress');
 
-        const outputTokenAddress = getTokenAddress(ChainId.BOB_SEPOLIA, 'bobbtc');
+        const outputTokenAddress = getTokenAddress(bobSepolia.id, 'bobbtc');
         const searchParams = new URLSearchParams({
             amountInWrappedToken: '1000',
             token: outputTokenAddress,
@@ -967,7 +960,7 @@ describe('Gateway Tests', () => {
     });
 
     it('should return onramp and offramp orders', async () => {
-        const gatewaySDK = new GatewaySDK('signet');
+        const gatewaySDK = new GatewaySDK(bobSepolia.id);
 
         const getOnrampOrdersSpy = vi
             .spyOn(gatewaySDK, 'getOnrampOrders')
