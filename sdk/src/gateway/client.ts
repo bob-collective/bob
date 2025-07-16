@@ -518,13 +518,13 @@ export class GatewayApiClient {
 
     // TODO: add error handling
     /**
-     * Start an order via the Gateway API to reserve liquidity. This is step 1 of 2, see the {@link finalizeOrder} method.
+     * Start an order via the Gateway API to reserve liquidity. This is step 1 of 2, see the {@link finalizeOnrampOrder} method.
      *
      * @param gatewayQuote The quote given by the {@link getQuote} method.
      * @param params The parameters for the quote, same as before.
      * @returns {Promise<GatewayStartOrder>} The success object.
      */
-    async startOrder(gatewayQuote: GatewayQuote, params: GetQuoteParams): Promise<GatewayStartOrder> {
+    async startOnrampOrder(gatewayQuote: GatewayQuote, params: GetQuoteParams): Promise<GatewayStartOrder> {
         if (!params.toUserAddress || !isAddress(params.toUserAddress)) {
             throw new Error('Invalid user address');
         }
@@ -587,7 +587,7 @@ export class GatewayApiClient {
 
     /**
      * Execute an order via the Gateway API.
-     * This method invokes the {@link startOrder} and the {@link finalizeOrder} methods.
+     * This method invokes the {@link startOnrampOrder} and the {@link finalizeOnrampOrder} methods.
      *
      * @param {ExecuteQuoteParams} executeQuoteParams - The params to initiate gateway or evm transaction.
      * @param options - Configuration object containing client instances and optional signer.
@@ -617,7 +617,7 @@ export class GatewayApiClient {
             const { onrampQuote, params } = executeQuoteParams;
             const quote = onrampQuote!;
 
-            const { uuid, psbtBase64 } = await this.startOrder(quote, params);
+            const { uuid, psbtBase64 } = await this.startOnrampOrder(quote, params);
 
             if (!btcSigner) {
                 throw new Error(`btcSigner is required for onramp order`);
@@ -627,7 +627,7 @@ export class GatewayApiClient {
 
             if (!bitcoinTxHex) throw new Error('no psbt');
 
-            const txId = await this.finalizeOrder(uuid, bitcoinTxHex);
+            const txId = await this.finalizeOnrampOrder(uuid, bitcoinTxHex);
 
             return txId;
         } else {
@@ -741,13 +741,13 @@ export class GatewayApiClient {
     /**
      * Finalize an order via the Gateway API by providing the Bitcoin transaction. The tx will
      * be validated for correctness and forwarded to the mempool so there is no need to separately
-     * broadcast the transaction. This is step 2 of 2, see the {@link startOrder} method.
+     * broadcast the transaction. This is step 2 of 2, see the {@link startOnrampOrder} method.
      *
-     * @param uuid The id given by the {@link startOrder} method.
+     * @param uuid The id given by the {@link startOnrampOrder} method.
      * @param bitcoinTxOrId The hex encoded Bitcoin transaction or txid.
      * @returns {Promise<string>} The Bitcoin txid.
      */
-    async finalizeOrder(uuid: string, bitcoinTxOrId: string): Promise<string> {
+    async finalizeOnrampOrder(uuid: string, bitcoinTxOrId: string): Promise<string> {
         bitcoinTxOrId = stripHexPrefix(bitcoinTxOrId);
 
         let bitcoinTxHex: string;

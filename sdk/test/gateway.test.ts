@@ -234,7 +234,7 @@ describe('Gateway Tests', () => {
         });
 
         await expect(async () => {
-            await gatewaySDK.startOrder(mockQuote, {
+            await gatewaySDK.startOnrampOrder(mockQuote, {
                 toChain: 'BOB',
                 toToken: 'tBTC',
                 toUserAddress: '2N8DbeaBdjkktkRzaKL1tHj9FQELV7jA8Re',
@@ -245,7 +245,7 @@ describe('Gateway Tests', () => {
             });
         }).rejects.toThrowError('Invalid user address');
 
-        const result = await gatewaySDK.startOrder(mockQuote, {
+        const result = await gatewaySDK.startOnrampOrder(mockQuote, {
             toChain: 'BOB',
             toToken: 'tBTC',
             toUserAddress: zeroAddress,
@@ -650,8 +650,8 @@ describe('Gateway Tests', () => {
                 Promise.resolve('0x35f5bca7f984f4ed97888944293b979f3abb198a5716d04e10c6bdc023080075'),
         } as unknown as Parameters<typeof gatewaySDK.executeQuote>[1]['publicClient'];
 
-        const startOrderSpy = vi.spyOn(gatewaySDK, 'startOrder');
-        const finalizeOrderSpy = vi.spyOn(gatewaySDK, 'finalizeOrder');
+        const startOrderSpy = vi.spyOn(gatewaySDK, 'startOnrampOrder');
+        const finalizeOrderSpy = vi.spyOn(gatewaySDK, 'finalizeOnrampOrder');
 
         const mockQuote: GatewayQuote & GatewayTokensInfo = {
             gatewayAddress: zeroAddress,
