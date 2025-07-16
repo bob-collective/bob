@@ -1,0 +1,5 @@
+position: 999
+label: "Deprecated Features"
+collapsible: true
+collapsed: true
+className: "sidebar-hidden"
