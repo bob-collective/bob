@@ -295,6 +295,22 @@ impl BitcoinClient {
         .await?.map_err(Error::BitcoinError)
     }
 
+    /// Fetch the transaction ID at a specific index in the block (like esplora's
+    /// `/block/:hash/txid/:index`).
+    pub fn get_block_txid_by_index(
+        &self,
+        block_hash: &BlockHash,
+        index: usize,
+    ) -> Result<Txid, Error> {
+        let block = self.rpc.get_block(block_hash)?;
+        block.txdata.get(index).map(|tx| tx.compute_txid()).ok_or(Error::MissingTxId)
+    }
+
+    pub fn get_block_hash_from_txid(&self, txid: &Txid) -> Result<BlockHash, Error> {
+        let result = self.rpc.get_transaction(txid, None)?;
+        result.info.blockhash.ok_or(Error::MissingTxId)
+    }
+
     pub fn network(&self) -> Result<Network, Error> {
         let info = self.rpc.get_blockchain_info()?;
         Ok(info.chain)
@@ -366,6 +382,7 @@ impl BitcoinClient {
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn send_to_address_with_op_return(
         &self,
         address: Option<&Address<NetworkChecked>>,
@@ -389,6 +406,7 @@ impl BitcoinClient {
         Ok(txid)
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn create_and_sign_tx(
         &self,
         address: Option<&Address<NetworkChecked>>,
@@ -542,11 +560,11 @@ fn create_merkle_branch_and_root(
 ) -> (Vec<Sha256dHash>, Sha256dHash) {
     let mut merkle = vec![];
     while hashes.len() > 1 {
-        if hashes.len() % 2 != 0 {
+        if !hashes.len().is_multiple_of(2) {
             let last = *hashes.last().unwrap();
             hashes.push(last);
         }
-        index = if index % 2 == 0 { index + 1 } else { index - 1 };
+        index = if index.is_multiple_of(2) { index + 1 } else { index - 1 };
         merkle.push(hashes[index]);
         index /= 2;
         hashes = hashes.chunks(2).map(|pair| merklize(pair[0], pair[1])).collect()

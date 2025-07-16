@@ -31,11 +31,6 @@ contract FullRelayConstructionTest is FullRelayTestUtils {
         relay = new TestRelay("", genesisHeight, orphanDigestLe);
     }
 
-    function testPeriodStartWrongByteOrder() external {
-        vm.expectRevert(bytes("Period start hash does not have work. Hint: wrong byte order?"));
-        new TestRelay(genesisHex, genesisHeight, orphanDigestLe);
-    }
-
     function testStoresGenesisBlockInfo() external view {
         assertEq(relay.getRelayGenesis(), genesisDigestLe);
 

@@ -27,7 +27,7 @@ import {
     EnrichedToken,
     ExecuteQuoteParams,
     ExecuteStakeParam,
-    GatewayCreateOrderRequest,
+    GatewayCreateOrderRequestPayload,
     GatewayCreateOrderResponse,
     GatewayQuote,
     GatewayStartOrder,
@@ -46,19 +46,20 @@ import {
     OnchainOfframpOrderDetails,
     OnrampExecuteQuoteParams,
     OnrampOrder,
-    OnrampOrderResponse,
+    OrderDetails,
     OrderStatus,
     StakeParams,
     StakeTransactionParams,
     Token,
 } from './types';
 import {
-    calculateOpReturnHash,
     parseOrderStatus,
     slugify,
     stripHexPrefix,
     toHexScriptPubKey,
     viemClient,
+    convertOrderDetailsRawToOrderDetails,
+    convertOrderDetailsToRaw,
 } from './utils';
 
 /**
@@ -143,14 +144,7 @@ export class GatewayApiClient {
             const onrampQuote = await this.getOnrampQuote(params);
             return { params, onrampQuote };
         } else if (params.toChain.toString().toLowerCase() === 'bitcoin') {
-            if (!params.fromToken) {
-                throw new Error('`fromToken` must be specified for offramp');
-            }
-            if (!params.amount) {
-                throw new Error('`amount` must be specified for offramp');
-            }
-            const tokenAddress = getTokenAddress(this.chainId, params.fromToken.toLowerCase());
-            const offrampQuote = await this.fetchOfframpQuote(tokenAddress, BigInt(params.amount || 0));
+            const offrampQuote = await this.getOfframpQuote(params);
 
             return { params, offrampQuote };
         }
@@ -183,9 +177,10 @@ export class GatewayApiClient {
         const outputTokenAddress = getTokenAddress(this.chainId, toToken);
         const strategyAddress = params.strategyAddress?.startsWith('0x') ? params.strategyAddress : undefined;
 
-        const url = new URL(`${this.baseUrl}/quote/${outputTokenAddress}`);
+        const url = new URL(`${this.baseUrl}/v4/quote/${outputTokenAddress}`);
         if (strategyAddress) url.searchParams.append('strategy', strategyAddress);
         if (params.amount) url.searchParams.append('satoshis', `${params.amount}`);
+        if (params.gasRefill) url.searchParams.append('ethAmountToReceive', `${params.gasRefill}`);
 
         const response = await fetch(url, {
             headers: {
@@ -194,13 +189,38 @@ export class GatewayApiClient {
             },
         });
 
-        const quote: GatewayQuote = await response.json();
+        const jsonResponse = await response.json();
+
+        if (!jsonResponse.orderDetails) {
+            throw new Error('Missing orderDetails in quote response');
+        }
+
+        const quote: GatewayQuote = {
+            ...jsonResponse,
+            orderDetails: convertOrderDetailsRawToOrderDetails(jsonResponse.orderDetails),
+        };
+
         return {
             ...quote,
-            fee: quote.fee + (params.gasRefill || 0),
             baseToken: ADDRESS_LOOKUP[this.chainId][quote.baseTokenAddress],
             outputToken: quote.strategyAddress ? ADDRESS_LOOKUP[this.chainId][outputTokenAddress] : undefined,
         };
+    }
+
+    /**
+     * Get a quote from the Gateway API for swapping or staking BTC.
+     *
+     * @param params The parameters for the quote.
+     */
+    async getOfframpQuote(params: GetQuoteParams) {
+        if (!params.fromToken) {
+            throw new Error('`fromToken` must be specified for offramp');
+        }
+
+        const tokenAddress = getTokenAddress(this.chainId, params.fromToken.toLowerCase());
+        const quote = await this.fetchOfframpQuote(tokenAddress, BigInt(params.amount || 0));
+
+        return quote;
     }
 
     /**
@@ -532,7 +552,7 @@ export class GatewayApiClient {
         }
 
         const abiCoder = new AbiCoder();
-        const request: GatewayCreateOrderRequest = {
+        const request: GatewayCreateOrderRequestPayload = {
             gatewayAddress: gatewayQuote.gatewayAddress,
             strategyAddress: gatewayQuote.strategyAddress,
             satsToConvertToEth: params.gasRefill || 0,
@@ -542,9 +562,10 @@ export class GatewayApiClient {
             strategyExtraData: abiCoder.encode(['uint256'], [0]) as Hex,
             satoshis: gatewayQuote.satoshis,
             campaignId: params.campaignId,
+            orderDetails: convertOrderDetailsToRaw(gatewayQuote.orderDetails),
         };
 
-        const response = await fetch(`${this.baseUrl}/order`, {
+        const response = await fetch(`${this.baseUrl}/v4/order`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -558,10 +579,6 @@ export class GatewayApiClient {
         }
 
         const data: GatewayCreateOrderResponse = await response.json();
-        // NOTE: could remove this check but good for sanity
-        if (data.opReturnHash != calculateOpReturnHash(request)) {
-            throw new Error('Invalid OP_RETURN hash');
-        }
 
         let psbtBase64: string = '';
         if (
@@ -749,7 +766,7 @@ export class GatewayApiClient {
 
         let bitcoinTxHex: string;
         if (bitcoinTxOrId.length === 64) {
-            const esploraClient = new EsploraClient(this.chain === Chain.BOB ? Network.mainnet : Network.testnet);
+            const esploraClient = new EsploraClient(this.chain === Chain.BOB ? Network.mainnet : Network.signet);
             bitcoinTxHex = await esploraClient.getTransactionHex(bitcoinTxOrId);
         } else {
             bitcoinTxHex = bitcoinTxOrId;
@@ -780,7 +797,7 @@ export class GatewayApiClient {
     async getOnrampOrders(userAddress: Address): Promise<OnrampOrder[]> {
         const chainId = this.chainId;
         const response = await this.fetchGet(`${this.baseUrl}/orders/${userAddress}`);
-        const orders: OnrampOrderResponse[] = await response.json();
+        const orders = await response.json();
         return orders.map((order) => {
             function getFinal<L, R>(base?: L, output?: R): NonNullable<L | R> {
                 return order.status
@@ -806,9 +823,15 @@ export class GatewayApiClient {
                 }
                 return txStatus.confirmed ? latestHeight - txStatus.block_height! + 1 : 0;
             };
+
+            const orderDetails = order.orderDetails
+                ? convertOrderDetailsRawToOrderDetails(order.orderDetails)
+                : undefined;
+
             return {
-                gasRefill: order.satsToConvertToEth,
                 ...order,
+                orderDetails,
+                gasRefill: order.satsToConvertToEth,
                 baseToken: ADDRESS_LOOKUP[chainId][order.baseTokenAddress],
                 outputToken: ADDRESS_LOOKUP[chainId][order.outputTokenAddress!],
                 getTokenAddress,

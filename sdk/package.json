@@ -1,6 +1,6 @@
 {
     "name": "@gobob/bob-sdk",
-    "version": "3.3.4",
+    "version": "3.3.4-alpha5",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
     "scripts": {
@@ -21,33 +21,33 @@
         "README.md"
     ],
     "devDependencies": {
-        "@types/node": "^24.0.3",
+        "@types/node": "^24.0.10",
         "@types/yargs": "^17.0.33",
-        "@typescript-eslint/eslint-plugin": "^8.33.1",
-        "@typescript-eslint/parser": "^8.34.1",
+        "@typescript-eslint/eslint-plugin": "^8.36.0",
+        "@typescript-eslint/parser": "^8.36.0",
         "ecpair": "^2.1.0",
         "eslint": "^9.30.1",
         "eslint-config-prettier": "^10.1.5",
         "eslint-plugin-prettier": "^5.5.1",
-        "mocha": "^11.7.0",
+        "mocha": "^11.7.1",
         "nock": "^14.0.5",
         "prettier": "^3.6.2",
         "tiny-secp256k1": "^2.2.3",
         "ts-node": "^10.0.0",
         "typescript": "^5.7.3",
-        "vitest": "^3.1.4",
+        "vitest": "^3.2.4",
         "yargs": "^18.0.0"
     },
     "dependencies": {
         "@eslint/eslintrc": "^3.3.1",
-        "@eslint/js": "^9.28.0",
+        "@eslint/js": "^9.31.0",
         "@gobob/sats-wagmi": "^0.3.23",
         "@magiceden-oss/runestone-lib": "^1.0.2",
         "@scure/base": "^1.2.4",
         "@scure/btc-signer": "^1.6.0",
         "bitcoin-address-validation": "^3.0.0",
         "bitcoinjs-lib": "^6.1.7",
-        "ethers": "^6.14.1",
+        "ethers": "^6.14.4",
         "viem": "^2.31.0",
         "global": "^4.4.0"
     }

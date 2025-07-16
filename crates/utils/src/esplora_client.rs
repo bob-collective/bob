@@ -13,6 +13,21 @@ const ESPLORA_MAINNET_URL: &str = "https://btc-mainnet.interlay.io";
 const ESPLORA_LOCALHOST_URL: &str = "http://localhost:3002";
 const ESPLORA_SIGNET_URL: &str = "https://btc-signet.gobob.xyz";
 
+#[derive(Deserialize, Debug)]
+pub struct Tx {
+    pub txid: Txid,
+    pub version: i32,
+    pub locktime: u32,
+    pub vin: Vec<VinFormat>,
+    pub vout: Vec<VoutFormat>,
+    /// Transaction size in raw bytes (NOT virtual bytes).
+    pub size: usize,
+    /// Transaction weight units.
+    pub weight: u64,
+    pub status: TransactionStatus,
+    pub fee: u64,
+}
+
 // https://github.com/Blockstream/electrs/blob/adedee15f1fe460398a7045b292604df2161adc0/src/util/transaction.rs#L17-L26
 #[derive(Debug, Deserialize)]
 pub struct TransactionStatus {
@@ -138,6 +153,12 @@ impl EsploraClient {
         self.get(&format!("/tx/{txid}/hex")).await
     }
 
+    pub async fn get_tx_info(&self, txid: &Txid) -> Result<Tx, Error> {
+        let path = format!("/tx/{txid}");
+        let tx = self.get_and_decode::<Tx>(&path).await?;
+        Ok(tx)
+    }
+
     pub async fn get_raw_tx(&self, txid: &Txid) -> Result<Vec<u8>> {
         Ok(Vec::<u8>::from_hex(&self.get_tx_hex(txid).await?)?)
     }
@@ -194,6 +215,19 @@ impl EsploraClient {
 
     pub async fn get_tx_status(&self, txid: &Txid) -> Result<TransactionStatus> {
         self.get_and_decode(&format!("tx/{txid}/status")).await
+    }
+
+    /// Fetch the transaction at the specified index within the given block.
+    pub async fn get_block_txid_by_index(
+        &self,
+        block_hash: &BlockHash,
+        index: usize,
+    ) -> Result<Txid> {
+        // 1. Get the txid at the index in the block
+        let path = format!("block/{block_hash}/txid/{index}");
+        let txid_str = self.get(&path).await?;
+        let txid = Txid::from_str(&txid_str)?;
+        Ok(txid)
     }
 
     pub async fn send_transaction(&self, tx: &Transaction) -> Result<Txid> {
@@ -287,6 +321,34 @@ mod tests {
         )?;
 
         assert_eq!(esplora_client.get_block_value(&block_hash).await.unwrap().height, 884457);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_esplora_get_tx_info() -> Result<()> {
+        let esplora_client = EsploraClient::new(Network::Bitcoin)?;
+
+        let txid =
+            Txid::from_str("7d572189e512cf1660abe079adde55ab38c61a714c622121756d062ee4934416")?;
+        let tx = esplora_client.get_tx_info(&txid).await?;
+
+        assert!(tx.status.confirmed);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_esplora_fetch_coinbase_tx() -> Result<()> {
+        let esplora_client = EsploraClient::new(Network::Bitcoin)?;
+
+        let block_hash = BlockHash::from_str(
+            "000000000000000000007baa43da74c78fbb7dc6b4bf5f1ef16d800a3b884051",
+        )?;
+        let coinbase_tx = esplora_client.get_block_txid_by_index(&block_hash, 0).await?;
+
+        assert_eq!(
+            coinbase_tx,
+            Txid::from_str("33b36c41948b549159a200e9fed5027ef9a3fd5737a6bfe91094a61c8124c722")?
+        );
         Ok(())
     }
 }
