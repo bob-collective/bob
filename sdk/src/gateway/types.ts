@@ -8,9 +8,9 @@ type TokenSymbol = string;
 export type Optional<T, K extends keyof T> = Omit<T, K> & Partial<T>;
 
 /**
- * Parameters required to construct a staking transaction.
+ * Parameters required to construct a legacy strategy call.
  */
-export type StakeParams = {
+export type StrategyParams = {
     /** @description The address of the staking strategy contract */
     strategyAddress: Address;
     /** @description The token address being staked */
@@ -23,24 +23,6 @@ export type StakeParams = {
     amount: bigint;
     /** @description Minimum acceptable output amount after slippage */
     amountOutMin: bigint;
-};
-
-/**
- * Parameters needed to execute a staking transaction on an EVM-based chain.
- *
- * ⚠️ **Important**: The token must be approved before calling this transaction.
- */
-export type StakeTransactionParams = {
-    /** @description The address of the staking strategy contract */
-    strategyAddress: Address;
-    /** @description The ABI used to interact with the staking contract */
-    strategyABI: typeof strategyCaller;
-    /** @description The name of the function being called on the contract */
-    strategyFunctionName: (typeof strategyCaller)[number]['name'];
-    /** @description Arguments required for the staking contract call */
-    strategyArgs: [Address, bigint, Address, { amountOutMin: bigint }];
-    /** @description The wallet address executing the transaction */
-    address: Address;
 };
 
 /**
@@ -192,7 +174,7 @@ export interface GatewayStrategyContract {
      * @description Contract address
      * @example 0x...
      */
-    address: string;
+    address: Address;
     /** @example deposit */
     method: string;
     /** @example bob */
@@ -592,7 +574,5 @@ export type OfframpExecuteQuoteParams = {
     offrampQuote?: OfframpQuote;
     params: GetQuoteParams;
 };
-
-export type ExecuteStakeParam = StakeParams;
 
 export type ExecuteQuoteParams = OnrampExecuteQuoteParams | OfframpExecuteQuoteParams;

@@ -23,7 +23,6 @@ import { ADDRESS_LOOKUP, getTokenAddress, getTokenDecimals } from './tokens';
 import {
     EnrichedToken,
     ExecuteQuoteParams,
-    ExecuteStakeParam,
     GatewayCreateOrderRequestPayload,
     GatewayCreateOrderResponse,
     GatewayQuote,
@@ -45,8 +44,7 @@ import {
     OnrampOrder,
     OnrampOrderResponse,
     OrderStatus,
-    StakeParams,
-    StakeTransactionParams,
+    StrategyParams,
     Token,
 } from './types';
 import {
@@ -690,18 +688,25 @@ export class GatewayApiClient {
         }
     }
 
-    async executeStake(
-        params: ExecuteStakeParam,
-        walletClient: WalletClient<Transport, ViemChain, Account>,
-        publicClient: PublicClient<Transport>
+    /**
+     * Execute a strategy directly - e.g. wBTC -> xSolveBTC.
+     * @deprecated In the future this will be replaced by Multicall strategies.
+     */
+    async executeStrategy(
+        params: StrategyParams,
+        {
+            walletClient,
+            publicClient,
+        }: {
+            walletClient: WalletClient<Transport, ViemChain, Account>;
+            publicClient: PublicClient<Transport>;
+        }
     ) {
-        const result = await this.buildStake(params);
-
         const allowance = await publicClient.readContract({
             address: params.token,
             abi: erc20Abi,
             functionName: 'allowance',
-            args: [walletClient.account.address as Address, result.strategyAddress],
+            args: [walletClient.account.address, params.strategyAddress],
         });
 
         if (BigInt(params.amount) > allowance) {
@@ -710,7 +715,7 @@ export class GatewayApiClient {
                 address: params.token,
                 abi: erc20Abi,
                 functionName: 'approve',
-                args: [result.strategyAddress, maxUint256],
+                args: [params.strategyAddress, maxUint256],
             });
 
             const approveTxHash = await walletClient.writeContract(request);
@@ -719,11 +724,11 @@ export class GatewayApiClient {
         }
 
         const { request } = await publicClient.simulateContract({
-            address: result.strategyAddress, // Ensure correct type
-            abi: result.strategyABI,
-            functionName: result.strategyFunctionName,
-            args: result.strategyArgs,
-            account: result.address,
+            address: params.strategyAddress,
+            abi: strategyCaller,
+            functionName: 'handleGatewayMessageWithSlippageArgs', // TODO: encode args
+            args: [params.token, params.amount, params.receiver, { amountOutMin: params.amountOutMin }],
+            account: params.sender,
         });
 
         const transactionHash = await walletClient.writeContract(request);
@@ -840,6 +845,7 @@ export class GatewayApiClient {
 
     /**
      * Returns all strategies supported by the Gateway API.
+     * @deprecated Moving away from hardcoded strategies.
      *
      * @returns {Promise<GatewayStrategyContract[]>} The array of strategies.
      */
@@ -859,7 +865,7 @@ export class GatewayApiClient {
             return {
                 id: strategySlug,
                 type: 'deposit',
-                address: strategy.strategyAddress,
+                address: strategy.strategyAddress as Address,
                 method: '',
                 chain: {
                     id: '', // TODO
@@ -981,88 +987,6 @@ export class GatewayApiClient {
                 };
             })
         );
-    }
-
-    /**
-     * Builds the parameters required to stake ERC-20 tokens using the specified strategy.
-     *
-     * @param {StakeParams} stakeParams - The parameters required for staking.
-     * @returns {Promise<StakeTransactionParams>} The constructed staking parameters.
-     * @throws {Error} If the strategy or token does not match, or if any address is invalid.
-     *
-     * @note Tokens must be approved first before calling the staking function.
-     * @example
-     * ```ts
-     * // Check configs: https://viem.sh/docs/contract/writeContract.html#usage
-     * import { account, publicClient, walletClient } from './config';
-     * import { erc20Abi } from 'viem';
-     *
-     * // Define staking parameters
-     * const params: StakeParams = {
-     *     strategyAddress: '0x06cEA150E651236499319d78f92791f0FAe6FE67' as Address,
-     *     token: '0x6744babdf02dcf578ea173a9f0637771a9e1c4d0' as Address,
-     *     sender: '0x5e46D220eC8B01f55B70Dbb503c697f6E231eb65' as Address, // Sender must hold the input token
-     *     receiver: '0x5e46D220eC8B01f55B70Dbb503c697f6E231eb65' as Address,
-     *     amount: 100n,
-     *     amountOutMin: 0n,
-     * };
-     *
-     * // Call SDK method to build stake parameters
-     * const result = await gatewaySDK.buildStake(params);
-     *
-     * // Approve ERC-20 token to be spent
-     * const { request: approveRequest } = await publicClient.simulateContract({
-     *     address: params.token, // Ensure correct type
-     *     abi: erc20Abi,
-     *     functionName: 'approve',
-     *     args: [result.strategyAddress, maxUint256],
-     *     account: result.account, // Ensure correct type
-     * });
-     * await walletClient.writeContract(approveRequest);
-     *
-     * // Call strategy contract
-     * const { request: stakeRequest } = await publicClient.simulateContract({
-     *     address: result.strategyAddress, // Ensure correct type
-     *     abi: result.strategyABI,
-     *     functionName: result.strategyFunctionName,
-     *     args: result.strategyArgs,
-     *     account: result.account, // Ensure correct type
-     * });
-     * await walletClient.writeContract(stakeRequest);
-     * ```
-     */
-    async buildStake(stakeParams: StakeParams): Promise<StakeTransactionParams> {
-        const strategies = await this.getStrategies();
-
-        const strategy = strategies.find((s) => isAddressEqual(s.address as Address, stakeParams.strategyAddress));
-        if (!strategy) {
-            throw new Error(
-                `Strategy with address ${stakeParams.strategyAddress} not found. ${JSON.stringify(strategies)}`
-            );
-        }
-
-        if (!isAddressEqual(strategy.inputToken.address as Address, stakeParams.token)) {
-            throw new Error(
-                `Provided token ${stakeParams.token} does not match strategy's input token ${strategy.inputToken.address}.`
-            );
-        }
-
-        if (![stakeParams.sender, stakeParams.receiver, stakeParams.token].every((address) => isAddress(address))) {
-            throw new Error(`Invalid EVM address detected.`);
-        }
-
-        return {
-            strategyAddress: stakeParams.strategyAddress,
-            strategyABI: strategyCaller,
-            strategyFunctionName: 'handleGatewayMessageWithSlippageArgs',
-            strategyArgs: [
-                stakeParams.token,
-                stakeParams.amount,
-                stakeParams.receiver,
-                { amountOutMin: stakeParams.amountOutMin },
-            ],
-            address: stakeParams.sender,
-        };
     }
 
     /**
