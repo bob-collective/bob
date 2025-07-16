@@ -539,14 +539,12 @@ export interface GatewayStrategy {
 }
 
 /** @dev Internal */
-
 export interface StrategyAssetState {
     address: Address | 'usd';
     totalUnderlying: bigint;
 }
 
 /** @dev Internal */
-
 export interface DefiLlamaPool {
     pool: string;
     chain: string;
@@ -559,11 +557,7 @@ export interface DefiLlamaPool {
     rewardTokens: null | string[];
 }
 
-export type OnrampQuoteParams = Optional<GatewayQuoteParams, 'toUserAddress'>;
-
-export type OfframpQuoteParams = Optional<GatewayQuoteParams, 'fromUserAddress'>;
-
-export type GetQuoteParams = Optional<OnrampQuoteParams | OfframpQuoteParams, 'amount'>;
+export type GetQuoteParams = Optional<GatewayQuoteParams, 'fromUserAddress'>;
 
 export type OnrampExecuteQuoteParams = {
     onrampQuote?: GatewayQuote & GatewayTokensInfo;

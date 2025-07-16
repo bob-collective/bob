@@ -5,7 +5,6 @@ import {
     Address,
     erc20Abi,
     isAddress,
-    isAddressEqual,
     PublicClient,
     Transport,
     Chain as ViemChain,
@@ -171,11 +170,12 @@ export class GatewayApiClient {
         const strategyAddress = params.strategyAddress?.startsWith('0x') ? params.strategyAddress : undefined;
 
         const url = new URL(`${this.baseUrl}/v4/quote/${outputTokenAddress}`);
+        url.searchParams.append('userAddress', `${params.toUserAddress}`);
         if (strategyAddress) url.searchParams.append('strategy', strategyAddress);
         if (params.amount) url.searchParams.append('satoshis', `${params.amount}`);
         if (params.gasRefill) url.searchParams.append('ethAmountToReceive', `${params.gasRefill}`);
+        if (params.message) url.searchParams.append('strategyExtraData', `${params.message}`);
 
-        // TODO: add stragegy data / message
         const response = await fetch(url, {
             headers: {
                 'Content-Type': 'application/json',
