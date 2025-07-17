@@ -11,10 +11,10 @@ import {
     IPellStrategy,
     PellStrategy,
     PellBedrockStrategy,
-    PellSolvLSTStrategy
+    PellXSolvBTCStrategy
 } from "../../../src/gateway/strategy/PellStrategy.sol";
 import {IBedrockVault, BedrockStrategy} from "../../../src/gateway/strategy/BedrockStrategy.sol";
-import {SolvLSTStrategy, ISolvBTCRouter} from "../../../src/gateway/strategy/SolvStrategy.sol";
+import {XSolvBTCStrategy, ISolvBTCRouterV2} from "../../../src/gateway/strategy/SolvStrategy.sol";
 import {StrategySlippageArgs} from "../../../src/gateway/IStrategy.sol";
 import {Constants} from "./Constants.sol";
 import {ForkedStrategyTemplateTbtc, ForkedStrategyTemplateWbtc} from "./ForkedTemplate.sol";
@@ -82,32 +82,25 @@ contract PellBedRockStrategyForked is ForkedStrategyTemplateWbtc {
 }
 
 // Command to run this contract tests with Foundry:
-// BOB_PROD_PUBLIC_RPC_URL=https://rpc.gobob.xyz/ forge test --match-contract PellBedRockLSTStrategyForked -vv
-contract PellBedRockLSTStrategyForked is ForkedStrategyTemplateWbtc {
+// BOB_PROD_PUBLIC_RPC_URL=https://rpc.gobob.xyz/ forge test --match-contract PellBedRockXSolvBTCStrategyForked -vv
+contract PellBedRockXSolvBTCStrategyForked is ForkedStrategyTemplateWbtc {
     function setUp() public {
         super.simulateForkAndTransfer(
-            6642119, address(0x5A8E9774d67fe846C6F4311c073e2AC34b33646F), Constants.DUMMY_SENDER, 1e8
+            19911846, address(0x508A838922a93096C1Eb23FE21D8938BBd653Db6), Constants.DUMMY_SENDER, 1e8
         );
     }
 
-    function testPellBedrockLSTStrategy() public {
-        IERC20 solvBTC = IERC20(0x541FD749419CA806a8bc7da8ac23D346f2dF8B77);
-        IERC20 solvBTCBBN = IERC20(0xCC0966D8418d412c599A6421b760a847eB169A8c);
-        SolvLSTStrategy solvLSTStrategy = new SolvLSTStrategy(
-            ISolvBTCRouter(0x49b072158564Db36304518FFa37B1cFc13916A90),
-            ISolvBTCRouter(0xbA46FcC16B464D9787314167bDD9f1Ce28405bA1),
-            0x5664520240a46b4b3e9655c20cc3f9e08496a9b746a478e476ae3e04d6c8fc31,
-            0x6899a7e13b655fa367208cb27c6eaa2410370d1565dc1f5f11853a1e8cbef033,
-            solvBTC,
-            solvBTCBBN
-        );
+    function testPellXSolvBTCStrategy() public {
+        IERC20 xSolvBTC = IERC20(0xCC0966D8418d412c599A6421b760a847eB169A8c);
+        XSolvBTCStrategy xSolvBTCStrategy =
+            new XSolvBTCStrategy(ISolvBTCRouterV2(0x56a4d805d7A292f03Ead5Be31E0fFB8f7d0E3B48), xSolvBTC);
 
         PellStrategy pellStrategy = new PellStrategy(
             IPellStrategyManager(0x00B67E4805138325ce871D5E27DC15f994681bC1),
             IPellStrategy(0x6f0AfADE16BFD2E7f5515634f2D0E3cd03C845Ef)
         );
 
-        PellSolvLSTStrategy strategy = new PellSolvLSTStrategy(solvLSTStrategy, pellStrategy);
+        PellXSolvBTCStrategy strategy = new PellXSolvBTCStrategy(xSolvBTCStrategy, pellStrategy);
 
         vm.startPrank(Constants.DUMMY_SENDER);
         token.approve(address(strategy), 1e8);
@@ -120,6 +113,6 @@ contract PellBedRockLSTStrategyForked is ForkedStrategyTemplateWbtc {
         );
         vm.stopPrank();
 
-        assertEq(pellStrategy.stakerStrategyShares(Constants.DUMMY_RECEIVER), 1e18);
+        assertApproxEqAbs(pellStrategy.stakerStrategyShares(Constants.DUMMY_RECEIVER), 1e18, 1e18 / 100);
     }
 }

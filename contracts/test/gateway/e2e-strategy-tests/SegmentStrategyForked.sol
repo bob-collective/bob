@@ -11,16 +11,16 @@ import {
     IPellStrategy,
     PellStrategy,
     PellBedrockStrategy,
-    PellSolvLSTStrategy
+    PellXSolvBTCStrategy
 } from "../../../src/gateway/strategy/PellStrategy.sol";
 import {
     ISeBep20,
     SegmentStrategy,
     SegmentBedrockStrategy,
-    SegmentSolvLSTStrategy
+    SegmentXSolvBTCStrategy
 } from "../../../src/gateway/strategy/SegmentStrategy.sol";
 import {IBedrockVault, BedrockStrategy} from "../../../src/gateway/strategy/BedrockStrategy.sol";
-import {SolvLSTStrategy, ISolvBTCRouter} from "../../../src/gateway/strategy/SolvStrategy.sol";
+import {XSolvBTCStrategy, ISolvBTCRouterV2} from "../../../src/gateway/strategy/SolvStrategy.sol";
 import {StrategySlippageArgs} from "../../../src/gateway/IStrategy.sol";
 import {Constants} from "./Constants.sol";
 import {ForkedStrategyTemplateTbtc, ForkedStrategyTemplateWbtc} from "./ForkedTemplate.sol";
@@ -56,11 +56,11 @@ contract SegmentStrategyForked is ForkedStrategyTemplateTbtc {
 }
 
 // Command to run this contract tests with Foundry:
-// BOB_PROD_PUBLIC_RPC_URL=https://rpc.gobob.xyz/ forge test --match-contract SegmentBedrockAndLstStrategyForked -vv
-contract SegmentBedrockAndLstStrategyForked is ForkedStrategyTemplateWbtc {
+// BOB_PROD_PUBLIC_RPC_URL=https://rpc.gobob.xyz/ forge test --match-contract SegmentBedrockAndXSolvBTCStrategyForked -vv
+contract SegmentBedrockAndXSolvBTCStrategyForked is ForkedStrategyTemplateWbtc {
     function setUp() public {
         super.simulateForkAndTransfer(
-            6945930, address(0x5A8E9774d67fe846C6F4311c073e2AC34b33646F), Constants.DUMMY_SENDER, 1e8
+            19911846, address(0x508A838922a93096C1Eb23FE21D8938BBd653Db6), Constants.DUMMY_SENDER, 1e8
         );
     }
 
@@ -93,20 +93,13 @@ contract SegmentBedrockAndLstStrategyForked is ForkedStrategyTemplateWbtc {
         assertGt(uniBTC.balanceOf(Constants.DUMMY_RECEIVER), 0, "User increase in uniBTC Balance");
     }
 
-    function testSegmentSolvLstStrategy() public {
-        IERC20 solvBTC = IERC20(0x541FD749419CA806a8bc7da8ac23D346f2dF8B77);
-        IERC20 solvBTCBBN = IERC20(0xCC0966D8418d412c599A6421b760a847eB169A8c);
-        SolvLSTStrategy solvLSTStrategy = new SolvLSTStrategy(
-            ISolvBTCRouter(0x49b072158564Db36304518FFa37B1cFc13916A90),
-            ISolvBTCRouter(0xbA46FcC16B464D9787314167bDD9f1Ce28405bA1),
-            0x5664520240a46b4b3e9655c20cc3f9e08496a9b746a478e476ae3e04d6c8fc31,
-            0x6899a7e13b655fa367208cb27c6eaa2410370d1565dc1f5f11853a1e8cbef033,
-            solvBTC,
-            solvBTCBBN
-        );
+    function testSegmentXSolvBTCStrategy() public {
+        IERC20 xSolvBTC = IERC20(0xCC0966D8418d412c599A6421b760a847eB169A8c);
+        XSolvBTCStrategy xSolvBTCStrategy =
+            new XSolvBTCStrategy(ISolvBTCRouterV2(0x56a4d805d7A292f03Ead5Be31E0fFB8f7d0E3B48), xSolvBTC);
         ISeBep20 seBep20 = ISeBep20(0x5EF2B8fbCc8aea2A9Dbe2729F0acf33E073Fa43e);
         SegmentStrategy segmentStrategy = new SegmentStrategy(seBep20);
-        SegmentSolvLSTStrategy strategy = new SegmentSolvLSTStrategy(solvLSTStrategy, segmentStrategy);
+        SegmentXSolvBTCStrategy strategy = new SegmentXSolvBTCStrategy(xSolvBTCStrategy, segmentStrategy);
 
         vm.startPrank(Constants.DUMMY_SENDER);
         token.approve(address(strategy), 1e8);
@@ -123,6 +116,6 @@ contract SegmentBedrockAndLstStrategyForked is ForkedStrategyTemplateWbtc {
 
         userSeBalance = IERC20(address(seBep20)).balanceOf(Constants.DUMMY_RECEIVER);
         assertEq(userSeBalance, 0, "User has redeemed");
-        assertGt(solvBTCBBN.balanceOf(Constants.DUMMY_RECEIVER), 0, "User has SolvBTC.BBN tokens");
+        assertGt(xSolvBTC.balanceOf(Constants.DUMMY_RECEIVER), 0, "User still has xSolvBTC tokens");
     }
 }

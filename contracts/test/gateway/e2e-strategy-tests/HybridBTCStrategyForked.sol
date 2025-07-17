@@ -25,9 +25,8 @@ contract HybridBTCStrategyForkedWbtc is ForkedStrategyTemplateWbtc {
     HybridBTCStrategy hybridBTCStrategy;
 
     function setUp() public {
-        // transferring from the uniswap pool address to the sender
         super.simulateForkAndTransfer(
-            14000000, address(0x4A1dF9716147b785f3f82019f36f248Ac15DC308), Constants.DUMMY_SENDER, amountIn
+            19911846, address(0x508A838922a93096C1Eb23FE21D8938BBd653Db6), Constants.DUMMY_SENDER, 1e8
         );
 
         // Deploy the strategy
