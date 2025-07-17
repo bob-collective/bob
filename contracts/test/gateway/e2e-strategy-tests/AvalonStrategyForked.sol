@@ -7,12 +7,14 @@ using stdStorage for StdStorage;
 
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {
-    IAvalonIPool, AvalonLendingStrategy, AvalonLstStrategy
+    IAvalonIPool,
+    AvalonLendingStrategy,
+    AvalonXSolvBTCStrategy
 } from "../../../src/gateway/strategy/AvalonStrategy.sol";
 import {StrategySlippageArgs} from "../../../src/gateway/IStrategy.sol";
 import {Constants} from "./Constants.sol";
 import {ForkedStrategyTemplateTbtc, ForkedStrategyTemplateWbtc} from "./ForkedTemplate.sol";
-import {SolvLSTStrategy, ISolvBTCRouter} from "../../../src/gateway/strategy/SolvStrategy.sol";
+import {XSolvBTCStrategy, ISolvBTCRouterV2} from "../../../src/gateway/strategy/SolvStrategy.sol";
 
 // Command to run this contract tests with Foundry:
 // BOB_PROD_PUBLIC_RPC_URL=https://rpc.gobob.xyz/ forge test --match-contract AvalonTBTCLendingStrategyForked -vv
@@ -57,7 +59,7 @@ contract AvalonTBTCLendingStrategyForked is ForkedStrategyTemplateTbtc {
 contract AvalonWBTCLendingStrategyForked is ForkedStrategyTemplateWbtc {
     function setUp() public {
         super.simulateForkAndTransfer(
-            6216882, address(0x5A8E9774d67fe846C6F4311c073e2AC34b33646F), Constants.DUMMY_SENDER, 1e8
+            19911846, address(0x508A838922a93096C1Eb23FE21D8938BBd653Db6), Constants.DUMMY_SENDER, 1e8
         );
     }
 
@@ -88,44 +90,38 @@ contract AvalonWBTCLendingStrategyForked is ForkedStrategyTemplateWbtc {
 }
 
 // Command to run this contract tests with Foundry:
-// BOB_PROD_PUBLIC_RPC_URL=https://rpc.gobob.xyz/ forge test --match-contract AvalonWBTCLstStrategyForked -vv
-contract AvalonWBTCLstStrategyForked is ForkedStrategyTemplateWbtc {
+// BOB_PROD_PUBLIC_RPC_URL=https://rpc.gobob.xyz/ forge test --match-contract AvalonWBTCXSolvBTCStrategyForked -vv
+contract AvalonWBTCXSolvBTCStrategyForked is ForkedStrategyTemplateWbtc {
     function setUp() public {
         super.simulateForkAndTransfer(
-            6216882, address(0x5A8E9774d67fe846C6F4311c073e2AC34b33646F), Constants.DUMMY_SENDER, 1e8
+            19911846, address(0x508A838922a93096C1Eb23FE21D8938BBd653Db6), Constants.DUMMY_SENDER, 1e8
         );
     }
 
-    function testWbtcLstStrategy() public {
-        IERC20 solvBTC = IERC20(0x541FD749419CA806a8bc7da8ac23D346f2dF8B77);
-        IERC20 solvBTCBBN = IERC20(0xCC0966D8418d412c599A6421b760a847eB169A8c);
-        SolvLSTStrategy solvLSTStrategy = new SolvLSTStrategy(
-            ISolvBTCRouter(0x49b072158564Db36304518FFa37B1cFc13916A90),
-            ISolvBTCRouter(0xbA46FcC16B464D9787314167bDD9f1Ce28405bA1),
-            0x5664520240a46b4b3e9655c20cc3f9e08496a9b746a478e476ae3e04d6c8fc31,
-            0x6899a7e13b655fa367208cb27c6eaa2410370d1565dc1f5f11853a1e8cbef033,
-            solvBTC,
-            solvBTCBBN
-        );
+    function testWBTCXSolvBTCStrategy() public {
+        IERC20 xSolvBTC = IERC20(0xCC0966D8418d412c599A6421b760a847eB169A8c);
+        XSolvBTCStrategy xSolvBTCStrategy =
+            new XSolvBTCStrategy(ISolvBTCRouterV2(0x56a4d805d7A292f03Ead5Be31E0fFB8f7d0E3B48), xSolvBTC);
 
         IERC20 avalonSolvBtcBBNToken = IERC20(0x2E6500A7Add9a788753a897e4e3477f651c612eb);
         IAvalonIPool pool = IAvalonIPool(0x35B3F1BFe7cbE1e95A3DC2Ad054eB6f0D4c879b6);
         AvalonLendingStrategy avalonLendingStrategy = new AvalonLendingStrategy(avalonSolvBtcBBNToken, pool);
 
-        // Deploy a new AvalonLstStrategy contract
-        AvalonLstStrategy avalonLstStrategy = new AvalonLstStrategy(solvLSTStrategy, avalonLendingStrategy);
+        // Deploy a new AvalonXSolvBTCStrategy contract
+        AvalonXSolvBTCStrategy avalonXSolvBTCStrategy =
+            new AvalonXSolvBTCStrategy(xSolvBTCStrategy, avalonLendingStrategy);
 
         vm.startPrank(Constants.DUMMY_SENDER);
-        token.approve(address(avalonLstStrategy), 1e8);
+        token.approve(address(avalonXSolvBTCStrategy), 1e8);
 
         // check before calling receiver has not avalonSolvBtcBBN tokens
         assertEq(avalonSolvBtcBBNToken.balanceOf(address(Constants.DUMMY_RECEIVER)), 0);
 
-        avalonLstStrategy.handleGatewayMessageWithSlippageArgs(
+        avalonXSolvBTCStrategy.handleGatewayMessageWithSlippageArgs(
             token, 1e8, Constants.DUMMY_RECEIVER, StrategySlippageArgs(0)
         );
         vm.stopPrank();
 
-        assertEq(avalonSolvBtcBBNToken.balanceOf(address(Constants.DUMMY_RECEIVER)), 1 ether);
+        assertApproxEqAbs(avalonSolvBtcBBNToken.balanceOf(address(Constants.DUMMY_RECEIVER)), 1e18, 1e18 / 100);
     }
 }

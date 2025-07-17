@@ -3,7 +3,7 @@ pragma solidity ^0.8.13;
 
 import {IStrategyWithSlippageArgs, StrategySlippageArgs} from "../IStrategy.sol";
 import {BedrockStrategy} from "./BedrockStrategy.sol";
-import {SolvLSTStrategy} from "./SolvStrategy.sol";
+import {XSolvBTCStrategy} from "./SolvStrategy.sol";
 
 import {Context} from "@openzeppelin/contracts/utils/Context.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -74,14 +74,14 @@ contract AvalonLendingStrategy is IStrategyWithSlippageArgs, Context {
     }
 }
 
-contract AvalonLstStrategy is IStrategyWithSlippageArgs, Context {
+contract AvalonXSolvBTCStrategy is IStrategyWithSlippageArgs, Context {
     using SafeERC20 for IERC20;
 
-    SolvLSTStrategy public immutable solvLSTStrategy;
+    XSolvBTCStrategy public immutable xSolvBTCStrategy;
     AvalonLendingStrategy public immutable avalonLendingStrategy;
 
-    constructor(SolvLSTStrategy _solvLSTStrategy, AvalonLendingStrategy _avalonLendingStrategy) {
-        solvLSTStrategy = _solvLSTStrategy;
+    constructor(XSolvBTCStrategy _xSolvBTCStrategy, AvalonLendingStrategy _avalonLendingStrategy) {
+        xSolvBTCStrategy = _xSolvBTCStrategy;
         avalonLendingStrategy = _avalonLendingStrategy;
     }
 
@@ -100,16 +100,16 @@ contract AvalonLstStrategy is IStrategyWithSlippageArgs, Context {
         StrategySlippageArgs memory args
     ) public override {
         tokenSent.safeTransferFrom(_msgSender(), address(this), amountIn);
-        tokenSent.safeIncreaseAllowance(address(solvLSTStrategy), amountIn);
+        tokenSent.safeIncreaseAllowance(address(xSolvBTCStrategy), amountIn);
 
-        solvLSTStrategy.handleGatewayMessageWithSlippageArgs(
+        xSolvBTCStrategy.handleGatewayMessageWithSlippageArgs(
             tokenSent, amountIn, address(this), StrategySlippageArgs(0)
         );
 
-        IERC20 solvLST = solvLSTStrategy.solvLST();
-        uint256 solvLSTAmount = solvLST.balanceOf(address(this));
-        solvLST.safeIncreaseAllowance(address(avalonLendingStrategy), solvLSTAmount);
+        IERC20 xSolvBTC = xSolvBTCStrategy.xSolvBTC();
+        uint256 xSolvBTCAmount = xSolvBTC.balanceOf(address(this));
 
-        avalonLendingStrategy.handleGatewayMessageWithSlippageArgs(solvLST, solvLSTAmount, recipient, args);
+        xSolvBTC.safeIncreaseAllowance(address(avalonLendingStrategy), xSolvBTCAmount);
+        avalonLendingStrategy.handleGatewayMessageWithSlippageArgs(xSolvBTC, xSolvBTCAmount, recipient, args);
     }
 }

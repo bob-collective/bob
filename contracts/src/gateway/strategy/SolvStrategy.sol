@@ -8,16 +8,25 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 /**
- * @dev Solv ABI for their router.
+ * @dev Solv ABI for their router v2.
  */
-interface ISolvBTCRouter {
+interface ISolvBTCRouterV2 {
     /**
-     * Subscribe with payment currency (i.e. WBTC) and receive SolvBTC.
-     * @param poolId SolvBTC fund ID.
-     * @param currencyAmount Amount of currency to be paid.
-     * @return shareValue Amount of SolvBTC to be received after subscription.
+     * @notice Deposit currency and get targetToken
+     * @param targetToken_ The target ERC20 token address to receive
+     * @param currency_ The currency address to deposit
+     * @param currencyAmount_ The amount of currency to deposit
+     * @param minimumTargetTokenAmount_ The minimum acceptable return amount of target token
+     * @param expireTime_ The expire time
+     * @return targetTokenAmount_ The targetToken amount to receive
      */
-    function createSubscription(bytes32 poolId, uint256 currencyAmount) external returns (uint256 shareValue);
+    function deposit(
+        address targetToken_,
+        address currency_,
+        uint256 currencyAmount_,
+        uint256 minimumTargetTokenAmount_,
+        uint64 expireTime_
+    ) external returns (uint256 targetTokenAmount_);
 }
 
 /**
@@ -26,13 +35,11 @@ interface ISolvBTCRouter {
 contract SolvBTCStrategy is IStrategyWithSlippageArgs, Context {
     using SafeERC20 for IERC20;
 
-    ISolvBTCRouter public immutable solvBTCRouter;
-    bytes32 public immutable poolId;
+    ISolvBTCRouterV2 public immutable solvBTCRouter;
     IERC20 public immutable solvBTC;
 
-    constructor(ISolvBTCRouter _solvBTCRouter, bytes32 _poolId, IERC20 _solvBTC) {
+    constructor(ISolvBTCRouterV2 _solvBTCRouter, IERC20 _solvBTC) {
         solvBTCRouter = _solvBTCRouter;
-        poolId = _poolId;
         solvBTC = _solvBTC;
     }
 
@@ -53,42 +60,26 @@ contract SolvBTCStrategy is IStrategyWithSlippageArgs, Context {
         tokenSent.safeTransferFrom(_msgSender(), address(this), amountIn);
         tokenSent.safeIncreaseAllowance(address(solvBTCRouter), amountIn);
 
-        uint256 shareValue = solvBTCRouter.createSubscription(poolId, amountIn);
-        require(shareValue >= args.amountOutMin, "Insufficient output amount");
+        // Expiry time must be in the future, so we use 1 second from now since the deposit will happen atomically
+        uint256 solvBTCAmount = solvBTCRouter.deposit(
+            address(solvBTC), address(tokenSent), amountIn, args.amountOutMin, uint64(block.timestamp + 1)
+        );
 
-        solvBTC.safeTransfer(recipient, shareValue);
+        solvBTC.safeTransfer(recipient, solvBTCAmount);
 
-        emit TokenOutput(address(solvBTC), shareValue);
+        emit TokenOutput(address(solvBTC), solvBTCAmount);
     }
 }
 
-/**
- * @title Strategy contract for e.g. SolvBTC.BBN.
- */
-contract SolvLSTStrategy is IStrategyWithSlippageArgs, Context {
+contract XSolvBTCStrategy is IStrategyWithSlippageArgs, Context {
     using SafeERC20 for IERC20;
 
-    ISolvBTCRouter public immutable solvBTCRouter;
-    ISolvBTCRouter public immutable solvLSTRouter;
-    bytes32 public immutable solvBTCPoolId;
-    bytes32 public immutable solvLSTPoolId;
-    IERC20 public immutable solvBTC;
-    IERC20 public immutable solvLST;
+    ISolvBTCRouterV2 public immutable solvBTCRouter;
+    IERC20 public immutable xSolvBTC;
 
-    constructor(
-        ISolvBTCRouter _solvBTCRouter,
-        ISolvBTCRouter _solvLSTRouter,
-        bytes32 _solvBTCPoolId,
-        bytes32 _solvLSTPoolId,
-        IERC20 _solvBTC,
-        IERC20 _solvLST
-    ) {
+    constructor(ISolvBTCRouterV2 _solvBTCRouter, IERC20 _xSolvBTC) {
         solvBTCRouter = _solvBTCRouter;
-        solvLSTRouter = _solvLSTRouter;
-        solvBTCPoolId = _solvBTCPoolId;
-        solvLSTPoolId = _solvLSTPoolId;
-        solvBTC = _solvBTC;
-        solvLST = _solvLST;
+        xSolvBTC = _xSolvBTC;
     }
 
     /**
@@ -107,14 +98,14 @@ contract SolvLSTStrategy is IStrategyWithSlippageArgs, Context {
     ) public override {
         tokenSent.safeTransferFrom(_msgSender(), address(this), amountIn);
         tokenSent.safeIncreaseAllowance(address(solvBTCRouter), amountIn);
-        uint256 shareValueBTC = solvBTCRouter.createSubscription(solvBTCPoolId, amountIn);
 
-        solvBTC.safeIncreaseAllowance(address(solvLSTRouter), shareValueBTC);
-        uint256 shareValueLST = solvLSTRouter.createSubscription(solvLSTPoolId, shareValueBTC);
-        require(shareValueLST >= args.amountOutMin, "Insufficient output amount");
+        // Expiry time must be in the future, so we use 1 second from now since the deposit will happen atomically
+        uint256 xSolvBTCAmount = solvBTCRouter.deposit(
+            address(xSolvBTC), address(tokenSent), amountIn, args.amountOutMin, uint64(block.timestamp + 1)
+        );
 
-        solvLST.safeTransfer(recipient, shareValueLST);
+        xSolvBTC.safeTransfer(recipient, xSolvBTCAmount);
 
-        emit TokenOutput(address(solvLST), shareValueLST);
+        emit TokenOutput(address(xSolvBTC), xSolvBTCAmount);
     }
 }
