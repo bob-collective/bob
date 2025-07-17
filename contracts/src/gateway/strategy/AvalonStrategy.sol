@@ -9,8 +9,6 @@ import {Context} from "@openzeppelin/contracts/utils/Context.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import {console} from "forge-std/console.sol";
-
 interface IAvalonIPool {
     /**
      * @notice Mints pool tokens to the recipient.
@@ -110,9 +108,8 @@ contract AvalonXSolvBTCStrategy is IStrategyWithSlippageArgs, Context {
 
         IERC20 xSolvBTC = xSolvBTCStrategy.xSolvBTC();
         uint256 xSolvBTCAmount = xSolvBTC.balanceOf(address(this));
-        console.log("xSolvBTCAmount", xSolvBTCAmount);
-        xSolvBTC.safeIncreaseAllowance(address(avalonLendingStrategy), xSolvBTCAmount);
 
+        xSolvBTC.safeIncreaseAllowance(address(avalonLendingStrategy), xSolvBTCAmount);
         avalonLendingStrategy.handleGatewayMessageWithSlippageArgs(xSolvBTC, xSolvBTCAmount, recipient, args);
     }
 }

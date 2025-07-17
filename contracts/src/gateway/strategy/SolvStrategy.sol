@@ -26,7 +26,7 @@ interface ISolvBTCRouterV2 {
         uint256 currencyAmount_,
         uint256 minimumTargetTokenAmount_,
         uint64 expireTime_
-    ) external virtual returns (uint256 targetTokenAmount_);
+    ) external returns (uint256 targetTokenAmount_);
 }
 
 /**
