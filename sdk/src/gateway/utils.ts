@@ -1,8 +1,6 @@
-import { createPublicClient, http, zeroAddress } from 'viem';
-import { bob, bobSepolia } from 'viem/chains';
-
-import { Chain, GatewayCreateOrderRequest, OfframpOrderStatus, OrderDetails, OrderDetailsRaw } from './types';
-import { AbiCoder, ethers } from 'ethers';
+import { createPublicClient, http, zeroAddress, Chain as ViemChain } from 'viem';
+import { GatewayCreateOrderRequest, OfframpOrderStatus, OrderDetails, OrderDetailsRaw } from './types';
+import { encodeAbiParameters, parseAbiParameters, keccak256 } from 'viem';
 import * as bitcoin from 'bitcoinjs-lib';
 
 /**
@@ -10,14 +8,20 @@ import * as bitcoin from 'bitcoinjs-lib';
  * This is used for data integrity checking.
  */
 export function calculateOpReturnHash(req: GatewayCreateOrderRequest) {
-    const abiCoder = new AbiCoder();
-    return ethers.keccak256(
-        abiCoder.encode(
-            ['address', 'address', 'uint256', 'address', 'bytes', 'bytes'],
+    return keccak256(
+        encodeAbiParameters(
+            parseAbiParameters([
+                'address gateway',
+                'address strategy',
+                'uint256 satsToConvertToEth',
+                'address recipient',
+                'bytes gatewayExtraData',
+                'bytes strategyExtraData',
+            ]),
             [
                 req.gatewayAddress,
                 req.strategyAddress || zeroAddress,
-                req.satsToConvertToEth,
+                BigInt(req.satsToConvertToEth),
                 req.userAddress,
                 req.gatewayExtraData || '0x',
                 req.strategyExtraData || '0x',
@@ -55,9 +59,8 @@ export function parseOrderStatus(value: number): OfframpOrderStatus {
     throw new Error(`Invalid order status: ${value}`);
 }
 
-export function viemClient(chain: Chain) {
-    const chainConfig = chain === Chain.BOB ? bob : bobSepolia;
-    return createPublicClient({ chain: chainConfig, transport: http() });
+export function viemClient(chain: ViemChain) {
+    return createPublicClient({ chain, transport: http() });
 }
 
 function parseU256(value: string): bigint {

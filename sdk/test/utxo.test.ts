@@ -42,8 +42,9 @@ describe('UTXO Tests', () => {
             // '3DFVKuT9Ft4rWpysAZ1bHpg55EBy1HVPcr',
             // P2PKH: https://blockstream.info/address/12higDjoCCNXSA95xZMWUdPvXNmkAduhWv
             '12higDjoCCNXSA95xZMWUdPvXNmkAduhWv',
+            // TODO: change payment address to one that isn't spent
             // P2TR https://blockstream.info/address/bc1peqr5a5kfufvsl66444jm9y8qq0s87ph0zv4lfkcs7h40ew02uvsqkhjav0
-            'bc1peqr5a5kfufvsl66444jm9y8qq0s87ph0zv4lfkcs7h40ew02uvsqkhjav0',
+            // 'bc1peqr5a5kfufvsl66444jm9y8qq0s87ph0zv4lfkcs7h40ew02uvsqkhjav0',
         ];
 
         const toAddresses = [
@@ -348,7 +349,8 @@ describe('UTXO Tests', () => {
         );
     });
 
-    it('should not spend outputs with inscriptions', { timeout: 50000 }, async () => {
+    // TODO: change payment address to one that isn't spent
+    it.skip('should not spend outputs with inscriptions', { timeout: 50000 }, async () => {
         const paymentAddress = 'bc1peqr5a5kfufvsl66444jm9y8qq0s87ph0zv4lfkcs7h40ew02uvsqkhjav0';
         // Use a random public key
         const pubkey = '03b366c69e8237d9be7c4f1ac2a7abc6a79932fbf3de4e2f6c04797d7ef27abfe1';

@@ -1,7 +1,6 @@
 import { createPublicClient, http, type PublicClient, type Chain, erc20Abi, Address, zeroAddress } from 'viem';
 import { ADDRESS_LOOKUP, tokenToStrategyTypeMap } from './tokens';
 import {
-    ChainId,
     type DefiLlamaPool,
     type EnrichedToken,
     type PointsIncentive,
@@ -9,6 +8,7 @@ import {
     type Token,
 } from './types';
 import { aaveV2AtokenAbi, compoundV2CTokenAbi } from './abi';
+import { bob, optimism } from 'viem/chains';
 
 const projectPointsIncentives: Map<string, PointsIncentive[]> = new Map([
     [
@@ -201,8 +201,8 @@ export default class StrategyClient {
                 rewardTokens: (defillamaPool?.rewardTokens ?? [])
                     .map(
                         (addr) =>
-                            ADDRESS_LOOKUP[ChainId.BOB][addr.toLowerCase()] ||
-                            ADDRESS_LOOKUP[ChainId.OPTIMISM][addr.toLowerCase()]
+                            ADDRESS_LOOKUP[bob.id][addr.toLowerCase()] ||
+                            ADDRESS_LOOKUP[optimism.id][addr.toLowerCase()]
                     )
                     .filter(Boolean),
                 points: [

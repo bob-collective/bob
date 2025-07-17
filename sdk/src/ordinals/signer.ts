@@ -8,11 +8,13 @@ export class DummySigner implements Signer {
     constructor(publicKey: Buffer) {
         this.publicKey = publicKey;
     }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     sign(_hash: Buffer, _lowR?: boolean | undefined): Buffer {
         // https://github.com/bitcoin/bitcoin/blob/607d5a46aa0f5053d8643a3e2c31a69bfdeb6e9f/src/script/sign.cpp#L611
         return Buffer.alloc(64, 0);
     }
-    signSchnorr(hash: Buffer): Buffer {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    signSchnorr(_hash: Buffer): Buffer {
         // https://github.com/bitcoin/bitcoin/blob/607d5a46aa0f5053d8643a3e2c31a69bfdeb6e9f/src/script/sign.cpp#L626
         return Buffer.alloc(64, 0);
     }

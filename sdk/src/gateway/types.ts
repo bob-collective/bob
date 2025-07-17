@@ -7,28 +7,10 @@ type TokenSymbol = string;
 
 export type Optional<T, K extends keyof T> = Omit<T, K> & Partial<T>;
 
-export enum Chain {
-    // NOTE: we also support Bitcoin testnet
-    BITCOIN = 'bitcoin',
-    BOB = 'bob',
-    BOB_SEPOLIA = 'bob-sepolia',
-}
-
-export enum ChainId {
-    BOB = 60808,
-    BOB_SEPOLIA = 808813,
-    OPTIMISM = 10,
-}
-
-export const chainIdMapping = {
-    [ChainId.BOB]: Chain.BOB,
-    [ChainId.BOB_SEPOLIA]: Chain.BOB_SEPOLIA,
-} as const;
-
 /**
- * Parameters required to construct a staking transaction.
+ * Parameters required to construct a legacy strategy call.
  */
-export type StakeParams = {
+export type StrategyParams = {
     /** @description The address of the staking strategy contract */
     strategyAddress: Address;
     /** @description The token address being staked */
@@ -44,30 +26,12 @@ export type StakeParams = {
 };
 
 /**
- * Parameters needed to execute a staking transaction on an EVM-based chain.
- *
- * ⚠️ **Important**: The token must be approved before calling this transaction.
- */
-export type StakeTransactionParams = {
-    /** @description The address of the staking strategy contract */
-    strategyAddress: Address;
-    /** @description The ABI used to interact with the staking contract */
-    strategyABI: typeof strategyCaller;
-    /** @description The name of the function being called on the contract */
-    strategyFunctionName: (typeof strategyCaller)[number]['name'];
-    /** @description Arguments required for the staking contract call */
-    strategyArgs: [Address, bigint, Address, { amountOutMin: bigint }];
-    /** @description The wallet address executing the transaction */
-    address: Address;
-};
-
-/**
  * Designed to be compatible with the Superchain token list.
  * https://github.com/ethereum-optimism/ethereum-optimism.github.io
  */
 export interface Token {
     chainId: number;
-    address: string;
+    address: Address;
     name: string;
     symbol: string;
     decimals: number;
@@ -128,6 +92,9 @@ export interface GatewayQuoteParams {
     strategyAddress?: string;
     /** @description Campaign id for tracking */
     campaignId?: string;
+
+    /** @description Cross chain message - strategy data */
+    message?: Hex;
 }
 
 /**
@@ -207,7 +174,7 @@ export interface GatewayStrategyContract {
      * @description Contract address
      * @example 0x...
      */
-    address: string;
+    address: Address;
     /** @example deposit */
     method: string;
     /** @example bob */
@@ -574,14 +541,12 @@ export interface GatewayStrategy {
 }
 
 /** @dev Internal */
-
 export interface StrategyAssetState {
     address: Address | 'usd';
     totalUnderlying: bigint;
 }
 
 /** @dev Internal */
-
 export interface DefiLlamaPool {
     pool: string;
     chain: string;
@@ -594,11 +559,7 @@ export interface DefiLlamaPool {
     rewardTokens: null | string[];
 }
 
-export type OnrampQuoteParams = Optional<GatewayQuoteParams, 'toUserAddress'>;
-
-export type OfframpQuoteParams = Optional<GatewayQuoteParams, 'fromUserAddress'>;
-
-export type GetQuoteParams = Optional<OnrampQuoteParams | OfframpQuoteParams, 'amount'>;
+export type GetQuoteParams = Optional<GatewayQuoteParams, 'fromUserAddress'>;
 
 export type OnrampExecuteQuoteParams = {
     onrampQuote?: GatewayQuote & GatewayTokensInfo;
@@ -609,7 +570,5 @@ export type OfframpExecuteQuoteParams = {
     offrampQuote?: OfframpQuote;
     params: GetQuoteParams;
 };
-
-export type ExecuteStakeParam = StakeParams;
 
 export type ExecuteQuoteParams = OnrampExecuteQuoteParams | OfframpExecuteQuoteParams;
