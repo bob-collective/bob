@@ -45,7 +45,6 @@ contract SolvStrategyForked is ForkedStrategyTemplateWbtc {
         strategy.handleGatewayMessageWithSlippageArgs(token, 1e8, Constants.DUMMY_RECEIVER, StrategySlippageArgs(0));
         vm.stopPrank();
 
-        // Due to xSolvBTC being an LST, you receiver slightly less than 1:1 with WBTC
         assertApproxEqAbs(xSolvBTC.balanceOf(Constants.DUMMY_RECEIVER), 1e18, 1e18 / 100);
     }
 }
