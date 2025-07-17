@@ -31,7 +31,7 @@ export type StrategyParams = {
  */
 export interface Token {
     chainId: number;
-    address: string;
+    address: Address;
     name: string;
     symbol: string;
     decimals: number;

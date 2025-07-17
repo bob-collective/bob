@@ -337,7 +337,7 @@ function addToken(address: string, token: (typeof TOKENS)[number], chainId: numb
     const lowerAddress = address.toLowerCase();
     const lowerToken: Token = {
         chainId,
-        address: lowerAddress,
+        address: lowerAddress as Address,
         name: token.name,
         symbol: token.symbol,
         decimals: token.decimals,
@@ -381,17 +381,11 @@ export function getTokenDecimals(tokenAddress: Address): number | undefined {
     return token?.decimals;
 }
 
-export function getTokenAddress(chain: string | number, token: string): Address {
-    const isMainnet = chain === bob.id || (typeof chain === 'string' && chain.toLowerCase() === bob.name.toLowerCase());
-    const isTestnet =
-        chain === bobSepolia.id || (typeof chain === 'string' && chain.toLowerCase() === bobSepolia.name.toLowerCase());
-
+export function getTokenAddress(chainId: number, token: string): Address {
     if (isAddress(token)) {
         return token;
-    } else if (isMainnet && SYMBOL_LOOKUP[chain][token]) {
-        return SYMBOL_LOOKUP[chain][token].address;
-    } else if (isTestnet && SYMBOL_LOOKUP[chain][token]) {
-        return SYMBOL_LOOKUP[chain][token].address;
+    } else if (SYMBOL_LOOKUP[chainId][token]) {
+        return SYMBOL_LOOKUP[chainId][token].address;
     } else {
         throw new Error('Unknown output token');
     }
