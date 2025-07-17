@@ -3,7 +3,7 @@ pragma solidity ^0.8.13;
 
 import {IStrategyWithSlippageArgs, StrategySlippageArgs} from "../IStrategy.sol";
 import {BedrockStrategy} from "./BedrockStrategy.sol";
-import {SolvLSTStrategy} from "./SolvStrategy.sol";
+import {XSolvBTCStrategy} from "./SolvStrategy.sol";
 
 import {Context} from "@openzeppelin/contracts/utils/Context.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -93,14 +93,14 @@ contract PellBedrockStrategy is IStrategyWithSlippageArgs, Context {
     }
 }
 
-contract PellSolvLSTStrategy is IStrategyWithSlippageArgs, Context {
+contract PellXSolvBTCStrategy is IStrategyWithSlippageArgs, Context {
     using SafeERC20 for IERC20;
 
-    SolvLSTStrategy public immutable solvLSTStrategy;
+    XSolvBTCStrategy public immutable xSolvBTCStrategy;
     PellStrategy public immutable pellStrategy;
 
-    constructor(SolvLSTStrategy _solvLSTStrategy, PellStrategy _pellStrategy) {
-        solvLSTStrategy = _solvLSTStrategy;
+    constructor(XSolvBTCStrategy _xSolvBTCStrategy, PellStrategy _pellStrategy) {
+        xSolvBTCStrategy = _xSolvBTCStrategy;
         pellStrategy = _pellStrategy;
     }
 
@@ -111,14 +111,14 @@ contract PellSolvLSTStrategy is IStrategyWithSlippageArgs, Context {
         StrategySlippageArgs memory args
     ) public override {
         tokenSent.safeTransferFrom(_msgSender(), address(this), amount);
-        tokenSent.safeIncreaseAllowance(address(solvLSTStrategy), amount);
+        tokenSent.safeIncreaseAllowance(address(xSolvBTCStrategy), amount);
 
-        solvLSTStrategy.handleGatewayMessageWithSlippageArgs(tokenSent, amount, address(this), StrategySlippageArgs(0));
+        xSolvBTCStrategy.handleGatewayMessageWithSlippageArgs(tokenSent, amount, address(this), StrategySlippageArgs(0));
 
-        IERC20 solvLST = solvLSTStrategy.solvLST();
-        uint256 solvLSTAmount = solvLST.balanceOf(address(this));
-        solvLST.safeIncreaseAllowance(address(pellStrategy), solvLSTAmount);
+        IERC20 xSolvBTC = xSolvBTCStrategy.xSolvBTC();
+        uint256 xSolvBTCAmount = xSolvBTC.balanceOf(address(this));
+        xSolvBTC.safeIncreaseAllowance(address(pellStrategy), xSolvBTCAmount);
 
-        pellStrategy.handleGatewayMessageWithSlippageArgs(solvLST, solvLSTAmount, recipient, args);
+        pellStrategy.handleGatewayMessageWithSlippageArgs(xSolvBTC, xSolvBTCAmount, recipient, args);
     }
 }
