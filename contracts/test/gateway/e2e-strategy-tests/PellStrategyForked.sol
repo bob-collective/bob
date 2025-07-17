@@ -54,7 +54,7 @@ contract PellStrategyForked is ForkedStrategyTemplateTbtc {
 contract PellBedRockStrategyForked is ForkedStrategyTemplateWbtc {
     function setUp() public {
         super.simulateForkAndTransfer(
-            6642119, address(0x5A8E9774d67fe846C6F4311c073e2AC34b33646F), Constants.DUMMY_SENDER, 1e8
+            19911846, address(0x508A838922a93096C1Eb23FE21D8938BBd653Db6), Constants.DUMMY_SENDER, 1e8
         );
     }
 

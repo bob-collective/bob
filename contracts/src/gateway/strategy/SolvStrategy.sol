@@ -38,8 +38,6 @@ contract SolvBTCStrategy is IStrategyWithSlippageArgs, Context {
     ISolvBTCRouterV2 public immutable solvBTCRouter;
     IERC20 public immutable solvBTC;
 
-    uint256 public constant ORDER_TIME_LIMIT = 1 days;
-
     constructor(ISolvBTCRouterV2 _solvBTCRouter, IERC20 _solvBTC) {
         solvBTCRouter = _solvBTCRouter;
         solvBTC = _solvBTC;
@@ -62,12 +60,9 @@ contract SolvBTCStrategy is IStrategyWithSlippageArgs, Context {
         tokenSent.safeTransferFrom(_msgSender(), address(this), amountIn);
         tokenSent.safeIncreaseAllowance(address(solvBTCRouter), amountIn);
 
+        // Expiry time must be in the future, so we use 1 second from now since the deposit will happen atomically
         uint256 solvBTCAmount = solvBTCRouter.deposit(
-            address(solvBTC),
-            address(tokenSent),
-            amountIn,
-            args.amountOutMin,
-            uint64(block.timestamp + ORDER_TIME_LIMIT)
+            address(solvBTC), address(tokenSent), amountIn, args.amountOutMin, uint64(block.timestamp + 1)
         );
 
         solvBTC.safeTransfer(recipient, solvBTCAmount);
@@ -81,8 +76,6 @@ contract XSolvBTCStrategy is IStrategyWithSlippageArgs, Context {
 
     ISolvBTCRouterV2 public immutable solvBTCRouter;
     IERC20 public immutable xSolvBTC;
-
-    uint256 public constant ORDER_TIME_LIMIT = 1 days;
 
     constructor(ISolvBTCRouterV2 _solvBTCRouter, IERC20 _xSolvBTC) {
         solvBTCRouter = _solvBTCRouter;
@@ -106,12 +99,9 @@ contract XSolvBTCStrategy is IStrategyWithSlippageArgs, Context {
         tokenSent.safeTransferFrom(_msgSender(), address(this), amountIn);
         tokenSent.safeIncreaseAllowance(address(solvBTCRouter), amountIn);
 
+        // Expiry time must be in the future, so we use 1 second from now since the deposit will happen atomically
         uint256 xSolvBTCAmount = solvBTCRouter.deposit(
-            address(xSolvBTC),
-            address(tokenSent),
-            amountIn,
-            args.amountOutMin,
-            uint64(block.timestamp + ORDER_TIME_LIMIT)
+            address(xSolvBTC), address(tokenSent), amountIn, args.amountOutMin, uint64(block.timestamp + 1)
         );
 
         xSolvBTC.safeTransfer(recipient, xSolvBTCAmount);
