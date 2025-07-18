@@ -541,7 +541,6 @@ export class GatewayApiClient {
         const request: GatewayCreateOrderRequestPayload = {
             gatewayAddress: gatewayQuote.gatewayAddress,
             strategyAddress: gatewayQuote.strategyAddress,
-            satsToConvertToEth: params.gasRefill || 0,
             userAddress: params.toUserAddress,
             gatewayExtraData: undefined,
             strategyExtraData: params.message,
