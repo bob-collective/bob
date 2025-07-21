@@ -10,7 +10,7 @@ BOB mainnet is live. BitVM is a new BTC bridge and is set to go live on mainnet 
 
 ## Current Status: BitVM Testnet
 
-BitVM is currently running on testnet with significant improvements and new features that set it apart from previous iterations. The testnet represents a major step forward in bringing native BTC to DeFi applications while maintaining Bitcoin's security guarantees.
+[BitVM](https://blog.gobob.xyz/posts/what-is-bitvm) is currently running on testnet with significant improvements and new features that set it apart from previous iterations. The testnet represents a major step forward in bringing native BTC to DeFi applications while maintaining Bitcoin's security guarantees.
 
 ### Key Testnet Features
 

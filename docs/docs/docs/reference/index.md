@@ -32,11 +32,8 @@ Technical reference for BOB Chain, BitVM, and Gateway SDK.
 
 ## Official Resources
 
+- **Homepage**: https://gobob.xyz
 - **App**: https://app.gobob.xyz
 - **Blog**: https://blog.gobob.xyz
 - **GitHub**: https://github.com/bob-collective
 - **Discord**: https://discord.gg/gobob
-- **Forum**: https://forum.gobob.xyz
-
----
-

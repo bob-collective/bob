@@ -26,7 +26,7 @@ BOB is an optimistic rollup with ZK proofs on Ethereum secured by billions of do
 
 ### Core Architecture
 
-- **Bitcoin Security**: BTC on BOB is protected by Bitcoin's security model via BitVM
+- **Bitcoin Security**: BTC on BOB is protected by Bitcoin's security model via [BitVM](https://blog.gobob.xyz/posts/what-is-bitvm)
 - **Ethereum Compatibility**: Full EVM compatibility with ZK fraud proofs
 - **Hybrid Finality**: Finality secured by both Bitcoin and Ethereum networks
 - **Native BTC Integration**: Direct BTC access with a single transaction
