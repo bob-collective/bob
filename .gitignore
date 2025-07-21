@@ -23,6 +23,10 @@ yarn-error.log*
 # Editors
 .vscode/
 
+# Claude AI context
+.claude/
+**/.claude/
+
 # Compiler files
 cache/
 out/
