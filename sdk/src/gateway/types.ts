@@ -84,7 +84,7 @@ export interface GatewayQuoteParams {
     feeRate?: number;
 
     // NOTE: the following are new fields added by us
-    /** @description Amount of satoshis to swap for ETH */
+    /** @description Amount of ETH to get to pay for fees */
     gasRefill?: number;
     /** @description Wallet public key on source chain */
     fromUserPublicKey?: string;
@@ -264,7 +264,6 @@ export type GatewayCreateOrderRequest = {
 export type GatewayCreateOrderRequestPayload = {
     gatewayAddress: Address;
     strategyAddress?: Address;
-    satsToConvertToEth: number;
     userAddress: Address;
     gatewayExtraData?: Hex;
     strategyExtraData?: Hex;
