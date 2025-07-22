@@ -101,7 +101,7 @@ These are OP Stack related contracts. If an API is preferred, here is the [Condu
 - DelayedWETHImpl: [`0x44efe3ecf916f756c02e09fe17fe2d9abc8d9d71`](https://sepolia.etherscan.io/address/0x44efe3ecf916f756c02e09fe17fe2d9abc8d9d71)
 - DelayedWETHPermissionedGameProxy: [`0x7444d4470ED4320e4B84eE160351FBbcbCd4BB2a`](https://sepolia.etherscan.io/address/0x7444d4470ED4320e4B84eE160351FBbcbCd4BB2a)
 - DisputeGameFactoryImpl: [`0x4bba758f006ef09402ef31724203f316ab74e4a0`](https://sepolia.etherscan.io/address/0x4bba758f006ef09402ef31724203f316ab74e4a0)
-- DisputeGameFactoryProxy: [`0x7a25d06Af869d0A94f6effAfFa0A30EEBF1EcfB`](https://sepolia.etherscan.io/address/0x7a25d06Af869d0A94f6effAfFa0A30EEBF1EcfB)
+- DisputeGameFactoryProxy: [`0x7a25d06Af869d0A94f6effAfFa0A830EEBF1EcfB`](https://sepolia.etherscan.io/address/0x7a25d06Af869d0A94f6effAfFa0A830EEBF1EcfB)
 - L1CrossDomainMessengerImpl: [`0x5d5a095665886119693f0b41d8dfee78da033e8b`](https://sepolia.etherscan.io/address/0x5d5a095665886119693f0b41d8dfee78da033e8b)
 - L1CrossDomainMessengerProxy: [`0xB88164eE7669f1C736A55121160daB9c82b62d55`](https://sepolia.etherscan.io/address/0xB88164eE7669f1C736A55121160daB9c82b62d55)
 - L1ERC721BridgeImpl: [`0x7ae1d3bd877a4c5ca257404ce26be93a02c98013`](https://sepolia.etherscan.io/address/0x7ae1d3bd877a4c5ca257404ce26be93a02c98013)
