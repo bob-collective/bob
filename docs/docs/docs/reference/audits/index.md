@@ -7,7 +7,15 @@ sidebar_label: Audits
 
 ## BOB Mainnet
 
-In Phase 1 of our [roadmap](/docs/bob-chain/roadmap), "Optimistic BOB" is an OP-stack rollup on Ethereum. We inherit the hard work of the Optimism Collective, including the many [security reviews](https://github.com/ethereum-optimism/optimism/tree/v1.1.4/technical-documents/security-reviews) they have secured for our infrastructure.
+BOB is based on the OP Stack and relies on the extensive [security reviews](https://github.com/ethereum-optimism/optimism/tree/v1.1.4/technical-documents/security-reviews) conducted for the OP Stack infrastructure by the Optimism Collective.
+
+Our dispute game differs from the standard OP Stack implementation by using [Kailua](https://github.com/risc0/kailua), a hybrid zk rollup framework that enables validity proofs for dispute resolution and on-demand fast withdrawals. The Kailua framework has undergone multiple security audits:
+
+### Veridise
+
+- February 2025: Kailua Security Audit. [Report](veridise-kailua-20250217.pdf)
+- May 2025: Kailua Security Audit. [Report](veridise-kailua-20250522.pdf)
+- June 2025: Kailua Security Audit. [Report](veridise-kailua-20250616.pdf)
 
 ## BOB Gateway
 

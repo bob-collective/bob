@@ -4,9 +4,13 @@ sidebar_position: 5
 
 # Privileged Roles in BOB Mainnet
 
-BOB uses the [OP Stack](https://docs.optimism.io/stack/getting-started), just like Optimism Mainnet and Base. As a result, BOB is on the same [Pragmatic Path to Decentralization](https://medium.com/ethereum-optimism/our-pragmatic-path-to-decentralization-cb5805ca43c1).
+BOB uses the [OP Stack](https://docs.optimism.io/stack/getting-started) as its foundation and has upgraded to a [hybrid zk rollup](/docs/bob-chain/hybrid-rollup) powered by Kailua, which enables validity proofs for dispute resolution and on-demand fast withdrawals.
 
-For now, OP Stack chains still include "privileged" roles that allow certain addresses to carry out specific actions. Read this page to understand these roles, why they exist, and what risks they pose.
+OP Stack chains still include "privileged" roles that allow certain addresses to carry out specific actions. Read this page to understand these roles, why they exist, and what risks they pose.
+
+For independent reviews of BOB's security and decentralization status, see:
+- [L2Beat](https://l2beat.com/scaling/projects/bob) - Comprehensive analysis of L2 scaling solutions
+- [Bitcoin Layers](https://www.bitcoinlayers.org/layers/bob) - Bitcoin-focused layer analysis
 
 ## L1 Proxy Admin
 
@@ -87,20 +91,27 @@ BOB nodes will look for transactions from this address to find new batches of L2
 
 ### Description
 
-The Proposer is a software service that submits proposals about the state of BOB to the `L2OutputOracle` contract on Ethereum.
-Proposals submitted to the `L2OutputOracle` contract can be used to execute withdrawal transactions on Ethereum after 7 days.
+The Proposer is a software service that submits proposals about the state of BOB to the `DisputeGameFactory` contract on Ethereum, which spawns a new `KailuaGame` contract for each proposal in which disputes can be resolved if necessary. BOB operates in [Kailua's vanguard mode](https://risc0.github.io/kailua/parameters.html?highlight=vanguard#vanguard-advantage), where the BOB proposer has priority to submit proposals. If no proposal is made by the BOB proposer within 30 days, then any user can submit their own proposal.
+
+Proposals can be finalized in multiple ways:
+
+- After 4 days if there is no challenge
+- Instantly when a challenge is resolved through a validity proof
+- Instantly when a proposal is submitted with a validity proof
+
 Proposer addresses are typically "hot wallets" as they must be available to frequently sign and publish new state proposals.
 
 ### Risks
 
 - Proposer address is typically a hot wallet.
 - Compromised proposer address could propose invalid state proposals.
-- Invalid state proposals can be used to execute invalid withdrawals after 7 days.
+- Invalid state proposals can be used to execute invalid withdrawals if not challenged.
 
 ### Mitigations
 
 - Compromised proposer address can be replaced by the [L1 Proxy Admin](#l1-proxy-admin).
-- Invalid state proposals can be challenged by the [Challenger](#challenger) within 7 days.
+- Invalid state proposals can be challenged by anyone with 0.5 ETH collateral.
+- Validity proofs provide mathematical certainty during disputes.
 
 ### Address
 
@@ -110,22 +121,25 @@ Proposer addresses are typically "hot wallets" as they must be available to freq
 
 ### Description
 
-The Challenger is an address that can be used to challenge invalid state proposals submitted by the [Proposer](#proposer) role.
+In BOB's Kailua-powered system, anyone can challenge invalid state proposals submitted by the [Proposer](#proposer) role. Challenges require a collateral deposit of 0.5 ETH. When a challenge is initiated, the dispute is resolved through validity proofs that provide mathematical certainty about the correctness of the state transition.
+
+Successful challengers are rewarded, while unsuccessful challengers forfeit their collateral. This permissionless challenging mechanism ensures the security of the hybrid zk rollup system.
 
 ### Risks
 
-- Compromised challenger could invalidate valid state proposals.
-- Compromised challenger could fail to challenge invalid state proposals.
+- Economic barrier (0.5 ETH) may limit the number of potential challengers.
+- If no one challenges invalid proposals within the challenge period, invalid withdrawals could be executed.
 
 ### Mitigations
 
-- Compromised challenger address can be replaced by the [L1 Proxy Admin](#l1-proxy-admin).
-- Challenges can be executed by replaced challenger address.
-- Challenger is a 4-of-6 [multisig](https://etherscan.io/address/0xC91482A96e9c2A104d9298D1980eCCf8C4dc764E#readProxyContract).
+- Low collateral requirement (0.5 ETH) makes challenging accessible to many participants.
+- Validity proofs provide cryptographic certainty in dispute resolution.
+- Anyone can participate in challenging, not limited to specific addresses.
+- Economic incentives reward successful challengers.
 
 ### Address
 
-- **Ethereum**: [`0xC91482A96e9c2A104d9298D1980eCCf8C4dc764E`](https://etherscan.io/address/0xC91482A96e9c2A104d9298D1980eCCf8C4dc764E#readProxyContract)
+- **Anyone** can challenge by depositing 0.5 ETH collateral
 
 ## Guardian
 
