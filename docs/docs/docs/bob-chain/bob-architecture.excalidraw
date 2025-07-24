@@ -463,10 +463,10 @@
     },
     {
       "type": "rectangle",
-      "version": 275,
+      "version": 276,
       "id": "consensus",
-      "x": 110.0546875,
-      "y": 641.77734375,
+      "x": 110.06640625,
+      "y": 641.58203125,
       "width": 800,
       "height": 85,
       "angle": 0,
@@ -483,7 +483,7 @@
         "type": 3
       },
       "seed": 123456789,
-      "versionNonce": 1563227047,
+      "versionNonce": 134139401,
       "isDeleted": false,
       "boundElements": [
         {
@@ -491,7 +491,7 @@
           "id": "vKE96x8AA8wL1yWAPgHI0"
         }
       ],
-      "updated": 1753209084553,
+      "updated": 1753258402001,
       "link": null,
       "locked": false,
       "index": "aE"
@@ -499,8 +499,8 @@
     {
       "id": "vKE96x8AA8wL1yWAPgHI0",
       "type": "text",
-      "x": 255.994873046875,
-      "y": 646.77734375,
+      "x": 256.006591796875,
+      "y": 646.58203125,
       "width": 508.11962890625,
       "height": 75,
       "angle": 0,
@@ -516,20 +516,20 @@
       "index": "aEV",
       "roundness": null,
       "seed": 1920378953,
-      "version": 316,
-      "versionNonce": 163483687,
+      "version": 336,
+      "versionNonce": 1943893609,
       "isDeleted": false,
       "boundElements": null,
-      "updated": 1753209072575,
+      "updated": 1753258408902,
       "link": null,
       "locked": false,
-      "text": "Optimistic rollup\nSecurity: zk proofs powered by OP Stack and Kailua\nFinality: Bitcoin anchoring and staking",
+      "text": "Hybrid ZK Rollup\nSecurity: zk proofs powered by OP Stack and Kailua\nFinality: Bitcoin anchoring and staking",
       "fontSize": 20,
       "fontFamily": 5,
       "textAlign": "center",
       "verticalAlign": "middle",
       "containerId": "consensus",
-      "originalText": "Optimistic rollup\nSecurity: zk proofs powered by OP Stack and Kailua\nFinality: Bitcoin anchoring and staking",
+      "originalText": "Hybrid ZK Rollup\nSecurity: zk proofs powered by OP Stack and Kailua\nFinality: Bitcoin anchoring and staking",
       "autoResize": true,
       "lineHeight": 1.25
     },
@@ -987,8 +987,8 @@
         "type": 3
       },
       "seed": 1853887175,
-      "version": 403,
-      "versionNonce": 699746599,
+      "version": 405,
+      "versionNonce": 697946247,
       "isDeleted": false,
       "boundElements": [
         {
@@ -996,7 +996,7 @@
           "id": "B1COV_BvggJN8Zyikc8Cf"
         }
       ],
-      "updated": 1753208323565,
+      "updated": 1753258454887,
       "link": null,
       "locked": false
     },
@@ -1020,11 +1020,11 @@
       "index": "aT",
       "roundness": null,
       "seed": 2124423655,
-      "version": 391,
-      "versionNonce": 1759536775,
+      "version": 393,
+      "versionNonce": 859580327,
       "isDeleted": false,
       "boundElements": [],
-      "updated": 1753208324804,
+      "updated": 1753258454887,
       "link": null,
       "locked": false,
       "text": "Inter-\noperability",
@@ -1183,10 +1183,10 @@
     },
     {
       "type": "rectangle",
-      "version": 243,
+      "version": 244,
       "id": "zaXj_2nphsYnsZvgsuVaE",
-      "x": 508.2890625,
-      "y": 480.525634765625,
+      "x": 508.296875,
+      "y": 480.322509765625,
       "width": 411.52734375,
       "height": 60,
       "angle": 0,
@@ -1203,7 +1203,7 @@
         "type": 3
       },
       "seed": 911267017,
-      "versionNonce": 1559249001,
+      "versionNonce": 2087614953,
       "isDeleted": false,
       "boundElements": [
         {
@@ -1211,7 +1211,7 @@
           "id": "kXElv42LBxwQDzX9YPtnw"
         }
       ],
-      "updated": 1753208425531,
+      "updated": 1753258421052,
       "link": null,
       "locked": false,
       "index": "aZ"
@@ -1219,9 +1219,9 @@
     {
       "id": "kXElv42LBxwQDzX9YPtnw",
       "type": "text",
-      "x": 579.6828308105469,
-      "y": 498.025634765625,
-      "width": 268.73980712890625,
+      "x": 577.0506591796875,
+      "y": 497.822509765625,
+      "width": 274.019775390625,
       "height": 25,
       "angle": 0,
       "strokeColor": "#1e1e1e",
@@ -1236,20 +1236,20 @@
       "index": "aa",
       "roundness": null,
       "seed": 1758286761,
-      "version": 210,
-      "versionNonce": 1270762313,
+      "version": 212,
+      "versionNonce": 333435527,
       "isDeleted": false,
       "boundElements": [],
-      "updated": 1753208425531,
+      "updated": 1753258424336,
       "link": null,
       "locked": false,
-      "text": "Bitcoin BitVM native bridge",
+      "text": "Bitcoin: BitVM native bridge",
       "fontSize": 20,
       "fontFamily": 5,
       "textAlign": "center",
       "verticalAlign": "middle",
       "containerId": "zaXj_2nphsYnsZvgsuVaE",
-      "originalText": "Bitcoin BitVM native bridge",
+      "originalText": "Bitcoin: BitVM native bridge",
       "autoResize": true,
       "lineHeight": 1.25
     },
