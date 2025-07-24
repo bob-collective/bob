@@ -1,110 +1,29 @@
 ---
-sidebar_position: 2
-sidebar_label: The Hybrid Stack
+sidebar_position: 1
 ---
 
-# The Hybrid Stack
+# Hybrid Stack
 
-## Introduction
+The BOB ecosystem is built as a layered stack that enables seamless interaction between Bitcoin and Ethereum ecosystems, providing users with cryptographic security via ZK proofs, Ethereum's innovation, and Bitcoin-secured finality.
 
-BOB represents a new paradigm in blockchain architecture: a [Hybrid Layer 2](/docs/bob-chain/roadmap) that unifies the security and liquidity of Bitcoin with the innovation and activity of Ethereum's vibrant DeFi ecosystem.
+![BOB Architecture](./bob-architecture.png)
 
-This page outlines the _BOB Stack_, the infrastructure choices we've made and are currently researching to achieve our vision of a hybrid network that is greater than the sum of its parts. From underlying data availability and consensus mechanisms to user-facing bridges and account abstraction, we are proud of the progress we've made on [our roadmap](/docs/bob-chain/roadmap) to uniting Bitcoin and Ethereum.
+## Accounts and Wallets
 
-## BOB Core
+Users interact with BOB through familiar EVM wallets like MetaMask and Rabby, as well as native Bitcoin wallets including Xverse, Unisat, and Phantom. Account abstraction is supported via ERC-4337 smart accounts and [EIP-7702](https://eips.ethereum.org/EIPS/eip-7702) (which provides [superior UX](https://blog.thirdweb.com/eip-7702/)) for gasless transactions and enhanced user experience. Bitcoin wallet integration allows users to control EVM funds directly from their Bitcoin wallets through providers. Or users can skip wallets altogether and use social logins with providers like [Dynamic](https://dynamic.xyz/), [Reown](https://reown.com/), and others.
 
-### Hybrid Data Availability
+## BOB SDK
 
-_A Hybrid Chain should have censorship-resistant, unilateral exit to multiple L1s._
+The [BOB SDK](/docs/gateway/integration) abstracts Bitcoin cross-chain complexity for developers, enabling single-transaction BTC deposits and withdrawals from and into any DeFi protocol on any chain. Developers can build and extend their existing applications to accept native BTC deposits that are converted to wBTC or other BTC-wrappers. They can also offer their users to receive native BTC. The SDK provides familiar web3 APIs and comprehensive tooling for seamless Bitcoin DeFi integration powered by [BOB Gateway](/docs/gateway).
 
-#### Ethereum DA: Blobs
+## DeFi Ecosystem
 
-BOB currently uses Ethereum's EIP-4844 blob transactions for cost-effective data availability (DA). All transaction data is periodically committed to Ethereum L1, ensuring verifiability and censorship resistance aligned with Ethereum's security model.
+BOB hosts a [growing ecosystem](https://app.gobob.xyz/en/apps) of leading DeFi applications including Uniswap v3, Avalon, Euler, Solv, Lombard, Bedrock, and more. The ecosystem leverages BOB's Bitcoin position to offer BTC-yields, BTC trading, and BTC lending use cases.
 
-Users can already force withdraw their assets from BOB to Ethereum, even if BOB's sequencer goes offline. An Ethereum transaction can directly call the [Native Ethereum Bridge](/docs/reference/contracts#ethereum-l1) that BOB has as an OP Stack rollup.
+## Interoperability
 
-#### Bitcoin DA: Forced Withdrawal with Bitcoin Transactions
+BOB's interoperability layer consists of [BOB Gateway](/docs/gateway), an intent-based Bitcoin bridge optimized for speed and programmability. BOB is specialized in optimizign the Bitcoin to BOB route. For multichain connection to Base, Arbitrum, Solana, Binance Smart Chain, and many more, BOB relies on on multiple third-party bridges including [Chainlink CCIP](https://chain.link/cross-chain), [LayerZero](https://layerzero.network/), [Hyperlane](https://hyperlane.xyz/), [deBridge](https://debridge.finance/), and many more.
 
-BOB is researching a [hybrid data availability](https://blog.gobob.xyz/posts/hybrid-data-availability-enforcing-bitvm-withdrawals-on-bob) architecture that combines Ethereum's cost efficiency with Bitcoin's censorship resistance. We are exploring modifying our `op-node` to add a check for forced withdrawal transactions on Bitcoin as part of the derivation pipeline.
+## BOB Hybrid Chain
 
-This hybrid DA model offers:
-
-- **Censorship Resistance:** Leverages Bitcoin's battle-tested security as fallback storage
-- **Forced Transaction Inclusion:** Enables forced withdrawals back to Bitcoin through the [BitVM bridge](/docs/bitvm#bitvm-bridge-summary), even if BOB's Sequencer is offline.
-
-### Hybrid Consensus
-
-_A Hybrid Chain should inherit security from multiple L1s._
-
-#### Ethereum Consensus: OP Stack Rollup
-
-BOB launched on the [OP stack](https://docs.optimism.io/) as an optimistic rollup and will soon transition to a validity rollup model. This involves using SNARKs to create validity proofs that cryptographically verify the correctness of BOB state proposals, as described below. These ZK proofs enable immediate finalization of state and faster withdrawals to Ethereum, reducing withdrawal times from 7 days to just a few hours.
-
-#### Bitcoin Consensus: Soft Finality via BTC-Staking
-
-BOB will soon transition to [Phase 2: Bitcoin "Soft" Finality](/docs/bob-chain/roadmap#-phase-2-bitcoin-soft-finality), introducing BTC-staked Finality Providers (FPs) to our consensus mechanism. These FPs sign BOB state proposals and receive sequencer fees in exchange for providing economic security through their staked BTC. If FPs sign competing chains, their staked BTC will be slashed, creating strong economic incentives against chain forks - a critical feature for maintaining consistency across BOB's native bridges.
-
-The consensus process combines two key building blocks:
-
-- Validity proofs using SNARKs to cryptographically guarantee the correctness of all BOB state transitions
-- BTC-staked FPs that sign state proposals, with ⅔ stake required for finalization
-
-This dual-consensus model provides both mathematical certainty of transaction validity through SNARKs and economic security backed by native BTC. The combination enables secure bridging to both Bitcoin and Ethereum while preventing safety failures and double-spend attacks.
-
-[BOB's ultimate goal](/docs/bob-chain/roadmap#phase-3-full-bitcoin-security) is to settle directly on Bitcoin. While direct ZK verification on Bitcoin is unlikely in the near future, BOB's innovative combination of BitVM and BTC-staked finality creates a robust security model that doesn't require any Bitcoin forks.
-
-### Native Bridges
-
-_A Hybrid Chain should have secure asset transfers across its L1s._
-
-#### OP Standard Bridge
-
-BOB utilizes the [OP Stack's native bridge contracts](https://docs.optimism.io/app-developers/bridging/standard-bridge) for secure and free asset transfers between Ethereum and BOB. This allows users to deposit and withdraw assets directly through L1 smart contracts, inheriting Ethereum's security guarantees and censorship-resistance. The bridge supports 1-click onboarding of ERC-20 tokens, stablecoins, and ETH, with over $250M in TVL secured by Ethereum's validator network.
-
-#### BitVM Bridge
-
-[BOB has prototyped](https://blog.gobob.xyz/posts/bob-announces-trust-minimized-bitcoin-bridge-prototype-powered-by-bitvm/) a two-way light-client BTC bridge powered by [BitVM](/docs/bitvm#bitvm-bridge-summary) in partnership with Fiamma. Withdrawals of bridged BTC from BOB to Bitcoin through this BitVM bridge are verified by a ZK SNARK fraud-proof mechanism that relies on a 1-of-N trust assumption for operation. A bridged version of BTC secured by BitVM is a massive improvement in BTC safety because it unlocks unilateral exit back to Bitcoin.
-
-In combination with our [hybrid Bitcoin consensus model](#hybrid-consensus) described above, BOB's native bridges to Bitcoin and Ethereum will both be secured by Bitcoin Finality Providers.
-
-## EVM Ecosystem
-
-_A Hybrid Chain should make Bitcoin DeFi smooth and safe for users and builders._
-
-[Intent-based bridging](/docs/gateway), [smart accounts](/docs/tools/account-abstraction) controlled by Bitcoin wallets, [paying fees with BTC](/docs/deprecated/bridged-btc-gas-fee), and [unilateral exit back to Bitcoin](/docs/bitvm) and Ethereum - BOB is singularly focused on bringing this UX and security to Bitcoin DeFi by providing these tools to teams building on BOB.
-
-### Smart Contracts Reading and Writing to Bitcoin
-
-BOB uses the [Ethereum Virtual Machine](https://ethereum.org/en/developers/docs/evm/) (EVM) to execute smart contracts developed using the [Solidity](https://soliditylang.org/) programming language. BOB makes it easy for your smart contract to verify Bitcoin transactional data with our [BTC light client](/docs/bob-chain/relay), a low-level interface for parsing Bitcoin blocks in real-time. Trustlessly reading Bitcoin data within EVM smart contract logic unlocks a broad design space, such as P2P native BTC swaps, Ordinal auctions, and hashrate tokenization.
-
-While the [BTC light client](/docs/bob-chain/relay) and [oracles](/docs/tools/oracles) make it easy to dynamically _read_ Bitcoin state, we imagine a world where smart contracts _write_ to Bitcoin as well. For example, a DAO that pools its funds to pay for a batch inscription of ordinals to airdrop its members.
-
-The majority of Bitcoin's stack and applications built around it are implemented in Rust, including core [SDKs](https://github.com/rust-bitcoin/rust-bitcoin/), [Lightning](https://github.com/lightningdevkit/rust-lightning/), and [Ordinals](https://github.com/ordinals/ord/). BOB can support Bitcoin's Rust libraries via the [RISC Zero zkVM](/docs/tools/rust-zkvm), which allows off-chain execution of Rust programs while using [ZK proofs](https://ethereum.org/en/zero-knowledge-proofs/) to verify correct execution in EVM smart contracts. In the future, we see this as a path to scaling as a [ZK rollup](https://vitalik.eth.limo/general/2021/01/05/rollup.html) directly on Bitcoin where BOB itself can be proven in the zkVM and verified by Bitcoin consensus.
-
-### Interop and Bridging
-
-<!-- TODO: Add link around "programmable" to upcoming Gateway Strategy Creation page. -->
-
-[BOB Bridge](/docs/user-hub/onboard-to-bob/bob-gateway) is our intent-based Bitcoin bridge built on the light client verification mentioned above. It is optimized to be fast, inexpensive, and programmable. As of this writing, 30,000 users have swapped a total of 75 BTC in a trust-minimized, peer-to-peer way.
-
-[BOB Earn](/docs/user-hub/stake-btc) extends this idea by executing users' "intents" to stake, restake, or lend their BTC automatically during the bridge process. There are [more than a dozen options available](https://app.gobob.xyz/en/stake) at the moment, some offering five different sources of yield. All options are BTC-denominated and have no risk of impermanent loss.
-
-We built the [BOB Gateway SDK](/docs/gateway) to make it possible for any frontend to offer its users these options by plugging into our infrastructure.
-
-BOB also supports [third-party bridges](https://app.gobob.xyz/bridge/) to many chains. Developers working on cross-chain protocols can leverage [Chainlink CCIP](/docs/tools/cross-chain#chainlink-ccip), [LayerZero](/docs/tools/cross-chain#layerzero), and [Hyperlane](https://docs.hyperlane.xyz/docs/reference/contract-addresses/) on BOB.
-
-### Hybrid Tooling
-
-By using the same EVM as Ethereum, teams building on BOB have access to familiar and modern tooling:
-
-- [Data Analytics](/docs/tools/data-indexers) and [Node Providers](/docs/tools/node-providers)
-- [Cross-chain Messaging](/docs/tools/cross-chain) and [Oracles](/docs/tools/oracles)
-- [Wallets](/docs/user-hub/wallet-guide), including [Account Abstraction](/docs/tools/account-abstraction) (AA), [Social Login](/docs/tools/social-login), and [our SDK for connecting to Bitcoin wallets](/docs/gateway/sats-wagmi)
-
-We are particularly excited about AA providers like [Safe](/docs/tools/account-abstraction#safe-wallet) and [BTC Connect](/docs/tools/account-abstraction#btc-connect) that make it possible to control funds on EVM chains from a Bitcoin wallet.
-
-## Conclusion
-
-BOB is committed to improving the security and UX for Bitcoin DeFi at every layer: inheriting security and finality from Bitcoin, building a better UX for self-custody when staking BTC, and giving all users' unilateral exit to bridge their assets back to their original L1s.
-
-Our Hybrid Chain has already made inroads on all of these goals, with major upgrades to each of them in line of sight.
+BOB's foundation consists of native bridges to both Ethereum (via the OP stack) and Bitcoin (developed by BOB via [BitVM](/docs/bitvm)). Just like "ETH" is "ETH" on Arbitrum, BTC on BOB will just be "BTC". In addition, EVM smart contracts for full programmability, and a hybrid ZK rollup consensus powered by OP stack and Kailua complete the rollup. Data availability uses Ethereum blobs as primary storage with Bitcoin as a censorship-resistant fallback. This infrastructure enables unilateral exit to both Bitcoin and Ethereum while providing cryptographic security guarantees through validity proofs.
