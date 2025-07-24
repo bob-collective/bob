@@ -4,7 +4,7 @@ sidebar_position: 5
 
 # Privileged Roles in BOB Mainnet
 
-BOB uses the [OP Stack](https://docs.optimism.io/stack/getting-started) as its foundation and has upgraded to a [hybrid zk rollup](/docs/bob-chain/hybrid-rollup) powered by Kailua, which enables validity proofs for dispute resolution and on-demand fast withdrawals.
+BOB uses the [OP Stack](https://docs.optimism.io/stack/getting-started) as its foundation and has upgraded to a [hybrid zk rollup](/docs/bob-chain/hybrid-chain) powered by Kailua, which enables validity proofs for dispute resolution and on-demand fast withdrawals.
 
 OP Stack chains still include "privileged" roles that allow certain addresses to carry out specific actions. Read this page to understand these roles, why they exist, and what risks they pose.
 

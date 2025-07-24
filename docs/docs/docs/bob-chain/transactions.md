@@ -67,7 +67,7 @@ BOB transactions follow a three-stage finality process that inherits Ethereum's 
 3. **Finalized** (15-74 minutes): Ethereum block containing the transaction is finalized (2 epochs + 14 minutes after safe)
 
 ### Kailua Enhancement
-With BOB's [hybrid zk rollup](/docs/bob-chain/hybrid-rollup) powered by Kailua, state proposals can be finalized instantly using validity proofs. While this service is not yet exposed to users, the technical capability exists to enable **on-demand fast withdrawals** in the future, potentially reducing withdrawal times from the current 4-day period to as little as 1 hour.
+With BOB's [hybrid zk rollup](/docs/bob-chain/hybrid-chain) powered by Kailua, state proposals can be finalized instantly using validity proofs. While this service is not yet exposed to users, the technical capability exists to enable **on-demand fast withdrawals** in the future, potentially reducing withdrawal times from the current 4-day period to as little as 1 hour.
 
 ### Finality Guarantees
 - **Unsafe transactions**: Can be reorganized by the sequencer
