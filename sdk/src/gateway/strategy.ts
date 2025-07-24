@@ -91,7 +91,7 @@ const tokensPointsIncentives: Map<string, PointsIncentive[]> = new Map([
     ],
     [
         // Solv (xSolvBTC)
-        '0x0bef2a8b771e37763c1ce02a88f404c6b2573843',
+        '0xCC0966D8418d412c599A6421b760a847eB169A8c',
         [solvPoints, babylonPoints],
     ],
     [
