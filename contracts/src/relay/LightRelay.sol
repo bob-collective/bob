@@ -4,7 +4,7 @@
 
 pragma solidity ^0.8.17;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "../../lib/openzeppelin-contracts/contracts/access/Ownable.sol";
 
 import {BytesLib} from "@bob-collective/bitcoin-spv/BytesLib.sol";
 import {BTCUtils} from "@bob-collective/bitcoin-spv/BTCUtils.sol";
