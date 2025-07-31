@@ -10,7 +10,7 @@ Technical reference for BOB Chain, BitVM, and Gateway SDK.
 
 - **[Audits](./audits/)**: Security audits and reports
 - **[Contracts](./contracts/)**: Smart contract addresses and ABIs
-- **[Bridged Token Addresses](./bridged-token-addresses/)**: Official token lists
+- **[Token Registry](./token-registry/)**: Official token registry
 - **[Tools](/docs/tools/)**: Developer and user tools
 - **[Bug Bounty](./bug-bounty.md)**: Security program details
 - **[Privileged Roles](./privileged-roles.md)**: Role-based permissions
