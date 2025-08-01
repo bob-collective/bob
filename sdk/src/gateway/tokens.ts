@@ -13,7 +13,7 @@ const bobTokens = [
                 address: '0xBBa2eF945D523C4e2608C9E1214C2Cc64D4fc2e2',
             },
         },
-        logoURI: 'https://ethereum-optimism.github.io/data/tBTC/logo.svg',
+        logoURI: 'https://raw.githubusercontent.com/bob-collective/bob/master/assets/tbtc.svg',
     },
     {
         name: 'Wrapped BTC',
@@ -24,7 +24,7 @@ const bobTokens = [
                 address: '0x03C7054BCB39f7b2e5B2c7AcB37583e32D70Cfa3',
             },
         },
-        logoURI: 'https://ethereum-optimism.github.io/data/WBTC/logo.svg',
+        logoURI: 'https://raw.githubusercontent.com/bob-collective/bob/master/assets/wbtc.svg',
     },
     {
         name: 'Solv BTC',
@@ -82,7 +82,7 @@ const bobSepoliaTokens = [
                 address: '0xc4229678b65e2D9384FDf96F2E5D512d6eeC0C77',
             },
         },
-        logoURI: 'https://ethereum-optimism.github.io/data/tBTC/logo.svg',
+        logoURI: 'https://raw.githubusercontent.com/bob-collective/bob/master/assets/tbtc.svg',
     },
     {
         name: 'tBTC v2',
@@ -93,7 +93,7 @@ const bobSepoliaTokens = [
                 address: '0x6744bAbDf02DCF578EA173A9F0637771A9e1c4d0',
             },
         },
-        logoURI: 'https://ethereum-optimism.github.io/data/tBTC/logo.svg',
+        logoURI: 'https://raw.githubusercontent.com/bob-collective/bob/master/assets/tbtc.svg',
     },
     {
         name: 'Wrapped BTC',
@@ -104,7 +104,7 @@ const bobSepoliaTokens = [
                 address: '0xe51e40e15e6e1496a0981f90Ca1D632545bdB519',
             },
         },
-        logoURI: 'https://ethereum-optimism.github.io/data/WBTC/logo.svg',
+        logoURI: 'https://raw.githubusercontent.com/bob-collective/bob/master/assets/wbtc.svg',
     },
     {
         name: 'Bob BTC',
