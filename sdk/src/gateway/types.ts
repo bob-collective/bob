@@ -1,6 +1,6 @@
 import type { EsploraClient } from '../esplora';
 import { Address, Hex } from 'viem';
-import { offrampCaller, strategyCaller } from './abi';
+import { offrampCaller } from './abi';
 
 type ChainSlug = string | number;
 type TokenSymbol = string;
@@ -69,7 +69,7 @@ export interface GatewayQuoteParams {
     /** @description Wallet address on destination chain */
     toUserAddress: string;
     /** @description Amount of tokens to send from the source chain */
-    amount: number | string; // NOTE: modified from Swing
+    amount: number | string | bigint; // NOTE: modified from Swing
 
     /** @description Maximum slippage percentage between 0.01 and 0.03 (Default: 0.03) */
     maxSlippage?: number;
@@ -85,7 +85,7 @@ export interface GatewayQuoteParams {
 
     // NOTE: the following are new fields added by us
     /** @description Amount of ETH to get to pay for fees */
-    gasRefill?: number;
+    gasRefill?: bigint;
     /** @description Wallet public key on source chain */
     fromUserPublicKey?: string;
     /** @description Strategy address */
@@ -571,3 +571,14 @@ export type OfframpExecuteQuoteParams = {
 };
 
 export type ExecuteQuoteParams = OnrampExecuteQuoteParams | OfframpExecuteQuoteParams;
+
+export interface BitcoinSigner {
+    signAllInputs?: (psbtBase64: string) => Promise<string>;
+    sendBitcoin?: (params: {
+        from: string;
+        to: string;
+        value: string;
+        opReturn: string;
+        isSignet: boolean;
+    }) => Promise<string>;
+}

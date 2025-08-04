@@ -2,11 +2,15 @@
 sidebar_position: 1
 ---
 
-# Gateway SDK Overview
+# Gateway Overview
 
-Add native Bitcoin integration to your application with BOB Gateway SDK.
+BOB Gateway is a Bitcoin intent/RFQ-based swap protocol that allows users to swap BTC on Bitcoin for ERC20 assets on BOB (and other chains via third-party bridges). The swap mechanism is trust-minimized: BOB Gateway uses smart contracts and cross-chain BTC proofs to ensure that swaps are always executed correctly ("atomically").
 
-## What is Gateway SDK?
+:::info Gateway Overview
+For a detailed technical explanation of Gateway's architecture and user flow, see the [overview](./overview.md).
+:::
+
+## What is the Gateway SDK?
 
 BOB Gateway SDK enables developers to seamlessly integrate native Bitcoin functionality into their applications. No more wrapping BTC or relying on third-party bridges - provide your users with direct access to Bitcoin's liquidity and security.
 
