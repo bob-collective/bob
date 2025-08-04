@@ -123,6 +123,39 @@ Get an array of pending and completed orders for a specific EVM address. Typical
 const orders = await gatewaySDK.getOrders(userAddress);
 ```
 
+### Bump Fees (**Offramp Only**)
+
+If the Bitcoin fee rate increases after an order is placed, you can then bump the transaction fee to speed up confirmation.
+
+```ts
+await gatewaySDK.bumpFeeForOfframpOrder(orderId, {
+  walletClient,
+  publicClient,
+});
+```
+
+### Unlock Order (**Offramp Only**)
+
+In cases where an order gets stuck or needs to be cancelled, you can unlock the order to free up the reserved liquidity. This allows the user to create a new order or cancel their intent.
+
+```ts
+await gatewaySDK.unlockOfframpOrder(orderId, receiver, {
+  walletClient,
+  publicClient,
+});
+```
+
+:::warning Important Notes
+- **Bump Fees**: Only works if the original transaction hasn't been confirmed yet. The bumped transaction will replace the original one.
+- **Unlock Order**: This action is irreversible. Once unlocked, the order cannot be resumed and any reserved liquidity will be released.
+:::
+
+:::tip Best Practices
+- Monitor Bitcoin mempool congestion and suggest fee bumping proactively
+- Provide clear UI feedback when orders are stuck or need attention
+- Always explain the implications of unlocking an order to users
+:::
+
 ## Conclusion
 
 BOB Gateway enables staking, swapping, lending, and bridging Bitcoin with a single transaction. The BOB SDK makes it possible for you to bring Gateway and Bitcoin LSTs directly to your users.
