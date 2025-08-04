@@ -20,6 +20,7 @@ import { claimDelayAbi, offrampCaller, strategyCaller } from './abi';
 import StrategyClient from './strategy';
 import { ADDRESS_LOOKUP, getTokenAddress, getTokenDecimals } from './tokens';
 import {
+    BitcoinSigner,
     EnrichedToken,
     ExecuteQuoteParams,
     GatewayCreateOrderRequestPayload,
@@ -54,6 +55,7 @@ import {
     viemClient,
     convertOrderDetailsRawToOrderDetails,
     convertOrderDetailsToRaw,
+    formatBtc,
 } from './utils';
 
 /**
@@ -608,7 +610,7 @@ export class GatewayApiClient {
      * @param options - Configuration object containing client instances and optional signer.
      * @param {WalletClient<Transport, ViemChain, Account>} options.walletClient - The wallet client for interacting with the blockchain.
      * @param {PublicClient<Transport>} options.publicClient - The public client for reading blockchain data.
-     * @param {{ signAllInputs: (psbtBase64: string) => Promise<string> }} options.btcSigner - Optional Bitcoin signer for signing transaction inputs.
+     * @param {BitcoinSigner} options.btcSigner - Optional Bitcoin signer for signing transaction inputs.
      * @async
      * @returns {Promise<GatewayStartOrder>} The success object.
      */
@@ -621,7 +623,7 @@ export class GatewayApiClient {
         }: {
             walletClient: WalletClient<Transport, ViemChain, Account>;
             publicClient: PublicClient<Transport>;
-            btcSigner?: { signAllInputs: (psbtBase64: string) => Promise<string> };
+            btcSigner?: BitcoinSigner;
         }
     ): Promise<string> {
         const isOnrampQuoteParams = (args: ExecuteQuoteParams): args is OnrampExecuteQuoteParams => {
@@ -632,15 +634,32 @@ export class GatewayApiClient {
             const { onrampQuote, params } = executeQuoteParams;
             const quote = onrampQuote!;
 
-            const { uuid, psbtBase64 } = await this.startOnrampOrder(quote, params);
+            const { uuid, psbtBase64, bitcoinAddress, satoshis, opReturnHash } = await this.startOnrampOrder(
+                quote,
+                params
+            );
 
             if (!btcSigner) {
                 throw new Error(`btcSigner is required for onramp order`);
             }
 
-            const bitcoinTxHex = await btcSigner?.signAllInputs(psbtBase64!);
+            let bitcoinTxHex: string;
 
-            if (!bitcoinTxHex) throw new Error('no psbt');
+            if (btcSigner.sendBitcoin) {
+                bitcoinTxHex = await btcSigner.sendBitcoin({
+                    from: params.fromUserAddress!,
+                    to: bitcoinAddress,
+                    value: formatBtc(BigInt(satoshis)),
+                    opReturn: opReturnHash,
+                    isSignet: this.isSignet,
+                });
+            } else if (btcSigner.signAllInputs) {
+                bitcoinTxHex = await btcSigner.signAllInputs(psbtBase64!);
+            } else {
+                throw new Error('btcSigner must implement either sendBitcoin or signAllInputs method');
+            }
+
+            if (!bitcoinTxHex) throw new Error('Failed to get signed transaction');
 
             const txId = await this.finalizeOnrampOrder(uuid, bitcoinTxHex);
 
