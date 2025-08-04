@@ -15,6 +15,11 @@ BOB Gateway allows Bitcoin users to interact with DeFi protocols using a single 
 For Gateway's architecture details, see the [overview](./overview.md).
 :::
 
+Which approach should I choose - Custom Strategy or Multicall?
+
+- **Custom Strategy**: Choose this if you need complex logic, gas optimization, custom events, or want full control over the execution flow
+- **Multicall**: Choose this if you want to integrate with existing contracts without deploying new ones, or for simple approve + deposit patterns
+
 ## Option 1: Custom Strategy Contract
 
 Deploy a smart contract that implements the Gateway strategy interface. This gives you full control over the logic and allows for complex multi-step operations.
@@ -138,11 +143,6 @@ const quote = await gatewaySDK.getQuote({
 ```
 
 ## Frequently Asked Questions
-
-### Which approach should I choose - Custom Strategy or Multicall?
-
-- **Custom Strategy**: Choose this if you need complex logic, gas optimization, custom events, or want full control over the execution flow
-- **Multicall**: Choose this if you want to integrate with existing contracts without deploying new ones, or for simple approve + deposit patterns
 
 ### Who pays the gas fees?
 
