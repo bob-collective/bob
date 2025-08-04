@@ -11,6 +11,7 @@ import {
     WalletClient,
     zeroAddress,
     maxUint256,
+    Hash,
 } from 'viem';
 import { bob, bobSepolia } from 'viem/chains';
 import { EsploraClient } from '../esplora';
@@ -31,18 +32,15 @@ import {
     GatewayStrategyContract,
     GatewayTokensInfo,
     GetQuoteParams,
-    OfframpBumpFeeParams,
     OfframpCreateOrderParams,
     OfframpLiquidity,
     OfframpOrder,
     OfframpOrderStatus,
     OfframpQuote,
     OfframpRawOrder,
-    OfframpUnlockFundsParams,
     OnchainOfframpOrderDetails,
     OnrampExecuteQuoteParams,
     OnrampOrder,
-    OrderDetails,
     OrderStatus,
     StrategyParams,
     Token,
@@ -350,7 +348,16 @@ export class GatewayApiClient {
      * @param orderId The ID of the existing order.
      * @returns Parameters for onchain `bumpFeeOfExistingOrder` call.
      */
-    async bumpFeeForOfframpOrder(orderId: bigint): Promise<OfframpBumpFeeParams> {
+    async bumpFeeForOfframpOrder(
+        orderId: bigint,
+        {
+            walletClient,
+            publicClient,
+        }: {
+            walletClient: WalletClient<Transport, ViemChain, Account>;
+            publicClient: PublicClient<Transport>;
+        }
+    ): Promise<Hash> {
         // check order status via viem should be Active/Accepted
         const orderDetails: OnchainOfframpOrderDetails = await this.fetchOfframpOrder(orderId);
 
@@ -377,12 +384,18 @@ export class GatewayApiClient {
 
         const offrampRegistryAddress: Address = await this.fetchOfframpRegistryAddress();
 
-        return {
-            offrampABI: offrampCaller,
-            offrampRegistryAddress: offrampRegistryAddress,
-            offrampFunctionName: 'bumpFeeOfExistingOrder' as const,
-            offrampArgs: [orderId, BigInt(newFeeSat)],
-        };
+        const { request } = await publicClient.simulateContract({
+            address: offrampRegistryAddress,
+            abi: offrampCaller,
+            functionName: 'bumpFeeOfExistingOrder',
+            args: [orderId, BigInt(newFeeSat)],
+            account: walletClient.account,
+        });
+
+        const transactionHash = await walletClient.writeContract(request);
+        await publicClient.waitForTransactionReceipt({ hash: transactionHash });
+
+        return transactionHash;
     }
 
     /**
@@ -392,13 +405,23 @@ export class GatewayApiClient {
      * @param receiver The address to receive the funds.
      * @returns Parameters for onchain `unlockFunds` call.
      */
-    async unlockOfframpOrder(orderId: bigint, receiver: Address): Promise<OfframpUnlockFundsParams> {
+    async unlockOfframpOrder(
+        orderId: bigint,
+        receiver: Address,
+        {
+            walletClient,
+            publicClient,
+        }: {
+            walletClient: WalletClient<Transport, ViemChain, Account>;
+            publicClient: PublicClient<Transport>;
+        }
+    ): Promise<Hash> {
         // check order status via viem should be Active/Accepted
         const orderDetails: OnchainOfframpOrderDetails = await this.fetchOfframpOrder(orderId);
 
         // Processed and refunded order can't be unlocked
         if (orderDetails.status == 'Processed' || orderDetails.status == 'Refunded') {
-            throw new Error(`Offramp order already processed/refunded`);
+            throw new Error(`Offramp order already processed / refunded`);
         }
 
         const offrampRegistryAddress: Address = await this.fetchOfframpRegistryAddress();
@@ -410,12 +433,18 @@ export class GatewayApiClient {
             throw new Error(`Offramp order is still within the 7-day claim delay and cannot be unlocked yet.`);
         }
 
-        return {
-            offrampABI: offrampCaller,
-            offrampRegistryAddress: offrampRegistryAddress,
-            offrampFunctionName: 'unlockFunds',
-            offrampArgs: [orderId, receiver],
-        };
+        const { request } = await publicClient.simulateContract({
+            address: offrampRegistryAddress,
+            abi: offrampCaller,
+            functionName: 'unlockFunds',
+            args: [orderId, receiver],
+            account: walletClient.account,
+        });
+
+        const transactionHash = await walletClient.writeContract(request);
+        await publicClient.waitForTransactionReceipt({ hash: transactionHash });
+
+        return transactionHash;
     }
 
     /**
