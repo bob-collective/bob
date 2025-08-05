@@ -26,7 +26,8 @@ import { ReownWalletAdapter } from '@gobob/bob-sdk';
 const { walletProvider } = useAppKitProvider<BitcoinConnector>('bip122');
 const { address: btcAddress } = useAppKitAccount();
 
-const txId = await gatewaySDK.executeQuote(quote, {
+const txId = await gatewaySDK.executeQuote({
+  quote,
   walletClient,
   publicClient,
   btcSigner: new ReownWalletAdapter(walletProvider, btcAddress),
@@ -61,7 +62,8 @@ import { Network, XverseConnector } from '@gobob/sats-wagmi';
 
 const btcSigner = new XverseConnector(Network.mainnet);
 
-const txId = await gatewaySDK.executeQuote(quote, {
+const txId = await gatewaySDK.executeQuote({
+  quote,
   walletClient,
   publicClient,
   btcSigner,
@@ -77,7 +79,8 @@ For OKX wallet, you can use their direct send API:
 ```ts
 import { OkxWalletAdapter } from '@gobob/bob-sdk';
 
-const txId = await gatewaySDK.executeQuote(quote, {
+const txId = await gatewaySDK.executeQuote({
+  quote,
   walletClient,
   publicClient,
   btcSigner: new OkxWalletAdapter(window.okxwallet.bitcoin),

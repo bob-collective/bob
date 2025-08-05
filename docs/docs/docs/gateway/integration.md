@@ -100,7 +100,8 @@ const walletClient = createWalletClient({
 const { walletProvider } = useAppKitProvider<BitcoinConnector>('bip122');
 const { address: btcAddress } = useAppKitAccount();
 
-const txId = await gatewaySDK.executeQuote(quote, {
+const txId = await gatewaySDK.executeQuote({
+  quote,
   walletClient,
   publicClient,
   btcSigner: new ReownWalletAdapter(walletProvider, btcAddress),

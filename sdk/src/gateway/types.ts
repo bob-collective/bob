@@ -558,3 +558,12 @@ export interface BitcoinSigner {
         isSignet: boolean;
     }) => Promise<string>;
 }
+
+export interface BumpFeeParams {
+    orderId: bigint;
+}
+
+export interface UnlockOrderParams {
+    orderId: bigint;
+    receiver: Address;
+}

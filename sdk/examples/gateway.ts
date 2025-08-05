@@ -43,7 +43,8 @@ export async function swapBtcForToken(evmAddress: Address) {
         gasRefill: parseEther('0.00001'), // ETH
     });
 
-    const onrampTx = await gatewaySDK.executeQuote(quote, {
+    const onrampTx = await gatewaySDK.executeQuote({
+        quote,
         walletClient,
         publicClient: publicClient as PublicClient<Transport>,
         btcSigner,
@@ -60,7 +61,8 @@ export async function swapBtcForToken(evmAddress: Address) {
         amount: parseBtc('0.1'), // BTC
     });
 
-    const offrampTx = await gatewaySDK.executeQuote(offrampQuote, {
+    const offrampTx = await gatewaySDK.executeQuote({
+        quote: offrampQuote,
         walletClient,
         publicClient: publicClient as PublicClient<Transport>,
     });
@@ -140,7 +142,8 @@ export async function onrampAndDeposit(evmAddress: Address) {
         ),
     });
 
-    const onrampTx = await gatewaySDK.executeQuote(quote, {
+    const onrampTx = await gatewaySDK.executeQuote({
+        quote,
         walletClient,
         publicClient: publicClient as PublicClient<Transport>,
         btcSigner,
