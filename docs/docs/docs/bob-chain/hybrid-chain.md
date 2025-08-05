@@ -4,7 +4,7 @@ sidebar_position: 3
 
 # Hybrid Chain
 
-BOB is a _Hybrid Chain_, a new kind of Hybrid ZK Rollup that inherits Bitcoin fnlaity while providing trust-minimized bridges directly to Ethereum and Bitcoin. Through its unique multi-layered architecture, BOB combines Bitcoin's security with Ethereum's innovation, ultimately bringing BTC to any app on any chain.
+BOB is a _Hybrid Chain_, a new kind of Hybrid ZK Rollup that inherits Bitcoin finality while providing trust-minimized bridges directly to Ethereum and Bitcoin. Through its unique multi-layered architecture, BOB combines Bitcoin's security with Ethereum's innovation, ultimately bringing BTC to any app on any chain.
 
 ## Roadmap Overview
 
@@ -48,7 +48,7 @@ This upgrade positions BOB to achieve Stage 0 status on [L2Beat](https://l2beat.
 
 #### Under the Hood: OP Stack
 
-BOB uses the [OP Stack](https://docs.optimism.io/stack/getting-started) as its foundation. In the OP Stack, the "Sequencer" consists actually of multiple services that are run together. The main services are:
+BOB uses the [OP Stack](https://docs.optimism.io/stack/getting-started) as its foundation. In the OP Stack, the "Sequencer" actually consists of multiple services that are run together. The main services are:
 
 - **Proposer:** The proposer is responsible for submitting the latest proposals of BOB to Ethereum.
 - **Batcher:** The batcher is responsible for submitting all data from BOB to Ethereum blobs to ensure that the BOB state can be entirely reconstructed just from data on Ethereum without any dependency on the BOB sequencer.
