@@ -1,3 +1,20 @@
+---
+hide_table_of_contents: true
+---
+
+# Token Registry
+
+Various ERC-20 tokens originally deployed to Ethereum also have corresponding "bridged" representations on BOB Mainnet.
+
+:::info Do Your Own Research
+
+Tokens listed on this page are provided for convenience only.
+The presence of a token on this page does not imply any endorsement of the token or its minter.
+
+:::
+
+## BOB Mainnet
+
 | Name                            | Symbol       | L1 Token                                                                                 | L2 Token                                                                                       | Bridge L1                                                                                | Bridge L2                                                                                      |
 | ------------------------------- | ------------ | ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
 | ALEX                            | ALEX         | [0xe7c3...0923](https://etherscan.io/address/0xe7c3755482d0da522678af05945062d4427e0923) | [0xa669...edb8](https://explorer.gobob.xyz/address/0xa669e059fdcbdfc532a2edd658eb2922799eedb8) | [0x3F6c...1f7](https://etherscan.io/address/0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7)  | [0x4200...0010](https://explorer.gobob.xyz/address/0x4200000000000000000000000000000000000010) |
