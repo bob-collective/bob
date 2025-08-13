@@ -50,7 +50,7 @@ BOB is an optimistic rollup with ZK proofs on Ethereum secured by billions of do
 
 ### Ecosystem (Home of BTC DeFi)
 
-- Best-in-class EVM and DeFi infrastructure based on the [OP stack](https://www.optimism.io/developers/op-stack)
+- Best-in-class EVM and DeFi infrastructure based on the [OP stack](https://docs.optimism.io/stack/getting-started)
 - [Tier 1 DeFi choosing BOB](https://app.gobob.xyz/en/apps): Uniswap, Euler, Aave, LiFi, Lombard, Chainlink, Babylon, Solv
 - Institutions choosing BOB: Fireblocks, Cobo, ForDeFi and more to be announced
 - Strong/fast stablecoin infrastructure with USDC, USDT, Chainlink CCIP, LayerZero
