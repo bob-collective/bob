@@ -1,17 +1,19 @@
+import * as bitcoin from 'bitcoinjs-lib';
 import {
-    createPublicClient,
-    http,
-    zeroAddress,
-    Chain as ViemChain,
-    erc20Abi,
-    parseAbi,
-    decodeAbiParameters,
-    concatHex,
     Address,
+    createPublicClient,
+    encodeAbiParameters,
+    encodeFunctionData,
+    erc20Abi,
+    http,
+    keccak256,
+    parseAbiParameters,
+    PublicClient,
+    Transport,
+    Chain as ViemChain,
+    zeroAddress,
 } from 'viem';
 import { GatewayCreateOrderRequest, OfframpOrderStatus, OrderDetails, OrderDetailsRaw } from './types';
-import { encodeAbiParameters, encodeFunctionData, parseAbiParameters, keccak256 } from 'viem';
-import * as bitcoin from 'bitcoinjs-lib';
 
 /**
  * Should compute the same OP_RETURN hash as the Gateway API and smart contracts.
@@ -40,174 +42,109 @@ export function calculateOpReturnHash(req: GatewayCreateOrderRequest) {
     );
 }
 
-const bridgeDataType = [
-    { name: 'transactionId', type: 'bytes32', internalType: 'bytes32' },
-    { name: 'bridge', type: 'string', internalType: 'string' },
-    { name: 'integrator', type: 'string', internalType: 'string' },
-    { name: 'referrer', type: 'address', internalType: 'address' },
-    { name: 'sendingAssetId', type: 'address', internalType: 'address' },
-    { name: 'receiver', type: 'address', internalType: 'address' },
-    { name: 'minAmount', type: 'uint256', internalType: 'uint256' },
-    { name: 'destinationChainId', type: 'uint256', internalType: 'uint256' },
-    { name: 'hasSourceSwaps', type: 'bool', internalType: 'bool' },
-    { name: 'hasDestinationCall', type: 'bool', internalType: 'bool' },
-] as const;
-
-const swapDataType = [
-    { name: 'callTo', type: 'address', internalType: 'address' },
-    {
-        name: 'approveTo',
-        type: 'address',
-        internalType: 'address',
-    },
-    {
-        name: 'sendingAssetId',
-        type: 'address',
-        internalType: 'address',
-    },
-    {
-        name: 'receivingAssetId',
-        type: 'address',
-        internalType: 'address',
-    },
-    {
-        name: 'fromAmount',
-        type: 'uint256',
-        internalType: 'uint256',
-    },
-    { name: 'callData', type: 'bytes', internalType: 'bytes' },
-    {
-        name: 'requiresDeposit',
-        type: 'bool',
-        internalType: 'bool',
-    },
-] as const;
-
-const relayDataType = [
-    {
-        name: 'requestId',
-        type: 'bytes32',
-        internalType: 'bytes32',
-    },
-    {
-        name: 'nonEVMReceiver',
-        type: 'bytes32',
-        internalType: 'bytes32',
-    },
-    {
-        name: 'receivingAssetId',
-        type: 'bytes32',
-        internalType: 'bytes32',
-    },
-    { name: 'signature', type: 'bytes', internalType: 'bytes' },
-] as const;
-
-const lifiAbi = [
-    {
-        name: '_bridgeData',
-        type: 'tuple',
-        internalType: 'struct ILiFi.BridgeData',
-        components: [
-            { name: 'transactionId', type: 'bytes32', internalType: 'bytes32' },
-            { name: 'bridge', type: 'string', internalType: 'string' },
-            { name: 'integrator', type: 'string', internalType: 'string' },
-            { name: 'referrer', type: 'address', internalType: 'address' },
-            { name: 'sendingAssetId', type: 'address', internalType: 'address' },
-            { name: 'receiver', type: 'address', internalType: 'address' },
-            { name: 'minAmount', type: 'uint256', internalType: 'uint256' },
-            { name: 'destinationChainId', type: 'uint256', internalType: 'uint256' },
-            { name: 'hasSourceSwaps', type: 'bool', internalType: 'bool' },
-            { name: 'hasDestinationCall', type: 'bool', internalType: 'bool' },
-        ],
-    },
-    {
-        name: '_swapData',
-        type: 'tuple[]',
-        internalType: 'struct LibSwap.SwapData[]',
-        components: [
-            { name: 'callTo', type: 'address', internalType: 'address' },
-            { name: 'approveTo', type: 'address', internalType: 'address' },
-            { name: 'sendingAssetId', type: 'address', internalType: 'address' },
-            { name: 'receivingAssetId', type: 'address', internalType: 'address' },
-            { name: 'fromAmount', type: 'uint256', internalType: 'uint256' },
-            { name: 'callData', type: 'bytes', internalType: 'bytes' },
-            { name: 'requiresDeposit', type: 'bool', internalType: 'bool' },
-        ],
-    },
-    {
-        name: '_relayData',
-        type: 'tuple',
-        internalType: 'struct RelayFacet.RelayData',
-        components: [
-            { name: 'requestId', type: 'bytes32', internalType: 'bytes32' },
-            { name: 'nonEVMReceiver', type: 'bytes32', internalType: 'bytes32' },
-            { name: 'receivingAssetId', type: 'bytes32', internalType: 'bytes32' },
-            { name: 'signature', type: 'bytes', internalType: 'bytes' },
-        ],
-    },
-] as const;
-
 const LIFI_DIAMOND_ADDRESS = '0x1231DEB6f5749EF6cE6943a275A1D3E7486F4EaE';
 
-export function encodeLiFiParameters(token: Address, swapAmount: bigint, minBridgeAmount: bigint) {
-    const multicallAbi = parseAbi([
-        'function makeCallWithInjection(address target, bytes callData, uint256 value, (address token, uint256 offset)[] replacements)',
-    ]);
+const callAbi = [
+    { name: 'target', type: 'address', internalType: 'address' },
+    { name: 'callData', type: 'bytes', internalType: 'bytes' },
+    { name: 'value', type: 'uint256', internalType: 'uint256' },
+] as const;
 
-    const balanceReplacementForApproval = {
-        token,
-        offset: 36n,
-    };
+const gatewayOnrampV4Abi = [
+    {
+        type: 'function',
+        name: 'calculateFee',
+        inputs: [
+            { name: '_amount', type: 'uint256', internalType: 'uint256' },
+            {
+                name: '_feeRanges',
+                type: 'tuple[]',
+                internalType: 'struct FeeRange[]',
+                components: [
+                    { name: 'scaledFeePercent', type: 'uint256', internalType: 'uint256' },
+                    { name: 'amountLowerRange', type: 'uint256', internalType: 'uint256' },
+                ],
+            },
+        ],
+        outputs: [{ name: 'fee', type: 'uint256', internalType: 'uint256' }],
+        stateMutability: 'view',
+    },
+    {
+        type: 'function',
+        name: 'getFeeRanges',
+        inputs: [],
+        outputs: [
+            {
+                name: '_feeRanges',
+                type: 'tuple[]',
+                internalType: 'struct FeeRange[]',
+                components: [
+                    { name: 'scaledFeePercent', type: 'uint256', internalType: 'uint256' },
+                    { name: 'amountLowerRange', type: 'uint256', internalType: 'uint256' },
+                ],
+            },
+        ],
+        stateMutability: 'view',
+    },
+    {
+        type: 'function',
+        name: 'multiplier',
+        inputs: [],
+        outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+        stateMutability: 'view',
+    },
+] as const;
 
-    // approve with injection
+const gatewayV4Address = zeroAddress;
+
+const lifiCalldata =
+    '0x25d374e80000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000022000000000000000000000000000000000000000000000000000000000000007e0dfb0b59ca3790449592cbb192f9dbc5599e898a406f8166d0fde1b94d959fe3a000000000000000000000000000000000000000000000000000000000000014000000000000000000000000000000000000000000000000000000000000001800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000097632b3760460a623e068cc70abf11d5fa99be5f000000000000000000000000000000000000000000000000031725319c721fa5000000000000000000000000000000000000000000000000000000000000210500000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000572656c617900000000000000000000000000000000000000000000000000000000000000000000000000000000s000000000000000000000000000000000000086c6966692d6170690000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000001e0000000000000000000000000728f23859c718b9e1ca762f051c29ea99119b92d000000000000000000000000728f23859c718b9e1ca762f051c29ea99119b92d00000000000000000000000003c7054bcb39f7b2e5b2c7acb37583e32d70cfa300000000000000000000000003c7054bcb39f7b2e5b2c7acb37583e32d70cfa300000000000000000000000000000000000000000000000000000000000d6d8000000000000000000000000000000000000000000000000000000000000000e000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000084eedd56e100000000000000000000000003c7054bcb39f7b2e5b2c7acb37583e32d70cfa300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000898000000000000000000000000b9c0de368bece5e76b52545a8e377a4c118f597b000000000000000000000000000000000000000000000000000000000000000000000000000000003fc68470a35072c3a49ac28187c2cc0d4ad1bc570000000000000000000000003fc68470a35072c3a49ac28187c2cc0d4ad1bc5700000000000000000000000003c7054bcb39f7b2e5b2c7acb37583e32d70cfa3000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000d64e800000000000000000000000000000000000000000000000000000000000000e0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002a42646478b00000000000000000000000003c7054bcb39f7b2e5b2c7acb37583e32d70cfa300000000000000000000000000000000000000000000000000000000000d64e8000000000000000000000000eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee000000000000000000000000000000000000000000000000031725319c721fa5000000000000000000000000452cf1b8597e6319cd21abd847312bf17e26d8d100000000000000000000000000000000000000000000000000000000000000c000000000000000000000000000000000000000000000000000000000000001a40203c7054bcb39f7b2e5b2c7acb37583e32d70cfa303a22201e112389471d577f7bc45c03c7c37f70abca1cc93013fc68470a35072c3a49ac28187c2cc0d4ad1bc578000016407fec527abad1aafdb9a3b5a2171800c21a2fe013fc68470a35072c3a49ac28187c2cc0d4ad1bc57ffff08cc2acddbbf2c15e680c4480b449e94d4df53c0ef013fc68470a35072c3a49ac28187c2cc0d4ad1bc570105d032ac25d322df992303dca074ee7392c117b9037459019a3b17a2e2daf54ce80f2f4b2c8440902be715de013fc68470a35072c3a49ac28187c2cc0d4ad1bc57d55a012ece0e4b20ab662a9fc222a391b3ccb9ebf0485d013fc68470a35072c3a49ac28187c2cc0d4ad1bc57ffff0137760492b899398a2b3b86aa9490679cd9d63b2d013fc68470a35072c3a49ac28187c2cc0d4ad1bc5701e75d0fb2c24a55ca1e3f96781a2bcc7bdba058f001ffff0102f57b2e4d310f3cf432fafa8d0d780ee920467c003fc68470a35072c3a49ac28187c2cc0d4ad1bc5701420000000000000000000000000000000000000601ffff0200452cf1b8597e6319cd21abd847312bf17e26d8d10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000b8ac7e62fae2cc1eaac6e5d5431e9e3b1b0636ed6a3c16156e0abb4d94fa1f1300000000000000000000000097632b3760460a623e068cc70abf11d5fa99be5f0000000000000000000000000555e30da8f98308edb960aa94c0db47230d2b9c000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000411f10d11f3d32c9bfa48d159e6ddae1180276b763bb05c68b715d49b972ce81ee599b63b6e55ad2ee48251163f70c7664324cc07cb5b15a193813045f780672f01b00000000000000000000000000000000000000000000000000000000000000';
+
+export async function encodeLiFiParameters(
+    publicClient: PublicClient<Transport>,
+    tokenAddress: Address,
+    swapAmount: bigint
+) {
+    const [feeRanges, multiplier] = await publicClient.multicall({
+        allowFailure: false,
+        contracts: [
+            {
+                abi: gatewayOnrampV4Abi,
+                address: gatewayV4Address,
+                functionName: 'getFeeRanges',
+            },
+            {
+                abi: gatewayOnrampV4Abi,
+                address: gatewayV4Address,
+                functionName: 'multiplier',
+            },
+        ],
+    });
+
+    const calculatedFee = await publicClient.readContract({
+        abi: gatewayOnrampV4Abi,
+        functionName: 'calculateFee',
+        address: gatewayV4Address,
+        args: [swapAmount, feeRanges],
+    });
+
+    const tokenOrderSize = swapAmount * multiplier;
+
+    const tokenLpFee = calculatedFee * multiplier;
+    const tokenToSwapToEth = (swapAmount * multiplier) / 10n;
+    const tokenForStrategy = tokenOrderSize - tokenLpFee - tokenToSwapToEth;
+
     const approveCalldata = encodeFunctionData({
         abi: erc20Abi,
         functionName: 'approve',
-        args: [LIFI_DIAMOND_ADDRESS, 0n],
+        args: [LIFI_DIAMOND_ADDRESS, tokenForStrategy],
     });
 
-    // Encode the makeCallWithInjection call
-    const approveWithInjectionCalldata = encodeFunctionData({
-        abi: multicallAbi,
-        functionName: 'makeCallWithInjection',
-        args: [LIFI_DIAMOND_ADDRESS, approveCalldata, BigInt(0), [balanceReplacementForApproval]],
-    });
+    const approveCall = encodeAbiParameters(callAbi, [tokenAddress, approveCalldata, 0n]);
 
-    const lifiTxCalldata =
-        '0x25d374e80000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000022000000000000000000000000000000000000000000000000000000000000004000d35a30ed0b0ca7323f3fedd8cde75743d1433c9289e45ef01d49887a081290e0000000000000000000000000000000000000000000000000000000000000140000000000000000000000000000000000000000000000000000000000000018000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002260fac5e5542a773aa44fbcfedf7c193bc2c59900000000000000000000000097632b3760460a623e068cc70abf11d5fa99be5f00000000000000000000000000000000000000000000000000000000000f387c000000000000000000000000000000000000000000000000000000000000210500000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000572656c617900000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000086c6966692d61706900000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000020000000000000000000000000bd6c7b0d2f68c2b7805d88388319cfb6ecb50ea9000000000000000000000000bd6c7b0d2f68c2b7805d88388319cfb6ecb50ea90000000000000000000000002260fac5e5542a773aa44fbcfedf7c193bc2c5990000000000000000000000002260fac5e5542a773aa44fbcfedf7c193bc2c59900000000000000000000000000000000000000000000000000000000000f424000000000000000000000000000000000000000000000000000000000000000e000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000084eedd56e10000000000000000000000002260fac5e5542a773aa44fbcfedf7c193bc2c599000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000009c4000000000000000000000000b9c0de368bece5e76b52545a8e377a4c118f597b000000000000000000000000000000000000000000000000000000005366919d2996ddfde07c8cd7fd2f6f0c1bb78364c488607f4b15f51379d98ba800000000000000000000000097632b3760460a623e068cc70abf11d5fa99be5f0000000000000000000000000555e30da8f98308edb960aa94c0db47230d2b9c0000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000004199fd4bf7634f69030b6e43dc2f9a201c4c7d69b09c2d789cb8f73341b0ccd7f56774c167a3dbf09a3615f84fb44f7f72330e13609455e3b7b148bc20787c75c91c00000000000000000000000000000000000000000000000000000000000000';
+    const lifiCall = encodeAbiParameters(callAbi, [LIFI_DIAMOND_ADDRESS, lifiCalldata, 0n]);
 
-    const [bridgeData, swapData, relayData] = decodeAbiParameters(
-        [
-            { type: 'tuple', components: bridgeDataType },
-            { type: 'tuple[]', components: swapDataType },
-            { type: 'tuple', components: relayDataType },
-        ],
-        `0x${lifiTxCalldata.slice(10)}`
-    );
-
-    swapData[0].fromAmount = swapAmount;
-    bridgeData.minAmount = minBridgeAmount;
-
-    const lifiData = encodeFunctionData({
-        abi: lifiAbi,
-        functionName: 'swapAndStartBridgeTokensViaRelay',
-        args: [bridgeData, swapData, relayData],
-    });
-
-    const balanceReplacementForLifiTx = {
-        token,
-        offset: 740n, // 23*32+4
-    };
-
-    const liFiWithInjectionCalldata = encodeFunctionData({
-        abi: multicallAbi,
-        functionName: 'makeCallWithInjection',
-        args: [LIFI_DIAMOND_ADDRESS, lifiData, BigInt(0), [balanceReplacementForLifiTx]],
-    });
-
-    const calldata = concatHex([approveWithInjectionCalldata, liFiWithInjectionCalldata]);
-
-    return calldata;
+    return [approveCall, lifiCall];
 }
 
 export function toHexScriptPubKey(userAddress: string, network: bitcoin.Network): string {
