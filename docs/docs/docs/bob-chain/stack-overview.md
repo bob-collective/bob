@@ -22,7 +22,7 @@ BOB hosts a [growing ecosystem](https://app.gobob.xyz/en/apps) of leading DeFi a
 
 ## Interoperability
 
-BOB's interoperability layer consists of [BOB Gateway](/docs/gateway), an intent-based Bitcoin bridge optimized for speed and programmability. BOB is specialized in optimizign the Bitcoin to BOB route. For multichain connection to Base, Arbitrum, Solana, Binance Smart Chain, and many more, BOB relies on on multiple third-party bridges including [Chainlink CCIP](https://chain.link/cross-chain), [LayerZero](https://layerzero.network/), [Hyperlane](https://hyperlane.xyz/), [deBridge](https://debridge.finance/), and many more.
+BOB's interoperability layer consists of [BOB Gateway](/docs/gateway), an intent-based Bitcoin bridge optimized for speed and programmability. BOB is specialized in optimizign the Bitcoin to BOB route. For multichain connection to Base, Arbitrum, Solana, Binance Smart Chain, and many more, BOB relies on multiple third-party bridges including [Chainlink CCIP](https://chain.link/cross-chain), [LayerZero](https://layerzero.network/), [Hyperlane](https://hyperlane.xyz/), [deBridge](https://debridge.finance/), and many more.
 
 ## BOB Hybrid Chain
 
