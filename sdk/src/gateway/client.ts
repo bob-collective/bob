@@ -838,6 +838,13 @@ export class GatewayApiClient {
                     }
                     return getFinal(amount, order.outputTokenAmount);
                 },
+                getOutputs() {
+                    return order.outputTokenAddresses?.map((address, i) => {
+                        const token = ADDRESS_LOOKUP[this.chainId][address];
+                        const amount = order.outputTokenAmounts?.[i];
+                        return [token, amount];
+                    });
+                },
                 getConfirmations,
                 async getStatus(esploraClient: EsploraClient, latestHeight?: number): Promise<OrderStatus> {
                     const confirmations = await getConfirmations(esploraClient, latestHeight);
