@@ -25,7 +25,7 @@ const MOCK_ORDER_DETAILS_RAW: OrderDetailsRaw = {
     version: 'v4',
     data: {
         ethAmountToReceive: '0x0',
-        maxSatsToSwapToEth: 0,
+        satsToSwapToEth: 0,
         ethTransferGasLimit: '0x8fc',
         strategyGasLimit: '0x0',
         totalUserGasLimit: '0x30d40',
