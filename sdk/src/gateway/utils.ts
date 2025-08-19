@@ -72,7 +72,7 @@ export function convertOrderDetailsRawToOrderDetails(order: OrderDetailsRaw): Or
         version: order.version,
         data: {
             ethAmountToReceive: parseU256(order.data.ethAmountToReceive),
-            maxSatsToSwapToEth: order.data.maxSatsToSwapToEth,
+            satsToSwapToEth: order.data.satsToSwapToEth,
             ethTransferGasLimit: parseU256(order.data.ethTransferGasLimit),
             strategyGasLimit: parseU256(order.data.strategyGasLimit),
             totalUserGasLimit: parseU256(order.data.totalUserGasLimit),
@@ -88,7 +88,7 @@ export function convertOrderDetailsToRaw(order: OrderDetails): OrderDetailsRaw {
         version: order.version,
         data: {
             ethAmountToReceive: order.data.ethAmountToReceive.toString(), // bigint to string
-            maxSatsToSwapToEth: order.data.maxSatsToSwapToEth,
+            satsToSwapToEth: order.data.satsToSwapToEth,
             ethTransferGasLimit: order.data.ethTransferGasLimit.toString(),
             strategyGasLimit: order.data.strategyGasLimit.toString(),
             totalUserGasLimit: order.data.totalUserGasLimit.toString(),

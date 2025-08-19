@@ -212,7 +212,7 @@ export type OrderDetailsRaw = {
     version: string;
     data: {
         ethAmountToReceive: string;
-        maxSatsToSwapToEth: number;
+        satsToSwapToEth: number;
         ethTransferGasLimit: string;
         strategyGasLimit: string;
         totalUserGasLimit: string;
@@ -229,8 +229,8 @@ export type OrderDetails = {
     data: {
         /** @description The amount of ETH (in wei) that the user will receive */
         ethAmountToReceive: bigint;
-        /** @description Maximum amount of satoshis allowed to be swapped to ETH */
-        maxSatsToSwapToEth: number;
+        /** @description Amount of satoshis to be swapped to ETH */
+        satsToSwapToEth: number;
         /** @description Estimated gas limit for the ETH transfer step */
         ethTransferGasLimit: bigint;
         /** @description Estimated gas limit for executing the strategy logic */
