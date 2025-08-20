@@ -12,7 +12,7 @@ BOB Gateway allows Bitcoin users to interact with DeFi protocols using a single 
 2. **Multicall Integration** - Use the built-in multicall handler to interact with existing contracts without deploying new ones
 
 :::info Gateway Overview
-For a detailed technical explanation of Gateway's architecture and user flow, see the [overview](./overview.md).
+For a detailed explanation of Gateway's architecture and user flow, see the [technical overview](./overview.md).
 :::
 
 Which approach should I choose - Custom Strategy or Multicall?

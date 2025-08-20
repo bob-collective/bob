@@ -9,7 +9,7 @@ sidebar_position: 2
 Our SDK makes it possible for you to bring this UX directly into your app.
 
 :::info Gateway Overview
-For a detailed technical explanation of Gateway's architecture and user flow, see the [overview](./overview.md).
+For a detailed explanation of Gateway's architecture and user flow, see the [technical overview](./overview.md).
 :::
 
 ## Step-by-Step

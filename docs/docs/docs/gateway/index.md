@@ -7,7 +7,11 @@ sidebar_position: 1
 BOB Gateway is a Bitcoin intent/RFQ-based swap protocol that allows users to swap BTC on Bitcoin for ERC20 assets on BOB. The swap mechanism is trust-minimized: BOB Gateway uses smart contracts and cross-chain BTC proofs to ensure that swaps are always executed correctly ("atomically").
 
 :::info Gateway Overview
-For a detailed technical explanation of Gateway's architecture and user flow, see the [overview](./overview.md).
+For a detailed explanation of Gateway's architecture and user flow, see the [technical overview](./overview.md).
+:::
+
+:::warning Gateway v4 Documentation
+This documentation reflects the upcoming Gateway v4 protocol, scheduled for deployment around August 25th-26th, 2025. The information in this guide will only be accurate after the v4 upgrade is complete.
 :::
 
 ## Key Benefits
@@ -23,11 +27,13 @@ For a detailed technical explanation of Gateway's architecture and user flow, se
 - **Multiple Languages** - Support for JavaScript, TypeScript, and more
 - **Quick Setup** - Get started in under 10 minutes
 
-### Security & Reliability
+### Key Features
+- **Wallet SDK for BTC**: Abstracts UTXO logic and Bitcoin wallet integrations
+- **Solver Network**: Experienced in Bitcoin settlement and rebalancing
+- **Plug-and-Play**: Simple integrations on BOB L2 (OP stack)
 - **Bitcoin-Grade Security** - All operations secured by Bitcoin
 - **Audited Contracts** - All Gateway contracts are thoroughly audited
 - **Trust Minimized** - No reliance on centralized bridges
-- **Solver Network** - Specialized network for Bitcoin settlement and rebalancing ensures low slippage swaps
 
 ### Featured Projects
 - **Get Featured** - Successful integrations get featured on the [BOB App](https://app.gobob.xyz/en)
@@ -64,7 +70,32 @@ Build sophisticated financial applications using native Bitcoin as collateral. C
 
 ## How It Works
 
-BOB Gateway uses intents for peer-to-peer swaps and verifies Bitcoin transactions via on-chain light client. The system supports optional intents like staking and cross-chain routing.
+BOB Gateway uses intents to coordinate peer-to-peer swaps between users and liquidity providers. It ensures trustless settlement using an on-chain light client that verifies Bitcoin transactions.
+
+### Roles
+
+- **User**: Sends BTC to receive ERC20 or vice versa
+- **Solver**: Provides liquidity and executes swaps
+- **Smart Contract**: Manages swap logic and verifies transactions
+- **Relayer**: Facilitates communication and transaction proofs
+
+### Swap Process
+
+#### BTC → ERC20 Swap
+1. Solver deposits ERC20 in Smart Contract
+2. User requests swap via Frontend
+3. Relayer coordinates with Solver
+4. User sends BTC to Solver
+5. Relayer submits Bitcoin transaction proof
+6. Smart Contract unlocks ERC20 to User
+
+#### ERC20 → BTC Swap
+1. User deposits ERC20 in Smart Contract
+2. User requests swap via Frontend
+3. Relayer coordinates with Solver
+4. Solver sends BTC to User
+5. Relayer submits Bitcoin transaction proof
+6. Smart Contract releases ERC20 to Solver
 
 ## What is the Gateway SDK?
 
@@ -72,7 +103,7 @@ BOB Gateway SDK enables developers to seamlessly integrate native Bitcoin functi
 
 ## Next Steps
 
-- **[Overview](./overview.md)** - Complete Gateway overview
+- **[Technical Overview](./overview.md)** - Complete Gateway technical overview
 - **[Integration Guide](./integration.md)** - Get started with Gateway integration
 - **[On-Chain Actions](./strategy.md)** - Learn about Gateway strategies
 - **[Bitcoin Wallets](./wallets.md)** - Learn about Bitcoin wallet support
