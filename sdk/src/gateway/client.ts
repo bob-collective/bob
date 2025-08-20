@@ -205,7 +205,11 @@ export class GatewayApiClient {
         }
 
         const tokenAddress = getTokenAddress(this.chainId, params.fromToken.toLowerCase());
-        const quote = await this.fetchOfframpQuote(tokenAddress, BigInt(params.amount || 0));
+        const quote = await this.fetchOfframpQuote(
+            tokenAddress,
+            BigInt(params.amount || 0),
+            params.fromUserAddress as Address
+        );
 
         return quote;
     }
@@ -260,10 +264,11 @@ export class GatewayApiClient {
      * @param amountInToken Amount specified in token decimals.
      * @returns Offramp quote details.
      */
-    async fetchOfframpQuote(token: Address, amountInToken: bigint): Promise<OfframpQuote> {
+    async fetchOfframpQuote(token: Address, amountInToken: bigint, userAddress: Address): Promise<OfframpQuote> {
         const queryParams = new URLSearchParams({
             amountInWrappedToken: amountInToken.toString(),
             token,
+            userAddress: userAddress,
         });
 
         const response = await fetch(`${this.baseUrl}/offramp-quote?${queryParams}`, {
@@ -354,7 +359,8 @@ export class GatewayApiClient {
         const [shouldFeesBeBumped, newFeeSat, error] = await this.getBumpFeeRequirement(
             orderDetails.token,
             orderDetails.satAmountLocked,
-            orderDetails.satFeesMax
+            orderDetails.satFeesMax,
+            orderDetails.sender
         );
 
         if (error) {
@@ -453,7 +459,8 @@ export class GatewayApiClient {
     private async getBumpFeeRequirement(
         token: Address,
         satAmountLocked: bigint,
-        satFeesMax: bigint
+        satFeesMax: bigint,
+        userAddress: Address
     ): Promise<[boolean, bigint, string?]> {
         const decimals = getTokenDecimals(token);
         if (decimals === undefined) {
@@ -463,7 +470,7 @@ export class GatewayApiClient {
         const amountInToken = satAmountLocked * BigInt(10 ** (decimals - 8));
 
         try {
-            const offrampQuote = await this.fetchOfframpQuote(token, amountInToken);
+            const offrampQuote = await this.fetchOfframpQuote(token, amountInToken, userAddress);
             const shouldBump = satFeesMax < offrampQuote.feeBreakdown.overallFeeSats;
             return [shouldBump, BigInt(offrampQuote.feeBreakdown.overallFeeSats)];
         } catch (err) {
