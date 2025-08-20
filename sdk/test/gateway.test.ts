@@ -644,13 +644,13 @@ describe('Gateway Tests', () => {
             signAllInputs: vi.fn((val) => val),
         };
 
-        const mockWalletClient = {} as Parameters<typeof gatewaySDK.executeQuote>[1]['walletClient'];
+        const mockWalletClient = {} as Parameters<typeof gatewaySDK.executeQuote>[0]['walletClient'];
         const mockPublicClient = {
             readContract: () => Promise.resolve(10_000n),
             simulateContract: () => Promise.resolve({ request: '🎉' }),
             waitForTransactionReceipt: () =>
                 Promise.resolve('0x35f5bca7f984f4ed97888944293b979f3abb198a5716d04e10c6bdc023080075'),
-        } as unknown as Parameters<typeof gatewaySDK.executeQuote>[1]['publicClient'];
+        } as unknown as Parameters<typeof gatewaySDK.executeQuote>[0]['publicClient'];
 
         const startOrderSpy = vi.spyOn(gatewaySDK, 'startOnrampOrder');
         const finalizeOrderSpy = vi.spyOn(gatewaySDK, 'finalizeOnrampOrder');
@@ -677,8 +677,8 @@ describe('Gateway Tests', () => {
             .patch(`/order/00000000-0000-0000-0000-000000000000`)
             .reply(201, '"f8c934f181cb88ce910f31bda1a6a8c27fdf5fe9c650edad1ccf4c4e0c89f863"');
 
-        const btcTxId = await gatewaySDK.executeQuote(
-            {
+        const btcTxId = await gatewaySDK.executeQuote({
+            quote: {
                 onrampQuote: mockQuote,
                 params: {
                     toChain: 60808,
@@ -690,8 +690,10 @@ describe('Gateway Tests', () => {
                     fromUserAddress: 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq',
                 },
             },
-            { walletClient: mockWalletClient, publicClient: mockPublicClient, btcSigner: mockBtcSigner }
-        );
+            walletClient: mockWalletClient,
+            publicClient: mockPublicClient,
+            btcSigner: mockBtcSigner,
+        });
 
         expect(btcTxId).toBe('f8c934f181cb88ce910f31bda1a6a8c27fdf5fe9c650edad1ccf4c4e0c89f863');
         expect(startOrderSpy).toHaveBeenCalledOnce();
@@ -703,7 +705,7 @@ describe('Gateway Tests', () => {
 
         const mockWalletClient = {
             writeContract: () => Promise.resolve('0x35f5bca7f984f4ed97888944293b979f3abb198a5716d04e10c6bdc023080075'),
-        } as unknown as Parameters<typeof gatewaySDK.executeQuote>[1];
+        } as unknown as Parameters<typeof gatewaySDK.executeQuote>[0]['walletClient'];
 
         const mockPublicClient = {
             multicall: () => Promise.resolve([10_000n, 8]),
@@ -711,7 +713,7 @@ describe('Gateway Tests', () => {
             simulateContract: () => Promise.resolve({ request: '🎉' }),
             waitForTransactionReceipt: () =>
                 Promise.resolve('0x35f5bca7f984f4ed97888944293b979f3abb198a5716d04e10c6bdc023080075'),
-        } as unknown as Parameters<typeof gatewaySDK.executeQuote>[1]['publicClient'];
+        } as unknown as Parameters<typeof gatewaySDK.executeQuote>[0]['publicClient'];
 
         const createOfframpOrderSpy = vi.spyOn(gatewaySDK, 'createOfframpOrder');
         const fetchOfframpRegistryAddressSpy = vi.spyOn(gatewaySDK, 'fetchOfframpRegistryAddress');
@@ -737,8 +739,8 @@ describe('Gateway Tests', () => {
 
         nock(`${SIGNET_GATEWAY_BASE_URL}`).get(`/offramp-registry-address`).reply(201, `${zeroAddress}`);
 
-        const evmTxId = await gatewaySDK.executeQuote(
-            {
+        const evmTxId = await gatewaySDK.executeQuote({
+            quote: {
                 offrampQuote: {
                     amountLockInSat: 0,
                     deadline: 0,
@@ -762,11 +764,9 @@ describe('Gateway Tests', () => {
                     fromUserAddress: zeroAddress,
                 },
             },
-            {
-                walletClient: mockWalletClient,
-                publicClient: mockPublicClient,
-            }
-        );
+            walletClient: mockWalletClient,
+            publicClient: mockPublicClient,
+        });
 
         expect(evmTxId).toBe('0x35f5bca7f984f4ed97888944293b979f3abb198a5716d04e10c6bdc023080075');
         expect(createOfframpOrderSpy).toHaveBeenCalledOnce();
