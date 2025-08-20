@@ -310,6 +310,10 @@ export interface OnrampOrderResponse {
     /** @description The output amount (from strategies) */
     outputTokenAmount?: string;
     /** @description The tx hash on the EVM chain */
+    outputTokenAddresses?: EvmAddress[];
+    /** @description The output amount (from strategies) */
+    outputTokenAmounts?: string[];
+    /** @description The tx hash on the EVM chain */
     txHash?: string;
     /** @description V4 order details */
     orderDetails?: OrderDetails;
@@ -348,11 +352,16 @@ export type OnrampOrder = Omit<
     'satsToConvertToEth'
 > & {
     /** @description Get the actual token address received */
+    /** @deprecated use getOutputTokenAmounts instead */
     getTokenAddress(): string | undefined;
     /** @description Get the actual token received */
+    /** @deprecated use getOutputTokenAmounts instead */
     getToken(): Token | undefined;
     /** @description Get the actual amount received of the token */
+    /** @deprecated use getOutputTokenAmounts instead */
     getTokenAmount(): string | number | undefined;
+    /** @description get all received tokens and the amounts */
+    getOutputs(): [Token, string][];
     /** @description Get the number of confirmations */
     getConfirmations(esploraClient: EsploraClient, latestHeight?: number): Promise<number>;
     /** @description Get the actual order status */
