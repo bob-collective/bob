@@ -13,9 +13,9 @@ interface ReownWalletProvider {
 
 export class ReownWalletAdapter implements BitcoinSigner {
     walletProvider: ReownWalletProvider;
-    userAddress: Address;
+    userAddress: string;
 
-    constructor(walletProvider: ReownWalletProvider, userAddress: Address) {
+    constructor(walletProvider: ReownWalletProvider, userAddress: string) {
         this.walletProvider = walletProvider;
         this.userAddress = userAddress;
     }
