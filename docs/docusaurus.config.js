@@ -45,6 +45,7 @@ const config = {
   },
 
   plugins: [
+    'docusaurus-plugin-llms',
     [
       "@docusaurus/plugin-client-redirects",
       {
