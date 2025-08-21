@@ -45,7 +45,7 @@ const config = {
   },
 
   plugins: [
-    'docusaurus-plugin-llms',
+    [ 'docusaurus-plugin-llms', {  pathTransformation: { ignorePaths: ['docs'] } } ],
     [
       "@docusaurus/plugin-client-redirects",
       {
