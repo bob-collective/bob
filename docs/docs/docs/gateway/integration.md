@@ -1,29 +1,20 @@
 ---
-sidebar_position: 1
+sidebar_position: 2
 ---
 
-# Integration
+# Integration Guide
 
 [BOB Gateway](/docs/gateway) is a Bitcoin intent bridge that unlocks Bitcoin liquidity by reducing the number of steps to onboard users to your app, saving time and money. For example, users can go from **BTC** on Bitcoin to **staked BTC LSTs** with a single Bitcoin transaction.
 
 Our SDK makes it possible for you to bring this UX directly into your app.
 
-## How Gateway Works
-
-1. Liquidity providers (LPs) temporarily lock wrapped Bitcoin (WBTC or tBTC) in escrow smart contracts on BOB.
-1. A user makes a request for wrapped or staked Bitcoin (e.g. WBTC, tBTC, or a Bitcoin LST/LRT).
-1. The user sends BTC to the liquidity provider's Bitcoin address. A hash of the user's order is included in the `OP_RETURN` of the transaction.
-
-1. Gateway finalizes the transaction. After trustlessly verifying the user's Bitcoin transaction with an on-chain [Light Client](/docs/bob-chain/relay), Gateway sends the LP's wrapped Bitcoin to the user's EVM address. If the user requested a Bitcoin LST/LRT, that token is minted using the LP's wrapped Bitcoin before it is sent to the user.
-
-This SDK exposes helper functions for steps 2, 3, and 4 to be used in your application's front end.
-:::info Learn More
-Discover the architecture of BOB Gateway and how it simplifies Bitcoin transactions by visiting our [BOB Gateway overview page](./overview).
+:::info Gateway Overview
+For a detailed explanation of Gateway's architecture and user flow, see the [technical overview](./overview.md).
 :::
 
-## Step-by-Step Integration Guide
+## Step-by-Step
 
-This is an example implementation of our SDK. You will need to decide how you handle asking your user to sign a partially-signed Bitcoin transaction (PSBT). We recommend using our [sats-wagmi](/docs/gateway/sats-wagmi) package to connect to your users' wallets.
+This is an example implementation of our SDK. You will need to decide how you handle asking your user to sign a partially-signed Bitcoin transaction (PSBT).
 
 ### Install the BOB SDK
 
@@ -39,8 +30,9 @@ Import the `GatewaySDK` class from `@gobob/bob-sdk` and create an instance of it
 
 ```ts title="/src/utils/gateway.ts"
 import { GatewayQuoteParams, GatewaySDK } from '@gobob/bob-sdk';
+import { bob } from 'viem/chains';
 
-const gatewaySDK = new GatewaySDK('bob'); // or "testnet"
+const gatewaySDK = new GatewaySDK(bob.id); // or bobSepolia.id
 ```
 
 ### Get Available Tokens
@@ -60,144 +52,71 @@ We recommend rendering `quote.fee` and [its other fields](https://github.com/bob
 :::
 
 ```ts
-const quoteParams: GatewayQuoteParams = {
+import { parseEther } from 'viem';
+import { parseBtc } from '@gobob/bob-sdk';
+
+const quote = await gatewaySDK.getQuote({
+  fromChain: 'bitcoin',
   fromToken: 'BTC',
-  fromChain: 'Bitcoin',
   fromUserAddress: 'bc1qafk4yhqvj4wep57m62dgrmutldusqde8adh20d',
-  toChain: 'BOB',
+  toChain: 'bob',
   toUserAddress: '0x2D2E86236a5bC1c8a5e5499C517E17Fb88Dbc18c',
-  toToken: 'tBTC', // or e.g. "SolvBTC"
-  amount: 10000000, // 0.1 BTC
-  gasRefill: 10000, // 0.0001 BTC. The amount of BTC to swap for ETH for tx fees.
-};
-
-const quote = await gatewaySDK.getQuote(quoteParams);
+  toToken: 'wBTC',
+  amount: parseBtc("0.1"), // BTC
+  // The amount of ETH to receive (this is subtracted from the amount)
+  gasRefill: parseEther("0.00001"), // ETH
+});
 ```
 
-### Get available staking or lending contracts
+### Execute the Quote
 
-:::tip One-Click Staking
-By specifying the strategy in the quote we will automatically execute additional calls on behalf of the user, for example the user can request their wBTC to be deposited into a Babylon LST.
-:::
+This locks in the quote, placing a hold on the LP's funds. Internally, this creates a Bitcoin transaction that sends the quoted `amount` of BTC to the LP. This also publishes a hash of the order's parameters in the `OP_RETURN` of the transaction so the Gateway can trustlessly verify the order on BOB. Gateway will broadcast the Bitcoin transaction to the mempool; you can pass the transaction to the SDK without broadcasting from the user's wallet.
 
-The SDK will handle automatically when the `toToken` has a fungible ERC20 token, but sometimes there is no representation. In that case we can list the available integrations and specify that in the quote.
+Pass the `quote` returned from the previous step.
 
 ```ts
-const strategies = await gatewaySDK.getStrategies();
-const strategy = strategies.find(
-  (contract) => contract.integration.name === 'pell-wbtc',
-)!;
-const quoteParamsStaking: GatewayQuoteParams = {
-  ...quoteParams,
-  toChain: strategy.chain.chainId,
-  toToken: strategy.inputToken.symbol, // "wbtc"
-  strategyAddress: strategy.address,
-};
-```
+import {
+    createPublicClient,
+    createWalletClient,
+    http,
+    zeroAddress,
+    parseEther,
+} from 'viem';
+import { useAppKitProvider, useAppKitAccount } from '@reown/appkit/react';
+import type { BitcoinConnector } from "@reown/appkit-adapter-bitcoin";
+import { ReownWalletAdapter } from '@gobob/bob-sdk';
 
-### Start the Order
+const publicClient = createPublicClient({
+  chain: bob,
+  transport: http(),
+});
 
-This locks in the quote, placing a hold on the LP's funds. Pass the same `quoteParams` as before and the `quote` returned from the previous step.
-
-Returns a `uuid` for the order and `psbtBase64`, a partially-signed Bitcoin transaction (PSBT) the user must sign.
-
-```ts
-const { uuid, psbtBase64 } = await gatewaySDK.startOrder(quote, quoteParams);
-```
-
-### Sign the Bitcoin Transaction
-
-Create a Bitcoin transaction that sends the quoted `amount` of BTC to the LP's `bitcoinAddress`. This also publishes a hash of the order's parameters in the `OP_RETURN` of the transaction so the Gateway can trustlessly verify the order on BOB.
-
-<Tabs>
-
-<TabItem value="Reown" label="Reown (Recommended)">
-
-```ts
-import { Transaction } from '@scure/btc-signer';
-import { base64 } from '@scure/base';
-import { useAppKitProvider } from '@reown/appkit/react';
-import { BitcoinConnector } from '@reown/appkit-adapter-bitcoin';
+const walletClient = createWalletClient({
+  chain: bob,
+  transport: http(),
+  account: zeroAddress, // Use connected account here
+});
 
 const { walletProvider } = useAppKitProvider<BitcoinConnector>('bip122');
-const unsignedTx = Transaction.fromPSBT(base64.decode(psbtBase64));
+const { address: btcAddress } = useAppKitAccount();
 
-const inputLength = unsignedTx.inputsLength;
-const inputsToSign = Array.from({ length: inputLength }, (_, i) => i);
-
-const { uuid, psbtBase64 } = await gatewaySDK.startOrder(quote, quoteParams);
-const bitcoinTxHex = await connector.signAllInputs(psbtBase64!);
-
-const result = await walletProvider.signPSBT({
-  psbt: psbtBase64,
-  broadcast: false,
-  signInputs: inputsToSign.map((input) => ({
-    index: input,
-    address: quoteParams.fromUserAddress,
-    sighashTypes: [0]
-  }))
+const txId = await gatewaySDK.executeQuote({
+  quote,
+  walletClient,
+  publicClient,
+  btcSigner: new ReownWalletAdapter(walletProvider, btcAddress),
 });
-
-const signedTx = Transaction.fromPSBT(base64.decode(result.psbt));
-signedTx.finalize();
-
-await gatewaySDK.finalizeOrder(uuid, signedTx.hex);
 ```
 
-</TabItem>
+#### Other Wallets
 
-<TabItem value="sats-wagmi" label="sats-wagmi">
+The example above uses Reown AppKit for Bitcoin wallet integration. For additional wallet options and detailed integration guides, see our [Bitcoin Wallets](./wallets.md) guide which covers:
 
-Please follow the [guide here](/docs/gateway/sats-wagmi) to install and use sats-wagmi. In this example, we sign the `psbtBase64` using sats-wagmi which abstracts the complex wallet logic for multiple connectors (including OKX, UniSat and Xverse).
+- **Reown AppKit** - Unified interface with broad wallet support (recommended)
+- **sats-wagmi** - React hooks for Bitcoin wallets with support for Unisat, Leather, Xverse, and more
+- **Direct integrations** - OKX Wallet, Dynamic.xyz, and other wallet-specific implementations
 
-It is also possible to directly use the `useSendGatewayTransaction` hook, example below.
-
-```tsx
-const { uuid, psbtBase64 } = await gatewaySDK.startOrder(quote, quoteParams);
-const bitcoinTxHex = await connector.signAllInputs(psbtBase64!);
-await gatewaySDK.finalizeOrder(uuid, bitcoinTxHex);
-```
-
-</TabItem>
-<TabItem value="send-okx" label="Send (OKX)">
-
-Please refer to the [OKX docs](https://www.okx.com/web3/build/docs/sdks/chains/bitcoin/introduce) for more information.
-In this example, instead of signing the `psbtBase64` we instead use the in-built wallet methods to directly send the BTC.
-
-```ts
-const { uuid, bitcoinAddress, satoshis, opReturnHash } =
-  await gatewaySDK.startOrder(quote, quoteParams);
-const { txhash } = await window.okxwallet.bitcoin.send({
-  from: quoteParams.fromUserAddress,
-  to: bitcoinAddress,
-  value: satoshis.toString(),
-  memo: opReturnHash,
-});
-await gatewaySDK.finalizeOrder(uuid, txhash);
-```
-
-</TabItem>
-
-<TabItem value="dynamic" label="Dynamic">
-
-Please refer to the Dynamic guide on [PSBT signing](https://docs.dynamic.xyz/wallets/using-wallets/bitcoin/sign-a-psbt).
-
-</TabItem>
-
-</Tabs>
-
-### Finalize the Order
-
-Submit the Bitcoin transaction as proof of transfer. This completes the process by transferring wrapped Bitcoin and ETH to the user's EVM address on BOB.
-
-Gateway can broadcast the Bitcoin transaction to the mempool; you can pass the transaction to the SDK without broadcasting from the user's wallet.
-
-```ts
-// NOTE: Gateway broadcasts the transaction
-await gatewaySDK.finalizeOrder(uuid, tx.hex);
-```
-
-### Monitor the User's Orders
+### Monitor the Orders
 
 Get an array of pending and completed orders for a specific EVM address. Typically rendered in a table.
 
@@ -205,24 +124,38 @@ Get an array of pending and completed orders for a specific EVM address. Typical
 const orders = await gatewaySDK.getOrders(userAddress);
 ```
 
-### Example - sats-wagmi
+### Bump Fees (**Offramp Only**)
 
-<Tabs>
-<TabItem value="sats-wagmi-app" label="Gateway.tsx">
+If the Bitcoin fee rate increases after an order is placed, you can then bump the transaction fee to speed up confirmation.
 
-```js reference title="Gateway.tsx"
-https://github.com/bob-collective/sats-wagmi/blob/ae876d96bb2e54e5a24e0f3e1aaa6799565169e4/playgrounds/vite-react/src/Gateway.tsx#L1-L37
+```ts
+await gatewaySDK.bumpFeeForOfframpOrder(orderId, {
+  walletClient,
+  publicClient,
+});
 ```
 
-</TabItem>
-<TabItem value="sats-wagmi-hook" label="useSendGatewayTransaction.tsx">
+### Unlock Order (**Offramp Only**)
 
-```js reference title="useSendGatewayTransaction.tsx"
-https://github.com/bob-collective/sats-wagmi/blob/ae876d96bb2e54e5a24e0f3e1aaa6799565169e4/packages/sats-wagmi/src/hooks/useSendGatewayTransaction.tsx#L28-L69
+In cases where an order gets stuck or needs to be cancelled, you can unlock the order to free up the reserved liquidity. This allows the user to create a new order or cancel their intent.
+
+```ts
+await gatewaySDK.unlockOfframpOrder(orderId, receiver, {
+  walletClient,
+  publicClient,
+});
 ```
 
-</TabItem>
-</Tabs>
+:::warning Important Notes
+- **Bump Fees**: Only works if the original transaction hasn't been confirmed yet. The bumped transaction will replace the original one.
+- **Unlock Order**: This action is irreversible. Once unlocked, the order cannot be resumed and any reserved liquidity will be released.
+:::
+
+:::tip Best Practices
+- Monitor Bitcoin mempool congestion and suggest fee bumping proactively
+- Provide clear UI feedback when orders are stuck or need attention
+- Always explain the implications of unlocking an order to users
+:::
 
 ## Conclusion
 

@@ -1,6 +1,6 @@
 import type { EsploraClient } from '../esplora';
 import { Address, Hex } from 'viem';
-import { offrampCaller, strategyCaller } from './abi';
+import { offrampCaller } from './abi';
 
 type ChainSlug = string | number;
 type TokenSymbol = string;
@@ -69,7 +69,7 @@ export interface GatewayQuoteParams {
     /** @description Wallet address on destination chain */
     toUserAddress: string;
     /** @description Amount of tokens to send from the source chain */
-    amount: number | string; // NOTE: modified from Swing
+    amount: number | string | bigint; // NOTE: modified from Swing
 
     /** @description Maximum slippage percentage between 0.01 and 0.03 (Default: 0.03) */
     maxSlippage?: number;
@@ -85,7 +85,7 @@ export interface GatewayQuoteParams {
 
     // NOTE: the following are new fields added by us
     /** @description Amount of ETH to get to pay for fees */
-    gasRefill?: number;
+    gasRefill?: bigint;
     /** @description Wallet public key on source chain */
     fromUserPublicKey?: string;
     /** @description Strategy address */
@@ -443,30 +443,6 @@ export type OfframpCreateOrderParams = {
     ];
 };
 
-/** @dev Params used to bump fee for an existing order */
-export type OfframpBumpFeeParams = {
-    offrampABI: typeof offrampCaller;
-    offrampRegistryAddress: Address;
-    offrampFunctionName: 'bumpFeeOfExistingOrder';
-    /**
-     * @param orderId The order ID to bump fee for
-     * @param newFeeSat The new fee amount in satoshis
-     */
-    offrampArgs: [orderId: bigint, newFeeSat: bigint];
-};
-
-/** @dev Params used to unlock funds after order completion or refund */
-export type OfframpUnlockFundsParams = {
-    offrampABI: typeof offrampCaller;
-    offrampRegistryAddress: Address;
-    offrampFunctionName: 'unlockFunds';
-    /**
-     * @param orderId The order ID to bump fee for
-     * @param receiver address to send unlocked funds to
-     */
-    offrampArgs: [orderId: bigint, receiver: Address];
-};
-
 /** @dev Final state of an offramp order used in UI/backend */
 export type OfframpOrder = {
     /** @dev Unique identifier for the off-ramp order */
@@ -571,3 +547,23 @@ export type OfframpExecuteQuoteParams = {
 };
 
 export type ExecuteQuoteParams = OnrampExecuteQuoteParams | OfframpExecuteQuoteParams;
+
+export interface BitcoinSigner {
+    signAllInputs?: (psbtBase64: string) => Promise<string>;
+    sendBitcoin?: (params: {
+        from: string;
+        to: string;
+        value: string;
+        opReturn: string;
+        isSignet: boolean;
+    }) => Promise<string>;
+}
+
+export interface BumpFeeParams {
+    orderId: bigint;
+}
+
+export interface UnlockOrderParams {
+    orderId: bigint;
+    receiver: Address;
+}

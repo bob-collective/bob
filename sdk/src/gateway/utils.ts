@@ -1,6 +1,6 @@
 import { createPublicClient, http, zeroAddress, Chain as ViemChain } from 'viem';
 import { GatewayCreateOrderRequest, OfframpOrderStatus, OrderDetails, OrderDetailsRaw } from './types';
-import { encodeAbiParameters, parseAbiParameters, keccak256 } from 'viem';
+import { encodeAbiParameters, parseAbiParameters, keccak256, parseUnits, formatUnits } from 'viem';
 import * as bitcoin from 'bitcoinjs-lib';
 
 /**
@@ -98,4 +98,12 @@ export function convertOrderDetailsToRaw(order: OrderDetails): OrderDetailsRaw {
             extraSatsFeeRecipient: order.data.extraSatsFeeRecipient,
         },
     };
+}
+
+export function parseBtc(btc: string) {
+    return parseUnits(btc, 8);
+}
+
+export function formatBtc(btc: bigint) {
+    return formatUnits(btc, 8);
 }
