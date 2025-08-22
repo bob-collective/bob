@@ -6,17 +6,11 @@ sidebar_position: 3
 
 BOB is a _Hybrid Chain_, a new kind of Hybrid ZK Rollup that inherits Bitcoin finality while providing trust-minimized bridges directly to Ethereum and Bitcoin. Through its unique multi-layered architecture, BOB combines Bitcoin's security with Ethereum's innovation, ultimately bringing BTC to any app on any chain.
 
-## Roadmap Overview
-
-BOB's development follows a three-phase approach toward full Bitcoin security. Today, BOB has completed Phase 1 and operates as a hybrid ZK rollup on Ethereum with [growing TVL](https://dune.com/bob_collective/build-on-bitcoin-bob-overview) of Bitcoin liquid staking tokens in [our DeFi ecosystem](https://app.gobob.xyz/en/apps). Our onchain [BTC light client](/docs/bob-chain/relay) powers trust-minimized cross-chain BTC intents with [BOB Gateway](/docs/gateway).
-
-The next phases will progressively inherit more security from Bitcoin, ultimately enabling BOB to create trust-minimized bridges to Bitcoin, Ethereum, and other L1s without relying on third-party bridge infrastructure.
-
-## Native Bridges: ETH on BOB and BTC on BOB
+## Native Bridges
 
 BOB's hybrid architecture is built on two native bridges that provide secure asset transfers to both Bitcoin and Ethereum.
 
-### BitVM Bridge
+### BitVM Bridge: BTC on BOB
 
 :::info R&D
 BOB has released its BitVM testnet bridge. Mainnet is planned for Q4 2025. For details, see the dedicated [BitVM Bridge](/docs/bitvm) page.
@@ -26,7 +20,7 @@ BOB has [released its BitVM testnet bridge](https://blog.gobob.xyz/posts/bob-bit
 
 Withdrawals of bridged BTC from BOB to Bitcoin through this BitVM bridge are verified by a ZK SNARK fraud-proof mechanism that relies on a 1-of-N trust assumption for operation. Unlike traditional bridges that rely on trusted multisigs or honest majorities, the BitVM bridge uses optimistic computation secured by Bitcoin's own consensus, allowing anyone to challenge fraudulent withdrawals and prevent theft through on-chain fraud proofs. A bridged version of BTC secured by BitVM is a massive improvement in BTC safety because it unlocks unilateral exit back to Bitcoin.
 
-### Ethereum Bridge
+### Ethereum Bridge: ETH, ERC20s, and NFTs on BOB
 
 BOB utilizes the [OP Stack's native bridge contracts](https://docs.optimism.io/app-developers/bridging/standard-bridge) for secure and free asset transfers between Ethereum and BOB. This allows users to deposit and withdraw assets directly through L1 smart contracts, inheriting Ethereum's security guarantees and censorship-resistance. The bridge supports 1-click onboarding of ERC-20 tokens, stablecoins, and ETH, with over $250M in TVL secured by Ethereum's validator network.
 
@@ -36,17 +30,17 @@ Users can already force withdraw their assets from BOB to Ethereum, even if BOB'
 
 ### Hybrid ZK Rollup
 
-BOB operates as a hybrid ZK rollup powered by [Kailua](https://github.com/risc0/kailua), combining the efficiency of optimistic rollups with the security of ZK proofs. Under normal operation, the BOB proposer posts state updates that can be challenged like other optimistic rollups, but disputes are resolved through single ZK proofs rather than expensive multi-round verification games. This approach reduces withdrawal times to 4 days (with plans to reduce to hours as the system matures) and makes fault proofs accessible with just 0.5 ETH collateral, ~$3 proof generation cost, and 250k gas for SNARK verification.
+BOB operates as a hybrid ZK rollup powered by [Kailua](https://github.com/boundless-xyz/kailua), combining the efficiency of optimistic rollups with the security of ZK proofs. Under normal operation, the BOB proposer posts state updates that can be challenged like other optimistic rollups, but disputes are resolved through single ZK proofs rather than expensive multi-round verification games. This approach reduces withdrawal times to 4 days (with plans to reduce to hours as the system matures) and makes fault proofs accessible with just 0.5 ETH collateral, ~$3 proof generation cost, and 250k gas for SNARK verification.
 
-The hybrid model allows proposers to optionally submit validity proofs directly with their proposals for instant finality, enabling users to choose between cost-optimized (optimistic) and speed-optimized (validity proof) modes based on their needs. The Kailua integration provides:
+On demand, the hybrid model allows proposers to submit validity proofs directly with their proposals for instant finality, enabling users to choose between cost-optimized (optimistic) and speed-optimized (validity proof) modes based on their needs. The Kailua integration provides:
 
 - **Mathematical Certainty:** ZK proofs guarantee the correctness of all BOB state transitions during disputes
 - **Flexible Finality:** Users can choose between cost-optimized (optimistic) or speed-optimized (validity proof) modes based on their needs
 - **Progressive Enhancement:** Seamless upgrade path from optimistic to full validity rollup without disruption
 
-This upgrade positions BOB to achieve Stage 0 status on [L2Beat](https://l2beat.com/scaling/projects/bob), moving it into the exclusive Rollups category with only 24 other protocols, as it now has a functioning proof system providing full Ethereum security.
+This upgrade positions BOB to achieve Stage 0 status on [L2Beat](https://l2beat.com/scaling/projects/bob).
 
-#### Under the Hood: OP Stack
+### Under the Hood: OP Stack
 
 BOB uses the [OP Stack](https://docs.optimism.io/stack/getting-started) as its foundation. In the OP Stack, the "Sequencer" actually consists of multiple services that are run together. The main services are:
 
@@ -58,15 +52,23 @@ BOB uses the [OP Stack](https://docs.optimism.io/stack/getting-started) as its f
 
 ![Sequencer Architecture](./sequencer-architecture.png)
 
-#### Under the Hood: Kailua
+### Under the Hood: Kailua
 
 Traditionally, rollups have followed two separate models: optimistic rollups, which assume transactions are valid but require a 7-day challenge window, and validity rollups, which verify transactions instantly via ZK proofs but are expensive to operate. Kailua introduces a third Hybrid ZK option by applying ZK proofs to the fraud resolution process in optimistic rollups.
 
 **Sequencing**
 
-In Kailua, proposer need to stake 0.5 ETH to be the proposer. The proposer submits ["mini proposals"](https://risc0.github.io/kailua/design.html#sequencing) frequently. In the case of BOB, every 6 BOB blocks a mini proposal is created. Every 12 hours, the proposer submits a full proposal to BOB's Ethereum contracts that reference all the mini proposals. The mini proposals are stored in Ethereum blobs.
+In Kailua, proposer need to stake 0.5 ETH to be the proposer. The proposer submits ["mini proposals"](https://boundless-xyz.github.io/kailua/design.html#sequencing) frequently. In the case of BOB, every 6 BOB blocks a mini proposal is created. Every 12 hours, the proposer submits a full proposal to BOB's Ethereum contracts that reference all the mini proposals. The mini proposals are stored in Ethereum blobs.
+
+**On Demand Validity Proofs**
 
 The proposer can optionally submit a validity proof with their proposal. If a correct validity proof is submitted, the proposal is finalized instantly. If no validity proof is submitted, the proposal is finalized after 4 days unless successfully disputed.
+
+:::info Validity Proof on BOB Mainnet
+
+See here for an example of a validity proof for BOB on mainnet: https://etherscan.io/tx/0xe3d5ed2b47c9b19fa777e8a3d5103b72d05abfa5d5c79c7289389acb9eafda0f
+
+:::
 
 **Dispute Resolution**
 
@@ -74,7 +76,7 @@ Once a full proposal is submitted by a proposer, it can be challenged by anyone.
 
 **Vanguard Mode**
 
-BOB is currently in [vanguard mode](https://risc0.github.io/kailua/parameters.html?highlight=vanguard#vanguard-advantage). This means that the BOB proposer has priority to submit proposals. If no proposal is made by the proposer within 30 days, then any user can submit their own proposal.
+BOB is currently in [vanguard mode](https://boundless-xyz.github.io/kailua/parameters.html?highlight=vanguard#vanguard-advantage). This means that the BOB proposer has priority to submit proposals. If no proposal is made by the proposer within 30 days, then any user can submit their own proposal.
 
 **Finality**
 
