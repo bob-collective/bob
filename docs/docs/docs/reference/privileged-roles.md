@@ -91,7 +91,7 @@ BOB nodes will look for transactions from this address to find new batches of L2
 
 ### Description
 
-The Proposer is a software service that submits proposals about the state of BOB to the `DisputeGameFactory` contract on Ethereum, which spawns a new `KailuaGame` contract for each proposal in which disputes can be resolved if necessary. BOB operates in [Kailua's vanguard mode](https://risc0.github.io/kailua/parameters.html?highlight=vanguard#vanguard-advantage), where the BOB proposer has priority to submit proposals. If no proposal is made by the BOB proposer within 30 days, then any user can submit their own proposal.
+The Proposer is a software service that submits proposals about the state of BOB to the `DisputeGameFactory` contract on Ethereum, which spawns a new `KailuaGame` contract for each proposal in which disputes can be resolved if necessary. BOB operates in [Kailua's vanguard mode](https://boundless-xyz.github.io/kailua/parameters.html?highlight=vanguard#vanguard-advantage), where the BOB proposer has priority to submit proposals. If no proposal is made by the BOB proposer within 30 days, then any user can submit their own proposal.
 
 Proposals can be finalized in multiple ways:
 
