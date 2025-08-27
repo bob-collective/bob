@@ -26,8 +26,8 @@ const bobTokens = [
         logoURI: 'https://ethereum-optimism.github.io/data/WBTC/logo.svg',
     },
     {
-        name: 'Wrapped BTC (new)',
-        symbol: 'WBTC (new)',
+        name: 'Wrapped BTC (OFT)',
+        symbol: 'WBTC (OFT)',
         decimals: 8,
         tokens: {
             bob: {
