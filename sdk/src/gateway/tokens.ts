@@ -27,6 +27,17 @@ const bobTokens = [
         logoURI: 'https://raw.githubusercontent.com/bob-collective/bob/master/assets/wbtc.svg',
     },
     {
+        name: 'Wrapped BTC (OFT)',
+        symbol: 'WBTC (OFT)',
+        decimals: 8,
+        tokens: {
+            bob: {
+                address: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
+            },
+        },
+        logoURI: 'https://raw.githubusercontent.com/bob-collective/bob/master/assets/wbtc.svg',
+    },
+    {
         name: 'Solv BTC',
         symbol: 'SolvBTC',
         decimals: 18,
