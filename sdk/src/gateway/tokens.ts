@@ -70,6 +70,28 @@ const bobTokens = [
         },
         logoURI: 'https://raw.githubusercontent.com/bob-collective/bob/master/assets/uniBTC.svg',
     },
+    {
+        name: 'SolvBTC Jupiter',
+        symbol: 'SolvBTC.JUP',
+        decimals: 18,
+        tokens: {
+            bob: {
+                address: '0x6b062AA7F5FC52b530Cb13967aE2E6bc0D8Dd3E4',
+            },
+        },
+        logoURI: 'https://raw.githubusercontent.com/bob-collective/bob/master/assets/solvBTC_Jupiter.svg',
+    },
+    {
+        name: 'BTC+',
+        symbol: 'BTC+',
+        decimals: 18,
+        tokens: {
+            bob: {
+                address: '0x4Ca70811E831db42072CBa1f0d03496EF126fAad',
+            },
+        },
+        logoURI: 'https://raw.githubusercontent.com/bob-collective/bob/master/assets/BTC_plus.svg',
+    },
 ];
 
 const bobSepoliaTokens = [
