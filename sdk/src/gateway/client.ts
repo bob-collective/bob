@@ -243,7 +243,12 @@ export class GatewayApiClient {
         const jsonResponse = await response.json();
 
         if (!jsonResponse.orderDetails) {
-            throw new Error('Missing orderDetails in quote response');
+            const errorData = await response.json().catch(() => null);
+            const apiMessage = errorData?.message;
+            const errorMessage = apiMessage
+                ? `Failed to get onramp quote: ${apiMessage}`
+                : 'Failed to get onramp quote';
+            throw new Error(errorMessage);
         }
 
         const quote: GatewayQuote = {
@@ -347,9 +352,12 @@ export class GatewayApiClient {
         });
 
         if (!response.ok) {
-            const errorData = await response.json();
-            const errorMessage = errorData?.message || 'Failed to get offramp quote';
-            throw new Error(`Offramp API Error: ${errorMessage} ${queryParams}`);
+            const errorData = await response.json().catch(() => null);
+            const apiMessage = errorData?.message;
+            const errorMessage = apiMessage
+                ? `Failed to get offramp quote: ${apiMessage}`
+                : `Failed to get offramp quote`;
+            throw new Error(`${errorMessage} | queryParams: ${queryParams}`);
         }
 
         const rawQuote: OfframpQuote = await response.json();
@@ -664,7 +672,10 @@ export class GatewayApiClient {
         });
 
         if (!response.ok) {
-            throw new Error('Failed to create order');
+            const errorData = await response.json().catch(() => null);
+            const apiMessage = errorData?.message;
+            const errorMessage = apiMessage ? `Failed to create order: ${apiMessage}` : 'Failed to create order';
+            throw new Error(errorMessage);
         }
 
         const data: GatewayCreateOrderResponse = await response.json();
@@ -886,7 +897,10 @@ export class GatewayApiClient {
         });
 
         if (!response.ok) {
-            throw new Error('Failed to update order');
+            const errorData = await response.json().catch(() => null);
+            const apiMessage = errorData?.message;
+            const errorMessage = apiMessage ? `Failed to update order: ${apiMessage}` : `Failed to update order)`;
+            throw new Error(errorMessage);
         }
 
         return response.json();
