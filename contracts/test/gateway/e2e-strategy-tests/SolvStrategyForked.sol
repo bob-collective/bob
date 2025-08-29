@@ -13,10 +13,10 @@ import {ForkedStrategyTemplateWbtc} from "./ForkedTemplate.sol";
 
 // Command to run this contract tests with Foundry:
 // BOB_PROD_PUBLIC_RPC_URL=https://rpc.gobob.xyz/ forge test --match-contract SolvStrategyForked -vv
-contract SolvStrategyForked is ForkedStrategyTemplateWbtc {
+contract SolvStrategyForked is ForkedStrategyTemplateWbtcOft {
     function setUp() public {
         super.simulateForkAndTransfer(
-            19911846, address(0x508A838922a93096C1Eb23FE21D8938BBd653Db6), Constants.DUMMY_SENDER, 1e8
+            21809244, address(0xa79a356B01ef805B3089b4FE67447b96c7e6DD4C), Constants.DUMMY_SENDER, 1e8
         );
     }
 
