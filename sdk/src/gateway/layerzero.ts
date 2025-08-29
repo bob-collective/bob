@@ -75,15 +75,15 @@ function resolveChainName(chain: number | string): string {
     return chain.toLowerCase();
 }
 
-export interface SendParam {
+export type SendParam = {
     dstEid: number;
-    to: Address;
+    to: Hex;
     amountLD: bigint;
     minAmountLD: bigint;
     extraOptions: Hex;
     composeMsg: Hex;
     oftCmd: Hex;
-}
+};
 
 // TODO: support bob sepolia
 export class LayerZeroGatewayClient extends GatewayApiClient {
@@ -140,7 +140,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                 address: params.toToken as Hex,
                 abi: layerZeroOftAbi,
                 functionName: 'quoteSend',
-                args: [sendParam as any, false],
+                args: [sendParam, false],
             });
 
             const buffer = BigInt(500); // 5% buffer
@@ -259,7 +259,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                 abi: oftAbi,
                 address: WBTC_OFT_ADDRESS, // TODO: may be different for other chains
                 functionName: 'quoteSend',
-                args: [sendParam as any, false],
+                args: [sendParam, false],
             });
 
             const { request } = await publicClient.simulateContract({
@@ -267,7 +267,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                 abi: oftAbi,
                 address: WBTC_OFT_ADDRESS,
                 functionName: 'send',
-                args: [sendParam as any, sendFees, recipient],
+                args: [sendParam, sendFees, recipient],
                 value: sendFees.nativeFee,
             });
 
