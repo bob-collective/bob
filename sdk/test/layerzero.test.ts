@@ -8,7 +8,6 @@ describe('LayerZero Tests', () => {
     it('should get chains', async () => {
         const client = new LayerZeroClient();
         const chains = await client.getSupportedChains();
-        console.log('chains: ', chains);
         assert.containSubset(chains, [
             'ethereum',
             'bob',
@@ -48,7 +47,7 @@ describe('LayerZero Tests', () => {
         const quote = await client.getQuote({
             fromChain: 'bitcoin',
             fromToken: 'bitcoin',
-            toChain: 'aptos',
+            toChain: 'swell',
             toToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
             fromUserAddress: 'bc1q6tgkjx4pgc5qda52fsgeuvjrhml5nuawwplejq',
             toUserAddress: '0x2A7f5295ac6e24b6D2ca78d82E3cbf01dDA52745',
