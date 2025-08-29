@@ -13,6 +13,8 @@ import oftAbi from './abis/OFT.abi';
 import { offrampCaller } from './abi';
 import { toHexScriptPubKey } from './utils';
 import * as bitcoin from 'bitcoinjs-lib';
+import { viemClient } from './utils';
+import { layerZeroOftAbi, quoterV2Abi } from './abi';
 
 const WBTC_OFT_ADDRESS: Address = '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c';
 
@@ -73,40 +75,15 @@ function resolveChainName(chain: number | string): string {
     return chain.toLowerCase();
 }
 
-export interface SendParams {
+export type SendParam = {
     dstEid: number;
-    to: Address;
+    to: Hex;
     amountLD: bigint;
     minAmountLD: bigint;
     extraOptions: Hex;
     composeMsg: Hex;
     oftCmd: Hex;
-}
-
-export namespace SendParams {
-    export function toBytes(params: SendParams): Hex {
-        return encodeAbiParameters(
-            parseAbiParameters([
-                'uint32 dstEid',
-                'bytes32 to',
-                'uint256 amountLD',
-                'uint256 minAmountLD',
-                'bytes extraOptions',
-                'bytes composeMsg',
-                'bytes oftCmd',
-            ]),
-            [
-                params.dstEid,
-                padHex(params.to, { size: 32 }),
-                params.amountLD,
-                params.minAmountLD,
-                params.extraOptions,
-                params.composeMsg,
-                params.oftCmd,
-            ]
-        );
-    }
-}
+};
 
 // TODO: support bob sepolia
 export class LayerZeroGatewayClient extends GatewayApiClient {
@@ -125,43 +102,86 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
             // Handle bob -> bitcoin: use normal flow
             return super.getQuote(params);
         } else if (fromChain === 'bitcoin') {
-            // TODO: use L0 SDK
             const layerZeroClient = new LayerZeroClient();
             const dstEid = await layerZeroClient.getEidForChain(toChain);
             if (!dstEid) {
                 throw new Error(`Unsupported destination chain: ${toChain}`);
             }
 
-            const option = encodePacked(['uint128', 'uint128'], [BigInt(65000), BigInt(0)]);
+            // TODO: Will need to generalize this if we want to support other option sets. Its manual ABI encoding so a little complex.
             const extraOptions = encodePacked(
-                ['uint8', 'uint8', 'uint16', 'uint8', 'bytes'],
+                ['uint16', 'uint8', 'uint16', 'uint8', 'uint128'],
                 [
                     // https://github.com/LayerZero-Labs/LayerZero-v2/blob/200cda254120375f40ed0a7e89931afb897b8891/packages/layerzero-v2/evm/oapp/contracts/oapp/libs/OptionsBuilder.sol#L22
                     3, // TYPE_3
                     // https://github.com/LayerZero-Labs/LayerZero-v2/blob/200cda254120375f40ed0a7e89931afb897b8891/packages/layerzero-v2/evm/messagelib/contracts/libs/ExecutorOptions.sol#L10
                     1, // WORKER_ID
-                    Buffer.from(option, 'hex').length + 1, // +1 for optionType
+                    17, // 16+1 for optionType
                     1, // OPTION_TYPE_LZRECEIVE
-                    option,
+                    BigInt(65000),
                 ]
             );
 
-            // https://github.com/LayerZero-Labs/LayerZero-v2/blob/200cda254120375f40ed0a7e89931afb897b8891/packages/layerzero-v2/evm/oapp/contracts/oft/interfaces/IOFT.sol#L10-L18
-            const encodedParameters = SendParams.toBytes({
-                dstEid: parseInt(dstEid, 10),
-                to: params.toUserAddress as Address,
+            const sendParam: SendParam = {
+                dstEid: parseInt(dstEid!, 10),
+                to: padHex(params.toUserAddress as Hex) as Hex,
                 amountLD: BigInt(0), // will be added inside the strategy
-                minAmountLD: BigInt(0), // will be added inside the strategy
-                extraOptions,
-                composeMsg: '0x',
-                oftCmd: '0x',
+                minAmountLD: BigInt(0), // will be added inside the strategyzz
+                extraOptions: extraOptions,
+                composeMsg: '0x' as Hex,
+                oftCmd: '0x' as Hex,
+            };
+
+            // TODO: expose via params
+            const publicClient = viemClient(bob);
+
+            // Getting the layer zero fee gas so we know how much we need to swap from the order
+            const layerZeroFee = await publicClient.readContract({
+                address: params.toToken as Hex,
+                abi: layerZeroOftAbi,
+                functionName: 'quoteSend',
+                args: [sendParam, false],
             });
 
-            // change to bob chain for bridging
-            params.toChain = bob.id;
+            const buffer = BigInt(500); // 5% buffer
+
+            // Add buffer to the layer zero fee to account for changes from now until the order is executed
+            const layerZeroFeeWithBuffer = (layerZeroFee.nativeFee * (10000n + buffer)) / 10000n; // 5% buffer
+
+            // Getting the amount of tokens we need to swap from the order by using the uniswap quoter
+            const quote = await publicClient.readContract({
+                address: '0x6Aa54a43d7eEF5b239a18eed3Af4877f46522BCA',
+                abi: quoterV2Abi,
+                functionName: 'quoteExactOutputSingle',
+                args: [
+                    {
+                        tokenIn: params.toToken as Hex,
+                        tokenOut: '0x4200000000000000000000000000000000000006' as Hex,
+                        amountOut: layerZeroFeeWithBuffer, // Desired output amount
+                        fee: 3000,
+                        sqrtPriceLimitX96: BigInt(0),
+                    },
+                ],
+            });
+            const tokensToSwapForLayerZeroFees = quote[0];
+            // Adding a buffer to the swap amount to account for slippage
+            const tokensToSwapForLayerZeroFeesWithBuffer = (tokensToSwapForLayerZeroFees * (10000n + buffer)) / 10000n; // 5% buffer
+
+            // https://github.com/LayerZero-Labs/LayerZero-v2/blob/200cda254120375f40ed0a7e89931afb897b8891/packages/layerzero-v2/evm/oapp/contracts/oft/interfaces/IOFT.sol#L10-L18
+            const encodedParameters = encodeAbiParameters(
+                parseAbiParameters([
+                    '(uint32 dstEid, bytes32 to, uint256 amountLD, uint256 minAmountLD, bytes extraOptions, bytes composeMsg, bytes oftCmd)',
+                    'uint256 buffer',
+                    'uint256 maxTokensToSwap',
+                ]),
+                [sendParam, BigInt(buffer), BigInt(tokensToSwapForLayerZeroFeesWithBuffer)]
+            );
+
             // encode bob -> l0 chain calldata
             params.strategyAddress = '0x5Fd9B934c219663C7f4f432f39682be2dC42eDC7';
             params.message = encodedParameters;
+            // change to BOB chain for bridging
+            params.toChain = bob.id;
 
             // Handle bitcoin -> l0 chain: need to add calldata
             return super.getQuote(params);
@@ -187,7 +207,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
             return args.params.toChain?.toString().toLowerCase() === 'bitcoin';
         };
 
-        const fromChain = resolveChainName(executeQuoteParams.params.toChain);
+        const fromChain = resolveChainName(executeQuoteParams.params.fromChain);
         const toChain = resolveChainName(executeQuoteParams.params.toChain);
 
         // Handle bitcoin -> bob / l0 chain, normal flow with additional calldata
@@ -212,7 +232,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
 
             const receiverAddress = toHexScriptPubKey(params.toUserAddress, bitcoin.networks.bitcoin);
 
-            const sendParams: SendParams = {
+            const sendParam: SendParam = {
                 dstEid: parseInt(dstEid, 10),
                 to: padHex(recipient, { size: 32 }),
                 minAmountLD: amount,
@@ -239,7 +259,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                 abi: oftAbi,
                 address: WBTC_OFT_ADDRESS, // TODO: may be different for other chains
                 functionName: 'quoteSend',
-                args: [sendParams, false],
+                args: [sendParam, false],
             });
 
             const { request } = await publicClient.simulateContract({
@@ -247,7 +267,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                 abi: oftAbi,
                 address: WBTC_OFT_ADDRESS,
                 functionName: 'send',
-                args: [sendParams, sendFees, recipient],
+                args: [sendParam, sendFees, recipient],
                 value: sendFees.nativeFee,
             });
 
