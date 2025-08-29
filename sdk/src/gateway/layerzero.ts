@@ -127,7 +127,6 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
             // Handle bob -> bitcoin: use normal flow
             return super.getQuote(params);
         } else if (fromChain === 'bitcoin') {
-            // TODO: use L0 SDK
             const layerZeroClient = new LayerZeroClient();
             const dstEid = await layerZeroClient.getEidForChain(toChain);
             if (!dstEid) {
@@ -234,7 +233,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
             return args.params.toChain?.toString().toLowerCase() === 'bitcoin';
         };
 
-        const fromChain = resolveChainName(executeQuoteParams.params.toChain);
+        const fromChain = resolveChainName(executeQuoteParams.params.fromChain);
         const toChain = resolveChainName(executeQuoteParams.params.toChain);
 
         // Handle bitcoin -> bob / l0 chain, normal flow with additional calldata
