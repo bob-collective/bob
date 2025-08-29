@@ -201,13 +201,11 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                 [sendParam, BigInt(buffer), BigInt(tokensToSwapForLayerZeroFeesWithBuffer)]
             );
 
+            // encode bob -> l0 chain calldata
             params.strategyAddress = '0x5Fd9B934c219663C7f4f432f39682be2dC42eDC7';
             params.message = encodedParameters;
             // change to BOB chain for bridging
             params.toChain = bob.id;
-            // encode bob -> l0 chain calldata
-            params.strategyAddress = '0x5Fd9B934c219663C7f4f432f39682be2dC42eDC7';
-            params.message = encodedParameters;
 
             // Handle bitcoin -> l0 chain: need to add calldata
             return super.getQuote(params);
