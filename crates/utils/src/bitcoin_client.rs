@@ -296,7 +296,7 @@ impl BitcoinClient {
     }
 
     /// Create or load a wallet on Bitcoin Core.
-    pub async fn create_or_load_wallet(&self, wallet_name: &String) -> Result<(), Error> {
+    pub fn create_or_load_wallet(&self, wallet_name: &String) -> Result<(), Error> {
         if self.rpc.list_wallets()?.contains(wallet_name) {
             // already loaded - nothing to do
             info!("Wallet {wallet_name} already loaded");
