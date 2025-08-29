@@ -83,6 +83,7 @@ export function convertOrderDetailsRawToOrderDetails(order: OrderDetailsRaw): Or
         },
     };
 }
+
 export function convertOrderDetailsToRaw(order: OrderDetails): OrderDetailsRaw {
     return {
         version: order.version,
