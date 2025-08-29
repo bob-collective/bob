@@ -132,6 +132,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                 oftCmd: '0x' as Hex,
             };
 
+            // TODO: expose via params
             const publicClient = viemClient(bob);
 
             // Getting the layer zero fee gas so we know how much we need to swap from the order
