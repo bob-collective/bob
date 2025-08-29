@@ -69,16 +69,16 @@ describe('LayerZero Tests', () => {
         });
 
         // Uncomment this so test passes without mnemonic set
-        const btcSignerFromSeed = await ScureBitcoinSigner.fromSeedPhrase(process.env.MNEMONIC!, "m/84'/0'/0'/0/0");
-        console.log('P2WPKH Address: ', await btcSignerFromSeed.getP2WPKHAddress());
+        // const btcSignerFromSeed = await ScureBitcoinSigner.fromSeedPhrase(process.env.MNEMONIC!, "m/84'/0'/0'/0/0");
+        // console.log('P2WPKH Address: ', await btcSignerFromSeed.getP2WPKHAddress());
 
-        const txHash = await client.executeQuote({
-            quote,
-            walletClient,
-            publicClient: publicClient as PublicClient<Transport>,
-            btcSigner: btcSignerFromSeed,
-        });
+        // const txHash = await client.executeQuote({
+        //     quote,
+        //     walletClient,
+        //     publicClient: publicClient as PublicClient<Transport>,
+        //     btcSigner: btcSignerFromSeed,
+        // });
 
-        console.log(txHash);
+        // console.log(txHash);
     }, 120000);
 });
