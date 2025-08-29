@@ -150,8 +150,8 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
             const sendParam = {
                 dstEid: parseInt(dstEid!, 10),
                 to: `0x${params.toUserAddress.slice(2).padStart(64, '0')}` as `0x${string}`,
-                amountLD: BigInt(0),
-                minAmountLD: BigInt(0),
+                amountLD: BigInt(0), // will be added inside the strategy
+                minAmountLD: BigInt(0), // will be added inside the strategy
                 extraOptions: extraOptions,
                 composeMsg: '0x' as `0x${string}`,
                 oftCmd: '0x' as `0x${string}`,
