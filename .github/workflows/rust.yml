@@ -22,9 +22,14 @@ jobs:
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
 
+      - name: Set variables
+        run: |
+          echo "TOOLCHAIN=$(rustup show active-toolchain | cut -d " " -f1)" >> $GITHUB_ENV
+
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@nightly
         with:
+          toolchain: ${{ env.TOOLCHAIN }}
           components: rustfmt, clippy, rust-docs
 
       - uses: Swatinem/rust-cache@v2
