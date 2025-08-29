@@ -75,7 +75,7 @@ function resolveChainName(chain: number | string): string {
     return chain.toLowerCase();
 }
 
-export interface SendParams {
+export interface SendParam {
     dstEid: number;
     to: Address;
     amountLD: bigint;
@@ -83,31 +83,6 @@ export interface SendParams {
     extraOptions: Hex;
     composeMsg: Hex;
     oftCmd: Hex;
-}
-
-export namespace SendParams {
-    export function toBytes(params: SendParams): Hex {
-        return encodeAbiParameters(
-            parseAbiParameters([
-                'uint32 dstEid',
-                'bytes32 to',
-                'uint256 amountLD',
-                'uint256 minAmountLD',
-                'bytes extraOptions',
-                'bytes composeMsg',
-                'bytes oftCmd',
-            ]),
-            [
-                params.dstEid,
-                padHex(params.to, { size: 32 }),
-                params.amountLD,
-                params.minAmountLD,
-                params.extraOptions,
-                params.composeMsg,
-                params.oftCmd,
-            ]
-        );
-    }
 }
 
 // TODO: support bob sepolia
@@ -147,24 +122,24 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                 ]
             );
 
-            const sendParam = {
+            const sendParam: SendParam = {
                 dstEid: parseInt(dstEid!, 10),
-                to: `0x${params.toUserAddress.slice(2).padStart(64, '0')}` as `0x${string}`,
+                to: padHex(params.toUserAddress as Hex) as Hex,
                 amountLD: BigInt(0), // will be added inside the strategy
-                minAmountLD: BigInt(0), // will be added inside the strategy
+                minAmountLD: BigInt(0), // will be added inside the strategyzz
                 extraOptions: extraOptions,
-                composeMsg: '0x' as `0x${string}`,
-                oftCmd: '0x' as `0x${string}`,
+                composeMsg: '0x' as Hex,
+                oftCmd: '0x' as Hex,
             };
 
             const publicClient = viemClient(bob);
 
             // Getting the layer zero fee gas so we know how much we need to swap from the order
             const layerZeroFee = await publicClient.readContract({
-                address: params.toToken as `0x${string}`,
+                address: params.toToken as Hex,
                 abi: layerZeroOftAbi,
                 functionName: 'quoteSend',
-                args: [sendParam, false],
+                args: [sendParam as any, false],
             });
 
             const buffer = BigInt(500); // 5% buffer
@@ -179,8 +154,8 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                 functionName: 'quoteExactOutputSingle',
                 args: [
                     {
-                        tokenIn: params.toToken as `0x${string}`,
-                        tokenOut: '0x4200000000000000000000000000000000000006' as `0x${string}`,
+                        tokenIn: params.toToken as Hex,
+                        tokenOut: '0x4200000000000000000000000000000000000006' as Hex,
                         amountOut: layerZeroFeeWithBuffer, // Desired output amount
                         fee: 3000,
                         sqrtPriceLimitX96: BigInt(0),
@@ -256,7 +231,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
 
             const receiverAddress = toHexScriptPubKey(params.toUserAddress, bitcoin.networks.bitcoin);
 
-            const sendParams: SendParams = {
+            const sendParam: SendParam = {
                 dstEid: parseInt(dstEid, 10),
                 to: padHex(recipient, { size: 32 }),
                 minAmountLD: amount,
@@ -283,7 +258,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                 abi: oftAbi,
                 address: WBTC_OFT_ADDRESS, // TODO: may be different for other chains
                 functionName: 'quoteSend',
-                args: [sendParams, false],
+                args: [sendParam as any, false],
             });
 
             const { request } = await publicClient.simulateContract({
@@ -291,7 +266,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                 abi: oftAbi,
                 address: WBTC_OFT_ADDRESS,
                 functionName: 'send',
-                args: [sendParams, sendFees, recipient],
+                args: [sendParam as any, sendFees, recipient],
                 value: sendFees.nativeFee,
             });
 
