@@ -295,6 +295,31 @@ impl BitcoinClient {
         .await?.map_err(Error::BitcoinError)
     }
 
+    /// Create or load a wallet on Bitcoin Core.
+    pub fn create_or_load_wallet(&self, wallet_name: &String) -> Result<(), Error> {
+        if self.rpc.list_wallets()?.contains(wallet_name) {
+            // already loaded - nothing to do
+            info!("Wallet {wallet_name} already loaded");
+        } else if self.rpc.list_wallet_dir()?.contains(wallet_name) {
+            // wallet exists but is not loaded
+            info!("Loading wallet {wallet_name}...");
+            let result = self.rpc.load_wallet(wallet_name)?;
+            if let Some(warning) = result.warning {
+                warn!("Received error while loading wallet {wallet_name}: {warning}");
+            }
+        } else {
+            info!("Creating wallet {wallet_name}...");
+            // wallet does not exist, create
+            let result = self.rpc.create_wallet(wallet_name, None, None, None, None)?;
+            if let Some(warning) = result.warning {
+                if !warning.is_empty() {
+                    warn!("Received warning while creating wallet {wallet_name}: {warning}");
+                }
+            }
+        }
+        Ok(())
+    }
+
     /// Fetch the transaction ID at a specific index in the block (like esplora's
     /// `/block/:hash/txid/:index`).
     pub fn get_block_txid_by_index(
