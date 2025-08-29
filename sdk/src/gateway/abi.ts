@@ -160,3 +160,71 @@ export const compoundV2CTokenAbi = parseAbi([
 export const aaveV2AtokenAbi = parseAbi(['function UNDERLYING_ASSET_ADDRESS() external view returns (address)']);
 
 export const claimDelayAbi = parseAbi(['function CLAIM_DELAY() view returns (uint64)']);
+
+export const layerZeroOftAbi = [
+    {
+        type: 'function',
+        name: 'quoteSend',
+        inputs: [
+            {
+                name: 'sendParam',
+                type: 'tuple',
+                internalType: 'struct SendParam',
+                components: [
+                    { name: 'dstEid', type: 'uint32', internalType: 'uint32' },
+                    { name: 'to', type: 'bytes32', internalType: 'bytes32' },
+                    { name: 'amountLD', type: 'uint256', internalType: 'uint256' },
+                    { name: 'minAmountLD', type: 'uint256', internalType: 'uint256' },
+                    { name: 'extraOptions', type: 'bytes', internalType: 'bytes' },
+                    { name: 'composeMsg', type: 'bytes', internalType: 'bytes' },
+                    { name: 'oftCmd', type: 'bytes', internalType: 'bytes' },
+                ],
+            },
+            {
+                name: 'isNative',
+                type: 'bool',
+                internalType: 'bool',
+            },
+        ],
+        outputs: [
+            {
+                name: '',
+                type: 'tuple',
+                internalType: 'struct MessagingFee',
+                components: [
+                    { name: 'nativeFee', type: 'uint256', internalType: 'uint256' },
+                    { name: 'lzTokenFee', type: 'uint256', internalType: 'uint256' },
+                ],
+            },
+        ],
+        stateMutability: 'view',
+    },
+] as const;
+
+export const quoterV2Abi = [
+    {
+        type: 'function',
+        name: 'quoteExactOutputSingle',
+        inputs: [
+            {
+                name: 'params',
+                type: 'tuple',
+                internalType: 'struct IQuoterV2.QuoteExactOutputSingleParams',
+                components: [
+                    { name: 'tokenIn', type: 'address', internalType: 'address' },
+                    { name: 'tokenOut', type: 'address', internalType: 'address' },
+                    { name: 'amountOut', type: 'uint256', internalType: 'uint256' },
+                    { name: 'fee', type: 'uint24', internalType: 'uint24' },
+                    { name: 'sqrtPriceLimitX96', type: 'uint160', internalType: 'uint160' },
+                ],
+            },
+        ],
+        outputs: [
+            { name: 'amountIn', type: 'uint256', internalType: 'uint256' },
+            { name: 'sqrtPriceX96After', type: 'uint160', internalType: 'uint160' },
+            { name: 'initializedTicksCrossed', type: 'uint32', internalType: 'uint32' },
+            { name: 'gasEstimate', type: 'uint256', internalType: 'uint256' },
+        ],
+        stateMutability: 'nonpayable',
+    },
+] as const;

@@ -13,6 +13,8 @@ import oftAbi from './abis/OFT.abi';
 import { offrampCaller } from './abi';
 import { toHexScriptPubKey } from './utils';
 import * as bitcoin from 'bitcoinjs-lib';
+import { viemClient } from './utils';
+import { layerZeroOftAbi, quoterV2Abi } from './abi';
 
 const WBTC_OFT_ADDRESS: Address = '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c';
 
@@ -132,32 +134,77 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                 throw new Error(`Unsupported destination chain: ${toChain}`);
             }
 
-            const option = encodePacked(['uint128', 'uint128'], [BigInt(65000), BigInt(0)]);
+            // TODO: Will need to generalize this if we want to support other option sets. Its manual ABI encoding so a little complex.
             const extraOptions = encodePacked(
-                ['uint8', 'uint8', 'uint16', 'uint8', 'bytes'],
+                ['uint16', 'uint8', 'uint16', 'uint8', 'uint128'],
                 [
                     // https://github.com/LayerZero-Labs/LayerZero-v2/blob/200cda254120375f40ed0a7e89931afb897b8891/packages/layerzero-v2/evm/oapp/contracts/oapp/libs/OptionsBuilder.sol#L22
                     3, // TYPE_3
                     // https://github.com/LayerZero-Labs/LayerZero-v2/blob/200cda254120375f40ed0a7e89931afb897b8891/packages/layerzero-v2/evm/messagelib/contracts/libs/ExecutorOptions.sol#L10
                     1, // WORKER_ID
-                    Buffer.from(option, 'hex').length + 1, // +1 for optionType
+                    17, // 16+1 for optionType
                     1, // OPTION_TYPE_LZRECEIVE
-                    option,
+                    BigInt(65000),
                 ]
             );
 
-            // https://github.com/LayerZero-Labs/LayerZero-v2/blob/200cda254120375f40ed0a7e89931afb897b8891/packages/layerzero-v2/evm/oapp/contracts/oft/interfaces/IOFT.sol#L10-L18
-            const encodedParameters = SendParams.toBytes({
-                dstEid: parseInt(dstEid, 10),
-                to: params.toUserAddress as Address,
-                amountLD: BigInt(0), // will be added inside the strategy
-                minAmountLD: BigInt(0), // will be added inside the strategy
-                extraOptions,
-                composeMsg: '0x',
-                oftCmd: '0x',
+            const sendParam = {
+                dstEid: parseInt(dstEid!, 10),
+                to: `0x${params.toUserAddress.slice(2).padStart(64, '0')}` as `0x${string}`,
+                amountLD: BigInt(0),
+                minAmountLD: BigInt(0),
+                extraOptions: extraOptions,
+                composeMsg: '0x' as `0x${string}`,
+                oftCmd: '0x' as `0x${string}`,
+            };
+
+            const publicClient = viemClient(bob);
+
+            // Getting the layer zero fee gas so we know how much we need to swap from the order
+            const layerZeroFee = await publicClient.readContract({
+                address: params.toToken as `0x${string}`,
+                abi: layerZeroOftAbi,
+                functionName: 'quoteSend',
+                args: [sendParam, false],
             });
 
-            // change to bob chain for bridging
+            const buffer = BigInt(500); // 5% buffer
+
+            // Add buffer to the layer zero fee to account for changes from now until the order is executed
+            const layerZeroFeeWithBuffer = (layerZeroFee.nativeFee * (10000n + buffer)) / 10000n; // 5% buffer
+
+            // Getting the amount of tokens we need to swap from the order by using the uniswap quoter
+            const quote = await publicClient.readContract({
+                address: '0x6Aa54a43d7eEF5b239a18eed3Af4877f46522BCA',
+                abi: quoterV2Abi,
+                functionName: 'quoteExactOutputSingle',
+                args: [
+                    {
+                        tokenIn: params.toToken as `0x${string}`,
+                        tokenOut: '0x4200000000000000000000000000000000000006' as `0x${string}`,
+                        amountOut: layerZeroFeeWithBuffer, // Desired output amount
+                        fee: 3000,
+                        sqrtPriceLimitX96: BigInt(0),
+                    },
+                ],
+            });
+            const tokensToSwapForLayerZeroFees = quote[0];
+            // Adding a buffer to the swap amount to account for slippage
+            const tokensToSwapForLayerZeroFeesWithBuffer = (tokensToSwapForLayerZeroFees * (10000n + buffer)) / 10000n; // 5% buffer
+
+            // https://github.com/LayerZero-Labs/LayerZero-v2/blob/200cda254120375f40ed0a7e89931afb897b8891/packages/layerzero-v2/evm/oapp/contracts/oft/interfaces/IOFT.sol#L10-L18
+            const encodedParameters = encodeAbiParameters(
+                parseAbiParameters([
+                    '(uint32 dstEid, bytes32 to, uint256 amountLD, uint256 minAmountLD, bytes extraOptions, bytes composeMsg, bytes oftCmd)',
+                    'uint256 buffer',
+                    'uint256 maxTokensToSwap',
+                ]),
+                [sendParam, BigInt(buffer), BigInt(tokensToSwapForLayerZeroFeesWithBuffer)]
+            );
+
+            params.strategyAddress = '0x5Fd9B934c219663C7f4f432f39682be2dC42eDC7';
+            params.message = encodedParameters;
+            // change to BOB chain for bridging
             params.toChain = bob.id;
             // encode bob -> l0 chain calldata
             params.strategyAddress = '0x5Fd9B934c219663C7f4f432f39682be2dC42eDC7';
