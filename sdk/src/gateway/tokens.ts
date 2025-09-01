@@ -27,8 +27,8 @@ const bobTokens = [
         logoURI: 'https://raw.githubusercontent.com/bob-collective/bob/master/assets/wbtc.svg',
     },
     {
-        name: 'Wrapped BTC (OFT)',
-        symbol: 'WBTC (OFT)',
+        name: 'Wrapped BTC',
+        symbol: 'WBTC',
         decimals: 8,
         tokens: {
             bob: {
