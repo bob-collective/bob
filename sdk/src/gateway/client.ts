@@ -992,7 +992,7 @@ export class GatewayApiClient {
     async getStrategies(): Promise<GatewayStrategyContract[]> {
         const response = await this.fetchGet(`${this.baseUrl}/strategies`);
 
-        const chainName = this.chain.toString();
+        const chainName = this.chain.name;
         const chainId = this.chainId;
 
         const strategies: GatewayStrategy[] = await response.json();
