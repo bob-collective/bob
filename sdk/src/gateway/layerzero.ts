@@ -16,8 +16,6 @@ import * as bitcoin from 'bitcoinjs-lib';
 import { viemClient } from './utils';
 import { layerZeroOftAbi, quoterV2Abi } from './abi';
 
-const WBTC_OFT_ADDRESS: Address = '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c';
-
 export class LayerZeroClient {
     private basePath: string;
 
@@ -50,6 +48,18 @@ export class LayerZeroClient {
         }>(`${this.basePath}`);
 
         return data[chainKey]?.deployments.find((item) => item.version === 2)?.eid || null;
+    }
+
+    async getOftAddressForChain(chainKey: string): Promise<string | null> {
+        const params = new URLSearchParams({
+            symbols: 'WBTC',
+        });
+
+        const data = await this.getJson<{
+            WBTC: [{ deployments: { [chainKey: string]: { address: string } } }];
+        }>(`${this.basePath}/experiment/ofts/list?${params.toString()}`);
+
+        return data.WBTC[0].deployments[chainKey]?.address || null;
     }
 
     private async getJson<T>(url: string): Promise<T> {
@@ -222,42 +232,64 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
 
             const layerZeroClient = new LayerZeroClient();
 
-            const dstEid = await layerZeroClient.getEidForChain(toChain);
-            if (!dstEid) {
-                throw new Error(`Unsupported destination chain: ${toChain}`);
-            }
-
-            const recipient = params.toUserAddress as Address;
-            const amount = BigInt(params.amount);
-
+            // The recipient address of the layer zero send, this contract will create the offramp order
+            const offrampComposer = '0xc05AA3D7BD9c61B8b94EaCC937d1F542c3E5b94a';
             const receiverAddress = toHexScriptPubKey(params.toUserAddress, bitcoin.networks.bitcoin);
 
+            const dstEid = await layerZeroClient.getEidForChain('bob');
+            if (!dstEid) {
+                throw new Error(`Destination EID not found for chain: ${fromChain}`);
+            }
+            const wbtcOftAddress = await layerZeroClient.getOftAddressForChain(fromChain);
+            if (!wbtcOftAddress) {
+                throw new Error(`WBTC OFT not found for chain: ${fromChain}`);
+            }
+
+            const extraOptions = encodePacked(
+                ['uint16', 'uint8', 'uint16', 'uint8', 'uint128', 'uint8', 'uint16', 'uint8', 'uint16', 'uint128'],
+                [
+                    // https://github.com/LayerZero-Labs/LayerZero-v2/blob/200cda254120375f40ed0a7e89931afb897b8891/packages/layerzero-v2/evm/oapp/contracts/oapp/libs/OptionsBuilder.sol#L22
+                    3, // TYPE_3
+                    // https://github.com/LayerZero-Labs/LayerZero-v2/blob/200cda254120375f40ed0a7e89931afb897b8891/packages/layerzero-v2/evm/messagelib/contracts/libs/ExecutorOptions.sol#L10
+                    1, // WORKER_ID
+                    17, // 16+1 option length
+                    1, // OPTION_TYPE_LZRECEIVE
+                    BigInt(100000),
+                    1, // WORKER_ID
+                    19, // 18+1 option length
+                    3, // OPTION_TYPE_LZCOMPOSE
+                    0, // index for compose function
+                    BigInt(300000), // gas limit for compose function
+                ]
+            );
+
             const sendParam: SendParam = {
-                dstEid: parseInt(dstEid, 10),
-                to: padHex(recipient, { size: 32 }),
-                minAmountLD: amount,
-                amountLD: amount,
+                dstEid: parseInt(dstEid!, 10),
+                to: padHex(offrampComposer, { size: 32 }),
+                minAmountLD: BigInt(params.amount),
+                amountLD: BigInt(params.amount),
                 oftCmd: '0x',
-                extraOptions: '0x', // TODO: add extra options for gas estimation
-                composeMsg: encodeFunctionData({
-                    abi: offrampCaller,
-                    functionName: 'createOrder',
-                    args: [
+                extraOptions: extraOptions,
+                composeMsg: encodeAbiParameters(
+                    parseAbiParameters([
+                        '(uint256 satAmountToLock, uint256 satFeesMax, uint256 creationDeadline, bytes outputScript, address token, address owner)',
+                    ]),
+                    [
                         {
                             satAmountToLock: BigInt(quote.amountLockInSat),
                             satFeesMax: BigInt(quote.feeBreakdown.overallFeeSats),
-                            orderCreationDeadline: BigInt(quote.deadline),
+                            creationDeadline: BigInt(quote.deadline),
                             outputScript: receiverAddress as Hex,
                             token: quote.token,
-                            orderOwner: params.toUserAddress as Address,
+                            owner: params.fromUserAddress as Address,
                         },
-                    ],
-                }),
+                    ]
+                ),
             };
 
             const sendFees = await publicClient.readContract({
                 abi: oftAbi,
-                address: WBTC_OFT_ADDRESS, // TODO: may be different for other chains
+                address: wbtcOftAddress as Hex,
                 functionName: 'quoteSend',
                 args: [sendParam, false],
             });
@@ -265,9 +297,9 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
             const { request } = await publicClient.simulateContract({
                 account: walletClient.account,
                 abi: oftAbi,
-                address: WBTC_OFT_ADDRESS,
+                address: wbtcOftAddress as Hex,
                 functionName: 'send',
-                args: [sendParam, sendFees, recipient],
+                args: [sendParam, sendFees, offrampComposer],
                 value: sendFees.nativeFee,
             });
 
