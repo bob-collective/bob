@@ -9,7 +9,6 @@ import {
     OfframpQuote,
 } from './types';
 import { bob, bobSepolia } from 'viem/chains';
-import oftAbi from './abis/OFT.abi';
 import { offrampCaller } from './abi';
 import { toHexScriptPubKey } from './utils';
 import * as bitcoin from 'bitcoinjs-lib';
@@ -90,6 +89,9 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
     private l0Client: LayerZeroClient;
 
     constructor(chainId: number, options?: { rpcUrl?: string }) {
+        if (chainId !== bob.id) {
+            throw new Error('LayerZeroGatewayClient only supports BOB mainnet');
+        }
         super(chainId, options);
         this.l0Client = new LayerZeroClient();
     }
@@ -264,7 +266,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
             };
 
             const sendFees = await publicClient.readContract({
-                abi: oftAbi,
+                abi: layerZeroOftAbi,
                 address: WBTC_OFT_ADDRESS, // TODO: may be different for other chains
                 functionName: 'quoteSend',
                 args: [sendParam, false],
@@ -272,7 +274,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
 
             const { request } = await publicClient.simulateContract({
                 account: walletClient.account,
-                abi: oftAbi,
+                abi: layerZeroOftAbi,
                 address: WBTC_OFT_ADDRESS,
                 functionName: 'send',
                 args: [sendParam, sendFees, recipient],
