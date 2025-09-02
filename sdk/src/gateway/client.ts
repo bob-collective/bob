@@ -12,6 +12,7 @@ import {
     zeroAddress,
     maxUint256,
     Hash,
+    Hex,
 } from 'viem';
 import { bob, bobSepolia } from 'viem/chains';
 import { EsploraClient } from '../esplora';
@@ -87,7 +88,7 @@ interface EvmWalletClientParams {
     publicClient: PublicClient<Transport>;
 }
 
-interface AllWalletClientParams extends EvmWalletClientParams {
+export interface AllWalletClientParams extends EvmWalletClientParams {
     /**
      * Bitcoin signer used to sign the transaction inputs.
      */
@@ -410,10 +411,10 @@ export class GatewayApiClient {
                 {
                     satAmountToLock: BigInt(quote.amountLockInSat),
                     satFeesMax: BigInt(quote.feeBreakdown.overallFeeSats),
-                    orderCreationDeadline: BigInt(quote.deadline),
-                    outputScript: receiverAddress as `0x${string}`,
+                    creationDeadline: BigInt(quote.deadline),
+                    outputScript: receiverAddress as Hex,
                     token: quote.token,
-                    orderOwner: params.fromUserAddress as Address,
+                    owner: params.fromUserAddress as Address,
                 },
             ],
         };
@@ -442,7 +443,7 @@ export class GatewayApiClient {
             orderDetails.token,
             orderDetails.satAmountLocked,
             orderDetails.satFeesMax,
-            orderDetails.sender
+            orderDetails.owner
         );
 
         if (error) {
@@ -504,7 +505,7 @@ export class GatewayApiClient {
         const { request } = await publicClient.simulateContract({
             address: offrampRegistryAddress,
             abi: offrampCaller,
-            functionName: 'unlockFunds',
+            functionName: 'refundOrder',
             args: [orderId, receiver],
             account: walletClient.account,
         });
@@ -617,7 +618,7 @@ export class GatewayApiClient {
         const order = await publicClient.readContract({
             address: offrampRegistryAddress,
             abi: offrampCaller,
-            functionName: 'getOfframpOrder',
+            functionName: 'getOrderDetails',
             args: [orderId],
         });
 
@@ -626,9 +627,10 @@ export class GatewayApiClient {
             token: order.token as Address,
             satAmountLocked: order.satAmountLocked,
             satFeesMax: order.satFeesMax,
-            sender: order.sender as Address,
-            receiver: order.receiver !== (zeroAddress as Address) ? (order.receiver as Address) : null,
-            owner: order.owner !== (zeroAddress as Address) ? (order.owner as Address) : null,
+            owner: order.owner as Address,
+            solverOwner: order.solverOwner !== (zeroAddress as Address) ? (order.solverOwner as Address) : null,
+            solverRecipient:
+                order.solverRecipient !== (zeroAddress as Address) ? (order.solverRecipient as Address) : null,
             outputScript: order.outputScript,
             status: parseOrderStatus(Number(order.status)) as OnchainOfframpOrderDetails['status'],
             orderTimestamp: Number(order.timestamp),
@@ -990,7 +992,7 @@ export class GatewayApiClient {
     async getStrategies(): Promise<GatewayStrategyContract[]> {
         const response = await this.fetchGet(`${this.baseUrl}/strategies`);
 
-        const chainName = this.chain.toString();
+        const chainName = this.chain.name;
         const chainId = this.chainId;
 
         const strategies: GatewayStrategy[] = await response.json();

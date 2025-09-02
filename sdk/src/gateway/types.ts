@@ -432,13 +432,13 @@ export type OfframpCreateOrderParams = {
             /** @dev Max sats to be paid as fees */
             satFeesMax: bigint;
             /** @dev Timestamp by which the order must be created */
-            orderCreationDeadline: bigint;
+            creationDeadline: bigint;
             /** @dev Output script for Bitcoin settlement */
             outputScript: `0x${string}`;
             /** @dev Token to use for payment */
             token: Address;
             /** @dev EVM address of the user who can unlock the order or bump its fee */
-            orderOwner: Address;
+            owner: Address;
         },
     ];
 };
@@ -478,11 +478,11 @@ export type OnchainOfframpOrderDetails = {
     /** @dev Max sats for fee */
     satFeesMax: bigint;
     /** @dev Address that created the order */
-    sender: Address;
-    /** @dev Optional receiver address for order payout */
-    receiver: Address | null;
-    /** @dev Optional owner address of the order */
-    owner: Address | null;
+    owner: Address;
+    /** @dev Optional solver owner address */
+    solverOwner: Address | null;
+    /** @dev Optional solver recipient address */
+    solverRecipient: Address | null;
     /** @dev Output script for Bitcoin tx */
     outputScript: string;
     /** @dev Order status */
