@@ -160,6 +160,19 @@ const tokenToDefiLlamaPoolIdMap = new Map<string, string>([
     // ],
 ]);
 
+const tokenToSolvStrategyMap = new Map<string, string>([
+    [
+        // Solv BTC+
+        '0x4ca70811e831db42072cba1f0d03496ef126faad',
+        'BTC+',
+    ],
+    [
+        // SolvBTC.JUP
+        '0x6b062aa7f5fc52b530cb13967ae2e6bc0d8dd3e4',
+        'Jupiter',
+    ]
+]);
+
 export default class StrategyClient {
     private viemClient: PublicClient;
 
@@ -180,37 +193,70 @@ export default class StrategyClient {
     async getTokensIncentives(
         tokens: string[]
     ): Promise<Pick<EnrichedToken, 'apyBase' | 'apyReward' | 'rewardTokens' | 'points'>[]> {
+        const [
+            defillamaPoolMap,
+            solvAPYs,
+        ] = await Promise.all([
+            this.getDefillamaPools(),
+            this.getSolvAPYs(),
+        ]);
+
+        return tokens.map((token) => {
+            const tokenAddress = token.toLowerCase();
+
+            const strategyType = tokenToStrategyTypeMap.get(tokenAddress) ?? 'bob';
+            const points = [
+                ...(projectPointsIncentives.get(strategyType) ?? []),
+                ...(tokensPointsIncentives.get(tokenAddress) ?? []),
+            ];
+
+            const defillamaPoolId = tokenToDefiLlamaPoolIdMap.get(tokenAddress) || '';
+            const defillamaPool = defillamaPoolMap.get(defillamaPoolId);
+
+            if (defillamaPool) {
+                return {
+                    // HACK: set HybridBTC APY to 2%
+                    apyBase: defillamaPoolId === 'e8bfea35-ff6d-48db-aa08-51599b363219' ? 2 : (defillamaPool?.apyBase ?? 0),
+                    apyReward: defillamaPool?.apyReward ?? 0,
+                    rewardTokens: (defillamaPool?.rewardTokens ?? [])
+                        .map(
+                            (addr) =>
+                                ADDRESS_LOOKUP[bob.id][addr.toLowerCase()] ||
+                                ADDRESS_LOOKUP[optimism.id][addr.toLowerCase()]
+                        )
+                        .filter(Boolean),
+                    points,
+                };
+            }
+
+            const solvStrategy = tokenToSolvStrategyMap.get(tokenAddress);
+
+            if (solvStrategy) {
+                return {
+                    apyBase: solvAPYs[solvStrategy].apyBase,
+                    apyReward: solvAPYs[solvStrategy].apyReward,
+                    rewardTokens: [],
+                    points,
+                };
+            }
+
+            return {
+                apyBase: 0,
+                apyReward: 0,
+                rewardTokens: [],
+                points,
+            }
+        });
+    }
+
+    private async getDefillamaPools() {
         const res = await fetch('https://yields.llama.fi/pools');
 
         const defillamaPools: DefiLlamaPool[] = res.ok ? (await res.json()).data : [];
         const defillamaPoolMap = new Map<string, DefiLlamaPool>(
             defillamaPools.filter((pool) => pool.chain === 'Bob').map((pool) => [pool.pool, pool])
         );
-
-        return tokens.map((token) => {
-            const tokenAddress = token.toLowerCase();
-
-            const strategyType = tokenToStrategyTypeMap.get(tokenAddress) ?? 'bob';
-            const defillamaPoolId = tokenToDefiLlamaPoolIdMap.get(tokenAddress) || '';
-            const defillamaPool = defillamaPoolMap.get(defillamaPoolId);
-
-            return {
-                // HACK: set HybridBTC APY to 2%
-                apyBase: defillamaPoolId === 'e8bfea35-ff6d-48db-aa08-51599b363219' ? 2 : (defillamaPool?.apyBase ?? 0),
-                apyReward: defillamaPool?.apyReward ?? 0,
-                rewardTokens: (defillamaPool?.rewardTokens ?? [])
-                    .map(
-                        (addr) =>
-                            ADDRESS_LOOKUP[bob.id][addr.toLowerCase()] ||
-                            ADDRESS_LOOKUP[optimism.id][addr.toLowerCase()]
-                    )
-                    .filter(Boolean),
-                points: [
-                    ...(projectPointsIncentives.get(strategyType) ?? []),
-                    ...(tokensPointsIncentives.get(tokenAddress) ?? []),
-                ],
-            };
-        });
+        return defillamaPoolMap;
     }
 
     async getStrategyAssetState(token: Token): Promise<StrategyAssetState> {
@@ -355,5 +401,62 @@ export default class StrategyClient {
             address: 'usd',
             totalUnderlying: BigInt(Math.floor(tvl)),
         };
+    }
+
+    private async getSolvAPYs() {
+        try {
+            const query =`
+                query SolvAPYs {
+                    btcPlusStats(stageNo: 1) {
+                        baseApy
+                        rewardApy
+                        tvl
+                    }
+                    lsts {
+                        details {
+                            protocol
+                            apy
+                            estApy
+                            tvlUsd
+                        }
+                    }
+                }
+            `.split("\n").join(" ");
+
+            const res = await fetch("https://sft-api.com/graphql", {
+                "headers": {
+                    "content-type": "application/json",
+                    "Authorization": "solv",
+                },
+                "body": `{
+                    "operationName": "SolvAPYs",
+                    "variables": {},
+                    "query": "${query}"
+                }`,
+                "method": "POST",
+            });
+
+            const data = await res.json();
+
+            const apys = {
+                // TODO: should include Solv token as reward token
+                'BTC+': {
+                    apyBase: Number(data.data.btcPlusStats.baseApy),
+                    apyReward: Number(data.data.btcPlusStats.rewardApy),
+                }
+            }
+
+            data.data.lsts.details.forEach((pool) => {
+                apys[pool.protocol] = {
+                    apyBase: Number(pool.apy),
+                    apyReward: 0,
+                }
+            });
+
+            return apys;
+        } catch (err) {
+            console.error('Failed to fetch APY data from Solv', err);
+            return {};
+        }
     }
 }
