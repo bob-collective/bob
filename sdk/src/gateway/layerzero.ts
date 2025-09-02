@@ -301,7 +301,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
             };
 
             const sendFees = await publicClient.readContract({
-                abi: oftAbi,
+                abi: layerZeroOftAbi,
                 address: wbtcOftAddress as Hex,
                 functionName: 'quoteSend',
                 args: [sendParam, false],
@@ -309,7 +309,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
 
             const { request } = await publicClient.simulateContract({
                 account: walletClient.account,
-                abi: oftAbi,
+                abi: layerZeroOftAbi,
                 address: wbtcOftAddress as Hex,
                 functionName: 'send',
                 args: [sendParam, sendFees, offrampComposer],

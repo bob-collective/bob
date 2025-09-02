@@ -71,12 +71,11 @@ describe('LayerZero Tests', () => {
         const quote = await client.getQuote({
             fromChain: 'bitcoin',
             fromToken: 'bitcoin',
-            toChain: 'bob',
+            toChain: 'base',
             toToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
             fromUserAddress: 'bc1q6tgkjx4pgc5qda52fsgeuvjrhml5nuawwplejq',
             toUserAddress: '0x2A7f5295ac6e24b6D2ca78d82E3cbf01dDA52745',
             amount: 3000,
-            gasRefill: 1000000000000000n,
         });
 
         console.log('quote', quote);
@@ -92,25 +91,23 @@ describe('LayerZero Tests', () => {
             account: zeroAddress,
         });
 
-        // Uncomment this so test passes without mnemonic set
-        // const btcSignerFromSeed = await ScureBitcoinSigner.fromSeedPhrase(process.env.MNEMONIC!, "m/84'/0'/0'/0/0");
-        // console.log('P2WPKH Address: ', await btcSignerFromSeed.getP2WPKHAddress());
+        const btcSignerFromSeed = await ScureBitcoinSigner.fromSeedPhrase(process.env.MNEMONIC!, "m/84'/0'/0'/0/0");
+        console.log('P2WPKH Address: ', await btcSignerFromSeed.getP2WPKHAddress());
 
-        // const txHash = await client.executeQuote({
-        //     quote,
-        //     walletClient,
-        //     publicClient: publicClient as PublicClient<Transport>,
-        //     btcSigner: btcSignerFromSeed,
-        // });
+        const txHash = await client.executeQuote({
+            quote,
+            walletClient,
+            publicClient: publicClient as PublicClient<Transport>,
+            btcSigner: btcSignerFromSeed,
+        });
 
-        // console.log(txHash);
+        console.log(txHash);
     }, 120000);
 
     it('should get an offramp quote and execute it', async () => {
         const client = new LayerZeroGatewayClient(bob.id);
         const layerZeroClient = new LayerZeroClient();
 
-        // Get quote from base chain to bitcoin (offramp)
         const quote = await client.getQuote({
             fromChain: 'base',
             fromToken: (await layerZeroClient.getOftAddressForChain('base')) as string, // WBTC on base
@@ -121,6 +118,8 @@ describe('LayerZero Tests', () => {
             amount: 17000,
         });
 
+        console.log('quote', quote);
+
         // Verify we got an offramp quote
         assert.ok(quote.offrampQuote, 'Should have offramp quote');
         assert.ok(quote.params, 'Should have quote params');
@@ -130,24 +129,23 @@ describe('LayerZero Tests', () => {
             transport: http(),
         });
 
-        // Uncomment this so test passes without mnemonic or private key set
-        // const walletClient = createWalletClient({
-        //     chain: base,
-        //     transport: http(),
-        //     account: privateKeyToAccount(process.env.PRIVATE_KEY as Hex),
-        // });
+        const walletClient = createWalletClient({
+            chain: base,
+            transport: http(),
+            account: privateKeyToAccount(process.env.PRIVATE_KEY as Hex),
+        });
 
-        // const btcSignerFromSeed = await ScureBitcoinSigner.fromSeedPhrase(process.env.MNEMONIC!, "m/84'/0'/0'/0/0");
-        // console.log('P2WPKH Address: ', await btcSignerFromSeed.getP2WPKHAddress());
+        const btcSignerFromSeed = await ScureBitcoinSigner.fromSeedPhrase(process.env.MNEMONIC!, "m/84'/0'/0'/0/0");
+        console.log('P2WPKH Address: ', await btcSignerFromSeed.getP2WPKHAddress());
 
-        // const txHash = await client.executeQuote({
-        //     quote,
-        //     walletClient,
-        //     publicClient: publicClient as PublicClient<Transport>,
-        //     btcSigner: btcSignerFromSeed,
-        // });
+        const txHash = await client.executeQuote({
+            quote,
+            walletClient,
+            publicClient: publicClient as PublicClient<Transport>,
+            btcSigner: btcSignerFromSeed,
+        });
 
-        // console.log(txHash);
+        console.log(txHash);
     }, 120000);
 });
 

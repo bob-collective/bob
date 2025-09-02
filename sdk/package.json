@@ -4,7 +4,7 @@
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
     "scripts": {
-        "test": "vitest run test/*.ts",
+        "test": "vitest run test/*.ts --exclude test/layerzero.test.ts",
         "deploy-relay": "ts-node src/scripts/relay-genesis.ts",
         "update-relay": "ts-node src/scripts/relay-retarget.ts",
         "build": "tsc -p tsconfig.json",
