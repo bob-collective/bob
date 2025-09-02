@@ -9,12 +9,21 @@ import {
     OfframpQuote,
 } from './types';
 import { bob, bobSepolia } from 'viem/chains';
-import oftAbi from './abis/OFT.abi';
 import { offrampCaller } from './abi';
 import { toHexScriptPubKey } from './utils';
 import * as bitcoin from 'bitcoinjs-lib';
 import { viemClient } from './utils';
 import { layerZeroOftAbi, quoterV2Abi } from './abi';
+
+type SendParam = {
+    dstEid: number;
+    to: Hex;
+    amountLD: bigint;
+    minAmountLD: bigint;
+    extraOptions: Hex;
+    composeMsg: Hex;
+    oftCmd: Hex;
+};
 
 export class LayerZeroClient {
     private basePath: string;
@@ -85,18 +94,22 @@ function resolveChainName(chain: number | string): string {
     return chain.toLowerCase();
 }
 
-export type SendParam = {
-    dstEid: number;
-    to: Hex;
-    amountLD: bigint;
-    minAmountLD: bigint;
-    extraOptions: Hex;
-    composeMsg: Hex;
-    oftCmd: Hex;
-};
-
 // TODO: support bob sepolia
 export class LayerZeroGatewayClient extends GatewayApiClient {
+    private l0Client: LayerZeroClient;
+
+    constructor(chainId: number, options?: { rpcUrl?: string }) {
+        if (chainId !== bob.id) {
+            throw new Error('LayerZeroGatewayClient only supports BOB mainnet');
+        }
+        super(chainId, options);
+        this.l0Client = new LayerZeroClient();
+    }
+
+    async getSupportedChains(): Promise<Array<string>> {
+        return this.l0Client.getSupportedChains();
+    }
+
     async getQuote(params: GetQuoteParams): Promise<{
         params: GetQuoteParams;
         onrampQuote?: GatewayQuote & GatewayTokensInfo;
@@ -112,8 +125,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
             // Handle bob -> bitcoin: use normal flow
             return super.getQuote(params);
         } else if (fromChain === 'bitcoin') {
-            const layerZeroClient = new LayerZeroClient();
-            const dstEid = await layerZeroClient.getEidForChain(toChain);
+            const dstEid = await this.l0Client.getEidForChain(toChain);
             if (!dstEid) {
                 throw new Error(`Unsupported destination chain: ${toChain}`);
             }
@@ -237,6 +249,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
             const receiverAddress = toHexScriptPubKey(params.toUserAddress, bitcoin.networks.bitcoin);
 
             const dstEid = await layerZeroClient.getEidForChain('bob');
+
             if (!dstEid) {
                 throw new Error(`Destination EID not found for chain: ${fromChain}`);
             }

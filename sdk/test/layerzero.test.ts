@@ -154,7 +154,7 @@ describe('LayerZero Tests', () => {
 /**
  * Bitcoin signer implementation from seed phrase using scure-btc-signer
  */
-export class ScureBitcoinSigner implements BitcoinSigner {
+class ScureBitcoinSigner implements BitcoinSigner {
     private privateKey: Uint8Array;
 
     constructor(privateKeyHex: string) {
