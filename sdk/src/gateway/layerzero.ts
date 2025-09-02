@@ -18,6 +18,16 @@ import { layerZeroOftAbi, quoterV2Abi } from './abi';
 
 const WBTC_OFT_ADDRESS: Address = '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c';
 
+type SendParam = {
+    dstEid: number;
+    to: Hex;
+    amountLD: bigint;
+    minAmountLD: bigint;
+    extraOptions: Hex;
+    composeMsg: Hex;
+    oftCmd: Hex;
+};
+
 export class LayerZeroClient {
     private basePath: string;
 
@@ -75,18 +85,19 @@ function resolveChainName(chain: number | string): string {
     return chain.toLowerCase();
 }
 
-export type SendParam = {
-    dstEid: number;
-    to: Hex;
-    amountLD: bigint;
-    minAmountLD: bigint;
-    extraOptions: Hex;
-    composeMsg: Hex;
-    oftCmd: Hex;
-};
-
 // TODO: support bob sepolia
 export class LayerZeroGatewayClient extends GatewayApiClient {
+    private l0Client: LayerZeroClient;
+
+    constructor(chainId: number, options?: { rpcUrl?: string }) {
+        super(chainId, options);
+        this.l0Client = new LayerZeroClient();
+    }
+
+    async getSupportedChains(): Promise<Array<string>> {
+        return this.l0Client.getSupportedChains();
+    }
+
     async getQuote(params: GetQuoteParams): Promise<{
         params: GetQuoteParams;
         onrampQuote?: GatewayQuote & GatewayTokensInfo;
@@ -102,8 +113,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
             // Handle bob -> bitcoin: use normal flow
             return super.getQuote(params);
         } else if (fromChain === 'bitcoin') {
-            const layerZeroClient = new LayerZeroClient();
-            const dstEid = await layerZeroClient.getEidForChain(toChain);
+            const dstEid = await this.l0Client.getEidForChain(toChain);
             if (!dstEid) {
                 throw new Error(`Unsupported destination chain: ${toChain}`);
             }
@@ -220,9 +230,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
             const { offrampQuote, params } = executeQuoteParams;
             const quote = offrampQuote!;
 
-            const layerZeroClient = new LayerZeroClient();
-
-            const dstEid = await layerZeroClient.getEidForChain(toChain);
+            const dstEid = await this.l0Client.getEidForChain(toChain);
             if (!dstEid) {
                 throw new Error(`Unsupported destination chain: ${toChain}`);
             }
