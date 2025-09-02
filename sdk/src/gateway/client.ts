@@ -410,10 +410,10 @@ export class GatewayApiClient {
                 {
                     satAmountToLock: BigInt(quote.amountLockInSat),
                     satFeesMax: BigInt(quote.feeBreakdown.overallFeeSats),
-                    orderCreationDeadline: BigInt(quote.deadline),
+                    creationDeadline: BigInt(quote.deadline),
                     outputScript: receiverAddress as `0x${string}`,
                     token: quote.token,
-                    orderOwner: params.fromUserAddress as Address,
+                    owner: params.fromUserAddress as Address,
                 },
             ],
         };
