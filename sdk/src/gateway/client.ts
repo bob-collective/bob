@@ -12,6 +12,7 @@ import {
     zeroAddress,
     maxUint256,
     Hash,
+    Hex,
 } from 'viem';
 import { bob, bobSepolia } from 'viem/chains';
 import { EsploraClient } from '../esplora';
@@ -87,7 +88,7 @@ interface EvmWalletClientParams {
     publicClient: PublicClient<Transport>;
 }
 
-interface AllWalletClientParams extends EvmWalletClientParams {
+export interface AllWalletClientParams extends EvmWalletClientParams {
     /**
      * Bitcoin signer used to sign the transaction inputs.
      */
@@ -411,7 +412,7 @@ export class GatewayApiClient {
                     satAmountToLock: BigInt(quote.amountLockInSat),
                     satFeesMax: BigInt(quote.feeBreakdown.overallFeeSats),
                     creationDeadline: BigInt(quote.deadline),
-                    outputScript: receiverAddress as `0x${string}`,
+                    outputScript: receiverAddress as Hex,
                     token: quote.token,
                     owner: params.fromUserAddress as Address,
                 },
