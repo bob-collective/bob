@@ -443,7 +443,7 @@ export class GatewayApiClient {
             orderDetails.token,
             orderDetails.satAmountLocked,
             orderDetails.satFeesMax,
-            orderDetails.sender
+            orderDetails.owner
         );
 
         if (error) {
@@ -618,7 +618,7 @@ export class GatewayApiClient {
         const order = await publicClient.readContract({
             address: offrampRegistryAddress,
             abi: offrampCaller,
-            functionName: 'getOfframpOrder',
+            functionName: 'getOrderDetails',
             args: [orderId],
         });
 
@@ -627,9 +627,10 @@ export class GatewayApiClient {
             token: order.token as Address,
             satAmountLocked: order.satAmountLocked,
             satFeesMax: order.satFeesMax,
-            sender: order.sender as Address,
-            receiver: order.receiver !== (zeroAddress as Address) ? (order.receiver as Address) : null,
-            owner: order.owner !== (zeroAddress as Address) ? (order.owner as Address) : null,
+            owner: order.owner as Address,
+            solverOwner: order.solverOwner !== (zeroAddress as Address) ? (order.solverOwner as Address) : null,
+            solverRecipient:
+                order.solverRecipient !== (zeroAddress as Address) ? (order.solverRecipient as Address) : null,
             outputScript: order.outputScript,
             status: parseOrderStatus(Number(order.status)) as OnchainOfframpOrderDetails['status'],
             orderTimestamp: Number(order.timestamp),
