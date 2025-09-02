@@ -1,12 +1,14 @@
 import { assert, describe, it } from 'vitest';
 import { LayerZeroClient, LayerZeroGatewayClient } from '../src/gateway/layerzero';
 import { createPublicClient, createWalletClient, http, PublicClient, Transport, zeroAddress } from 'viem';
-import { bob } from 'viem/chains';
+import { base, bob } from 'viem/chains';
 import { BitcoinSigner } from '../src/gateway/types';
 import * as btc from '@scure/btc-signer';
 import { base64 } from '@scure/base';
 import { mnemonicToSeedSync } from 'bip39';
 import { HDKey } from '@scure/bip32';
+import { Hex } from 'viem';
+import { privateKeyToAccount } from 'viem/accounts';
 
 describe('LayerZero Tests', () => {
     it('should get chains', async () => {
@@ -43,9 +45,27 @@ describe('LayerZero Tests', () => {
         assert.equal(await client.getEidForChain('swell'), '30335');
         assert.equal(await client.getEidForChain('optimism'), '30111');
         assert.equal(await client.getEidForChain('sei'), '30280');
+
+        assert.equal(await client.getOftAddressForChain('ethereum'), '0x0555e30da8f98308edb960aa94c0db47230d2b9c');
+        assert.equal(await client.getOftAddressForChain('bob'), '0x0555e30da8f98308edb960aa94c0db47230d2b9c');
+        assert.equal(await client.getOftAddressForChain('base'), '0x0555e30da8f98308edb960aa94c0db47230d2b9c');
+        assert.equal(await client.getOftAddressForChain('bera'), '0x0555e30da8f98308edb960aa94c0db47230d2b9c');
+        assert.equal(await client.getOftAddressForChain('unichain'), '0x0555e30da8f98308edb960aa94c0db47230d2b9c');
+        assert.equal(await client.getOftAddressForChain('avalanche'), '0x0555e30da8f98308edb960aa94c0db47230d2b9c');
+        assert.equal(await client.getOftAddressForChain('sonic'), '0x0555e30da8f98308edb960aa94c0db47230d2b9c');
+        assert.equal(
+            await client.getOftAddressForChain('aptos'),
+            '0xef3a1c7d6aa1a531336433e48d7b1d9b46c5bedc69f3db291df4e39bef4708e2'
+        );
+        assert.equal(await client.getOftAddressForChain('bsc'), '0x0555e30da8f98308edb960aa94c0db47230d2b9c');
+        assert.equal(await client.getOftAddressForChain('soneium'), '0x0555e30da8f98308edb960aa94c0db47230d2b9c');
+        assert.equal(await client.getOftAddressForChain('telos'), '0x0555e30da8f98308edb960aa94c0db47230d2b9c');
+        assert.equal(await client.getOftAddressForChain('swell'), '0x0555e30da8f98308edb960aa94c0db47230d2b9c');
+        assert.equal(await client.getOftAddressForChain('optimism'), '0xc3f854b2970f8727d28527ece33176fac67fef48');
+        assert.equal(await client.getOftAddressForChain('sei'), '0x0555e30da8f98308edb960aa94c0db47230d2b9c');
     }, 120000);
 
-    it('should get a quote and execute it', async () => {
+    it('should get an onramp quote and execute it', async () => {
         const client = new LayerZeroGatewayClient(bob.id);
 
         const quote = await client.getQuote({
@@ -58,6 +78,8 @@ describe('LayerZero Tests', () => {
             amount: 3000,
         });
 
+        console.log('quote', quote);
+
         const publicClient = createPublicClient({
             chain: bob,
             transport: http(),
@@ -69,18 +91,61 @@ describe('LayerZero Tests', () => {
             account: zeroAddress,
         });
 
-        // Uncomment this so test passes without mnemonic set
-        // const btcSignerFromSeed = await ScureBitcoinSigner.fromSeedPhrase(process.env.MNEMONIC!, "m/84'/0'/0'/0/0");
-        // console.log('P2WPKH Address: ', await btcSignerFromSeed.getP2WPKHAddress());
+        const btcSignerFromSeed = await ScureBitcoinSigner.fromSeedPhrase(process.env.MNEMONIC!, "m/84'/0'/0'/0/0");
+        console.log('P2WPKH Address: ', await btcSignerFromSeed.getP2WPKHAddress());
 
-        // const txHash = await client.executeQuote({
-        //     quote,
-        //     walletClient,
-        //     publicClient: publicClient as PublicClient<Transport>,
-        //     btcSigner: btcSignerFromSeed,
-        // });
+        const txHash = await client.executeQuote({
+            quote,
+            walletClient,
+            publicClient: publicClient as PublicClient<Transport>,
+            btcSigner: btcSignerFromSeed,
+        });
 
-        // console.log(txHash);
+        console.log(txHash);
+    }, 120000);
+
+    it('should get an offramp quote and execute it', async () => {
+        const client = new LayerZeroGatewayClient(bob.id);
+        const layerZeroClient = new LayerZeroClient();
+
+        const quote = await client.getQuote({
+            fromChain: 'base',
+            fromToken: (await layerZeroClient.getOftAddressForChain('base')) as string, // WBTC on base
+            toChain: 'bitcoin',
+            toToken: 'bitcoin',
+            fromUserAddress: '0x2A7f5295ac6e24b6D2ca78d82E3cbf01dDA52745', // EVM address (sender)
+            toUserAddress: 'bc1q6tgkjx4pgc5qda52fsgeuvjrhml5nuawwplejq', // Bitcoin address (recipient)
+            amount: 17000,
+        });
+
+        console.log('quote', quote);
+
+        // Verify we got an offramp quote
+        assert.ok(quote.offrampQuote, 'Should have offramp quote');
+        assert.ok(quote.params, 'Should have quote params');
+
+        const publicClient = createPublicClient({
+            chain: base,
+            transport: http(),
+        });
+
+        const walletClient = createWalletClient({
+            chain: base,
+            transport: http(),
+            account: privateKeyToAccount(process.env.PRIVATE_KEY as Hex),
+        });
+
+        const btcSignerFromSeed = await ScureBitcoinSigner.fromSeedPhrase(process.env.MNEMONIC!, "m/84'/0'/0'/0/0");
+        console.log('P2WPKH Address: ', await btcSignerFromSeed.getP2WPKHAddress());
+
+        const txHash = await client.executeQuote({
+            quote,
+            walletClient,
+            publicClient: publicClient as PublicClient<Transport>,
+            btcSigner: btcSignerFromSeed,
+        });
+
+        console.log(txHash);
     }, 120000);
 });
 
