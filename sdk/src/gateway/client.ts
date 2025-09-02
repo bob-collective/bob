@@ -504,7 +504,7 @@ export class GatewayApiClient {
         const { request } = await publicClient.simulateContract({
             address: offrampRegistryAddress,
             abi: offrampCaller,
-            functionName: 'unlockFunds',
+            functionName: 'refundOrder',
             args: [orderId, receiver],
             account: walletClient.account,
         });
