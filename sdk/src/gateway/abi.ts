@@ -59,7 +59,7 @@ export const offrampCaller = [
                         internalType: 'uint256',
                     },
                     {
-                        name: 'orderCreationDeadline',
+                        name: 'creationDeadline',
                         type: 'uint256',
                         internalType: 'uint256',
                     },
@@ -74,7 +74,7 @@ export const offrampCaller = [
                         internalType: 'address',
                     },
                     {
-                        name: 'orderOwner',
+                        name: 'owner',
                         type: 'address',
                         internalType: 'address',
                     },
@@ -104,7 +104,7 @@ export const offrampCaller = [
     },
     {
         type: 'function',
-        name: 'unlockFunds',
+        name: 'refundOrder',
         inputs: [
             {
                 name: 'orderId',
