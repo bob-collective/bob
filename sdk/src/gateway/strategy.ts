@@ -170,7 +170,7 @@ const tokenToSolvStrategyMap = new Map<string, string>([
         // SolvBTC.JUP
         '0x6b062aa7f5fc52b530cb13967ae2e6bc0d8dd3e4',
         'Jupiter',
-    ]
+    ],
 ]);
 
 export default class StrategyClient {
@@ -193,13 +193,7 @@ export default class StrategyClient {
     async getTokensIncentives(
         tokens: string[]
     ): Promise<Pick<EnrichedToken, 'apyBase' | 'apyReward' | 'rewardTokens' | 'points'>[]> {
-        const [
-            defillamaPoolMap,
-            solvAPYs,
-        ] = await Promise.all([
-            this.getDefillamaPools(),
-            this.getSolvAPYs(),
-        ]);
+        const [defillamaPoolMap, solvAPYs] = await Promise.all([this.getDefillamaPools(), this.getSolvAPYs()]);
 
         return tokens.map((token) => {
             const tokenAddress = token.toLowerCase();
@@ -216,7 +210,8 @@ export default class StrategyClient {
             if (defillamaPool) {
                 return {
                     // HACK: set HybridBTC APY to 2%
-                    apyBase: defillamaPoolId === 'e8bfea35-ff6d-48db-aa08-51599b363219' ? 2 : (defillamaPool?.apyBase ?? 0),
+                    apyBase:
+                        defillamaPoolId === 'e8bfea35-ff6d-48db-aa08-51599b363219' ? 2 : (defillamaPool?.apyBase ?? 0),
                     apyReward: defillamaPool?.apyReward ?? 0,
                     rewardTokens: this.resolveTokens(defillamaPool?.rewardTokens),
                     points,
@@ -239,7 +234,7 @@ export default class StrategyClient {
                 apyReward: 0,
                 rewardTokens: [],
                 points,
-            }
+            };
         });
     }
 
@@ -258,12 +253,14 @@ export default class StrategyClient {
             return [];
         }
 
-        return tokens.map((addr) =>
-            ADDRESS_LOOKUP[bob.id][addr.toLowerCase()] ||
-            ADDRESS_LOOKUP[optimism.id][addr.toLowerCase()] ||
-            ADDRESS_LOOKUP[mainnet.id][addr.toLowerCase()]
-        )
-        .filter(Boolean);
+        return tokens
+            .map(
+                (addr) =>
+                    ADDRESS_LOOKUP[bob.id][addr.toLowerCase()] ||
+                    ADDRESS_LOOKUP[optimism.id][addr.toLowerCase()] ||
+                    ADDRESS_LOOKUP[mainnet.id][addr.toLowerCase()]
+            )
+            .filter(Boolean);
     }
 
     async getStrategyAssetState(token: Token): Promise<StrategyAssetState> {
@@ -412,7 +409,7 @@ export default class StrategyClient {
 
     private async getSolvAPYs() {
         try {
-            const query =`
+            const query = `
                 query SolvAPYs {
                     btcPlusStats(stageNo: 1) {
                         baseApy
@@ -428,19 +425,21 @@ export default class StrategyClient {
                         }
                     }
                 }
-            `.split("\n").join(" ");
+            `
+                .split('\n')
+                .join(' ');
 
-            const res = await fetch("https://sft-api.com/graphql", {
-                "headers": {
-                    "content-type": "application/json",
-                    "Authorization": "solv",
+            const res = await fetch('https://sft-api.com/graphql', {
+                headers: {
+                    'content-type': 'application/json',
+                    Authorization: 'solv',
                 },
-                "body": `{
+                body: `{
                     "operationName": "SolvAPYs",
                     "variables": {},
                     "query": "${query}"
                 }`,
-                "method": "POST",
+                method: 'POST',
             });
 
             const data = await res.json();
@@ -449,17 +448,15 @@ export default class StrategyClient {
                 'BTC+': {
                     apyBase: Number(data.data.btcPlusStats.baseApy),
                     apyReward: Number(data.data.btcPlusStats.rewardApy),
-                    rewardTokens: [
-                        '0x04830a96a23ea718faa695a5aae74695aae3a23f',
-                    ]
-                }
-            }
+                    rewardTokens: ['0x04830a96a23ea718faa695a5aae74695aae3a23f'],
+                },
+            };
 
             data.data.lsts.details.forEach((pool) => {
                 apys[pool.protocol] = {
                     apyBase: Number(pool.apy),
                     apyReward: 0,
-                }
+                };
             });
 
             return apys;
