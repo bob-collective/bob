@@ -8,7 +8,7 @@ import {
     type Token,
 } from './types';
 import { aaveV2AtokenAbi, compoundV2CTokenAbi } from './abi';
-import { bob, optimism } from 'viem/chains';
+import { bob, optimism, mainnet } from 'viem/chains';
 
 const projectPointsIncentives: Map<string, PointsIncentive[]> = new Map([
     [
@@ -218,13 +218,7 @@ export default class StrategyClient {
                     // HACK: set HybridBTC APY to 2%
                     apyBase: defillamaPoolId === 'e8bfea35-ff6d-48db-aa08-51599b363219' ? 2 : (defillamaPool?.apyBase ?? 0),
                     apyReward: defillamaPool?.apyReward ?? 0,
-                    rewardTokens: (defillamaPool?.rewardTokens ?? [])
-                        .map(
-                            (addr) =>
-                                ADDRESS_LOOKUP[bob.id][addr.toLowerCase()] ||
-                                ADDRESS_LOOKUP[optimism.id][addr.toLowerCase()]
-                        )
-                        .filter(Boolean),
+                    rewardTokens: this.resolveTokens(defillamaPool?.rewardTokens),
                     points,
                 };
             }
@@ -235,7 +229,7 @@ export default class StrategyClient {
                 return {
                     apyBase: solvAPYs[solvStrategy].apyBase,
                     apyReward: solvAPYs[solvStrategy].apyReward,
-                    rewardTokens: [],
+                    rewardTokens: this.resolveTokens(solvAPYs[solvStrategy].rewardTokens),
                     points,
                 };
             }
@@ -257,6 +251,19 @@ export default class StrategyClient {
             defillamaPools.filter((pool) => pool.chain === 'Bob').map((pool) => [pool.pool, pool])
         );
         return defillamaPoolMap;
+    }
+
+    private resolveTokens(tokens: string[] | undefined | null): Token[] {
+        if (!tokens) {
+            return [];
+        }
+
+        return tokens.map((addr) =>
+            ADDRESS_LOOKUP[bob.id][addr.toLowerCase()] ||
+            ADDRESS_LOOKUP[optimism.id][addr.toLowerCase()] ||
+            ADDRESS_LOOKUP[mainnet.id][addr.toLowerCase()]
+        )
+        .filter(Boolean);
     }
 
     async getStrategyAssetState(token: Token): Promise<StrategyAssetState> {
@@ -439,10 +446,12 @@ export default class StrategyClient {
             const data = await res.json();
 
             const apys = {
-                // TODO: should include Solv token as reward token
                 'BTC+': {
                     apyBase: Number(data.data.btcPlusStats.baseApy),
                     apyReward: Number(data.data.btcPlusStats.rewardApy),
+                    rewardTokens: [
+                        '0x04830a96a23ea718faa695a5aae74695aae3a23f',
+                    ]
                 }
             }
 
