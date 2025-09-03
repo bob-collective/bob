@@ -1,4 +1,4 @@
-import { Address, encodeAbiParameters, encodeFunctionData, encodePacked, Hex, padHex, parseAbiParameters } from 'viem';
+import { Address, encodeAbiParameters, encodePacked, Hex, padHex, parseAbiParameters } from 'viem';
 import { AllWalletClientParams, GatewayApiClient } from './client';
 import {
     ExecuteQuoteParams,
@@ -9,7 +9,6 @@ import {
     OfframpQuote,
 } from './types';
 import { bob, bobSepolia } from 'viem/chains';
-import { offrampCaller } from './abi';
 import { toHexScriptPubKey } from './utils';
 import * as bitcoin from 'bitcoinjs-lib';
 import { viemClient } from './utils';
@@ -108,6 +107,10 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
 
     async getSupportedChains(): Promise<Array<string>> {
         return this.l0Client.getSupportedChains();
+    }
+
+    async getEidForChain(chainKey: string): Promise<string | null> {
+        return this.l0Client.getEidForChain(chainKey);
     }
 
     async getQuote(params: GetQuoteParams): Promise<{
