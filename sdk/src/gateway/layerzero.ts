@@ -113,6 +113,10 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
         return this.l0Client.getEidForChain(chainKey);
     }
 
+    async getOftAddressForChain(chainKey: string): Promise<string | null> {
+        return this.l0Client.getOftAddressForChain(chainKey);
+    }
+
     async getQuote(params: GetQuoteParams): Promise<{
         params: GetQuoteParams;
         onrampQuote?: GatewayQuote & GatewayTokensInfo;
