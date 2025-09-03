@@ -134,7 +134,7 @@ impl EsploraClient {
         Ok(Self { url: esplora_url.parse()?, cli: Client::new() })
     }
 
-    pub async fn get(&self, path: &str) -> Result<String> {
+    async fn get(&self, path: &str) -> Result<String> {
         let url = self.url.join(path)?;
         Ok(self.cli.get(url).send().await?.error_for_status()?.text().await?)
     }
