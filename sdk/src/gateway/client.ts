@@ -588,7 +588,7 @@ export class GatewayApiClient {
         orderTimestamp: number,
         offrampRegistryAddress: Address
     ): Promise<boolean> {
-        if (Math.floor(Date.now() / 1000) - orderTimestamp >= 60) {
+        if (status === 'Active' && Math.floor(Date.now() / 1000) - orderTimestamp >= 60) {
             return true;
         }
         if (status !== 'Accepted') {
