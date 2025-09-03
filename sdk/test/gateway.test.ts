@@ -504,7 +504,7 @@ describe('Gateway Tests', () => {
             satAmountLocked: BigInt(order.satAmountLocked.toString()),
             satFeesMax: BigInt(order.satFeesMax.toString()),
             orderTimestamp: order.orderTimestamp,
-            canOrderBeUnlocked: false,
+            canOrderBeUnlocked: true,
             shouldFeesBeBumped: false,
         }));
 
