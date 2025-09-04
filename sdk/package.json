@@ -49,7 +49,7 @@
         "@scure/btc-signer": "^1.6.0",
         "bitcoin-address-validation": "^3.0.0",
         "bitcoinjs-lib": "^6.1.7",
-        "viem": "^2.33.2",
+        "viem": "^2.37.3",
         "global": "^4.4.0"
     }
 }
