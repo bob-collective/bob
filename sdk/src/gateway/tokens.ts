@@ -79,7 +79,7 @@ const bobTokens = [
                 address: '0x6b062AA7F5FC52b530Cb13967aE2E6bc0D8Dd3E4',
             },
         },
-        logoURI: 'https://raw.githubusercontent.com/bob-collective/bob/master/assets/solvBTC_Jupiter.svg',
+        logoURI: 'https://raw.githubusercontent.com/bob-collective/bob/master/assets/solvBTC.JUP.svg',
     },
     {
         name: 'BTC+',
@@ -90,7 +90,7 @@ const bobTokens = [
                 address: '0x4Ca70811E831db42072CBa1f0d03496EF126fAad',
             },
         },
-        logoURI: 'https://raw.githubusercontent.com/bob-collective/bob/master/assets/BTC_plus.svg',
+        logoURI: 'https://raw.githubusercontent.com/bob-collective/bob/master/assets/solvBTC.plus.svg',
     },
 ];
 
