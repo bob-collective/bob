@@ -24,6 +24,20 @@ abstract contract ForkedStrategyTemplateWbtc is Test {
     }
 }
 
+abstract contract ForkedStrategyTemplateWbtcOft is Test {
+    IERC20 public token;
+
+    constructor() {
+        token = IERC20(Constants.WBTC_OFT_ADDRESS);
+    }
+
+    function simulateForkAndTransfer(uint256 forkAtBlock, address sender, address receiver, uint256 amount) public {
+        vm.createSelectFork(vm.envString("BOB_PROD_PUBLIC_RPC_URL"), forkAtBlock);
+        vm.prank(sender);
+        token.transfer(receiver, amount);
+    }
+}
+
 abstract contract ForkedStrategyTemplateTbtc is Test {
     IERC20 public token;
 
