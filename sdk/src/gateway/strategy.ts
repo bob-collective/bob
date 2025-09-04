@@ -243,13 +243,18 @@ export default class StrategyClient {
     }
 
     private async getDefillamaPools() {
-        const res = await fetch('https://yields.llama.fi/pools');
+        try {
+            const res = await fetch('https://yields.llama.fi/pools');
 
-        const defillamaPools: DefiLlamaPool[] = res.ok ? (await res.json()).data : [];
-        const defillamaPoolMap = new Map<string, DefiLlamaPool>(
-            defillamaPools.filter((pool) => pool.chain === 'Bob').map((pool) => [pool.pool, pool])
-        );
-        return defillamaPoolMap;
+            const defillamaPools: DefiLlamaPool[] = res.ok ? (await res.json()).data : [];
+            const defillamaPoolMap = new Map<string, DefiLlamaPool>(
+                defillamaPools.filter((pool) => pool.chain === 'Bob').map((pool) => [pool.pool, pool])
+            );
+            return defillamaPoolMap;
+        } catch (err) {
+            console.error('Failed to fetch DefiLlama pools', err);
+            return new Map();
+        }
     }
 
     private resolveTokens(tokens: string[] | undefined | null): Token[] {
@@ -260,11 +265,11 @@ export default class StrategyClient {
         return tokens
             .map(
                 (addr) =>
-                    ADDRESS_LOOKUP[bob.id][addr.toLowerCase()] ||
-                    ADDRESS_LOOKUP[optimism.id][addr.toLowerCase()] ||
-                    ADDRESS_LOOKUP[mainnet.id][addr.toLowerCase()]
+                    ADDRESS_LOOKUP[bob.id]?.[addr.toLowerCase()] ??
+                    ADDRESS_LOOKUP[optimism.id]?.[addr.toLowerCase()] ??
+                    ADDRESS_LOOKUP[mainnet.id]?.[addr.toLowerCase()]
             )
-            .filter(Boolean);
+            .filter((t): t is Token => Boolean(t));
     }
 
     async getStrategyAssetState(token: Token): Promise<StrategyAssetState> {
