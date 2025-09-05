@@ -1,6 +1,6 @@
 import { Token } from './types';
 import { Address, isAddress } from 'viem';
-import { bob, bobSepolia, optimism } from 'viem/chains';
+import { bob, bobSepolia, mainnet, optimism } from 'viem/chains';
 
 // TODO: re-write to use superchain tokenlist
 const bobTokens = [
@@ -163,6 +163,20 @@ const optimismTokens = [
             },
         },
         logoURI: 'https://optimistic.etherscan.io/token/images/optimism_32.png',
+    },
+];
+
+const ethereumTokens = [
+    {
+        name: 'Solv',
+        symbol: 'SOLV',
+        decimals: 18,
+        tokens: {
+            ethereum: {
+                address: '0x04830a96a23ea718faa695a5aae74695aae3a23f',
+            },
+        },
+        logoURI: 'https://raw.githubusercontent.com/bob-collective/bob/master/assets/SOLV.svg',
     },
 ];
 
@@ -341,12 +355,16 @@ const TOKENS: Array<{
         optimism?: {
             address: string;
         };
+        ethereum?: {
+            address: string;
+        };
     };
     logoURI: string;
 }> = [
     ...bobTokens,
     ...bobSepoliaTokens,
     ...optimismTokens,
+    ...ethereumTokens,
     ...shoebillTokens,
     ...segmentTokens,
     ...avalonTokens,
@@ -361,10 +379,12 @@ export const ADDRESS_LOOKUP: { [key in number]: { [key in string]: Token } } = {
 SYMBOL_LOOKUP[bob.id] = {};
 SYMBOL_LOOKUP[bobSepolia.id] = {};
 SYMBOL_LOOKUP[optimism.id] = {};
+SYMBOL_LOOKUP[mainnet.id] = {};
 
 ADDRESS_LOOKUP[bob.id] = {};
 ADDRESS_LOOKUP[bobSepolia.id] = {};
 ADDRESS_LOOKUP[optimism.id] = {};
+ADDRESS_LOOKUP[mainnet.id] = {};
 
 function addToken(address: string, token: (typeof TOKENS)[number], chainId: number) {
     const lowerAddress = address.toLowerCase();
@@ -392,6 +412,10 @@ for (const token of TOKENS) {
 
     if (token.tokens.optimism) {
         addToken(token.tokens.optimism.address, token, optimism.id);
+    }
+
+    if (token.tokens.ethereum) {
+        addToken(token.tokens.ethereum.address, token, mainnet.id);
     }
 }
 
