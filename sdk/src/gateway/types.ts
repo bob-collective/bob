@@ -478,11 +478,11 @@ export type OnchainOfframpOrderDetails = {
     /** @dev Max sats for fee */
     satFeesMax: bigint;
     /** @dev Address that created the order */
-    sender: Address;
-    /** @dev Optional receiver address for order payout */
-    receiver: Address | null;
-    /** @dev Optional owner address of the order */
-    owner: Address | null;
+    owner: Address;
+    /** @dev Optional solver owner address */
+    solverOwner: Address | null;
+    /** @dev Optional solver recipient address */
+    solverRecipient: Address | null;
     /** @dev Output script for Bitcoin tx */
     outputScript: string;
     /** @dev Order status */

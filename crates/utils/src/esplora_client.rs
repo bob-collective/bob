@@ -53,7 +53,7 @@ pub struct VoutFormat {
     pub scriptpubkey_asm: String,
     pub scriptpubkey_type: String,
     pub scriptpubkey_address: Option<String>,
-    pub value: u32,
+    pub value: u64,
 }
 
 #[derive(Deserialize, Debug)]
@@ -72,9 +72,9 @@ pub struct TransactionFormat {
     pub txid: String,
     pub version: u32,
     pub locktime: u32,
-    pub size: u32,
-    pub weight: u32,
-    pub fee: u32,
+    pub size: u64,
+    pub weight: u64,
+    pub fee: u64,
     pub vin: Vec<VinFormat>,
     pub vout: Vec<VoutFormat>,
     pub status: TransactionStatus,

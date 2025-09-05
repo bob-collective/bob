@@ -122,7 +122,7 @@ export const offrampCaller = [
     },
     {
         type: 'function',
-        name: 'getOfframpOrder',
+        name: 'getOrderDetails',
         inputs: [
             {
                 name: 'orderId',
@@ -138,13 +138,13 @@ export const offrampCaller = [
                 components: [
                     { name: 'satAmountLocked', type: 'uint256', internalType: 'uint256' },
                     { name: 'satFeesMax', type: 'uint256', internalType: 'uint256' },
-                    { name: 'sender', type: 'address', internalType: 'address' },
-                    { name: 'receiver', type: 'address', internalType: 'address' },
+                    { name: 'owner', type: 'address', internalType: 'address' },
                     { name: 'outputScript', type: 'bytes', internalType: 'bytes' },
                     { name: 'status', type: 'uint8', internalType: 'enum OfframpOrderStatus' },
                     { name: 'timestamp', type: 'uint256', internalType: 'uint256' },
                     { name: 'token', type: 'address', internalType: 'address' },
-                    { name: 'owner', type: 'address', internalType: 'address' },
+                    { name: 'solverOwner', type: 'address', internalType: 'address' },
+                    { name: 'solverRecipient', type: 'address', internalType: 'address' },
                 ],
             },
         ],

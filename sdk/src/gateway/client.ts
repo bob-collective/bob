@@ -443,7 +443,7 @@ export class GatewayApiClient {
             orderDetails.token,
             orderDetails.satAmountLocked,
             orderDetails.satFeesMax,
-            orderDetails.sender
+            orderDetails.owner
         );
 
         if (error) {
@@ -588,7 +588,7 @@ export class GatewayApiClient {
         orderTimestamp: number,
         offrampRegistryAddress: Address
     ): Promise<boolean> {
-        if (status === 'Active') {
+        if (status === 'Active' && Math.floor(Date.now() / 1000) - orderTimestamp >= 60) {
             return true;
         }
         if (status !== 'Accepted') {
@@ -618,7 +618,7 @@ export class GatewayApiClient {
         const order = await publicClient.readContract({
             address: offrampRegistryAddress,
             abi: offrampCaller,
-            functionName: 'getOfframpOrder',
+            functionName: 'getOrderDetails',
             args: [orderId],
         });
 
@@ -627,9 +627,10 @@ export class GatewayApiClient {
             token: order.token as Address,
             satAmountLocked: order.satAmountLocked,
             satFeesMax: order.satFeesMax,
-            sender: order.sender as Address,
-            receiver: order.receiver !== (zeroAddress as Address) ? (order.receiver as Address) : null,
-            owner: order.owner !== (zeroAddress as Address) ? (order.owner as Address) : null,
+            owner: order.owner as Address,
+            solverOwner: order.solverOwner !== (zeroAddress as Address) ? (order.solverOwner as Address) : null,
+            solverRecipient:
+                order.solverRecipient !== (zeroAddress as Address) ? (order.solverRecipient as Address) : null,
             outputScript: order.outputScript,
             status: parseOrderStatus(Number(order.status)) as OnchainOfframpOrderDetails['status'],
             orderTimestamp: Number(order.timestamp),
@@ -991,7 +992,7 @@ export class GatewayApiClient {
     async getStrategies(): Promise<GatewayStrategyContract[]> {
         const response = await this.fetchGet(`${this.baseUrl}/strategies`);
 
-        const chainName = this.chain.toString();
+        const chainName = this.chain.name;
         const chainId = this.chainId;
 
         const strategies: GatewayStrategy[] = await response.json();
