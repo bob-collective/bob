@@ -137,6 +137,12 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                 throw new Error(`Unsupported destination chain: ${toChain}`);
             }
 
+            // always use the wBTC token on BOB
+            const wbtcOftAddress = await this.l0Client.getOftAddressForChain('bob');
+            if (!wbtcOftAddress) {
+                throw new Error(`WBTC OFT not found for chain: ${fromChain}`);
+            }
+
             // TODO: Will need to generalize this if we want to support other option sets. Its manual ABI encoding so a little complex.
             const extraOptions = encodePacked(
                 ['uint16', 'uint8', 'uint16', 'uint8', 'uint128'],
@@ -166,16 +172,17 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
 
             // Getting the layer zero fee gas so we know how much we need to swap from the order
             const layerZeroFee = await publicClient.readContract({
-                address: params.toToken as Hex,
+                address: wbtcOftAddress as Hex,
                 abi: layerZeroOftAbi,
                 functionName: 'quoteSend',
                 args: [sendParam, false],
             });
 
-            const buffer = BigInt(500); // 5% buffer
+            // allow consumer to override the buffer
+            const buffer = params.l0FeeBuffer ? BigInt(params.l0FeeBuffer) : BigInt(500); // 5% buffer
 
             // Add buffer to the layer zero fee to account for changes from now until the order is executed
-            const layerZeroFeeWithBuffer = (layerZeroFee.nativeFee * (10000n + buffer)) / 10000n; // 5% buffer
+            const layerZeroFeeWithBuffer = (layerZeroFee.nativeFee * (10000n + buffer)) / 10000n;
 
             // Getting the amount of tokens we need to swap from the order by using the uniswap quoter
             const quote = await publicClient.readContract({
@@ -184,7 +191,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                 functionName: 'quoteExactOutputSingle',
                 args: [
                     {
-                        tokenIn: params.toToken as Hex,
+                        tokenIn: wbtcOftAddress as Hex,
                         tokenOut: '0x4200000000000000000000000000000000000006' as Hex,
                         amountOut: layerZeroFeeWithBuffer, // Desired output amount
                         fee: 3000,
@@ -256,10 +263,10 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
             const receiverAddress = toHexScriptPubKey(params.toUserAddress, bitcoin.networks.bitcoin);
 
             const dstEid = await layerZeroClient.getEidForChain('bob');
-
             if (!dstEid) {
                 throw new Error(`Destination EID not found for chain: ${fromChain}`);
             }
+
             const wbtcOftAddress = await layerZeroClient.getOftAddressForChain(fromChain);
             if (!wbtcOftAddress) {
                 throw new Error(`WBTC OFT not found for chain: ${fromChain}`);
@@ -306,6 +313,11 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                     ]
                 ),
             };
+
+            // we're quoting on the origin chain, so public client must be configured correctly
+            if (publicClient.chain?.name.toLowerCase() !== fromChain) {
+                throw new Error(`Public client must be origin chain`);
+            }
 
             const sendFees = await publicClient.readContract({
                 abi: layerZeroOftAbi,
