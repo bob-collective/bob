@@ -95,6 +95,9 @@ export interface GatewayQuoteParams {
 
     /** @description Cross chain message - strategy data */
     message?: Hex;
+
+    /** @description LayerZero fee buffer percentage in Basis Points (BPS) units to add on top of the estimated L0 fee. This accounts for potential L0 fee changes between quote time and order execution. Default is 500 BPS (5%). */
+    l0FeeBuffer?: number | bigint;
 }
 
 /**

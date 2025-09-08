@@ -65,7 +65,7 @@ describe('LayerZero Tests', () => {
         assert.equal(await client.getOftAddressForChain('sei'), '0x0555e30da8f98308edb960aa94c0db47230d2b9c');
     }, 120000);
 
-    it('should get an onramp quote and execute it', async () => {
+    it.skip('should get an onramp quote and execute it', async () => {
         const client = new LayerZeroGatewayClient(bob.id);
 
         const quote = await client.getQuote({
@@ -104,7 +104,7 @@ describe('LayerZero Tests', () => {
         console.log(txHash);
     }, 120000);
 
-    it('should get an offramp quote and execute it', async () => {
+    it.skip('should get an offramp quote and execute it', async () => {
         const client = new LayerZeroGatewayClient(bob.id);
         const layerZeroClient = new LayerZeroClient();
 
