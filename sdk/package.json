@@ -47,9 +47,10 @@
         "@magiceden-oss/runestone-lib": "^1.0.2",
         "@scure/base": "^1.2.4",
         "@scure/btc-signer": "^1.6.0",
+        "@swing.xyz/sdk": "^0.67.7",
         "bitcoin-address-validation": "^3.0.0",
         "bitcoinjs-lib": "^6.1.7",
-        "viem": "^2.33.2",
-        "global": "^4.4.0"
+        "global": "^4.4.0",
+        "viem": "^2.33.2"
     }
 }
