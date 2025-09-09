@@ -234,44 +234,44 @@ export class GatewayApiClient {
         if (params.gasRefill) url.searchParams.append('ethAmountToReceive', `${params.gasRefill}`);
         if (params.message) url.searchParams.append('strategyExtraData', `${params.message}`);
 
-        try {
-            const response = await fetch(url, {
+        const response = await this.safeFetch(
+            url,
+            {
                 headers: {
                     'Content-Type': 'application/json',
                     Accept: 'application/json',
                 },
-            });
+            },
+            'Failed to get onramp liquidity'
+        );
 
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => null);
-                const errorMessage = errorData?.message || 'Failed to get onramp liquidity';
-                throw new Error(`Onramp liquidity API Error: ${errorMessage}`);
-            }
-
-            const jsonResponse = await response.json();
-
-            if (!jsonResponse.orderDetails) {
-                const errorData = jsonResponse.errorData;
-                const apiMessage = errorData?.message;
-                const errorMessage = apiMessage
-                    ? `Failed to get onramp quote: ${apiMessage}`
-                    : 'Failed to get onramp quote';
-                throw new Error(errorMessage);
-            }
-
-            const quote: GatewayQuote = {
-                ...jsonResponse,
-                orderDetails: convertOrderDetailsRawToOrderDetails(jsonResponse.orderDetails),
-            };
-
-            return {
-                ...quote,
-                baseToken: ADDRESS_LOOKUP[this.chainId][quote.baseTokenAddress],
-                outputToken: quote.strategyAddress ? ADDRESS_LOOKUP[this.chainId][outputTokenAddress] : undefined,
-            };
-        } catch (err) {
-            this.handleFetchError(err, 'Failed to get onramp liquidity');
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => null);
+            const errorMessage = errorData?.message || 'Failed to get onramp liquidity';
+            throw new Error(`Onramp liquidity API Error: ${errorMessage}`);
         }
+
+        const jsonResponse = await response.json();
+
+        if (!jsonResponse.orderDetails) {
+            const errorData = jsonResponse.errorData;
+            const apiMessage = errorData?.message;
+            const errorMessage = apiMessage
+                ? `Failed to get onramp quote: ${apiMessage}`
+                : 'Failed to get onramp quote';
+            throw new Error(errorMessage);
+        }
+
+        const quote: GatewayQuote = {
+            ...jsonResponse,
+            orderDetails: convertOrderDetailsRawToOrderDetails(jsonResponse.orderDetails),
+        };
+
+        return {
+            ...quote,
+            baseToken: ADDRESS_LOOKUP[this.chainId][quote.baseTokenAddress],
+            outputToken: quote.strategyAddress ? ADDRESS_LOOKUP[this.chainId][outputTokenAddress] : undefined,
+        };
     }
 
     /**
@@ -302,20 +302,20 @@ export class GatewayApiClient {
      * @returns Promise resolving to the registry contract address
      */
     async fetchOfframpRegistryAddress(): Promise<Address> {
-        try {
-            const response = await this.fetchGet(`${this.baseUrl}/offramp-registry-address`);
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => null);
-                const apiMessage = errorData?.message;
-                const errorMessage = apiMessage
-                    ? `Failed to fetch offramp registry contract: ${apiMessage}`
-                    : 'Failed to fetch offramp registry contract';
-                throw new Error(errorMessage);
-            }
-            return response.text() as Promise<Address>;
-        } catch (err) {
-            this.handleFetchError(err, 'Failed to fetch offramp registry contract address');
+        const response = await this.safeFetch(
+            `${this.baseUrl}/offramp-registry-address`,
+            undefined,
+            'Failed to fetch offramp registry contract address'
+        );
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => null);
+            const apiMessage = errorData?.message;
+            const errorMessage = apiMessage
+                ? `Failed to fetch offramp registry contract: ${apiMessage}`
+                : 'Failed to fetch offramp registry contract';
+            throw new Error(errorMessage);
         }
+        return response.text() as Promise<Address>;
     }
 
     /**
@@ -328,31 +328,25 @@ export class GatewayApiClient {
     async fetchOfframpLiquidity(token: string): Promise<OfframpLiquidity> {
         const tokenAddress = getTokenAddress(this.chainId, token.toLowerCase());
 
-        try {
-            const response = await fetch(`${this.baseUrl}/offramp-liquidity/${tokenAddress}`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Accept: 'application/json',
-                },
-            });
+        const response = await this.safeFetch(
+            `${this.baseUrl}/offramp-liquidity/${tokenAddress}`,
+            undefined,
+            'Failed to get offramp liquidity'
+        );
 
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => null);
-                const errorMessage = errorData?.message || 'Failed to get offramp liquidity';
-                throw new Error(`Offramp liquidity API Error: ${errorMessage}`);
-            }
-
-            const rawLiquidity = await response.json();
-
-            return {
-                token: rawLiquidity.tokenAddress as Address,
-                maxOrderAmount: BigInt(rawLiquidity.maxOrderAmount),
-                totalOfframpLiquidity: BigInt(rawLiquidity.totalOfframpLiquidity),
-            };
-        } catch (err) {
-            this.handleFetchError(err, 'Failed to get offramp liquidity');
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => null);
+            const errorMessage = errorData?.message || 'Failed to get offramp liquidity';
+            throw new Error(`Offramp liquidity API Error: ${errorMessage}`);
         }
+
+        const rawLiquidity = await response.json();
+
+        return {
+            token: rawLiquidity.tokenAddress as Address,
+            maxOrderAmount: BigInt(rawLiquidity.maxOrderAmount),
+            totalOfframpLiquidity: BigInt(rawLiquidity.totalOfframpLiquidity),
+        };
     }
 
     /**
@@ -370,44 +364,38 @@ export class GatewayApiClient {
             userAddress: userAddress,
         });
 
-        try {
-            const response = await fetch(`${this.baseUrl}/offramp-quote?${queryParams}`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Accept: 'application/json',
-                },
-            });
+        const response = await this.safeFetch(
+            `${this.baseUrl}/offramp-quote?${queryParams}`,
+            undefined,
+            'Failed to get offramp quote'
+        );
 
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => null);
-                const apiMessage = errorData?.message;
-                const errorMessage = apiMessage
-                    ? `Failed to get offramp quote: ${apiMessage}`
-                    : `Failed to get offramp quote`;
-                throw new Error(`${errorMessage} | queryParams: ${queryParams}`);
-            }
-
-            const rawQuote: OfframpQuote = await response.json();
-            const currentUnixTimeInSec = Math.floor(Date.now() / 1000);
-            const deadline = currentUnixTimeInSec + ORDER_DEADLINE_IN_SECONDS;
-
-            return {
-                amountLockInSat: rawQuote.amountLockInSat,
-                registryAddress: rawQuote.registryAddress as Address,
-                deadline: deadline,
-                token: token as Address,
-                feeBreakdown: {
-                    overallFeeSats: rawQuote.feeBreakdown.overallFeeSats,
-                    inclusionFeeSats: rawQuote.feeBreakdown.inclusionFeeSats,
-                    protocolFeeSats: rawQuote.feeBreakdown.protocolFeeSats,
-                    affiliateFeeSats: rawQuote.feeBreakdown.affiliateFeeSats,
-                    fastestFeeRate: rawQuote.feeBreakdown.fastestFeeRate,
-                },
-            };
-        } catch (err) {
-            this.handleFetchError(err, 'Failed to get offramp quote');
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => null);
+            const apiMessage = errorData?.message;
+            const errorMessage = apiMessage
+                ? `Failed to get offramp quote: ${apiMessage}`
+                : `Failed to get offramp quote`;
+            throw new Error(`${errorMessage} | queryParams: ${queryParams}`);
         }
+
+        const rawQuote: OfframpQuote = await response.json();
+        const currentUnixTimeInSec = Math.floor(Date.now() / 1000);
+        const deadline = currentUnixTimeInSec + ORDER_DEADLINE_IN_SECONDS;
+
+        return {
+            amountLockInSat: rawQuote.amountLockInSat,
+            registryAddress: rawQuote.registryAddress as Address,
+            deadline: deadline,
+            token: token as Address,
+            feeBreakdown: {
+                overallFeeSats: rawQuote.feeBreakdown.overallFeeSats,
+                inclusionFeeSats: rawQuote.feeBreakdown.inclusionFeeSats,
+                protocolFeeSats: rawQuote.feeBreakdown.protocolFeeSats,
+                affiliateFeeSats: rawQuote.feeBreakdown.affiliateFeeSats,
+                fastestFeeRate: rawQuote.feeBreakdown.fastestFeeRate,
+            },
+        };
     }
 
     /**
@@ -553,36 +541,36 @@ export class GatewayApiClient {
      * @returns Promise resolving to array of offramp orders with status info
      */
     async getOfframpOrders(userAddress: Address): Promise<OfframpOrder[]> {
-        try {
-            const response = await this.fetchGet(`${this.baseUrl}/offramp-orders/${userAddress}`);
-            const rawOrders: OfframpRawOrder[] = await response.json();
-            const offrampRegistryAddress: Address = await this.fetchOfframpRegistryAddress();
+        const response = await this.safeFetch(
+            `${this.baseUrl}/offramp-orders/${userAddress}`,
+            undefined,
+            'Failed to fetch offramp orders'
+        );
+        const rawOrders: OfframpRawOrder[] = await response.json();
+        const offrampRegistryAddress: Address = await this.fetchOfframpRegistryAddress();
 
-            return Promise.all(
-                rawOrders.map(async (order) => {
-                    const status = order.status as OfframpOrderStatus;
-                    const canOrderBeUnlocked = await this.canOrderBeUnlocked(
-                        status,
-                        Number(order.orderTimestamp),
-                        offrampRegistryAddress
-                    );
+        return Promise.all(
+            rawOrders.map(async (order) => {
+                const status = order.status as OfframpOrderStatus;
+                const canOrderBeUnlocked = await this.canOrderBeUnlocked(
+                    status,
+                    Number(order.orderTimestamp),
+                    offrampRegistryAddress
+                );
 
-                    return {
-                        ...order,
-                        status,
-                        token: order.token as Address,
-                        orderId: BigInt(order.orderId.toString()),
-                        satAmountLocked: BigInt(order.satAmountLocked.toString()),
-                        satFeesMax: BigInt(order.satFeesMax.toString()),
-                        orderTimestamp: Number(order.orderTimestamp),
-                        shouldFeesBeBumped: order.shouldFeesBeBumped,
-                        canOrderBeUnlocked,
-                    };
-                })
-            );
-        } catch (err) {
-            this.handleFetchError(err, 'Failed to fetch offramp offramp orders');
-        }
+                return {
+                    ...order,
+                    status,
+                    token: order.token as Address,
+                    orderId: BigInt(order.orderId.toString()),
+                    satAmountLocked: BigInt(order.satAmountLocked.toString()),
+                    satFeesMax: BigInt(order.satFeesMax.toString()),
+                    orderTimestamp: Number(order.orderTimestamp),
+                    shouldFeesBeBumped: order.shouldFeesBeBumped,
+                    canOrderBeUnlocked,
+                };
+            })
+        );
     }
 
     /**
@@ -698,52 +686,52 @@ export class GatewayApiClient {
             orderDetails: convertOrderDetailsToRaw(gatewayQuote.orderDetails),
         };
 
-        try {
-            const response = await fetch(`${this.baseUrl}/v4/order`, {
+        const response = await this.safeFetch(
+            `${this.baseUrl}/v4/order`,
+            {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     Accept: 'application/json',
                 },
                 body: JSON.stringify(request),
-            });
+            },
+            'Failed to create order'
+        );
 
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => null);
-                const apiMessage = errorData?.message;
-                const errorMessage = apiMessage ? `Failed to create order: ${apiMessage}` : 'Failed to create order';
-                throw new Error(errorMessage);
-            }
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => null);
+            const apiMessage = errorData?.message;
+            const errorMessage = apiMessage ? `Failed to create order: ${apiMessage}` : 'Failed to create order';
+            throw new Error(errorMessage);
+        }
 
-            const data: GatewayCreateOrderResponse = await response.json();
+        const data: GatewayCreateOrderResponse = await response.json();
 
-            let psbtBase64: string = '';
-            if (
-                params.fromUserAddress &&
-                typeof params.fromChain === 'string' &&
-                params.fromChain.toLowerCase() === 'bitcoin'
-            ) {
-                psbtBase64 = await createBitcoinPsbt(
-                    params.fromUserAddress,
-                    gatewayQuote.bitcoinAddress,
-                    gatewayQuote.satoshis,
-                    params.fromUserPublicKey,
-                    data.opReturnHash,
-                    params.feeRate,
-                    gatewayQuote.txProofDifficultyFactor,
-                    this.isSignet
-                );
+        let psbtBase64: string = '';
+        if (
+            params.fromUserAddress &&
+            typeof params.fromChain === 'string' &&
+            params.fromChain.toLowerCase() === 'bitcoin'
+        ) {
+            psbtBase64 = await createBitcoinPsbt(
+                params.fromUserAddress,
+                gatewayQuote.bitcoinAddress,
+                gatewayQuote.satoshis,
+                params.fromUserPublicKey,
+                data.opReturnHash,
+                params.feeRate,
+                gatewayQuote.txProofDifficultyFactor,
+                this.isSignet
+            );
 
-                return {
-                    uuid: data.uuid,
-                    opReturnHash: data.opReturnHash,
-                    bitcoinAddress: gatewayQuote.bitcoinAddress,
-                    satoshis: gatewayQuote.satoshis,
-                    psbtBase64,
-                };
-            }
-        } catch (err) {
-            this.handleFetchError(err, 'Failed to create order');
+            return {
+                uuid: data.uuid,
+                opReturnHash: data.opReturnHash,
+                bitcoinAddress: gatewayQuote.bitcoinAddress,
+                satoshis: gatewayQuote.satoshis,
+                psbtBase64,
+            };
         }
 
         throw new Error('Failed to create bitcoin psbt due to an unexpected error.');
@@ -927,27 +915,27 @@ export class GatewayApiClient {
             bitcoinTxHex = bitcoinTxOrId;
         }
 
-        try {
-            const response = await fetch(`${this.baseUrl}/order/${uuid}`, {
+        const response = await this.safeFetch(
+            `${this.baseUrl}/order/${uuid}`,
+            {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
                     Accept: 'application/json',
                 },
                 body: JSON.stringify({ bitcoinTx: bitcoinTxHex }),
-            });
+            },
+            'Failed to update order'
+        );
 
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => null);
-                const apiMessage = errorData?.message;
-                const errorMessage = apiMessage ? `Failed to update order: ${apiMessage}` : `Failed to update order`;
-                throw new Error(errorMessage);
-            }
-
-            return response.json();
-        } catch (err) {
-            this.handleFetchError(err, 'Failed to update order');
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => null);
+            const apiMessage = errorData?.message;
+            const errorMessage = apiMessage ? `Failed to update order: ${apiMessage}` : `Failed to update order`;
+            throw new Error(errorMessage);
         }
+
+        return response.json();
     }
 
     /**
@@ -958,7 +946,11 @@ export class GatewayApiClient {
      */
     async getOnrampOrders(userAddress: Address): Promise<OnrampOrder[]> {
         const chainId = this.chainId;
-        const response = await this.fetchGet(`${this.baseUrl}/orders/${userAddress}`);
+        const response = await this.safeFetch(
+            `${this.baseUrl}/orders/${userAddress}`,
+            undefined,
+            'Failed to fetch onramp orders'
+        );
         const orders = await response.json();
         return orders.map((order) => {
             function getFinal<L, R>(base?: L, output?: R): NonNullable<L | R> {
@@ -1032,7 +1024,11 @@ export class GatewayApiClient {
      * @returns Promise resolving to array of strategy contracts
      */
     async getStrategies(): Promise<GatewayStrategyContract[]> {
-        const response = await this.fetchGet(`${this.baseUrl}/strategies`);
+        const response = await this.safeFetch(
+            `${this.baseUrl}/strategies`,
+            undefined,
+            'Failed to fetch gateway strategies'
+        );
 
         const chainName = this.chain.name;
         const chainId = this.chainId;
@@ -1093,20 +1089,20 @@ export class GatewayApiClient {
      * @returns Promise resolving to array of token addresses
      */
     async getTokenAddresses(includeStrategies: boolean = true): Promise<Address[]> {
-        try {
-            const response = await this.fetchGet(`${this.baseUrl}/tokens?includeStrategies=${includeStrategies}`);
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => null);
-                const apiMessage = errorData?.message;
-                const errorMessage = apiMessage
-                    ? `Failed to fetch supported token addresses: ${apiMessage}`
-                    : 'Failed to fetch supported token addresses';
-                throw new Error(errorMessage);
-            }
-            return response.json();
-        } catch (err) {
-            this.handleFetchError(err, 'Failed to fetch supported token addresses');
+        const response = await this.safeFetch(
+            `${this.baseUrl}/tokens?includeStrategies=${includeStrategies}`,
+            undefined,
+            'Failed to fetch supported token addresses'
+        );
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => null);
+            const apiMessage = errorData?.message;
+            const errorMessage = apiMessage
+                ? `Failed to fetch supported token addresses: ${apiMessage}`
+                : 'Failed to fetch supported token addresses';
+            throw new Error(errorMessage);
         }
+        return response.json();
     }
 
     /**
@@ -1123,20 +1119,20 @@ export class GatewayApiClient {
 
     // TODO: should get price from the gateway API
     private async getPrices(): Promise<Map<string, number>> {
-        try {
-            const response = await this.fetchGet('https://fusion-api.gobob.xyz/pricefeed');
+        const response = await this.safeFetch(
+            'https://fusion-api.gobob.xyz/pricefeed',
+            undefined,
+            'Failed to fetch prices from Fusion API'
+        );
 
-            if (!response.ok) {
-                console.error('Failed to fetch prices from Fusion API');
-                return new Map();
-            }
-
-            const list = await response.json();
-
-            return new Map(list.map((x) => [x.token_address.toLowerCase(), Number(x.price)]));
-        } catch (err) {
-            this.handleFetchError(err, 'Failed to fetch prices from Fusion API');
+        if (!response.ok) {
+            console.error('Failed to fetch prices from Fusion API');
+            return new Map();
         }
+
+        const list = await response.json();
+
+        return new Map(list.map((x) => [x.token_address.toLowerCase(), Number(x.price)]));
     }
 
     /**
@@ -1206,14 +1202,20 @@ export class GatewayApiClient {
         ];
     }
 
-    private fetchGet(url: string) {
-        return fetch(url, {
+    private safeFetch(url: URL | string, init: RequestInit | undefined, errorMessage: string) {
+        const defaultInit = {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
                 Accept: 'application/json',
             },
-        });
+        };
+
+        try {
+            return fetch(url, init || defaultInit);
+        } catch (err) {
+            this.handleFetchError(err, errorMessage);
+        }
     }
 
     private handleFetchError(err: unknown, message: string): never {
