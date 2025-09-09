@@ -251,7 +251,7 @@ export class GatewayApiClient {
             const jsonResponse = await response.json();
 
             if (!jsonResponse.orderDetails) {
-                const errorData = await response.json().catch(() => null);
+                const errorData = jsonResponse.errorData;
                 const apiMessage = errorData?.message;
                 const errorMessage = apiMessage
                     ? `Failed to get onramp quote: ${apiMessage}`
@@ -304,6 +304,14 @@ export class GatewayApiClient {
     async fetchOfframpRegistryAddress(): Promise<Address> {
         try {
             const response = await this.fetchGet(`${this.baseUrl}/offramp-registry-address`);
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => null);
+                const apiMessage = errorData?.message;
+                const errorMessage = apiMessage
+                    ? `Failed to fetch offramp registry contract: ${apiMessage}`
+                    : 'Failed to fetch offramp registry contract';
+                throw new Error(errorMessage);
+            }
             return response.text() as Promise<Address>;
         } catch (err) {
             this.handleFetchError(err, 'Failed to fetch offramp registry contract address');
@@ -1087,6 +1095,14 @@ export class GatewayApiClient {
     async getTokenAddresses(includeStrategies: boolean = true): Promise<Address[]> {
         try {
             const response = await this.fetchGet(`${this.baseUrl}/tokens?includeStrategies=${includeStrategies}`);
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => null);
+                const apiMessage = errorData?.message;
+                const errorMessage = apiMessage
+                    ? `Failed to fetch supported token addresses: ${apiMessage}`
+                    : 'Failed to fetch supported token addresses';
+                throw new Error(errorMessage);
+            }
             return response.json();
         } catch (err) {
             this.handleFetchError(err, 'Failed to fetch supported token addresses');
