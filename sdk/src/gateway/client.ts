@@ -241,6 +241,12 @@ export class GatewayApiClient {
             },
         });
 
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => null);
+            const errorMessage = errorData?.message || 'Failed to get onramp liquidity';
+            throw new Error(`Onramp liquidity API Error: ${errorMessage}`);
+        }
+
         const jsonResponse = await response.json();
 
         if (!jsonResponse.orderDetails) {
