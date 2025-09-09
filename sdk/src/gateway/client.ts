@@ -1202,7 +1202,7 @@ export class GatewayApiClient {
         ];
     }
 
-    private safeFetch(url: URL | string, init: RequestInit | undefined, errorMessage: string) {
+    private async safeFetch(url: URL | string, init: RequestInit | undefined, errorMessage: string) {
         const defaultInit = {
             method: 'GET',
             headers: {
@@ -1212,7 +1212,9 @@ export class GatewayApiClient {
         };
 
         try {
-            return fetch(url, init || defaultInit);
+            // NOTE: await inside try/catch to handle runtime error
+            const response = await fetch(url, init || defaultInit);
+            return response;
         } catch (err) {
             this.handleFetchError(err, errorMessage);
         }
