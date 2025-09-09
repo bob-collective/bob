@@ -306,7 +306,7 @@ export class GatewayApiClient {
             const response = await this.fetchGet(`${this.baseUrl}/offramp-registry-address`);
             return response.text() as Promise<Address>;
         } catch (err) {
-            this.handleFetchError(err, 'Failed to fetch offramp registry contract');
+            this.handleFetchError(err, 'Failed to fetch offramp registry contract address');
         }
     }
 
