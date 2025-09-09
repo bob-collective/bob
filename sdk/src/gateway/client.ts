@@ -234,40 +234,49 @@ export class GatewayApiClient {
         if (params.gasRefill) url.searchParams.append('ethAmountToReceive', `${params.gasRefill}`);
         if (params.message) url.searchParams.append('strategyExtraData', `${params.message}`);
 
-        const response = await fetch(url, {
-            headers: {
-                'Content-Type': 'application/json',
-                Accept: 'application/json',
-            },
-        });
+        try {
+            const response = await fetch(url, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                },
+            });
 
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => null);
-            const errorMessage = errorData?.message || 'Failed to get onramp liquidity';
-            throw new Error(`Onramp liquidity API Error: ${errorMessage}`);
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => null);
+                const errorMessage = errorData?.message || 'Failed to get onramp liquidity';
+                throw new Error(`Onramp liquidity API Error: ${errorMessage}`);
+            }
+
+            const jsonResponse = await response.json();
+
+            if (!jsonResponse.orderDetails) {
+                const errorData = await response.json().catch(() => null);
+                const apiMessage = errorData?.message;
+                const errorMessage = apiMessage
+                    ? `Failed to get onramp quote: ${apiMessage}`
+                    : 'Failed to get onramp quote';
+                throw new Error(errorMessage);
+            }
+
+            const quote: GatewayQuote = {
+                ...jsonResponse,
+                orderDetails: convertOrderDetailsRawToOrderDetails(jsonResponse.orderDetails),
+            };
+
+            return {
+                ...quote,
+                baseToken: ADDRESS_LOOKUP[this.chainId][quote.baseTokenAddress],
+                outputToken: quote.strategyAddress ? ADDRESS_LOOKUP[this.chainId][outputTokenAddress] : undefined,
+            };
+        } catch (err) {
+            if (err instanceof TypeError) {
+                if (err.message === 'Failed to fetch') {
+                    throw new Error('Failed to get onramp liquidity');
+                }
+            }
+            throw err;
         }
-
-        const jsonResponse = await response.json();
-
-        if (!jsonResponse.orderDetails) {
-            const errorData = await response.json().catch(() => null);
-            const apiMessage = errorData?.message;
-            const errorMessage = apiMessage
-                ? `Failed to get onramp quote: ${apiMessage}`
-                : 'Failed to get onramp quote';
-            throw new Error(errorMessage);
-        }
-
-        const quote: GatewayQuote = {
-            ...jsonResponse,
-            orderDetails: convertOrderDetailsRawToOrderDetails(jsonResponse.orderDetails),
-        };
-
-        return {
-            ...quote,
-            baseToken: ADDRESS_LOOKUP[this.chainId][quote.baseTokenAddress],
-            outputToken: quote.strategyAddress ? ADDRESS_LOOKUP[this.chainId][outputTokenAddress] : undefined,
-        };
     }
 
     /**
@@ -312,27 +321,36 @@ export class GatewayApiClient {
     async fetchOfframpLiquidity(token: string): Promise<OfframpLiquidity> {
         const tokenAddress = getTokenAddress(this.chainId, token.toLowerCase());
 
-        const response = await fetch(`${this.baseUrl}/offramp-liquidity/${tokenAddress}`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                Accept: 'application/json',
-            },
-        });
+        try {
+            const response = await fetch(`${this.baseUrl}/offramp-liquidity/${tokenAddress}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                },
+            });
 
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => null);
-            const errorMessage = errorData?.message || 'Failed to get offramp liquidity';
-            throw new Error(`Offramp liquidity API Error: ${errorMessage}`);
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => null);
+                const errorMessage = errorData?.message || 'Failed to get offramp liquidity';
+                throw new Error(`Offramp liquidity API Error: ${errorMessage}`);
+            }
+
+            const rawLiquidity = await response.json();
+
+            return {
+                token: rawLiquidity.tokenAddress as Address,
+                maxOrderAmount: BigInt(rawLiquidity.maxOrderAmount),
+                totalOfframpLiquidity: BigInt(rawLiquidity.totalOfframpLiquidity),
+            };
+        } catch (err) {
+            if (err instanceof TypeError) {
+                if (err.message === 'Failed to fetch') {
+                    throw new Error('Failed to get offramp liquidity');
+                }
+            }
+            throw err;
         }
-
-        const rawLiquidity = await response.json();
-
-        return {
-            token: rawLiquidity.tokenAddress as Address,
-            maxOrderAmount: BigInt(rawLiquidity.maxOrderAmount),
-            totalOfframpLiquidity: BigInt(rawLiquidity.totalOfframpLiquidity),
-        };
     }
 
     /**
@@ -350,40 +368,49 @@ export class GatewayApiClient {
             userAddress: userAddress,
         });
 
-        const response = await fetch(`${this.baseUrl}/offramp-quote?${queryParams}`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                Accept: 'application/json',
-            },
-        });
+        try {
+            const response = await fetch(`${this.baseUrl}/offramp-quote?${queryParams}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                },
+            });
 
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => null);
-            const apiMessage = errorData?.message;
-            const errorMessage = apiMessage
-                ? `Failed to get offramp quote: ${apiMessage}`
-                : `Failed to get offramp quote`;
-            throw new Error(`${errorMessage} | queryParams: ${queryParams}`);
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => null);
+                const apiMessage = errorData?.message;
+                const errorMessage = apiMessage
+                    ? `Failed to get offramp quote: ${apiMessage}`
+                    : `Failed to get offramp quote`;
+                throw new Error(`${errorMessage} | queryParams: ${queryParams}`);
+            }
+
+            const rawQuote: OfframpQuote = await response.json();
+            const currentUnixTimeInSec = Math.floor(Date.now() / 1000);
+            const deadline = currentUnixTimeInSec + ORDER_DEADLINE_IN_SECONDS;
+
+            return {
+                amountLockInSat: rawQuote.amountLockInSat,
+                registryAddress: rawQuote.registryAddress as Address,
+                deadline: deadline,
+                token: token as Address,
+                feeBreakdown: {
+                    overallFeeSats: rawQuote.feeBreakdown.overallFeeSats,
+                    inclusionFeeSats: rawQuote.feeBreakdown.inclusionFeeSats,
+                    protocolFeeSats: rawQuote.feeBreakdown.protocolFeeSats,
+                    affiliateFeeSats: rawQuote.feeBreakdown.affiliateFeeSats,
+                    fastestFeeRate: rawQuote.feeBreakdown.fastestFeeRate,
+                },
+            };
+        } catch (err) {
+            if (err instanceof TypeError) {
+                if (err.message === 'Failed to fetch') {
+                    throw new Error(`Failed to get offramp quote`);
+                }
+            }
+            throw err;
         }
-
-        const rawQuote: OfframpQuote = await response.json();
-        const currentUnixTimeInSec = Math.floor(Date.now() / 1000);
-        const deadline = currentUnixTimeInSec + ORDER_DEADLINE_IN_SECONDS;
-
-        return {
-            amountLockInSat: rawQuote.amountLockInSat,
-            registryAddress: rawQuote.registryAddress as Address,
-            deadline: deadline,
-            token: token as Address,
-            feeBreakdown: {
-                overallFeeSats: rawQuote.feeBreakdown.overallFeeSats,
-                inclusionFeeSats: rawQuote.feeBreakdown.inclusionFeeSats,
-                protocolFeeSats: rawQuote.feeBreakdown.protocolFeeSats,
-                affiliateFeeSats: rawQuote.feeBreakdown.affiliateFeeSats,
-                fastestFeeRate: rawQuote.feeBreakdown.fastestFeeRate,
-            },
-        };
     }
 
     /**
@@ -670,48 +697,57 @@ export class GatewayApiClient {
             orderDetails: convertOrderDetailsToRaw(gatewayQuote.orderDetails),
         };
 
-        const response = await fetch(`${this.baseUrl}/v4/order`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                Accept: 'application/json',
-            },
-            body: JSON.stringify(request),
-        });
+        try {
+            const response = await fetch(`${this.baseUrl}/v4/order`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                },
+                body: JSON.stringify(request),
+            });
 
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => null);
-            const apiMessage = errorData?.message;
-            const errorMessage = apiMessage ? `Failed to create order: ${apiMessage}` : 'Failed to create order';
-            throw new Error(errorMessage);
-        }
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => null);
+                const apiMessage = errorData?.message;
+                const errorMessage = apiMessage ? `Failed to create order: ${apiMessage}` : 'Failed to create order';
+                throw new Error(errorMessage);
+            }
 
-        const data: GatewayCreateOrderResponse = await response.json();
+            const data: GatewayCreateOrderResponse = await response.json();
 
-        let psbtBase64: string = '';
-        if (
-            params.fromUserAddress &&
-            typeof params.fromChain === 'string' &&
-            params.fromChain.toLowerCase() === 'bitcoin'
-        ) {
-            psbtBase64 = await createBitcoinPsbt(
-                params.fromUserAddress,
-                gatewayQuote.bitcoinAddress,
-                gatewayQuote.satoshis,
-                params.fromUserPublicKey,
-                data.opReturnHash,
-                params.feeRate,
-                gatewayQuote.txProofDifficultyFactor,
-                this.isSignet
-            );
+            let psbtBase64: string = '';
+            if (
+                params.fromUserAddress &&
+                typeof params.fromChain === 'string' &&
+                params.fromChain.toLowerCase() === 'bitcoin'
+            ) {
+                psbtBase64 = await createBitcoinPsbt(
+                    params.fromUserAddress,
+                    gatewayQuote.bitcoinAddress,
+                    gatewayQuote.satoshis,
+                    params.fromUserPublicKey,
+                    data.opReturnHash,
+                    params.feeRate,
+                    gatewayQuote.txProofDifficultyFactor,
+                    this.isSignet
+                );
 
-            return {
-                uuid: data.uuid,
-                opReturnHash: data.opReturnHash,
-                bitcoinAddress: gatewayQuote.bitcoinAddress,
-                satoshis: gatewayQuote.satoshis,
-                psbtBase64,
-            };
+                return {
+                    uuid: data.uuid,
+                    opReturnHash: data.opReturnHash,
+                    bitcoinAddress: gatewayQuote.bitcoinAddress,
+                    satoshis: gatewayQuote.satoshis,
+                    psbtBase64,
+                };
+            }
+        } catch (err) {
+            if (err instanceof TypeError) {
+                if (err.message === 'Failed to fetch') {
+                    throw new Error('Failed to create order');
+                }
+            }
+            throw err;
         }
 
         throw new Error('Failed to create bitcoin psbt due to an unexpected error.');
@@ -895,23 +931,32 @@ export class GatewayApiClient {
             bitcoinTxHex = bitcoinTxOrId;
         }
 
-        const response = await fetch(`${this.baseUrl}/order/${uuid}`, {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-                Accept: 'application/json',
-            },
-            body: JSON.stringify({ bitcoinTx: bitcoinTxHex }),
-        });
+        try {
+            const response = await fetch(`${this.baseUrl}/order/${uuid}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                },
+                body: JSON.stringify({ bitcoinTx: bitcoinTxHex }),
+            });
 
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => null);
-            const apiMessage = errorData?.message;
-            const errorMessage = apiMessage ? `Failed to update order: ${apiMessage}` : `Failed to update order)`;
-            throw new Error(errorMessage);
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => null);
+                const apiMessage = errorData?.message;
+                const errorMessage = apiMessage ? `Failed to update order: ${apiMessage}` : `Failed to update order`;
+                throw new Error(errorMessage);
+            }
+
+            return response.json();
+        } catch (err) {
+            if (err instanceof TypeError) {
+                if (err.message === 'Failed to fetch') {
+                    throw new Error('Failed to update order');
+                }
+            }
+            throw err;
         }
-
-        return response.json();
     }
 
     /**
