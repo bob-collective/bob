@@ -497,9 +497,11 @@ export class EsploraClient {
     private async getJson<T>(url: string): Promise<T> {
         const response = await fetch(url);
         if (!response.ok) {
-            throw new Error(response.statusText);
+            const text = await response.text();
+            const errorText = `Esplora error: ${text}`;
+            throw new Error(errorText);
         }
-        return (await response.json()) as Promise<T>;
+        return response.json() as Promise<T>;
     }
 
     /**
