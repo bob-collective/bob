@@ -111,3 +111,54 @@ All LayerZero operations route through BOB:
 LayerZero uses standardized wBTC OFT contracts across supported chains:
 - **Address**: `0x0555e30da8f98308edb960aa94c0db47230d2b9c` (most chains)
 - **Exception**: Optimism uses `0xc3f854b2970f8727d28527ece33176fac67fef48`
+
+## Error Cases & Recovery
+
+LayerZero transactions involve multiple steps that can fail at different points, requiring manual user intervention:
+
+### BOB → LayerZero Chain Failures
+
+If the LayerZero bridging step fails on BOB (e.g., insufficient gas, network congestion):
+
+- **Issue**: User's Bitcoin was swapped to wBTC on BOB, but LayerZero send failed
+- **Recovery**: User must manually execute the LayerZero bridge transaction on BOB
+- **Action Required**: Submit the LayerZero `send()` transaction directly on BOB with sufficient gas
+
+### BOB → Bitcoin Offramp Failures  
+
+If the Bitcoin withdrawal fails after LayerZero bridging completes:
+
+#### Insufficient Fees
+- **Issue**: Bitcoin network fees increased, making the withdrawal uneconomical
+- **Recovery Options**:
+  - **Bump Fees**: Increase the fee allocation for the withdrawal order
+  - **Wait**: Monitor for lower network fees before proceeding
+
+#### Network Congestion
+- **Issue**: Bitcoin network congestion prevents timely withdrawal processing
+- **Recovery Options**:
+  - **Withdraw wBTC**: Cancel the withdrawal and manually withdraw wBTC from BOB
+  - **Wait**: Allow additional time for network conditions to improve
+
+### Manual Recovery Process
+
+```typescript
+// For failed Bitcoin withdrawals, users can bump fees:
+const bumpTxHash = await client.bumpFee({
+    orderId: offrampOrderId, // From the failed withdrawal order
+    walletClient,
+    publicClient
+});
+
+// Or unlock and withdraw wBTC if withdrawal is uneconomical:
+const unlockTxHash = await client.unlockOrder({
+    orderId: offrampOrderId,
+    receiver: userEvmAddress, // Where to send the wBTC
+    walletClient,
+    publicClient
+});
+```
+
+:::warning Manual Intervention Required
+LayerZero integration may require users to complete transactions manually on BOB in certain failure scenarios. Always monitor transaction status and be prepared to assist users with recovery procedures.
+:::
