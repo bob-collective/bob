@@ -248,7 +248,7 @@ export class GatewayApiClient {
         if (!response.ok) {
             const errorData = await response.json().catch(() => null);
             const errorMessage = errorData?.message || 'Failed to get onramp liquidity';
-            throw new Error(`Onramp liquidity API Error: ${errorMessage}`);
+            throw new Error(errorMessage);
         }
 
         const jsonResponse = await response.json();
@@ -256,9 +256,7 @@ export class GatewayApiClient {
         if (!jsonResponse.orderDetails) {
             const errorData = jsonResponse.errorData;
             const apiMessage = errorData?.message;
-            const errorMessage = apiMessage
-                ? `Failed to get onramp quote: ${apiMessage}`
-                : 'Failed to get onramp quote';
+            const errorMessage = apiMessage || 'Failed to get onramp quote';
             throw new Error(errorMessage);
         }
 
@@ -310,9 +308,7 @@ export class GatewayApiClient {
         if (!response.ok) {
             const errorData = await response.json().catch(() => null);
             const apiMessage = errorData?.message;
-            const errorMessage = apiMessage
-                ? `Failed to fetch offramp registry contract: ${apiMessage}`
-                : 'Failed to fetch offramp registry contract';
+            const errorMessage = apiMessage || 'Failed to fetch offramp registry contract';
             throw new Error(errorMessage);
         }
         return response.text() as Promise<Address>;
@@ -337,7 +333,7 @@ export class GatewayApiClient {
         if (!response.ok) {
             const errorData = await response.json().catch(() => null);
             const errorMessage = errorData?.message || 'Failed to get offramp liquidity';
-            throw new Error(`Offramp liquidity API Error: ${errorMessage}`);
+            throw new Error(errorMessage);
         }
 
         const rawLiquidity = await response.json();
@@ -373,9 +369,7 @@ export class GatewayApiClient {
         if (!response.ok) {
             const errorData = await response.json().catch(() => null);
             const apiMessage = errorData?.message;
-            const errorMessage = apiMessage
-                ? `Failed to get offramp quote: ${apiMessage}`
-                : `Failed to get offramp quote`;
+            const errorMessage = apiMessage || `Failed to get offramp quote`;
             throw new Error(`${errorMessage} | queryParams: ${queryParams}`);
         }
 
@@ -702,7 +696,7 @@ export class GatewayApiClient {
         if (!response.ok) {
             const errorData = await response.json().catch(() => null);
             const apiMessage = errorData?.message;
-            const errorMessage = apiMessage ? `Failed to create order: ${apiMessage}` : 'Failed to create order';
+            const errorMessage = apiMessage || 'Failed to create order';
             throw new Error(errorMessage);
         }
 
@@ -931,7 +925,7 @@ export class GatewayApiClient {
         if (!response.ok) {
             const errorData = await response.json().catch(() => null);
             const apiMessage = errorData?.message;
-            const errorMessage = apiMessage ? `Failed to update order: ${apiMessage}` : `Failed to update order`;
+            const errorMessage = apiMessage || `Failed to update order`;
             throw new Error(errorMessage);
         }
 
@@ -1097,9 +1091,7 @@ export class GatewayApiClient {
         if (!response.ok) {
             const errorData = await response.json().catch(() => null);
             const apiMessage = errorData?.message;
-            const errorMessage = apiMessage
-                ? `Failed to fetch supported token addresses: ${apiMessage}`
-                : 'Failed to fetch supported token addresses';
+            const errorMessage = apiMessage || 'Failed to fetch supported token addresses';
             throw new Error(errorMessage);
         }
         return response.json();
