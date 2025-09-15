@@ -47,6 +47,7 @@ We contracted several auditing firms to evaluate BOB's implementation of the USD
 ### Pashov
 
 - April 2024: BOB USDC Bridge Security Review. [Report](BOB-USDCBridge-security-review.pdf)
+- August 2025: BOB Gateway Offramp Solver Security Audit. [Report](Pashov-Audit-Report-2025-offramp-solver.pdf)
 
 ## FusionLock Contract
 
