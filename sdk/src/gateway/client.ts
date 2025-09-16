@@ -759,7 +759,6 @@ export class GatewayApiClient {
 
             // TODO: refactor to construct the PSBT instead since it may fund from other inputs
             const availableBtcBalance = await esploraClient.getBalance(params.fromUserAddress!);
-            console.log(availableBtcBalance);
             if (availableBtcBalance.total < BigInt(quote.satoshis)) {
                 throw new Error(
                     `Insufficient BTC balance in address ${quote.bitcoinAddress}. Required: ${formatBtc(BigInt(quote.satoshis))}, Got: ${formatBtc(BigInt(availableBtcBalance.total))}`
@@ -808,13 +807,20 @@ export class GatewayApiClient {
 
             const accountAddress = walletClient.account?.address ?? (params.fromUserAddress as Address);
 
-            // Check ETH balance for gas fees
-            const ethBalance = await publicClient.getBalance({
-                address: accountAddress,
-            });
-
-            // Estimate gas for both potential transactions
-            const [approvalGasEstimate, createOrderGasEstimate] = await Promise.all([
+            // Check ETH balance and estimate gas for both potential transactions
+            const [
+                ethBalance,
+                feeValues,
+                gasPrice,
+                approvalGasEstimate,
+                createOrderGasEstimate,
+                [allowance, decimals],
+            ] = await Promise.all([
+                publicClient.getBalance({
+                    address: accountAddress,
+                }),
+                publicClient.estimateFeesPerGas(),
+                publicClient.getGasPrice(),
                 publicClient.estimateContractGas({
                     address: tokenAddress,
                     abi: erc20Abi,
@@ -829,30 +835,27 @@ export class GatewayApiClient {
                     args: offrampOrder.offrampArgs,
                     account: walletClient.account,
                 }),
+                publicClient.multicall({
+                    allowFailure: false,
+                    contracts: [
+                        {
+                            address: tokenAddress,
+                            abi: erc20Abi,
+                            functionName: 'allowance',
+                            args: [params.fromUserAddress as Address, offrampRegistryAddress],
+                        },
+                        {
+                            address: tokenAddress,
+                            abi: erc20Abi,
+                            functionName: 'decimals',
+                        },
+                    ],
+                }),
             ]);
 
-            const feeValues = await publicClient.estimateFeesPerGas();
-            const gasPrice = await publicClient.getGasPrice();
             const fee = feeValues.maxFeePerGas ?? gasPrice;
             const approvalGasCost = approvalGasEstimate * fee;
             const createOrderGasCost = createOrderGasEstimate * fee;
-
-            const [allowance, decimals] = await publicClient.multicall({
-                allowFailure: false,
-                contracts: [
-                    {
-                        address: tokenAddress,
-                        abi: erc20Abi,
-                        functionName: 'allowance',
-                        args: [params.fromUserAddress as Address, offrampRegistryAddress],
-                    },
-                    {
-                        address: tokenAddress,
-                        abi: erc20Abi,
-                        functionName: 'decimals',
-                    },
-                ],
-            });
 
             if (decimals < 8) {
                 throw new Error('Tokens with less than 8 decimals are not supported');
