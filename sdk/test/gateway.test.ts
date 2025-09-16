@@ -710,6 +710,14 @@ describe('Gateway Tests', () => {
         const mockPublicClient = {
             multicall: () => Promise.resolve([10_000n, 8]),
             readContract: () => Promise.resolve(10_000n),
+            getBalance: () => Promise.resolve(1000000000000000000n), // 1 ETH in wei
+            estimateContractGas: () => Promise.resolve(21000n),
+            estimateFeesPerGas: () =>
+                Promise.resolve({
+                    maxFeePerGas: 20000000000n,
+                    maxPriorityFeePerGas: 1000000000n,
+                }),
+            getGasPrice: () => Promise.resolve(20000000000n),
             simulateContract: () => Promise.resolve({ request: '🎉' }),
             waitForTransactionReceipt: () =>
                 Promise.resolve('0x35f5bca7f984f4ed97888944293b979f3abb198a5716d04e10c6bdc023080075'),

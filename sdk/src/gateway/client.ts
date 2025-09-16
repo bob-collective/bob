@@ -758,10 +758,11 @@ export class GatewayApiClient {
             const esploraClient = new EsploraClient(this.chain.id === bob.id ? Network.mainnet : Network.signet);
 
             // TODO: refactor to construct the PSBT instead since it may fund from other inputs
-            const availableBtcBalance = await esploraClient.getBalance(quote.bitcoinAddress);
+            const availableBtcBalance = await esploraClient.getBalance(params.fromUserAddress!);
+            console.log(availableBtcBalance);
             if (availableBtcBalance.total < BigInt(quote.satoshis)) {
                 throw new Error(
-                    `Insufficient BTC balance in address ${quote.bitcoinAddress}. Required: ${formatBtc(BigInt(quote.satoshis))}`
+                    `Insufficient BTC balance in address ${quote.bitcoinAddress}. Required: ${formatBtc(BigInt(quote.satoshis))}, Got: ${formatBtc(BigInt(availableBtcBalance.total))}`
                 );
             }
 
