@@ -795,9 +795,11 @@ export class GatewayApiClient {
                 this.fetchOfframpRegistryAddress(),
             ]);
 
+            const accountAddress = walletClient.account?.address ?? (params.fromUserAddress as Address);
+
             // Check ETH balance for gas fees
             const ethBalance = await publicClient.getBalance({
-                address: walletClient.account.address,
+                address: accountAddress,
             });
 
             // Estimate gas for both potential transactions
@@ -818,9 +820,11 @@ export class GatewayApiClient {
                 }),
             ]);
 
+            const feeValues = await publicClient.estimateFeesPerGas();
             const gasPrice = await publicClient.getGasPrice();
-            const approvalGasCost = approvalGasEstimate * gasPrice;
-            const createOrderGasCost = createOrderGasEstimate * gasPrice;
+            const fee = feeValues.maxFeePerGas ?? gasPrice;
+            const approvalGasCost = approvalGasEstimate * fee;
+            const createOrderGasCost = createOrderGasEstimate * fee;
 
             const [allowance, decimals] = await publicClient.multicall({
                 allowFailure: false,
@@ -839,8 +843,12 @@ export class GatewayApiClient {
                 ],
             });
 
-            const multiplier = 10 ** (decimals - 8);
-            const needsApproval = BigInt(quote.amountLockInSat * multiplier) > allowance;
+            if (decimals < 8) {
+                throw new Error('Tokens with less than 8 decimals are not supported');
+            }
+            const multiplier = 10n ** BigInt(decimals - 8);
+            const requiredAmount = BigInt(quote.amountLockInSat) * multiplier;
+            const needsApproval = requiredAmount > allowance;
 
             // Calculate total gas cost needed
             const totalGasCost = needsApproval ? approvalGasCost + createOrderGasCost : createOrderGasCost;
