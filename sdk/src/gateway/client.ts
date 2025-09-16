@@ -755,6 +755,16 @@ export class GatewayApiClient {
             const { onrampQuote, params } = executeQuoteParams;
             const quote = onrampQuote!;
 
+            const esploraClient = new EsploraClient(this.chain.id === bob.id ? Network.mainnet : Network.signet);
+
+            // TODO: refactor to construct the PSBT instead since it may fund from other inputs
+            const availableBtcBalance = await esploraClient.getBalance(params.fromUserAddress!);
+            if (availableBtcBalance.total < BigInt(quote.satoshis)) {
+                throw new Error(
+                    `Insufficient BTC balance in address ${quote.bitcoinAddress}. Required: ${formatBtc(BigInt(quote.satoshis))}, Got: ${formatBtc(BigInt(availableBtcBalance.total))}`
+                );
+            }
+
             const { uuid, psbtBase64, bitcoinAddress, satoshis, opReturnHash } = await this.startOnrampOrder(
                 quote,
                 params
@@ -795,25 +805,75 @@ export class GatewayApiClient {
                 this.fetchOfframpRegistryAddress(),
             ]);
 
-            const [allowance, decimals] = await publicClient.multicall({
-                allowFailure: false,
-                contracts: [
-                    {
-                        address: tokenAddress,
-                        abi: erc20Abi,
-                        functionName: 'allowance',
-                        args: [params.fromUserAddress as Address, offrampRegistryAddress],
-                    },
-                    {
-                        address: tokenAddress,
-                        abi: erc20Abi,
-                        functionName: 'decimals',
-                    },
-                ],
-            });
+            const accountAddress = walletClient.account?.address ?? (params.fromUserAddress as Address);
 
-            const multiplier = 10 ** (decimals - 8);
-            if (BigInt(quote.amountLockInSat * multiplier) > allowance) {
+            // Check ETH balance and estimate gas for both potential transactions
+            const [
+                ethBalance,
+                feeValues,
+                gasPrice,
+                approvalGasEstimate,
+                createOrderGasEstimate,
+                [allowance, decimals],
+            ] = await Promise.all([
+                publicClient.getBalance({
+                    address: accountAddress,
+                }),
+                publicClient.estimateFeesPerGas(),
+                publicClient.getGasPrice(),
+                publicClient.estimateContractGas({
+                    address: tokenAddress,
+                    abi: erc20Abi,
+                    functionName: 'approve',
+                    args: [offrampRegistryAddress, maxUint256],
+                    account: walletClient.account,
+                }),
+                publicClient.estimateContractGas({
+                    address: offrampRegistryAddress,
+                    abi: offrampOrder.offrampABI,
+                    functionName: offrampOrder.offrampFunctionName,
+                    args: offrampOrder.offrampArgs,
+                    account: walletClient.account,
+                }),
+                publicClient.multicall({
+                    allowFailure: false,
+                    contracts: [
+                        {
+                            address: tokenAddress,
+                            abi: erc20Abi,
+                            functionName: 'allowance',
+                            args: [params.fromUserAddress as Address, offrampRegistryAddress],
+                        },
+                        {
+                            address: tokenAddress,
+                            abi: erc20Abi,
+                            functionName: 'decimals',
+                        },
+                    ],
+                }),
+            ]);
+
+            const fee = feeValues.maxFeePerGas ?? gasPrice;
+            const approvalGasCost = approvalGasEstimate * fee;
+            const createOrderGasCost = createOrderGasEstimate * fee;
+
+            if (decimals < 8) {
+                throw new Error('Tokens with less than 8 decimals are not supported');
+            }
+            const multiplier = 10n ** BigInt(decimals - 8);
+            const requiredAmount = BigInt(quote.amountLockInSat) * multiplier;
+            const needsApproval = requiredAmount > allowance;
+
+            // Calculate total gas cost needed
+            const totalGasCost = needsApproval ? approvalGasCost + createOrderGasCost : createOrderGasCost;
+
+            if (ethBalance < totalGasCost) {
+                throw new Error(
+                    `Insufficient ETH balance for gas fees. Required: ${totalGasCost} wei, Available: ${ethBalance} wei`
+                );
+            }
+
+            if (needsApproval) {
                 const { request } = await publicClient.simulateContract({
                     account: walletClient.account,
                     address: tokenAddress,
