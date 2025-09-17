@@ -288,7 +288,8 @@ export class GatewayApiClient {
         const quote = await this.fetchOfframpQuote(
             tokenAddress,
             BigInt(params.amount || 0),
-            params.fromUserAddress as Address
+            params.fromUserAddress as Address,
+            params.toUserAddress
         );
 
         return quote;
@@ -350,15 +351,26 @@ export class GatewayApiClient {
      *
      * @param token ERC20 token address
      * @param amountInToken Amount in token's smallest unit
+     * @param userAddress User EVM Address
+     * @param toUserAddress User BTC Address
      * @returns Promise resolving to offramp quote with fee breakdown
      * @throws {Error} If API request fails
      */
-    async fetchOfframpQuote(token: Address, amountInToken: bigint, userAddress: Address): Promise<OfframpQuote> {
+    async fetchOfframpQuote(
+        token: Address,
+        amountInToken: bigint,
+        userAddress: Address,
+        toUserAddress?: string | null
+    ): Promise<OfframpQuote> {
         const queryParams = new URLSearchParams({
             amountInWrappedToken: amountInToken.toString(),
             token,
             userAddress: userAddress,
         });
+
+        if (toUserAddress) {
+            queryParams.append('userBtcAddress', toUserAddress);
+        }
 
         const response = await this.safeFetch(
             `${this.baseUrl}/offramp-quote?${queryParams}`,
