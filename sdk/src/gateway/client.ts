@@ -360,7 +360,7 @@ export class GatewayApiClient {
         token: Address,
         amountInToken: bigint,
         userAddress: Address,
-        toUserAddress?: string | null
+        toUserAddress?: string
     ): Promise<OfframpQuote> {
         const queryParams = new URLSearchParams({
             amountInWrappedToken: amountInToken.toString(),
