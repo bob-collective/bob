@@ -315,7 +315,7 @@ export interface OnrampOrderResponse {
     /** @description The tx hash on the EVM chain */
     txHash?: string;
     /** @description V4 order details */
-    orderDetails?: OrderDetails;
+    orderDetails?: OrderDetailsRaw;
 }
 
 export type OrderStatusData = {
@@ -343,13 +343,12 @@ export type OrderStatus =
       };
 
 /** Order given by the Gateway API once the bitcoin tx is submitted */
-export type OnrampOrder = Omit<
-    OnrampOrderResponse & {
-        /** @description The gas refill in satoshis */
-        gasRefill: number;
-    },
-    'satsToConvertToEth'
-> & {
+export type OnrampOrder = Omit<OnrampOrderResponse, 'satsToConvertToEth' | 'orderDetails'> & {
+    /** @description The gas refill in satoshis */
+    gasRefill: number;
+    /** @description V4 order details */
+    orderDetails?: OrderDetails;
+} & {
     /** @description Get the actual token address received */
     getTokenAddress(): string | undefined;
     /** @description Get the actual token received */

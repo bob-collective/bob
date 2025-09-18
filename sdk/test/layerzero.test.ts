@@ -13,8 +13,10 @@ import { privateKeyToAccount } from 'viem/accounts';
 describe('LayerZero Tests', () => {
     it('should get chains', async () => {
         const client = new LayerZeroClient();
-        const chains = await client.getSupportedChains();
-        assert.containSubset(chains, [
+        const chainsInfo = await client.getSupportedChainsInfo();
+
+        const chainNames = chainsInfo.map((chain) => chain.name);
+        assert.containSubset(chainNames, [
             'ethereum',
             'bob',
             'base',
@@ -31,38 +33,40 @@ describe('LayerZero Tests', () => {
             'sei',
         ]);
 
-        assert.equal(await client.getEidForChain('ethereum'), '30101');
-        assert.equal(await client.getEidForChain('bob'), '30279');
-        assert.equal(await client.getEidForChain('base'), '30184');
-        assert.equal(await client.getEidForChain('bera'), '30362');
-        assert.equal(await client.getEidForChain('unichain'), '30320');
-        assert.equal(await client.getEidForChain('avalanche'), '30106');
-        assert.equal(await client.getEidForChain('sonic'), '30332');
-        assert.equal(await client.getEidForChain('aptos'), '30108');
-        assert.equal(await client.getEidForChain('bsc'), '30102');
-        assert.equal(await client.getEidForChain('soneium'), '30340');
-        assert.equal(await client.getEidForChain('telos'), '30199');
-        assert.equal(await client.getEidForChain('swell'), '30335');
-        assert.equal(await client.getEidForChain('optimism'), '30111');
-        assert.equal(await client.getEidForChain('sei'), '30280');
+        const findChain = (name: string) => chainsInfo.find((chain) => chain.name === name);
 
-        assert.equal(await client.getOftAddressForChain('ethereum'), '0x0555e30da8f98308edb960aa94c0db47230d2b9c');
-        assert.equal(await client.getOftAddressForChain('bob'), '0x0555e30da8f98308edb960aa94c0db47230d2b9c');
-        assert.equal(await client.getOftAddressForChain('base'), '0x0555e30da8f98308edb960aa94c0db47230d2b9c');
-        assert.equal(await client.getOftAddressForChain('bera'), '0x0555e30da8f98308edb960aa94c0db47230d2b9c');
-        assert.equal(await client.getOftAddressForChain('unichain'), '0x0555e30da8f98308edb960aa94c0db47230d2b9c');
-        assert.equal(await client.getOftAddressForChain('avalanche'), '0x0555e30da8f98308edb960aa94c0db47230d2b9c');
-        assert.equal(await client.getOftAddressForChain('sonic'), '0x0555e30da8f98308edb960aa94c0db47230d2b9c');
+        assert.equal(findChain('ethereum')?.eid, '30101');
+        assert.equal(findChain('bob')?.eid, '30279');
+        assert.equal(findChain('base')?.eid, '30184');
+        assert.equal(findChain('bera')?.eid, '30362');
+        assert.equal(findChain('unichain')?.eid, '30320');
+        assert.equal(findChain('avalanche')?.eid, '30106');
+        assert.equal(findChain('sonic')?.eid, '30332');
+        assert.equal(findChain('aptos')?.eid, '30108');
+        assert.equal(findChain('bsc')?.eid, '30102');
+        assert.equal(findChain('soneium')?.eid, '30340');
+        assert.equal(findChain('telos')?.eid, '30199');
+        assert.equal(findChain('swell')?.eid, '30335');
+        assert.equal(findChain('optimism')?.eid, '30111');
+        assert.equal(findChain('sei')?.eid, '30280');
+
+        assert.equal(findChain('ethereum')?.oftAddress, '0x0555e30da8f98308edb960aa94c0db47230d2b9c');
+        assert.equal(findChain('bob')?.oftAddress, '0x0555e30da8f98308edb960aa94c0db47230d2b9c');
+        assert.equal(findChain('base')?.oftAddress, '0x0555e30da8f98308edb960aa94c0db47230d2b9c');
+        assert.equal(findChain('bera')?.oftAddress, '0x0555e30da8f98308edb960aa94c0db47230d2b9c');
+        assert.equal(findChain('unichain')?.oftAddress, '0x0555e30da8f98308edb960aa94c0db47230d2b9c');
+        assert.equal(findChain('avalanche')?.oftAddress, '0x0555e30da8f98308edb960aa94c0db47230d2b9c');
+        assert.equal(findChain('sonic')?.oftAddress, '0x0555e30da8f98308edb960aa94c0db47230d2b9c');
         assert.equal(
-            await client.getOftAddressForChain('aptos'),
+            findChain('aptos')?.oftAddress,
             '0xef3a1c7d6aa1a531336433e48d7b1d9b46c5bedc69f3db291df4e39bef4708e2'
         );
-        assert.equal(await client.getOftAddressForChain('bsc'), '0x0555e30da8f98308edb960aa94c0db47230d2b9c');
-        assert.equal(await client.getOftAddressForChain('soneium'), '0x0555e30da8f98308edb960aa94c0db47230d2b9c');
-        assert.equal(await client.getOftAddressForChain('telos'), '0x0555e30da8f98308edb960aa94c0db47230d2b9c');
-        assert.equal(await client.getOftAddressForChain('swell'), '0x0555e30da8f98308edb960aa94c0db47230d2b9c');
-        assert.equal(await client.getOftAddressForChain('optimism'), '0xc3f854b2970f8727d28527ece33176fac67fef48');
-        assert.equal(await client.getOftAddressForChain('sei'), '0x0555e30da8f98308edb960aa94c0db47230d2b9c');
+        assert.equal(findChain('bsc')?.oftAddress, '0x0555e30da8f98308edb960aa94c0db47230d2b9c');
+        assert.equal(findChain('soneium')?.oftAddress, '0x0555e30da8f98308edb960aa94c0db47230d2b9c');
+        assert.equal(findChain('telos')?.oftAddress, '0x0555e30da8f98308edb960aa94c0db47230d2b9c');
+        assert.equal(findChain('swell')?.oftAddress, '0x0555e30da8f98308edb960aa94c0db47230d2b9c');
+        assert.equal(findChain('optimism')?.oftAddress, '0xc3f854b2970f8727d28527ece33176fac67fef48');
+        assert.equal(findChain('sei')?.oftAddress, '0x0555e30da8f98308edb960aa94c0db47230d2b9c');
     }, 120000);
 
     it.skip('should get an onramp quote and execute it', async () => {

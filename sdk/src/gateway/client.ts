@@ -43,6 +43,7 @@ import {
     OnchainOfframpOrderDetails,
     OnrampExecuteQuoteParams,
     OnrampOrder,
+    OnrampOrderResponse,
     OrderStatus,
     StrategyParams,
     Token,
@@ -421,9 +422,6 @@ export class GatewayApiClient {
             bitcoinNetwork = bitcoin.networks.testnet;
         }
 
-        if (!params.toUserAddress || getAddressInfo(params.toUserAddress, this.isSignet).type === AddressType.p2tr) {
-            throw new Error('Only following bitcoin address types are supported P2PKH, P2WPKH, P2SH or P2WSH.');
-        }
         const receiverAddress = toHexScriptPubKey(params.toUserAddress, bitcoinNetwork);
 
         return {
@@ -1017,7 +1015,7 @@ export class GatewayApiClient {
             undefined,
             'Failed to fetch onramp orders'
         );
-        const orders = await response.json();
+        const orders: OnrampOrderResponse[] = await response.json();
         return orders.map((order) => {
             function getFinal<L, R>(base?: L, output?: R): NonNullable<L | R> {
                 return order.status

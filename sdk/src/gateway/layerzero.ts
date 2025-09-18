@@ -24,6 +24,13 @@ type SendParam = {
     oftCmd: Hex;
 };
 
+type LayerZeroChainInfo = {
+    name: string;
+    eid?: string;
+    oftAddress: string;
+    nativeChainId?: number;
+};
+
 export class LayerZeroClient {
     private basePath: string;
 
@@ -31,34 +38,29 @@ export class LayerZeroClient {
         this.basePath = 'https://metadata.layerzero-api.com/v1/metadata';
     }
 
-    async getSupportedChains(): Promise<Array<string>> {
-        const params = new URLSearchParams({
-            symbols: 'WBTC',
-        });
-
-        const data = await this.getJson<{
-            WBTC: [{ deployments: { [chainKey: string]: { address: string } } }];
-        }>(`${this.basePath}/experiment/ofts/list?${params.toString()}`);
-
-        return Object.keys(data.WBTC[0].deployments);
-    }
-
-    async getEidForChain(chainKey: string) {
-        const data = await this.getJson<{
+    private async getChainDeployments() {
+        return this.getJson<{
             [chainKey: string]: {
-                deployments: [
+                deployments?: [
                     {
                         version: number;
                         eid: string;
                     },
                 ];
+                chainKey: string;
+                chainDetails?: {
+                    nativeChainId: number;
+                };
             };
         }>(`${this.basePath}`);
-
-        return data[chainKey]?.deployments.find((item) => item.version === 2)?.eid || null;
     }
 
-    async getOftAddressForChain(chainKey: string): Promise<string | null> {
+    async getEidForChain(chainKey: string) {
+        const data = await this.getChainDeployments();
+        return data[chainKey]?.deployments?.find((item) => item.version === 2)?.eid || null;
+    }
+
+    private async getWbtcDeployments() {
         const params = new URLSearchParams({
             symbols: 'WBTC',
         });
@@ -67,7 +69,41 @@ export class LayerZeroClient {
             WBTC: [{ deployments: { [chainKey: string]: { address: string } } }];
         }>(`${this.basePath}/experiment/ofts/list?${params.toString()}`);
 
-        return data.WBTC[0].deployments[chainKey]?.address || null;
+        return data.WBTC[0].deployments;
+    }
+
+    async getSupportedChains(): Promise<Array<string>> {
+        const deployments = await this.getWbtcDeployments();
+        return Object.keys(deployments);
+    }
+
+    async getOftAddressForChain(chainKey: string): Promise<string | null> {
+        const deployments = await this.getWbtcDeployments();
+        return deployments[chainKey]?.address || null;
+    }
+
+    async getSupportedChainsInfo(): Promise<Array<LayerZeroChainInfo>> {
+        const chains = await this.getChainDeployments();
+        const chainLookup = Object.fromEntries(
+            Object.entries(chains).map(([_, chainData]) => [
+                chainData.chainKey,
+                {
+                    eid: chainData.deployments?.find((item) => item.version === 2)?.eid,
+                    nativeChainId: chainData.chainDetails?.nativeChainId,
+                },
+            ])
+        );
+
+        const deployments = await this.getWbtcDeployments();
+        return Object.entries(deployments).map(([chainKey, deployment]) => {
+            const chainInfo = chainLookup[chainKey];
+            return {
+                name: chainKey,
+                eid: chainInfo?.eid,
+                oftAddress: deployment.address,
+                nativeChainId: chainInfo?.nativeChainId,
+            };
+        });
     }
 
     private async getJson<T>(url: string): Promise<T> {
@@ -105,14 +141,27 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
         this.l0Client = new LayerZeroClient();
     }
 
+    async getSupportedChainsInfo(): Promise<Array<LayerZeroChainInfo>> {
+        return this.l0Client.getSupportedChainsInfo();
+    }
+
+    /**
+     * @deprecated Use getSupportedChainsInfo() instead
+     */
     async getSupportedChains(): Promise<Array<string>> {
         return this.l0Client.getSupportedChains();
     }
 
+    /**
+     * @deprecated Use getSupportedChainsInfo() instead
+     */
     async getEidForChain(chainKey: string): Promise<string | null> {
         return this.l0Client.getEidForChain(chainKey);
     }
 
+    /**
+     * @deprecated Use getSupportedChainsInfo() instead
+     */
     async getOftAddressForChain(chainKey: string): Promise<string | null> {
         return this.l0Client.getOftAddressForChain(chainKey);
     }
@@ -315,7 +364,9 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
             };
 
             // we're quoting on the origin chain, so public client must be configured correctly
-            if (publicClient.chain?.name.toLowerCase() !== fromChain) {
+            const maybeFromChainId = executeQuoteParams.params.fromChain;
+            if (typeof maybeFromChainId === 'number' && publicClient.chain?.id !== maybeFromChainId) {
+                // avoid matching on name since L0 and viem may have different naming conventions
                 throw new Error(`Public client must be origin chain`);
             }
 
