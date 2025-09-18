@@ -141,7 +141,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
         this.l0Client = new LayerZeroClient();
     }
 
-    async getSupportedChainInfo(): Promise<Array<LayerZeroChainInfo>> {
+    async getSupportedChainsInfo(): Promise<Array<LayerZeroChainInfo>> {
         return this.l0Client.getSupportedChainsInfo();
     }
 
