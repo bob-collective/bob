@@ -422,9 +422,6 @@ export class GatewayApiClient {
             bitcoinNetwork = bitcoin.networks.testnet;
         }
 
-        if (!params.toUserAddress || getAddressInfo(params.toUserAddress, this.isSignet).type === AddressType.p2tr) {
-            throw new Error('Only following bitcoin address types are supported P2PKH, P2WPKH, P2SH or P2WSH.');
-        }
         const receiverAddress = toHexScriptPubKey(params.toUserAddress, bitcoinNetwork);
 
         return {
