@@ -97,7 +97,7 @@ export interface AllWalletClientParams extends EvmWalletClientParams {
 }
 
 // subset of: https://github.com/LayerZero-Labs/devtools/blob/aa43d67ec0ca5a1668b9174a3f3a032e6ce8693d/packages/metadata-tools/src/types.ts#L41
-type LayerZeroDeplotmentsMetadata = Record<
+type LayerZeroDeploymentsMetadata = Record<
     string,
     {
         deployments?: {
@@ -1344,13 +1344,12 @@ export class GatewayApiClient {
                     return new Map();
                 }
 
-                const data: LayerZeroDeplotmentsMetadata = await response.json();
+                const data: LayerZeroDeploymentsMetadata = await response.json();
 
                 return new Map(
                     Object.values(data)
                         .map((x) => x.deployments?.map((d) => [d.eid, x.chainDetails?.nativeChainId] as const) ?? [])
                         .flat()
-                        .filter(Boolean)
                 );
             })();
         }
