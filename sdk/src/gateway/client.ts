@@ -403,6 +403,7 @@ export class GatewayApiClient {
                 affiliateFeeSats: rawQuote.feeBreakdown.affiliateFeeSats,
                 fastestFeeRate: rawQuote.feeBreakdown.fastestFeeRate,
             },
+            amountReceiveInSat: rawQuote.amountLockInSat - rawQuote.feeBreakdown.overallFeeSats,
         };
     }
 
