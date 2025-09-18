@@ -267,6 +267,7 @@ export class GatewayApiClient {
 
         return {
             ...quote,
+            outputSatoshis: quote.satoshis - quote.fee,
             baseToken: ADDRESS_LOOKUP[this.chainId][quote.baseTokenAddress],
             outputToken: quote.strategyAddress ? ADDRESS_LOOKUP[this.chainId][outputTokenAddress] : undefined,
         };

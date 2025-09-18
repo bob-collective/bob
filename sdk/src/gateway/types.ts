@@ -197,8 +197,10 @@ export type GatewayQuote = {
     baseTokenAddress: Address;
     /** @description The minimum amount of Bitcoin to send */
     dustThreshold: number;
-    /** @description The satoshi output amount */
+    /** @description The satoshi input amount */
     satoshis: number;
+    /** @description The satoshi output amount (amount user receives after fees) */
+    outputSatoshis: number;
     /** @description The fee paid in satoshis (includes gas refill, l1 data fee and estimated prove tx fee) */
     fee: number;
     /** @description The Bitcoin address to send BTC */
