@@ -96,6 +96,19 @@ export interface AllWalletClientParams extends EvmWalletClientParams {
     btcSigner?: BitcoinSigner;
 }
 
+// subset of: https://github.com/LayerZero-Labs/devtools/blob/aa43d67ec0ca5a1668b9174a3f3a032e6ce8693d/packages/metadata-tools/src/types.ts#L41
+type LayerZeroDeplotmentsMetadata = Record<
+    string,
+    {
+        deployments?: {
+            eid: string;
+        }[];
+        chainDetails?: {
+            nativeChainId?: number;
+        };
+    }
+>;
+
 /**
  * Gateway REST HTTP API client.
  *
@@ -123,6 +136,9 @@ export class GatewayApiClient {
     private chain: ViemChain;
     private strategy: StrategyClient;
     private isSignet: boolean = false;
+
+    // Internal cache for layerzero chain id mapping
+    private layerZeroEidToChainIdMapP: Promise<Map<string, number | null | undefined>> | null = null;
 
     /**
      * Creates a new Gateway API client instance.
@@ -1047,6 +1063,8 @@ export class GatewayApiClient {
                 ? convertOrderDetailsRawToOrderDetails(order.orderDetails)
                 : undefined;
 
+            const that = this;
+
             return {
                 ...order,
                 orderDetails,
@@ -1077,6 +1095,23 @@ export class GatewayApiClient {
                                   : { success: false, data }
                               : { success: true, data }
                           : { pending: true, data };
+                },
+                isLayerZero() {
+                    return order.layerzeroDstEid != undefined;
+                },
+                async getLayerZeroDetails() {
+                    const eid = order.layerzeroDstEid;
+
+                    if (!eid) {
+                        return null;
+                    }
+
+                    const chainId = await that.getLayerZeroChainId(eid);
+
+                    return {
+                        dstEid: eid,
+                        chainId,
+                    };
                 },
             };
         });
@@ -1288,5 +1323,47 @@ export class GatewayApiClient {
             throw new Error(message);
         }
         throw err;
+    }
+
+    private async getLayerZeroChainId(eid: number): Promise<number | null> {
+        // Only calls the API once and cache it for future calls
+        if (!this.layerZeroEidToChainIdMapP) {
+            this.layerZeroEidToChainIdMapP = (async () => {
+                const response = await this.safeFetch(
+                    'https://metadata.layerzero-api.com/v1/metadata/deployments',
+                    {
+                        headers: {
+                            'Content-Type': 'application/json',
+                            Accept: 'application/json',
+                        },
+                    },
+                    `Failed to get layerzero deployments`
+                );
+
+                if (!response.ok) {
+                    return new Map();
+                }
+
+                const data: LayerZeroDeplotmentsMetadata = await response.json();
+
+                return new Map(
+                    Object.values(data)
+                        .map((x) => x.deployments?.map((d) => [d.eid, x.chainDetails?.nativeChainId] as const) ?? [])
+                        .flat()
+                        .filter(Boolean)
+                );
+            })();
+        }
+
+        const map = await this.layerZeroEidToChainIdMapP;
+
+        const chainId = map.get(eid.toString());
+
+        // make sure it's not null, undefined, or 0
+        if (chainId) {
+            return chainId;
+        }
+
+        return null;
     }
 }

@@ -2,7 +2,7 @@ import * as bitcoin from 'bitcoinjs-lib';
 import nock from 'nock';
 import { zeroAddress } from 'viem';
 import { Address } from 'viem/accounts';
-import { bob, bobSepolia } from 'viem/chains';
+import { bob, bobSepolia, optimism } from 'viem/chains';
 import { afterEach, assert, describe, expect, it, vi } from 'vitest';
 import { GatewaySDK } from '../src/gateway';
 import { MAINNET_GATEWAY_BASE_URL, SIGNET_GATEWAY_BASE_URL } from '../src/gateway/client';
@@ -407,11 +407,20 @@ describe('Gateway Tests', () => {
                     fee: 0,
                     status: true,
                 },
+                // swapping - success (layerzero wBTC optimism)
+                {
+                    ...mockOrder,
+                    baseTokenAddress: SYMBOL_LOOKUP[bob.id]['wbtc'],
+                    satoshis: 1000,
+                    fee: 0,
+                    status: true,
+                    layerzeroDstEid: 30111,
+                },
             ]);
 
         const gatewaySDK = new GatewaySDK(bob.id);
         const orders = await gatewaySDK.getOnrampOrders(zeroAddress);
-        assert.lengthOf(orders, 7);
+        assert.lengthOf(orders, 8);
 
         assert.strictEqual(orders[0].getTokenAmount(), '2000'); // success (staking)
         assert.strictEqual(orders[1].getTokenAmount(), undefined); // pending (staking)
@@ -423,6 +432,9 @@ describe('Gateway Tests', () => {
 
         assert.strictEqual(orders[0].getToken()!.address, SOLVBTC_ADDRESS);
         assert.strictEqual(orders[1].getToken(), undefined);
+
+        assert.strictEqual(orders[7].isLayerZero(), true);
+        assert.deepEqual(await orders[7].getLayerZeroDetails(), { dstEid: 30111, chainId: optimism.id });
     });
 
     it('should get valid create offramp quote', async () => {
