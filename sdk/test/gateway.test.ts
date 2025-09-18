@@ -68,6 +68,7 @@ describe('Gateway Tests', () => {
 
         const assertMockQuote = {
             ...mockQuote,
+            outputSatoshis: mockQuote.satoshis - mockQuote.fee,
             orderDetails: orderDetails,
         };
 
