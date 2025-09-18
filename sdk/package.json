@@ -41,6 +41,7 @@
         "yargs": "^18.0.0"
     },
     "dependencies": {
+        "@bitcoinerlab/secp256k1": "^1.2.0",
         "@eslint/eslintrc": "^3.3.1",
         "@eslint/js": "^9.34.0",
         "@gobob/sats-wagmi": "^0.3.23",
@@ -49,7 +50,8 @@
         "@scure/btc-signer": "^1.6.0",
         "bitcoin-address-validation": "^3.0.0",
         "bitcoinjs-lib": "^6.1.7",
-        "viem": "^2.33.2",
-        "global": "^4.4.0"
-    }
+        "global": "^4.4.0",
+        "viem": "^2.33.2"
+    },
+    "packageManager": "pnpm@10.14.0+sha512.ad27a79641b49c3e481a16a805baa71817a04bbe06a38d17e60e2eaee83f6a146c6a688125f5792e48dd5ba30e7da52a5cda4c3992b9ccf333f9ce223af84748"
 }

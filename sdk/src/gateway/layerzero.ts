@@ -13,6 +13,9 @@ import { toHexScriptPubKey } from './utils';
 import * as bitcoin from 'bitcoinjs-lib';
 import { viemClient } from './utils';
 import { layerZeroOftAbi, quoterV2Abi } from './abi';
+import ecc from '@bitcoinerlab/secp256k1';
+
+bitcoin.initEccLib(ecc);
 
 type SendParam = {
     dstEid: number;
