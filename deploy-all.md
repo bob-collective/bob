@@ -37,7 +37,7 @@ npx gsn deploy --network https://l2-puff-bob-jznbxtoq7h.t.conduit.xyz --privateK
 #   Paymaster (Default): 0x0000000000000000000000000000000000000000
 ```
 
-## Miscelaneous deployments
+## Miscellaneous deployments
 
 ### Tokens
 
