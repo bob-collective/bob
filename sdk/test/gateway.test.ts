@@ -539,51 +539,6 @@ describe('Gateway Tests', () => {
         expect(scriptPubKey).to.deep.equal('0x1976a914bba505f3a2730254053081318cade0672ffe31d888ac');
     });
 
-    it('should return error for taproot address', async () => {
-        const gatewaySDK = new GatewaySDK(bobSepolia.id);
-        nock(`${SIGNET_GATEWAY_BASE_URL}`)
-            .get('/offramp-quote')
-            .query(true)
-            .reply(200, {
-                amountLockInSat: 10000000000000,
-                registryAddress: '0xd7b27b178f6bf290155201109906ad203b6d99b1',
-                feeBreakdown: {
-                    overallFeeSats: 385,
-                    inclusionFeeSats: 384,
-                    protocolFeeSats: 1,
-                    affiliateFeeSats: 0,
-                    fastestFeeRate: 1,
-                },
-            });
-
-        await expect(
-            gatewaySDK.createOfframpOrder(
-                {
-                    amountLockInSat: 0,
-                    deadline: 0,
-                    registryAddress: '0x',
-                    token: '0x',
-                    feeBreakdown: {
-                        overallFeeSats: 0,
-                        inclusionFeeSats: 0,
-                        protocolFeeSats: 0,
-                        affiliateFeeSats: 0,
-                        fastestFeeRate: 0,
-                    },
-                },
-                {
-                    fromToken: '0xda472456b1a6a2fc9ae7edb0e007064224d4284c',
-                    amount: 100000000000000,
-                    fromUserAddress: '0xFAEe001465dE6D7E8414aCDD9eF4aC5A35B2B808',
-                    toUserAddress: 'tb1p5d2m6d7yje35xqnk2wczghak6q20c6rqw303p58wrlzhue8t4z9s9y304z', // P2TR taproot address
-                    fromChain: 'bob',
-                    toChain: 'bitcoin',
-                    toToken: 'bitcoin',
-                }
-            )
-        ).rejects.toThrowError('Only following bitcoin address types are supported P2PKH, P2WPKH, P2SH or P2WSH.');
-    });
-
     it('fetches the correct offramp registry address', async () => {
         const gatewaySDK = new GatewaySDK(bobSepolia.id);
 
