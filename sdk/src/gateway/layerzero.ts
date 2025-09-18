@@ -315,7 +315,9 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
             };
 
             // we're quoting on the origin chain, so public client must be configured correctly
-            if (publicClient.chain?.name.toLowerCase() !== fromChain) {
+            const maybeFromChainId = executeQuoteParams.params.fromChain;
+            if (typeof maybeFromChainId === 'number' && publicClient.chain?.id !== maybeFromChainId) {
+                // avoid matching on name since L0 and viem may have different naming conventions
                 throw new Error(`Public client must be origin chain`);
             }
 

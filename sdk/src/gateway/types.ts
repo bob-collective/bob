@@ -315,7 +315,7 @@ export interface OnrampOrderResponse {
     /** @description The tx hash on the EVM chain */
     txHash?: string;
     /** @description V4 order details */
-    orderDetails?: OrderDetails;
+    orderDetails?: OrderDetailsRaw;
 }
 
 export type OrderStatusData = {
@@ -347,8 +347,10 @@ export type OnrampOrder = Omit<
     OnrampOrderResponse & {
         /** @description The gas refill in satoshis */
         gasRefill: number;
+        /** @description V4 order details */
+        orderDetails?: OrderDetails;
     },
-    'satsToConvertToEth'
+    'satsToConvertToEth' | 'orderDetails'
 > & {
     /** @description Get the actual token address received */
     getTokenAddress(): string | undefined;

@@ -43,6 +43,7 @@ import {
     OnchainOfframpOrderDetails,
     OnrampExecuteQuoteParams,
     OnrampOrder,
+    OnrampOrderResponse,
     OrderStatus,
     StrategyParams,
     Token,
@@ -1017,7 +1018,7 @@ export class GatewayApiClient {
             undefined,
             'Failed to fetch onramp orders'
         );
-        const orders = await response.json();
+        const orders: OnrampOrderResponse[] = await response.json();
         return orders.map((order) => {
             function getFinal<L, R>(base?: L, output?: R): NonNullable<L | R> {
                 return order.status
