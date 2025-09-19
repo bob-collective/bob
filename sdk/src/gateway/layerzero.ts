@@ -230,12 +230,6 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                 args: [sendParam, false],
             });
 
-            // allow consumer to override the buffer
-            const buffer = params.l0FeeBuffer ? BigInt(params.l0FeeBuffer) : BigInt(500); // 5% buffer
-
-            // Add buffer to the layer zero fee to account for changes from now until the order is executed
-            const layerZeroFeeWithBuffer = (layerZeroFee.nativeFee * (10000n + buffer)) / 10000n;
-
             // Getting the amount of tokens we need to swap from the order by using the uniswap quoter
             const quote = await publicClient.readContract({
                 address: '0x6Aa54a43d7eEF5b239a18eed3Af4877f46522BCA',
@@ -245,15 +239,23 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                     {
                         tokenIn: wbtcOftAddress as Hex,
                         tokenOut: '0x4200000000000000000000000000000000000006' as Hex,
-                        amountOut: layerZeroFeeWithBuffer, // Desired output amount
+                        amountOut: layerZeroFee.nativeFee, // Desired output amount
                         fee: 3000,
                         sqrtPriceLimitX96: BigInt(0),
                     },
                 ],
             });
             const tokensToSwapForLayerZeroFees = quote[0];
-            // Adding a buffer to the swap amount to account for slippage
-            const tokensToSwapForLayerZeroFeesWithBuffer = (tokensToSwapForLayerZeroFees * (10000n + buffer)) / 10000n; // 5% buffer
+
+            // Adding a buffer to the max swap amount to account for slippage or gas price changes, between the quote and the execution. Allow consumer to override the buffer
+            const buffer = params.l0FeeBuffer ? BigInt(params.l0FeeBuffer) : BigInt(500); // 5% default buffer
+            const maxTokensToSwapForLayerZeroFees = (tokensToSwapForLayerZeroFees * (10000n + buffer)) / 10000n;
+
+            if (maxTokensToSwapForLayerZeroFees >= BigInt(params.amount)) {
+                throw new Error(
+                    `The maximum allocated LayerZero swap fee (${maxTokensToSwapForLayerZeroFees}) exceeds the order size (${params.amount}). Please increase the order size or wait for gas fees on the destination chain to decrease.`
+                );
+            }
 
             // https://github.com/LayerZero-Labs/LayerZero-v2/blob/200cda254120375f40ed0a7e89931afb897b8891/packages/layerzero-v2/evm/oapp/contracts/oft/interfaces/IOFT.sol#L10-L18
             const encodedParameters = encodeAbiParameters(
@@ -262,7 +264,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                     'uint256 buffer',
                     'uint256 maxTokensToSwap',
                 ]),
-                [sendParam, BigInt(buffer), BigInt(tokensToSwapForLayerZeroFeesWithBuffer)]
+                [sendParam, BigInt(buffer), BigInt(maxTokensToSwapForLayerZeroFees)]
             );
 
             // encode bob -> l0 chain calldata
