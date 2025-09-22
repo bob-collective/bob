@@ -820,19 +820,12 @@ export class GatewayApiClient {
             const accountAddress = walletClient.account?.address ?? (params.fromUserAddress as Address);
 
             // Check ETH balance and estimate gas for both potential transactions
-            const [ethBalance, feeValues, gasPrice, approvalGasEstimate, [allowance, decimals]] = await Promise.all([
+            const [ethBalance, feeValues, gasPrice, [allowance, decimals]] = await Promise.all([
                 publicClient.getBalance({
                     address: accountAddress,
                 }),
                 publicClient.estimateFeesPerGas(),
                 publicClient.getGasPrice(),
-                publicClient.estimateContractGas({
-                    address: tokenAddress,
-                    abi: erc20Abi,
-                    functionName: 'approve',
-                    args: [offrampRegistryAddress, maxUint256],
-                    account: walletClient.account,
-                }),
                 publicClient.multicall({
                     allowFailure: false,
                     contracts: [
@@ -852,7 +845,6 @@ export class GatewayApiClient {
             ]);
 
             const fee = feeValues.maxFeePerGas ?? gasPrice;
-            const approvalGasCost = approvalGasEstimate * fee;
 
             if (decimals < 8) {
                 throw new Error('Tokens with less than 8 decimals are not supported');
@@ -875,6 +867,10 @@ export class GatewayApiClient {
                 await publicClient.waitForTransactionReceipt({ hash: approveTxHash });
             }
 
+            const balanceForCreate = needsApproval
+                ? await publicClient.getBalance({ address: accountAddress })
+                : ethBalance;
+
             const createOrderGasEstimate = await publicClient.estimateContractGas({
                 address: offrampRegistryAddress,
                 abi: offrampOrder.offrampABI,
@@ -885,12 +881,9 @@ export class GatewayApiClient {
 
             const createOrderGasCost = createOrderGasEstimate * fee;
 
-            // Calculate total gas cost needed
-            const totalGasCost = needsApproval ? approvalGasCost + createOrderGasCost : createOrderGasCost;
-
-            if (ethBalance < totalGasCost) {
+            if (balanceForCreate < createOrderGasCost) {
                 throw new Error(
-                    `Insufficient ETH balance for gas fees. Required: ${totalGasCost} wei, Available: ${ethBalance} wei`
+                    `Insufficient ETH balance for gas fees. Required: ${createOrderGasCost} wei, Available: ${ethBalance} wei`
                 );
             }
 
