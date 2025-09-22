@@ -228,12 +228,11 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
             //      This is 30 mins plus, therefore a large buffer is needed for values to remain valid over this period.
             //  2) Bob Finality on the destination chain (destination finality).
             //      This is much shorter, not more than a few minutes, therefore a smaller/zero buffer can be used.
-
-            const originFinalityBuffer = params.originFinalityBuffer
-                ? BigInt(params.originFinalityBuffer)
+            const originFinalityBuffer = params.l0OriginFinalityBuffer
+                ? BigInt(params.l0OriginFinalityBuffer)
                 : BigInt(10000); // 100% default origin finality buffer
-            const destinationFinalityBuffer = params.destinationFinalityBuffer
-                ? BigInt(params.destinationFinalityBuffer)
+            const destinationFinalityBuffer = params.l0DestinationFinalityBuffer
+                ? BigInt(params.l0DestinationFinalityBuffer)
                 : BigInt(0); // 0% default destination finality buffer
 
             // Getting the layer zero fee gas so we know how much we need to swap from the order

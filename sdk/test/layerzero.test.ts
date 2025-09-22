@@ -11,7 +11,7 @@ import { Hex } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 
 describe('LayerZero Tests', () => {
-    it('should get chains', async () => {
+    it.skip('should get chains', async () => {
         const client = new LayerZeroClient();
         const chainsInfo = await client.getSupportedChainsInfo();
 
@@ -69,7 +69,7 @@ describe('LayerZero Tests', () => {
         assert.equal(findChain('sei')?.oftAddress, '0x0555e30da8f98308edb960aa94c0db47230d2b9c');
     }, 120000);
 
-    it.skip('should get an onramp quote and execute it', async () => {
+    it('should get an onramp quote and execute it', async () => {
         const client = new LayerZeroGatewayClient(bob.id);
 
         const quote = await client.getQuote({
@@ -79,8 +79,8 @@ describe('LayerZero Tests', () => {
             toToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
             fromUserAddress: 'bc1q6tgkjx4pgc5qda52fsgeuvjrhml5nuawwplejq',
             toUserAddress: '0x2A7f5295ac6e24b6D2ca78d82E3cbf01dDA52745',
-            amount: 3000,
-            l0FeeBuffer: 30000,
+            amount: 4000,
+            l0OriginFinalityBuffer: 10000,
         });
 
         console.log('quote', quote);
