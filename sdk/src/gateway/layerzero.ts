@@ -106,6 +106,20 @@ export class LayerZeroClient {
         });
     }
 
+    async getChainId(eid: string): Promise<number | null> {
+        const chains = await this.getChainDeployments();
+
+        const chainId = Object.values(chains).find((chain) =>
+            chain.deployments?.some((deployment) => deployment.eid === eid)
+        )?.chainDetails?.nativeChainId;
+
+        if (chainId) {
+            return chainId;
+        }
+
+        return null;
+    }
+
     private async getJson<T>(url: string): Promise<T> {
         const response = await fetch(url);
         if (!response.ok) {
@@ -157,6 +171,15 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
      */
     async getEidForChain(chainKey: string): Promise<string | null> {
         return this.l0Client.getEidForChain(chainKey);
+    }
+
+    /**
+     * Get the chain id for a given LayerZero EID
+     * @param eid LayerZero EID
+     * @returns chain id for the given eid if found
+     */
+    async getChainIdForEid(eid: string): Promise<number | null> {
+        return this.l0Client.getChainId(eid);
     }
 
     /**

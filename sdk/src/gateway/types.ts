@@ -346,11 +346,6 @@ export type OrderStatus =
           data: OrderStatusData;
       };
 
-export interface LayerZeroDetails {
-    dstEid: number;
-    chainId: number | null;
-}
-
 /** Order given by the Gateway API once the bitcoin tx is submitted */
 export type OnrampOrder = Omit<OnrampOrderResponse, 'satsToConvertToEth' | 'orderDetails'> & {
     /** @description The gas refill in satoshis */
@@ -368,10 +363,6 @@ export type OnrampOrder = Omit<OnrampOrderResponse, 'satsToConvertToEth' | 'orde
     getConfirmations(esploraClient: EsploraClient, latestHeight?: number): Promise<number>;
     /** @description Get the actual order status */
     getStatus(esploraClient: EsploraClient, latestHeight?: number): Promise<OrderStatus>;
-    /** @description Check if the order is routed through layerzero */
-    isLayerZero(): boolean;
-    /** @description Get the layerzero details */
-    getLayerZeroDetails(): Promise<LayerZeroDetails | null>;
 } & GatewayTokensInfo;
 
 export type GatewayTokensInfo = {

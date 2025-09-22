@@ -1,7 +1,7 @@
 import { assert, describe, it } from 'vitest';
 import { LayerZeroClient, LayerZeroGatewayClient } from '../src/gateway/layerzero';
 import { createPublicClient, createWalletClient, http, PublicClient, Transport, zeroAddress } from 'viem';
-import { base, bob } from 'viem/chains';
+import { base, bob, optimism } from 'viem/chains';
 import { BitcoinSigner } from '../src/gateway/types';
 import * as btc from '@scure/btc-signer';
 import { base64 } from '@scure/base';
@@ -150,6 +150,14 @@ describe('LayerZero Tests', () => {
         });
 
         console.log(txHash);
+    }, 120000);
+
+    it('should get chain id for eid', async () => {
+        const client = new LayerZeroClient();
+
+        const optimismEid = '30111';
+
+        assert.equal(await client.getChainId(optimismEid), optimism.id);
     }, 120000);
 });
 
