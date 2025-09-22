@@ -245,6 +245,19 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
             // TODO: expose via params
             const publicClient = viemClient(bob);
 
+            // // We need to add buffers to fee calculations to account for gas price changes and slippage while waiting for these finalities.
+            // There are two finalities we must consider:
+            //  1) Bitcoin Finality on Bob (origin finality).
+            //      This is 30 mins plus, therefore a large buffer is needed for values to remain valid over this period.
+            //  2) Bob Finality on the destination chain (destination finality).
+            //      This is much shorter, not more than a few minutes, therefore a smaller/zero buffer can be used.
+            const originFinalityBuffer = params.l0OriginFinalityBuffer
+                ? BigInt(params.l0OriginFinalityBuffer)
+                : BigInt(10000); // 100% default origin finality buffer
+            const destinationFinalityBuffer = params.l0DestinationFinalityBuffer
+                ? BigInt(params.l0DestinationFinalityBuffer)
+                : BigInt(0); // 0% default destination finality buffer
+
             // Getting the layer zero fee gas so we know how much we need to swap from the order
             const layerZeroFee = await publicClient.readContract({
                 address: wbtcOftAddress as Hex,
@@ -253,13 +266,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                 args: [sendParam, false],
             });
 
-            // allow consumer to override the buffer
-            const buffer = params.l0FeeBuffer ? BigInt(params.l0FeeBuffer) : BigInt(500); // 5% buffer
-
-            // Add buffer to the layer zero fee to account for changes from now until the order is executed
-            const layerZeroFeeWithBuffer = (layerZeroFee.nativeFee * (10000n + buffer)) / 10000n;
-
-            // Getting the amount of tokens we need to swap from the order by using the uniswap quoter
+            // Estimating the amount of tokens we need to swap from the order by using the uniswap quoter
             const quote = await publicClient.readContract({
                 address: '0x6Aa54a43d7eEF5b239a18eed3Af4877f46522BCA',
                 abi: quoterV2Abi,
@@ -268,15 +275,22 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                     {
                         tokenIn: wbtcOftAddress as Hex,
                         tokenOut: '0x4200000000000000000000000000000000000006' as Hex,
-                        amountOut: layerZeroFeeWithBuffer, // Desired output amount
+                        amountOut: layerZeroFee.nativeFee, // Desired output amount
                         fee: 3000,
                         sqrtPriceLimitX96: BigInt(0),
                     },
                 ],
             });
             const tokensToSwapForLayerZeroFees = quote[0];
-            // Adding a buffer to the swap amount to account for slippage
-            const tokensToSwapForLayerZeroFeesWithBuffer = (tokensToSwapForLayerZeroFees * (10000n + buffer)) / 10000n; // 5% buffer
+            // Adding the origin finality buffer to this to work out a safe maximum amount that will be swapped, if the fees required exceed this, the LayerZero strategy will revert.
+            const maxTokensToSwapForLayerZeroFees =
+                (tokensToSwapForLayerZeroFees * (10000n + originFinalityBuffer)) / 10000n;
+
+            if (maxTokensToSwapForLayerZeroFees >= BigInt(params.amount)) {
+                throw new Error(
+                    `The maximum allocated LayerZero swap fee (${maxTokensToSwapForLayerZeroFees}) exceeds the order size (${params.amount}). Please increase the order size or wait for gas fees on the destination chain to decrease.`
+                );
+            }
 
             // https://github.com/LayerZero-Labs/LayerZero-v2/blob/200cda254120375f40ed0a7e89931afb897b8891/packages/layerzero-v2/evm/oapp/contracts/oft/interfaces/IOFT.sol#L10-L18
             const encodedParameters = encodeAbiParameters(
@@ -285,7 +299,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                     'uint256 buffer',
                     'uint256 maxTokensToSwap',
                 ]),
-                [sendParam, BigInt(buffer), BigInt(tokensToSwapForLayerZeroFeesWithBuffer)]
+                [sendParam, BigInt(destinationFinalityBuffer), BigInt(maxTokensToSwapForLayerZeroFees)]
             );
 
             // encode bob -> l0 chain calldata
