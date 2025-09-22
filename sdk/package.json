@@ -1,6 +1,6 @@
 {
     "name": "@gobob/bob-sdk",
-    "version": "4.2.11",
+    "version": "4.2.14",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
     "scripts": {
@@ -41,6 +41,7 @@
         "yargs": "^18.0.0"
     },
     "dependencies": {
+        "@bitcoinerlab/secp256k1": "^1.2.0",
         "@eslint/eslintrc": "^3.3.1",
         "@eslint/js": "^9.34.0",
         "@gobob/sats-wagmi": "^0.3.23",
@@ -49,7 +50,7 @@
         "@scure/btc-signer": "^1.6.0",
         "bitcoin-address-validation": "^3.0.0",
         "bitcoinjs-lib": "^6.1.7",
-        "viem": "^2.33.2",
-        "global": "^4.4.0"
+        "global": "^4.4.0",
+        "viem": "^2.33.2"
     }
 }
