@@ -222,6 +222,20 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
             // TODO: expose via params
             const publicClient = viemClient(bob);
 
+            // // We need to add buffers to fee calculations to account for gas price changes and slippage while waiting for these finalities.
+            // There are two finalities we must consider:
+            //  1) Bitcoin Finality on Bob (origin finality).
+            //      This is 30 mins plus, therefore a large buffer is needed for values to remain valid over this period.
+            //  2) Bob Finality on the destination chain (destination finality).
+            //      This is much shorter, not more than a few minutes, therefore a smaller/zero buffer can be used.
+
+            const originFinalityBuffer = params.originFinalityBuffer
+                ? BigInt(params.originFinalityBuffer)
+                : BigInt(10000); // 100% default origin finality buffer
+            const destinationFinalityBuffer = params.destinationFinalityBuffer
+                ? BigInt(params.destinationFinalityBuffer)
+                : BigInt(0); // 0% default destination finality buffer
+
             // Getting the layer zero fee gas so we know how much we need to swap from the order
             const layerZeroFee = await publicClient.readContract({
                 address: wbtcOftAddress as Hex,
@@ -230,7 +244,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                 args: [sendParam, false],
             });
 
-            // Getting the amount of tokens we need to swap from the order by using the uniswap quoter
+            // Estimating the amount of tokens we need to swap from the order by using the uniswap quoter
             const quote = await publicClient.readContract({
                 address: '0x6Aa54a43d7eEF5b239a18eed3Af4877f46522BCA',
                 abi: quoterV2Abi,
@@ -246,10 +260,9 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                 ],
             });
             const tokensToSwapForLayerZeroFees = quote[0];
-
-            // Adding a buffer to the max swap amount to account for slippage or gas price changes, between the quote and the execution. Allow consumer to override the buffer
-            const buffer = params.l0FeeBuffer ? BigInt(params.l0FeeBuffer) : BigInt(500); // 5% default buffer
-            const maxTokensToSwapForLayerZeroFees = (tokensToSwapForLayerZeroFees * (10000n + buffer)) / 10000n;
+            // Adding the origin finality buffer to this to work out a safe maximum amount that will be swapped, if the fees required exceed this, the LayerZero strategy will revert.
+            const maxTokensToSwapForLayerZeroFees =
+                (tokensToSwapForLayerZeroFees * (10000n + originFinalityBuffer)) / 10000n;
 
             if (maxTokensToSwapForLayerZeroFees >= BigInt(params.amount)) {
                 throw new Error(
@@ -264,7 +277,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                     'uint256 buffer',
                     'uint256 maxTokensToSwap',
                 ]),
-                [sendParam, BigInt(buffer), BigInt(maxTokensToSwapForLayerZeroFees)]
+                [sendParam, BigInt(destinationFinalityBuffer), BigInt(maxTokensToSwapForLayerZeroFees)]
             );
 
             // encode bob -> l0 chain calldata
