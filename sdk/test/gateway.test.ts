@@ -407,11 +407,20 @@ describe('Gateway Tests', () => {
                     fee: 0,
                     status: true,
                 },
+                // swapping - success (layerzero wBTC optimism)
+                {
+                    ...mockOrder,
+                    baseTokenAddress: SYMBOL_LOOKUP[bob.id]['wbtc'],
+                    satoshis: 1000,
+                    fee: 0,
+                    status: true,
+                    layerzeroDstEid: 30111,
+                },
             ]);
 
         const gatewaySDK = new GatewaySDK(bob.id);
         const orders = await gatewaySDK.getOnrampOrders(zeroAddress);
-        assert.lengthOf(orders, 7);
+        assert.lengthOf(orders, 8);
 
         assert.strictEqual(orders[0].getTokenAmount(), '2000'); // success (staking)
         assert.strictEqual(orders[1].getTokenAmount(), undefined); // pending (staking)
@@ -423,6 +432,8 @@ describe('Gateway Tests', () => {
 
         assert.strictEqual(orders[0].getToken()!.address, SOLVBTC_ADDRESS);
         assert.strictEqual(orders[1].getToken(), undefined);
+
+        assert.strictEqual(orders[7].layerzeroDstEid, 30111);
     });
 
     it('should get valid create offramp quote', async () => {

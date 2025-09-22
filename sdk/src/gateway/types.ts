@@ -320,6 +320,8 @@ export interface OnrampOrderResponse {
     txHash?: string;
     /** @description V4 order details */
     orderDetails?: OrderDetailsRaw;
+    /** layerzero dst eid if the order being routed through layerzero */
+    layerzeroDstEid?: number;
 }
 
 export type OrderStatusData = {
