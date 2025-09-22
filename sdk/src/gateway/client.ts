@@ -1,4 +1,4 @@
-import { AddressType, Network } from 'bitcoin-address-validation';
+import { Network } from 'bitcoin-address-validation';
 import * as bitcoin from 'bitcoinjs-lib';
 import {
     Account,
@@ -17,7 +17,7 @@ import {
 import { bob, bobSepolia } from 'viem/chains';
 import { EsploraClient } from '../esplora';
 import { bigIntToFloatingNumber } from '../utils';
-import { createBitcoinPsbt, getAddressInfo } from '../wallet';
+import { createBitcoinPsbt } from '../wallet';
 import { claimDelayAbi, offrampCaller, strategyCaller } from './abi';
 import StrategyClient from './strategy';
 import { ADDRESS_LOOKUP, getTokenAddress, getTokenDecimals } from './tokens';
@@ -820,14 +820,7 @@ export class GatewayApiClient {
             const accountAddress = walletClient.account?.address ?? (params.fromUserAddress as Address);
 
             // Check ETH balance and estimate gas for both potential transactions
-            const [
-                ethBalance,
-                feeValues,
-                gasPrice,
-                approvalGasEstimate,
-                createOrderGasEstimate,
-                [allowance, decimals],
-            ] = await Promise.all([
+            const [ethBalance, feeValues, gasPrice, approvalGasEstimate, [allowance, decimals]] = await Promise.all([
                 publicClient.getBalance({
                     address: accountAddress,
                 }),
@@ -838,13 +831,6 @@ export class GatewayApiClient {
                     abi: erc20Abi,
                     functionName: 'approve',
                     args: [offrampRegistryAddress, maxUint256],
-                    account: walletClient.account,
-                }),
-                publicClient.estimateContractGas({
-                    address: offrampRegistryAddress,
-                    abi: offrampOrder.offrampABI,
-                    functionName: offrampOrder.offrampFunctionName,
-                    args: offrampOrder.offrampArgs,
                     account: walletClient.account,
                 }),
                 publicClient.multicall({
@@ -867,7 +853,6 @@ export class GatewayApiClient {
 
             const fee = feeValues.maxFeePerGas ?? gasPrice;
             const approvalGasCost = approvalGasEstimate * fee;
-            const createOrderGasCost = createOrderGasEstimate * fee;
 
             if (decimals < 8) {
                 throw new Error('Tokens with less than 8 decimals are not supported');
@@ -875,15 +860,6 @@ export class GatewayApiClient {
             const multiplier = 10n ** BigInt(decimals - 8);
             const requiredAmount = BigInt(quote.amountLockInSat) * multiplier;
             const needsApproval = requiredAmount > allowance;
-
-            // Calculate total gas cost needed
-            const totalGasCost = needsApproval ? approvalGasCost + createOrderGasCost : createOrderGasCost;
-
-            if (ethBalance < totalGasCost) {
-                throw new Error(
-                    `Insufficient ETH balance for gas fees. Required: ${totalGasCost} wei, Available: ${ethBalance} wei`
-                );
-            }
 
             if (needsApproval) {
                 const { request } = await publicClient.simulateContract({
@@ -897,6 +873,25 @@ export class GatewayApiClient {
                 const approveTxHash = await walletClient.writeContract(request);
 
                 await publicClient.waitForTransactionReceipt({ hash: approveTxHash });
+            }
+
+            const createOrderGasEstimate = await publicClient.estimateContractGas({
+                address: offrampRegistryAddress,
+                abi: offrampOrder.offrampABI,
+                functionName: offrampOrder.offrampFunctionName,
+                args: offrampOrder.offrampArgs,
+                account: walletClient.account,
+            });
+
+            const createOrderGasCost = createOrderGasEstimate * fee;
+
+            // Calculate total gas cost needed
+            const totalGasCost = needsApproval ? approvalGasCost + createOrderGasCost : createOrderGasCost;
+
+            if (ethBalance < totalGasCost) {
+                throw new Error(
+                    `Insufficient ETH balance for gas fees. Required: ${totalGasCost} wei, Available: ${ethBalance} wei`
+                );
             }
 
             const { request } = await publicClient.simulateContract({
