@@ -34,28 +34,49 @@ type LayerZeroChainInfo = {
     nativeChainId?: number;
 };
 
+type LayerZeroDeploymentsMetadata = {
+    [chainKey: string]: {
+        deployments?: [
+            {
+                version: number;
+                eid: string;
+            },
+        ];
+        chainKey: string;
+        chainDetails?: {
+            nativeChainId: number;
+        };
+    };
+};
+
+type LayerZeroTokenDeployments = {
+    [chainKey: string]: {
+        address: string;
+    };
+};
+
 export class LayerZeroClient {
     private basePath: string;
+
+    private getChainDeploymentsPromiseCache: Promise<LayerZeroDeploymentsMetadata> | null = null;
+    private getWbtcDeploymentsPromiseCache: Promise<LayerZeroTokenDeployments> | null = null;
 
     constructor() {
         this.basePath = 'https://metadata.layerzero-api.com/v1/metadata';
     }
 
     private async getChainDeployments() {
-        return this.getJson<{
-            [chainKey: string]: {
-                deployments?: [
-                    {
-                        version: number;
-                        eid: string;
-                    },
-                ];
-                chainKey: string;
-                chainDetails?: {
-                    nativeChainId: number;
-                };
-            };
-        }>(`${this.basePath}`);
+        if (!this.getChainDeploymentsPromiseCache) {
+            this.getChainDeploymentsPromiseCache = this.getJson<LayerZeroDeploymentsMetadata>(`${this.basePath}`).catch(
+                (err) => {
+                    // On failure, clear the cache to allow retries on subsequent calls.
+                    this.getChainDeploymentsPromiseCache = null;
+                    throw err;
+                }
+            );
+        }
+
+        return this.getChainDeploymentsPromiseCache;
     }
 
     async getEidForChain(chainKey: string) {
@@ -64,15 +85,25 @@ export class LayerZeroClient {
     }
 
     private async getWbtcDeployments() {
-        const params = new URLSearchParams({
-            symbols: 'WBTC',
-        });
+        if (!this.getWbtcDeploymentsPromiseCache) {
+            const params = new URLSearchParams({
+                symbols: 'WBTC',
+            });
 
-        const data = await this.getJson<{
-            WBTC: [{ deployments: { [chainKey: string]: { address: string } } }];
-        }>(`${this.basePath}/experiment/ofts/list?${params.toString()}`);
+            this.getWbtcDeploymentsPromiseCache = this.getJson<{
+                WBTC: [{ deployments: LayerZeroTokenDeployments }];
+            }>(`${this.basePath}/experiment/ofts/list?${params.toString()}`)
+                .then((data) => {
+                    return data.WBTC[0].deployments;
+                })
+                .catch((err) => {
+                    // On failure, clear the cache to allow retries on subsequent calls.
+                    this.getWbtcDeploymentsPromiseCache = null;
+                    throw err;
+                });
+        }
 
-        return data.WBTC[0].deployments;
+        return this.getWbtcDeploymentsPromiseCache;
     }
 
     async getSupportedChains(): Promise<Array<string>> {
