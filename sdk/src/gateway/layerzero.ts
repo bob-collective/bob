@@ -34,28 +34,49 @@ type LayerZeroChainInfo = {
     nativeChainId?: number;
 };
 
+type LayerZeroDeploymentsMetadata = {
+    [chainKey: string]: {
+        deployments?: [
+            {
+                version: number;
+                eid: string;
+            },
+        ];
+        chainKey: string;
+        chainDetails?: {
+            nativeChainId: number;
+        };
+    };
+};
+
 export class LayerZeroClient {
     private basePath: string;
+
+    private getChainDeploymentsPromiseCache: Promise<LayerZeroDeploymentsMetadata> | null = null;
 
     constructor() {
         this.basePath = 'https://metadata.layerzero-api.com/v1/metadata';
     }
 
     private async getChainDeployments() {
-        return this.getJson<{
-            [chainKey: string]: {
-                deployments?: [
-                    {
-                        version: number;
-                        eid: string;
-                    },
-                ];
-                chainKey: string;
-                chainDetails?: {
-                    nativeChainId: number;
-                };
-            };
-        }>(`${this.basePath}`);
+        if (this.getChainDeploymentsPromiseCache) {
+            return this.getChainDeploymentsPromiseCache;
+        }
+
+        const promise = (async () => {
+            try {
+                return await this.getJson<LayerZeroDeploymentsMetadata>(`${this.basePath}`);
+            } catch (err) {
+                // Don't cache rejected promises
+                this.getChainDeploymentsPromiseCache = null;
+                // Already awaited promises will still be rejected
+                throw err;
+            }
+        })();
+
+        this.getChainDeploymentsPromiseCache = promise;
+
+        return promise;
     }
 
     async getEidForChain(chainKey: string) {
