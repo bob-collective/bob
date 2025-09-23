@@ -59,24 +59,17 @@ export class LayerZeroClient {
     }
 
     private async getChainDeployments() {
-        if (this.getChainDeploymentsPromiseCache) {
-            return this.getChainDeploymentsPromiseCache;
+        if (!this.getChainDeploymentsPromiseCache) {
+            this.getChainDeploymentsPromiseCache = this.getJson<LayerZeroDeploymentsMetadata>(`${this.basePath}`).catch(
+                (err) => {
+                    // On failure, clear the cache to allow retries on subsequent calls.
+                    this.getChainDeploymentsPromiseCache = null;
+                    throw err;
+                }
+            );
         }
 
-        const promise = (async () => {
-            try {
-                return await this.getJson<LayerZeroDeploymentsMetadata>(`${this.basePath}`);
-            } catch (err) {
-                // Don't cache rejected promises
-                this.getChainDeploymentsPromiseCache = null;
-                // Already awaited promises will still be rejected
-                throw err;
-            }
-        })();
-
-        this.getChainDeploymentsPromiseCache = promise;
-
-        return promise;
+        return this.getChainDeploymentsPromiseCache;
     }
 
     async getEidForChain(chainKey: string) {
