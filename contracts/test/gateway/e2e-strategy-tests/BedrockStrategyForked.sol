@@ -6,14 +6,14 @@ import {StrategySlippageArgs} from "../../../src/gateway/IStrategy.sol";
 import {Constants} from "./Constants.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {IBedrockVault, BedrockStrategy} from "../../../src/gateway/strategy/BedrockStrategy.sol";
-import {ForkedStrategyTemplateWbtc} from "./ForkedTemplate.sol";
+import {ForkedStrategyTemplateWbtcOft} from "./ForkedTemplate.sol";
 
 // Command to run this contract tests with Foundry:
 // BOB_PROD_PUBLIC_RPC_URL=https://rpc.gobob.xyz/ forge test --match-contract BedrockStrategyForked -vv
-contract BedrockStrategyForked is ForkedStrategyTemplateWbtc {
+contract BedrockStrategyForked is ForkedStrategyTemplateWbtcOft {
     function setUp() public {
         super.simulateForkAndTransfer(
-            19911846, address(0x508A838922a93096C1Eb23FE21D8938BBd653Db6), Constants.DUMMY_SENDER, 1e8
+            21930500, address(0xa79a356B01ef805B3089b4FE67447b96c7e6DD4C), Constants.DUMMY_SENDER, 1e8
         );
     }
 
