@@ -286,6 +286,11 @@ export type OfframpGatewayCreateQuoteResponse = {
     gateway: Address;
 };
 
+export interface TokenReceived {
+    token_address: Address;
+    amount: string;
+}
+
 export interface OnrampOrderResponse {
     /** @description The gateway address */
     gatewayAddress: Address;
@@ -322,6 +327,8 @@ export interface OnrampOrderResponse {
     orderDetails?: OrderDetailsRaw;
     /** layerzero dst eid if the order being routed through layerzero */
     layerzeroDstEid?: number;
+    /** @description The tokens received by the user */
+    tokensReceived?: TokenReceived[] | null;
 }
 
 export type OrderStatusData = {
