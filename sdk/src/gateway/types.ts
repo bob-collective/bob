@@ -379,9 +379,9 @@ export type OnrampOrder = Omit<
     getConfirmations(esploraClient: EsploraClient, latestHeight?: number): Promise<number>;
     /** @description Get the actual order status */
     getStatus(esploraClient: EsploraClient, latestHeight?: number): Promise<OrderStatus>;
-    /** @dcription Get all the output tokens */
+    /** @description Get all the output tokens */
     getOutputTokens(): { amount: string; token: Token }[];
-    /** @dcription Get all the tokens */
+    /** @description Get all the tokens */
     getTokens(): { amount: string | number; token: Token }[];
 } & GatewayTokensInfo;
 
