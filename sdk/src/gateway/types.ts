@@ -380,9 +380,9 @@ export type OnrampOrder = Omit<
     /** @description Get the actual order status */
     getStatus(esploraClient: EsploraClient, latestHeight?: number): Promise<OrderStatus>;
     /** @dcription Get all the output tokens */
-    getOutputTokens(): Promise<{ amount: string; token: Token }[]>;
+    getOutputTokens(): { amount: string; token: Token }[];
     /** @dcription Get all the tokens */
-    getTokens(): Promise<{ amount: string | number; token: Token }[]>;
+    getTokens(): { amount: string | number; token: Token }[];
 } & GatewayTokensInfo;
 
 export type GatewayTokensInfo = {
