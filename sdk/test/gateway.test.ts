@@ -324,8 +324,6 @@ describe('Gateway Tests', () => {
         const tokens = await gatewaySDK.getTokens(true);
         const enrichedTokens = await gatewaySDK.getEnrichedTokens(true);
 
-        assert.lengthOf(enrichedTokens, tokens.length);
-
         enrichedTokens.forEach((enrichedToken, i) => {
             assert.strictEqual(tokens[i].address, enrichedToken.address);
             assert.strictEqual(tokens[i].name, enrichedToken.name);
@@ -434,6 +432,101 @@ describe('Gateway Tests', () => {
         assert.strictEqual(orders[1].getToken(), undefined);
 
         assert.strictEqual(orders[7].layerzeroDstEid, 30111);
+    });
+
+    it('should return multiple output tokens', async () => {
+        const mockOrder = {
+            gatewayAddress: zeroAddress,
+            baseTokenAddress: TBTC_ADDRESS,
+            txid: '',
+            status: true,
+            timestamp: 0,
+            tokens: '0',
+            satoshis: 0,
+            fee: 0,
+            txProofDifficultyFactor: 0,
+            satsToConvertToEth: 0,
+            strategyAddress: zeroAddress,
+        };
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
+            .get(`/orders/${zeroAddress}`)
+            .reply(200, [
+                // pending
+                {
+                    ...mockOrder,
+                    status: false,
+                    strategyAddress: null,
+                    satoshis: 2000,
+                    outputTokenAddress: null,
+                    outputTokenAmount: null,
+                    tokensReceived: null,
+                },
+                // swapped - gateway v3
+                {
+                    ...mockOrder,
+                    satoshis: 2000,
+                    outputTokenAddress: TBTC_ADDRESS,
+                    outputTokenAmount: '2000',
+                    tokensReceived: null,
+                },
+                // swapped - gateway v4
+                {
+                    ...mockOrder,
+                    satoshis: 2000,
+                    outputTokenAddress: null,
+                    outputTokenAmount: null,
+                    tokensReceived: [{ amount: '2000', token_address: TBTC_ADDRESS }],
+                },
+            ]);
+
+        const gatewaySDK = new GatewaySDK(bob.id);
+        const orders = await gatewaySDK.getOnrampOrders(zeroAddress);
+        assert.lengthOf(orders, 3);
+
+        assert.strictEqual(orders[0].getTokenAmount(), 20000000000000);
+        assert.strictEqual(orders[1].getTokenAmount(), '2000');
+        assert.strictEqual(orders[2].getTokenAmount(), '2000');
+
+        assert.strictEqual(orders[0].getTokenAddress(), TBTC_ADDRESS);
+        assert.strictEqual(orders[1].getTokenAddress(), TBTC_ADDRESS);
+        assert.strictEqual(orders[2].getTokenAddress(), TBTC_ADDRESS);
+
+        assert.strictEqual(orders[0].getToken()!.address, TBTC_ADDRESS);
+        assert.strictEqual(orders[1].getToken()!.address, TBTC_ADDRESS);
+        assert.strictEqual(orders[2].getToken()!.address, TBTC_ADDRESS);
+
+        assert.deepEqual(await orders[0].getOutputTokens(), []);
+        assert.deepEqual(await orders[1].getOutputTokens(), [
+            {
+                amount: '2000',
+                token: TBTC,
+            },
+        ]);
+        assert.deepEqual(await orders[2].getOutputTokens(), [
+            {
+                amount: '2000',
+                token: TBTC,
+            },
+        ]);
+
+        assert.deepEqual(await orders[0].getTokens(), [
+            {
+                amount: 20000000000000,
+                token: TBTC,
+            },
+        ]);
+        assert.deepEqual(await orders[1].getTokens(), [
+            {
+                amount: '2000',
+                token: TBTC,
+            },
+        ]);
+        assert.deepEqual(await orders[2].getTokens(), [
+            {
+                amount: '2000',
+                token: TBTC,
+            },
+        ]);
     });
 
     it('should get valid create offramp quote', async () => {

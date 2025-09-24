@@ -286,6 +286,11 @@ export type OfframpGatewayCreateQuoteResponse = {
     gateway: Address;
 };
 
+export interface TokenReceived {
+    amount: string;
+    token_address: Address;
+}
+
 export interface OnrampOrderResponse {
     /** @description The gateway address */
     gatewayAddress: Address;
@@ -313,15 +318,17 @@ export interface OnrampOrderResponse {
     /** @description The amount of ETH received */
     outputEthAmount?: string;
     /** @description The output token (from strategies) */
-    outputTokenAddress?: Address;
+    outputTokenAddress?: Address | null;
     /** @description The output amount (from strategies) */
-    outputTokenAmount?: string;
+    outputTokenAmount?: string | null;
     /** @description The tx hash on the EVM chain */
     txHash?: string;
     /** @description V4 order details */
     orderDetails?: OrderDetailsRaw;
     /** layerzero dst eid if the order being routed through layerzero */
     layerzeroDstEid?: number;
+    /** tokens received for gatway v4 order */
+    tokensReceived: TokenReceived[] | null;
 }
 
 export type OrderStatusData = {
@@ -349,12 +356,19 @@ export type OrderStatus =
       };
 
 /** Order given by the Gateway API once the bitcoin tx is submitted */
-export type OnrampOrder = Omit<OnrampOrderResponse, 'satsToConvertToEth' | 'orderDetails'> & {
+export type OnrampOrder = Omit<
+    OnrampOrderResponse,
+    'satsToConvertToEth' | 'orderDetails' | 'tokensReceived' | 'outputTokenAddress' | 'outputTokenAmount'
+> & {
     /** @description The gas refill in satoshis */
     gasRefill: number;
     /** @description V4 order details */
     orderDetails?: OrderDetails;
 } & {
+    /** @description The output token (from strategies) */
+    outputTokenAddress?: Address;
+    /** @description The output amount (from strategies) */
+    outputTokenAmount?: string;
     /** @description Get the actual token address received */
     getTokenAddress(): string | undefined;
     /** @description Get the actual token received */
@@ -365,6 +379,10 @@ export type OnrampOrder = Omit<OnrampOrderResponse, 'satsToConvertToEth' | 'orde
     getConfirmations(esploraClient: EsploraClient, latestHeight?: number): Promise<number>;
     /** @description Get the actual order status */
     getStatus(esploraClient: EsploraClient, latestHeight?: number): Promise<OrderStatus>;
+    /** @dcription Get all the output tokens */
+    getOutputTokens(): Promise<{ amount: string; token: Token }[]>;
+    /** @dcription Get all the tokens */
+    getTokens(): Promise<{ amount: string | number; token: Token }[]>;
 } & GatewayTokensInfo;
 
 export type GatewayTokensInfo = {
