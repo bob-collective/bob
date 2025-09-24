@@ -287,7 +287,7 @@ export type OfframpGatewayCreateQuoteResponse = {
 };
 
 export interface TokenReceived {
-    token_address: Address;
+    tokenAddress: Address;
     amount: string;
 }
 
