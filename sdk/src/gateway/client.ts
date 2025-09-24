@@ -1076,6 +1076,8 @@ export class GatewayApiClient {
 
             return {
                 ...order,
+                outputTokenAddress,
+                outputTokenAmount,
                 orderDetails,
                 gasRefill: order.satsToConvertToEth,
                 baseToken: ADDRESS_LOOKUP[chainId][order.baseTokenAddress],

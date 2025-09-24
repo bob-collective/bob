@@ -483,6 +483,14 @@ describe('Gateway Tests', () => {
         const orders = await gatewaySDK.getOnrampOrders(zeroAddress);
         assert.lengthOf(orders, 3);
 
+        assert.strictEqual(orders[0].outputTokenAddress, undefined);
+        assert.strictEqual(orders[1].outputTokenAddress, TBTC_ADDRESS);
+        assert.strictEqual(orders[2].outputTokenAddress, TBTC_ADDRESS);
+
+        assert.strictEqual(orders[0].outputTokenAmount, undefined);
+        assert.strictEqual(orders[1].outputTokenAmount, '2000');
+        assert.strictEqual(orders[2].outputTokenAmount, '2000');
+
         assert.strictEqual(orders[0].getTokenAmount(), 20000000000000);
         assert.strictEqual(orders[1].getTokenAmount(), '2000');
         assert.strictEqual(orders[2].getTokenAmount(), '2000');
