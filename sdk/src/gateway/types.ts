@@ -288,7 +288,7 @@ export type OfframpGatewayCreateQuoteResponse = {
 
 export interface TokenReceived {
     amount: string;
-    token_address: Address;
+    tokenAddress: Address;
 }
 
 export interface OnrampOrderResponse {
@@ -327,7 +327,7 @@ export interface OnrampOrderResponse {
     orderDetails?: OrderDetailsRaw;
     /** layerzero dst eid if the order being routed through layerzero */
     layerzeroDstEid?: number;
-    /** tokens received for gatway v4 order */
+    /** ERC20 tokens received by the user for gateway order */
     tokensReceived: TokenReceived[] | null;
 }
 
@@ -365,10 +365,6 @@ export type OnrampOrder = Omit<
     /** @description V4 order details */
     orderDetails?: OrderDetails;
 } & {
-    /** @description The output token (from strategies) */
-    outputTokenAddress?: Address;
-    /** @description The output amount (from strategies) */
-    outputTokenAmount?: string;
     /** @description Get the actual token address received */
     getTokenAddress(): string | undefined;
     /** @description Get the actual token received */

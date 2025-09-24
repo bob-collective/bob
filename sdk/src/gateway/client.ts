@@ -1008,7 +1008,7 @@ export class GatewayApiClient {
         const orders: OnrampOrderResponse[] = await response.json();
         return orders.map((order) => {
             const outputTokenAddress =
-                order.outputTokenAddress ?? order.tokensReceived?.[0]?.token_address ?? undefined;
+                order.outputTokenAddress ?? order.tokensReceived?.[0]?.tokenAddress ?? undefined;
             const outputTokenAmount = order.outputTokenAmount ?? order.tokensReceived?.[0]?.amount ?? undefined;
 
             function getFinal<L, R>(base?: L, output?: R): NonNullable<L | R> {
@@ -1054,30 +1054,28 @@ export class GatewayApiClient {
                 const tokens = order.tokensReceived
                     ? order.tokensReceived
                     : outputTokenAmount && outputTokenAddress
-                      ? [{ amount: outputTokenAmount, token_address: outputTokenAddress }]
+                      ? [{ amount: outputTokenAmount, tokenAddress: outputTokenAddress }]
                       : [];
 
-                return tokens.map(({ amount, token_address }) => ({
+                return tokens.map(({ amount, tokenAddress }) => ({
                     amount: amount,
-                    token: ADDRESS_LOOKUP[chainId][token_address],
+                    token: ADDRESS_LOOKUP[chainId][tokenAddress],
                 }));
             };
 
             const getTokens = () => {
                 const tokens = order.tokensReceived
                     ? order.tokensReceived
-                    : [{ amount: getTokenAmount(), token_address: getTokenAddress() }];
+                    : [{ amount: getTokenAmount(), tokenAddress: getTokenAddress() }];
 
-                return tokens.map(({ amount, token_address }) => ({
+                return tokens.map(({ amount, tokenAddress }) => ({
                     amount: amount,
-                    token: ADDRESS_LOOKUP[chainId][token_address],
+                    token: ADDRESS_LOOKUP[chainId][tokenAddress],
                 }));
             };
 
             return {
                 ...order,
-                outputTokenAddress,
-                outputTokenAmount,
                 orderDetails,
                 gasRefill: order.satsToConvertToEth,
                 baseToken: ADDRESS_LOOKUP[chainId][order.baseTokenAddress],
