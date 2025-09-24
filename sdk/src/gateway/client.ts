@@ -1007,8 +1007,7 @@ export class GatewayApiClient {
         );
         const orders: OnrampOrderResponse[] = await response.json();
         return orders.map((order) => {
-            const outputTokenAddress =
-                order.outputTokenAddress ?? order.tokensReceived?.[0]?.tokenAddress ?? undefined;
+            const outputTokenAddress = order.outputTokenAddress ?? order.tokensReceived?.[0]?.tokenAddress ?? undefined;
             const outputTokenAmount = order.outputTokenAmount ?? order.tokensReceived?.[0]?.amount ?? undefined;
 
             function getFinal<L, R>(base?: L, output?: R): NonNullable<L | R> {
