@@ -96,9 +96,9 @@ export interface GatewayQuoteParams {
     /** @description Cross chain message - strategy data */
     message?: Hex;
 
-    /** @description Buffer in BPS to account for Bitcoin to Bob finality delay (30 mins +) when using the L0 Strategy */
+    /** @description Buffer in BPS to account for Bitcoin to BOB finality delay (30 mins+) when using the L0 Strategy */
     l0OriginFinalityBuffer?: number | bigint;
-    /** @description Buffer in BPS to account for Bob to destination finality delay (a few minutes) when using the L0 Strategy */
+    /** @description Buffer in BPS to account for BOB to destination finality delay (a few minutes) when using the L0 Strategy */
     l0DestinationFinalityBuffer?: number | bigint;
 }
 
@@ -192,7 +192,22 @@ export interface GatewayStrategyContract {
     outputToken: GatewayToken | null;
 }
 
-export type GatewayQuote = {
+export interface OnrampFeeBreakdown {
+    /** @dev Total fees in satoshis */
+    overallFeeSats: number;
+
+    /** @dev Protocol-specific fee */
+    protocolFeeSats: number;
+    /** @dev Affiliate-related fee */
+    affiliateFeeSats: number;
+
+    /** @dev Fee for gas costs on BOB */
+    executionFeeWei: bigint;
+    /** @dev L1 data fee */
+    l1DataFeeWei: bigint;
+}
+
+export type OnrampQuote = {
     /** @description The gateway address */
     gatewayAddress: Address;
     /** @description The base token address (e.g. wBTC or tBTC) */
@@ -213,6 +228,8 @@ export type GatewayQuote = {
     strategyAddress?: Address;
     /** @description V4 order details */
     orderDetails: OrderDetails;
+    /** @dev Detailed fee breakdown */
+    feeBreakdown: OnrampFeeBreakdown;
 };
 
 export type OrderDetailsRaw = {
@@ -549,17 +566,17 @@ export interface DefiLlamaPool {
 
 export type GetQuoteParams = Optional<GatewayQuoteParams, 'fromUserAddress'>;
 
-export type OnrampExecuteQuoteParams = {
-    onrampQuote?: GatewayQuote & GatewayTokensInfo;
+export type OnrampExecuteQuoteParams<T = {}> = {
+    onrampQuote?: OnrampQuote & GatewayTokensInfo;
     params: GetQuoteParams;
-};
+} & T;
 
-export type OfframpExecuteQuoteParams = {
+export type OfframpExecuteQuoteParams<T = {}> = {
     offrampQuote?: OfframpQuote;
     params: GetQuoteParams;
-};
+} & T;
 
-export type ExecuteQuoteParams = OnrampExecuteQuoteParams | OfframpExecuteQuoteParams;
+export type ExecuteQuoteParams<T = {}> = OnrampExecuteQuoteParams<T> | OfframpExecuteQuoteParams<T>;
 
 export interface BitcoinSigner {
     signAllInputs?: (psbtBase64: string) => Promise<string>;
