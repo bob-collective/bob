@@ -1061,9 +1061,7 @@ export class GatewayApiClient {
                         ? { confirmed: false, data }
                         : order.status
                           ? order.strategyAddress
-                              ? order.outputTokenAddress
-                                  ? { success: true, data }
-                                  : { success: false, data }
+                              ? { success: true, data }
                               : { success: true, data }
                           : { pending: true, data };
                 },
