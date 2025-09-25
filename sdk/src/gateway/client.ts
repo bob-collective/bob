@@ -384,7 +384,7 @@ export class GatewayApiClient {
             const errorData = await response.json().catch(() => null);
             const apiMessage = errorData?.message;
             const errorMessage = apiMessage || `Failed to get offramp quote`;
-            throw new Error(`${errorMessage} | queryParams: ${queryParams}`);
+            throw new Error(`${errorMessage}`);
         }
 
         const rawQuote: OfframpQuote = await response.json();
