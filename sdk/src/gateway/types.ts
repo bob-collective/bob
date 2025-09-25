@@ -365,10 +365,13 @@ export type OnrampOrder = Omit<
     /** @description V4 order details */
     orderDetails?: OrderDetails;
 } & {
+    /** @deprecated please use getTokens() instead as gateway v4 can handle multiple tokens */
     /** @description Get the actual token address received */
     getTokenAddress(): string | undefined;
+    /** @deprecated please use getTokens() instead as gateway v4 can handle multiple tokens */
     /** @description Get the actual token received */
     getToken(): Token | undefined;
+    /** @deprecated please use getTokens() instead as gateway v4 can handle multiple tokens */
     /** @description Get the actual amount received of the token */
     getTokenAmount(): string | number | undefined;
     /** @description Get the number of confirmations */
