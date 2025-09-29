@@ -48,8 +48,17 @@ type LayerZeroTokenDeployments = {
     };
 };
 
-interface LayerZeroQuoteExtension {
+interface LayerZeroQuoteParamsExt {
+    /** @description Buffer in BPS to account for Bitcoin to BOB finality delay (30 mins+) when using the L0 Strategy */
+    l0OriginFinalityBuffer?: number | bigint;
+    /** @description Buffer in BPS to account for BOB to destination finality delay (a few minutes) when using the L0 Strategy */
+    l0DestinationFinalityBuffer?: number | bigint;
+}
+
+interface LayerZeroQuoteExt {
+    /** @description The expected amount of wBTC to be swapped to pay for L0 fees */
     estimatedDestinationL0Fee?: bigint;
+    /** @description The maximum amount of wBTC that can be swapped to pay for L0 fees */
     maxAllocatedL0DestinationFee?: bigint;
 }
 
@@ -221,7 +230,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
         return this.l0Client.getOftAddressForChain(chainKey);
     }
 
-    async getQuote(params: GetQuoteParams): Promise<ExecuteQuoteParams<LayerZeroQuoteExtension>> {
+    async getQuote(params: GetQuoteParams<LayerZeroQuoteParamsExt>): Promise<ExecuteQuoteParams<LayerZeroQuoteExt>> {
         const fromChain = resolveChainName(params.fromChain);
         const toChain = resolveChainName(params.toChain);
 
@@ -339,6 +348,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                 ...baseQuote,
                 estimatedDestinationL0Fee: tokensToSwapForLayerZeroFees,
                 maxAllocatedL0DestinationFee: maxTokensToSwapForLayerZeroFees,
+                totalFeeSats: baseQuote.totalFeeSats + Number(maxTokensToSwapForLayerZeroFees),
             };
         } else if (toChain === 'bitcoin') {
             params.fromChain = bob.id;

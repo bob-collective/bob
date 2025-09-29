@@ -188,10 +188,18 @@ export class GatewayApiClient {
         if (params.fromChain?.toString().toLowerCase() === 'bitcoin') {
             // NOTE: toChain validation is performed inside `getOnrampQuote` method
             const onrampQuote = await this.getOnrampQuote(params);
-            return { params, onrampQuote };
+            return {
+                params,
+                totalFeeSats: onrampQuote.feeBreakdown.overallFeeSats,
+                onrampQuote,
+            };
         } else if (params.toChain.toString().toLowerCase() === 'bitcoin') {
             const offrampQuote = await this.getOfframpQuote(params);
-            return { params, offrampQuote };
+            return {
+                params,
+                totalFeeSats: offrampQuote.feeBreakdown.overallFeeSats,
+                offrampQuote,
+            };
         }
 
         throw new Error('Invalid quote arguments');

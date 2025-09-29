@@ -95,11 +95,6 @@ export interface GatewayQuoteParams {
 
     /** @description Cross chain message - strategy data */
     message?: Hex;
-
-    /** @description Buffer in BPS to account for Bitcoin to BOB finality delay (30 mins+) when using the L0 Strategy */
-    l0OriginFinalityBuffer?: number | bigint;
-    /** @description Buffer in BPS to account for BOB to destination finality delay (a few minutes) when using the L0 Strategy */
-    l0DestinationFinalityBuffer?: number | bigint;
 }
 
 /**
@@ -564,15 +559,17 @@ export interface DefiLlamaPool {
     rewardTokens: null | string[];
 }
 
-export type GetQuoteParams = Optional<GatewayQuoteParams, 'fromUserAddress'>;
+export type GetQuoteParams<T = {}> = Optional<GatewayQuoteParams & T, 'fromUserAddress'>;
 
 export type OnrampExecuteQuoteParams<T = {}> = {
     onrampQuote?: OnrampQuote & GatewayTokensInfo;
+    totalFeeSats: number;
     params: GetQuoteParams;
 } & T;
 
 export type OfframpExecuteQuoteParams<T = {}> = {
     offrampQuote?: OfframpQuote;
+    totalFeeSats: number;
     params: GetQuoteParams;
 } & T;
 
