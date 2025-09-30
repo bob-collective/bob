@@ -514,6 +514,7 @@ export interface OfframpRawOrder {
     btcTx: string | null;
     submitOrderEvmTx: string | null;
     shouldFeesBeBumped: boolean;
+    refundedEvmTx: string | null;
 }
 
 /** @dev Internal */
