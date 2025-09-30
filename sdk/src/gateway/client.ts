@@ -26,6 +26,7 @@ import {
     BumpFeeParams,
     EnrichedToken,
     ExecuteQuoteParams,
+    ExecutionProgress,
     GatewayCreateOrderRequestPayload,
     GatewayCreateOrderResponse,
     GatewayQuote,
@@ -758,7 +759,11 @@ export class GatewayApiClient {
         walletClient,
         publicClient,
         btcSigner,
-    }: { quote: ExecuteQuoteParams } & AllWalletClientParams): Promise<string> {
+        onProgress,
+    }: {
+        quote: ExecuteQuoteParams;
+        onProgress?: (progress: ExecutionProgress) => void;
+    } & AllWalletClientParams): Promise<string> {
         const isOnrampQuoteParams = (args: ExecuteQuoteParams): args is OnrampExecuteQuoteParams => {
             return args.params.fromChain?.toString().toLowerCase() === 'bitcoin';
         };

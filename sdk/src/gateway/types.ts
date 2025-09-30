@@ -558,6 +558,43 @@ export type OfframpExecuteQuoteParams = {
 
 export type ExecuteQuoteParams = OnrampExecuteQuoteParams | OfframpExecuteQuoteParams;
 
+export type ExecutionProgress =
+    | {
+          step: 'approve';
+          status: 'idle';
+          meta: {};
+      }
+    | {
+          step: 'approve';
+          status: 'simulation-success';
+          meta: {};
+      }
+    | {
+          step: 'approve';
+          status: 'pending';
+          meta: {};
+      }
+    | {
+          step: 'approve';
+          status: 'success';
+          meta: {};
+      }
+    | {
+          step: 'approve';
+          status: 'simulation-error' | 'pending' | 'success' | 'error';
+          meta: {};
+      }
+    | {
+          step: 'sign';
+          status: 'idle' | 'simulation-success' | 'simulation-error' | 'pending' | 'success' | 'error';
+          meta: {};
+      }
+    | {
+          step: 'approve' | 'sign';
+          status: 'simulation-error' | 'error',
+          meta: {};
+      };
+
 export interface BitcoinSigner {
     signAllInputs?: (psbtBase64: string) => Promise<string>;
     sendBitcoin?: (params: {

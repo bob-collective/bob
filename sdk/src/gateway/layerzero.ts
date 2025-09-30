@@ -2,6 +2,7 @@ import { Address, encodeAbiParameters, encodePacked, Hex, padHex, parseAbiParame
 import { AllWalletClientParams, GatewayApiClient } from './client';
 import {
     ExecuteQuoteParams,
+    ExecutionProgress,
     GatewayQuote,
     GatewayTokensInfo,
     GetQuoteParams,
@@ -358,7 +359,11 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
         walletClient,
         publicClient,
         btcSigner,
-    }: { quote: ExecuteQuoteParams } & AllWalletClientParams): Promise<string> {
+        onProgress,
+    }: {
+        quote: ExecuteQuoteParams;
+        onProgress?: (progress: ExecutionProgress) => void;
+    } & AllWalletClientParams): Promise<string> {
         const isOfframpQuoteParams = (args: ExecuteQuoteParams): args is OfframpExecuteQuoteParams => {
             return args.params.toChain?.toString().toLowerCase() === 'bitcoin';
         };
@@ -368,10 +373,10 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
 
         // Handle bitcoin -> bob / l0 chain, normal flow with additional calldata
         if (fromChain === 'bitcoin') {
-            return super.executeQuote({ quote: executeQuoteParams, walletClient, publicClient, btcSigner });
+            return super.executeQuote({ quote: executeQuoteParams, walletClient, publicClient, btcSigner, onProgress });
         } else if (fromChain === bob.name.toLowerCase() && toChain === 'bitcoin') {
             // Handle bob -> bitcoin, normal flow
-            return super.executeQuote({ quote: executeQuoteParams, walletClient, publicClient, btcSigner });
+            return super.executeQuote({ quote: executeQuoteParams, walletClient, publicClient, btcSigner, onProgress });
         } else if (isOfframpQuoteParams(executeQuoteParams)) {
             const { offrampQuote, params } = executeQuoteParams;
             const quote = offrampQuote!;
