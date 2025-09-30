@@ -469,6 +469,8 @@ export type OfframpOrder = {
     orderTimestamp: number;
     /** @dev The user submit order transaction hash on the EVM chain */
     submitOrderEvmTx: string | null;
+    /** @dev The user refunded order transaction hash on the EVM chain */
+    refundedEvmTx: string | null;
     /** @dev The transaction ID on the Bitcoin network */
     btcTx: string | null;
     /** @dev Indicates whether the fees for this order should be bumped based on current network conditions */
