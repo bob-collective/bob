@@ -454,7 +454,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                 abi: layerZeroOftAbi,
                 address: wbtcOftAddress as Hex,
                 functionName: 'send',
-                args: [sendParam, sendFees, offrampComposer],
+                args: [sendParam, sendFees, params.fromUserAddress as Address],
                 value: sendFees.nativeFee,
             });
 
