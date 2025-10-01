@@ -256,7 +256,7 @@ export class GatewayApiClient {
             throw new Error(errorMessage);
         }
 
-        const jsonResponse: Omit<OnrampQuote, 'orderDetails' | 'feeBreakdown'> & {
+        const jsonResponse: Omit<OnrampQuote, 'orderDetails'> & {
             orderDetails?: OrderDetailsRaw;
             errorData?: { message: string };
         } = await response.json();
@@ -268,19 +268,9 @@ export class GatewayApiClient {
             throw new Error(errorMessage);
         }
 
-        const orderDetails = convertOrderDetailsRawToOrderDetails(jsonResponse.orderDetails);
         const quote: OnrampQuote = {
             ...jsonResponse,
-            orderDetails,
-            feeBreakdown: {
-                // overallFeeSats = protocolFeeSats + affiliateFeeSats + executionFeeWei + l1DataFeeWei
-                // TODO: subtract gas refill amount
-                overallFeeSats: orderDetails.data.satsToSwapToEth,
-                protocolFeeSats: 0, // TODO: get from API
-                affiliateFeeSats: Number(orderDetails.data.extraSatsFee || 0n),
-                executionFeeWei: orderDetails.data.totalUserGasLimit * orderDetails.data.userGasPriceLimit, // TODO: is this correct?
-                l1DataFeeWei: orderDetails.data.l1DataFee,
-            },
+            orderDetails: convertOrderDetailsRawToOrderDetails(jsonResponse.orderDetails),
         };
 
         return {

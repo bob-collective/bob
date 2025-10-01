@@ -190,12 +190,10 @@ export interface GatewayStrategyContract {
 export interface OnrampFeeBreakdown {
     /** @dev Total fees in satoshis */
     overallFeeSats: number;
-
     /** @dev Protocol-specific fee */
     protocolFeeSats: number;
     /** @dev Affiliate-related fee */
     affiliateFeeSats: number;
-
     /** @dev Fee for gas costs on BOB */
     executionFeeWei: bigint;
     /** @dev L1 data fee */

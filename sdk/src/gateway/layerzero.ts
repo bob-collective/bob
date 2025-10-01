@@ -57,9 +57,13 @@ interface LayerZeroQuoteParamsExt {
 
 interface LayerZeroQuoteExt {
     /** @description The expected amount of wBTC to be swapped to pay for L0 fees */
-    estimatedDestinationL0Fee?: bigint;
+    estimatedL0DestinationFee?: bigint;
     /** @description The maximum amount of wBTC that can be swapped to pay for L0 fees */
     maxAllocatedL0DestinationFee?: bigint;
+    /** @description The estimated total fees in satoshis including the estimated L0 destination fee */
+    estimatedTotalFeeSats?: bigint;
+    /** @description The maximum total fees in satoshis including the max allocated L0 destination fee */
+    maxTotalFeeSats?: bigint;
 }
 
 export class LayerZeroClient {
@@ -346,9 +350,10 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
             const baseQuote = await super.getQuote(params);
             return {
                 ...baseQuote,
-                estimatedDestinationL0Fee: tokensToSwapForLayerZeroFees,
+                estimatedL0DestinationFee: tokensToSwapForLayerZeroFees,
                 maxAllocatedL0DestinationFee: maxTokensToSwapForLayerZeroFees,
-                totalFeeSats: baseQuote.totalFeeSats + Number(maxTokensToSwapForLayerZeroFees),
+                estimatedTotalFeeSats: BigInt(baseQuote.totalFeeSats) + tokensToSwapForLayerZeroFees,
+                maxTotalFeeSats: BigInt(baseQuote.totalFeeSats) + maxTokensToSwapForLayerZeroFees,
             };
         } else if (toChain === 'bitcoin') {
             params.fromChain = bob.id;
