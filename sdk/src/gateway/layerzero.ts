@@ -379,7 +379,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
             const layerZeroClient = new LayerZeroClient();
 
             // The recipient address of the layer zero send, this contract will create the offramp order
-            const offrampComposer = '0xc05AA3D7BD9c61B8b94EaCC937d1F542c3E5b94a';
+            const offrampComposer = '0xd455e08a6ecfac74e1a159fd3853ef14e6b99c7f';
             const receiverAddress = toHexScriptPubKey(params.toUserAddress, bitcoin.networks.bitcoin);
 
             const dstEid = await layerZeroClient.getEidForChain('bob');
