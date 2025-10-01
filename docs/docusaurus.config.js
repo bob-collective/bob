@@ -45,7 +45,7 @@ const config = {
   },
 
   plugins: [
-    [ 'docusaurus-plugin-llms', {  pathTransformation: { ignorePaths: ['docs'] } } ],
+    ['docusaurus-plugin-llms', { pathTransformation: { ignorePaths: ['docs'] } }],
     [
       "@docusaurus/plugin-client-redirects",
       {
@@ -87,12 +87,7 @@ const config = {
           {
             from: "/learn/user-guides/bob-pay",
             to: "/docs/deprecated/bob-pay",
-          },
-          // External document redirects
-          {
-            from: "/docs/reference/mica-whitepaper",
-            to: "https://docs.google.com/document/d/1T3OzCNTS9NVEixAFKW1bRWffrPswiL_m/edit?usp=sharing&ouid=112528513121405423589&rtpof=true&sd=true",
-          },
+          }
         ],
       },
     ],
