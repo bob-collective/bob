@@ -49,6 +49,7 @@ import {
     Token,
     UnlockOrderParams,
     OrderDetailsRaw,
+    OnrampFeeBreakdownRaw,
 } from './types';
 import {
     parseOrderStatus,
@@ -59,6 +60,7 @@ import {
     convertOrderDetailsRawToOrderDetails,
     convertOrderDetailsToRaw,
     formatBtc,
+    convertOnrampFeeBreakdown,
 } from './utils';
 
 /**
@@ -258,8 +260,9 @@ export class GatewayApiClient {
             throw new Error(errorMessage);
         }
 
-        const jsonResponse: Omit<OnrampQuote, 'orderDetails'> & {
-            orderDetails?: OrderDetailsRaw;
+        const jsonResponse: Omit<OnrampQuote, 'orderDetails' | 'feeBreakdown'> & {
+            orderDetails: OrderDetailsRaw;
+            feeBreakdown: OnrampFeeBreakdownRaw;
             errorData?: { message: string };
         } = await response.json();
 
@@ -273,6 +276,7 @@ export class GatewayApiClient {
         const quote: OnrampQuote = {
             ...jsonResponse,
             orderDetails: convertOrderDetailsRawToOrderDetails(jsonResponse.orderDetails),
+            feeBreakdown: convertOnrampFeeBreakdown(jsonResponse.feeBreakdown),
         };
 
         return {

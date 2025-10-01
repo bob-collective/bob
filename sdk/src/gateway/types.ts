@@ -187,7 +187,7 @@ export interface GatewayStrategyContract {
     outputToken: GatewayToken | null;
 }
 
-export interface OnrampFeeBreakdown {
+export interface OnrampFeeBreakdownRaw {
     /** @dev Total fees in satoshis */
     overallFeeSats: number;
     /** @dev Protocol-specific fee */
@@ -195,10 +195,17 @@ export interface OnrampFeeBreakdown {
     /** @dev Affiliate-related fee */
     affiliateFeeSats: number;
     /** @dev Fee for gas costs on BOB */
+    executionFeeWei: string;
+    /** @dev L1 data fee */
+    l1DataFeeWei: string;
+}
+
+export type OnrampFeeBreakdown = Omit<OnrampFeeBreakdownRaw, 'executionFeeWei' | 'l1DataFeeWei'> & {
+    /** @dev Fee for gas costs on BOB */
     executionFeeWei: bigint;
     /** @dev L1 data fee */
     l1DataFeeWei: bigint;
-}
+};
 
 export type OnrampQuote = {
     /** @description The gateway address */
