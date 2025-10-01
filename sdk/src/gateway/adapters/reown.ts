@@ -1,7 +1,6 @@
 import { Transaction } from '@scure/btc-signer';
 import { BitcoinSigner } from '../types';
 import { base64 } from '@scure/base';
-import { Address } from 'viem';
 
 interface ReownWalletProvider {
     signPSBT: (params: {

@@ -55,17 +55,6 @@ interface LayerZeroQuoteParamsExt {
     l0DestinationFinalityBuffer?: number | bigint;
 }
 
-interface LayerZeroQuoteExt {
-    /** @description The expected amount of wBTC to be swapped to pay for L0 fees */
-    estimatedL0DestinationFee?: bigint;
-    /** @description The maximum amount of wBTC that can be swapped to pay for L0 fees */
-    maxAllocatedL0DestinationFee?: bigint;
-    /** @description The estimated total fees in satoshis including the estimated L0 destination fee */
-    estimatedTotalFeeSats?: bigint;
-    /** @description The maximum total fees in satoshis including the max allocated L0 destination fee */
-    maxTotalFeeSats?: bigint;
-}
-
 export class LayerZeroClient {
     private basePath: string;
 
@@ -130,7 +119,7 @@ export class LayerZeroClient {
     async getSupportedChainsInfo(): Promise<Array<LayerZeroChainInfo>> {
         const chains = await this.getChainDeployments();
         const chainLookup = Object.fromEntries(
-            Object.entries(chains).map(([_, chainData]) => [
+            Object.entries(chains).map(([, chainData]) => [
                 chainData.chainKey,
                 {
                     eid: chainData.deployments?.find((item) => item.version === 2)?.eid,
@@ -234,7 +223,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
         return this.l0Client.getOftAddressForChain(chainKey);
     }
 
-    async getQuote(params: GetQuoteParams<LayerZeroQuoteParamsExt>): Promise<ExecuteQuoteParams<LayerZeroQuoteExt>> {
+    async getQuote(params: GetQuoteParams<LayerZeroQuoteParamsExt>): Promise<ExecuteQuoteParams> {
         const fromChain = resolveChainName(params.fromChain);
         const toChain = resolveChainName(params.toChain);
 
@@ -350,10 +339,8 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
             const baseQuote = await super.getQuote(params);
             return {
                 ...baseQuote,
-                estimatedL0DestinationFee: tokensToSwapForLayerZeroFees,
-                maxAllocatedL0DestinationFee: maxTokensToSwapForLayerZeroFees,
-                estimatedTotalFeeSats: BigInt(baseQuote.totalFeeSats) + tokensToSwapForLayerZeroFees,
-                maxTotalFeeSats: BigInt(baseQuote.totalFeeSats) + maxTokensToSwapForLayerZeroFees,
+                finalOutputSats: baseQuote.finalOutputSats - Number(maxTokensToSwapForLayerZeroFees),
+                finalFeeSats: baseQuote.finalFeeSats + Number(maxTokensToSwapForLayerZeroFees),
             };
         } else if (toChain === 'bitcoin') {
             params.fromChain = bob.id;

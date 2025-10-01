@@ -557,20 +557,26 @@ export interface DefiLlamaPool {
     rewardTokens: null | string[];
 }
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export type GetQuoteParams<T = {}> = Optional<GatewayQuoteParams & T, 'fromUserAddress'>;
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export type OnrampExecuteQuoteParams<T = {}> = {
     onrampQuote?: OnrampQuote & GatewayTokensInfo;
-    totalFeeSats: number;
+    finalOutputSats: number;
+    finalFeeSats: number;
     params: GetQuoteParams;
 } & T;
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export type OfframpExecuteQuoteParams<T = {}> = {
     offrampQuote?: OfframpQuote;
-    totalFeeSats: number;
+    finalOutputSats: number;
+    finalFeeSats: number;
     params: GetQuoteParams;
 } & T;
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export type ExecuteQuoteParams<T = {}> = OnrampExecuteQuoteParams<T> | OfframpExecuteQuoteParams<T>;
 
 export interface BitcoinSigner {

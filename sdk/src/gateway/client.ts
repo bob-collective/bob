@@ -190,14 +190,16 @@ export class GatewayApiClient {
             const onrampQuote = await this.getOnrampQuote(params);
             return {
                 params,
-                totalFeeSats: onrampQuote.feeBreakdown.overallFeeSats,
+                finalOutputSats: onrampQuote.outputSatoshis,
+                finalFeeSats: onrampQuote.feeBreakdown.overallFeeSats,
                 onrampQuote,
             };
         } else if (params.toChain.toString().toLowerCase() === 'bitcoin') {
             const offrampQuote = await this.getOfframpQuote(params);
             return {
                 params,
-                totalFeeSats: offrampQuote.feeBreakdown.overallFeeSats,
+                finalOutputSats: offrampQuote.amountReceiveInSat,
+                finalFeeSats: offrampQuote.feeBreakdown.overallFeeSats,
                 offrampQuote,
             };
         }
