@@ -165,28 +165,28 @@ impl EsploraClient {
 
     pub async fn get_merkleblock_proof(&self, txid: &Txid) -> Result<MerkleBlock> {
         Ok(consensus::deserialize(&Vec::<u8>::from_hex(
-            &self.get(&format!("tx/{txid}/merkleblock-proof")).await?,
+            &self.get(&format!("/tx/{txid}/merkleblock-proof")).await?,
         )?)?)
     }
 
     pub async fn get_merkle_proof(&self, txid: &Txid) -> Result<MerkleProof> {
-        self.get_and_decode(&format!("tx/{txid}/merkle-proof")).await
+        self.get_and_decode(&format!("/tx/{txid}/merkle-proof")).await
     }
 
     pub async fn get_transactions_by_scripthash(
         &self,
         scripthash: &str,
     ) -> Result<Vec<TransactionFormat>> {
-        self.get_and_decode(&format!("scripthash/{scripthash}/txs")).await
+        self.get_and_decode(&format!("/scripthash/{scripthash}/txs")).await
     }
 
     pub async fn get_block_hash(&self, height: u32) -> Result<BlockHash> {
-        let response = self.get(&format!("block-height/{height}")).await?;
+        let response = self.get(&format!("/block-height/{height}")).await?;
         Ok(BlockHash::from_str(&response)?)
     }
 
     pub async fn get_raw_block_header(&self, hash: &BlockHash) -> Result<Vec<u8>> {
-        Ok(Vec::<u8>::from_hex(&self.get(&format!("block/{hash}/header")).await?)?)
+        Ok(Vec::<u8>::from_hex(&self.get(&format!("/block/{hash}/header")).await?)?)
     }
 
     pub async fn get_block_header(&self, hash: &BlockHash) -> Result<Header> {
@@ -194,7 +194,7 @@ impl EsploraClient {
     }
 
     pub async fn get_block_value(&self, hash: &BlockHash) -> Result<BlockValue> {
-        self.get_and_decode(&format!("block/{hash}")).await
+        self.get_and_decode(&format!("/block/{hash}")).await
     }
 
     pub async fn get_raw_block_header_at_height(&self, height: u32) -> Result<Vec<u8>> {
@@ -206,7 +206,7 @@ impl EsploraClient {
     }
 
     pub async fn get_block_txids(&self, hash: &BlockHash) -> Result<Vec<Txid>> {
-        self.get_and_decode(&format!("block/{hash}/txids")).await
+        self.get_and_decode(&format!("/block/{hash}/txids")).await
     }
 
     pub async fn get_chain_height(&self) -> Result<u32> {
@@ -214,7 +214,7 @@ impl EsploraClient {
     }
 
     pub async fn get_tx_status(&self, txid: &Txid) -> Result<TransactionStatus> {
-        self.get_and_decode(&format!("tx/{txid}/status")).await
+        self.get_and_decode(&format!("/tx/{txid}/status")).await
     }
 
     /// Fetch the transaction at the specified index within the given block.
