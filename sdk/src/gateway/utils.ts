@@ -1,5 +1,12 @@
 import { createPublicClient, http, zeroAddress, Chain as ViemChain } from 'viem';
-import { GatewayCreateOrderRequest, OfframpOrderStatus, OrderDetails, OrderDetailsRaw } from './types';
+import {
+    GatewayCreateOrderRequest,
+    OfframpOrderStatus,
+    OnrampFeeBreakdown,
+    OnrampFeeBreakdownRaw,
+    OrderDetails,
+    OrderDetailsRaw,
+} from './types';
 import { encodeAbiParameters, parseAbiParameters, keccak256, parseUnits, formatUnits } from 'viem';
 import * as bitcoin from 'bitcoinjs-lib';
 
@@ -98,6 +105,16 @@ export function convertOrderDetailsToRaw(order: OrderDetails): OrderDetailsRaw {
             extraSatsFee: order.data.extraSatsFee !== null ? order.data.extraSatsFee.toString() : null,
             extraSatsFeeRecipient: order.data.extraSatsFeeRecipient,
         },
+    };
+}
+
+export function convertOnrampFeeBreakdown(order: OnrampFeeBreakdownRaw): OnrampFeeBreakdown {
+    return {
+        overallFeeSats: order.overallFeeSats,
+        protocolFeeSats: order.protocolFeeSats,
+        affiliateFeeSats: order.affiliateFeeSats,
+        executionFeeWei: BigInt(order.executionFeeWei),
+        l1DataFeeWei: BigInt(order.l1DataFeeWei),
     };
 }
 

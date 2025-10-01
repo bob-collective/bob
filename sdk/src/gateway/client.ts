@@ -28,7 +28,7 @@ import {
     ExecuteQuoteParams,
     GatewayCreateOrderRequestPayload,
     GatewayCreateOrderResponse,
-    GatewayQuote,
+    OnrampQuote,
     GatewayStartOrder,
     GatewayStrategy,
     GatewayStrategyContract,
@@ -48,6 +48,8 @@ import {
     StrategyParams,
     Token,
     UnlockOrderParams,
+    OrderDetailsRaw,
+    OnrampFeeBreakdownRaw,
 } from './types';
 import {
     parseOrderStatus,
@@ -58,6 +60,7 @@ import {
     convertOrderDetailsRawToOrderDetails,
     convertOrderDetailsToRaw,
     formatBtc,
+    convertOnrampFeeBreakdown,
 } from './utils';
 
 /**
@@ -182,20 +185,25 @@ export class GatewayApiClient {
      * @returns Promise resolving to quote details with either onrampQuote or offrampQuote populated
      * @throws {Error} If neither onramp nor offramp conditions are met
      */
-    async getQuote(params: GetQuoteParams): Promise<{
-        params: GetQuoteParams;
-        onrampQuote?: GatewayQuote & GatewayTokensInfo;
-        offrampQuote?: OfframpQuote;
-    }> {
+    async getQuote(params: GetQuoteParams): Promise<ExecuteQuoteParams> {
         // NOTE: fromChain must be specified if you do onramp
         if (params.fromChain?.toString().toLowerCase() === 'bitcoin') {
             // NOTE: toChain validation is performed inside `getOnrampQuote` method
             const onrampQuote = await this.getOnrampQuote(params);
-            return { params, onrampQuote };
+            return {
+                params,
+                finalOutputSats: onrampQuote.outputSatoshis,
+                finalFeeSats: onrampQuote.feeBreakdown.overallFeeSats,
+                onrampQuote,
+            };
         } else if (params.toChain.toString().toLowerCase() === 'bitcoin') {
             const offrampQuote = await this.getOfframpQuote(params);
-
-            return { params, offrampQuote };
+            return {
+                params,
+                finalOutputSats: offrampQuote.amountReceiveInSat,
+                finalFeeSats: offrampQuote.feeBreakdown.overallFeeSats,
+                offrampQuote,
+            };
         }
 
         throw new Error('Invalid quote arguments');
@@ -208,7 +216,7 @@ export class GatewayApiClient {
      * @returns Promise resolving to onramp quote with token info
      * @throws {Error} If invalid output chain or parameters
      */
-    async getOnrampQuote(params: GetQuoteParams): Promise<GatewayQuote & GatewayTokensInfo> {
+    async getOnrampQuote(params: GetQuoteParams): Promise<OnrampQuote & GatewayTokensInfo> {
         const isMainnet =
             params.toChain === bob.id ||
             (typeof params.toChain === 'string' && params.toChain.toLowerCase() === bob.name.toLowerCase());
@@ -252,7 +260,11 @@ export class GatewayApiClient {
             throw new Error(errorMessage);
         }
 
-        const jsonResponse = await response.json();
+        const jsonResponse: Omit<OnrampQuote, 'orderDetails' | 'feeBreakdown'> & {
+            orderDetails: OrderDetailsRaw;
+            feeBreakdown: OnrampFeeBreakdownRaw;
+            errorData?: { message: string };
+        } = await response.json();
 
         if (!jsonResponse.orderDetails) {
             const errorData = jsonResponse.errorData;
@@ -261,9 +273,10 @@ export class GatewayApiClient {
             throw new Error(errorMessage);
         }
 
-        const quote: GatewayQuote = {
+        const quote: OnrampQuote = {
             ...jsonResponse,
             orderDetails: convertOrderDetailsRawToOrderDetails(jsonResponse.orderDetails),
+            feeBreakdown: convertOnrampFeeBreakdown(jsonResponse.feeBreakdown),
         };
 
         return {
@@ -676,7 +689,7 @@ export class GatewayApiClient {
      * @returns Promise resolving to order details with PSBT
      * @throws {Error} If user address is invalid or PSBT creation fails
      */
-    async startOnrampOrder(gatewayQuote: GatewayQuote, params: GetQuoteParams): Promise<GatewayStartOrder> {
+    async startOnrampOrder(gatewayQuote: OnrampQuote, params: GetQuoteParams): Promise<GatewayStartOrder> {
         if (!params.toUserAddress || !isAddress(params.toUserAddress)) {
             throw new Error('Invalid user address');
         }

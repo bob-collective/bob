@@ -1,13 +1,6 @@
 import { Address, encodeAbiParameters, encodePacked, Hex, padHex, parseAbiParameters } from 'viem';
 import { AllWalletClientParams, GatewayApiClient } from './client';
-import {
-    ExecuteQuoteParams,
-    GatewayQuote,
-    GatewayTokensInfo,
-    GetQuoteParams,
-    OfframpExecuteQuoteParams,
-    OfframpQuote,
-} from './types';
+import { ExecuteQuoteParams, GetQuoteParams, OfframpExecuteQuoteParams } from './types';
 import { bob, bobSepolia } from 'viem/chains';
 import { toHexScriptPubKey } from './utils';
 import * as bitcoin from 'bitcoinjs-lib';
@@ -54,6 +47,13 @@ type LayerZeroTokenDeployments = {
         address: string;
     };
 };
+
+interface LayerZeroQuoteParamsExt {
+    /** @description Buffer in BPS to account for Bitcoin to BOB finality delay (30 mins+) when using the L0 Strategy */
+    l0OriginFinalityBuffer?: number | bigint;
+    /** @description Buffer in BPS to account for BOB to destination finality delay (a few minutes) when using the L0 Strategy */
+    l0DestinationFinalityBuffer?: number | bigint;
+}
 
 export class LayerZeroClient {
     private basePath: string;
@@ -119,7 +119,7 @@ export class LayerZeroClient {
     async getSupportedChainsInfo(): Promise<Array<LayerZeroChainInfo>> {
         const chains = await this.getChainDeployments();
         const chainLookup = Object.fromEntries(
-            Object.entries(chains).map(([_, chainData]) => [
+            Object.entries(chains).map(([, chainData]) => [
                 chainData.chainKey,
                 {
                     eid: chainData.deployments?.find((item) => item.version === 2)?.eid,
@@ -223,11 +223,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
         return this.l0Client.getOftAddressForChain(chainKey);
     }
 
-    async getQuote(params: GetQuoteParams): Promise<{
-        params: GetQuoteParams;
-        onrampQuote?: GatewayQuote & GatewayTokensInfo;
-        offrampQuote?: OfframpQuote;
-    }> {
+    async getQuote(params: GetQuoteParams<LayerZeroQuoteParamsExt>): Promise<ExecuteQuoteParams> {
         const fromChain = resolveChainName(params.fromChain);
         const toChain = resolveChainName(params.toChain);
 
@@ -276,7 +272,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
             // TODO: expose via params
             const publicClient = viemClient(bob);
 
-            // // We need to add buffers to fee calculations to account for gas price changes and slippage while waiting for these finalities.
+            // We need to add buffers to fee calculations to account for gas price changes and slippage while waiting for these finalities.
             // There are two finalities we must consider:
             //  1) Bitcoin Finality on Bob (origin finality).
             //      This is 30 mins plus, therefore a large buffer is needed for values to remain valid over this period.
@@ -340,7 +336,12 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
             params.toChain = bob.id;
 
             // Handle bitcoin -> l0 chain: need to add calldata
-            return super.getQuote(params);
+            const baseQuote = await super.getQuote(params);
+            return {
+                ...baseQuote,
+                finalOutputSats: baseQuote.finalOutputSats - Number(maxTokensToSwapForLayerZeroFees),
+                finalFeeSats: baseQuote.finalFeeSats + Number(maxTokensToSwapForLayerZeroFees),
+            };
         } else if (toChain === 'bitcoin') {
             params.fromChain = bob.id;
             // Handle l0 -> bitcoin: estimate bob -> bitcoin
