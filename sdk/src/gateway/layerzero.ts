@@ -1,12 +1,11 @@
-import { Address, encodeAbiParameters, encodePacked, Hex, padHex, parseAbiParameters } from 'viem';
-import { AllWalletClientParams, GatewayApiClient } from './client';
-import { ExecuteQuoteParams, GetQuoteParams, OfframpExecuteQuoteParams } from './types';
-import { bob, bobSepolia } from 'viem/chains';
-import { toHexScriptPubKey } from './utils';
-import * as bitcoin from 'bitcoinjs-lib';
-import { viemClient } from './utils';
-import { layerZeroOftAbi, quoterV2Abi } from './abi';
 import ecc from '@bitcoinerlab/secp256k1';
+import * as bitcoin from 'bitcoinjs-lib';
+import { Address, encodeAbiParameters, encodePacked, Hex, padHex, parseAbiParameters } from 'viem';
+import { bob, bobSepolia } from 'viem/chains';
+import { layerZeroOftAbi, quoterV2Abi } from './abi';
+import { AllWalletClientParams, GatewayApiClient } from './client';
+import { ExecuteQuoteParams, GetQuoteParams } from './types';
+import { toHexScriptPubKey, viemClient } from './utils';
 
 bitcoin.initEccLib(ecc);
 
