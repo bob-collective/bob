@@ -103,7 +103,8 @@ describe('Gateway Tests', () => {
                 amount: 1000,
             }),
             {
-                onrampQuote: assertMockQuote,
+                type: 'onramp',
+                data: assertMockQuote,
                 finalOutputSats: mockQuote.satoshis - mockQuote.fee,
                 finalFeeSats: mockQuote.fee,
                 params: {
@@ -126,7 +127,8 @@ describe('Gateway Tests', () => {
                 amount: 1000,
             }),
             {
-                onrampQuote: assertMockQuote,
+                type: 'onramp',
+                data: assertMockQuote,
                 finalOutputSats: mockQuote.satoshis - mockQuote.fee,
                 finalFeeSats: mockQuote.fee,
                 params: {
@@ -149,7 +151,8 @@ describe('Gateway Tests', () => {
                 amount: 1000,
             }),
             {
-                onrampQuote: assertMockQuote,
+                type: 'onramp',
+                data: assertMockQuote,
                 finalOutputSats: mockQuote.satoshis - mockQuote.fee,
                 finalFeeSats: mockQuote.fee,
                 params: {
@@ -172,7 +175,8 @@ describe('Gateway Tests', () => {
                 amount: 1000,
             }),
             {
-                onrampQuote: assertMockQuote,
+                type: 'onramp',
+                data: assertMockQuote,
                 finalOutputSats: mockQuote.satoshis - mockQuote.fee,
                 finalFeeSats: mockQuote.fee,
                 params: {
@@ -210,7 +214,8 @@ describe('Gateway Tests', () => {
                 toUserAddress: zeroAddress,
             }),
             {
-                onrampQuote: assertMockQuote,
+                type: 'onramp',
+                data: assertMockQuote,
                 finalOutputSats: mockQuote.satoshis - mockQuote.fee,
                 finalFeeSats: mockQuote.fee,
                 params: {
@@ -675,6 +680,14 @@ describe('Gateway Tests', () => {
         const finalizeOrderSpy = vi.spyOn(gatewaySDK, 'finalizeOnrampOrder');
 
         const mockQuote: OnrampQuote & GatewayTokensInfo = {
+            outputSatoshis: 990,
+            feeBreakdown: {
+                overallFeeSats: 10,
+                protocolFeeSats: 0,
+                affiliateFeeSats: 0,
+                executionFeeWei: BigInt(0),
+                l1DataFeeWei: BigInt(0),
+            },
             gatewayAddress: zeroAddress,
             baseTokenAddress: TBTC_ADDRESS as Address,
             dustThreshold: 1000,
@@ -698,7 +711,8 @@ describe('Gateway Tests', () => {
 
         const btcTxId = await gatewaySDK.executeQuote({
             quote: {
-                onrampQuote: mockQuote,
+                type: 'onramp',
+                data: mockQuote,
                 finalOutputSats: mockQuote.satoshis - mockQuote.fee,
                 finalFeeSats: mockQuote.fee,
                 params: {
@@ -770,7 +784,8 @@ describe('Gateway Tests', () => {
 
         const evmTxId = await gatewaySDK.executeQuote({
             quote: {
-                offrampQuote: {
+                type: 'offramp',
+                data: {
                     amountLockInSat: 0,
                     amountReceiveInSat: 0,
                     deadline: 0,

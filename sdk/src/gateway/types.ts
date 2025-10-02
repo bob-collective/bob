@@ -568,20 +568,23 @@ export interface DefiLlamaPool {
 export type GetQuoteParams<T = {}> = Optional<GatewayQuoteParams & T, 'fromUserAddress'>;
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export type OnrampExecuteQuoteParams<T = {}> = {
-    onrampQuote?: OnrampQuote & GatewayTokensInfo;
+type BaseExecuteQuoteParams<T = {}> = {
     finalOutputSats: number;
     finalFeeSats: number;
     params: GetQuoteParams;
 } & T;
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export type OfframpExecuteQuoteParams<T = {}> = {
-    offrampQuote?: OfframpQuote;
-    finalOutputSats: number;
-    finalFeeSats: number;
-    params: GetQuoteParams;
-} & T;
+export type OnrampExecuteQuoteParams<T = {}> = BaseExecuteQuoteParams<T> & {
+    type: 'onramp';
+    data: OnrampQuote & GatewayTokensInfo;
+};
+
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export type OfframpExecuteQuoteParams<T = {}> = BaseExecuteQuoteParams<T> & {
+    type: 'offramp';
+    data: OfframpQuote;
+};
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export type ExecuteQuoteParams<T = {}> = OnrampExecuteQuoteParams<T> | OfframpExecuteQuoteParams<T>;

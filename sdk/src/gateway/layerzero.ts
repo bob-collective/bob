@@ -1,12 +1,11 @@
-import { Address, encodeAbiParameters, encodePacked, Hex, padHex, parseAbiParameters } from 'viem';
-import { AllWalletClientParams, GatewayApiClient } from './client';
-import { ExecuteQuoteParams, GetQuoteParams, OfframpExecuteQuoteParams } from './types';
-import { bob, bobSepolia } from 'viem/chains';
-import { toHexScriptPubKey } from './utils';
-import * as bitcoin from 'bitcoinjs-lib';
-import { viemClient } from './utils';
-import { layerZeroOftAbi, quoterV2Abi } from './abi';
 import ecc from '@bitcoinerlab/secp256k1';
+import * as bitcoin from 'bitcoinjs-lib';
+import { Address, encodeAbiParameters, encodePacked, Hex, padHex, parseAbiParameters } from 'viem';
+import { bob, bobSepolia } from 'viem/chains';
+import { layerZeroOftAbi, quoterV2Abi } from './abi';
+import { AllWalletClientParams, GatewayApiClient } from './client';
+import { ExecuteQuoteParams, GetQuoteParams } from './types';
+import { toHexScriptPubKey, viemClient } from './utils';
 
 bitcoin.initEccLib(ecc);
 
@@ -355,27 +354,24 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
     }
 
     async executeQuote({
-        quote: executeQuoteParams,
+        quote,
         walletClient,
         publicClient,
         btcSigner,
     }: { quote: ExecuteQuoteParams } & AllWalletClientParams): Promise<string> {
-        const isOfframpQuoteParams = (args: ExecuteQuoteParams): args is OfframpExecuteQuoteParams => {
-            return args.params.toChain?.toString().toLowerCase() === 'bitcoin';
-        };
-
-        const fromChain = resolveChainName(executeQuoteParams.params.fromChain);
-        const toChain = resolveChainName(executeQuoteParams.params.toChain);
+        const fromChain = resolveChainName(quote.params.fromChain);
+        const toChain = resolveChainName(quote.params.toChain);
 
         // Handle bitcoin -> bob / l0 chain, normal flow with additional calldata
-        if (fromChain === 'bitcoin') {
-            return super.executeQuote({ quote: executeQuoteParams, walletClient, publicClient, btcSigner });
-        } else if (fromChain === bob.name.toLowerCase() && toChain === 'bitcoin') {
-            // Handle bob -> bitcoin, normal flow
-            return super.executeQuote({ quote: executeQuoteParams, walletClient, publicClient, btcSigner });
-        } else if (isOfframpQuoteParams(executeQuoteParams)) {
-            const { offrampQuote, params } = executeQuoteParams;
-            const quote = offrampQuote!;
+        if (quote.type === 'onramp') {
+            return super.executeQuote({ quote, walletClient, publicClient, btcSigner });
+        } else if (quote.type === 'offramp') {
+            if (fromChain === bob.name.toLowerCase()) {
+                // Handle bob -> bitcoin, normal flow
+                return super.executeQuote({ quote, walletClient, publicClient, btcSigner });
+            }
+
+            const { data, params } = quote;
 
             const layerZeroClient = new LayerZeroClient();
 
@@ -424,11 +420,11 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                     ]),
                     [
                         {
-                            satAmountToLock: BigInt(quote.amountLockInSat),
-                            satFeesMax: BigInt(quote.feeBreakdown.overallFeeSats),
-                            creationDeadline: BigInt(quote.deadline),
+                            satAmountToLock: BigInt(data.amountLockInSat),
+                            satFeesMax: BigInt(data.feeBreakdown.overallFeeSats),
+                            creationDeadline: BigInt(data.deadline),
                             outputScript: receiverAddress as Hex,
-                            token: quote.token,
+                            token: data.token,
                             owner: params.fromUserAddress as Address,
                         },
                     ]
@@ -436,7 +432,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
             };
 
             // we're quoting on the origin chain, so public client must be configured correctly
-            const maybeFromChainId = executeQuoteParams.params.fromChain;
+            const maybeFromChainId = quote.params.fromChain;
             if (typeof maybeFromChainId === 'number' && publicClient.chain?.id !== maybeFromChainId) {
                 // avoid matching on name since L0 and viem may have different naming conventions
                 throw new Error(`Public client must be origin chain`);
