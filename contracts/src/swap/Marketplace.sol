@@ -8,7 +8,7 @@ import {ERC2771Recipient} from "../ERC2771/ERC2771Recipient.sol";
 using SafeERC20 for IERC20;
 
 contract MarketPlace is ERC2771Recipient {
-    mapping(uint256 => Order) public ercErcOrders; // cant have struct as key, nor tupple
+    mapping(uint256 => Order) public ercErcOrders; // can't have struct as key, nor tuple
 
     event placeOrder(
         uint256 indexed orderId,
