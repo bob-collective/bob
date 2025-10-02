@@ -364,12 +364,14 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
         const toChain = resolveChainName(quote.params.toChain);
 
         // Handle bitcoin -> bob / l0 chain, normal flow with additional calldata
-        if (fromChain === 'bitcoin') {
-            return super.executeQuote({ quote, walletClient, publicClient, btcSigner });
-        } else if (fromChain === bob.name.toLowerCase() && toChain === 'bitcoin') {
-            // Handle bob -> bitcoin, normal flow
+        if (quote.type === 'onramp') {
             return super.executeQuote({ quote, walletClient, publicClient, btcSigner });
         } else if (quote.type === 'offramp') {
+            if (fromChain === bob.name.toLowerCase()) {
+                // Handle bob -> bitcoin, normal flow
+                return super.executeQuote({ quote, walletClient, publicClient, btcSigner });
+            }
+
             const { data, params } = quote;
 
             const layerZeroClient = new LayerZeroClient();
