@@ -312,21 +312,21 @@ export interface OnrampOrderResponse {
     /** @description The number of confirmations required to confirm the Bitcoin tx */
     txProofDifficultyFactor: number;
     /** @description The optional strategy address */
-    strategyAddress?: Address;
+    strategyAddress: Address | null;
     /** @description The gas refill in satoshis */
     satsToConvertToEth: number;
     /** @description The amount of ETH received */
-    outputEthAmount?: string;
+    outputEthAmount: string | null;
     /** @description The output token (from strategies) */
-    outputTokenAddress?: Address | null;
+    outputTokenAddress: Address | null;
     /** @description The output amount (from strategies) */
-    outputTokenAmount?: string | null;
+    outputTokenAmount: string | null;
     /** @description The tx hash on the EVM chain */
-    txHash?: string;
+    txHash: string | null;
     /** @description V4 order details */
-    orderDetails?: OrderDetailsRaw;
+    orderDetails: OrderDetailsRaw | null;
     /** layerzero dst eid if the order being routed through layerzero */
-    layerzeroDstEid?: number;
+    layerzeroDstEid: number | null;
     /** ERC20 tokens received by the user for gateway order */
     tokensReceived: TokenReceived[] | null;
 }

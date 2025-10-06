@@ -346,6 +346,14 @@ describe('Gateway Tests', () => {
             fee: 0,
             txProofDifficultyFactor: 0,
             satsToConvertToEth: 0,
+            strategyAddress: null,
+            outputEthAmount: null,
+            outputTokenAddress: null,
+            outputTokenAmount: null,
+            txHash: null,
+            layerzeroDstEid: null,
+            orderDetails: null,
+            tokensReceived: null,
         };
         nock(`${MAINNET_GATEWAY_BASE_URL}`)
             .get(`/orders/${zeroAddress}`)
@@ -421,7 +429,7 @@ describe('Gateway Tests', () => {
         assert.lengthOf(orders, 8);
 
         assert.strictEqual(orders[0].getTokenAmount(), '2000'); // success (staking)
-        assert.strictEqual(orders[1].getTokenAmount(), undefined); // pending (staking)
+        assert.strictEqual(orders[1].getTokenAmount(), null); // pending (staking)
         assert.strictEqual(orders[2].getTokenAmount(), 10000000000000); // failed (staking)
         assert.strictEqual(orders[3].getTokenAmount(), 10000000000000); // pending (swapping)
         assert.strictEqual(orders[4].getTokenAmount(), 10000000000000); // success (swapping)
@@ -447,6 +455,13 @@ describe('Gateway Tests', () => {
             txProofDifficultyFactor: 0,
             satsToConvertToEth: 0,
             strategyAddress: zeroAddress,
+            outputEthAmount: null,
+            outputTokenAddress: null,
+            outputTokenAmount: null,
+            txHash: null,
+            layerzeroDstEid: null,
+            orderDetails: null,
+            tokensReceived: null,
         };
         nock(`${MAINNET_GATEWAY_BASE_URL}`)
             .get(`/orders/${zeroAddress}`)
