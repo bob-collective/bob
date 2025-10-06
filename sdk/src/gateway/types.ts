@@ -494,6 +494,8 @@ export type OfframpOrder = {
     shouldFeesBeBumped: boolean;
     /** @dev Indicates whether the user can unlock this order (typically if it's still active) */
     canOrderBeUnlocked: boolean;
+    /** @dev The offramp registry address the order is related to */
+    offrampRegistryAddress: string
 };
 
 /** @dev Internal, On-chain fetched state of an active/processed/refunded order */
