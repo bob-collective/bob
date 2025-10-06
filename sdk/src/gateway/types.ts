@@ -390,7 +390,7 @@ export type OnrampOrder = Omit<
     getToken(): Token | undefined;
     /** @deprecated please use getTokens() instead as gateway v4 can handle multiple tokens */
     /** @description Get the actual amount received of the token */
-    getTokenAmount(): string | number | undefined;
+    getTokenAmount(): string | number | null;
     /** @description Get the number of confirmations */
     getConfirmations(esploraClient: EsploraClient, latestHeight?: number): Promise<number>;
     /** @description Get the actual order status */
