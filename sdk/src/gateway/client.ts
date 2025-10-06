@@ -4,15 +4,15 @@ import {
     Account,
     Address,
     erc20Abi,
+    Hash,
+    Hex,
     isAddress,
+    maxUint256,
     PublicClient,
     Transport,
     Chain as ViemChain,
     WalletClient,
     zeroAddress,
-    maxUint256,
-    Hash,
-    Hex,
 } from 'viem';
 import { bob, bobSepolia } from 'viem/chains';
 import { EsploraClient } from '../esplora';
@@ -28,7 +28,6 @@ import {
     ExecuteQuoteParams,
     GatewayCreateOrderRequestPayload,
     GatewayCreateOrderResponse,
-    GatewayQuote,
     GatewayStartOrder,
     GatewayStrategy,
     GatewayStrategyContract,
@@ -41,23 +40,26 @@ import {
     OfframpQuote,
     OfframpRawOrder,
     OnchainOfframpOrderDetails,
-    OnrampExecuteQuoteParams,
+    OnrampFeeBreakdownRaw,
     OnrampOrder,
     OnrampOrderResponse,
+    OnrampQuote,
+    OrderDetailsRaw,
     OrderStatus,
     StrategyParams,
     Token,
     UnlockOrderParams,
 } from './types';
 import {
+    convertOnrampFeeBreakdown,
+    convertOrderDetailsRawToOrderDetails,
+    convertOrderDetailsToRaw,
+    formatBtc,
     parseOrderStatus,
     slugify,
     stripHexPrefix,
     toHexScriptPubKey,
     viemClient,
-    convertOrderDetailsRawToOrderDetails,
-    convertOrderDetailsToRaw,
-    formatBtc,
 } from './utils';
 
 /**
@@ -182,20 +184,27 @@ export class GatewayApiClient {
      * @returns Promise resolving to quote details with either onrampQuote or offrampQuote populated
      * @throws {Error} If neither onramp nor offramp conditions are met
      */
-    async getQuote(params: GetQuoteParams): Promise<{
-        params: GetQuoteParams;
-        onrampQuote?: GatewayQuote & GatewayTokensInfo;
-        offrampQuote?: OfframpQuote;
-    }> {
+    async getQuote(params: GetQuoteParams): Promise<ExecuteQuoteParams> {
         // NOTE: fromChain must be specified if you do onramp
         if (params.fromChain?.toString().toLowerCase() === 'bitcoin') {
             // NOTE: toChain validation is performed inside `getOnrampQuote` method
-            const onrampQuote = await this.getOnrampQuote(params);
-            return { params, onrampQuote };
+            const data = await this.getOnrampQuote(params);
+            return {
+                type: 'onramp',
+                params,
+                finalOutputSats: data.outputSatoshis,
+                finalFeeSats: data.feeBreakdown.overallFeeSats,
+                data,
+            };
         } else if (params.toChain.toString().toLowerCase() === 'bitcoin') {
-            const offrampQuote = await this.getOfframpQuote(params);
-
-            return { params, offrampQuote };
+            const data = await this.getOfframpQuote(params);
+            return {
+                type: 'offramp',
+                params,
+                finalOutputSats: data.amountReceiveInSat,
+                finalFeeSats: data.feeBreakdown.overallFeeSats,
+                data,
+            };
         }
 
         throw new Error('Invalid quote arguments');
@@ -208,7 +217,7 @@ export class GatewayApiClient {
      * @returns Promise resolving to onramp quote with token info
      * @throws {Error} If invalid output chain or parameters
      */
-    async getOnrampQuote(params: GetQuoteParams): Promise<GatewayQuote & GatewayTokensInfo> {
+    async getOnrampQuote(params: GetQuoteParams): Promise<OnrampQuote & GatewayTokensInfo> {
         const isMainnet =
             params.toChain === bob.id ||
             (typeof params.toChain === 'string' && params.toChain.toLowerCase() === bob.name.toLowerCase());
@@ -252,7 +261,11 @@ export class GatewayApiClient {
             throw new Error(errorMessage);
         }
 
-        const jsonResponse = await response.json();
+        const jsonResponse: Omit<OnrampQuote, 'orderDetails' | 'feeBreakdown'> & {
+            orderDetails: OrderDetailsRaw;
+            feeBreakdown: OnrampFeeBreakdownRaw;
+            errorData?: { message: string };
+        } = await response.json();
 
         if (!jsonResponse.orderDetails) {
             const errorData = jsonResponse.errorData;
@@ -261,9 +274,10 @@ export class GatewayApiClient {
             throw new Error(errorMessage);
         }
 
-        const quote: GatewayQuote = {
+        const quote: OnrampQuote = {
             ...jsonResponse,
             orderDetails: convertOrderDetailsRawToOrderDetails(jsonResponse.orderDetails),
+            feeBreakdown: convertOnrampFeeBreakdown(jsonResponse.feeBreakdown),
         };
 
         return {
@@ -384,7 +398,7 @@ export class GatewayApiClient {
             const errorData = await response.json().catch(() => null);
             const apiMessage = errorData?.message;
             const errorMessage = apiMessage || `Failed to get offramp quote`;
-            throw new Error(`${errorMessage} | queryParams: ${queryParams}`);
+            throw new Error(`${errorMessage}`);
         }
 
         const rawQuote: OfframpQuote = await response.json();
@@ -676,7 +690,7 @@ export class GatewayApiClient {
      * @returns Promise resolving to order details with PSBT
      * @throws {Error} If user address is invalid or PSBT creation fails
      */
-    async startOnrampOrder(gatewayQuote: GatewayQuote, params: GetQuoteParams): Promise<GatewayStartOrder> {
+    async startOnrampOrder(gatewayQuote: OnrampQuote, params: GetQuoteParams): Promise<GatewayStartOrder> {
         if (!params.toUserAddress || !isAddress(params.toUserAddress)) {
             throw new Error('Invalid user address');
         }
@@ -754,31 +768,26 @@ export class GatewayApiClient {
      * @throws {Error} If required signers are missing or transaction fails
      */
     async executeQuote({
-        quote: executeQuoteParams,
+        quote,
         walletClient,
         publicClient,
         btcSigner,
     }: { quote: ExecuteQuoteParams } & AllWalletClientParams): Promise<string> {
-        const isOnrampQuoteParams = (args: ExecuteQuoteParams): args is OnrampExecuteQuoteParams => {
-            return args.params.fromChain?.toString().toLowerCase() === 'bitcoin';
-        };
-
-        if (isOnrampQuoteParams(executeQuoteParams)) {
-            const { onrampQuote, params } = executeQuoteParams;
-            const quote = onrampQuote!;
+        if (quote.type === 'onramp') {
+            const { params, data } = quote;
 
             const esploraClient = new EsploraClient(this.chain.id === bob.id ? Network.mainnet : Network.signet);
 
             // TODO: refactor to construct the PSBT instead since it may fund from other inputs
             const availableBtcBalance = await esploraClient.getBalance(params.fromUserAddress!);
-            if (availableBtcBalance.total < BigInt(quote.satoshis)) {
+            if (availableBtcBalance.total < BigInt(data.satoshis)) {
                 throw new Error(
-                    `Insufficient BTC balance in address ${quote.bitcoinAddress}. Required: ${formatBtc(BigInt(quote.satoshis))}, Got: ${formatBtc(BigInt(availableBtcBalance.total))}`
+                    `Insufficient BTC balance in address ${data.bitcoinAddress}. Required: ${formatBtc(BigInt(data.satoshis))}, Got: ${formatBtc(BigInt(availableBtcBalance.total))}`
                 );
             }
 
             const { uuid, psbtBase64, bitcoinAddress, satoshis, opReturnHash } = await this.startOnrampOrder(
-                quote,
+                data,
                 params
             );
 
@@ -807,13 +816,12 @@ export class GatewayApiClient {
             const txId = await this.finalizeOnrampOrder(uuid, bitcoinTxHex);
 
             return txId;
-        } else {
-            const { params, offrampQuote } = executeQuoteParams;
-            const quote = offrampQuote!;
+        } else if (quote.type === 'offramp') {
+            const { params, data } = quote;
 
             const tokenAddress = getTokenAddress(this.chainId, params.fromToken.toLowerCase());
             const [offrampOrder, offrampRegistryAddress] = await Promise.all([
-                this.createOfframpOrder(quote, params),
+                this.createOfframpOrder(data, params),
                 this.fetchOfframpRegistryAddress(),
             ]);
 
@@ -850,7 +858,7 @@ export class GatewayApiClient {
                 throw new Error('Tokens with less than 8 decimals are not supported');
             }
             const multiplier = 10n ** BigInt(decimals - 8);
-            const requiredAmount = BigInt(quote.amountLockInSat) * multiplier;
+            const requiredAmount = BigInt(data.amountLockInSat) * multiplier;
             const needsApproval = requiredAmount > allowance;
 
             if (needsApproval) {
@@ -901,6 +909,8 @@ export class GatewayApiClient {
 
             return transactionHash;
         }
+
+        throw new Error('Invalid quote type');
     }
 
     /**
