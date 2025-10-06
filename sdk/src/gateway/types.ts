@@ -584,6 +584,7 @@ export type OnrampExecuteQuoteParams<T = {}> = BaseExecuteQuoteParams<T> & {
 export type OfframpExecuteQuoteParams<T = {}> = BaseExecuteQuoteParams<T> & {
     type: 'offramp';
     data: OfframpQuote;
+    blockchainFee?: bigint;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type

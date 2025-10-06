@@ -9,6 +9,8 @@ import {
 } from './types';
 import { encodeAbiParameters, parseAbiParameters, keccak256, parseUnits, formatUnits } from 'viem';
 import * as bitcoin from 'bitcoinjs-lib';
+import { avalanche, base, berachain, bob, bsc, mainnet, optimism, sei, soneium, sonic, unichain } from 'viem/chains';
+import { number } from 'yargs';
 
 /**
  * Should compute the same OP_RETURN hash as the Gateway API and smart contracts.
@@ -124,4 +126,64 @@ export function parseBtc(btc: string) {
 
 export function formatBtc(btc: bigint) {
     return formatUnits(btc, 8);
+}
+
+const supportedChains = [
+    bob,
+    mainnet,
+    sonic,
+    bsc,
+    unichain,
+    berachain,
+    sei,
+    avalanche,
+    base,
+    soneium,
+    optimism,
+] as const;
+
+type ViemChain = (typeof supportedChains)[number];
+
+const chainIdToChainConfigMapping = supportedChains.reduce(
+    (acc, chain) => {
+        acc[chain.id] = chain;
+        return acc;
+    },
+    {} as Record<ViemChain['id'], ViemChain>
+);
+
+const chainNameToChainIdMapping = supportedChains.reduce(
+    (acc, chain) => {
+        acc[chain.name.toLowerCase()] = chain.id;
+        return acc;
+    },
+    {} as Record<ViemChain['name'], ViemChain['id']>
+);
+
+function getChainIdByName(chainName: string) {
+    const chainId = chainNameToChainIdMapping[chainName.toLowerCase()];
+    if (!chainId) {
+        throw new Error(
+            `Chain id for "${chainName}" not found. Allowed values ${supportedChains.map((chain) => chain.name)}`
+        );
+    }
+    return chainId;
+}
+
+function getChainConfigById(chainId: number) {
+    const config = chainIdToChainConfigMapping[chainId];
+    if (!config) {
+        throw Error(`Chain id for "${chainId}" not found. Allowed values ${supportedChains.map((chain) => chain.id)}`);
+    }
+
+    return config;
+}
+
+export function getChainConfig(fromChain: string | number) {
+    if (typeof fromChain === 'string') {
+        const chainId = getChainIdByName(fromChain);
+        return getChainConfigById(chainId);
+    }
+
+    return getChainConfigById(fromChain);
 }

@@ -55,6 +55,7 @@ import {
     convertOrderDetailsRawToOrderDetails,
     convertOrderDetailsToRaw,
     formatBtc,
+    getChainConfig,
     parseOrderStatus,
     slugify,
     stripHexPrefix,
@@ -197,13 +198,36 @@ export class GatewayApiClient {
                 data,
             };
         } else if (params.toChain.toString().toLowerCase() === 'bitcoin') {
+            const chain = getChainConfig(params.fromChain);
+            const publicClient = viemClient(chain);
             const data = await this.getOfframpQuote(params);
+
+            const [offrampOrder, offrampRegistryAddress, feeValues, gasPrice] = await Promise.all([
+                this.createOfframpOrder(data, params),
+                this.fetchOfframpRegistryAddress(),
+                publicClient.estimateFeesPerGas(),
+                publicClient.getGasPrice(),
+            ]);
+
+            const fee = feeValues.maxFeePerGas ?? gasPrice;
+
+            const createOrderGasEstimate = await publicClient.estimateContractGas({
+                address: offrampRegistryAddress,
+                abi: offrampOrder.offrampABI,
+                functionName: offrampOrder.offrampFunctionName,
+                args: offrampOrder.offrampArgs,
+                account: params.fromUserAddress as Address,
+            });
+
+            const createOrderGasCost = createOrderGasEstimate * fee;
+
             return {
                 type: 'offramp',
                 params,
                 finalOutputSats: data.amountReceiveInSat,
                 finalFeeSats: data.feeBreakdown.overallFeeSats,
                 data,
+                blockchainFee: createOrderGasCost,
             };
         }
 
