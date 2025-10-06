@@ -418,6 +418,8 @@ export interface OfframpFeeBreakdown {
     affiliateFeeSats: number;
     /** @dev Fastest available fee rate (e.g., sat/vB) */
     fastestFeeRate: number;
+    /** @dev Fastest gas fees on the source chain */
+    gasFee?: bigint;
 }
 
 /** @dev Offramp order quote returned by the quoting logic */
@@ -584,7 +586,6 @@ export type OnrampExecuteQuoteParams<T = {}> = BaseExecuteQuoteParams<T> & {
 export type OfframpExecuteQuoteParams<T = {}> = BaseExecuteQuoteParams<T> & {
     type: 'offramp';
     data: OfframpQuote;
-    blockchainFee?: bigint;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type

@@ -10,7 +10,6 @@ import {
 import { encodeAbiParameters, parseAbiParameters, keccak256, parseUnits, formatUnits } from 'viem';
 import * as bitcoin from 'bitcoinjs-lib';
 import { avalanche, base, berachain, bob, bsc, mainnet, optimism, sei, soneium, sonic, unichain } from 'viem/chains';
-import { number } from 'yargs';
 
 /**
  * Should compute the same OP_RETURN hash as the Gateway API and smart contracts.
@@ -142,8 +141,6 @@ const supportedChains = [
     optimism,
 ] as const;
 
-type ViemChain = (typeof supportedChains)[number];
-
 const chainIdToChainConfigMapping = supportedChains.reduce(
     (acc, chain) => {
         acc[chain.id] = chain;
@@ -173,7 +170,9 @@ function getChainIdByName(chainName: string) {
 function getChainConfigById(chainId: number) {
     const config = chainIdToChainConfigMapping[chainId];
     if (!config) {
-        throw Error(`Chain id for "${chainId}" not found. Allowed values ${supportedChains.map((chain) => chain.id)}`);
+        throw new Error(
+            `Chain id for "${chainId}" not found. Allowed values ${supportedChains.map((chain) => chain.id)}`
+        );
     }
 
     return config;

@@ -226,8 +226,13 @@ export class GatewayApiClient {
                 params,
                 finalOutputSats: data.amountReceiveInSat,
                 finalFeeSats: data.feeBreakdown.overallFeeSats,
-                data,
-                blockchainFee: createOrderGasCost,
+                data: {
+                    ...data,
+                    feeBreakdown: {
+                        ...data.feeBreakdown,
+                        gasFee: createOrderGasCost,
+                    },
+                },
             };
         }
 
