@@ -704,6 +704,7 @@ describe('Gateway Tests', () => {
             orderTimestamp: order.orderTimestamp,
             canOrderBeUnlocked: false,
             shouldFeesBeBumped: false,
+            offrampRegistryAddress: '0xb74a5af78520075f90f4be803153673a162a9776',
         }));
 
         nock(SIGNET_GATEWAY_BASE_URL).get(`/offramp-orders/${userAddress}`).reply(200, mockResponse);
