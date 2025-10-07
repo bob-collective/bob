@@ -95,11 +95,6 @@ export interface GatewayQuoteParams {
 
     /** @description Cross chain message - strategy data */
     message?: Hex;
-
-    /** @description Buffer in BPS to account for Bitcoin to Bob finality delay (30 mins +) when using the L0 Strategy */
-    l0OriginFinalityBuffer?: number | bigint;
-    /** @description Buffer in BPS to account for Bob to destination finality delay (a few minutes) when using the L0 Strategy */
-    l0DestinationFinalityBuffer?: number | bigint;
 }
 
 /**
@@ -192,7 +187,27 @@ export interface GatewayStrategyContract {
     outputToken: GatewayToken | null;
 }
 
-export type GatewayQuote = {
+export interface OnrampFeeBreakdownRaw {
+    /** @dev Total fees in satoshis */
+    overallFeeSats: number;
+    /** @dev Protocol-specific fee */
+    protocolFeeSats: number;
+    /** @dev Affiliate-related fee */
+    affiliateFeeSats: number;
+    /** @dev Fee for gas costs on BOB */
+    executionFeeWei: string;
+    /** @dev L1 data fee */
+    l1DataFeeWei: string;
+}
+
+export type OnrampFeeBreakdown = Omit<OnrampFeeBreakdownRaw, 'executionFeeWei' | 'l1DataFeeWei'> & {
+    /** @dev Fee for gas costs on BOB */
+    executionFeeWei: bigint;
+    /** @dev L1 data fee */
+    l1DataFeeWei: bigint;
+};
+
+export type OnrampQuote = {
     /** @description The gateway address */
     gatewayAddress: Address;
     /** @description The base token address (e.g. wBTC or tBTC) */
@@ -213,6 +228,8 @@ export type GatewayQuote = {
     strategyAddress?: Address;
     /** @description V4 order details */
     orderDetails: OrderDetails;
+    /** @dev Detailed fee breakdown */
+    feeBreakdown: OnrampFeeBreakdown;
 };
 
 export type OrderDetailsRaw = {
@@ -286,6 +303,11 @@ export type OfframpGatewayCreateQuoteResponse = {
     gateway: Address;
 };
 
+export interface TokenReceived {
+    amount: string;
+    tokenAddress: Address;
+}
+
 export interface OnrampOrderResponse {
     /** @description The gateway address */
     gatewayAddress: Address;
@@ -307,21 +329,23 @@ export interface OnrampOrderResponse {
     /** @description The number of confirmations required to confirm the Bitcoin tx */
     txProofDifficultyFactor: number;
     /** @description The optional strategy address */
-    strategyAddress?: Address;
+    strategyAddress: Address | null;
     /** @description The gas refill in satoshis */
     satsToConvertToEth: number;
     /** @description The amount of ETH received */
-    outputEthAmount?: string;
+    outputEthAmount: string | null;
     /** @description The output token (from strategies) */
-    outputTokenAddress?: Address;
+    outputTokenAddress: Address | null;
     /** @description The output amount (from strategies) */
-    outputTokenAmount?: string;
+    outputTokenAmount: string | null;
     /** @description The tx hash on the EVM chain */
-    txHash?: string;
+    txHash: string | null;
     /** @description V4 order details */
-    orderDetails?: OrderDetailsRaw;
+    orderDetails: OrderDetailsRaw | null;
     /** layerzero dst eid if the order being routed through layerzero */
-    layerzeroDstEid?: number;
+    layerzeroDstEid: number | null;
+    /** ERC20 tokens received by the user for gateway order */
+    tokensReceived: TokenReceived[] | null;
 }
 
 export type OrderStatusData = {
@@ -349,22 +373,32 @@ export type OrderStatus =
       };
 
 /** Order given by the Gateway API once the bitcoin tx is submitted */
-export type OnrampOrder = Omit<OnrampOrderResponse, 'satsToConvertToEth' | 'orderDetails'> & {
+export type OnrampOrder = Omit<
+    OnrampOrderResponse,
+    'satsToConvertToEth' | 'orderDetails' | 'tokensReceived' | 'outputTokenAddress' | 'outputTokenAmount'
+> & {
     /** @description The gas refill in satoshis */
     gasRefill: number;
     /** @description V4 order details */
     orderDetails?: OrderDetails;
 } & {
+    /** @deprecated please use getTokens() instead as gateway v4 can handle multiple tokens */
     /** @description Get the actual token address received */
     getTokenAddress(): string | undefined;
+    /** @deprecated please use getTokens() instead as gateway v4 can handle multiple tokens */
     /** @description Get the actual token received */
     getToken(): Token | undefined;
+    /** @deprecated please use getTokens() instead as gateway v4 can handle multiple tokens */
     /** @description Get the actual amount received of the token */
-    getTokenAmount(): string | number | undefined;
+    getTokenAmount(): string | number | null;
     /** @description Get the number of confirmations */
     getConfirmations(esploraClient: EsploraClient, latestHeight?: number): Promise<number>;
     /** @description Get the actual order status */
     getStatus(esploraClient: EsploraClient, latestHeight?: number): Promise<OrderStatus>;
+    /** @description Get all the output tokens */
+    getOutputTokens(): { amount: string; token: Token }[];
+    /** @description Get all the tokens */
+    getTokens(): { amount: string | number; token: Token }[];
 } & GatewayTokensInfo;
 
 export type GatewayTokensInfo = {
@@ -401,6 +435,8 @@ export interface OfframpFeeBreakdown {
     affiliateFeeSats: number;
     /** @dev Fastest available fee rate (e.g., sat/vB) */
     fastestFeeRate: number;
+    /** @dev Fastest gas fees on the source chain */
+    gasFee?: bigint;
 }
 
 /** @dev Offramp order quote returned by the quoting logic */
@@ -469,12 +505,16 @@ export type OfframpOrder = {
     orderTimestamp: number;
     /** @dev The user submit order transaction hash on the EVM chain */
     submitOrderEvmTx: string | null;
+    /** @dev The user refunded order transaction hash on the EVM chain */
+    refundedEvmTx: string | null;
     /** @dev The transaction ID on the Bitcoin network */
     btcTx: string | null;
     /** @dev Indicates whether the fees for this order should be bumped based on current network conditions */
     shouldFeesBeBumped: boolean;
     /** @dev Indicates whether the user can unlock this order (typically if it's still active) */
     canOrderBeUnlocked: boolean;
+    /** @dev The offramp registry address the order is related to */
+    offrampRegistryAddress: Address;
 };
 
 /** @dev Internal, On-chain fetched state of an active/processed/refunded order */
@@ -512,6 +552,7 @@ export interface OfframpRawOrder {
     btcTx: string | null;
     submitOrderEvmTx: string | null;
     shouldFeesBeBumped: boolean;
+    refundedEvmTx: string | null;
 }
 
 /** @dev Internal */
@@ -544,19 +585,30 @@ export interface DefiLlamaPool {
     rewardTokens: null | string[];
 }
 
-export type GetQuoteParams = Optional<GatewayQuoteParams, 'fromUserAddress'>;
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export type GetQuoteParams<T = {}> = Optional<GatewayQuoteParams & T, 'fromUserAddress'>;
 
-export type OnrampExecuteQuoteParams = {
-    onrampQuote?: GatewayQuote & GatewayTokensInfo;
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+type BaseExecuteQuoteParams<T = {}> = {
+    finalOutputSats: number;
+    finalFeeSats: number;
     params: GetQuoteParams;
+} & T;
+
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export type OnrampExecuteQuoteParams<T = {}> = BaseExecuteQuoteParams<T> & {
+    type: 'onramp';
+    data: OnrampQuote & GatewayTokensInfo;
 };
 
-export type OfframpExecuteQuoteParams = {
-    offrampQuote?: OfframpQuote;
-    params: GetQuoteParams;
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export type OfframpExecuteQuoteParams<T = {}> = BaseExecuteQuoteParams<T> & {
+    type: 'offramp';
+    data: OfframpQuote;
 };
 
-export type ExecuteQuoteParams = OnrampExecuteQuoteParams | OfframpExecuteQuoteParams;
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export type ExecuteQuoteParams<T = {}> = OnrampExecuteQuoteParams<T> | OfframpExecuteQuoteParams<T>;
 
 export interface BitcoinSigner {
     signAllInputs?: (psbtBase64: string) => Promise<string>;

@@ -1,7 +1,15 @@
 import { createPublicClient, http, zeroAddress, Chain as ViemChain } from 'viem';
-import { GatewayCreateOrderRequest, OfframpOrderStatus, OrderDetails, OrderDetailsRaw } from './types';
-import { encodeAbiParameters, parseAbiParameters, keccak256, parseUnits, formatUnits } from 'viem';
+import {
+    GatewayCreateOrderRequest,
+    OfframpOrderStatus,
+    OnrampFeeBreakdown,
+    OnrampFeeBreakdownRaw,
+    OrderDetails,
+    OrderDetailsRaw,
+} from './types';
+import { encodeAbiParameters, parseAbiParameters, keccak256, parseUnits, formatUnits, Address, Hex } from 'viem';
 import * as bitcoin from 'bitcoinjs-lib';
+import { avalanche, base, berachain, bob, bsc, mainnet, optimism, sei, soneium, sonic, unichain } from 'viem/chains';
 
 /**
  * Should compute the same OP_RETURN hash as the Gateway API and smart contracts.
@@ -101,10 +109,120 @@ export function convertOrderDetailsToRaw(order: OrderDetails): OrderDetailsRaw {
     };
 }
 
+export function convertOnrampFeeBreakdown(order: OnrampFeeBreakdownRaw): OnrampFeeBreakdown {
+    return {
+        overallFeeSats: order.overallFeeSats,
+        protocolFeeSats: order.protocolFeeSats,
+        affiliateFeeSats: order.affiliateFeeSats,
+        executionFeeWei: BigInt(order.executionFeeWei),
+        l1DataFeeWei: BigInt(order.l1DataFeeWei),
+    };
+}
+
 export function parseBtc(btc: string) {
     return parseUnits(btc, 8);
 }
 
 export function formatBtc(btc: bigint) {
     return formatUnits(btc, 8);
+}
+
+const supportedChains = [
+    bob,
+    mainnet,
+    sonic,
+    bsc,
+    unichain,
+    berachain,
+    sei,
+    avalanche,
+    base,
+    soneium,
+    optimism,
+] as const;
+
+const chainIdToChainConfigMapping = supportedChains.reduce(
+    (acc, chain) => {
+        acc[chain.id] = chain;
+        return acc;
+    },
+    {} as Record<ViemChain['id'], ViemChain>
+);
+
+const chainNameToChainIdMapping = supportedChains.reduce(
+    (acc, chain) => {
+        acc[chain.name.toLowerCase()] = chain.id;
+        return acc;
+    },
+    {} as Record<ViemChain['name'], ViemChain['id']>
+);
+
+function getChainIdByName(chainName: string) {
+    const chainId = chainNameToChainIdMapping[chainName.toLowerCase()];
+    if (!chainId) {
+        throw new Error(
+            `Chain id for "${chainName}" not found. Allowed values ${supportedChains.map((chain) => chain.name)}`
+        );
+    }
+    return chainId;
+}
+
+function getChainConfigById(chainId: number) {
+    const config = chainIdToChainConfigMapping[chainId];
+    if (!config) {
+        throw new Error(
+            `Chain id for "${chainId}" not found. Allowed values ${supportedChains.map((chain) => chain.id)}`
+        );
+    }
+
+    return config;
+}
+
+export function getChainConfig(fromChain: string | number) {
+    if (typeof fromChain === 'string') {
+        const chainId = getChainIdByName(fromChain);
+        return getChainConfigById(chainId);
+    }
+
+    return getChainConfigById(fromChain);
+}
+
+// Compute the final ERC20 allowance storage slot
+export function computeAllowanceSlot(user: Address, offrampRegistryAddress: Address, tokenAllowanceSlot: bigint): Hex {
+    const innerSlot = keccak256(
+        encodeAbiParameters(
+            [
+                { name: 'owner', type: 'address' },
+                { name: 'slot', type: 'uint256' },
+            ],
+            [user, tokenAllowanceSlot]
+        )
+    );
+
+    const allowanceSlot = keccak256(
+        encodeAbiParameters(
+            [
+                { name: 'spender', type: 'address' },
+                { name: 'innerSlot', type: 'bytes32' },
+            ],
+            [offrampRegistryAddress, innerSlot]
+        )
+    );
+    return allowanceSlot;
+}
+
+// Compute the final ERC20 balance storage slot for a user
+export function computeBalanceSlot(user: Address, balancesMappingSlot: bigint): Hex {
+    // Compute the storage slot for the user's balance
+    const balanceSlot = keccak256(
+        encodeAbiParameters(
+            [
+                { name: 'owner', type: 'address' },
+                { name: 'slot', type: 'uint256' },
+            ],
+            [user, balancesMappingSlot]
+        )
+    );
+
+    return balanceSlot;
 }

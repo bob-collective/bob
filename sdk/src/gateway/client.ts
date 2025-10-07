@@ -4,15 +4,18 @@ import {
     Account,
     Address,
     erc20Abi,
+    Hash,
+    Hex,
     isAddress,
+    maxUint256,
     PublicClient,
     Transport,
     Chain as ViemChain,
     WalletClient,
     zeroAddress,
-    maxUint256,
-    Hash,
-    Hex,
+    parseEther,
+    toHex,
+    isAddressEqual,
 } from 'viem';
 import { bob, bobSepolia } from 'viem/chains';
 import { EsploraClient } from '../esplora';
@@ -20,7 +23,7 @@ import { bigIntToFloatingNumber } from '../utils';
 import { createBitcoinPsbt } from '../wallet';
 import { claimDelayAbi, offrampCaller, strategyCaller } from './abi';
 import StrategyClient from './strategy';
-import { ADDRESS_LOOKUP, getTokenAddress, getTokenDecimals } from './tokens';
+import { ADDRESS_LOOKUP, getTokenAddress, getTokenDecimals, getTokenSlots } from './tokens';
 import {
     BitcoinSigner,
     BumpFeeParams,
@@ -28,7 +31,6 @@ import {
     ExecuteQuoteParams,
     GatewayCreateOrderRequestPayload,
     GatewayCreateOrderResponse,
-    GatewayQuote,
     GatewayStartOrder,
     GatewayStrategy,
     GatewayStrategyContract,
@@ -41,23 +43,29 @@ import {
     OfframpQuote,
     OfframpRawOrder,
     OnchainOfframpOrderDetails,
-    OnrampExecuteQuoteParams,
+    OnrampFeeBreakdownRaw,
     OnrampOrder,
     OnrampOrderResponse,
+    OnrampQuote,
+    OrderDetailsRaw,
     OrderStatus,
     StrategyParams,
     Token,
     UnlockOrderParams,
 } from './types';
 import {
+    computeAllowanceSlot,
+    computeBalanceSlot,
+    convertOnrampFeeBreakdown,
+    convertOrderDetailsRawToOrderDetails,
+    convertOrderDetailsToRaw,
+    formatBtc,
+    getChainConfig,
     parseOrderStatus,
     slugify,
     stripHexPrefix,
     toHexScriptPubKey,
     viemClient,
-    convertOrderDetailsRawToOrderDetails,
-    convertOrderDetailsToRaw,
-    formatBtc,
 } from './utils';
 
 /**
@@ -182,23 +190,130 @@ export class GatewayApiClient {
      * @returns Promise resolving to quote details with either onrampQuote or offrampQuote populated
      * @throws {Error} If neither onramp nor offramp conditions are met
      */
-    async getQuote(params: GetQuoteParams): Promise<{
-        params: GetQuoteParams;
-        onrampQuote?: GatewayQuote & GatewayTokensInfo;
-        offrampQuote?: OfframpQuote;
-    }> {
+    async getQuote(params: GetQuoteParams): Promise<ExecuteQuoteParams> {
         // NOTE: fromChain must be specified if you do onramp
         if (params.fromChain?.toString().toLowerCase() === 'bitcoin') {
             // NOTE: toChain validation is performed inside `getOnrampQuote` method
-            const onrampQuote = await this.getOnrampQuote(params);
-            return { params, onrampQuote };
+            const data = await this.getOnrampQuote(params);
+            return {
+                type: 'onramp',
+                params,
+                finalOutputSats: data.outputSatoshis,
+                finalFeeSats: data.feeBreakdown.overallFeeSats,
+                data,
+            };
         } else if (params.toChain.toString().toLowerCase() === 'bitcoin') {
-            const offrampQuote = await this.getOfframpQuote(params);
+            const data = await this.getOfframpQuote(params);
+            let createOrderGasCost = 0n;
+            // Even if we fail to estimate the create order gas cost, we still return a quote to the user.
+            try {
+                createOrderGasCost = await this.getOfframpCreateOrderGasCost(params, data);
+            } catch (err) {
+                console.warn('Failed to get create order gas cost, defaulting to 0', err);
+            }
 
-            return { params, offrampQuote };
+            return {
+                type: 'offramp',
+                params,
+                finalOutputSats: data.amountReceiveInSat,
+                finalFeeSats: data.feeBreakdown.overallFeeSats,
+                data: {
+                    ...data,
+                    feeBreakdown: {
+                        ...data.feeBreakdown,
+                        gasFee: createOrderGasCost,
+                    },
+                },
+            };
         }
 
         throw new Error('Invalid quote arguments');
+    }
+
+    /**
+     * Estimates the gas cost for creating an offramp order on-chain.
+     *
+     * This uses a state override to simulate max token allowance and balance for the user,
+     * ensuring the gas estimate accounts for sufficient funds and approvals.
+     *
+     * @param params - Quote parameters containing user address and chain info
+     * @param offrampQuote - Offramp quote containing token and amount info
+     * @returns Promise resolving to the estimated gas cost in wei (as bigint)
+     */
+    async getOfframpCreateOrderGasCost(params: GetQuoteParams, offrampQuote: OfframpQuote): Promise<bigint> {
+        const chain = getChainConfig(params.fromChain);
+        const publicClient = viemClient(chain);
+
+        if (!params.toUserAddress) {
+            params.toUserAddress = this.isSignet
+                ? 'tb1q0c2qnya702wrna5hqjp83jqqhx8zh5p9au2rqt'
+                : '14EvE4gm1yiYSzN8dYBtgYDppsaa1VVfud';
+        }
+
+        if (
+            !params.fromUserAddress ||
+            (isAddress(params.fromUserAddress) && isAddressEqual(params.fromUserAddress, zeroAddress))
+        ) {
+            params.fromUserAddress = '0x1111111111111111111111111111111111111111';
+        }
+
+        const [offrampOrder, offrampRegistryAddress, feeValues, gasPrice] = await Promise.all([
+            this.createOfframpOrder(offrampQuote, params),
+            this.fetchOfframpRegistryAddress(),
+            publicClient.estimateFeesPerGas(),
+            publicClient.getGasPrice(),
+        ]);
+
+        const fee = feeValues.maxFeePerGas ?? gasPrice;
+
+        const slots = getTokenSlots(offrampOrder.quote.token as Address, this.chainId);
+        const user = params.fromUserAddress;
+
+        const allowanceSlot = computeAllowanceSlot(
+            user as Address,
+            offrampRegistryAddress as Address,
+            slots.allowanceSlot
+        );
+        const balanceSlot = computeBalanceSlot(user as Address, slots.balanceSlot);
+
+        // Ensure the owner inside offrampArgs is set
+        const args: readonly [(typeof offrampOrder.offrampArgs)[0]] = [
+            {
+                ...offrampOrder.offrampArgs[0],
+                owner: user as Address,
+            },
+        ];
+
+        const createOrderGasEstimate = await publicClient.estimateContractGas({
+            address: offrampRegistryAddress,
+            abi: offrampOrder.offrampABI,
+            functionName: offrampOrder.offrampFunctionName,
+            args,
+            account: user as Address,
+            stateOverride: [
+                // ERC20 token override
+                {
+                    address: offrampOrder.quote.token as Address,
+                    stateDiff: [
+                        {
+                            slot: allowanceSlot,
+                            value: toHex(maxUint256),
+                        },
+                        {
+                            slot: balanceSlot,
+                            value: toHex(maxUint256),
+                        },
+                    ],
+                },
+                // Ether balance override
+                {
+                    address: user as Address,
+                    balance: parseEther('1'), // set 1 ETH for the user
+                },
+            ],
+        });
+
+        return createOrderGasEstimate * fee;
     }
 
     /**
@@ -208,7 +323,7 @@ export class GatewayApiClient {
      * @returns Promise resolving to onramp quote with token info
      * @throws {Error} If invalid output chain or parameters
      */
-    async getOnrampQuote(params: GetQuoteParams): Promise<GatewayQuote & GatewayTokensInfo> {
+    async getOnrampQuote(params: GetQuoteParams): Promise<OnrampQuote & GatewayTokensInfo> {
         const isMainnet =
             params.toChain === bob.id ||
             (typeof params.toChain === 'string' && params.toChain.toLowerCase() === bob.name.toLowerCase());
@@ -252,7 +367,11 @@ export class GatewayApiClient {
             throw new Error(errorMessage);
         }
 
-        const jsonResponse = await response.json();
+        const jsonResponse: Omit<OnrampQuote, 'orderDetails' | 'feeBreakdown'> & {
+            orderDetails: OrderDetailsRaw;
+            feeBreakdown: OnrampFeeBreakdownRaw;
+            errorData?: { message: string };
+        } = await response.json();
 
         if (!jsonResponse.orderDetails) {
             const errorData = jsonResponse.errorData;
@@ -261,9 +380,10 @@ export class GatewayApiClient {
             throw new Error(errorMessage);
         }
 
-        const quote: GatewayQuote = {
+        const quote: OnrampQuote = {
             ...jsonResponse,
             orderDetails: convertOrderDetailsRawToOrderDetails(jsonResponse.orderDetails),
+            feeBreakdown: convertOnrampFeeBreakdown(jsonResponse.feeBreakdown),
         };
 
         return {
@@ -574,6 +694,7 @@ export class GatewayApiClient {
                     orderTimestamp: Number(order.orderTimestamp),
                     shouldFeesBeBumped: order.shouldFeesBeBumped,
                     canOrderBeUnlocked,
+                    offrampRegistryAddress,
                 };
             })
         );
@@ -676,7 +797,7 @@ export class GatewayApiClient {
      * @returns Promise resolving to order details with PSBT
      * @throws {Error} If user address is invalid or PSBT creation fails
      */
-    async startOnrampOrder(gatewayQuote: GatewayQuote, params: GetQuoteParams): Promise<GatewayStartOrder> {
+    async startOnrampOrder(gatewayQuote: OnrampQuote, params: GetQuoteParams): Promise<GatewayStartOrder> {
         if (!params.toUserAddress || !isAddress(params.toUserAddress)) {
             throw new Error('Invalid user address');
         }
@@ -754,31 +875,26 @@ export class GatewayApiClient {
      * @throws {Error} If required signers are missing or transaction fails
      */
     async executeQuote({
-        quote: executeQuoteParams,
+        quote,
         walletClient,
         publicClient,
         btcSigner,
     }: { quote: ExecuteQuoteParams } & AllWalletClientParams): Promise<string> {
-        const isOnrampQuoteParams = (args: ExecuteQuoteParams): args is OnrampExecuteQuoteParams => {
-            return args.params.fromChain?.toString().toLowerCase() === 'bitcoin';
-        };
-
-        if (isOnrampQuoteParams(executeQuoteParams)) {
-            const { onrampQuote, params } = executeQuoteParams;
-            const quote = onrampQuote!;
+        if (quote.type === 'onramp') {
+            const { params, data } = quote;
 
             const esploraClient = new EsploraClient(this.chain.id === bob.id ? Network.mainnet : Network.signet);
 
             // TODO: refactor to construct the PSBT instead since it may fund from other inputs
             const availableBtcBalance = await esploraClient.getBalance(params.fromUserAddress!);
-            if (availableBtcBalance.total < BigInt(quote.satoshis)) {
+            if (availableBtcBalance.total < BigInt(data.satoshis)) {
                 throw new Error(
-                    `Insufficient BTC balance in address ${quote.bitcoinAddress}. Required: ${formatBtc(BigInt(quote.satoshis))}, Got: ${formatBtc(BigInt(availableBtcBalance.total))}`
+                    `Insufficient BTC balance in address ${data.bitcoinAddress}. Required: ${formatBtc(BigInt(data.satoshis))}, Got: ${formatBtc(BigInt(availableBtcBalance.total))}`
                 );
             }
 
             const { uuid, psbtBase64, bitcoinAddress, satoshis, opReturnHash } = await this.startOnrampOrder(
-                quote,
+                data,
                 params
             );
 
@@ -807,13 +923,12 @@ export class GatewayApiClient {
             const txId = await this.finalizeOnrampOrder(uuid, bitcoinTxHex);
 
             return txId;
-        } else {
-            const { params, offrampQuote } = executeQuoteParams;
-            const quote = offrampQuote!;
+        } else if (quote.type === 'offramp') {
+            const { params, data } = quote;
 
             const tokenAddress = getTokenAddress(this.chainId, params.fromToken.toLowerCase());
             const [offrampOrder, offrampRegistryAddress] = await Promise.all([
-                this.createOfframpOrder(quote, params),
+                this.createOfframpOrder(data, params),
                 this.fetchOfframpRegistryAddress(),
             ]);
 
@@ -850,7 +965,7 @@ export class GatewayApiClient {
                 throw new Error('Tokens with less than 8 decimals are not supported');
             }
             const multiplier = 10n ** BigInt(decimals - 8);
-            const requiredAmount = BigInt(quote.amountLockInSat) * multiplier;
+            const requiredAmount = BigInt(data.amountLockInSat) * multiplier;
             const needsApproval = requiredAmount > allowance;
 
             if (needsApproval) {
@@ -901,6 +1016,8 @@ export class GatewayApiClient {
 
             return transactionHash;
         }
+
+        throw new Error('Invalid quote type');
     }
 
     /**
@@ -1007,6 +1124,9 @@ export class GatewayApiClient {
         );
         const orders: OnrampOrderResponse[] = await response.json();
         return orders.map((order) => {
+            const outputTokenAddress = order.outputTokenAddress ?? order.tokensReceived?.[0]?.tokenAddress ?? null;
+            const outputTokenAmount = order.outputTokenAmount ?? order.tokensReceived?.[0]?.amount ?? null;
+
             function getFinal<L, R>(base?: L, output?: R): NonNullable<L | R> {
                 return order.status
                     ? order.strategyAddress
@@ -1019,7 +1139,17 @@ export class GatewayApiClient {
                       : (base as NonNullable<typeof base>);
             }
             const getTokenAddress = (): string => {
-                return getFinal(order.baseTokenAddress, order.outputTokenAddress);
+                return getFinal(order.baseTokenAddress, outputTokenAddress);
+            };
+            const getTokenAmount = () => {
+                let amount = order.satoshis - order.fee;
+                const token = getToken();
+
+                if (token && !outputTokenAmount) {
+                    amount *= Math.pow(10, token.decimals - 8);
+                }
+
+                return getFinal(amount, outputTokenAmount);
             };
             const getToken = (): Token | undefined => {
                 return ADDRESS_LOOKUP[chainId][getTokenAddress()];
@@ -1036,6 +1166,32 @@ export class GatewayApiClient {
                 ? convertOrderDetailsRawToOrderDetails(order.orderDetails)
                 : undefined;
 
+            const getOutputTokens = () => {
+                const tokens = order.tokensReceived
+                    ? order.tokensReceived
+                    : outputTokenAmount && outputTokenAddress
+                      ? [{ amount: outputTokenAmount, tokenAddress: outputTokenAddress }]
+                      : [];
+
+                return tokens
+                    .map(({ amount, tokenAddress }) => ({
+                        amount: amount,
+                        token: ADDRESS_LOOKUP[chainId][tokenAddress],
+                    }))
+                    .filter((x) => x.token);
+            };
+
+            const getTokens = () => {
+                const tokens = order.tokensReceived
+                    ? order.tokensReceived
+                    : [{ amount: getTokenAmount(), tokenAddress: getTokenAddress() }];
+
+                return tokens.map(({ amount, tokenAddress }) => ({
+                    amount: amount,
+                    token: ADDRESS_LOOKUP[chainId][tokenAddress],
+                }));
+            };
+
             return {
                 ...order,
                 orderDetails,
@@ -1044,14 +1200,9 @@ export class GatewayApiClient {
                 outputToken: ADDRESS_LOOKUP[chainId][order.outputTokenAddress!],
                 getTokenAddress,
                 getToken,
-                getTokenAmount() {
-                    let amount = order.satoshis - order.fee;
-                    const token = getToken();
-                    if (token && !order.outputTokenAmount) {
-                        amount *= Math.pow(10, token.decimals - 8);
-                    }
-                    return getFinal(amount, order.outputTokenAmount);
-                },
+                getTokenAmount,
+                getTokens,
+                getOutputTokens,
                 getConfirmations,
                 async getStatus(esploraClient: EsploraClient, latestHeight?: number): Promise<OrderStatus> {
                     const confirmations = await getConfirmations(esploraClient, latestHeight);

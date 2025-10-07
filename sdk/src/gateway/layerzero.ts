@@ -1,19 +1,11 @@
-import { Address, encodeAbiParameters, encodePacked, Hex, padHex, parseAbiParameters } from 'viem';
-import { AllWalletClientParams, GatewayApiClient } from './client';
-import {
-    ExecuteQuoteParams,
-    GatewayQuote,
-    GatewayTokensInfo,
-    GetQuoteParams,
-    OfframpExecuteQuoteParams,
-    OfframpQuote,
-} from './types';
-import { bob, bobSepolia } from 'viem/chains';
-import { toHexScriptPubKey } from './utils';
-import * as bitcoin from 'bitcoinjs-lib';
-import { viemClient } from './utils';
-import { layerZeroOftAbi, quoterV2Abi } from './abi';
 import ecc from '@bitcoinerlab/secp256k1';
+import * as bitcoin from 'bitcoinjs-lib';
+import { Address, encodeAbiParameters, encodePacked, Hex, padHex, parseAbiParameters } from 'viem';
+import { bob, bobSepolia } from 'viem/chains';
+import { layerZeroOftAbi, quoterV2Abi } from './abi';
+import { AllWalletClientParams, GatewayApiClient } from './client';
+import { ExecuteQuoteParams, GetQuoteParams } from './types';
+import { toHexScriptPubKey, viemClient } from './utils';
 
 bitcoin.initEccLib(ecc);
 
@@ -54,6 +46,13 @@ type LayerZeroTokenDeployments = {
         address: string;
     };
 };
+
+interface LayerZeroQuoteParamsExt {
+    /** @description Buffer in BPS to account for Bitcoin to BOB finality delay (30 mins+) when using the L0 Strategy */
+    l0OriginFinalityBuffer?: number | bigint;
+    /** @description Buffer in BPS to account for BOB to destination finality delay (a few minutes) when using the L0 Strategy */
+    l0DestinationFinalityBuffer?: number | bigint;
+}
 
 export class LayerZeroClient {
     private basePath: string;
@@ -119,7 +118,7 @@ export class LayerZeroClient {
     async getSupportedChainsInfo(): Promise<Array<LayerZeroChainInfo>> {
         const chains = await this.getChainDeployments();
         const chainLookup = Object.fromEntries(
-            Object.entries(chains).map(([_, chainData]) => [
+            Object.entries(chains).map(([, chainData]) => [
                 chainData.chainKey,
                 {
                     eid: chainData.deployments?.find((item) => item.version === 2)?.eid,
@@ -223,11 +222,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
         return this.l0Client.getOftAddressForChain(chainKey);
     }
 
-    async getQuote(params: GetQuoteParams): Promise<{
-        params: GetQuoteParams;
-        onrampQuote?: GatewayQuote & GatewayTokensInfo;
-        offrampQuote?: OfframpQuote;
-    }> {
+    async getQuote(params: GetQuoteParams<LayerZeroQuoteParamsExt>): Promise<ExecuteQuoteParams> {
         const fromChain = resolveChainName(params.fromChain);
         const toChain = resolveChainName(params.toChain);
 
@@ -276,7 +271,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
             // TODO: expose via params
             const publicClient = viemClient(bob);
 
-            // // We need to add buffers to fee calculations to account for gas price changes and slippage while waiting for these finalities.
+            // We need to add buffers to fee calculations to account for gas price changes and slippage while waiting for these finalities.
             // There are two finalities we must consider:
             //  1) Bitcoin Finality on Bob (origin finality).
             //      This is 30 mins plus, therefore a large buffer is needed for values to remain valid over this period.
@@ -340,7 +335,12 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
             params.toChain = bob.id;
 
             // Handle bitcoin -> l0 chain: need to add calldata
-            return super.getQuote(params);
+            const baseQuote = await super.getQuote(params);
+            return {
+                ...baseQuote,
+                finalOutputSats: baseQuote.finalOutputSats - Number(maxTokensToSwapForLayerZeroFees),
+                finalFeeSats: baseQuote.finalFeeSats + Number(maxTokensToSwapForLayerZeroFees),
+            };
         } else if (toChain === 'bitcoin') {
             params.fromChain = bob.id;
             // Handle l0 -> bitcoin: estimate bob -> bitcoin
@@ -354,32 +354,29 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
     }
 
     async executeQuote({
-        quote: executeQuoteParams,
+        quote,
         walletClient,
         publicClient,
         btcSigner,
     }: { quote: ExecuteQuoteParams } & AllWalletClientParams): Promise<string> {
-        const isOfframpQuoteParams = (args: ExecuteQuoteParams): args is OfframpExecuteQuoteParams => {
-            return args.params.toChain?.toString().toLowerCase() === 'bitcoin';
-        };
-
-        const fromChain = resolveChainName(executeQuoteParams.params.fromChain);
-        const toChain = resolveChainName(executeQuoteParams.params.toChain);
+        const fromChain = resolveChainName(quote.params.fromChain);
+        const toChain = resolveChainName(quote.params.toChain);
 
         // Handle bitcoin -> bob / l0 chain, normal flow with additional calldata
-        if (fromChain === 'bitcoin') {
-            return super.executeQuote({ quote: executeQuoteParams, walletClient, publicClient, btcSigner });
-        } else if (fromChain === bob.name.toLowerCase() && toChain === 'bitcoin') {
-            // Handle bob -> bitcoin, normal flow
-            return super.executeQuote({ quote: executeQuoteParams, walletClient, publicClient, btcSigner });
-        } else if (isOfframpQuoteParams(executeQuoteParams)) {
-            const { offrampQuote, params } = executeQuoteParams;
-            const quote = offrampQuote!;
+        if (quote.type === 'onramp') {
+            return super.executeQuote({ quote, walletClient, publicClient, btcSigner });
+        } else if (quote.type === 'offramp') {
+            if (fromChain === bob.name.toLowerCase()) {
+                // Handle bob -> bitcoin, normal flow
+                return super.executeQuote({ quote, walletClient, publicClient, btcSigner });
+            }
+
+            const { data, params } = quote;
 
             const layerZeroClient = new LayerZeroClient();
 
             // The recipient address of the layer zero send, this contract will create the offramp order
-            const offrampComposer = '0xc05AA3D7BD9c61B8b94EaCC937d1F542c3E5b94a';
+            const offrampComposer = '0xd455e08a6ecfac74e1a159fd3853ef14e6b99c7f';
             const receiverAddress = toHexScriptPubKey(params.toUserAddress, bitcoin.networks.bitcoin);
 
             const dstEid = await layerZeroClient.getEidForChain('bob');
@@ -423,11 +420,11 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                     ]),
                     [
                         {
-                            satAmountToLock: BigInt(quote.amountLockInSat),
-                            satFeesMax: BigInt(quote.feeBreakdown.overallFeeSats),
-                            creationDeadline: BigInt(quote.deadline),
+                            satAmountToLock: BigInt(data.amountLockInSat),
+                            satFeesMax: BigInt(data.feeBreakdown.overallFeeSats),
+                            creationDeadline: BigInt(data.deadline),
                             outputScript: receiverAddress as Hex,
-                            token: quote.token,
+                            token: data.token,
                             owner: params.fromUserAddress as Address,
                         },
                     ]
@@ -435,7 +432,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
             };
 
             // we're quoting on the origin chain, so public client must be configured correctly
-            const maybeFromChainId = executeQuoteParams.params.fromChain;
+            const maybeFromChainId = quote.params.fromChain;
             if (typeof maybeFromChainId === 'number' && publicClient.chain?.id !== maybeFromChainId) {
                 // avoid matching on name since L0 and viem may have different naming conventions
                 throw new Error(`Public client must be origin chain`);
@@ -453,7 +450,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                 abi: layerZeroOftAbi,
                 address: wbtcOftAddress as Hex,
                 functionName: 'send',
-                args: [sendParam, sendFees, offrampComposer],
+                args: [sendParam, sendFees, params.fromUserAddress as Address],
                 value: sendFees.nativeFee,
             });
 
