@@ -13,7 +13,8 @@ import {
     Chain as ViemChain,
     WalletClient,
     zeroAddress,
-    parseEther, toHex,
+    parseEther,
+    toHex,
 } from 'viem';
 import { bob, bobSepolia } from 'viem/chains';
 import { EsploraClient } from '../esplora';
