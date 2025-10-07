@@ -680,6 +680,7 @@ export class GatewayApiClient {
                     orderTimestamp: Number(order.orderTimestamp),
                     shouldFeesBeBumped: order.shouldFeesBeBumped,
                     canOrderBeUnlocked,
+                    offrampRegistryAddress,
                 };
             })
         );
