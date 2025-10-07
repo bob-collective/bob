@@ -1209,12 +1209,14 @@ export class GatewayApiClient {
                     const hasEnoughConfirmations = confirmations >= order.txProofDifficultyFactor;
                     const data = { confirmations };
                     return !hasEnoughConfirmations
-                        ? { confirmed: false, data }
+                        ? { confirmed: false, data } // if !hasEnoughConfirmations is true
                         : order.status
                           ? order.strategyAddress
-                              ? { success: true, data }
-                              : { success: true, data }
-                          : { pending: true, data };
+                              ? order.strategyFailed === true
+                                  ? { success: false, data } // if strategyAddress exists AND strategyFailed === true
+                                  : { success: true, data } // if strategyAddress exists AND strategyFailed !== true
+                              : { success: true, data } // if no strategyAddress
+                          : { pending: true, data }; // if order.status is false
                 },
             };
         });
