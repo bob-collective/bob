@@ -203,6 +203,7 @@ export class GatewayApiClient {
         } else if (params.toChain.toString().toLowerCase() === 'bitcoin') {
             const data = await this.getOfframpQuote(params);
             let createOrderGasCost = 0n;
+            // Even if we fail to estimate the create order gas cost, we still return a quote to the user.
             try {
                 createOrderGasCost = await this.getOfframpCreateOrderGasCost(params, data);
             } catch (err) {
@@ -227,6 +228,16 @@ export class GatewayApiClient {
         throw new Error('Invalid quote arguments');
     }
 
+    /**
+     * Estimates the gas cost for creating an offramp order on-chain.
+     *
+     * This uses a state override to simulate max token allowance and balance for the user,
+     * ensuring the gas estimate accounts for sufficient funds and approvals.
+     *
+     * @param params - Quote parameters containing user address and chain info
+     * @param offrampQuote - Offramp quote containing token and amount info
+     * @returns Promise resolving to the estimated gas cost in wei (as bigint)
+     */
     async getOfframpCreateOrderGasCost(params: GetQuoteParams, offrampQuote: OfframpQuote): Promise<bigint> {
         const chain = getChainConfig(params.fromChain);
         const publicClient = viemClient(chain);
