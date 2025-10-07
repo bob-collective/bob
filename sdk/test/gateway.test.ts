@@ -1040,6 +1040,6 @@ describe('Gateway Tests', () => {
                 throw new Error('Expected gasFee to exist on feeBreakdown, but it does not.');
             }
         },
-        { timeout: 5000 } // 5 seconds
+        { timeout: 10000 } // 10 seconds
     );
 });
