@@ -31,7 +31,7 @@
         "eslint": "^9.33.0",
         "eslint-config-prettier": "^10.1.8",
         "eslint-plugin-prettier": "^5.5.1",
-        "mocha": "^11.7.1",
+        "mocha": "^11.7.4",
         "nock": "^14.0.5",
         "prettier": "^3.6.2",
         "tiny-secp256k1": "^2.2.4",
