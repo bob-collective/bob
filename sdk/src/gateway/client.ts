@@ -1069,7 +1069,7 @@ export class GatewayApiClient {
                 return tokens.map(({ amount, tokenAddress }) => ({
                     amount: amount,
                     token: ADDRESS_LOOKUP[chainId][tokenAddress],
-                }));
+                })).filter(x => x.token);
             };
 
             const getTokens = () => {

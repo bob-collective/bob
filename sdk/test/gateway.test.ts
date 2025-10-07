@@ -478,11 +478,21 @@ describe('Gateway Tests', () => {
                     status: true,
                     layerzeroDstEid: 30111,
                 },
+                // staking - unknown token
+                {
+                    ...mockOrder,
+                    satoshis: 1000,
+                    fee: 0,
+                    status: true,
+                    strategyAddress: zeroAddress,
+                    outputTokenAmount: '2000',
+                    outputTokenAddress: '0x1111111111111111111111111111111111111111',
+                },
             ]);
 
         const gatewaySDK = new GatewaySDK(bob.id);
         const orders = await gatewaySDK.getOnrampOrders(zeroAddress);
-        assert.lengthOf(orders, 8);
+        assert.lengthOf(orders, 9);
 
         assert.strictEqual(orders[0].getTokenAmount(), '2000'); // success (staking)
         assert.strictEqual(orders[1].getTokenAmount(), null); // pending (staking)
@@ -491,9 +501,11 @@ describe('Gateway Tests', () => {
         assert.strictEqual(orders[4].getTokenAmount(), 10000000000000); // success (swapping)
         assert.strictEqual(orders[5].getTokenAmount(), 1000); // failed (staking)
         assert.strictEqual(orders[6].getTokenAmount(), 1000); // success (swapping)
+        assert.strictEqual(orders[8].getTokenAmount(), '2000'); // success (swapping)
 
         assert.strictEqual(orders[0].getToken()!.address, SOLVBTC_ADDRESS);
         assert.strictEqual(orders[1].getToken(), undefined);
+        assert.strictEqual(orders[8].getToken(), undefined);
 
         assert.strictEqual(orders[7].layerzeroDstEid, 30111);
     });
@@ -548,11 +560,19 @@ describe('Gateway Tests', () => {
                     outputTokenAmount: null,
                     tokensReceived: [{ amount: '2000', tokenAddress: TBTC_ADDRESS }],
                 },
+                // swapped unknown token - gateway v4
+                {
+                    ...mockOrder,
+                    satoshis: 2000,
+                    outputTokenAddress: null,
+                    outputTokenAmount: null,
+                    tokensReceived: [{ amount: '2000', tokenAddress: '0x1111111111111111111111111111111111111111' }],
+                },
             ]);
 
         const gatewaySDK = new GatewaySDK(bob.id);
         const orders = await gatewaySDK.getOnrampOrders(zeroAddress);
-        assert.lengthOf(orders, 3);
+        assert.lengthOf(orders, 4);
 
         assert.strictEqual(orders[0].getTokenAmount(), 20000000000000);
         assert.strictEqual(orders[1].getTokenAmount(), '2000');
@@ -579,6 +599,7 @@ describe('Gateway Tests', () => {
                 token: TBTC,
             },
         ]);
+        assert.deepEqual(await orders[3].getOutputTokens(), []);
 
         assert.deepEqual(await orders[0].getTokens(), [
             {
