@@ -13,7 +13,7 @@ import {
     Chain as ViemChain,
     WalletClient,
     zeroAddress,
-    parseEther,
+    parseEther, toHex,
 } from 'viem';
 import { bob, bobSepolia } from 'viem/chains';
 import { EsploraClient } from '../esplora';
@@ -282,11 +282,11 @@ export class GatewayApiClient {
                     stateDiff: [
                         {
                             slot: allowanceSlot,
-                            value: '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff',
+                            value: toHex(maxUint256),
                         },
                         {
                             slot: balanceSlot,
-                            value: '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff',
+                            value: toHex(maxUint256),
                         },
                     ],
                 },
