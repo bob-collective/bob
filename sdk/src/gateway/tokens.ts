@@ -36,6 +36,8 @@ const bobTokens = [
             },
         },
         logoURI: 'https://raw.githubusercontent.com/bob-collective/bob/master/assets/wbtc.svg',
+        allowanceSlot: 6n,
+        balanceSlot: 5n,
     },
     {
         name: 'Solv BTC',
@@ -105,6 +107,8 @@ const bobSepoliaTokens = [
             },
         },
         logoURI: 'https://raw.githubusercontent.com/bob-collective/bob/master/assets/btc.svg',
+        allowanceSlot: 1n,
+        balanceSlot: 0n,
     },
     {
         name: 'Staked mtBTC',
@@ -360,6 +364,8 @@ const TOKENS: Array<{
         };
     };
     logoURI: string;
+    allowanceSlot?: bigint; // optional
+    balanceSlot?: bigint; // optional
 }> = [
     ...bobTokens,
     ...bobSepoliaTokens,
@@ -446,4 +452,27 @@ export function getTokenAddress(chainId: number, token: string): Address {
     } else {
         throw new Error('Unknown output token');
     }
+}
+export function getTokenSlots(tokenAddress: Address, chainId: number): { allowanceSlot: bigint; balanceSlot: bigint } {
+    const lowerAddress = tokenAddress.toLowerCase();
+
+    // Look up the token in the master TOKENS array
+    const token = TOKENS.find((t) => {
+        const chainToken = t.tokens[bob.id === chainId ? 'bob' : 'bob-sepolia'];
+        return chainToken?.address.toLowerCase() === lowerAddress;
+    });
+
+    if (!token) {
+        throw new Error(`Token not found for address ${tokenAddress} on chain ${chainId}`);
+    }
+
+    // Check if slots are defined
+    if (token.allowanceSlot === undefined || token.balanceSlot === undefined) {
+        throw new Error(`Slots not defined for token ${token.symbol} at address ${tokenAddress}`);
+    }
+
+    return {
+        allowanceSlot: token.allowanceSlot,
+        balanceSlot: token.balanceSlot,
+    };
 }
