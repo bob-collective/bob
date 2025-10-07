@@ -13,6 +13,7 @@ import {
     Chain as ViemChain,
     WalletClient,
     zeroAddress,
+    parseEther,
 } from 'viem';
 import { bob, bobSepolia } from 'viem/chains';
 import { EsploraClient } from '../esplora';
@@ -20,7 +21,7 @@ import { bigIntToFloatingNumber } from '../utils';
 import { createBitcoinPsbt } from '../wallet';
 import { claimDelayAbi, offrampCaller, strategyCaller } from './abi';
 import StrategyClient from './strategy';
-import { ADDRESS_LOOKUP, getTokenAddress, getTokenDecimals } from './tokens';
+import { ADDRESS_LOOKUP, getTokenAddress, getTokenDecimals, getTokenSlots } from './tokens';
 import {
     BitcoinSigner,
     BumpFeeParams,
@@ -51,6 +52,8 @@ import {
     UnlockOrderParams,
 } from './types';
 import {
+    computeAllowanceSlot,
+    computeBalanceSlot,
     convertOnrampFeeBreakdown,
     convertOrderDetailsRawToOrderDetails,
     convertOrderDetailsToRaw,
@@ -198,28 +201,13 @@ export class GatewayApiClient {
                 data,
             };
         } else if (params.toChain.toString().toLowerCase() === 'bitcoin') {
-            const chain = getChainConfig(params.fromChain);
-            const publicClient = viemClient(chain);
             const data = await this.getOfframpQuote(params);
-
-            const [offrampOrder, offrampRegistryAddress, feeValues, gasPrice] = await Promise.all([
-                this.createOfframpOrder(data, params),
-                this.fetchOfframpRegistryAddress(),
-                publicClient.estimateFeesPerGas(),
-                publicClient.getGasPrice(),
-            ]);
-
-            const fee = feeValues.maxFeePerGas ?? gasPrice;
-
-            const createOrderGasEstimate = await publicClient.estimateContractGas({
-                address: offrampRegistryAddress,
-                abi: offrampOrder.offrampABI,
-                functionName: offrampOrder.offrampFunctionName,
-                args: offrampOrder.offrampArgs,
-                account: params.fromUserAddress as Address,
-            });
-
-            const createOrderGasCost = createOrderGasEstimate * fee;
+            let createOrderGasCost = 0n;
+            try {
+                createOrderGasCost = await this.getOfframpCreateOrderGasCost(params, data);
+            } catch (err) {
+                console.warn('Failed to get create order gas cost, defaulting to 0', err);
+            }
 
             return {
                 type: 'offramp',
@@ -237,6 +225,69 @@ export class GatewayApiClient {
         }
 
         throw new Error('Invalid quote arguments');
+    }
+
+    async getOfframpCreateOrderGasCost(params: GetQuoteParams, offrampQuote: OfframpQuote): Promise<bigint> {
+        const chain = getChainConfig(params.fromChain);
+        const publicClient = viemClient(chain);
+
+        const [offrampOrder, offrampRegistryAddress, feeValues, gasPrice] = await Promise.all([
+            this.createOfframpOrder(offrampQuote, params),
+            this.fetchOfframpRegistryAddress(),
+            publicClient.estimateFeesPerGas(),
+            publicClient.getGasPrice(),
+        ]);
+
+        const fee = feeValues.maxFeePerGas ?? gasPrice;
+
+        const slots = getTokenSlots(offrampOrder.quote.token as Address, this.chainId);
+        const user = params.fromUserAddress ?? '0x1111111111111111111111111111111111111111';
+
+        const allowanceSlot = computeAllowanceSlot(
+            user as Address,
+            offrampRegistryAddress as Address,
+            slots.allowanceSlot
+        );
+        const balanceSlot = computeBalanceSlot(user as Address, slots.balanceSlot);
+
+        // Ensure the owner inside offrampArgs is set
+        const args: readonly [(typeof offrampOrder.offrampArgs)[0]] = [
+            {
+                ...offrampOrder.offrampArgs[0],
+                owner: user as Address,
+            },
+        ];
+
+        const createOrderGasEstimate = await publicClient.estimateContractGas({
+            address: offrampRegistryAddress,
+            abi: offrampOrder.offrampABI,
+            functionName: offrampOrder.offrampFunctionName,
+            args,
+            account: user as Address,
+            stateOverride: [
+                // ERC20 token override
+                {
+                    address: offrampOrder.quote.token as Address,
+                    stateDiff: [
+                        {
+                            slot: allowanceSlot,
+                            value: '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff',
+                        },
+                        {
+                            slot: balanceSlot,
+                            value: '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff',
+                        },
+                    ],
+                },
+                // Ether balance override
+                {
+                    address: user as Address,
+                    balance: parseEther('1'), // set 1 ETH for the user
+                },
+            ],
+        });
+
+        return createOrderGasEstimate * fee;
     }
 
     /**

@@ -7,7 +7,7 @@ import {
     OrderDetails,
     OrderDetailsRaw,
 } from './types';
-import { encodeAbiParameters, parseAbiParameters, keccak256, parseUnits, formatUnits } from 'viem';
+import { encodeAbiParameters, parseAbiParameters, keccak256, parseUnits, formatUnits, Address, Hex } from 'viem';
 import * as bitcoin from 'bitcoinjs-lib';
 import { avalanche, base, berachain, bob, bsc, mainnet, optimism, sei, soneium, sonic, unichain } from 'viem/chains';
 
@@ -185,4 +185,44 @@ export function getChainConfig(fromChain: string | number) {
     }
 
     return getChainConfigById(fromChain);
+}
+
+// Compute the final ERC20 allowance storage slot
+export function computeAllowanceSlot(user: Address, offrampRegistryAddress: Address, tokenAllowanceSlot: bigint): Hex {
+    const innerSlot = keccak256(
+        encodeAbiParameters(
+            [
+                { name: 'owner', type: 'address' },
+                { name: 'slot', type: 'uint256' },
+            ],
+            [user, tokenAllowanceSlot]
+        )
+    );
+
+    const allowanceSlot = keccak256(
+        encodeAbiParameters(
+            [
+                { name: 'spender', type: 'address' },
+                { name: 'innerSlot', type: 'bytes32' },
+            ],
+            [offrampRegistryAddress, innerSlot]
+        )
+    );
+    return allowanceSlot;
+}
+
+// Compute the final ERC20 balance storage slot for a user
+export function computeBalanceSlot(user: Address, balancesMappingSlot: bigint): Hex {
+    // Compute the storage slot for the user's balance
+    const balanceSlot = keccak256(
+        encodeAbiParameters(
+            [
+                { name: 'owner', type: 'address' },
+                { name: 'slot', type: 'uint256' },
+            ],
+            [user, balancesMappingSlot]
+        )
+    );
+
+    return balanceSlot;
 }
