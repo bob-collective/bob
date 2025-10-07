@@ -303,6 +303,11 @@ export type OfframpGatewayCreateQuoteResponse = {
     gateway: Address;
 };
 
+export interface TokenReceived {
+    amount: string;
+    tokenAddress: Address;
+}
+
 export interface OnrampOrderResponse {
     /** @description The gateway address */
     gatewayAddress: Address;
@@ -324,21 +329,23 @@ export interface OnrampOrderResponse {
     /** @description The number of confirmations required to confirm the Bitcoin tx */
     txProofDifficultyFactor: number;
     /** @description The optional strategy address */
-    strategyAddress?: Address;
+    strategyAddress: Address | null;
     /** @description The gas refill in satoshis */
     satsToConvertToEth: number;
     /** @description The amount of ETH received */
-    outputEthAmount?: string;
+    outputEthAmount: string | null;
     /** @description The output token (from strategies) */
-    outputTokenAddress?: Address;
+    outputTokenAddress: Address | null;
     /** @description The output amount (from strategies) */
-    outputTokenAmount?: string;
+    outputTokenAmount: string | null;
     /** @description The tx hash on the EVM chain */
-    txHash?: string;
+    txHash: string | null;
     /** @description V4 order details */
-    orderDetails?: OrderDetailsRaw;
+    orderDetails: OrderDetailsRaw | null;
     /** layerzero dst eid if the order being routed through layerzero */
-    layerzeroDstEid?: number;
+    layerzeroDstEid: number | null;
+    /** ERC20 tokens received by the user for gateway order */
+    tokensReceived: TokenReceived[] | null;
 }
 
 export type OrderStatusData = {
@@ -366,22 +373,32 @@ export type OrderStatus =
       };
 
 /** Order given by the Gateway API once the bitcoin tx is submitted */
-export type OnrampOrder = Omit<OnrampOrderResponse, 'satsToConvertToEth' | 'orderDetails'> & {
+export type OnrampOrder = Omit<
+    OnrampOrderResponse,
+    'satsToConvertToEth' | 'orderDetails' | 'tokensReceived' | 'outputTokenAddress' | 'outputTokenAmount'
+> & {
     /** @description The gas refill in satoshis */
     gasRefill: number;
     /** @description V4 order details */
     orderDetails?: OrderDetails;
 } & {
+    /** @deprecated please use getTokens() instead as gateway v4 can handle multiple tokens */
     /** @description Get the actual token address received */
     getTokenAddress(): string | undefined;
+    /** @deprecated please use getTokens() instead as gateway v4 can handle multiple tokens */
     /** @description Get the actual token received */
     getToken(): Token | undefined;
+    /** @deprecated please use getTokens() instead as gateway v4 can handle multiple tokens */
     /** @description Get the actual amount received of the token */
-    getTokenAmount(): string | number | undefined;
+    getTokenAmount(): string | number | null;
     /** @description Get the number of confirmations */
     getConfirmations(esploraClient: EsploraClient, latestHeight?: number): Promise<number>;
     /** @description Get the actual order status */
     getStatus(esploraClient: EsploraClient, latestHeight?: number): Promise<OrderStatus>;
+    /** @description Get all the output tokens */
+    getOutputTokens(): { amount: string; token: Token }[];
+    /** @description Get all the tokens */
+    getTokens(): { amount: string | number; token: Token }[];
 } & GatewayTokensInfo;
 
 export type GatewayTokensInfo = {

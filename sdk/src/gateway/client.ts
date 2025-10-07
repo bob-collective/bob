@@ -1109,6 +1109,9 @@ export class GatewayApiClient {
         );
         const orders: OnrampOrderResponse[] = await response.json();
         return orders.map((order) => {
+            const outputTokenAddress = order.outputTokenAddress ?? order.tokensReceived?.[0]?.tokenAddress ?? null;
+            const outputTokenAmount = order.outputTokenAmount ?? order.tokensReceived?.[0]?.amount ?? null;
+
             function getFinal<L, R>(base?: L, output?: R): NonNullable<L | R> {
                 return order.status
                     ? order.strategyAddress
@@ -1121,7 +1124,17 @@ export class GatewayApiClient {
                       : (base as NonNullable<typeof base>);
             }
             const getTokenAddress = (): string => {
-                return getFinal(order.baseTokenAddress, order.outputTokenAddress);
+                return getFinal(order.baseTokenAddress, outputTokenAddress);
+            };
+            const getTokenAmount = () => {
+                let amount = order.satoshis - order.fee;
+                const token = getToken();
+
+                if (token && !outputTokenAmount) {
+                    amount *= Math.pow(10, token.decimals - 8);
+                }
+
+                return getFinal(amount, outputTokenAmount);
             };
             const getToken = (): Token | undefined => {
                 return ADDRESS_LOOKUP[chainId][getTokenAddress()];
@@ -1138,6 +1151,32 @@ export class GatewayApiClient {
                 ? convertOrderDetailsRawToOrderDetails(order.orderDetails)
                 : undefined;
 
+            const getOutputTokens = () => {
+                const tokens = order.tokensReceived
+                    ? order.tokensReceived
+                    : outputTokenAmount && outputTokenAddress
+                      ? [{ amount: outputTokenAmount, tokenAddress: outputTokenAddress }]
+                      : [];
+
+                return tokens
+                    .map(({ amount, tokenAddress }) => ({
+                        amount: amount,
+                        token: ADDRESS_LOOKUP[chainId][tokenAddress],
+                    }))
+                    .filter((x) => x.token);
+            };
+
+            const getTokens = () => {
+                const tokens = order.tokensReceived
+                    ? order.tokensReceived
+                    : [{ amount: getTokenAmount(), tokenAddress: getTokenAddress() }];
+
+                return tokens.map(({ amount, tokenAddress }) => ({
+                    amount: amount,
+                    token: ADDRESS_LOOKUP[chainId][tokenAddress],
+                }));
+            };
+
             return {
                 ...order,
                 orderDetails,
@@ -1146,14 +1185,9 @@ export class GatewayApiClient {
                 outputToken: ADDRESS_LOOKUP[chainId][order.outputTokenAddress!],
                 getTokenAddress,
                 getToken,
-                getTokenAmount() {
-                    let amount = order.satoshis - order.fee;
-                    const token = getToken();
-                    if (token && !order.outputTokenAmount) {
-                        amount *= Math.pow(10, token.decimals - 8);
-                    }
-                    return getFinal(amount, order.outputTokenAmount);
-                },
+                getTokenAmount,
+                getTokens,
+                getOutputTokens,
                 getConfirmations,
                 async getStatus(esploraClient: EsploraClient, latestHeight?: number): Promise<OrderStatus> {
                     const confirmations = await getConfirmations(esploraClient, latestHeight);
