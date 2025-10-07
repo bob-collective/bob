@@ -965,4 +965,81 @@ describe('Gateway Tests', () => {
         expect(getOnrampOrdersSpy).toHaveBeenCalledOnce();
         expect(getOfframpOrdersSpy).toHaveBeenCalledOnce();
     });
+
+    it(
+        'get offramp gas cost for BOB and Ethereum',
+        async () => {
+            const gatewaySDK = new GatewaySDK(bob.id);
+
+            // deployed offramp registry address
+            nock(MAINNET_GATEWAY_BASE_URL)
+                .persist()
+                .get('/offramp-registry-address')
+                .reply(200, '0x3d65cd168f27aeddeb08ca31cac5e5c12f3bb16d');
+
+            nock(MAINNET_GATEWAY_BASE_URL)
+                .persist()
+                .get('/offramp-quote')
+                .query(true)
+                .reply(200, {
+                    amountLockInSat: 4000,
+                    registryAddress: '0xd7b27b178f6bf290155201109906ad203b6d99b1',
+                    feeBreakdown: {
+                        overallFeeSats: 886,
+                        inclusionFeeSats: 886,
+                        protocolFeeSats: 0,
+                        affiliateFeeSats: 0,
+                        fastestFeeRate: 2,
+                    },
+                });
+
+            // Test for BOB
+            const bobQuote = await gatewaySDK.getQuote({
+                fromChain: 'BOB',
+                fromToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
+                toChain: 'Bitcoin',
+                toToken: 'bitcoin',
+                toUserAddress: 'bc1qcwcjsc0mltyt293877552grdktjhnvnn2zh52t',
+                fromUserAddress: '0xFAEe001465dE6D7E8414aCDD9eF4aC5A35B2B808',
+                amount: 40000,
+            });
+            if ('gasFee' in bobQuote.data.feeBreakdown) {
+                expect(bobQuote.data.feeBreakdown.gasFee).toBeGreaterThan(0);
+            } else {
+                throw new Error('Expected gasFee to exist on feeBreakdown, but it does not.');
+            }
+
+            // Test for Ethereum
+            const ethQuote = await gatewaySDK.getQuote({
+                fromChain: 'ethereum',
+                fromToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
+                toChain: 'Bitcoin',
+                toToken: 'bitcoin',
+                toUserAddress: 'bc1qcwcjsc0mltyt293877552grdktjhnvnn2zh52t',
+                fromUserAddress: '0xFAEe001465dE6D7E8414aCDD9eF4aC5A35B2B808',
+                amount: 40000,
+            });
+            if ('gasFee' in ethQuote.data.feeBreakdown) {
+                expect(ethQuote.data.feeBreakdown.gasFee).toBeGreaterThan(0);
+            } else {
+                throw new Error('Expected gasFee to exist on feeBreakdown, but it does not.');
+            }
+
+            // Test for BOB with no from user address
+            const bobQuoteWithNoUserAddress = await gatewaySDK.getQuote({
+                fromChain: 'BOB',
+                fromToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
+                toChain: 'Bitcoin',
+                toToken: 'bitcoin',
+                toUserAddress: 'bc1qcwcjsc0mltyt293877552grdktjhnvnn2zh52t',
+                amount: 40000,
+            });
+            if ('gasFee' in bobQuoteWithNoUserAddress.data.feeBreakdown) {
+                expect(bobQuoteWithNoUserAddress.data.feeBreakdown.gasFee).toBeGreaterThan(0);
+            } else {
+                throw new Error('Expected gasFee to exist on feeBreakdown, but it does not.');
+            }
+        },
+        { timeout: 5000 } // 5 seconds
+    );
 });
