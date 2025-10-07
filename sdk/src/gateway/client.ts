@@ -15,6 +15,7 @@ import {
     zeroAddress,
     parseEther,
     toHex,
+    isAddressEqual,
 } from 'viem';
 import { bob, bobSepolia } from 'viem/chains';
 import { EsploraClient } from '../esplora';
@@ -243,6 +244,19 @@ export class GatewayApiClient {
         const chain = getChainConfig(params.fromChain);
         const publicClient = viemClient(chain);
 
+        if (!params.toUserAddress) {
+            params.toUserAddress = this.isSignet
+                ? 'tb1q0c2qnya702wrna5hqjp83jqqhx8zh5p9au2rqt'
+                : '14EvE4gm1yiYSzN8dYBtgYDppsaa1VVfud';
+        }
+
+        if (
+            !params.fromUserAddress ||
+            (isAddress(params.fromUserAddress) && isAddressEqual(params.fromUserAddress, zeroAddress))
+        ) {
+            params.fromUserAddress = '0x1111111111111111111111111111111111111111';
+        }
+
         const [offrampOrder, offrampRegistryAddress, feeValues, gasPrice] = await Promise.all([
             this.createOfframpOrder(offrampQuote, params),
             this.fetchOfframpRegistryAddress(),
@@ -253,7 +267,7 @@ export class GatewayApiClient {
         const fee = feeValues.maxFeePerGas ?? gasPrice;
 
         const slots = getTokenSlots(offrampOrder.quote.token as Address, this.chainId);
-        const user = params.fromUserAddress ?? '0x1111111111111111111111111111111111111111';
+        const user = params.fromUserAddress;
 
         const allowanceSlot = computeAllowanceSlot(
             user as Address,
