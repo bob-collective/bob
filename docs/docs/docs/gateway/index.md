@@ -4,7 +4,7 @@ sidebar_position: 1
 
 # BOB Gateway
 
-BOB Gateway is a Bitcoin intent/RFQ-based swap protocol that allows users to swap BTC on Bitcoin for ERC20 assets on BOB and other connected chains including Base, BNB, Unichain, AVAX, and more. Users can also swap ERC20 asssets back to BTC from any chain. The swap mechanism is trust-minimized: BOB Gateway uses smart contracts and cross-chain BTC proofs to ensure that swaps are always executed correctly.
+BOB Gateway is a Bitcoin intent/RFQ-based swap protocol that allows users to swap BTC on Bitcoin for ERC20 assets on BOB and other connected chains including Base, BNB, Unichain, AVAX, and more. Users can also swap ERC20 assets back to BTC from any chain. The swap mechanism is trust-minimized: BOB Gateway uses smart contracts and cross-chain BTC proofs to ensure that swaps are always executed correctly.
 
 :::info Gateway Overview
 For a detailed explanation of Gateway's architecture and user flow, see the [technical overview](./overview.md).
