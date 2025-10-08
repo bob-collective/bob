@@ -1,11 +1,11 @@
 import ecc from '@bitcoinerlab/secp256k1';
 import * as bitcoin from 'bitcoinjs-lib';
 import { Address, encodeAbiParameters, encodePacked, Hex, padHex, parseAbiParameters } from 'viem';
-import { bob, bobSepolia } from 'viem/chains';
+import { bob, bobSepolia} from 'viem/chains';
 import { layerZeroOftAbi, quoterV2Abi } from './abi';
 import { AllWalletClientParams, GatewayApiClient } from './client';
 import { ExecuteQuoteParams, GetQuoteParams } from './types';
-import { toHexScriptPubKey, viemClient } from './utils';
+import { getChainConfig, toHexScriptPubKey, viemClient } from './utils';
 
 bitcoin.initEccLib(ecc);
 
@@ -360,7 +360,50 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
             response.params.fromChain = fromChain;
             return response;
         } else {
-            throw new Error(`Unsupported chain combination: ${fromChain} -> ${toChain}`);
+            // Handle l0 -> l0 
+
+            const dstEid = await this.l0Client.getEidForChain(toChain);
+            if (!dstEid) {
+                throw new Error(`Destination EID not found for chain: ${toChain}`);
+            }
+
+            const wbtcOftAddress = await this.l0Client.getOftAddressForChain(fromChain);
+            if (!wbtcOftAddress) {
+                throw new Error(`WBTC OFT not found for chain: ${fromChain}`);
+            }
+
+            // TODO: expose via params
+            const chain = getChainConfig(params.fromChain);
+            const publicClient = viemClient(chain);
+
+            const sendParam: SendParam = {
+                dstEid: parseInt(dstEid!, 10),
+                to: padHex(params.toUserAddress as Hex) as Hex,
+                amountLD: BigInt(params.amount),
+                minAmountLD: BigInt(params.amount),
+                extraOptions: '0x',
+                composeMsg: '0x',
+                oftCmd: '0x',
+            };
+
+            const sendFees = await publicClient.readContract({
+                abi: layerZeroOftAbi,
+                address: wbtcOftAddress as Hex,
+                functionName: 'quoteSend',
+                args: [sendParam, false],
+            });
+
+            return {
+                type: 'layerzero-send',
+                finalOutputSats: Number(params.amount), 
+                finalFeeSats: 0, // LayerZero sends don't have Bitcoin fees
+                params,
+                data: {
+                    nativeFee: sendFees.nativeFee,
+                    lzTokenFee: sendFees.lzTokenFee,
+                },
+            };
+
         }
     }
 
@@ -473,4 +516,16 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
             throw new Error(`Unsupported chain combination: ${fromChain} -> ${toChain}`);
         }
     }
+
+    // async executeLayerZeroSend({walletClient, publicClient}: EvmWalletClientParams): Promise<string> {
+    //     const sendFees = await publicClient.readContract({
+    //         abi: layerZeroOftAbi,
+    //         address: wbtcOftAddress as Hex,
+    //         functionName: 'quoteSend',
+    //         args: [sendParam, false],
+    //     });
+
+    // }
 }
+
+
