@@ -241,7 +241,10 @@ export class GatewayApiClient {
      * @returns Promise resolving to the estimated gas cost in wei (as bigint)
      */
     async getOfframpCreateOrderGasCost(params: GetQuoteParams, offrampQuote: OfframpQuote): Promise<bigint> {
-        const chain = getChainConfig(params.fromChain);
+        const chain = getChainConfig(
+            // FIXME: there should be a better way to access original toChain/fromChain param
+            (params as GetQuoteParams & { l0ChainId?: number | null }).l0ChainId ?? params.fromChain
+        );
         const publicClient = viemClient(chain);
 
         if (!params.toUserAddress) {
