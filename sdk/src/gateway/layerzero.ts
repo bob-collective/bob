@@ -48,6 +48,8 @@ type LayerZeroTokenDeployments = {
 };
 
 interface LayerZeroQuoteParamsExt {
+    /** @description temporary field for LayerZero chain ID */
+    l0chainId?: number | null;
     /** @description Buffer in BPS to account for Bitcoin to BOB finality delay (30 mins+) when using the L0 Strategy */
     l0OriginFinalityBuffer?: number | bigint;
     /** @description Buffer in BPS to account for BOB to destination finality delay (a few minutes) when using the L0 Strategy */
@@ -342,7 +344,16 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                 finalFeeSats: baseQuote.finalFeeSats + Number(maxTokensToSwapForLayerZeroFees),
             };
         } else if (toChain === 'bitcoin') {
+            const fromChain = resolveChainName(params.fromChain);
+            const dstEid = await this.l0Client.getEidForChain(fromChain);
+
+            if (!dstEid) {
+                throw new Error(`Unsupported destination chain: ${toChain}`);
+            }
+
             params.fromChain = bob.id;
+            params.l0chainId = await this.l0Client.getChainId(dstEid);
+
             // Handle l0 -> bitcoin: estimate bob -> bitcoin
             const response = await super.getQuote(params);
             // revert fromChain for handling in executeQuote
