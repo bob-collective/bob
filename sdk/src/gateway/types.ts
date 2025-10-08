@@ -342,10 +342,12 @@ export interface OnrampOrderResponse {
     txHash: string | null;
     /** @description V4 order details */
     orderDetails: OrderDetailsRaw | null;
-    /** layerzero dst eid if the order being routed through layerzero */
+    /** @description layerzero dst eid if the order being routed through layerzero */
     layerzeroDstEid: number | null;
-    /** ERC20 tokens received by the user for gateway order */
+    /** @description ERC20 tokens received by the user for gateway order */
     tokensReceived: TokenReceived[] | null;
+    /** @description Indicates the outcome of the strategy execution */
+    strategyFailed: boolean | null;
 }
 
 export type OrderStatusData = {

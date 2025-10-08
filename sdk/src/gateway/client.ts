@@ -1208,15 +1208,13 @@ export class GatewayApiClient {
                     const confirmations = await getConfirmations(esploraClient, latestHeight);
                     const hasEnoughConfirmations = confirmations >= order.txProofDifficultyFactor;
                     const data = { confirmations };
-                    return !hasEnoughConfirmations
-                        ? { confirmed: false, data }
-                        : order.status
-                          ? order.strategyAddress
-                              ? order.outputTokenAddress
-                                  ? { success: true, data }
-                                  : { success: false, data }
-                              : { success: true, data }
-                          : { pending: true, data };
+                    if (!hasEnoughConfirmations) {
+                        return { confirmed: false, data };
+                    }
+                    return {
+                        success: !(order.strategyAddress && order.strategyFailed === true),
+                        data,
+                    };
                 },
             };
         });
