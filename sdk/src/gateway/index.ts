@@ -3,4 +3,4 @@ export { GatewayQuoteParams, OnrampOrder, GatewayStrategyContract, OrderStatus }
 export { parseBtc } from './utils';
 export { ReownWalletAdapter } from './adapters/reown';
 export { OkxWalletAdapter } from './adapters/okx-wallet';
-export { LayerZeroGatewayClient } from './layerzero';
+export { LayerZeroGatewayClient, LayerZeroSendClient } from './layerzero';

@@ -1,5 +1,5 @@
 import { assert, describe, it } from 'vitest';
-import { LayerZeroClient, LayerZeroGatewayClient } from '../src/gateway/layerzero';
+import { LayerZeroClient, LayerZeroGatewayClient, LayerZeroSendClient } from '../src/gateway/layerzero';
 import { createPublicClient, createWalletClient, http, PublicClient, Transport, zeroAddress } from 'viem';
 import { base, bob, optimism } from 'viem/chains';
 import { BitcoinSigner } from '../src/gateway/types';
@@ -148,6 +148,43 @@ describe('LayerZero Tests', () => {
             walletClient,
             publicClient: publicClient as PublicClient<Transport>,
             btcSigner: btcSignerFromSeed,
+        });
+
+        console.log(txHash);
+    }, 120000);
+
+    it.skip('should get a layerzero send quote and execute it', async () => {
+        const client = new LayerZeroSendClient(base.id);
+
+        const quote = await client.getQuote({
+            fromChain: 'base',
+            fromToken: (await client.getSupportedChainsInfo()).find((chain) => chain.name === 'base')
+                ?.oftAddress as string,
+            toChain: 'optimism',
+            toToken: (await client.getSupportedChainsInfo()).find((chain) => chain.name === 'optimism')
+                ?.oftAddress as string,
+            fromUserAddress: '0xEf7Ff7Fb24797656DF41616e807AB4016AE9dCD5',
+            toUserAddress: '0xEf7Ff7Fb24797656DF41616e807AB4016AE9dCD5',
+            amount: 100,
+        });
+
+        console.log('quote', quote);
+
+        const publicClient = createPublicClient({
+            chain: base,
+            transport: http(),
+        });
+
+        const walletClient = createWalletClient({
+            chain: base,
+            transport: http(),
+            account: privateKeyToAccount(process.env.PRIVATE_KEY as Hex),
+        });
+
+        const txHash = await client.executeQuote({
+            quote,
+            walletClient,
+            publicClient: publicClient as PublicClient<Transport>,
         });
 
         console.log(txHash);
