@@ -609,7 +609,6 @@ export type OfframpExecuteQuoteParams<T = {}> = BaseExecuteQuoteParams<T> & {
     data: OfframpQuote;
 };
 
-
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export type LayerZeroSendQuoteParams<T = {}> = BaseExecuteQuoteParams<T> & {
     type: 'layerzero-send';
@@ -622,7 +621,10 @@ export interface LayerZeroSendQuote {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export type ExecuteQuoteParams<T = {}> = OnrampExecuteQuoteParams<T> | OfframpExecuteQuoteParams<T> | LayerZeroSendQuoteParams<T>;
+export type ExecuteQuoteParams<T = {}> =
+    | OnrampExecuteQuoteParams<T>
+    | OfframpExecuteQuoteParams<T>
+    | LayerZeroSendQuoteParams<T>;
 
 export interface BitcoinSigner {
     signAllInputs?: (psbtBase64: string) => Promise<string>;
