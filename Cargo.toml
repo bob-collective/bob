@@ -8,7 +8,7 @@ utils = { package = "bob-utils", path = "crates/utils" }
 
 # Bitcoin
 bitcoin = "0.32.5"
-bitcoincore-rpc = "0.19.0"
+bitcoincore-rpc = { git = "https://github.com/bob-collective/rust-bitcoincore-rpc", branch = "feat/anchor-scriptpubkeytype" }
 
 # Ethereum
 alloy = { version = "1.0.9", features = [
