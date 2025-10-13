@@ -456,19 +456,33 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                 args: [sendParam, false],
             });
 
-            const { request } = await publicClient.simulateContract({
-                account: walletClient.account,
-                abi: layerZeroOftAbi,
-                address: wbtcOftAddress as Hex,
-                functionName: 'send',
-                args: [sendParam, sendFees, params.fromUserAddress as Address],
-                value: sendFees.nativeFee,
-            });
+            try {
+                const { request } = await publicClient.simulateContract({
+                    account: walletClient.account,
+                    abi: layerZeroOftAbi,
+                    address: wbtcOftAddress as Hex,
+                    functionName: 'send',
+                    args: [sendParam, sendFees, params.fromUserAddress as Address],
+                    value: sendFees.nativeFee,
+                });
 
-            const txHash = await walletClient.writeContract(request);
-            await publicClient.waitForTransactionReceipt({ hash: txHash });
+                const txHash = await walletClient.writeContract(request);
+                await publicClient.waitForTransactionReceipt({ hash: txHash });
 
-            return txHash;
+                return txHash;
+            } catch (error) {
+                const message = error instanceof Error ? error.message : String(error);
+                if (
+                    message.includes(
+                        'The total cost (gas * gas fee + value) of executing this transaction exceeds the balance of the account'
+                    )
+                ) {
+                    throw new Error(
+                        'Insufficient native funds for source and destination gas fees, please add more native funds to your account'
+                    );
+                }
+                throw error;
+            }
         } else {
             throw new Error(`Unsupported chain combination: ${fromChain} -> ${toChain}`);
         }
