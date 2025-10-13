@@ -28,6 +28,7 @@ import {
     BitcoinSigner,
     BumpFeeParams,
     EnrichedToken,
+    LayerZeroSendOrder,
     ExecuteQuoteParams,
     GatewayCreateOrderRequestPayload,
     GatewayCreateOrderResponse,
@@ -1388,22 +1389,96 @@ export class GatewayApiClient {
     }
 
     /**
-     * Retrieves all orders (both onramp and offramp) for a specific user address.
+     * Retrieves all orders (onramp, offramp, and layerzero sends) for a specific user address.
      *
      * @param userAddress The user's EVM address
      * @returns Promise resolving to array of typed orders
      */
     async getOrders(
         userAddress: Address
-    ): Promise<Array<{ type: 'onramp'; order: OnrampOrder } | { type: 'offramp'; order: OfframpOrder }>> {
-        const [onrampOrders, offrampOrders] = await Promise.all([
+    ): Promise<
+        Array<
+            | { type: 'onramp'; order: OnrampOrder }
+            | { type: 'offramp'; order: OfframpOrder }
+            | { type: 'layerzero-send'; order: LayerZeroSendOrder }
+        >
+    > {
+        const [onrampOrders, offrampOrders, layerZeroSendOrders] = await Promise.all([
             this.getOnrampOrders(userAddress),
             this.getOfframpOrders(userAddress),
+            this.getLayerZeroSendOrders(userAddress),
         ]);
         return [
             ...onrampOrders.map((order) => ({ type: 'onramp' as const, order })),
             ...offrampOrders.map((order) => ({ type: 'offramp' as const, order })),
+            ...layerZeroSendOrders.map((order) => ({ type: 'layerzero-send' as const, order })),
         ];
+    }
+
+    async getLayerZeroSendOrders(_userAddress: Address): Promise<LayerZeroSendOrder[]> {
+        const url = new URL(`https://scan.layerzero-api.com/v1/messages/wallet/${_userAddress}`);
+
+        const response = await this.safeFetch(url.toString(), undefined, 'Failed to fetch LayerZero send orders');
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => null);
+            throw new Error(errorData?.message || 'Failed to fetch LayerZero send orders');
+        }
+
+        const json = (await response.json()) as {
+            data?: Array<{
+                pathway?: { srcEid?: number | string; dstEid?: number | string };
+                source?: {
+                    status?: string;
+                    tx?: { txHash?: string | null; blockTimestamp?: number; payload?: string | null };
+                };
+                destination?: {
+                    status?: string;
+                    tx?: { txHash?: string | null; blockTimestamp?: number };
+                    lzCompose?: { status?: string };
+                };
+            }>;
+        };
+
+        const items = (json.data ?? []).filter((item) => item.destination?.lzCompose?.status === 'N/A');
+
+        return items.map((item) => {
+            const sourceStatus = item.source?.status ?? 'UNKNOWN';
+            const destinationStatus = item.destination?.status ?? 'UNKNOWN';
+            const sourceTxHash = item.source?.tx?.txHash ?? null;
+            const destinationTxHash = item.destination?.tx?.txHash ?? null;
+            const orderTimestamp = item.source?.tx?.blockTimestamp ?? null;
+            const payload = item.source?.tx?.payload ?? null;
+            let orderSize = 0n;
+            if (payload && typeof payload === 'string') {
+                const hex = payload.startsWith('0x') ? payload.slice(2) : payload;
+                if (hex.length >= 16) {
+                    const last16 = hex.slice(-16);
+                    try {
+                        orderSize = BigInt('0x' + last16);
+                    } catch {
+                        orderSize = 0n;
+                    }
+                }
+            }
+            const srcEidRaw = item.pathway?.srcEid ?? null;
+            const dstEidRaw = item.pathway?.dstEid ?? null;
+            const sourceEid =
+                srcEidRaw === null ? null : typeof srcEidRaw === 'string' ? parseInt(srcEidRaw, 10) : srcEidRaw;
+            const destinationEid =
+                dstEidRaw === null ? null : typeof dstEidRaw === 'string' ? parseInt(dstEidRaw, 10) : dstEidRaw;
+
+            return {
+                orderSize,
+                orderTimestamp,
+                sourceEid: sourceEid as number,
+                sourceTxHash,
+                sourceStatus,
+                destinationTxHash,
+                destinationEid: destinationEid as number,
+                destinationStatus,
+            } as LayerZeroSendOrder;
+        });
     }
 
     private async safeFetch(url: URL | string, init: RequestInit | undefined, errorMessage: string) {
