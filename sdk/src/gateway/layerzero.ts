@@ -2,6 +2,7 @@ import ecc from '@bitcoinerlab/secp256k1';
 import * as bitcoin from 'bitcoinjs-lib';
 import {
     Address,
+    ContractFunctionExecutionError,
     encodeAbiParameters,
     encodePacked,
     Hex,
@@ -499,19 +500,31 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                     args: [sendParam, false],
                 });
 
-                const { request } = await publicClient.simulateContract({
-                    account: walletClient.account,
-                    abi: layerZeroOftAbi,
-                    address: wbtcOftAddress as Hex,
-                    functionName: 'send',
-                    args: [sendParam, sendFees, params.fromUserAddress as Address],
-                    value: sendFees.nativeFee,
-                });
+                try {
+                    const { request } = await publicClient.simulateContract({
+                        account: walletClient.account,
+                        abi: layerZeroOftAbi,
+                        address: wbtcOftAddress as Hex,
+                        functionName: 'send',
+                        args: [sendParam, sendFees, params.fromUserAddress as Address],
+                        value: sendFees.nativeFee,
+                    });
 
-                const txHash = await walletClient.writeContract(request);
-                await publicClient.waitForTransactionReceipt({ hash: txHash });
+                    const txHash = await walletClient.writeContract(request);
+                    await publicClient.waitForTransactionReceipt({ hash: txHash });
 
-                return txHash;
+                    return txHash;
+                } catch (error) {
+                    if (error instanceof ContractFunctionExecutionError) {
+                        // https://github.com/wevm/viem/blob/3aa882692d2c4af3f5e9cc152099e07cde28e551/src/actions/public/simulateContract.test.ts#L711
+                        // throw new error
+                        throw new Error(
+                            'Insufficient native funds for source and destination gas fees, please add more native funds to your account'
+                        );
+                    }
+
+                    throw error;
+                }
             }
             case GatewayOrderType.CrossChainSwap: {
                 const { data, params } = quote;
@@ -532,19 +545,31 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                     lzTokenFee: data.feeBreakdown.lzTokenFee,
                 };
 
-                const { request } = await publicClient.simulateContract({
-                    account: walletClient.account,
-                    abi: layerZeroOftAbi,
-                    address: oftAddress,
-                    functionName: 'send',
-                    args: [sendParam, sendFees, params.fromUserAddress as Address],
-                    value: sendFees.nativeFee,
-                });
+                try {
+                    const { request } = await publicClient.simulateContract({
+                        account: walletClient.account,
+                        abi: layerZeroOftAbi,
+                        address: oftAddress,
+                        functionName: 'send',
+                        args: [sendParam, sendFees, params.fromUserAddress as Address],
+                        value: sendFees.nativeFee,
+                    });
 
-                const txHash = await walletClient.writeContract(request);
-                await publicClient.waitForTransactionReceipt({ hash: txHash });
+                    const txHash = await walletClient.writeContract(request);
+                    await publicClient.waitForTransactionReceipt({ hash: txHash });
 
-                return txHash;
+                    return txHash;
+                } catch (error) {
+                    if (error instanceof ContractFunctionExecutionError) {
+                        // https://github.com/wevm/viem/blob/3aa882692d2c4af3f5e9cc152099e07cde28e551/src/actions/public/simulateContract.test.ts#L711
+                        // throw new error
+                        throw new Error(
+                            'Insufficient native funds for source and destination gas fees, please add more native funds to your account'
+                        );
+                    }
+
+                    throw error;
+                }
             }
             default:
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any

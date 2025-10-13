@@ -173,8 +173,6 @@ const tokenToSolvStrategyMap = new Map<string, string>([
     ],
 ]);
 
-
-
 export default class StrategyClient {
     private viemClient: PublicClient;
 
