@@ -609,6 +609,17 @@ export type OfframpExecuteQuoteParams<T = {}> = BaseExecuteQuoteParams<T> & {
     data: OfframpQuote;
 };
 
+export interface LayerZeroSendOrder {
+    orderSize: bigint;
+    orderTimestamp: number | null;
+    sourceEid: number;
+    sourceTxHash: string | null;
+    sourceStatus: string;
+    destinationTxHash: string | null;
+    destinationEid: number;
+    destinationStatus: string;
+}
+
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export type LayerZeroSendQuoteParams<T = {}> = BaseExecuteQuoteParams<T> & {
     type: 'layerzero-send';
