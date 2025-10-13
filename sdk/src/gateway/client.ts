@@ -1468,11 +1468,11 @@ export class GatewayApiClient {
             return {
                 orderSize,
                 orderTimestamp,
-                sourceEid: sourceEid as number,
+                sourceEid,
                 sourceTxHash,
                 sourceStatus,
                 destinationTxHash,
-                destinationEid: destinationEid as number,
+                destinationEid,
                 destinationStatus,
             } as LayerZeroSendOrder;
         });
