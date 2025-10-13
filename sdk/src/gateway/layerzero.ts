@@ -1,6 +1,6 @@
 import ecc from '@bitcoinerlab/secp256k1';
 import * as bitcoin from 'bitcoinjs-lib';
-import { Address, encodeAbiParameters, encodePacked, Hex, padHex, parseAbiParameters, parseEther } from 'viem';
+import { Address, encodeAbiParameters, encodePacked, Hex, padHex, parseAbiParameters } from 'viem';
 import { bob, bobSepolia } from 'viem/chains';
 import { layerZeroOftAbi, quoterV2Abi } from './abi';
 import { AllWalletClientParams, GatewayApiClient } from './client';
