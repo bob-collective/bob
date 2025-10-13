@@ -612,12 +612,12 @@ export type OfframpExecuteQuoteParams<T = {}> = BaseExecuteQuoteParams<T> & {
 export interface LayerZeroSendOrder {
     orderSize: bigint;
     orderTimestamp: number | null;
-    sourceEid: number;
+    sourceEid: number | null;
     sourceTxHash: string | null;
-    sourceStatus: string;
+    sourceStatus: string | null;
     destinationTxHash: string | null;
-    destinationEid: number;
-    destinationStatus: string;
+    destinationEid: number | null;
+    destinationStatus: string | null;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
