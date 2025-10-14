@@ -1423,58 +1423,92 @@ export class GatewayApiClient {
         }
 
         const json = (await response.json()) as {
-            data?: Array<{
-                pathway?: { srcEid?: number | string; dstEid?: number | string };
-                source?: {
-                    status?: string;
-                    tx?: { txHash?: string | null; blockTimestamp?: number; payload?: string | null };
+            data: Array<{
+                pathway: {
+                    srcEid: number;
+                    dstEid: number;
+                    sender: {
+                        address: string;
+                        id: string;
+                        name: string;
+                        chain: string;
+                    };
+                    receiver: {
+                        address: string;
+                        id: string;
+                        name: string;
+                        chain: string;
+                    };
                 };
-                destination?: {
-                    status?: string;
-                    tx?: { txHash?: string | null; blockTimestamp?: number };
-                    lzCompose?: { status?: string };
+                source: {
+                    status: string;
+                    tx: {
+                        txHash: string;
+                        blockHash: string;
+                        blockNumber: string;
+                        blockTimestamp: number;
+                        payload: string;
+                    };
+                };
+                destination: {
+                    status: string;
+                    tx: {
+                        txHash: string;
+                        blockHash: string;
+                        blockNumber: number;
+                        blockTimestamp: number;
+                    };
+                    lzCompose: { status: string };
                 };
             }>;
         };
 
-        const items = (json.data ?? []).filter((item) => item.destination?.lzCompose?.status === 'N/A');
+        const items = (json.data ?? []).filter((item) => item.destination.lzCompose.status === 'N/A');
 
-        return items.map((item) => {
-            const sourceStatus = item.source?.status ?? 'UNKNOWN';
-            const destinationStatus = item.destination?.status ?? 'UNKNOWN';
-            const sourceTxHash = item.source?.tx?.txHash ?? null;
-            const destinationTxHash = item.destination?.tx?.txHash ?? null;
-            const orderTimestamp = item.source?.tx?.blockTimestamp ?? null;
-            const payload = item.source?.tx?.payload ?? null;
-            let orderSize = 0n;
-            if (payload && typeof payload === 'string') {
-                const hex = payload.startsWith('0x') ? payload.slice(2) : payload;
-                if (hex.length >= 16) {
-                    const last16 = hex.slice(-16);
-                    try {
-                        orderSize = BigInt('0x' + last16);
-                    } catch {
-                        orderSize = 0n;
-                    }
+        return items.map((item): LayerZeroSendOrder => {
+            const { payload, blockTimestamp, txHash: sourceTxHash } = item.source.tx;
+            const { txHash: destinationTxHash } = item.destination.tx;
+
+            let amount = 0n;
+
+            const hex = payload.startsWith('0x') ? payload.slice(2) : payload;
+            if (hex.length >= 16) {
+                const last16 = hex.slice(-16);
+                try {
+                    amount = BigInt('0x' + last16);
+                } catch {
+                    amount = 0n;
                 }
             }
-            const srcEidRaw = item.pathway?.srcEid ?? null;
-            const dstEidRaw = item.pathway?.dstEid ?? null;
-            const sourceEid =
-                srcEidRaw === null ? null : typeof srcEidRaw === 'string' ? parseInt(srcEidRaw, 10) : srcEidRaw;
-            const destinationEid =
-                dstEidRaw === null ? null : typeof dstEidRaw === 'string' ? parseInt(dstEidRaw, 10) : dstEidRaw;
 
             return {
-                orderSize,
-                orderTimestamp,
-                sourceEid,
-                sourceTxHash,
-                sourceStatus,
-                destinationTxHash,
-                destinationEid,
-                destinationStatus,
-            } as LayerZeroSendOrder;
+                amount,
+                timestamp: blockTimestamp,
+                status:
+                    item.source.status === 'WAITING'
+                        ? 'source-pending'
+                        : item.source.status === 'SIMULATION_REVERTED'
+                          ? 'source-failed'
+                          : item.source.status === 'SUCCEEDED' && item.destination.status === 'WAITING'
+                            ? 'destination-pending'
+                            : item.source.status === 'SUCCEEDED' && item.destination.status === 'SUCCEEDED'
+                              ? 'destination-confirmed'
+                              : item.source.status === 'SUCCEEDED' && item.destination.status === 'SIMULATION_REVERTED'
+                                ? 'destination-failed'
+                                : 'unknown',
+                source: {
+                    eid: item.pathway.srcEid,
+
+                    txHash: sourceTxHash,
+                    token: item.pathway.sender.address as Address,
+                },
+                destination: {
+                    eid: item.pathway.dstEid,
+
+                    txHash: destinationTxHash,
+                    token: item.pathway.receiver.address as Address,
+                },
+            };
         });
     }
 

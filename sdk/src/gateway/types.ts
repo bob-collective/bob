@@ -609,15 +609,29 @@ export type OfframpExecuteQuoteParams<T = {}> = BaseExecuteQuoteParams<T> & {
     data: OfframpQuote;
 };
 
+export type LayerZeroSendOrderStatus =
+    | 'source-pending'
+    | 'source-confirmed'
+    | 'destination-pending'
+    | 'destination-confirmed'
+    | 'source-failed'
+    | 'destination-failed'
+    | 'unknown';
+
 export interface LayerZeroSendOrder {
-    orderSize: bigint;
-    orderTimestamp: number | null;
-    sourceEid: number | null;
-    sourceTxHash: string | null;
-    sourceStatus: string | null;
-    destinationTxHash: string | null;
-    destinationEid: number | null;
-    destinationStatus: string | null;
+    amount: bigint;
+    timestamp: number;
+    status: LayerZeroSendOrderStatus;
+    source: {
+        eid: number;
+        txHash: string;
+        token: Address;
+    };
+    destination: {
+        eid: number;
+        txHash: string;
+        token: Address;
+    };
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type

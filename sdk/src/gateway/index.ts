@@ -7,6 +7,9 @@ export {
     LayerZeroSendQuoteParams,
     GetQuoteParams,
     ExecuteQuoteParams,
+    LayerZeroSendOrder,
+    OfframpOrder,
+    LayerZeroSendOrderStatus,
 } from './types';
 export { parseBtc } from './utils';
 export { ReownWalletAdapter } from './adapters/reown';
