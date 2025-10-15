@@ -14,5 +14,6 @@ export {
     OfframpOrder,
     OnrampOrder,
     OnrampOrderStatus,
+    GatewayOrderType,
 } from './types';
 export { parseBtc } from './utils';

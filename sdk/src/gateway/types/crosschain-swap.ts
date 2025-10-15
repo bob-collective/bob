@@ -39,5 +39,8 @@ export type CrossChainFeeBreakdown = {
 };
 
 export interface CrossChainSwapQuote {
+    sourceEid: number;
+    destinationEid: number;
+    oftAddress: Address;
     feeBreakdown: CrossChainFeeBreakdown;
 }

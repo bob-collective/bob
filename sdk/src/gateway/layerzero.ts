@@ -1,6 +1,6 @@
 import ecc from '@bitcoinerlab/secp256k1';
 import * as bitcoin from 'bitcoinjs-lib';
-import { Address, encodeAbiParameters, encodePacked, Hex, padHex, parseAbiParameters } from 'viem';
+import { Address, encodeAbiParameters, encodePacked, Hex, isHex, padHex, parseAbiParameters } from 'viem';
 import { bob, bobSepolia } from 'viem/chains';
 import { layerZeroOftAbi, quoterV2Abi } from './abi';
 import { AllWalletClientParams, GatewayApiClient } from './client';
@@ -9,10 +9,10 @@ import {
     GatewayOrderType,
     GetQuoteParams,
     LayerZeroChainInfo,
-    LayerZeroDeploymentsMetadata,
+    LayerZeroDeploymentsMetadataResponse,
     LayerZeroQuoteParamsExt,
     LayerZeroSendParam,
-    LayerZeroTokenDeployments,
+    LayerZeroTokenDeploymentsResponse,
 } from './types';
 import { getChainConfig, toHexScriptPubKey, viemClient } from './utils';
 
@@ -21,8 +21,8 @@ bitcoin.initEccLib(ecc);
 export class LayerZeroClient {
     private basePath: string;
 
-    private getChainDeploymentsPromiseCache: Promise<LayerZeroDeploymentsMetadata> | null = null;
-    private getWbtcDeploymentsPromiseCache: Promise<LayerZeroTokenDeployments> | null = null;
+    private getChainDeploymentsPromiseCache: Promise<LayerZeroDeploymentsMetadataResponse> | null = null;
+    private getWbtcDeploymentsPromiseCache: Promise<LayerZeroTokenDeploymentsResponse> | null = null;
 
     constructor() {
         this.basePath = 'https://metadata.layerzero-api.com/v1/metadata';
@@ -30,13 +30,13 @@ export class LayerZeroClient {
 
     private async getChainDeployments() {
         if (!this.getChainDeploymentsPromiseCache) {
-            this.getChainDeploymentsPromiseCache = this.getJson<LayerZeroDeploymentsMetadata>(`${this.basePath}`).catch(
-                (err) => {
-                    // On failure, clear the cache to allow retries on subsequent calls.
-                    this.getChainDeploymentsPromiseCache = null;
-                    throw err;
-                }
-            );
+            this.getChainDeploymentsPromiseCache = this.getJson<LayerZeroDeploymentsMetadataResponse>(
+                `${this.basePath}`
+            ).catch((err) => {
+                // On failure, clear the cache to allow retries on subsequent calls.
+                this.getChainDeploymentsPromiseCache = null;
+                throw err;
+            });
         }
 
         return this.getChainDeploymentsPromiseCache;
@@ -44,7 +44,8 @@ export class LayerZeroClient {
 
     async getEidForChain(chainKey: string) {
         const data = await this.getChainDeployments();
-        return data[chainKey]?.deployments?.find((item) => item.version === 2)?.eid || null;
+        const eid = data[chainKey]?.deployments?.find((item) => item.version === 2)?.eid;
+        return eid !== undefined && eid !== null ? Number(eid) : null;
     }
 
     private async getWbtcDeployments() {
@@ -54,7 +55,7 @@ export class LayerZeroClient {
             });
 
             this.getWbtcDeploymentsPromiseCache = this.getJson<{
-                WBTC: [{ deployments: LayerZeroTokenDeployments }];
+                WBTC: [{ deployments: LayerZeroTokenDeploymentsResponse }];
             }>(`${this.basePath}/experiment/ofts/list?${params.toString()}`)
                 .then((data) => {
                     return data.WBTC[0].deployments;
@@ -103,11 +104,11 @@ export class LayerZeroClient {
         });
     }
 
-    async getChainId(eid: string): Promise<number | null> {
+    async getChainId(eid: number): Promise<number | null> {
         const chains = await this.getChainDeployments();
 
         const chainId = Object.values(chains).find((chain) =>
-            chain.deployments?.some((deployment) => deployment.eid === eid)
+            chain.deployments?.some((deployment) => deployment.eid === eid.toString())
         )?.chainDetails?.nativeChainId;
 
         if (chainId) {
@@ -166,7 +167,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
     /**
      * @deprecated Use getSupportedChainsInfo() instead
      */
-    async getEidForChain(chainKey: string): Promise<string | null> {
+    async getEidForChain(chainKey: string): Promise<number | null> {
         return this.l0Client.getEidForChain(chainKey);
     }
 
@@ -175,7 +176,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
      * @param eid LayerZero EID
      * @returns chain id for the given eid if found
      */
-    async getChainIdForEid(eid: string): Promise<number | null> {
+    async getChainIdForEid(eid: number): Promise<number | null> {
         return this.l0Client.getChainId(eid);
     }
 
@@ -187,6 +188,10 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
     }
 
     async getQuote(params: GetQuoteParams<LayerZeroQuoteParamsExt>): Promise<ExecuteQuoteParams> {
+        if (!isHex(params.toUserAddress)) {
+            throw new Error('toUserAddress must be a hex string');
+        }
+
         const fromChain = resolveChainName(params.fromChain);
         const toChain = resolveChainName(params.toChain);
 
@@ -223,10 +228,10 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
             );
 
             const sendParam: LayerZeroSendParam = {
-                dstEid: parseInt(dstEid!, 10),
-                to: padHex(params.toUserAddress as Hex) as Hex,
+                dstEid,
+                to: padHex(params.toUserAddress),
                 amountLD: BigInt(0), // will be added inside the strategy
-                minAmountLD: BigInt(0), // will be added inside the strategyzz
+                minAmountLD: BigInt(0), // will be added inside the strategy
                 extraOptions: extraOptions,
                 composeMsg: '0x' as Hex,
                 oftCmd: '0x' as Hex,
@@ -341,8 +346,8 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
             const publicClient = viemClient(chain);
 
             const sendParam: LayerZeroSendParam = {
-                dstEid: parseInt(dstEid!, 10),
-                to: padHex(params.toUserAddress as Hex) as Hex,
+                dstEid,
+                to: padHex(params.toUserAddress),
                 amountLD: BigInt(params.amount),
                 minAmountLD: BigInt(params.amount),
                 extraOptions: '0x',
@@ -363,6 +368,9 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                 finalFeeSats: 0, // LayerZero sends don't have Bitcoin fees
                 params,
                 data: {
+                    oftAddress: wbtcOftAddress as Hex,
+                    destinationEid: dstEid,
+                    sourceEid: srcEid,
                     feeBreakdown: {
                         nativeFee: sendFees.nativeFee,
                         lzTokenFee: sendFees.lzTokenFee,
@@ -380,14 +388,13 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
         publicClient,
         btcSigner,
     }: { quote: ExecuteQuoteParams } & AllWalletClientParams): Promise<string> {
-        const fromChain = resolveChainName(quote.params.fromChain);
-        const toChain = resolveChainName(quote.params.toChain);
-
         switch (quote.type) {
             case GatewayOrderType.Onramp: {
                 return super.executeQuote({ quote, walletClient, publicClient, btcSigner });
             }
             case GatewayOrderType.Offramp: {
+                const fromChain = resolveChainName(quote.params.fromChain);
+
                 if (fromChain === bob.name.toLowerCase()) {
                     // Handle bob -> bitcoin, normal flow
                     return super.executeQuote({ quote, walletClient, publicClient, btcSigner });
@@ -430,7 +437,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                 );
 
                 const sendParam: LayerZeroSendParam = {
-                    dstEid: parseInt(dstEid!, 10),
+                    dstEid,
                     to: padHex(offrampComposer, { size: 32 }),
                     minAmountLD: BigInt(params.amount),
                     amountLD: BigInt(params.amount),
@@ -483,19 +490,10 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
             }
             case GatewayOrderType.CrossChainSwap: {
                 const { data, params } = quote;
-
-                const dstEid = await this.l0Client.getEidForChain(toChain);
-                if (!dstEid) {
-                    throw new Error(`Destination EID not found for chain: ${toChain}`);
-                }
-
-                const wbtcOftAddress = await this.l0Client.getOftAddressForChain(fromChain);
-                if (!wbtcOftAddress) {
-                    throw new Error(`WBTC OFT not found for chain: ${fromChain}`);
-                }
+                const { oftAddress, destinationEid } = data;
 
                 const sendParam: LayerZeroSendParam = {
-                    dstEid: parseInt(dstEid!, 10),
+                    dstEid: destinationEid,
                     to: padHex(params.toUserAddress as Hex) as Hex,
                     amountLD: BigInt(params.amount),
                     minAmountLD: BigInt(params.amount),
@@ -512,7 +510,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                 const { request } = await publicClient.simulateContract({
                     account: walletClient.account,
                     abi: layerZeroOftAbi,
-                    address: wbtcOftAddress as Hex,
+                    address: oftAddress,
                     functionName: 'send',
                     args: [sendParam, sendFees, params.fromUserAddress as Address],
                     value: sendFees.nativeFee,

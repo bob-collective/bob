@@ -75,7 +75,7 @@ export type LayerZeroChainInfo = {
     nativeChainId?: number;
 };
 
-export type LayerZeroDeploymentsMetadata = {
+export type LayerZeroDeploymentsMetadataResponse = {
     [chainKey: string]: {
         deployments?: [
             {
@@ -90,7 +90,7 @@ export type LayerZeroDeploymentsMetadata = {
     };
 };
 
-export type LayerZeroTokenDeployments = {
+export type LayerZeroTokenDeploymentsResponse = {
     [chainKey: string]: {
         address: string;
     };
