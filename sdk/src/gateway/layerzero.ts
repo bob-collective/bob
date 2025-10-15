@@ -4,7 +4,7 @@ import { Address, encodeAbiParameters, encodePacked, Hex, padHex, parseAbiParame
 import { bob, bobSepolia } from 'viem/chains';
 import { layerZeroOftAbi, quoterV2Abi } from './abi';
 import { AllWalletClientParams, GatewayApiClient } from './client';
-import { ExecuteQuoteParams, GetQuoteParams } from './types';
+import { ExecuteQuoteParams, GatewayOrderType, GetQuoteParams } from './types';
 import { getChainConfig, toHexScriptPubKey, viemClient } from './utils';
 
 bitcoin.initEccLib(ecc);
@@ -234,7 +234,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
         } else if (fromChain === bob.name.toLowerCase() && toChain === 'bitcoin') {
             // Handle bob -> bitcoin: use normal flow
             return super.getQuote(params);
-        } else if (fromChain === 'bitcoin') {
+        } else if (fromChain === 'bitcoin' && toChain !== 'bitcoin') {
             const dstEid = await this.l0Client.getEidForChain(toChain);
             if (!dstEid) {
                 throw new Error(`Unsupported destination chain: ${toChain}`);
@@ -343,7 +343,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                 finalOutputSats: baseQuote.finalOutputSats - Number(maxTokensToSwapForLayerZeroFees),
                 finalFeeSats: baseQuote.finalFeeSats + Number(maxTokensToSwapForLayerZeroFees),
             };
-        } else if (toChain === 'bitcoin') {
+        } else if (fromChain !== 'bitcoin' && toChain === 'bitcoin') {
             const fromChain = resolveChainName(params.fromChain);
             const dstEid = await this.l0Client.getEidForChain(fromChain);
 
@@ -359,169 +359,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
             // revert fromChain for handling in executeQuote
             response.params.fromChain = fromChain;
             return response;
-        } else {
-            throw new Error(`Unsupported chain combination: ${fromChain} -> ${toChain}`);
-        }
-    }
-
-    async executeQuote({
-        quote,
-        walletClient,
-        publicClient,
-        btcSigner,
-    }: { quote: ExecuteQuoteParams } & AllWalletClientParams): Promise<string> {
-        const fromChain = resolveChainName(quote.params.fromChain);
-        const toChain = resolveChainName(quote.params.toChain);
-
-        // Handle bitcoin -> bob / l0 chain, normal flow with additional calldata
-        if (quote.type === 'onramp') {
-            return super.executeQuote({ quote, walletClient, publicClient, btcSigner });
-        } else if (quote.type === 'offramp') {
-            if (fromChain === bob.name.toLowerCase()) {
-                // Handle bob -> bitcoin, normal flow
-                return super.executeQuote({ quote, walletClient, publicClient, btcSigner });
-            }
-
-            const { data, params } = quote;
-
-            const layerZeroClient = new LayerZeroClient();
-
-            // The recipient address of the layer zero send, this contract will create the offramp order
-            const offrampComposer = '0xd455e08a6ecfac74e1a159fd3853ef14e6b99c7f';
-            const receiverAddress = toHexScriptPubKey(params.toUserAddress, bitcoin.networks.bitcoin);
-
-            const dstEid = await layerZeroClient.getEidForChain('bob');
-            if (!dstEid) {
-                throw new Error(`Destination EID not found for chain: ${fromChain}`);
-            }
-
-            const wbtcOftAddress = await layerZeroClient.getOftAddressForChain(fromChain);
-            if (!wbtcOftAddress) {
-                throw new Error(`WBTC OFT not found for chain: ${fromChain}`);
-            }
-
-            const extraOptions = encodePacked(
-                ['uint16', 'uint8', 'uint16', 'uint8', 'uint128', 'uint8', 'uint16', 'uint8', 'uint16', 'uint128'],
-                [
-                    // https://github.com/LayerZero-Labs/LayerZero-v2/blob/200cda254120375f40ed0a7e89931afb897b8891/packages/layerzero-v2/evm/oapp/contracts/oapp/libs/OptionsBuilder.sol#L22
-                    3, // TYPE_3
-                    // https://github.com/LayerZero-Labs/LayerZero-v2/blob/200cda254120375f40ed0a7e89931afb897b8891/packages/layerzero-v2/evm/messagelib/contracts/libs/ExecutorOptions.sol#L10
-                    1, // WORKER_ID
-                    17, // 16+1 option length
-                    1, // OPTION_TYPE_LZRECEIVE
-                    BigInt(100000),
-                    1, // WORKER_ID
-                    19, // 18+1 option length
-                    3, // OPTION_TYPE_LZCOMPOSE
-                    0, // index for compose function
-                    BigInt(300000), // gas limit for compose function
-                ]
-            );
-
-            const sendParam: SendParam = {
-                dstEid: parseInt(dstEid!, 10),
-                to: padHex(offrampComposer, { size: 32 }),
-                minAmountLD: BigInt(params.amount),
-                amountLD: BigInt(params.amount),
-                oftCmd: '0x',
-                extraOptions: extraOptions,
-                composeMsg: encodeAbiParameters(
-                    parseAbiParameters([
-                        '(uint256 satAmountToLock, uint256 satFeesMax, uint256 creationDeadline, bytes outputScript, address token, address owner)',
-                    ]),
-                    [
-                        {
-                            satAmountToLock: BigInt(data.amountLockInSat),
-                            satFeesMax: BigInt(data.feeBreakdown.overallFeeSats),
-                            creationDeadline: BigInt(data.deadline),
-                            outputScript: receiverAddress as Hex,
-                            token: data.token,
-                            owner: params.fromUserAddress as Address,
-                        },
-                    ]
-                ),
-            };
-
-            // we're quoting on the origin chain, so public client must be configured correctly
-            const maybeFromChainId = quote.params.fromChain;
-            if (typeof maybeFromChainId === 'number' && publicClient.chain?.id !== maybeFromChainId) {
-                // avoid matching on name since L0 and viem may have different naming conventions
-                throw new Error(`Public client must be origin chain`);
-            }
-
-            const sendFees = await publicClient.readContract({
-                abi: layerZeroOftAbi,
-                address: wbtcOftAddress as Hex,
-                functionName: 'quoteSend',
-                args: [sendParam, false],
-            });
-
-            const { request } = await publicClient.simulateContract({
-                account: walletClient.account,
-                abi: layerZeroOftAbi,
-                address: wbtcOftAddress as Hex,
-                functionName: 'send',
-                args: [sendParam, sendFees, params.fromUserAddress as Address],
-                value: sendFees.nativeFee,
-            });
-
-            const txHash = await walletClient.writeContract(request);
-            await publicClient.waitForTransactionReceipt({ hash: txHash });
-
-            return txHash;
-        } else {
-            throw new Error(`Unsupported chain combination: ${fromChain} -> ${toChain}`);
-        }
-    }
-}
-
-export class LayerZeroSendClient {
-    private l0Client: LayerZeroClient;
-    constructor(chainId: number, options?: { rpcUrl?: string }) {
-        this.l0Client = new LayerZeroClient();
-    }
-
-    async getSupportedChainsInfo(): Promise<Array<LayerZeroChainInfo>> {
-        return this.l0Client.getSupportedChainsInfo();
-    }
-
-    /**
-     * @deprecated Use getSupportedChainsInfo() instead
-     */
-    async getSupportedChains(): Promise<Array<string>> {
-        return this.l0Client.getSupportedChains();
-    }
-
-    /**
-     * @deprecated Use getSupportedChainsInfo() instead
-     */
-    async getEidForChain(chainKey: string): Promise<string | null> {
-        return this.l0Client.getEidForChain(chainKey);
-    }
-
-    /**
-     * Get the chain id for a given LayerZero EID
-     * @param eid LayerZero EID
-     * @returns chain id for the given eid if found
-     */
-    async getChainIdForEid(eid: string): Promise<number | null> {
-        return this.l0Client.getChainId(eid);
-    }
-
-    /**
-     * @deprecated Use getSupportedChainsInfo() instead
-     */
-    async getOftAddressForChain(chainKey: string): Promise<string | null> {
-        return this.l0Client.getOftAddressForChain(chainKey);
-    }
-
-    async getQuote(params: GetQuoteParams): Promise<ExecuteQuoteParams> {
-        const fromChain = resolveChainName(params.fromChain);
-        const toChain = resolveChainName(params.toChain);
-
-        if (fromChain !== 'bitcoin' && toChain !== 'bitcoin') {
-            // Handle l0 -> l0
-
+        } else if (fromChain !== 'bitcoin' && toChain !== 'bitcoin') {
             const dstEid = await this.l0Client.getEidForChain(toChain);
             if (!dstEid) {
                 throw new Error(`Destination EID not found for chain: ${toChain}`);
@@ -558,71 +396,174 @@ export class LayerZeroSendClient {
             });
 
             return {
-                type: 'layerzero-send',
+                type: GatewayOrderType.CrossChainSwap,
                 finalOutputSats: Number(params.amount),
                 finalFeeSats: 0, // LayerZero sends don't have Bitcoin fees
                 params,
                 data: {
-                    nativeFee: sendFees.nativeFee,
-                    lzTokenFee: sendFees.lzTokenFee,
+                    feeBreakdown: {
+                        nativeFee: sendFees.nativeFee,
+                        lzTokenFee: sendFees.lzTokenFee,
+                    },
                 },
             };
-        } else {
-            throw new Error(`LayerZeroSendClient does not support sending between ${fromChain} and ${toChain}`);
         }
+
+        throw new Error(`Unsupported chain combination: ${fromChain} -> ${toChain}`);
     }
 
     async executeQuote({
         quote,
         walletClient,
         publicClient,
+        btcSigner,
     }: { quote: ExecuteQuoteParams } & AllWalletClientParams): Promise<string> {
         const fromChain = resolveChainName(quote.params.fromChain);
         const toChain = resolveChainName(quote.params.toChain);
 
-        if (quote.type === 'layerzero-send') {
-            const { data, params } = quote;
-
-            const dstEid = await this.l0Client.getEidForChain(toChain);
-            if (!dstEid) {
-                throw new Error(`Destination EID not found for chain: ${toChain}`);
+        switch (quote.type) {
+            case GatewayOrderType.Onramp: {
+                return super.executeQuote({ quote, walletClient, publicClient, btcSigner });
             }
+            case GatewayOrderType.Offramp: {
+                if (fromChain === bob.name.toLowerCase()) {
+                    // Handle bob -> bitcoin, normal flow
+                    return super.executeQuote({ quote, walletClient, publicClient, btcSigner });
+                }
 
-            const wbtcOftAddress = await this.l0Client.getOftAddressForChain(fromChain);
-            if (!wbtcOftAddress) {
-                throw new Error(`WBTC OFT not found for chain: ${fromChain}`);
+                const { data, params } = quote;
+
+                const layerZeroClient = new LayerZeroClient();
+
+                // The recipient address of the layer zero send, this contract will create the offramp order
+                const offrampComposer = '0xd455e08a6ecfac74e1a159fd3853ef14e6b99c7f';
+                const receiverAddress = toHexScriptPubKey(params.toUserAddress, bitcoin.networks.bitcoin);
+
+                const dstEid = await layerZeroClient.getEidForChain('bob');
+                if (!dstEid) {
+                    throw new Error(`Destination EID not found for chain: ${fromChain}`);
+                }
+
+                const wbtcOftAddress = await layerZeroClient.getOftAddressForChain(fromChain);
+                if (!wbtcOftAddress) {
+                    throw new Error(`WBTC OFT not found for chain: ${fromChain}`);
+                }
+
+                const extraOptions = encodePacked(
+                    ['uint16', 'uint8', 'uint16', 'uint8', 'uint128', 'uint8', 'uint16', 'uint8', 'uint16', 'uint128'],
+                    [
+                        // https://github.com/LayerZero-Labs/LayerZero-v2/blob/200cda254120375f40ed0a7e89931afb897b8891/packages/layerzero-v2/evm/oapp/contracts/oapp/libs/OptionsBuilder.sol#L22
+                        3, // TYPE_3
+                        // https://github.com/LayerZero-Labs/LayerZero-v2/blob/200cda254120375f40ed0a7e89931afb897b8891/packages/layerzero-v2/evm/messagelib/contracts/libs/ExecutorOptions.sol#L10
+                        1, // WORKER_ID
+                        17, // 16+1 option length
+                        1, // OPTION_TYPE_LZRECEIVE
+                        BigInt(100000),
+                        1, // WORKER_ID
+                        19, // 18+1 option length
+                        3, // OPTION_TYPE_LZCOMPOSE
+                        0, // index for compose function
+                        BigInt(300000), // gas limit for compose function
+                    ]
+                );
+
+                const sendParam: SendParam = {
+                    dstEid: parseInt(dstEid!, 10),
+                    to: padHex(offrampComposer, { size: 32 }),
+                    minAmountLD: BigInt(params.amount),
+                    amountLD: BigInt(params.amount),
+                    oftCmd: '0x',
+                    extraOptions: extraOptions,
+                    composeMsg: encodeAbiParameters(
+                        parseAbiParameters([
+                            '(uint256 satAmountToLock, uint256 satFeesMax, uint256 creationDeadline, bytes outputScript, address token, address owner)',
+                        ]),
+                        [
+                            {
+                                satAmountToLock: BigInt(data.amountLockInSat),
+                                satFeesMax: BigInt(data.feeBreakdown.overallFeeSats),
+                                creationDeadline: BigInt(data.deadline),
+                                outputScript: receiverAddress as Hex,
+                                token: data.token,
+                                owner: params.fromUserAddress as Address,
+                            },
+                        ]
+                    ),
+                };
+
+                // we're quoting on the origin chain, so public client must be configured correctly
+                const maybeFromChainId = quote.params.fromChain;
+                if (typeof maybeFromChainId === 'number' && publicClient.chain?.id !== maybeFromChainId) {
+                    // avoid matching on name since L0 and viem may have different naming conventions
+                    throw new Error(`Public client must be origin chain`);
+                }
+
+                const sendFees = await publicClient.readContract({
+                    abi: layerZeroOftAbi,
+                    address: wbtcOftAddress as Hex,
+                    functionName: 'quoteSend',
+                    args: [sendParam, false],
+                });
+
+                const { request } = await publicClient.simulateContract({
+                    account: walletClient.account,
+                    abi: layerZeroOftAbi,
+                    address: wbtcOftAddress as Hex,
+                    functionName: 'send',
+                    args: [sendParam, sendFees, params.fromUserAddress as Address],
+                    value: sendFees.nativeFee,
+                });
+
+                const txHash = await walletClient.writeContract(request);
+                await publicClient.waitForTransactionReceipt({ hash: txHash });
+
+                return txHash;
             }
+            case GatewayOrderType.CrossChainSwap: {
+                const { data, params } = quote;
 
-            const sendParam: SendParam = {
-                dstEid: parseInt(dstEid!, 10),
-                to: padHex(params.toUserAddress as Hex) as Hex,
-                amountLD: BigInt(params.amount),
-                minAmountLD: BigInt(params.amount),
-                extraOptions: '0x',
-                composeMsg: '0x',
-                oftCmd: '0x',
-            };
+                const dstEid = await this.l0Client.getEidForChain(toChain);
+                if (!dstEid) {
+                    throw new Error(`Destination EID not found for chain: ${toChain}`);
+                }
 
-            const sendFees = {
-                nativeFee: data.nativeFee,
-                lzTokenFee: data.lzTokenFee,
-            };
+                const wbtcOftAddress = await this.l0Client.getOftAddressForChain(fromChain);
+                if (!wbtcOftAddress) {
+                    throw new Error(`WBTC OFT not found for chain: ${fromChain}`);
+                }
 
-            const { request } = await publicClient.simulateContract({
-                account: walletClient.account,
-                abi: layerZeroOftAbi,
-                address: wbtcOftAddress as Hex,
-                functionName: 'send',
-                args: [sendParam, sendFees, params.fromUserAddress as Address],
-                value: sendFees.nativeFee,
-            });
+                const sendParam: SendParam = {
+                    dstEid: parseInt(dstEid!, 10),
+                    to: padHex(params.toUserAddress as Hex) as Hex,
+                    amountLD: BigInt(params.amount),
+                    minAmountLD: BigInt(params.amount),
+                    extraOptions: '0x',
+                    composeMsg: '0x',
+                    oftCmd: '0x',
+                };
 
-            const txHash = await walletClient.writeContract(request);
-            await publicClient.waitForTransactionReceipt({ hash: txHash });
+                const sendFees = {
+                    nativeFee: data.feeBreakdown.nativeFee,
+                    lzTokenFee: data.feeBreakdown.lzTokenFee,
+                };
 
-            return txHash;
-        } else {
-            throw new Error(`Unsupported quote type: ${quote.type}`);
+                const { request } = await publicClient.simulateContract({
+                    account: walletClient.account,
+                    abi: layerZeroOftAbi,
+                    address: wbtcOftAddress as Hex,
+                    functionName: 'send',
+                    args: [sendParam, sendFees, params.fromUserAddress as Address],
+                    value: sendFees.nativeFee,
+                });
+
+                const txHash = await walletClient.writeContract(request);
+                await publicClient.waitForTransactionReceipt({ hash: txHash });
+
+                return txHash;
+            }
+            default:
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                throw new Error(`Unsupported quote type: ${(quote as any).type}`);
         }
     }
 }

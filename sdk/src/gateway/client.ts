@@ -7,15 +7,15 @@ import {
     Hash,
     Hex,
     isAddress,
+    isAddressEqual,
     maxUint256,
+    parseEther,
     PublicClient,
+    toHex,
     Transport,
     Chain as ViemChain,
     WalletClient,
     zeroAddress,
-    parseEther,
-    toHex,
-    isAddressEqual,
 } from 'viem';
 import { bob, bobSepolia } from 'viem/chains';
 import { EsploraClient } from '../esplora';
@@ -27,16 +27,19 @@ import { ADDRESS_LOOKUP, getTokenAddress, getTokenDecimals, getTokenSlots } from
 import {
     BitcoinSigner,
     BumpFeeParams,
+    CrossChainOrder,
     EnrichedToken,
-    LayerZeroSendOrder,
     ExecuteQuoteParams,
     GatewayCreateOrderRequestPayload,
     GatewayCreateOrderResponse,
+    GatewayOrder,
+    GatewayOrderType,
     GatewayStartOrder,
     GatewayStrategy,
     GatewayStrategyContract,
     GatewayTokensInfo,
     GetQuoteParams,
+    LayerZeroMessagesWalletResponse,
     OfframpCreateOrderParams,
     OfframpLiquidity,
     OfframpOrder,
@@ -47,9 +50,9 @@ import {
     OnrampFeeBreakdownRaw,
     OnrampOrder,
     OnrampOrderResponse,
+    OnrampOrderStatus,
     OnrampQuote,
     OrderDetailsRaw,
-    OrderStatus,
     StrategyParams,
     Token,
     UnlockOrderParams,
@@ -62,6 +65,7 @@ import {
     convertOrderDetailsToRaw,
     formatBtc,
     getChainConfig,
+    getCrossChainStatus,
     parseOrderStatus,
     slugify,
     stripHexPrefix,
@@ -197,7 +201,7 @@ export class GatewayApiClient {
             // NOTE: toChain validation is performed inside `getOnrampQuote` method
             const data = await this.getOnrampQuote(params);
             return {
-                type: 'onramp',
+                type: GatewayOrderType.Onramp,
                 params,
                 finalOutputSats: data.outputSatoshis,
                 finalFeeSats: data.feeBreakdown.overallFeeSats,
@@ -214,7 +218,7 @@ export class GatewayApiClient {
             }
 
             return {
-                type: 'offramp',
+                type: GatewayOrderType.Offramp,
                 params,
                 finalOutputSats: data.amountReceiveInSat,
                 finalFeeSats: data.feeBreakdown.overallFeeSats,
@@ -1208,7 +1212,7 @@ export class GatewayApiClient {
                 getTokens,
                 getOutputTokens,
                 getConfirmations,
-                async getStatus(esploraClient: EsploraClient, latestHeight?: number): Promise<OrderStatus> {
+                async getStatus(esploraClient: EsploraClient, latestHeight?: number): Promise<OnrampOrderStatus> {
                     const confirmations = await getConfirmations(esploraClient, latestHeight);
                     const hasEnoughConfirmations = confirmations >= order.txProofDifficultyFactor;
                     const data = { confirmations };
@@ -1389,33 +1393,26 @@ export class GatewayApiClient {
     }
 
     /**
-     * Retrieves all orders (onramp, offramp, and layerzero sends) for a specific user address.
+     * Retrieves all orders (onramp, offramp, and crosschain swaps) for a specific user address.
      *
      * @param userAddress The user's EVM address
      * @returns Promise resolving to array of typed orders
      */
-    async getOrders(
-        userAddress: Address
-    ): Promise<
-        Array<
-            | { type: 'onramp'; order: OnrampOrder }
-            | { type: 'offramp'; order: OfframpOrder }
-            | { type: 'layerzero-send'; order: LayerZeroSendOrder }
-        >
-    > {
-        const [onrampOrders, offrampOrders, layerZeroSendOrders] = await Promise.all([
+    async getOrders(userAddress: Address): Promise<Array<GatewayOrder>> {
+        const [onrampOrders, offrampOrders, crossChainSwapOrders] = await Promise.all([
             this.getOnrampOrders(userAddress),
             this.getOfframpOrders(userAddress),
-            this.getLayerZeroSendOrders(userAddress),
+            this.getCrossChainSwapOrders(userAddress),
         ]);
+
         return [
-            ...onrampOrders.map((order) => ({ type: 'onramp' as const, order })),
-            ...offrampOrders.map((order) => ({ type: 'offramp' as const, order })),
-            ...layerZeroSendOrders.map((order) => ({ type: 'layerzero-send' as const, order })),
+            ...onrampOrders.map((order) => ({ type: GatewayOrderType.Onramp as const, order })),
+            ...offrampOrders.map((order) => ({ type: GatewayOrderType.Offramp as const, order })),
+            ...crossChainSwapOrders.map((order) => ({ type: GatewayOrderType.CrossChainSwap as const, order })),
         ];
     }
 
-    async getLayerZeroSendOrders(_userAddress: Address): Promise<LayerZeroSendOrder[]> {
+    async getCrossChainSwapOrders(_userAddress: Address): Promise<CrossChainOrder[]> {
         const url = new URL(`https://scan.layerzero-api.com/v1/messages/wallet/${_userAddress}`);
 
         const response = await this.safeFetch(url.toString(), undefined, 'Failed to fetch LayerZero send orders');
@@ -1425,59 +1422,43 @@ export class GatewayApiClient {
             throw new Error(errorData?.message || 'Failed to fetch LayerZero send orders');
         }
 
-        const json = (await response.json()) as {
-            data?: Array<{
-                pathway?: { srcEid?: number | string; dstEid?: number | string };
-                source?: {
-                    status?: string;
-                    tx?: { txHash?: string | null; blockTimestamp?: number; payload?: string | null };
-                };
-                destination?: {
-                    status?: string;
-                    tx?: { txHash?: string | null; blockTimestamp?: number };
-                    lzCompose?: { status?: string };
-                };
-            }>;
-        };
+        const json: LayerZeroMessagesWalletResponse = await response.json();
 
-        const items = (json.data ?? []).filter((item) => item.destination?.lzCompose?.status === 'N/A');
+        const items = json.data.filter((item) => item.destination.lzCompose.status === 'N/A');
 
-        return items.map((item) => {
-            const sourceStatus = item.source?.status ?? 'UNKNOWN';
-            const destinationStatus = item.destination?.status ?? 'UNKNOWN';
-            const sourceTxHash = item.source?.tx?.txHash ?? null;
-            const destinationTxHash = item.destination?.tx?.txHash ?? null;
-            const orderTimestamp = item.source?.tx?.blockTimestamp ?? null;
-            const payload = item.source?.tx?.payload ?? null;
-            let orderSize = 0n;
-            if (payload && typeof payload === 'string') {
-                const hex = payload.startsWith('0x') ? payload.slice(2) : payload;
-                if (hex.length >= 16) {
-                    const last16 = hex.slice(-16);
-                    try {
-                        orderSize = BigInt('0x' + last16);
-                    } catch {
-                        orderSize = 0n;
-                    }
+        return items.map((item): CrossChainOrder => {
+            const { payload, blockTimestamp, txHash: sourceTxHash } = item.source.tx;
+            const { txHash: destinationTxHash } = item.destination.tx;
+
+            let amount = 0n;
+
+            const hex = payload.startsWith('0x') ? payload.slice(2) : payload;
+            if (hex.length >= 16) {
+                const last16 = hex.slice(-16);
+                try {
+                    amount = BigInt('0x' + last16);
+                } catch {
+                    amount = 0n;
                 }
             }
-            const srcEidRaw = item.pathway?.srcEid ?? null;
-            const dstEidRaw = item.pathway?.dstEid ?? null;
-            const sourceEid =
-                srcEidRaw === null ? null : typeof srcEidRaw === 'string' ? parseInt(srcEidRaw, 10) : srcEidRaw;
-            const destinationEid =
-                dstEidRaw === null ? null : typeof dstEidRaw === 'string' ? parseInt(dstEidRaw, 10) : dstEidRaw;
 
             return {
-                orderSize,
-                orderTimestamp,
-                sourceEid,
-                sourceTxHash,
-                sourceStatus,
-                destinationTxHash,
-                destinationEid,
-                destinationStatus,
-            } as LayerZeroSendOrder;
+                amount,
+                timestamp: blockTimestamp,
+                status: getCrossChainStatus(item),
+                source: {
+                    eid: item.pathway.srcEid,
+
+                    txHash: sourceTxHash,
+                    token: item.pathway.sender.address as Address,
+                },
+                destination: {
+                    eid: item.pathway.dstEid,
+
+                    txHash: destinationTxHash,
+                    token: item.pathway.receiver.address as Address,
+                },
+            };
         });
     }
 
