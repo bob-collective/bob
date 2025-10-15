@@ -1,6 +1,6 @@
 import ecc from '@bitcoinerlab/secp256k1';
 import * as bitcoin from 'bitcoinjs-lib';
-import { Address, encodeAbiParameters, encodePacked, Hex, isHex, padHex, parseAbiParameters } from 'viem';
+import { Address, encodeAbiParameters, encodePacked, Hex, padHex, parseAbiParameters } from 'viem';
 import { bob, bobSepolia } from 'viem/chains';
 import { layerZeroOftAbi, quoterV2Abi } from './abi';
 import { AllWalletClientParams, GatewayApiClient } from './client';
@@ -188,10 +188,6 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
     }
 
     async getQuote(params: GetQuoteParams<LayerZeroQuoteParamsExt>): Promise<ExecuteQuoteParams> {
-        if (!isHex(params.toUserAddress)) {
-            throw new Error('toUserAddress must be a hex string');
-        }
-
         const fromChain = resolveChainName(params.fromChain);
         const toChain = resolveChainName(params.toChain);
 
@@ -229,7 +225,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
 
             const sendParam: LayerZeroSendParam = {
                 dstEid,
-                to: padHex(params.toUserAddress),
+                to: padHex(params.toUserAddress as Hex),
                 amountLD: BigInt(0), // will be added inside the strategy
                 minAmountLD: BigInt(0), // will be added inside the strategy
                 extraOptions: extraOptions,
@@ -347,7 +343,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
 
             const sendParam: LayerZeroSendParam = {
                 dstEid,
-                to: padHex(params.toUserAddress),
+                to: padHex(params.toUserAddress as Hex),
                 amountLD: BigInt(params.amount),
                 minAmountLD: BigInt(params.amount),
                 extraOptions: '0x',

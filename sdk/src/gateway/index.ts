@@ -8,12 +8,12 @@ export {
     CrossChainSwapQuote,
     CrossChainSwapQuoteParams,
     ExecuteQuoteParams,
+    GatewayOrderType,
     GatewayQuoteParams,
     GatewayStrategyContract,
     GetQuoteParams,
     OfframpOrder,
     OnrampOrder,
     OnrampOrderStatus,
-    GatewayOrderType,
 } from './types';
 export { parseBtc } from './utils';
