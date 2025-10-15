@@ -1,4 +1,7 @@
 import { Address, Hex } from 'viem';
+import { OnrampOrder } from './onramp';
+import { OfframpOrder } from './offramp';
+import { CrossChainOrder } from './crosschain-swap';
 
 export type OrderDetailsRaw = {
     version: string;
@@ -82,3 +85,8 @@ export enum GatewayOrderType {
     Offramp = 'offramp',
     CrossChainSwap = 'crosschain-swap',
 }
+
+export type GatewayOrder =
+    | { type: GatewayOrderType.Onramp; order: OnrampOrder }
+    | { type: GatewayOrderType.Offramp; order: OfframpOrder }
+    | { type: GatewayOrderType.CrossChainSwap; order: CrossChainOrder };

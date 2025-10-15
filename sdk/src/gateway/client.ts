@@ -32,6 +32,7 @@ import {
     ExecuteQuoteParams,
     GatewayCreateOrderRequestPayload,
     GatewayCreateOrderResponse,
+    GatewayOrder,
     GatewayOrderType,
     GatewayStartOrder,
     GatewayStrategy,
@@ -1394,28 +1395,21 @@ export class GatewayApiClient {
      * @param userAddress The user's EVM address
      * @returns Promise resolving to array of typed orders
      */
-    async getOrders(
-        userAddress: Address
-    ): Promise<
-        Array<
-            | { type: 'onramp'; order: OnrampOrder }
-            | { type: 'offramp'; order: OfframpOrder }
-            | { type: 'crosschain-swap'; order: CrossChainOrder }
-        >
-    > {
+    async getOrders(userAddress: Address): Promise<Array<GatewayOrder>> {
         const [onrampOrders, offrampOrders, crossChainSwapOrders] = await Promise.all([
             this.getOnrampOrders(userAddress),
             this.getOfframpOrders(userAddress),
-            this.getCrossChainSwapsOrders(userAddress),
+            this.getCrossChainSwapOrders(userAddress),
         ]);
+
         return [
-            ...onrampOrders.map((order) => ({ type: 'onramp' as const, order })),
-            ...offrampOrders.map((order) => ({ type: 'offramp' as const, order })),
-            ...crossChainSwapOrders.map((order) => ({ type: 'crosschain-swap' as const, order })),
+            ...onrampOrders.map((order) => ({ type: GatewayOrderType.Onramp as const, order })),
+            ...offrampOrders.map((order) => ({ type: GatewayOrderType.Offramp as const, order })),
+            ...crossChainSwapOrders.map((order) => ({ type: GatewayOrderType.CrossChainSwap as const, order })),
         ];
     }
 
-    async getCrossChainSwapsOrders(_userAddress: Address): Promise<CrossChainOrder[]> {
+    async getCrossChainSwapOrders(_userAddress: Address): Promise<CrossChainOrder[]> {
         const url = new URL(`https://scan.layerzero-api.com/v1/messages/wallet/${_userAddress}`);
 
         const response = await this.safeFetch(url.toString(), undefined, 'Failed to fetch LayerZero send orders');
