@@ -4,57 +4,19 @@ import { Address, encodeAbiParameters, encodePacked, Hex, padHex, parseAbiParame
 import { bob, bobSepolia } from 'viem/chains';
 import { layerZeroOftAbi, quoterV2Abi } from './abi';
 import { AllWalletClientParams, GatewayApiClient } from './client';
-import { ExecuteQuoteParams, GatewayOrderType, GetQuoteParams } from './types';
+import {
+    ExecuteQuoteParams,
+    GatewayOrderType,
+    GetQuoteParams,
+    LayerZeroChainInfo,
+    LayerZeroDeploymentsMetadata,
+    LayerZeroQuoteParamsExt,
+    LayerZeroSendParam,
+    LayerZeroTokenDeployments,
+} from './types';
 import { getChainConfig, toHexScriptPubKey, viemClient } from './utils';
 
 bitcoin.initEccLib(ecc);
-
-type SendParam = {
-    dstEid: number;
-    to: Hex;
-    amountLD: bigint;
-    minAmountLD: bigint;
-    extraOptions: Hex;
-    composeMsg: Hex;
-    oftCmd: Hex;
-};
-
-type LayerZeroChainInfo = {
-    name: string;
-    eid?: string;
-    oftAddress: string;
-    nativeChainId?: number;
-};
-
-type LayerZeroDeploymentsMetadata = {
-    [chainKey: string]: {
-        deployments?: [
-            {
-                version: number;
-                eid: string;
-            },
-        ];
-        chainKey: string;
-        chainDetails?: {
-            nativeChainId: number;
-        };
-    };
-};
-
-type LayerZeroTokenDeployments = {
-    [chainKey: string]: {
-        address: string;
-    };
-};
-
-interface LayerZeroQuoteParamsExt {
-    /** @description temporary field for chain ID */
-    l0ChainId?: number | null;
-    /** @description Buffer in BPS to account for Bitcoin to BOB finality delay (30 mins+) when using the L0 Strategy */
-    l0OriginFinalityBuffer?: number | bigint;
-    /** @description Buffer in BPS to account for BOB to destination finality delay (a few minutes) when using the L0 Strategy */
-    l0DestinationFinalityBuffer?: number | bigint;
-}
 
 export class LayerZeroClient {
     private basePath: string;
@@ -260,7 +222,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                 ]
             );
 
-            const sendParam: SendParam = {
+            const sendParam: LayerZeroSendParam = {
                 dstEid: parseInt(dstEid!, 10),
                 to: padHex(params.toUserAddress as Hex) as Hex,
                 amountLD: BigInt(0), // will be added inside the strategy
@@ -378,7 +340,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
             const chain = getChainConfig(params.fromChain);
             const publicClient = viemClient(chain);
 
-            const sendParam: SendParam = {
+            const sendParam: LayerZeroSendParam = {
                 dstEid: parseInt(dstEid!, 10),
                 to: padHex(params.toUserAddress as Hex) as Hex,
                 amountLD: BigInt(params.amount),
@@ -467,7 +429,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                     ]
                 );
 
-                const sendParam: SendParam = {
+                const sendParam: LayerZeroSendParam = {
                     dstEid: parseInt(dstEid!, 10),
                     to: padHex(offrampComposer, { size: 32 }),
                     minAmountLD: BigInt(params.amount),
@@ -532,7 +494,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                     throw new Error(`WBTC OFT not found for chain: ${fromChain}`);
                 }
 
-                const sendParam: SendParam = {
+                const sendParam: LayerZeroSendParam = {
                     dstEid: parseInt(dstEid!, 10),
                     to: padHex(params.toUserAddress as Hex) as Hex,
                     amountLD: BigInt(params.amount),
