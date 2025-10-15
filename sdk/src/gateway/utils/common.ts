@@ -1,4 +1,18 @@
-import { createPublicClient, http, zeroAddress, Chain as ViemChain } from 'viem';
+import * as bitcoin from 'bitcoinjs-lib';
+import {
+    Address,
+    createPublicClient,
+    encodeAbiParameters,
+    formatUnits,
+    Hex,
+    http,
+    keccak256,
+    parseAbiParameters,
+    parseUnits,
+    Chain as ViemChain,
+    zeroAddress,
+} from 'viem';
+import { avalanche, base, berachain, bob, bsc, mainnet, optimism, sei, soneium, sonic, unichain } from 'viem/chains';
 import {
     GatewayCreateOrderRequest,
     OfframpOrderStatus,
@@ -6,10 +20,7 @@ import {
     OnrampFeeBreakdownRaw,
     OrderDetails,
     OrderDetailsRaw,
-} from './types';
-import { encodeAbiParameters, parseAbiParameters, keccak256, parseUnits, formatUnits, Address, Hex } from 'viem';
-import * as bitcoin from 'bitcoinjs-lib';
-import { avalanche, base, berachain, bob, bsc, mainnet, optimism, sei, soneium, sonic, unichain } from 'viem/chains';
+} from '../types';
 
 /**
  * Should compute the same OP_RETURN hash as the Gateway API and smart contracts.

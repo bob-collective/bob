@@ -7,15 +7,15 @@ import {
     Hash,
     Hex,
     isAddress,
+    isAddressEqual,
     maxUint256,
+    parseEther,
     PublicClient,
+    toHex,
     Transport,
     Chain as ViemChain,
     WalletClient,
     zeroAddress,
-    parseEther,
-    toHex,
-    isAddressEqual,
 } from 'viem';
 import { bob, bobSepolia } from 'viem/chains';
 import { EsploraClient } from '../esplora';
@@ -27,16 +27,18 @@ import { ADDRESS_LOOKUP, getTokenAddress, getTokenDecimals, getTokenSlots } from
 import {
     BitcoinSigner,
     BumpFeeParams,
+    CrossChainOrder,
     EnrichedToken,
-    LayerZeroSendOrder,
     ExecuteQuoteParams,
     GatewayCreateOrderRequestPayload,
     GatewayCreateOrderResponse,
+    GatewayOrderType,
     GatewayStartOrder,
     GatewayStrategy,
     GatewayStrategyContract,
     GatewayTokensInfo,
     GetQuoteParams,
+    LayerZeroMessagesWalletResponse,
     OfframpCreateOrderParams,
     OfframpLiquidity,
     OfframpOrder,
@@ -47,9 +49,9 @@ import {
     OnrampFeeBreakdownRaw,
     OnrampOrder,
     OnrampOrderResponse,
+    OnrampOrderStatus,
     OnrampQuote,
     OrderDetailsRaw,
-    OrderStatus,
     StrategyParams,
     Token,
     UnlockOrderParams,
@@ -62,6 +64,7 @@ import {
     convertOrderDetailsToRaw,
     formatBtc,
     getChainConfig,
+    getCrossChainStatus,
     parseOrderStatus,
     slugify,
     stripHexPrefix,
@@ -197,7 +200,7 @@ export class GatewayApiClient {
             // NOTE: toChain validation is performed inside `getOnrampQuote` method
             const data = await this.getOnrampQuote(params);
             return {
-                type: 'onramp',
+                type: GatewayOrderType.Onramp,
                 params,
                 finalOutputSats: data.outputSatoshis,
                 finalFeeSats: data.feeBreakdown.overallFeeSats,
@@ -214,7 +217,7 @@ export class GatewayApiClient {
             }
 
             return {
-                type: 'offramp',
+                type: GatewayOrderType.Offramp,
                 params,
                 finalOutputSats: data.amountReceiveInSat,
                 finalFeeSats: data.feeBreakdown.overallFeeSats,
@@ -1205,7 +1208,7 @@ export class GatewayApiClient {
                 getTokens,
                 getOutputTokens,
                 getConfirmations,
-                async getStatus(esploraClient: EsploraClient, latestHeight?: number): Promise<OrderStatus> {
+                async getStatus(esploraClient: EsploraClient, latestHeight?: number): Promise<OnrampOrderStatus> {
                     const confirmations = await getConfirmations(esploraClient, latestHeight);
                     const hasEnoughConfirmations = confirmations >= order.txProofDifficultyFactor;
                     const data = { confirmations };
@@ -1386,7 +1389,7 @@ export class GatewayApiClient {
     }
 
     /**
-     * Retrieves all orders (onramp, offramp, and layerzero sends) for a specific user address.
+     * Retrieves all orders (onramp, offramp, and crosschain swaps) for a specific user address.
      *
      * @param userAddress The user's EVM address
      * @returns Promise resolving to array of typed orders
@@ -1397,22 +1400,22 @@ export class GatewayApiClient {
         Array<
             | { type: 'onramp'; order: OnrampOrder }
             | { type: 'offramp'; order: OfframpOrder }
-            | { type: 'layerzero-send'; order: LayerZeroSendOrder }
+            | { type: 'crosschain-swap'; order: CrossChainOrder }
         >
     > {
-        const [onrampOrders, offrampOrders, layerZeroSendOrders] = await Promise.all([
+        const [onrampOrders, offrampOrders, crossChainSwapOrders] = await Promise.all([
             this.getOnrampOrders(userAddress),
             this.getOfframpOrders(userAddress),
-            this.getLayerZeroSendOrders(userAddress),
+            this.getCrossChainSwapsOrders(userAddress),
         ]);
         return [
             ...onrampOrders.map((order) => ({ type: 'onramp' as const, order })),
             ...offrampOrders.map((order) => ({ type: 'offramp' as const, order })),
-            ...layerZeroSendOrders.map((order) => ({ type: 'layerzero-send' as const, order })),
+            ...crossChainSwapOrders.map((order) => ({ type: 'crosschain-swap' as const, order })),
         ];
     }
 
-    async getLayerZeroSendOrders(_userAddress: Address): Promise<LayerZeroSendOrder[]> {
+    async getCrossChainSwapsOrders(_userAddress: Address): Promise<CrossChainOrder[]> {
         const url = new URL(`https://scan.layerzero-api.com/v1/messages/wallet/${_userAddress}`);
 
         const response = await this.safeFetch(url.toString(), undefined, 'Failed to fetch LayerZero send orders');
@@ -1422,50 +1425,11 @@ export class GatewayApiClient {
             throw new Error(errorData?.message || 'Failed to fetch LayerZero send orders');
         }
 
-        const json = (await response.json()) as {
-            data: Array<{
-                pathway: {
-                    srcEid: number;
-                    dstEid: number;
-                    sender: {
-                        address: string;
-                        id: string;
-                        name: string;
-                        chain: string;
-                    };
-                    receiver: {
-                        address: string;
-                        id: string;
-                        name: string;
-                        chain: string;
-                    };
-                };
-                source: {
-                    status: string;
-                    tx: {
-                        txHash: string;
-                        blockHash: string;
-                        blockNumber: string;
-                        blockTimestamp: number;
-                        payload: string;
-                    };
-                };
-                destination: {
-                    status: string;
-                    tx: {
-                        txHash: string;
-                        blockHash: string;
-                        blockNumber: number;
-                        blockTimestamp: number;
-                    };
-                    lzCompose: { status: string };
-                };
-            }>;
-        };
+        const json: LayerZeroMessagesWalletResponse = await response.json();
 
-        const items = (json.data ?? []).filter((item) => item.destination.lzCompose.status === 'N/A');
+        const items = json.data.filter((item) => item.destination.lzCompose.status === 'N/A');
 
-        return items.map((item): LayerZeroSendOrder => {
+        return items.map((item): CrossChainOrder => {
             const { payload, blockTimestamp, txHash: sourceTxHash } = item.source.tx;
             const { txHash: destinationTxHash } = item.destination.tx;
 
@@ -1484,18 +1448,7 @@ export class GatewayApiClient {
             return {
                 amount,
                 timestamp: blockTimestamp,
-                status:
-                    item.source.status === 'WAITING'
-                        ? 'source-pending'
-                        : item.source.status === 'SIMULATION_REVERTED'
-                          ? 'source-failed'
-                          : item.source.status === 'SUCCEEDED' && item.destination.status === 'WAITING'
-                            ? 'destination-pending'
-                            : item.source.status === 'SUCCEEDED' && item.destination.status === 'SUCCEEDED'
-                              ? 'destination-confirmed'
-                              : item.source.status === 'SUCCEEDED' && item.destination.status === 'SIMULATION_REVERTED'
-                                ? 'destination-failed'
-                                : 'unknown',
+                status: getCrossChainStatus(item),
                 source: {
                     eid: item.pathway.srcEid,
 
