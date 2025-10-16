@@ -283,6 +283,93 @@ describe('LayerZero Tests', () => {
             expect(getCrossChainStatus(message)).toBe('unknown');
         });
     });
+
+    describe('getL0CreateOrderGasCost', () => {
+        it('should estimate gas cost for order creation', async () => {
+            // Arrange
+            const l0Client = {
+                getOftAddressForChain: async () => '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
+            };
+            const publicClient = {
+                estimateFeesPerGas: async () => ({ maxFeePerGas: BigInt(100) }),
+                getGasPrice: async () => BigInt(100),
+                estimateContractGas: async () => BigInt(21000),
+            };
+            const client = new TestLayerZeroGatewayClient(bob.id, l0Client, publicClient);
+
+            // Mock params
+            const params = {
+                fromChain: 'bob',
+                l0ChainId: bob.id,
+                fromUserAddress: '0x1111111111111111111111111111111111111111',
+                toUserAddress: '0x2222222222222222222222222222222222222222',
+                amount: 1000,
+                toChain: 'optimism',
+                fromToken: 'wbtc',
+                toToken: 'wbtc',
+            };
+            const sendParams = {
+                dstEid: 30111,
+                to: '0x2222222222222222222222222222222222222222', // valid hex string
+                amountLD: BigInt(1000),
+                minAmountLD: BigInt(1000),
+                extraOptions: '0x',
+                composeMsg: '0x',
+                oftCmd: '0x',
+            };
+            const sendFees = {
+                nativeFee: BigInt(100000),
+                lzTokenFee: BigInt(50000),
+            };
+            const fromChain = 'bob';
+
+            // Act
+            const result = await client.getL0CreateOrderGasCost(params, sendParams as any, sendFees, fromChain);
+
+            // Assert
+            expect(result).toBe(BigInt(21000 * 100));
+        });
+
+        it('should throw error if WBTC OFT address is missing', async () => {
+            const l0Client = {
+                getOftAddressForChain: async () => null,
+            };
+            const publicClient = {
+                estimateFeesPerGas: async () => ({ maxFeePerGas: BigInt(100) }),
+                getGasPrice: async () => BigInt(100),
+                estimateContractGas: async () => BigInt(21000),
+            };
+            const client = new TestLayerZeroGatewayClient(bob.id, l0Client, publicClient);
+            const params = {
+                fromChain: 'bob',
+                l0ChainId: bob.id,
+                fromUserAddress: '0x1111111111111111111111111111111111111111',
+                toUserAddress: '0x2222222222222222222222222222222222222222',
+                amount: 1000,
+                toChain: 'optimism',
+                fromToken: 'wbtc',
+                toToken: 'wbtc',
+            };
+            const sendParams = {
+                dstEid: 30111,
+                to: '0x2222222222222222222222222222222222222222', // valid hex string
+                amountLD: BigInt(1000),
+                minAmountLD: BigInt(1000),
+                extraOptions: '0x',
+                composeMsg: '0x',
+                oftCmd: '0x',
+            };
+            const sendFees = {
+                nativeFee: BigInt(100000),
+                lzTokenFee: BigInt(50000),
+            };
+            const fromChain = 'bob';
+
+            await expect(
+                client.getL0CreateOrderGasCost(params, sendParams as any, sendFees, fromChain)
+            ).rejects.toThrow('WBTC OFT not found for chain: 40184');
+        });
+    });
 });
 
 /**
@@ -344,5 +431,19 @@ class ScureBitcoinSigner implements BitcoinSigner {
      */
     async getP2WPKHAddress(): Promise<string> {
         return btc.getAddress('wpkh', this.privateKey) as string;
+    }
+}
+
+class TestLayerZeroGatewayClient extends (await import('../src/gateway/layerzero')).LayerZeroGatewayClient {
+    _publicClient: any;
+    constructor(chainId: number, l0Client: any, publicClient: any) {
+        super(chainId);
+        // @ts-ignore
+        this.l0Client = l0Client;
+        this._publicClient = publicClient;
+    }
+    // @ts-ignore
+    get publicClient() {
+        return this._publicClient;
     }
 }
