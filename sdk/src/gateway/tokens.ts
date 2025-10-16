@@ -464,12 +464,12 @@ export function getTokenAddress(chainId: number, token: string): Address {
         throw new Error('Unknown output token');
     }
 }
-export function getTokenSlots(tokenAddress: Address, chainId: number): { allowanceSlot: bigint; balanceSlot: bigint } {
+export function getTokenSlots(tokenAddress: Address, chainId: string): { allowanceSlot: bigint; balanceSlot: bigint } {
     const lowerAddress = tokenAddress.toLowerCase();
 
     // Look up the token in the master TOKENS array
     const token = TOKENS.find((t) => {
-        const chainToken = t.tokens[bob.id === chainId ? 'bob' : 'bob-sepolia'];
+        const chainToken = t.tokens[chainId];
         return chainToken?.address.toLowerCase() === lowerAddress;
     });
 

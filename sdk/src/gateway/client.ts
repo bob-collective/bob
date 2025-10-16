@@ -274,7 +274,10 @@ export class GatewayApiClient {
 
         const fee = feeValues.maxFeePerGas ?? gasPrice;
 
-        const slots = getTokenSlots(offrampOrder.quote.token as Address, this.chainId);
+        const slots = getTokenSlots(
+            offrampOrder.quote.token as Address,
+            this.chainId === bob.id ? 'bob' : 'bob-sepolia'
+        );
         const user = params.fromUserAddress;
 
         const allowanceSlot = computeAllowanceSlot(

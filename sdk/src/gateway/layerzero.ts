@@ -588,12 +588,12 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
         const user = params.fromUserAddress;
 
         // WBTC OFT
-        const wbtcOftSlots = getTokenSlots(wbtcOftAddress as Address, chain.id);
+        const wbtcOftSlots = getTokenSlots(wbtcOftAddress as Address, fromChain);
 
         const oftBalanceSlot = computeBalanceSlot(user as Address, wbtcOftSlots.balanceSlot);
 
         // WBTC mainnet
-        const wbtcMainnetSlots = getTokenSlots(wbtcMainnetAddress, mainnet.id);
+        const wbtcMainnetSlots = getTokenSlots(wbtcMainnetAddress, 'mainnet');
         const allowanceSlot = computeAllowanceSlot(
             user as Address,
             wbtcMainnetAddress as Address,
