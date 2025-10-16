@@ -466,17 +466,20 @@ export function getTokenAddress(chainId: number, token: string): Address {
         throw new Error('Unknown output token');
     }
 }
-export function getTokenSlots(tokenAddress: Address, chainId: string): { allowanceSlot: bigint; balanceSlot: bigint } {
+export function getTokenSlots(
+    tokenAddress: Address,
+    originChain: string
+): { allowanceSlot: bigint; balanceSlot: bigint } {
     const lowerAddress = tokenAddress.toLowerCase();
 
     // Look up the token in the master TOKENS array
     const token = TOKENS.find((t) => {
-        const chainToken = t.tokens[chainId];
+        const chainToken = t.tokens[originChain];
         return chainToken?.address.toLowerCase() === lowerAddress;
     });
 
     if (!token) {
-        throw new Error(`Token not found for address ${tokenAddress} on chain ${chainId}`);
+        throw new Error(`Token not found for address ${tokenAddress} on chain ${originChain}`);
     }
 
     // Check if slots are defined
