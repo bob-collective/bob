@@ -148,6 +148,8 @@ function resolveChainName(chain: number | string): string {
                 return bob.name.toLowerCase();
             case bobSepolia.id:
                 return bobSepolia.name.toLowerCase();
+            case mainnet.id:
+                return 'mainnet';
             default:
                 throw new Error(`Unsupported chain ID: ${chain}`);
         }
