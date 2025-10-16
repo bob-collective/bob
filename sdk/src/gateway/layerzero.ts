@@ -11,6 +11,7 @@ import {
     padHex,
     parseAbiParameters,
     parseEther,
+    StateOverride,
     toHex,
     zeroAddress,
 } from 'viem';
@@ -599,19 +600,47 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
 
         const user = params.fromUserAddress;
 
-        // WBTC OFT
-        const wbtcOftSlots = getTokenSlots(wbtcOftAddress as Address, fromChain);
+        const overrides: StateOverride = [];
 
-        const oftBalanceSlot = computeBalanceSlot(user as Address, wbtcOftSlots.balanceSlot);
+        if (chain.id === mainnet.id) {
+            // WBTC mainnet
+            const wbtcMainnetSlots = getTokenSlots(wbtcMainnetAddress, 'ethereum');
+            const allowanceSlot = computeAllowanceSlot(
+                user as Address,
+                wbtcMainnetAddress as Address,
+                wbtcMainnetSlots.allowanceSlot
+            );
+            const balanceSlot = computeBalanceSlot(user as Address, wbtcMainnetSlots.balanceSlot);
 
-        // WBTC mainnet
-        const wbtcMainnetSlots = getTokenSlots(wbtcMainnetAddress, 'ethereum');
-        const allowanceSlot = computeAllowanceSlot(
-            user as Address,
-            wbtcMainnetAddress as Address,
-            wbtcMainnetSlots.allowanceSlot
-        );
-        const balanceSlot = computeBalanceSlot(user as Address, wbtcMainnetSlots.balanceSlot);
+            overrides.push({
+                address: wbtcMainnetAddress,
+                stateDiff: [
+                    {
+                        slot: allowanceSlot,
+                        value: toHex(maxUint256),
+                    },
+                    {
+                        slot: balanceSlot,
+                        value: toHex(maxUint256),
+                    },
+                ],
+            });
+        } else {
+            // WBTC OFT
+            const wbtcOftSlots = getTokenSlots(wbtcOftAddress as Address, fromChain);
+
+            const oftBalanceSlot = computeBalanceSlot(user as Address, wbtcOftSlots.balanceSlot);
+
+            overrides.push({
+                address: wbtcOftAddress as Address,
+                stateDiff: [
+                    {
+                        slot: oftBalanceSlot,
+                        value: toHex(maxUint256),
+                    },
+                ],
+            });
+        }
 
         const createOrderGasEstimate = await publicClient.estimateContractGas({
             address: wbtcOftAddress as Address,
@@ -621,33 +650,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
             value: sendFees.nativeFee,
             account: user as Address,
             stateOverride: [
-                ...(chain.id === mainnet.id
-                    ? [
-                          {
-                              address: wbtcMainnetAddress,
-                              stateDiff: [
-                                  {
-                                      slot: allowanceSlot,
-                                      value: toHex(maxUint256),
-                                  },
-                                  {
-                                      slot: balanceSlot,
-                                      value: toHex(maxUint256),
-                                  },
-                              ],
-                          },
-                      ]
-                    : [
-                          {
-                              address: wbtcOftAddress as Address,
-                              stateDiff: [
-                                  {
-                                      slot: oftBalanceSlot,
-                                      value: toHex(maxUint256),
-                                  },
-                              ],
-                          },
-                      ]),
+                ...overrides,
                 // Ether balance override
                 {
                     address: user as Address,
