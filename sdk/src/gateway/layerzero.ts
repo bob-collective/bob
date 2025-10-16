@@ -611,7 +611,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                 ...(chain.id === mainnet.id
                     ? [
                           {
-                              address: zeroAddress,
+                              address: wbtcMainnetAddress,
                               stateDiff: [
                                   {
                                       slot: allowanceSlot,
