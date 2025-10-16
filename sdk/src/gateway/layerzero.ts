@@ -334,7 +334,6 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                 finalFeeSats: baseQuote.finalFeeSats + Number(maxTokensToSwapForLayerZeroFees),
             };
         } else if (fromChain !== 'bitcoin' && toChain === 'bitcoin') {
-            const fromChain = resolveChainName(params.fromChain);
             const dstEid = await this.l0Client.getEidForChain(fromChain);
 
             if (!dstEid) {
@@ -399,8 +398,8 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                     feeBreakdown: {
                         nativeFee: sendFees.nativeFee,
                         lzTokenFee: sendFees.lzTokenFee,
+                        gasFee: gasFee,
                     },
-                    gasFee: gasFee,
                 },
             };
         }
