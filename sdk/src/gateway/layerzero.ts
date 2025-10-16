@@ -720,7 +720,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
      */
     async getOrders(userAddress: Address): Promise<Array<GatewayOrder>> {
         const [orders, crossChainSwapOrders] = await Promise.all([
-            this.getOrders(userAddress),
+            super.getOrders(userAddress),
             this.getCrossChainSwapOrders(userAddress),
         ]);
 
