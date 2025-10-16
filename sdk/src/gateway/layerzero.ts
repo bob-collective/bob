@@ -595,7 +595,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
         const oftBalanceSlot = computeBalanceSlot(user as Address, wbtcOftSlots.balanceSlot);
 
         // WBTC mainnet
-        const wbtcMainnetSlots = getTokenSlots(wbtcMainnetAddress, 'mainnet');
+        const wbtcMainnetSlots = getTokenSlots(wbtcMainnetAddress, 'ethereum');
         const allowanceSlot = computeAllowanceSlot(
             user as Address,
             wbtcMainnetAddress as Address,
