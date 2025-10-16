@@ -193,7 +193,7 @@ const ethereumTokens = [
         },
         logoURI: 'https://raw.githubusercontent.com/bob-collective/bob/master/assets/wbtc.svg',
         allowanceSlot: 1n,
-        balanceSlot: 5n,
+        balanceSlot: 0n,
     },
 ];
 
