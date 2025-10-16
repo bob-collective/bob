@@ -1,9 +1,23 @@
 import ecc from '@bitcoinerlab/secp256k1';
 import * as bitcoin from 'bitcoinjs-lib';
-import { Address, encodeAbiParameters, encodePacked, Hex, padHex, parseAbiParameters } from 'viem';
-import { bob, bobSepolia } from 'viem/chains';
+import {
+    Address,
+    encodeAbiParameters,
+    encodePacked,
+    Hex,
+    isAddress,
+    isAddressEqual,
+    maxUint256,
+    padHex,
+    parseAbiParameters,
+    parseEther,
+    toHex,
+    zeroAddress,
+} from 'viem';
+import { bob, bobSepolia, mainnet } from 'viem/chains';
 import { layerZeroOftAbi, quoterV2Abi } from './abi';
 import { AllWalletClientParams, GatewayApiClient } from './client';
+import { getTokenAddress, getTokenSlots } from './tokens';
 import {
     ExecuteQuoteParams,
     GatewayOrderType,
@@ -14,7 +28,7 @@ import {
     LayerZeroSendParam,
     LayerZeroTokenDeploymentsResponse,
 } from './types';
-import { getChainConfig, toHexScriptPubKey, viemClient } from './utils';
+import { computeAllowanceSlot, computeBalanceSlot, getChainConfig, toHexScriptPubKey, viemClient } from './utils';
 
 bitcoin.initEccLib(ecc);
 
@@ -358,6 +372,8 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                 args: [sendParam, false],
             });
 
+            const gasFee = await this.getL0CreateOrderGasCost(params, sendParam, sendFees);
+
             return {
                 type: GatewayOrderType.CrossChainSwap,
                 finalOutputSats: Number(params.amount),
@@ -371,6 +387,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                         nativeFee: sendFees.nativeFee,
                         lzTokenFee: sendFees.lzTokenFee,
                     },
+                    gasFee: gasFee,
                 },
             };
         }
@@ -521,5 +538,111 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 throw new Error(`Unsupported quote type: ${(quote as any).type}`);
         }
+    }
+
+    /**
+     * Estimates the gas cost for creating an l0 order on-chain.
+     *
+     * This uses a state override to simulate max token allowance and balance for the user,
+     * ensuring the gas estimate accounts for sufficient funds and approvals.
+     *
+     * @param params - Quote parameters containing user address and chain info
+     * @param sendParams - LayerZero send params
+     * @param sendFees - LayerZero `quoteSend` method results
+     * @returns Promise resolving to the estimated gas cost in wei (as bigint)
+     */
+    async getL0CreateOrderGasCost(
+        params: GetQuoteParams<LayerZeroQuoteParamsExt>,
+        sendParams: LayerZeroSendParam,
+        sendFees: {
+            nativeFee: bigint;
+            lzTokenFee: bigint;
+        }
+    ): Promise<bigint> {
+        const chain = getChainConfig(params.l0ChainId ?? params.fromChain);
+        const publicClient = viemClient(chain);
+
+        if (
+            !params.fromUserAddress ||
+            (isAddress(params.fromUserAddress) && isAddressEqual(params.fromUserAddress, zeroAddress))
+        ) {
+            params.fromUserAddress = '0x1111111111111111111111111111111111111111';
+            params.toUserAddress = params.fromUserAddress;
+        }
+
+        const [feeValues, gasPrice, wbtcOftAddress] = await Promise.all([
+            publicClient.estimateFeesPerGas(),
+            publicClient.getGasPrice(),
+            this.l0Client.getOftAddressForChain(chain.name),
+        ]);
+
+        const wbtcMainnetAddress = getTokenAddress(mainnet.id, 'WBTC');
+
+        const fee = feeValues.maxFeePerGas ?? gasPrice;
+
+        if (!wbtcOftAddress) {
+            throw new Error(`WBTC OFT not found for chain: ${chain.id}`);
+        }
+
+        const user = params.fromUserAddress;
+
+        // WBTC OFT
+        const wbtcOftSlots = getTokenSlots(wbtcOftAddress as Address, chain.id);
+
+        const oftBalanceSlot = computeBalanceSlot(user as Address, wbtcOftSlots.balanceSlot);
+
+        // WBTC mainnet
+        const wbtcMainnetSlots = getTokenSlots(wbtcMainnetAddress, mainnet.id);
+        const allowanceSlot = computeAllowanceSlot(
+            user as Address,
+            wbtcMainnetAddress as Address,
+            wbtcMainnetSlots.allowanceSlot
+        );
+        const balanceSlot = computeBalanceSlot(user as Address, wbtcMainnetSlots.balanceSlot);
+
+        const createOrderGasEstimate = await publicClient.estimateContractGas({
+            address: wbtcOftAddress as Address,
+            abi: layerZeroOftAbi,
+            functionName: 'send',
+            args: [sendParams, sendFees, user as Address],
+            value: sendFees.nativeFee,
+            account: user as Address,
+            stateOverride: [
+                ...(chain.id === mainnet.id
+                    ? [
+                          {
+                              address: zeroAddress,
+                              stateDiff: [
+                                  {
+                                      slot: allowanceSlot,
+                                      value: toHex(maxUint256),
+                                  },
+                                  {
+                                      slot: balanceSlot,
+                                      value: toHex(maxUint256),
+                                  },
+                              ],
+                          },
+                      ]
+                    : [
+                          {
+                              address: wbtcOftAddress as Address,
+                              stateDiff: [
+                                  {
+                                      slot: oftBalanceSlot,
+                                      value: toHex(maxUint256),
+                                  },
+                              ],
+                          },
+                      ]),
+                // Ether balance override
+                {
+                    address: user as Address,
+                    balance: parseEther('1'), // set 1 ETH for the user
+                },
+            ],
+        });
+
+        return createOrderGasEstimate * fee;
     }
 }

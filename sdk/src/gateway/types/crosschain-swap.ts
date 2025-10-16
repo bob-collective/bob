@@ -43,4 +43,5 @@ export interface CrossChainSwapQuote {
     destinationEid: number;
     oftAddress: Address;
     feeBreakdown: CrossChainFeeBreakdown;
+    gasFee: bigint;
 }

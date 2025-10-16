@@ -182,6 +182,17 @@ const ethereumTokens = [
         },
         logoURI: 'https://raw.githubusercontent.com/bob-collective/bob/master/assets/SOLV.svg',
     },
+    {
+        name: 'Wrapped BTC',
+        symbol: 'WBTC',
+        decimals: 8,
+        tokens: {
+            ethereum: {
+                address: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599',
+            },
+        },
+        logoURI: 'https://raw.githubusercontent.com/bob-collective/bob/master/assets/wbtc.svg',
+    },
 ];
 
 const shoebillTokens = [
