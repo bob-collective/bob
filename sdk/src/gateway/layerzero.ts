@@ -573,7 +573,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
         const [feeValues, gasPrice, wbtcOftAddress] = await Promise.all([
             publicClient.estimateFeesPerGas(),
             publicClient.getGasPrice(),
-            this.l0Client.getOftAddressForChain(chain.name),
+            this.l0Client.getOftAddressForChain(chain.name.toLowerCase()),
         ]);
 
         const wbtcMainnetAddress = getTokenAddress(mainnet.id, 'wbtc');
