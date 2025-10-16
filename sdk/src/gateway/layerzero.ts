@@ -372,7 +372,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                 args: [sendParam, false],
             });
 
-            const gasFee = await this.getL0CreateOrderGasCost(params, sendParam, sendFees);
+            const gasFee = await this.getL0CreateOrderGasCost(params, sendParam, sendFees, fromChain);
 
             return {
                 type: GatewayOrderType.CrossChainSwap,
@@ -557,7 +557,8 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
         sendFees: {
             nativeFee: bigint;
             lzTokenFee: bigint;
-        }
+        },
+        fromChain: string
     ): Promise<bigint> {
         const chain = getChainConfig(params.l0ChainId ?? params.fromChain);
         const publicClient = viemClient(chain);
@@ -573,7 +574,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
         const [feeValues, gasPrice, wbtcOftAddress] = await Promise.all([
             publicClient.estimateFeesPerGas(),
             publicClient.getGasPrice(),
-            this.l0Client.getOftAddressForChain(chain.name.toLowerCase()),
+            this.l0Client.getOftAddressForChain(fromChain),
         ]);
 
         const wbtcMainnetAddress = getTokenAddress(mainnet.id, 'wbtc');
