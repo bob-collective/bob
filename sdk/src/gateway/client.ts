@@ -1432,13 +1432,18 @@ export class GatewayApiClient {
 
             let amount = 0n;
 
-            const hex = payload.startsWith('0x') ? payload.slice(2) : payload;
-            if (hex.length >= 16) {
-                const last16 = hex.slice(-16);
-                try {
-                    amount = BigInt('0x' + last16);
-                } catch {
-                    amount = 0n;
+            if (payload && typeof payload === 'string') {
+                // LayerZero payload format: the order size is encoded in the last 8 bytes (16 hex chars)
+                const hex = payload.startsWith('0x') ? payload.slice(2) : payload;
+                // Validate minimum expected payload length
+                if (hex.length >= 16 && hex.length % 2 === 0) {
+                    const last16 = hex.slice(-16);
+                    try {
+                        amount = BigInt('0x' + last16);
+                    } catch {
+                        console.warn('Failed to parse order size from LayerZero payload');
+                        amount = 0n;
+                    }
                 }
             }
 

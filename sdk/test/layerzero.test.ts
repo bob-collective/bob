@@ -1,5 +1,5 @@
 import { assert, describe, it } from 'vitest';
-import { LayerZeroClient, LayerZeroGatewayClient, LayerZeroSendClient } from '../src/gateway/layerzero';
+import { LayerZeroClient, LayerZeroGatewayClient } from '../src/gateway/layerzero';
 import { createPublicClient, createWalletClient, http, PublicClient, Transport, zeroAddress } from 'viem';
 import { base, bob, optimism } from 'viem/chains';
 import { BitcoinSigner } from '../src/gateway/types';
@@ -126,7 +126,7 @@ describe('LayerZero Tests', () => {
         console.log('quote', quote);
 
         // Verify we got an offramp quote
-        assert.ok(quote.offrampQuote, 'Should have offramp quote');
+        assert.ok(quote.data, 'Should have offramp quote');
         assert.ok(quote.params, 'Should have quote params');
 
         const publicClient = createPublicClient({
@@ -154,7 +154,7 @@ describe('LayerZero Tests', () => {
     }, 120000);
 
     it.skip('should get a layerzero send quote and execute it', async () => {
-        const client = new LayerZeroSendClient(base.id);
+        const client = new LayerZeroGatewayClient(base.id);
 
         const quote = await client.getQuote({
             fromChain: 'base',
@@ -193,7 +193,7 @@ describe('LayerZero Tests', () => {
     it('should get chain id for eid', async () => {
         const client = new LayerZeroClient();
 
-        const optimismEid = '30111';
+        const optimismEid = 30111;
 
         assert.equal(await client.getChainId(optimismEid), optimism.id);
     }, 120000);
