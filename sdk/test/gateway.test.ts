@@ -4,18 +4,18 @@ import { zeroAddress } from 'viem';
 import { Address } from 'viem/accounts';
 import { bob, bobSepolia } from 'viem/chains';
 import { afterEach, assert, describe, expect, it, vi } from 'vitest';
-import { GatewaySDK } from '../src/gateway';
+import { GatewaySDK, LayerZeroGatewayClient } from '../src/gateway';
 import { MAINNET_GATEWAY_BASE_URL, SIGNET_GATEWAY_BASE_URL } from '../src/gateway/client';
 import { getTokenAddress, SYMBOL_LOOKUP } from '../src/gateway/tokens';
 import {
-    OnrampQuote,
+    GatewayOrderType,
     GatewayTokensInfo,
     OfframpOrder,
     OfframpOrderStatus,
+    OnrampQuote,
     OrderDetailsRaw,
-    GatewayOrderType,
 } from '../src/gateway/types';
-import { toHexScriptPubKey, convertOrderDetailsRawToOrderDetails } from '../src/gateway/utils';
+import { convertOrderDetailsRawToOrderDetails, toHexScriptPubKey } from '../src/gateway/utils';
 
 const TBTC = SYMBOL_LOOKUP[bob.id]['tbtc'];
 const TBTC_ADDRESS = TBTC.address;
@@ -960,16 +960,12 @@ describe('Gateway Tests', () => {
         const getOfframpOrdersSpy = vi
             .spyOn(gatewaySDK, 'getOfframpOrders')
             .mockImplementationOnce(() => Promise.resolve([]));
-        const getCrossChainOrdersSpy = vi
-            .spyOn(gatewaySDK, 'getCrossChainSwapOrders')
-            .mockImplementationOnce(() => Promise.resolve([]));
 
         const result = await gatewaySDK.getOrders(zeroAddress);
 
         expect(result).toEqual([]);
         expect(getOnrampOrdersSpy).toHaveBeenCalledOnce();
         expect(getOfframpOrdersSpy).toHaveBeenCalledOnce();
-        expect(getCrossChainOrdersSpy).toHaveBeenCalledOnce();
     });
 
     it(
@@ -1050,7 +1046,7 @@ describe('Gateway Tests', () => {
     );
 
     it('should get cross-chain swap orders', async () => {
-        const gatewaySDK = new GatewaySDK(bob.id);
+        const gatewaySDK = new LayerZeroGatewayClient(bob.id);
         const userAddress = '0xFAEe001465dE6D7E8414aCDD9eF4aC5A35B2B808';
 
         const mockLayerZeroResponse = {
@@ -1244,7 +1240,7 @@ describe('Gateway Tests', () => {
     });
 
     it('should handle edge cases in getCrossChainSwapOrders', async () => {
-        const gatewaySDK = new GatewaySDK(bob.id);
+        const gatewaySDK = new LayerZeroGatewayClient(bob.id);
         const userAddress = '0xFAEe001465dE6D7E8414aCDD9eF4aC5A35B2B808';
 
         const mockResponse = {
@@ -1388,7 +1384,7 @@ describe('Gateway Tests', () => {
     });
 
     it('should handle API error for getCrossChainSwapOrders', async () => {
-        const gatewaySDK = new GatewaySDK(bob.id);
+        const gatewaySDK = new LayerZeroGatewayClient(bob.id);
         const userAddress = '0xFAEe001465dE6D7E8414aCDD9eF4aC5A35B2B808';
 
         nock('https://scan.layerzero-api.com')
@@ -1399,7 +1395,7 @@ describe('Gateway Tests', () => {
     });
 
     it('should handle network error for getCrossChainSwapOrders', async () => {
-        const gatewaySDK = new GatewaySDK(bob.id);
+        const gatewaySDK = new LayerZeroGatewayClient(bob.id);
         const userAddress = '0xFAEe001465dE6D7E8414aCDD9eF4aC5A35B2B808';
 
         nock('https://scan.layerzero-api.com')
@@ -1412,7 +1408,7 @@ describe('Gateway Tests', () => {
     });
 
     it('should return empty array when no cross-chain orders exist', async () => {
-        const gatewaySDK = new GatewaySDK(bob.id);
+        const gatewaySDK = new LayerZeroGatewayClient(bob.id);
         const userAddress = '0xFAEe001465dE6D7E8414aCDD9eF4aC5A35B2B808';
 
         nock('https://scan.layerzero-api.com').get(`/v1/messages/wallet/${userAddress}`).reply(200, { data: [] });

@@ -19,16 +19,26 @@ import { layerZeroOftAbi, quoterV2Abi } from './abi';
 import { AllWalletClientParams, GatewayApiClient } from './client';
 import { getTokenAddress, getTokenSlots } from './tokens';
 import {
+    CrossChainOrder,
     ExecuteQuoteParams,
+    GatewayOrder,
     GatewayOrderType,
     GetQuoteParams,
     LayerZeroChainInfo,
     LayerZeroDeploymentsMetadataResponse,
+    LayerZeroMessagesWalletResponse,
     LayerZeroQuoteParamsExt,
     LayerZeroSendParam,
     LayerZeroTokenDeploymentsResponse,
 } from './types';
-import { computeAllowanceSlot, computeBalanceSlot, getChainConfig, toHexScriptPubKey, viemClient } from './utils';
+import {
+    computeAllowanceSlot,
+    computeBalanceSlot,
+    getChainConfig,
+    getCrossChainStatus,
+    toHexScriptPubKey,
+    viemClient,
+} from './utils';
 
 bitcoin.initEccLib(ecc);
 
@@ -647,5 +657,76 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
         });
 
         return createOrderGasEstimate * fee;
+    }
+
+    async getCrossChainSwapOrders(_userAddress: Address): Promise<CrossChainOrder[]> {
+        const url = new URL(`https://scan.layerzero-api.com/v1/messages/wallet/${_userAddress}`);
+
+        const response = await super.safeFetch(url.toString(), undefined, 'Failed to fetch LayerZero send orders');
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => null);
+            throw new Error(errorData?.message || 'Failed to fetch LayerZero send orders');
+        }
+
+        const json: LayerZeroMessagesWalletResponse = await response.json();
+
+        const items = json.data.filter((item) => item.destination.lzCompose.status === 'N/A');
+
+        return items.map((item): CrossChainOrder => {
+            const { payload, blockTimestamp, txHash: sourceTxHash } = item.source.tx;
+            const { txHash: destinationTxHash } = item.destination.tx;
+
+            let amount = 0n;
+
+            if (payload && typeof payload === 'string') {
+                // LayerZero payload format: the order size is encoded in the last 8 bytes (16 hex chars)
+                const hex = payload.startsWith('0x') ? payload.slice(2) : payload;
+                // Validate minimum expected payload length
+                if (hex.length >= 16 && hex.length % 2 === 0) {
+                    const last16 = hex.slice(-16);
+                    try {
+                        amount = BigInt('0x' + last16);
+                    } catch {
+                        console.warn('Failed to parse order size from LayerZero payload');
+                        amount = 0n;
+                    }
+                }
+            }
+
+            return {
+                amount,
+                timestamp: blockTimestamp,
+                status: getCrossChainStatus(item),
+                source: {
+                    eid: item.pathway.srcEid,
+                    txHash: sourceTxHash,
+                    token: item.pathway.sender.address as Address,
+                },
+                destination: {
+                    eid: item.pathway.dstEid,
+                    txHash: destinationTxHash,
+                    token: item.pathway.receiver.address as Address,
+                },
+            };
+        });
+    }
+
+    /**
+     * Retrieves all orders (onramp, offramp, and crosschain swaps) for a specific user address.
+     *
+     * @param userAddress The user's EVM address
+     * @returns Promise resolving to array of typed orders
+     */
+    async getOrders(userAddress: Address): Promise<Array<GatewayOrder>> {
+        const [orders, crossChainSwapOrders] = await Promise.all([
+            this.getOrders(userAddress),
+            this.getCrossChainSwapOrders(userAddress),
+        ]);
+
+        return [
+            ...orders,
+            ...crossChainSwapOrders.map((order) => ({ type: GatewayOrderType.CrossChainSwap as const, order })),
+        ];
     }
 }

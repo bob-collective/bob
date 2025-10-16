@@ -1,4 +1,4 @@
-import { assert, describe, expect, it } from 'vitest';
+import { assert, describe, expect, it, vi } from 'vitest';
 import { LayerZeroClient, LayerZeroGatewayClient } from '../src/gateway/layerzero';
 import { createPublicClient, createWalletClient, http, PublicClient, Transport, zeroAddress } from 'viem';
 import { base, bob, optimism } from 'viem/chains';
@@ -169,8 +169,6 @@ describe('LayerZero Tests', () => {
             amount: 100,
         });
 
-        console.log('quote', quote);
-
         const publicClient = createPublicClient({
             chain: base,
             transport: http(),
@@ -187,8 +185,6 @@ describe('LayerZero Tests', () => {
             walletClient,
             publicClient: publicClient as PublicClient<Transport>,
         });
-
-        console.log(txHash);
     }, 120000);
 
     it('should get chain id for eid', async () => {
@@ -198,6 +194,21 @@ describe('LayerZero Tests', () => {
 
         assert.equal(await client.getChainId(optimismEid), optimism.id);
     }, 120000);
+
+    it('should return onramp, offramp and cross-chain orders', async () => {
+        const gatewaySDK = new LayerZeroGatewayClient(bob.id);
+
+        const getOrdersSpy = vi.spyOn(gatewaySDK, 'getOrders').mockImplementationOnce(() => Promise.resolve([]));
+        const getCrossChainOrdersSpy = vi
+            .spyOn(gatewaySDK, 'getCrossChainSwapOrders')
+            .mockImplementationOnce(() => Promise.resolve([]));
+
+        const result = await gatewaySDK.getOrders(zeroAddress);
+
+        expect(result).toEqual([]);
+        expect(getOrdersSpy).toHaveBeenCalledOnce();
+        expect(getCrossChainOrdersSpy).toHaveBeenCalledOnce();
+    });
 
     describe('getCrossChainStatus', () => {
         const createMockMessage = (sourceStatus: string, destinationStatus: string): LayerZeroMessageWallet => ({
