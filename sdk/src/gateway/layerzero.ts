@@ -576,7 +576,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
             this.l0Client.getOftAddressForChain(chain.name),
         ]);
 
-        const wbtcMainnetAddress = getTokenAddress(mainnet.id, 'WBTC');
+        const wbtcMainnetAddress = getTokenAddress(mainnet.id, 'wbtc');
 
         const fee = feeValues.maxFeePerGas ?? gasPrice;
 
