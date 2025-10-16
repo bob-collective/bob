@@ -1,14 +1,15 @@
-import { assert, describe, it } from 'vitest';
+import { assert, describe, expect, it } from 'vitest';
 import { LayerZeroClient, LayerZeroGatewayClient } from '../src/gateway/layerzero';
 import { createPublicClient, createWalletClient, http, PublicClient, Transport, zeroAddress } from 'viem';
 import { base, bob, optimism } from 'viem/chains';
-import { BitcoinSigner } from '../src/gateway/types';
+import { BitcoinSigner, LayerZeroMessageWallet } from '../src/gateway/types';
 import * as btc from '@scure/btc-signer';
 import { base64 } from '@scure/base';
 import { mnemonicToSeedSync } from 'bip39';
 import { HDKey } from '@scure/bip32';
 import { Hex } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
+import { getCrossChainStatus } from '../src/gateway/utils/layerzero';
 
 describe('LayerZero Tests', () => {
     it.skip('should get chains', async () => {
@@ -197,6 +198,91 @@ describe('LayerZero Tests', () => {
 
         assert.equal(await client.getChainId(optimismEid), optimism.id);
     }, 120000);
+
+    describe('getCrossChainStatus', () => {
+        const createMockMessage = (sourceStatus: string, destinationStatus: string): LayerZeroMessageWallet => ({
+            pathway: {
+                srcEid: 40184,
+                dstEid: 30111,
+                sender: {
+                    address: '0x123',
+                    id: 'sender-1',
+                    name: 'Sender',
+                    chain: 'bob',
+                },
+                receiver: {
+                    address: '0x456',
+                    id: 'receiver-1',
+                    name: 'Receiver',
+                    chain: 'optimism',
+                },
+                id: 'pathway-1',
+                nonce: 1,
+            },
+            source: {
+                status: sourceStatus,
+                tx: {
+                    txHash: '0xsource',
+                    blockHash: '0xblock',
+                    blockNumber: '12345',
+                    blockTimestamp: 1700000000,
+                    from: '0xfrom',
+                    payload: '0x',
+                    readinessTimestamp: 1700000100,
+                },
+            },
+            destination: {
+                status: destinationStatus,
+                tx: {
+                    txHash: '0xdest',
+                    blockHash: '0xdestblock',
+                    blockNumber: '67890',
+                    blockTimestamp: 1700000200,
+                    from: '0xdestfrom',
+                    payload: '0x',
+                    readinessTimestamp: 1700000300,
+                },
+                lzCompose: {
+                    status: 'N/A',
+                },
+            },
+        });
+
+        it('should return source-pending when source is WAITING', () => {
+            const message = createMockMessage('WAITING', 'WAITING');
+            expect(getCrossChainStatus(message)).toBe('source-pending');
+        });
+
+        it('should return source-failed when source is SIMULATION_REVERTED', () => {
+            const message = createMockMessage('SIMULATION_REVERTED', 'WAITING');
+            expect(getCrossChainStatus(message)).toBe('source-failed');
+        });
+
+        it('should return destination-pending when source succeeded and destination is waiting', () => {
+            const message = createMockMessage('SUCCEEDED', 'WAITING');
+            expect(getCrossChainStatus(message)).toBe('destination-pending');
+        });
+
+        it('should return destination-confirmed when both source and destination succeeded', () => {
+            const message = createMockMessage('SUCCEEDED', 'SUCCEEDED');
+            expect(getCrossChainStatus(message)).toBe('destination-confirmed');
+        });
+
+        it('should return destination-failed when source succeeded but destination failed', () => {
+            const message = createMockMessage('SUCCEEDED', 'SIMULATION_REVERTED');
+            expect(getCrossChainStatus(message)).toBe('destination-failed');
+        });
+
+        it('should return unknown for unrecognized source status', () => {
+            const message = createMockMessage('UNKNOWN_STATUS', 'WAITING');
+            expect(getCrossChainStatus(message)).toBe('unknown');
+        });
+
+        it('should return unknown when source succeeded but destination has unknown status', () => {
+            const message = createMockMessage('SUCCEEDED', 'UNKNOWN_STATUS');
+            expect(getCrossChainStatus(message)).toBe('unknown');
+        });
+    });
 });
 
 /**

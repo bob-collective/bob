@@ -1453,13 +1453,11 @@ export class GatewayApiClient {
                 status: getCrossChainStatus(item),
                 source: {
                     eid: item.pathway.srcEid,
-
                     txHash: sourceTxHash,
                     token: item.pathway.sender.address as Address,
                 },
                 destination: {
                     eid: item.pathway.dstEid,
-
                     txHash: destinationTxHash,
                     token: item.pathway.receiver.address as Address,
                 },
