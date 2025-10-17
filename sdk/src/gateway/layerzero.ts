@@ -582,7 +582,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
             params.fromUserAddress = '0x1111111111111111111111111111111111111111';
             params.toUserAddress = params.fromUserAddress;
 
-            sendParams.to = toHex((params.fromUserAddress as Address) || zeroAddress, { size: 32 });
+            sendParams.to = padHex((params.fromUserAddress as Address) || zeroAddress, { size: 32 });
         }
 
         const [feeValues, gasPrice, wbtcOftAddress] = await Promise.all([
