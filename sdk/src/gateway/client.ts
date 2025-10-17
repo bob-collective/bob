@@ -7,21 +7,22 @@ import {
     Hash,
     Hex,
     isAddress,
+    isAddressEqual,
     maxUint256,
+    parseEther,
     PublicClient,
+    toHex,
     Transport,
     Chain as ViemChain,
     WalletClient,
     zeroAddress,
-    parseEther,
-    toHex,
-    isAddressEqual,
 } from 'viem';
 import { bob, bobSepolia } from 'viem/chains';
 import { EsploraClient } from '../esplora';
 import { bigIntToFloatingNumber } from '../utils';
 import { createBitcoinPsbt } from '../wallet';
 import { claimDelayAbi, offrampCaller, strategyCaller } from './abi';
+import { BaseClient } from './base-client';
 import StrategyClient from './strategy';
 import { ADDRESS_LOOKUP, getTokenAddress, getTokenDecimals, getTokenSlots } from './tokens';
 import {
@@ -31,6 +32,8 @@ import {
     ExecuteQuoteParams,
     GatewayCreateOrderRequestPayload,
     GatewayCreateOrderResponse,
+    GatewayOrder,
+    GatewayOrderType,
     GatewayStartOrder,
     GatewayStrategy,
     GatewayStrategyContract,
@@ -46,9 +49,9 @@ import {
     OnrampFeeBreakdownRaw,
     OnrampOrder,
     OnrampOrderResponse,
+    OnrampOrderStatus,
     OnrampQuote,
     OrderDetailsRaw,
-    OrderStatus,
     StrategyParams,
     Token,
     UnlockOrderParams,
@@ -127,7 +130,7 @@ export interface AllWalletClientParams extends EvmWalletClientParams {
  * });
  * ```
  */
-export class GatewayApiClient {
+export class GatewayApiClient extends BaseClient {
     private chain: ViemChain;
     private strategy: StrategyClient;
     private isSignet: boolean = false;
@@ -155,6 +158,7 @@ export class GatewayApiClient {
      * ```
      */
     constructor(chainId: number, options?: { rpcUrl?: string }) {
+        super();
         switch (chainId) {
             case bob.id:
                 this.chain = bob;
@@ -196,7 +200,7 @@ export class GatewayApiClient {
             // NOTE: toChain validation is performed inside `getOnrampQuote` method
             const data = await this.getOnrampQuote(params);
             return {
-                type: 'onramp',
+                type: GatewayOrderType.Onramp,
                 params,
                 finalOutputSats: data.outputSatoshis,
                 finalFeeSats: data.feeBreakdown.overallFeeSats,
@@ -213,7 +217,7 @@ export class GatewayApiClient {
             }
 
             return {
-                type: 'offramp',
+                type: GatewayOrderType.Offramp,
                 params,
                 finalOutputSats: data.amountReceiveInSat,
                 finalFeeSats: data.feeBreakdown.overallFeeSats,
@@ -269,7 +273,10 @@ export class GatewayApiClient {
 
         const fee = feeValues.maxFeePerGas ?? gasPrice;
 
-        const slots = getTokenSlots(offrampOrder.quote.token as Address, this.chainId);
+        const slots = getTokenSlots(
+            offrampOrder.quote.token as Address,
+            this.chainId === bob.id ? 'bob' : 'bob-sepolia'
+        );
         const user = params.fromUserAddress;
 
         const allowanceSlot = computeAllowanceSlot(
@@ -1207,7 +1214,7 @@ export class GatewayApiClient {
                 getTokens,
                 getOutputTokens,
                 getConfirmations,
-                async getStatus(esploraClient: EsploraClient, latestHeight?: number): Promise<OrderStatus> {
+                async getStatus(esploraClient: EsploraClient, latestHeight?: number): Promise<OnrampOrderStatus> {
                     const confirmations = await getConfirmations(esploraClient, latestHeight);
                     const hasEnoughConfirmations = confirmations >= order.txProofDifficultyFactor;
                     const data = { confirmations };
@@ -1388,46 +1395,20 @@ export class GatewayApiClient {
     }
 
     /**
-     * Retrieves all orders (both onramp and offramp) for a specific user address.
+     * Retrieves all orders (onramp and offramp) for a specific user address.
      *
      * @param userAddress The user's EVM address
      * @returns Promise resolving to array of typed orders
      */
-    async getOrders(
-        userAddress: Address
-    ): Promise<Array<{ type: 'onramp'; order: OnrampOrder } | { type: 'offramp'; order: OfframpOrder }>> {
+    async getOrders(userAddress: Address): Promise<Array<GatewayOrder>> {
         const [onrampOrders, offrampOrders] = await Promise.all([
             this.getOnrampOrders(userAddress),
             this.getOfframpOrders(userAddress),
         ]);
+
         return [
-            ...onrampOrders.map((order) => ({ type: 'onramp' as const, order })),
-            ...offrampOrders.map((order) => ({ type: 'offramp' as const, order })),
+            ...onrampOrders.map((order) => ({ type: GatewayOrderType.Onramp as const, order })),
+            ...offrampOrders.map((order) => ({ type: GatewayOrderType.Offramp as const, order })),
         ];
-    }
-
-    private async safeFetch(url: URL | string, init: RequestInit | undefined, errorMessage: string) {
-        const defaultInit = {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                Accept: 'application/json',
-            },
-        };
-
-        try {
-            // NOTE: await inside try/catch to handle runtime error
-            const response = await fetch(url, init || defaultInit);
-            return response;
-        } catch (err) {
-            this.handleFetchError(err, errorMessage);
-        }
-    }
-
-    private handleFetchError(err: unknown, message: string): never {
-        if (err instanceof TypeError && err.message === 'Failed to fetch') {
-            throw new Error(message);
-        }
-        throw err;
     }
 }

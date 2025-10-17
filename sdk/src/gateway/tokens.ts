@@ -182,6 +182,19 @@ const ethereumTokens = [
         },
         logoURI: 'https://raw.githubusercontent.com/bob-collective/bob/master/assets/SOLV.svg',
     },
+    {
+        name: 'Wrapped BTC',
+        symbol: 'WBTC',
+        decimals: 8,
+        tokens: {
+            ethereum: {
+                address: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599',
+            },
+        },
+        logoURI: 'https://raw.githubusercontent.com/bob-collective/bob/master/assets/wbtc.svg',
+        allowanceSlot: 1n,
+        balanceSlot: 0n,
+    },
 ];
 
 const shoebillTokens = [
@@ -453,17 +466,20 @@ export function getTokenAddress(chainId: number, token: string): Address {
         throw new Error('Unknown output token');
     }
 }
-export function getTokenSlots(tokenAddress: Address, chainId: number): { allowanceSlot: bigint; balanceSlot: bigint } {
+export function getTokenSlots(
+    tokenAddress: Address,
+    originChain: string
+): { allowanceSlot: bigint; balanceSlot: bigint } {
     const lowerAddress = tokenAddress.toLowerCase();
 
     // Look up the token in the master TOKENS array
     const token = TOKENS.find((t) => {
-        const chainToken = t.tokens[bob.id === chainId ? 'bob' : 'bob-sepolia'];
+        const chainToken = t.tokens[originChain];
         return chainToken?.address.toLowerCase() === lowerAddress;
     });
 
     if (!token) {
-        throw new Error(`Token not found for address ${tokenAddress} on chain ${chainId}`);
+        throw new Error(`Token not found for address ${tokenAddress} on chain ${originChain}`);
     }
 
     // Check if slots are defined

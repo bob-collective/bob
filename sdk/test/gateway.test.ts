@@ -4,17 +4,18 @@ import { zeroAddress } from 'viem';
 import { Address } from 'viem/accounts';
 import { bob, bobSepolia } from 'viem/chains';
 import { afterEach, assert, describe, expect, it, vi } from 'vitest';
-import { GatewaySDK } from '../src/gateway';
+import { GatewaySDK, LayerZeroGatewayClient } from '../src/gateway';
 import { MAINNET_GATEWAY_BASE_URL, SIGNET_GATEWAY_BASE_URL } from '../src/gateway/client';
 import { getTokenAddress, SYMBOL_LOOKUP } from '../src/gateway/tokens';
 import {
-    OnrampQuote,
+    GatewayOrderType,
     GatewayTokensInfo,
     OfframpOrder,
     OfframpOrderStatus,
+    OnrampQuote,
     OrderDetailsRaw,
 } from '../src/gateway/types';
-import { toHexScriptPubKey, convertOrderDetailsRawToOrderDetails } from '../src/gateway/utils';
+import { convertOrderDetailsRawToOrderDetails, toHexScriptPubKey } from '../src/gateway/utils';
 
 const TBTC = SYMBOL_LOOKUP[bob.id]['tbtc'];
 const TBTC_ADDRESS = TBTC.address;
@@ -103,7 +104,7 @@ describe('Gateway Tests', () => {
                 amount: 1000,
             }),
             {
-                type: 'onramp',
+                type: GatewayOrderType.Onramp,
                 data: assertMockQuote,
                 finalOutputSats: mockQuote.satoshis - mockQuote.fee,
                 finalFeeSats: mockQuote.fee,
@@ -127,7 +128,7 @@ describe('Gateway Tests', () => {
                 amount: 1000,
             }),
             {
-                type: 'onramp',
+                type: GatewayOrderType.Onramp,
                 data: assertMockQuote,
                 finalOutputSats: mockQuote.satoshis - mockQuote.fee,
                 finalFeeSats: mockQuote.fee,
@@ -151,7 +152,7 @@ describe('Gateway Tests', () => {
                 amount: 1000,
             }),
             {
-                type: 'onramp',
+                type: GatewayOrderType.Onramp,
                 data: assertMockQuote,
                 finalOutputSats: mockQuote.satoshis - mockQuote.fee,
                 finalFeeSats: mockQuote.fee,
@@ -175,7 +176,7 @@ describe('Gateway Tests', () => {
                 amount: 1000,
             }),
             {
-                type: 'onramp',
+                type: GatewayOrderType.Onramp,
                 data: assertMockQuote,
                 finalOutputSats: mockQuote.satoshis - mockQuote.fee,
                 finalFeeSats: mockQuote.fee,
@@ -214,7 +215,7 @@ describe('Gateway Tests', () => {
                 toUserAddress: zeroAddress,
             }),
             {
-                type: 'onramp',
+                type: GatewayOrderType.Onramp,
                 data: assertMockQuote,
                 finalOutputSats: mockQuote.satoshis - mockQuote.fee,
                 finalFeeSats: mockQuote.fee,
@@ -841,7 +842,7 @@ describe('Gateway Tests', () => {
 
         const btcTxId = await gatewaySDK.executeQuote({
             quote: {
-                type: 'onramp',
+                type: GatewayOrderType.Onramp,
                 data: mockQuote,
                 finalOutputSats: mockQuote.satoshis - mockQuote.fee,
                 finalFeeSats: mockQuote.fee,
@@ -914,7 +915,7 @@ describe('Gateway Tests', () => {
 
         const evmTxId = await gatewaySDK.executeQuote({
             quote: {
-                type: 'offramp',
+                type: GatewayOrderType.Offramp,
                 data: {
                     amountLockInSat: 0,
                     amountReceiveInSat: 0,
@@ -950,7 +951,7 @@ describe('Gateway Tests', () => {
         expect(fetchOfframpRegistryAddressSpy).toHaveBeenCalledOnce();
     });
 
-    it('should return onramp and offramp orders', async () => {
+    it('should return onramp, offramp and cross-chain orders', async () => {
         const gatewaySDK = new GatewaySDK(bobSepolia.id);
 
         const getOnrampOrdersSpy = vi
@@ -1043,4 +1044,377 @@ describe('Gateway Tests', () => {
         },
         { timeout: 30000 } // 30 seconds
     );
+
+    it('should get cross-chain swap orders', async () => {
+        const gatewaySDK = new LayerZeroGatewayClient(bob.id);
+        const userAddress = '0xFAEe001465dE6D7E8414aCDD9eF4aC5A35B2B808';
+
+        const mockLayerZeroResponse = {
+            data: [
+                {
+                    pathway: {
+                        srcEid: 40184, // BOB chain ID
+                        dstEid: 30111, // Optimism chain ID
+                        sender: {
+                            address: '0x123...abc',
+                            id: 'sender-1',
+                            name: 'BOB Sender',
+                            chain: 'bob',
+                        },
+                        receiver: {
+                            address: '0x456...def',
+                            id: 'receiver-1',
+                            name: 'Optimism Receiver',
+                            chain: 'optimism',
+                        },
+                        id: 'pathway-1',
+                        nonce: 1,
+                    },
+                    source: {
+                        status: 'SUCCEEDED',
+                        tx: {
+                            txHash: '0xsource123',
+                            blockHash: '0xblock123',
+                            blockNumber: '12345',
+                            blockTimestamp: 1700000000,
+                            from: userAddress,
+                            payload: '0x1234567890abcdef0000000000000064', // Last 16 chars = 0x64 = 100
+                            readinessTimestamp: 1700000100,
+                        },
+                    },
+                    destination: {
+                        status: 'SUCCEEDED',
+                        tx: {
+                            txHash: '0xdest456',
+                            blockHash: '0xdestblock456',
+                            blockNumber: '67890',
+                            blockTimestamp: 1700000200,
+                            from: '0xdestfrom',
+                            payload: '0x',
+                            readinessTimestamp: 1700000300,
+                        },
+                        lzCompose: {
+                            status: 'N/A',
+                        },
+                    },
+                },
+                {
+                    pathway: {
+                        srcEid: 30111, // Optimism chain ID
+                        dstEid: 40184, // BOB chain ID
+                        sender: {
+                            address: '0x789...ghi',
+                            id: 'sender-2',
+                            name: 'Optimism Sender',
+                            chain: 'optimism',
+                        },
+                        receiver: {
+                            address: '0xabc...123',
+                            id: 'receiver-2',
+                            name: 'BOB Receiver',
+                            chain: 'bob',
+                        },
+                        id: 'pathway-2',
+                        nonce: 2,
+                    },
+                    source: {
+                        status: 'SUCCEEDED',
+                        tx: {
+                            txHash: '0xsource789',
+                            blockHash: '0xblock789',
+                            blockNumber: '54321',
+                            blockTimestamp: 1700001000,
+                            from: userAddress,
+                            payload: '0xabcdef1234567890000000000000012c', // Last 16 chars = 0x12c = 300
+                            readinessTimestamp: 1700001100,
+                        },
+                    },
+                    destination: {
+                        status: 'WAITING',
+                        tx: {
+                            txHash: '',
+                            blockHash: '',
+                            blockNumber: '',
+                            blockTimestamp: 0,
+                            from: '',
+                            payload: '',
+                            readinessTimestamp: 0,
+                        },
+                        lzCompose: {
+                            status: 'N/A',
+                        },
+                    },
+                },
+                // This order should be filtered out because lzCompose.status is not 'N/A'
+                {
+                    pathway: {
+                        srcEid: 40184,
+                        dstEid: 30111,
+                        sender: {
+                            address: '0xfiltered',
+                            id: 'sender-filtered',
+                            name: 'Filtered Sender',
+                            chain: 'bob',
+                        },
+                        receiver: {
+                            address: '0xfiltered',
+                            id: 'receiver-filtered',
+                            name: 'Filtered Receiver',
+                            chain: 'optimism',
+                        },
+                        id: 'pathway-filtered',
+                        nonce: 3,
+                    },
+                    source: {
+                        status: 'SUCCEEDED',
+                        tx: {
+                            txHash: '0xfiltered',
+                            blockHash: '0xfiltered',
+                            blockNumber: '99999',
+                            blockTimestamp: 1700002000,
+                            from: userAddress,
+                            payload: '0x',
+                            readinessTimestamp: 1700002100,
+                        },
+                    },
+                    destination: {
+                        status: 'SUCCEEDED',
+                        tx: {
+                            txHash: '0xfiltered',
+                            blockHash: '0xfiltered',
+                            blockNumber: '88888',
+                            blockTimestamp: 1700002200,
+                            from: '0xfiltered',
+                            payload: '0x',
+                            readinessTimestamp: 1700002300,
+                        },
+                        lzCompose: {
+                            status: 'COMPOSE_SUBMITTED',
+                        },
+                    },
+                },
+            ],
+        };
+
+        nock('https://scan.layerzero-api.com')
+            .get(`/v1/messages/wallet/${userAddress}`)
+            .reply(200, mockLayerZeroResponse);
+
+        const orders = await gatewaySDK.getCrossChainSwapOrders(userAddress);
+
+        expect(orders).toHaveLength(2); // Third order should be filtered out
+
+        // First order (completed)
+        expect(orders[0]).toEqual({
+            amount: BigInt(100), // 0x64 = 100
+            timestamp: 1700000000,
+            status: 'destination-confirmed',
+            source: {
+                eid: 40184,
+                txHash: '0xsource123',
+                token: '0x123...abc',
+            },
+            destination: {
+                eid: 30111,
+                txHash: '0xdest456',
+                token: '0x456...def',
+            },
+        });
+
+        // Second order (pending)
+        expect(orders[1]).toEqual({
+            amount: BigInt(300), // 0x12c = 300
+            timestamp: 1700001000,
+            status: 'destination-pending',
+            source: {
+                eid: 30111,
+                txHash: '0xsource789',
+                token: '0x789...ghi',
+            },
+            destination: {
+                eid: 40184,
+                txHash: '',
+                token: '0xabc...123',
+            },
+        });
+    });
+
+    it('should handle edge cases in getCrossChainSwapOrders', async () => {
+        const gatewaySDK = new LayerZeroGatewayClient(bob.id);
+        const userAddress = '0xFAEe001465dE6D7E8414aCDD9eF4aC5A35B2B808';
+
+        const mockResponse = {
+            data: [
+                {
+                    pathway: {
+                        srcEid: 40184,
+                        dstEid: 30111,
+                        sender: {
+                            address: '0x123',
+                            id: 'sender-1',
+                            name: 'Sender',
+                            chain: 'bob',
+                        },
+                        receiver: {
+                            address: '0x456',
+                            id: 'receiver-1',
+                            name: 'Receiver',
+                            chain: 'optimism',
+                        },
+                        id: 'pathway-1',
+                        nonce: 1,
+                    },
+                    source: {
+                        status: 'WAITING',
+                        tx: {
+                            txHash: '0xsource123',
+                            blockHash: '0xblock123',
+                            blockNumber: '12345',
+                            blockTimestamp: 1700000000,
+                            from: userAddress,
+                            payload: '0x', // Empty payload should result in amount 0
+                            readinessTimestamp: 1700000100,
+                        },
+                    },
+                    destination: {
+                        status: 'WAITING',
+                        tx: {
+                            txHash: '',
+                            blockHash: '',
+                            blockNumber: '',
+                            blockTimestamp: 0,
+                            from: '',
+                            payload: '',
+                            readinessTimestamp: 0,
+                        },
+                        lzCompose: {
+                            status: 'N/A',
+                        },
+                    },
+                },
+                {
+                    pathway: {
+                        srcEid: 40184,
+                        dstEid: 30111,
+                        sender: {
+                            address: '0x789',
+                            id: 'sender-2',
+                            name: 'Sender 2',
+                            chain: 'bob',
+                        },
+                        receiver: {
+                            address: '0xabc',
+                            id: 'receiver-2',
+                            name: 'Receiver 2',
+                            chain: 'optimism',
+                        },
+                        id: 'pathway-2',
+                        nonce: 2,
+                    },
+                    source: {
+                        status: 'SIMULATION_REVERTED',
+                        tx: {
+                            txHash: '0xfailedsource',
+                            blockHash: '0xfailedblock',
+                            blockNumber: '99999',
+                            blockTimestamp: 1700001000,
+                            from: userAddress,
+                            payload: '0xinvalidhex', // Invalid hex should result in amount 0
+                            readinessTimestamp: 1700001100,
+                        },
+                    },
+                    destination: {
+                        status: 'WAITING',
+                        tx: {
+                            txHash: '',
+                            blockHash: '',
+                            blockNumber: '',
+                            blockTimestamp: 0,
+                            from: '',
+                            payload: '',
+                            readinessTimestamp: 0,
+                        },
+                        lzCompose: {
+                            status: 'N/A',
+                        },
+                    },
+                },
+            ],
+        };
+
+        nock('https://scan.layerzero-api.com').get(`/v1/messages/wallet/${userAddress}`).reply(200, mockResponse);
+
+        const orders = await gatewaySDK.getCrossChainSwapOrders(userAddress);
+
+        expect(orders).toHaveLength(2);
+
+        // First order (source pending)
+        expect(orders[0]).toEqual({
+            amount: BigInt(0), // Empty payload
+            timestamp: 1700000000,
+            status: 'source-pending',
+            source: {
+                eid: 40184,
+                txHash: '0xsource123',
+                token: '0x123',
+            },
+            destination: {
+                eid: 30111,
+                txHash: '',
+                token: '0x456',
+            },
+        });
+
+        // Second order (source failed)
+        expect(orders[1]).toEqual({
+            amount: BigInt(0), // Invalid hex parsing
+            timestamp: 1700001000,
+            status: 'source-failed',
+            source: {
+                eid: 40184,
+                txHash: '0xfailedsource',
+                token: '0x789',
+            },
+            destination: {
+                eid: 30111,
+                txHash: '',
+                token: '0xabc',
+            },
+        });
+    });
+
+    it('should handle API error for getCrossChainSwapOrders', async () => {
+        const gatewaySDK = new LayerZeroGatewayClient(bob.id);
+        const userAddress = '0xFAEe001465dE6D7E8414aCDD9eF4aC5A35B2B808';
+
+        nock('https://scan.layerzero-api.com')
+            .get(`/v1/messages/wallet/${userAddress}`)
+            .reply(500, { message: 'Internal Server Error' });
+
+        await expect(gatewaySDK.getCrossChainSwapOrders(userAddress)).rejects.toThrow('Internal Server Error');
+    });
+
+    it('should handle network error for getCrossChainSwapOrders', async () => {
+        const gatewaySDK = new LayerZeroGatewayClient(bob.id);
+        const userAddress = '0xFAEe001465dE6D7E8414aCDD9eF4aC5A35B2B808';
+
+        nock('https://scan.layerzero-api.com')
+            .get(`/v1/messages/wallet/${userAddress}`)
+            .replyWithError(new TypeError('Failed to fetch'));
+
+        await expect(gatewaySDK.getCrossChainSwapOrders(userAddress)).rejects.toThrow(
+            'Failed to fetch LayerZero send orders'
+        );
+    });
+
+    it('should return empty array when no cross-chain orders exist', async () => {
+        const gatewaySDK = new LayerZeroGatewayClient(bob.id);
+        const userAddress = '0xFAEe001465dE6D7E8414aCDD9eF4aC5A35B2B808';
+
+        nock('https://scan.layerzero-api.com').get(`/v1/messages/wallet/${userAddress}`).reply(200, { data: [] });
+
+        const orders = await gatewaySDK.getCrossChainSwapOrders(userAddress);
+
+        expect(orders).toEqual([]);
+    });
 });

@@ -1,14 +1,15 @@
-import { assert, describe, it } from 'vitest';
+import { assert, describe, expect, it, vi } from 'vitest';
 import { LayerZeroClient, LayerZeroGatewayClient } from '../src/gateway/layerzero';
 import { createPublicClient, createWalletClient, http, PublicClient, Transport, zeroAddress } from 'viem';
 import { base, bob, optimism } from 'viem/chains';
-import { BitcoinSigner } from '../src/gateway/types';
+import { BitcoinSigner, LayerZeroMessageWallet } from '../src/gateway/types';
 import * as btc from '@scure/btc-signer';
 import { base64 } from '@scure/base';
 import { mnemonicToSeedSync } from 'bip39';
 import { HDKey } from '@scure/bip32';
 import { Hex } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
+import { getCrossChainStatus } from '../src/gateway/utils/layerzero';
 
 describe('LayerZero Tests', () => {
     it.skip('should get chains', async () => {
@@ -126,7 +127,7 @@ describe('LayerZero Tests', () => {
         console.log('quote', quote);
 
         // Verify we got an offramp quote
-        assert.ok(quote.offrampQuote, 'Should have offramp quote');
+        assert.ok(quote.data, 'Should have offramp quote');
         assert.ok(quote.params, 'Should have quote params');
 
         const publicClient = createPublicClient({
@@ -153,13 +154,233 @@ describe('LayerZero Tests', () => {
         console.log(txHash);
     }, 120000);
 
+    it.skip('should get a layerzero send quote and execute it', async () => {
+        const client = new LayerZeroGatewayClient(base.id);
+
+        const quote = await client.getQuote({
+            fromChain: 'base',
+            fromToken: (await client.getSupportedChainsInfo()).find((chain) => chain.name === 'base')
+                ?.oftAddress as string,
+            toChain: 'optimism',
+            toToken: (await client.getSupportedChainsInfo()).find((chain) => chain.name === 'optimism')
+                ?.oftAddress as string,
+            fromUserAddress: '0xEf7Ff7Fb24797656DF41616e807AB4016AE9dCD5',
+            toUserAddress: '0xEf7Ff7Fb24797656DF41616e807AB4016AE9dCD5',
+            amount: 100,
+        });
+
+        const publicClient = createPublicClient({
+            chain: base,
+            transport: http(),
+        });
+
+        const walletClient = createWalletClient({
+            chain: base,
+            transport: http(),
+            account: privateKeyToAccount(process.env.PRIVATE_KEY as Hex),
+        });
+
+        const txHash = await client.executeQuote({
+            quote,
+            walletClient,
+            publicClient: publicClient as PublicClient<Transport>,
+        });
+    }, 120000);
+
     it('should get chain id for eid', async () => {
         const client = new LayerZeroClient();
 
-        const optimismEid = '30111';
+        const optimismEid = 30111;
 
         assert.equal(await client.getChainId(optimismEid), optimism.id);
     }, 120000);
+
+    it('should return onramp, offramp and cross-chain orders', async () => {
+        const gatewaySDK = new LayerZeroGatewayClient(bob.id);
+
+        const getOrdersSpy = vi.spyOn(gatewaySDK, 'getOrders').mockImplementationOnce(() => Promise.resolve([]));
+        const getCrossChainOrdersSpy = vi
+            .spyOn(gatewaySDK, 'getCrossChainSwapOrders')
+            .mockImplementationOnce(() => Promise.resolve([]));
+
+        const result = await gatewaySDK.getOrders(zeroAddress);
+
+        expect(result).toEqual([]);
+        expect(getOrdersSpy).toHaveBeenCalledOnce();
+        expect(getCrossChainOrdersSpy).toHaveBeenCalledOnce();
+    });
+
+    describe('getCrossChainStatus', () => {
+        const createMockMessage = (sourceStatus: string, destinationStatus: string): LayerZeroMessageWallet => ({
+            pathway: {
+                srcEid: 40184,
+                dstEid: 30111,
+                sender: {
+                    address: '0x123',
+                    id: 'sender-1',
+                    name: 'Sender',
+                    chain: 'bob',
+                },
+                receiver: {
+                    address: '0x456',
+                    id: 'receiver-1',
+                    name: 'Receiver',
+                    chain: 'optimism',
+                },
+                id: 'pathway-1',
+                nonce: 1,
+            },
+            source: {
+                status: sourceStatus,
+                tx: {
+                    txHash: '0xsource',
+                    blockHash: '0xblock',
+                    blockNumber: '12345',
+                    blockTimestamp: 1700000000,
+                    from: '0xfrom',
+                    payload: '0x',
+                    readinessTimestamp: 1700000100,
+                },
+            },
+            destination: {
+                status: destinationStatus,
+                tx: {
+                    txHash: '0xdest',
+                    blockHash: '0xdestblock',
+                    blockNumber: '67890',
+                    blockTimestamp: 1700000200,
+                    from: '0xdestfrom',
+                    payload: '0x',
+                    readinessTimestamp: 1700000300,
+                },
+                lzCompose: {
+                    status: 'N/A',
+                },
+            },
+        });
+
+        it('should return source-pending when source is WAITING', () => {
+            const message = createMockMessage('WAITING', 'WAITING');
+            expect(getCrossChainStatus(message)).toBe('source-pending');
+        });
+
+        it('should return source-failed when source is SIMULATION_REVERTED', () => {
+            const message = createMockMessage('SIMULATION_REVERTED', 'WAITING');
+            expect(getCrossChainStatus(message)).toBe('source-failed');
+        });
+
+        it('should return destination-pending when source succeeded and destination is waiting', () => {
+            const message = createMockMessage('SUCCEEDED', 'WAITING');
+            expect(getCrossChainStatus(message)).toBe('destination-pending');
+        });
+
+        it('should return destination-confirmed when both source and destination succeeded', () => {
+            const message = createMockMessage('SUCCEEDED', 'SUCCEEDED');
+            expect(getCrossChainStatus(message)).toBe('destination-confirmed');
+        });
+
+        it('should return destination-failed when source succeeded but destination failed', () => {
+            const message = createMockMessage('SUCCEEDED', 'SIMULATION_REVERTED');
+            expect(getCrossChainStatus(message)).toBe('destination-failed');
+        });
+
+        it('should return unknown for unrecognized source status', () => {
+            const message = createMockMessage('UNKNOWN_STATUS', 'WAITING');
+            expect(getCrossChainStatus(message)).toBe('unknown');
+        });
+
+        it('should return unknown when source succeeded but destination has unknown status', () => {
+            const message = createMockMessage('SUCCEEDED', 'UNKNOWN_STATUS');
+            expect(getCrossChainStatus(message)).toBe('unknown');
+        });
+    });
+
+    describe('getL0CreateOrderGasCost', () => {
+        it('should estimate gas cost for order creation', async () => {
+            // Arrange
+            const l0Client = {
+                getOftAddressForChain: async () => '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
+            };
+            const publicClient = {
+                estimateFeesPerGas: async () => ({ maxFeePerGas: BigInt(100) }),
+                getGasPrice: async () => BigInt(100),
+                estimateContractGas: async () => BigInt(21000),
+            };
+            const client = new TestLayerZeroGatewayClient(bob.id, l0Client, publicClient);
+
+            // Mock params
+            const params = {
+                fromChain: 'bob',
+                l0ChainId: bob.id,
+                fromUserAddress: '0x1111111111111111111111111111111111111111',
+                toUserAddress: '0x2222222222222222222222222222222222222222',
+                amount: 1000,
+                toChain: 'optimism',
+                fromToken: 'wbtc',
+                toToken: 'wbtc',
+            };
+            const sendParams = {
+                dstEid: 30111,
+                to: '0x2222222222222222222222222222222222222222', // valid hex string
+                amountLD: BigInt(1000),
+                minAmountLD: BigInt(1000),
+                extraOptions: '0x',
+                composeMsg: '0x',
+                oftCmd: '0x',
+            };
+            const sendFees = {
+                nativeFee: BigInt(100000),
+                lzTokenFee: BigInt(50000),
+            };
+            const fromChain = 'bob';
+
+            // Act
+            const result = await client.getL0CreateOrderGasCost(params, sendParams as any, sendFees, fromChain);
+
+            // Assert
+            expect(result).toBe(BigInt(21000 * 100));
+        });
+
+        it('should throw error if WBTC OFT address is missing', async () => {
+            const l0Client = {
+                getOftAddressForChain: async () => null,
+            };
+            const publicClient = {
+                estimateFeesPerGas: async () => ({ maxFeePerGas: BigInt(100) }),
+                getGasPrice: async () => BigInt(100),
+                estimateContractGas: async () => BigInt(21000),
+            };
+            const client = new TestLayerZeroGatewayClient(bob.id, l0Client, publicClient);
+            const params = {
+                fromChain: 'bob',
+                l0ChainId: bob.id,
+                fromUserAddress: '0x1111111111111111111111111111111111111111',
+                toUserAddress: '0x2222222222222222222222222222222222222222',
+                amount: 1000,
+                toChain: 'optimism',
+                fromToken: 'wbtc',
+                toToken: 'wbtc',
+            };
+            const sendParams = {
+                dstEid: 30111,
+                to: '0x2222222222222222222222222222222222222222', // valid hex string
+                amountLD: BigInt(1000),
+                minAmountLD: BigInt(1000),
+                extraOptions: '0x',
+                composeMsg: '0x',
+                oftCmd: '0x',
+            };
+            const sendFees = {
+                nativeFee: BigInt(100000),
+                lzTokenFee: BigInt(50000),
+            };
+            const fromChain = 'bob';
+
+            await expect(
+                client.getL0CreateOrderGasCost(params, sendParams as any, sendFees, fromChain)
+            ).rejects.toThrow('WBTC OFT not found for chain: 40184');
+        });
+    });
 });
 
 /**
@@ -221,5 +442,19 @@ class ScureBitcoinSigner implements BitcoinSigner {
      */
     async getP2WPKHAddress(): Promise<string> {
         return btc.getAddress('wpkh', this.privateKey) as string;
+    }
+}
+
+class TestLayerZeroGatewayClient extends (await import('../src/gateway/layerzero')).LayerZeroGatewayClient {
+    _publicClient: any;
+    constructor(chainId: number, l0Client: any, publicClient: any) {
+        super(chainId);
+        // @ts-ignore
+        this.l0Client = l0Client;
+        this._publicClient = publicClient;
+    }
+    // @ts-ignore
+    get publicClient() {
+        return this._publicClient;
     }
 }
