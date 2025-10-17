@@ -384,7 +384,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                 args: [sendParam, false],
             });
 
-            const gasFee = await this.getL0CreateOrderGasCost(params, sendParam, sendFees, fromChain);
+            // const gasFee = await this.getL0CreateOrderGasCost(params, sendParam, sendFees, fromChain);
 
             return {
                 type: GatewayOrderType.CrossChainSwap,
@@ -398,7 +398,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                     feeBreakdown: {
                         nativeFee: sendFees.nativeFee,
                         lzTokenFee: sendFees.lzTokenFee,
-                        gasFee: gasFee,
+                        // gasFee: gasFee,
                     },
                 },
             };

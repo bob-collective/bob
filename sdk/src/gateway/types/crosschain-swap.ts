@@ -36,7 +36,7 @@ export type CrossChainSwapQuoteParams<T = {}> = BaseExecuteQuoteParams<T> & {
 export type CrossChainFeeBreakdown = {
     nativeFee: bigint;
     lzTokenFee: bigint;
-    gasFee: bigint;
+    // gasFee: bigint;
 };
 
 export interface CrossChainSwapQuote {
