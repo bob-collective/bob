@@ -2,6 +2,7 @@ import * as bitcoin from 'bitcoinjs-lib';
 import {
     Address,
     createPublicClient,
+    defineChain,
     encodeAbiParameters,
     formatUnits,
     Hex,
@@ -138,21 +139,28 @@ export function formatBtc(btc: bigint) {
     return formatUnits(btc, 8);
 }
 
-const supportedChains = [
+const supportedChainsMapping = {
     bob,
-    mainnet,
+    ethereum: defineChain({
+        ...mainnet,
+        rpcUrls: {
+            default: {
+                http: ['https://ethereum-rpc.publicnode.com'],
+            },
+        },
+    }),
     sonic,
     bsc,
     unichain,
-    berachain,
+    bera: berachain,
     sei,
     avalanche,
     base,
     soneium,
     optimism,
-] as const;
+} as const;
 
-const chainIdToChainConfigMapping = supportedChains.reduce(
+const chainIdToChainConfigMapping = Object.values(supportedChainsMapping).reduce(
     (acc, chain) => {
         acc[chain.id] = chain;
         return acc;
@@ -160,9 +168,9 @@ const chainIdToChainConfigMapping = supportedChains.reduce(
     {} as Record<ViemChain['id'], ViemChain>
 );
 
-const chainNameToChainIdMapping = supportedChains.reduce(
-    (acc, chain) => {
-        acc[chain.name.toLowerCase()] = chain.id;
+const chainNameToChainIdMapping = Object.entries(supportedChainsMapping).reduce(
+    (acc, [name, chain]) => {
+        acc[name.toLowerCase()] = chain.id;
         return acc;
     },
     {} as Record<ViemChain['name'], ViemChain['id']>
@@ -172,7 +180,7 @@ function getChainIdByName(chainName: string) {
     const chainId = chainNameToChainIdMapping[chainName.toLowerCase()];
     if (!chainId) {
         throw new Error(
-            `Chain id for "${chainName}" not found. Allowed values ${supportedChains.map((chain) => chain.name)}`
+            `Chain id for "${chainName}" not found. Allowed values ${Object.keys(supportedChainsMapping).map((chainName) => chainName.toLocaleLowerCase())}`
         );
     }
     return chainId;
@@ -182,7 +190,7 @@ function getChainConfigById(chainId: number) {
     const config = chainIdToChainConfigMapping[chainId];
     if (!config) {
         throw new Error(
-            `Chain id for "${chainId}" not found. Allowed values ${supportedChains.map((chain) => chain.id)}`
+            `Chain id for "${chainId}" not found. Allowed values ${Object.values(supportedChainsMapping).map((chain) => chain.id)}`
         );
     }
 

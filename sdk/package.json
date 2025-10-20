@@ -1,6 +1,6 @@
 {
     "name": "@gobob/bob-sdk",
-    "version": "4.3.8",
+    "version": "4.3.9",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
     "scripts": {
@@ -51,6 +51,6 @@
         "bitcoin-address-validation": "^3.0.0",
         "bitcoinjs-lib": "^6.1.7",
         "global": "^4.4.0",
-        "viem": "^2.33.2"
+        "viem": "^2.38.3"
     }
 }
