@@ -157,7 +157,14 @@ const supportedChainsMapping = {
     avalanche,
     base,
     soneium,
-    optimism,
+    optimism: defineChain({
+        ...optimism,
+        rpcUrls: {
+            default: {
+                http: ['https://optimism-rpc.publicnode.com'],
+            },
+        },
+    }),
 } as const;
 
 const chainIdToChainConfigMapping = Object.values(supportedChainsMapping).reduce(

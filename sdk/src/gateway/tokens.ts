@@ -1,6 +1,52 @@
 import { Token } from './types';
 import { Address, isAddress } from 'viem';
-import { bob, bobSepolia, mainnet, optimism } from 'viem/chains';
+import { avalanche, base, berachain, bob, bobSepolia, bsc, mainnet, soneium, sonic, unichain } from 'viem/chains';
+
+const layerZeroTokens = [
+    {
+        name: 'Wrapped BTC (OFT)',
+        symbol: 'WBTC (OFT)',
+        decimals: 8,
+        tokens: {
+            bob: {
+                address: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
+            },
+            ethereum: {
+                address: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
+            },
+            berachain: {
+                address: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
+            },
+            optimism: {
+                address: '0xc3f854b2970f8727d28527ece33176fac67fef48',
+            },
+            sonic: {
+                address: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
+            },
+            soneium: {
+                address: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
+            },
+            bsc: {
+                address: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
+            },
+            unichain: {
+                address: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
+            },
+            sei: {
+                address: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
+            },
+            avalanche: {
+                address: '0x0555e30da8f98308edb960aa94c0db47230d2b9c',
+            },
+            base: {
+                address: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
+            },
+        },
+        logoURI: 'https://raw.githubusercontent.com/bob-collective/bob/master/assets/wbtc.svg',
+        allowanceSlot: 6n,
+        balanceSlot: 5n,
+    },
+];
 
 // TODO: re-write to use superchain tokenlist
 const bobTokens = [
@@ -32,6 +78,36 @@ const bobTokens = [
         decimals: 8,
         tokens: {
             bob: {
+                address: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
+            },
+            ethereum: {
+                address: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
+            },
+            berachain: {
+                address: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
+            },
+            optimism: {
+                address: '0xc3f854b2970f8727d28527ece33176fac67fef48',
+            },
+            sonic: {
+                address: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
+            },
+            soneium: {
+                address: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
+            },
+            bsc: {
+                address: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
+            },
+            unichain: {
+                address: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
+            },
+            sei: {
+                address: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
+            },
+            avalanche: {
+                address: '0x0555e30da8f98308edb960aa94c0db47230d2b9c',
+            },
+            base: {
                 address: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
             },
         },
@@ -375,6 +451,30 @@ const TOKENS: Array<{
         ethereum?: {
             address: string;
         };
+        berachain?: {
+            address: string;
+        };
+        sonic?: {
+            address: string;
+        };
+        soneium?: {
+            address: string;
+        };
+        bsc?: {
+            address: string;
+        };
+        unichain?: {
+            address: string;
+        };
+        sei?: {
+            address: string;
+        };
+        avalanche?: {
+            address: string;
+        };
+        base?: {
+            address: string;
+        };
     };
     logoURI: string;
     allowanceSlot?: bigint; // optional
@@ -389,21 +489,47 @@ const TOKENS: Array<{
     ...avalonTokens,
     ...ionicTokens,
     ...vedaTokens,
+    ...layerZeroTokens,
 ];
+
+const supportedChainNames = [
+    'bob',
+    'bob-sepolia',
+    // 'optimism',
+    'ethereum',
+    'berachain',
+    'sonic',
+    'soneium',
+    'bsc',
+    'unichain',
+    // 'sei',
+    'avalanche',
+    'base',
+] as const;
+
+const chainNameToIdMapping: Record<(typeof supportedChainNames)[number], number> = {
+    bob: bob.id,
+    'bob-sepolia': bobSepolia.id,
+    // optimism: optimism.id,
+    ethereum: mainnet.id,
+    berachain: berachain.id,
+    sonic: sonic.id,
+    soneium: soneium.id,
+    bsc: bsc.id,
+    unichain: unichain.id,
+    // sei: sei.id,
+    avalanche: avalanche.id,
+    base: base.id,
+};
 
 /** @description Tokens supported on BOB and BOB Sepolia */
 export const SYMBOL_LOOKUP: { [key in number]: { [key in string]: Token } } = {};
 export const ADDRESS_LOOKUP: { [key in number]: { [key in string]: Token } } = {};
 
-SYMBOL_LOOKUP[bob.id] = {};
-SYMBOL_LOOKUP[bobSepolia.id] = {};
-SYMBOL_LOOKUP[optimism.id] = {};
-SYMBOL_LOOKUP[mainnet.id] = {};
-
-ADDRESS_LOOKUP[bob.id] = {};
-ADDRESS_LOOKUP[bobSepolia.id] = {};
-ADDRESS_LOOKUP[optimism.id] = {};
-ADDRESS_LOOKUP[mainnet.id] = {};
+for (const chainName of supportedChainNames) {
+    SYMBOL_LOOKUP[chainNameToIdMapping[chainName]] = {};
+    ADDRESS_LOOKUP[chainNameToIdMapping[chainName]] = {};
+}
 
 function addToken(address: string, token: (typeof TOKENS)[number], chainId: number) {
     const lowerAddress = address.toLowerCase();
@@ -421,20 +547,11 @@ function addToken(address: string, token: (typeof TOKENS)[number], chainId: numb
 }
 
 for (const token of TOKENS) {
-    if (token.tokens.bob) {
-        addToken(token.tokens.bob.address, token, bob.id);
-    }
-
-    if (token.tokens['bob-sepolia']) {
-        addToken(token.tokens['bob-sepolia'].address, token, bobSepolia.id);
-    }
-
-    if (token.tokens.optimism) {
-        addToken(token.tokens.optimism.address, token, optimism.id);
-    }
-
-    if (token.tokens.ethereum) {
-        addToken(token.tokens.ethereum.address, token, mainnet.id);
+    for (const chainName of supportedChainNames) {
+        const chainToken = token.tokens[chainName];
+        if (chainToken) {
+            addToken(chainToken.address, token, chainNameToIdMapping[chainName]);
+        }
     }
 }
 
@@ -471,6 +588,11 @@ export function getTokenSlots(
     originChain: string
 ): { allowanceSlot: bigint; balanceSlot: bigint } {
     const lowerAddress = tokenAddress.toLowerCase();
+
+    /**
+     * @dev bera -> berachain. `bera` is defined in layerzero deployments json
+     */
+    if (originChain === 'bera') originChain = 'berachain';
 
     // Look up the token in the master TOKENS array
     const token = TOKENS.find((t) => {
