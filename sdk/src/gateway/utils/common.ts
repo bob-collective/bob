@@ -199,14 +199,14 @@ export function getChainConfig(fromChain: string | number) {
 }
 
 // Compute the final ERC20 allowance storage slot
-export function computeAllowanceSlot(user: Address, offrampRegistryAddress: Address, tokenAllowanceSlot: bigint): Hex {
+export function computeAllowanceSlot(owner: Address, spender: Address, tokenAllowanceSlot: bigint): Hex {
     const innerSlot = keccak256(
         encodeAbiParameters(
             [
                 { name: 'owner', type: 'address' },
                 { name: 'slot', type: 'uint256' },
             ],
-            [user, tokenAllowanceSlot]
+            [owner, tokenAllowanceSlot]
         )
     );
 
@@ -216,7 +216,7 @@ export function computeAllowanceSlot(user: Address, offrampRegistryAddress: Addr
                 { name: 'spender', type: 'address' },
                 { name: 'innerSlot', type: 'bytes32' },
             ],
-            [offrampRegistryAddress, innerSlot]
+            [spender, innerSlot]
         )
     );
     return allowanceSlot;
