@@ -446,7 +446,12 @@ export class EsploraClient {
             method: 'POST',
             body: txHex,
         });
-        return await res.text();
+        // Ensure errors are surfaced instead of being treated as a txid
+        const text = await res.text();
+        if (!res.ok) {
+            throw new Error(`Esplora broadcast error: ${text}`);
+        }
+        return text;
     }
 
     /**
