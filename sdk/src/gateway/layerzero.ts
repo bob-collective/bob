@@ -18,7 +18,7 @@ import {
 import { bob, bobSepolia, mainnet } from 'viem/chains';
 import { layerZeroOftAbi, quoterV2Abi } from './abi';
 import { AllWalletClientParams, GatewayApiClient } from './client';
-import { getTokenAddress, getTokenSlots } from './tokens';
+import { getTokenAddress } from './tokens';
 import {
     CrossChainOrder,
     ExecuteQuoteParams,
@@ -605,7 +605,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
 
         if (chain.id === mainnet.id) {
             // WBTC mainnet
-            const wbtcMainnetSlots = getTokenSlots(wbtcMainnetAddress, 'ethereum');
+            const wbtcMainnetSlots = this.getTokenSlots('ethereum');
             const allowanceSlot = computeAllowanceSlot(
                 user as Address,
                 wbtcOftAddress as Address,
@@ -628,7 +628,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
             });
         } else {
             // WBTC OFT
-            const wbtcOftSlots = getTokenSlots(wbtcOftAddress as Address, fromChain);
+            const wbtcOftSlots = this.getTokenSlots(fromChain);
 
             const oftBalanceSlot = computeBalanceSlot(user as Address, wbtcOftSlots.balanceSlot);
 
@@ -714,6 +714,16 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                 },
             };
         });
+    }
+
+    private getTokenSlots(originChain: string) {
+        // slots for WBTC ERC20 token on ethereum
+        if (originChain === 'ethereum') return { allowanceSlot: 2n, balanceSlot: 0n };
+
+        return {
+            allowanceSlot: 6n,
+            balanceSlot: 5n,
+        };
     }
 
     /**
