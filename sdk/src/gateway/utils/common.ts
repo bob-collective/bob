@@ -149,11 +149,25 @@ const supportedChainsMapping = {
             },
         },
     }),
-    sonic,
+    sonic: defineChain({
+        ...sonic,
+        rpcUrls: {
+            default: {
+                http: ['https://sonic.drpc.org'],
+            },
+        },
+    }),
     bsc,
     unichain,
     bera: berachain,
-    sei,
+    sei: defineChain({
+        ...sei,
+        rpcUrls: {
+            default: {
+                http: ['https://sei.drpc.org'],
+            },
+        },
+    }),
     avalanche,
     base,
     soneium,
@@ -161,7 +175,7 @@ const supportedChainsMapping = {
         ...optimism,
         rpcUrls: {
             default: {
-                http: ['https://optimism-rpc.publicnode.com'],
+                http: ['https://optimism.drpc.org'],
             },
         },
     }),
