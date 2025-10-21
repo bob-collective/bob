@@ -1,6 +1,6 @@
 {
     "name": "@gobob/bob-sdk",
-    "version": "4.3.8",
+    "version": "4.3.9",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
     "scripts": {
@@ -52,6 +52,5 @@
         "bitcoinjs-lib": "^6.1.7",
         "global": "^4.4.0",
         "viem": "^2.33.2"
-    },
-    "packageManager": "pnpm@10.10.0+sha512.d615db246fe70f25dcfea6d8d73dee782ce23e2245e3c4f6f888249fb568149318637dca73c2c5c8ef2a4ca0d5657fb9567188bfab47f566d1ee6ce987815c39"
+    }
 }
