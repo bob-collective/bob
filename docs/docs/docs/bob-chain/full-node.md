@@ -5,23 +5,37 @@ sidebar_label: Run a Full Node
 
 # Run a Full Node
 
-:::warning Upcoming BOB Isthmus Hardfork – May 9, 2025, 16:00:01 UTC
+:::warning Upcoming BOB Fusaka Readiness Upgrade – October 14, 2025 (Sepolia), Early December 2025 (Mainnet)
 **What's Included in the Upgrade**
-- Compatibility with Ethereum's Pectra features  
-- Improved scalability and maintainability across all OP Stack chains
+This is a **readiness upgrade** to make BOB protocol compatible with Ethereum's Fusaka hardfork on L1. This is NOT Fusaka adoption on L2—that will happen in a future upgrade.
 
-**Required Actions**
-If you or your partners are running external nodes, please ensure the following steps are completed before the fork time:
-- op-node: Update to version [v1.13.2](https://github.com/ethereum-optimism/optimism/releases/tag/op-node%2Fv1.13.2)
-- op-geth: Update to version [v1.101503.4](https://github.com/ethereum-optimism/op-geth/releases/tag/v1.101503.4)
-- If you **do not manage fork timestamps via --network**, add the following flag:  `--override.isthmus=1746806401`
+**Important Dates**
 
-**Granite and/or Holocene Forks**
-Granite and Holocene are active on BOB mainnet.
-- Set on op-geth and op-node the flags `--override.holocene=1736445601` and `--override.granite=1736272801`
+- Ethereum Sepolia Fusaka hard fork: Tuesday, October 14th, 2025 07:36:00 UTC (BOB testnet already upgraded)
+- Ethereum Mainnet Fusaka hard fork: Expected early December 2025
+
+**Required Actions for Node Operators**
+
+If you or your partners are running external nodes, please ensure the following steps are completed:
+
+- **op-node**: Update to version [v1.14.1](https://github.com/ethereum-optimism/optimism/releases/tag/op-node%2Fv1.14.1)
+- **op-geth**: Update to version [v1.101603.1](https://github.com/ethereum-optimism/op-geth/releases/tag/v1.101603.1)
+- **L1 Beacon Node**: Ensure your L1 beacon node endpoint can serve all blobs and is configured with the appropriate Fusaka flags before the fork
+
+**Required Actions for Chain Operators**
+
+- **op-batcher**: Update to [v1.16.0](https://github.com/ethereum-optimism/optimism/releases/tag/op-batcher%2Fv1.16.0) with `OP_BATCHER_TXMGR_ENABLE_CELL_PROOFS: true` and restart just after Fusaka activates on L1
+
+- **proxyd**: Update to [v4.19.0](https://github.com/ethereum-optimism/infra/releases/tag/proxyd%2Fv4.19.0) or greater (requires whitelisting `eth_blobBaseFee` RPC)
+- **op-challenger**: Update to [v1.6.0](https://github.com/ethereum-optimism/optimism/releases/tag/op-challenger%2Fv1.6.0) if using permissionless fault proofs
+
+**Previous Upgrades**
+
+- **Isthmus**: Active on May 9, 2025, 16:00:01 UTC
+- **Granite and Holocene**: Active on BOB mainnet
 
 **More Info**
-For full details, please refer to the [Upgrade Notice](https://docs.optimism.io/notices/upgrade-15)
+For full details, please refer to the [Fusaka Upgrade Notice](https://docs.optimism.io/notices/fusaka-notice)
 Feel free to reach out with any questions or concerns.
 :::
 
@@ -93,14 +107,14 @@ OP_NODE_METRICS_ENABLED=true
 ```yml title="docker-compose.yml"
 services:
   opgeth:
-    image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-geth:v1.101503.4
+    image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-geth:v1.101603.1
     env_file: op-geth.env
     volumes:
       - ./op-geth-data:/opt/op-geth/
     network_mode: host
 
   opnode:
-    image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node:v1.13.2
+    image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node:v1.14.1
     env_file: op-node.env
     command:
       - op-node
