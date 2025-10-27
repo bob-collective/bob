@@ -1,10 +1,19 @@
 ---
-sidebar_position: 2
+sidebar_position: 1
+sidebar_label: BOB Chain
 ---
 
 # BOB Chain Overview
 
 BOB is a Hybrid Chain that combines Bitcoin's security with Ethereum's DeFi innovation.
+
+## Architecture
+
+Learn more about BOB's architecture:
+- [Hybrid Stack](./stack-overview) - The layered architecture enabling Bitcoin and Ethereum interaction
+- [Hybrid Chain](./hybrid-chain) - BOB's core chain architecture and security model
+- [Transactions](./transactions) - How transactions work on BOB
+- [Hybrid Nodes](./hybrid-nodes) - Technical infrastructure providers securing the network
 
 ## Key Features
 
