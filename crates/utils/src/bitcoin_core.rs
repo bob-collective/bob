@@ -205,6 +205,8 @@ impl BitcoinCore {
         cmd.arg("-listen=0");
         // so we can use sendtoaddress from fresh instance
         cmd.arg("-fallbackfee=0.00001");
+        // set minimum relay fee (default is 0.00001000 BTC per kB)
+        cmd.arg("-minrelaytxfee=0.00001000");
 
         let datadir = TempDir::new().expect("Couldn't create temp directory");
         cmd.arg(format!("-datadir={}", datadir.path().to_str().unwrap()));
