@@ -21,6 +21,8 @@ jobs:
           submodules: recursive
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.3.6
       - name: Install deps
         run: forge install
       - name: Run forge tests
@@ -41,6 +43,8 @@ jobs:
           submodules: recursive
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.3.6
       - name: Pull library deps
         run: forge install
       - name: Check fmt
