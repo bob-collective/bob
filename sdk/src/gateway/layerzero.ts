@@ -1,6 +1,14 @@
 import ecc from '@bitcoinerlab/secp256k1';
 import * as bitcoin from 'bitcoinjs-lib';
-import { Address, encodeAbiParameters, encodePacked, Hex, padHex, parseAbiParameters } from 'viem';
+import {
+    Address,
+    ContractFunctionExecutionError,
+    encodeAbiParameters,
+    encodePacked,
+    Hex,
+    padHex,
+    parseAbiParameters,
+} from 'viem';
 import { bob, bobSepolia } from 'viem/chains';
 import { layerZeroOftAbi, quoterV2Abi } from './abi';
 import { AllWalletClientParams, GatewayApiClient } from './client';
@@ -471,16 +479,14 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
 
                 return txHash;
             } catch (error) {
-                const message = error instanceof Error ? error.message : String(error);
-                if (
-                    message.includes(
-                        'The total cost (gas * gas fee + value) of executing this transaction exceeds the balance of the account'
-                    )
-                ) {
+                if (error instanceof ContractFunctionExecutionError) {
+                    // https://github.com/wevm/viem/blob/3aa882692d2c4af3f5e9cc152099e07cde28e551/src/actions/public/simulateContract.test.ts#L711
+                    // throw new error
                     throw new Error(
                         'Insufficient native funds for source and destination gas fees, please add more native funds to your account'
                     );
                 }
+
                 throw error;
             }
         } else {
