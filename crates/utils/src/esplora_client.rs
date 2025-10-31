@@ -1,6 +1,6 @@
 use bitcoin::{
-    block::Header, consensus, hashes::hex::FromHex, BlockHash, CompactTarget, MerkleBlock, Network,
-    Transaction, TxMerkleNode, Txid,
+    block::Header, consensus, constants::ChainHash, hashes::hex::FromHex, BlockHash, CompactTarget,
+    MerkleBlock, Network, Transaction, TxMerkleNode, Txid,
 };
 use eyre::{Error, Result};
 use reqwest::{Client, Url};
@@ -257,15 +257,8 @@ impl EsploraClient {
     }
 
     pub async fn get_bitcoin_network(&self) -> Result<Network> {
-        let url_str = self.url.as_str();
-
-        match url_str {
-            _ if url_str.contains(ESPLORA_MAINNET_URL) => Ok(Network::Bitcoin),
-            _ if url_str.contains(ESPLORA_TESTNET_URL) => Ok(Network::Testnet),
-            _ if url_str.contains(ESPLORA_LOCALHOST_URL) => Ok(Network::Regtest),
-            _ if url_str.contains(ESPLORA_SIGNET_URL) => Ok(Network::Signet),
-            _ => Err(Error::msg("Unknown network for URL: {url_str}")),
-        }
+        let genesis_hash = self.get_block_hash(0).await?;
+        Ok(Network::try_from(ChainHash::from_genesis_block_hash(genesis_hash))?)
     }
 }
 
@@ -349,6 +342,20 @@ mod tests {
             coinbase_tx,
             Txid::from_str("33b36c41948b549159a200e9fed5027ef9a3fd5737a6bfe91094a61c8124c722")?
         );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_get_network() -> Result<()> {
+        let esplora_client = EsploraClient::new(Network::Bitcoin)?;
+        matches!(esplora_client.get_bitcoin_network().await?, Network::Bitcoin);
+
+        let esplora_client = EsploraClient::new(Network::Testnet)?;
+        matches!(esplora_client.get_bitcoin_network().await?, Network::Testnet);
+
+        let esplora_client = EsploraClient::new(Network::Signet)?;
+        matches!(esplora_client.get_bitcoin_network().await?, Network::Signet);
+
         Ok(())
     }
 }
