@@ -286,13 +286,8 @@ export class GatewayApiClient extends BaseClient {
         );
         const balanceSlot = computeBalanceSlot(user as Address, slots.balanceSlot);
 
-        // Ensure the owner inside offrampArgs is set
-        const args: readonly [(typeof offrampOrder.offrampArgs)[0]] = [
-            {
-                ...offrampOrder.offrampArgs[0],
-                owner: user as Address,
-            },
-        ];
+        // Reuse the pre-built args that already include the correct owner
+        const args = offrampOrder.offrampArgs;
 
         const createOrderGasEstimate = await publicClient.estimateContractGas({
             address: offrampRegistryAddress,
