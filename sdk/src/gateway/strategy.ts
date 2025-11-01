@@ -451,6 +451,10 @@ export default class StrategyClient {
                 method: 'POST',
             });
 
+            if (!res.ok) {
+                throw new Error(`Request failed. Status: ${res.status}`);
+            }
+
             const data = await res.json();
 
             const apys = {
