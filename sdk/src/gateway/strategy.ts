@@ -451,16 +451,12 @@ export default class StrategyClient {
                 method: 'POST',
             });
 
-            if (!res.ok) {
-                throw new Error(`Request failed. Status: ${res.status}`);
-            }
-
             const data = await res.json();
 
             const apys = {
                 'BTC+': {
-                    apyBase: Number(data.data.btcPlusStats.baseApy),
-                    apyReward: Number(data.data.btcPlusStats.rewardApy),
+                    apyBase: Number(data.data.btcPlusStats?.baseApy || 0),
+                    apyReward: Number(data.data.btcPlusStats?.rewardApy || 0),
                     rewardTokens: ['0x04830a96a23ea718faa695a5aae74695aae3a23f'],
                 },
             };
