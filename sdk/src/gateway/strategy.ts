@@ -455,15 +455,15 @@ export default class StrategyClient {
 
             const apys = {
                 'BTC+': {
-                    apyBase: Number(data.data.btcPlusStats?.baseApy || 0),
-                    apyReward: Number(data.data.btcPlusStats?.rewardApy || 0),
+                    apyBase: Math.max(Number(data.data.btcPlusStats?.baseApy || 0), 0),
+                    apyReward: Math.max(Number(data.data.btcPlusStats?.rewardApy || 0), 0),
                     rewardTokens: ['0x04830a96a23ea718faa695a5aae74695aae3a23f'],
                 },
             };
 
             data.data.lsts.details.forEach((pool) => {
                 apys[pool.protocol] = {
-                    apyBase: Number(pool.apy),
+                    apyBase: Math.max(Number(pool.apy), 0),
                     apyReward: 0,
                 };
             });
