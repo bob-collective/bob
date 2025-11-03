@@ -224,7 +224,7 @@ export default class StrategyClient {
 
             const solvStrategy = tokenToSolvStrategyMap.get(tokenAddress);
 
-            if (solvStrategy) {
+            if (solvStrategy && solvAPYs[solvStrategy]) {
                 return {
                     apyBase: solvAPYs[solvStrategy].apyBase,
                     apyReward: solvAPYs[solvStrategy].apyReward,
