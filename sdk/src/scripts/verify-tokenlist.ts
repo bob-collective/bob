@@ -1,0 +1,209 @@
+#!/usr/bin/env ts-node
+
+import { createPublicClient, http, isAddress, getAddress, parseAbi } from 'viem';
+import * as fs from 'fs';
+import * as path from 'path';
+import { bob } from 'viem/chains';
+
+const client = createPublicClient({
+  chain: bob,
+  transport: http()
+});
+
+// ERC20 ABI for name, symbol, decimals
+const erc20Abi = parseAbi([
+  'function name() view returns (string)',
+  'function symbol() view returns (string)',
+  'function decimals() view returns (uint8)'
+]);
+
+interface Token {
+  name: string;
+  address: string;
+  symbol: string;
+  decimals: number;
+  chainId: number;
+  logoURI: string;
+}
+
+interface ValidationResult {
+  address: string;
+  symbol: string;
+  issues: string[];
+  onChainData?: {
+    name: string;
+    symbol: string;
+    decimals: number;
+  };
+}
+
+async function validateTokenAddress(address: string): Promise<boolean> {
+  try {
+    // Check if address is valid
+    if (!isAddress(address)) {
+      return false;
+    }
+
+    // Check if address is checksummed
+    const checksummed = getAddress(address);
+    return address === checksummed;
+  } catch {
+    return false;
+  }
+}
+
+async function getTokenInfo(address: string): Promise<{ name: string; symbol: string; decimals: number } | null> {
+  try {
+    // Skip ETH (zero address)
+    if (address === '0x0000000000000000000000000000000000000000') {
+      return { name: 'Ether', symbol: 'ETH', decimals: 18 };
+    }
+
+    const [name, symbol, decimals] = await Promise.all([
+      client.readContract({
+        address: address as `0x${string}`,
+        abi: erc20Abi,
+        functionName: 'name',
+      }),
+      client.readContract({
+        address: address as `0x${string}`,
+        abi: erc20Abi,
+        functionName: 'symbol',
+      }),
+      client.readContract({
+        address: address as `0x${string}`,
+        abi: erc20Abi,
+        functionName: 'decimals',
+      }),
+    ]);
+
+    return {
+      name: name as string,
+      symbol: symbol as string,
+      decimals: Number(decimals)
+    };
+  } catch (error) {
+    console.error(`Error fetching token info for ${address}:`, error);
+    return null;
+  }
+}
+
+async function validateToken(token: Token): Promise<ValidationResult> {
+  const issues: string[] = [];
+  const result: ValidationResult = {
+    address: token.address,
+    symbol: token.symbol,
+    issues
+  };
+
+  // Validate chain ID
+  if (token.chainId !== 60808) {
+    issues.push(`Invalid chainId: expected 60808, got ${token.chainId}`);
+  }
+
+  // Validate address format and checksum
+  const isValidAddress = await validateTokenAddress(token.address);
+  if (!isValidAddress) {
+    issues.push('Invalid or non-checksummed address');
+    return result; // Can't continue validation without valid address
+  }
+
+  // Get on-chain data
+  const onChainData = await getTokenInfo(token.address);
+  if (!onChainData) {
+    issues.push('Unable to fetch on-chain token data - contract may not exist or not be ERC20');
+    return result;
+  }
+
+  result.onChainData = onChainData;
+
+  // Compare with tokenlist data
+  if (token.name !== onChainData.name) {
+    issues.push(`Name mismatch: tokenlist="${token.name}", onchain="${onChainData.name}"`);
+  }
+
+  if (token.symbol !== onChainData.symbol) {
+    issues.push(`Symbol mismatch: tokenlist="${token.symbol}", onchain="${onChainData.symbol}"`);
+  }
+
+  if (token.decimals !== onChainData.decimals) {
+    issues.push(`Decimals mismatch: tokenlist=${token.decimals}, onchain=${onChainData.decimals}`);
+  }
+
+  // Validate logoURI format
+  if (!token.logoURI.startsWith('http') && !token.logoURI.startsWith('ipfs://')) {
+    issues.push('Invalid logoURI: must start with http or ipfs://');
+  }
+
+  return result;
+}
+
+async function main() {
+  console.log('🔍 Verifying BOB tokenlist...\n');
+
+  // Read tokenlist
+  const tokenlistPath = path.join(__dirname, '../../../token-list.json');
+  if (!fs.existsSync(tokenlistPath)) {
+    console.error('❌ tokenlist.json not found');
+    process.exit(1);
+  }
+
+  const tokens: Token[] = JSON.parse(fs.readFileSync(tokenlistPath, 'utf8'));
+  console.log(`📋 Found ${tokens.length} tokens to validate\n`);
+
+  let totalIssues = 0;
+  const results: ValidationResult[] = [];
+
+  // Validate each token
+  for (let i = 0; i < tokens.length; i++) {
+    const token = tokens[i];
+    console.log(`[${i + 1}/${tokens.length}] Validating ${token.symbol} (${token.address})...`);
+
+    const result = await validateToken(token);
+    results.push(result);
+
+    if (result.issues.length > 0) {
+      console.log(`  ❌ ${result.issues.length} issue(s):`);
+      result.issues.forEach(issue => console.log(`     • ${issue}`));
+      totalIssues += result.issues.length;
+    } else {
+      console.log(`  ✅ Valid`);
+    }
+
+    // Small delay to avoid rate limiting
+    if (i < tokens.length - 1) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+  }
+
+  // Summary
+  console.log('\n📊 Validation Summary:');
+  console.log(`   Total tokens: ${tokens.length}`);
+  console.log(`   Valid tokens: ${results.filter(r => r.issues.length === 0).length}`);
+  console.log(`   Tokens with issues: ${results.filter(r => r.issues.length > 0).length}`);
+  console.log(`   Total issues: ${totalIssues}`);
+
+  // Check for duplicate addresses
+  const addresses = tokens.map(t => t.address.toLowerCase());
+  const duplicates = addresses.filter((addr, index) => addresses.indexOf(addr) !== index);
+  if (duplicates.length > 0) {
+    console.log(`\n⚠️  Duplicate addresses found: ${[...new Set(duplicates)].join(', ')}`);
+  }
+
+  // Check for duplicate symbols
+  const symbols = tokens.map(t => t.symbol);
+  const duplicateSymbols = symbols.filter((symbol, index) => symbols.indexOf(symbol) !== index);
+  if (duplicateSymbols.length > 0) {
+    console.log(`\n⚠️  Duplicate symbols found: ${[...new Set(duplicateSymbols)].join(', ')}`);
+  }
+
+  if (totalIssues === 0 && duplicates.length === 0) {
+    console.log('\n🎉 All tokens are valid!');
+    process.exit(0);
+  } else {
+    console.log('\n❌ Validation failed with issues');
+    process.exit(1);
+  }
+}
+
+main().catch(console.error);

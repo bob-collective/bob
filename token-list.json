@@ -1,0 +1,429 @@
+[
+  {
+    "name": "Ether",
+    "address": "0x0000000000000000000000000000000000000000",
+    "symbol": "ETH",
+    "decimals": 18,
+    "chainId": 60808,
+    "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/info/logo.png"
+  },
+  {
+    "name": "Wrapped Ether",
+    "address": "0x4200000000000000000000000000000000000006",
+    "symbol": "WETH",
+    "decimals": 18,
+    "chainId": 60808,
+    "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png",
+    "extensions": {
+      "bridgeInfo": {
+        "1": {
+          "tokenAddress": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+          "originBridgeAddress": "0x4200000000000000000000000000000000000010",
+          "destBridgeAddress": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+        }
+      }
+    }
+  },
+  {
+    "name": "Wrapped BTC",
+    "address": "0x0555E30da8f98308EdB960aa94C0Db47230d2B9c",
+    "symbol": "WBTC",
+    "decimals": 8,
+    "chainId": 60808,
+    "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/master/assets/wbtc.svg",
+    "extensions": {
+      "bridgeInfo": {
+        "1": {
+          "tokenAddress": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599"
+        }
+      }
+    }
+  },
+  {
+    "name": "tBTC v2",
+    "address": "0xBBa2eF945D523C4e2608C9E1214C2Cc64D4fc2e2",
+    "symbol": "tBTC",
+    "decimals": 18,
+    "chainId": 60808,
+    "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/master/assets/tbtc.svg",
+    "extensions": {
+      "bridgeInfo": {
+        "1": {
+          "tokenAddress": "0x18084fba666a33d37592fa2633fd49a74dd93a88",
+          "originBridgeAddress": "0x4200000000000000000000000000000000000010",
+          "destBridgeAddress": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+        }
+      }
+    }
+  },
+  {
+    "name": "Bridged USDC (BOB)",
+    "address": "0xe75D0fB2C24A55cA1e3F96781a2bCC7bdba058F0",
+    "symbol": "USDC.e",
+    "decimals": 6,
+    "chainId": 60808,
+    "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png",
+    "extensions": {
+      "bridgeInfo": {
+        "1": {
+          "tokenAddress": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+          "originBridgeAddress": "0xe497788F8Fcc30B773C9A181a0FFE2e60645cE90",
+          "destBridgeAddress": "0x450D55a4B4136805B0e5A6BB59377c71FC4FaCBb"
+        }
+      }
+    }
+  },
+  {
+    "name": "Tether USD",
+    "address": "0x05D032ac25d322df992303dCa074EE7392C117b9",
+    "symbol": "USDT",
+    "decimals": 6,
+    "chainId": 60808,
+    "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xdAC17F958D2ee523a2206206994597C13D831ec7/logo.png",
+    "extensions": {
+      "bridgeInfo": {
+        "1": {
+          "tokenAddress": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+          "originBridgeAddress": "0x4200000000000000000000000000000000000010",
+          "destBridgeAddress": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+        }
+      }
+    }
+  },
+  {
+    "name": "Dai Stablecoin",
+    "address": "0x6c851F501a3F24E29A8E39a29591cddf09369080",
+    "symbol": "DAI",
+    "decimals": 18,
+    "chainId": 60808,
+    "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x6B175474E89094C44Da98b954EedeAC495271d0F/logo.png",
+    "extensions": {
+      "bridgeInfo": {
+        "1": {
+          "tokenAddress": "0x6b175474e89094c44da98b954eedeac495271d0f",
+          "originBridgeAddress": "0x4200000000000000000000000000000000000010",
+          "destBridgeAddress": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+        }
+      }
+    }
+  },
+  {
+    "name": "Solv BTC",
+    "address": "0x541FD749419CA806a8bc7da8ac23D346f2dF8B77",
+    "symbol": "SolvBTC",
+    "decimals": 18,
+    "chainId": 60808,
+    "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/master/assets/solvBTC.svg"
+  },
+  {
+    "name": "xSolvBTC",
+    "address": "0xCC0966D8418d412c599A6421b760a847eB169A8c",
+    "symbol": "xSolvBTC",
+    "decimals": 18,
+    "chainId": 60808,
+    "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/master/assets/xSolvBTC.svg"
+  },
+  {
+    "name": "SolvBTC Bera Vault",
+    "address": "0x0F6f337B09cb5131cF0ce9df3Beb295b8e728F3B",
+    "symbol": "SolvBTC.BERA",
+    "decimals": 18,
+    "chainId": 60808,
+    "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/master/assets/solvBTC.BBN.svg"
+  },
+  {
+    "name": "SolvBTC Jupiter",
+    "address": "0x6b062AA7F5FC52b530Cb13967aE2E6bc0D8Dd3E4",
+    "symbol": "SolvBTC.JUP",
+    "decimals": 18,
+    "chainId": 60808,
+    "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/master/assets/solvBTC.JUP.svg"
+  },
+  {
+    "name": "uniBTC",
+    "address": "0x236f8c0a61dA474dB21B693fB2ea7AAB0c803894",
+    "symbol": "uniBTC",
+    "decimals": 8,
+    "chainId": 60808,
+    "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/master/assets/uniBTC.svg"
+  },
+  {
+    "name": "Rocket Pool ETH",
+    "address": "0xB5686c4f60904Ec2BDA6277d6FE1F7cAa8D1b41a",
+    "symbol": "rETH",
+    "decimals": 18,
+    "chainId": 60808,
+    "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xae78736Cd615f374D3085123a210448E74Fc6393/logo.png",
+    "extensions": {
+      "bridgeInfo": {
+        "1": {
+          "tokenAddress": "0xae78736cd615f374d3085123a210448e74fc6393",
+          "originBridgeAddress": "0x4200000000000000000000000000000000000010",
+          "destBridgeAddress": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+        }
+      }
+    }
+  },
+  {
+    "name": "Wrapped liquid staked Ether 2.0",
+    "address": "0x85008aE6198BC91aC0735CB5497CF125ddAAc528",
+    "symbol": "wstETH",
+    "decimals": 18,
+    "chainId": 60808,
+    "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0/logo.png",
+    "extensions": {
+      "bridgeInfo": {
+        "1": {
+          "tokenAddress": "0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0",
+          "originBridgeAddress": "0xd1559523374D93972E0F7fE1AA98642754f5c4d1",
+          "destBridgeAddress": "0x091dF5E1284E49fA682407096aD34cfD42B95B72"
+        }
+      }
+    }
+  },
+  {
+    "name": "Lombard Staked Bitcoin",
+    "address": "0xA45d4121b3D47719FF57a947A9d961539Ba33204",
+    "symbol": "LBTC",
+    "decimals": 8,
+    "chainId": 60808,
+    "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x8236a87084f8B84306f72007F36F2618A5634494/logo.png",
+    "extensions": {
+      "bridgeInfo": {
+        "1": {
+          "tokenAddress": "0x8236a87084f8B84306f72007F36F2618A5634494",
+          "originBridgeAddress": "0x4200000000000000000000000000000000000010",
+          "destBridgeAddress": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+        }
+      }
+    }
+  },
+  {
+    "name": "Fire Bitcoin",
+    "address": "0xC96dE26018A54D51c097160568752c4E3BD6C364",
+    "symbol": "FBTC",
+    "decimals": 8,
+    "chainId": 60808,
+    "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC96dE26018A54D51c097160568752c4E3BD6C364/logo.png",
+    "extensions": {
+      "bridgeInfo": {
+        "1": {
+          "tokenAddress": "0xc96de26018a54d51c097160568752c4e3bd6c364",
+          "originBridgeAddress": "0x4200000000000000000000000000000000000010",
+          "destBridgeAddress": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+        }
+      }
+    }
+  },
+  {
+    "name": "pumpBTC",
+    "address": "0x1fCca65fb6Ae3b2758b9b2B394CB227eAE404e1E",
+    "symbol": "pumpBTC",
+    "decimals": 8,
+    "chainId": 60808,
+    "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xF469fBD2abcd6B9de8E169d128226C0Fc90a012e/logo.png",
+    "extensions": {
+      "bridgeInfo": {
+        "1": {
+          "tokenAddress": "0xF469fBD2abcd6B9de8E169d128226C0Fc90a012e",
+          "originBridgeAddress": "0x4200000000000000000000000000000000000010",
+          "destBridgeAddress": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+        }
+      }
+    }
+  },
+  {
+    "name": "Frax",
+    "address": "0xc4a20a608616F18aA631316eEDa9Fb62d089361e",
+    "symbol": "FRAX",
+    "decimals": 18,
+    "chainId": 60808,
+    "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x853d955aCEf822Db058eb8505911ED77F175b99e/logo.png",
+    "extensions": {
+      "bridgeInfo": {
+        "1": {
+          "tokenAddress": "0x853d955aCEf822Db058eb8505911ED77F175b99e",
+          "originBridgeAddress": "0x4200000000000000000000000000000000000010",
+          "destBridgeAddress": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+        }
+      }
+    }
+  },
+  {
+    "name": "Frax Ether",
+    "address": "0x4124CBBDE250a1a4bF94740491E79AB6a2eC0321",
+    "symbol": "frxETH",
+    "decimals": 18,
+    "chainId": 60808,
+    "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x5E8422345238F34275888049021821E8E08CAa1f/logo.png",
+    "extensions": {
+      "bridgeInfo": {
+        "1": {
+          "tokenAddress": "0x5e8422345238f34275888049021821e8e08caa1f",
+          "originBridgeAddress": "0x4200000000000000000000000000000000000010",
+          "destBridgeAddress": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+        }
+      }
+    }
+  },
+  {
+    "name": "Staked Frax Ether",
+    "address": "0x249d2952D1C678843e7cD7bF654EfCeC52f2F9E8",
+    "symbol": "sfrxETH",
+    "decimals": 18,
+    "chainId": 60808,
+    "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xac3E018457B222d93114458476f3E3416Abbe38F/logo.png",
+    "extensions": {
+      "bridgeInfo": {
+        "1": {
+          "tokenAddress": "0xac3E018457B222d93114458476f3E3416Abbe38F",
+          "originBridgeAddress": "0x4200000000000000000000000000000000000010",
+          "destBridgeAddress": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+        }
+      }
+    }
+  },
+  {
+    "name": "Frax Share",
+    "address": "0x15e35B19AD29C512103EaABb55154Ef0Ee6ca661",
+    "symbol": "FXS",
+    "decimals": 18,
+    "chainId": 60808,
+    "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x3432B6A60D23Ca0dFCa7761B7ab56459D9C964D0/logo.png",
+    "extensions": {
+      "bridgeInfo": {
+        "1": {
+          "tokenAddress": "0x3432B6A60D23Ca0dFCa7761B7ab56459D9C964D0",
+          "originBridgeAddress": "0x4200000000000000000000000000000000000010",
+          "destBridgeAddress": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+        }
+      }
+    }
+  },
+  {
+    "name": "Staked FRAX",
+    "address": "0xb7eae04B995B3b365040dEE99795112ADD43afa0",
+    "symbol": "sFRAX",
+    "decimals": 18,
+    "chainId": 60808,
+    "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA663B02CF0a4b149d2aD41910CB81e23e1c41c32/logo.png",
+    "extensions": {
+      "bridgeInfo": {
+        "1": {
+          "tokenAddress": "0xA663B02CF0a4b149d2aD41910CB81e23e1c41c32",
+          "originBridgeAddress": "0x4200000000000000000000000000000000000010",
+          "destBridgeAddress": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+        }
+      }
+    }
+  },
+  {
+    "name": "StakeStone Ether",
+    "address": "0x96147A9Ae9a42d7Da551fD2322ca15B71032F342",
+    "symbol": "STONE",
+    "decimals": 18,
+    "chainId": 60808,
+    "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x7122985656e38bdc0302db86685bb972b145bd3c/logo.png",
+    "extensions": {
+      "bridgeInfo": {
+        "1": {
+          "tokenAddress": "0x7122985656e38bdc0302db86685bb972b145bd3c",
+          "originBridgeAddress": "0x4200000000000000000000000000000000000010",
+          "destBridgeAddress": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+        }
+      }
+    }
+  },
+  {
+    "name": "ALEX",
+    "address": "0xa669e059fDcbDFC532A2edd658eb2922799EEDb8",
+    "symbol": "ALEX",
+    "decimals": 18,
+    "chainId": 60808,
+    "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xe7c3755482d0da522678af05945062d4427e0923/logo.png",
+    "extensions": {
+      "bridgeInfo": {
+        "1": {
+          "tokenAddress": "0xe7c3755482d0da522678af05945062d4427e0923",
+          "originBridgeAddress": "0x4200000000000000000000000000000000000010",
+          "destBridgeAddress": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+        }
+      }
+    }
+  },
+  {
+    "name": "DLLR",
+    "address": "0xf3107eEC1e6F067552C035FD87199e1A5169CB20",
+    "symbol": "DLLR",
+    "decimals": 18,
+    "chainId": 60808,
+    "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xbdbb63f938c8961af31ead3deba5c96e6a323dd1/logo.png",
+    "extensions": {
+      "bridgeInfo": {
+        "1": {
+          "tokenAddress": "0xbdbb63f938c8961af31ead3deba5c96e6a323dd1",
+          "originBridgeAddress": "0x4200000000000000000000000000000000000010",
+          "destBridgeAddress": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+        }
+      }
+    }
+  },
+  {
+    "name": "SOV",
+    "address": "0xba20a5e63eeEFfFA6fD365E7e540628F8fC61474",
+    "symbol": "SOV",
+    "decimals": 18,
+    "chainId": 60808,
+    "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xbdab72602e9ad40fc6a6852caf43258113b8f7a5/logo.png",
+    "extensions": {
+      "bridgeInfo": {
+        "1": {
+          "tokenAddress": "0xbdab72602e9ad40fc6a6852caf43258113b8f7a5",
+          "originBridgeAddress": "0x4200000000000000000000000000000000000010",
+          "destBridgeAddress": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+        }
+      }
+    }
+  },
+  {
+    "name": "Threshold USD",
+    "address": "0xf7EF136751D7496021858c048FFA4f978C27831A",
+    "symbol": "thUSD",
+    "decimals": 18,
+    "chainId": 60808,
+    "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xCFC5bD99915aAa815401C5a41A927aB7a38d29cf/logo.png",
+    "extensions": {
+      "bridgeInfo": {
+        "1": {
+          "tokenAddress": "0xCFC5bD99915aAa815401C5a41A927aB7a38d29cf",
+          "originBridgeAddress": "0x4200000000000000000000000000000000000010",
+          "destBridgeAddress": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+        }
+      }
+    }
+  },
+  {
+    "name": "OpenUSDT",
+    "address": "0x1217BfE6c773EEC6cc4A38b5Dc45B92292B6E189",
+    "symbol": "oUSDT",
+    "decimals": 6,
+    "chainId": 60808,
+    "logoURI": "https://cryptologos.cc/logos/tether-usdt-logo.png"
+  },
+  {
+    "name": "Satoshi Stablecoin",
+    "address": "0x78Fea795cBFcC5fFD6Fb5B845a4f53d25C283bDB",
+    "symbol": "satUSD",
+    "decimals": 18,
+    "chainId": 60808,
+    "logoURI": "https://s2.coinmarketcap.com/static/img/coins/64x64/27494.png"
+  },
+  {
+    "name": "Satoshi Stablecoin V2",
+    "address": "0xecf21b335B41f9d5A89f6186A99c19a3c467871f",
+    "symbol": "satUSD",
+    "decimals": 18,
+    "chainId": 60808,
+    "logoURI": "https://s2.coinmarketcap.com/static/img/coins/64x64/27494.png"
+  }
+]
