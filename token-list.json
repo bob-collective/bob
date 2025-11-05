@@ -421,7 +421,7 @@
       "symbol": "BABY",
       "decimals": 6,
       "chainId": 60808,
-      "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x33a3d962955a3862c8093d1273344719f03ca17c/logo.png"
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/BABY/logo.svg"
     },
     {
       "name": "BTC+",
@@ -437,7 +437,7 @@
       "symbol": "HybridBTC.pendle",
       "decimals": 8,
       "chainId": 60808,
-      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/master/assets/hybridBTC-pendle"
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/HybridBTC.pendle/logo.svg"
     },
     {
       "name": "Threshold Network Token",
@@ -479,7 +479,7 @@
       "symbol": "UNI",
       "decimals": 18,
       "chainId": 60808,
-      "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x1f9840a85d5af5bf1d1762f925bdaddc4201f984/logo.png",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/UNI/logo.png",
       "extensions": {
         "bridgeInfo": {
           "1": {
@@ -496,7 +496,7 @@
       "symbol": "WBTC",
       "decimals": 8,
       "chainId": 60808,
-      "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x2260fac5e5542a773aa44fbcfedf7c193bc2c599/logo.png",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/WBTC/logo.svg",
       "extensions": {
         "bridgeInfo": {
           "1": {

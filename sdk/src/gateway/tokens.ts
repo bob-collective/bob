@@ -38,9 +38,9 @@ const bobTokens = tokenList.tokens
             logoURI: token.logoURI,
             ...(slots
                 ? {
-                    allowanceSlot: slots.allowanceSlot,
-                    balanceSlot: slots.balanceSlot,
-                }
+                      allowanceSlot: slots.allowanceSlot,
+                      balanceSlot: slots.balanceSlot,
+                  }
                 : {}),
         };
     });
