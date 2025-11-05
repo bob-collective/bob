@@ -54,33 +54,35 @@ export interface OfframpLiquidity {
     totalOfframpLiquidity: bigint;
 }
 
-/** @dev Offramp Available Liquidity */
+/** @dev Offramp available liquidity details */
 export interface OfframpLiquidityV2 {
-    /** @dev Token address used for payment */
+    /** @dev Address of the token accepted for offramp payments */
     token: Address;
-    /** @dev Max sats amount a *single* order can be served with for a given user address */
+    /** @dev Maximum sats amount that a *single* order can be served with for a specific user address */
     maxOrderAmountInSats: bigint;
-    /** @dev Total liquidity across all solver addresses */
+    /** @dev Total available offramp liquidity across all solver addresses */
     totalOfframpLiquidityInSats: bigint;
-    /** @dev Minimum offramp quote liquidity details */
+    /** @dev Details about the minimum offramp quote, including fee rate */
     minimumOfframpQuote: MinimumOfframpQuote;
 }
 
+/** @dev Minimum offramp quote information */
 export interface MinimumOfframpQuote {
-    /** @dev Minimum sats amount a *single* order can be served */
+    /** @dev Minimum sats amount that can be processed for a single offramp order */
     minimumAmountInSats: bigint;
-    /** @dev Minimum offramp quote calculated for fee rate */
+    /** @dev Fee rate used to calculate the minimum offramp quote */
     calculatedForFeeRate: bigint;
 }
 
+/** @dev Onramp available liquidity details */
 export interface OnrampLiquidity {
-    /** @dev Token address used for payment */
+    /** @dev Address of the token accepted for onramp payments */
     tokenAddress: Address;
-    /** @dev Max sats amount a *single* order can be served with for a given user address */
+    /** @dev Maximum sats amount that a *single* order can be served with for a specific user address */
     maxOrderAmountInSats: bigint;
-    /** @dev Total liquidity across all gateway addresses */
+    /** @dev Total available onramp liquidity across all gateway addresses */
     totalOnrampLiquidityInSats: bigint;
-    /** @dev Minimum sats onramp quote liquidity details */
+    /** @dev Minimum sats amount that can be processed for an onramp order */
     minSatsAmount: bigint;
 }
 
