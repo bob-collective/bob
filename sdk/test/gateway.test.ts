@@ -1392,7 +1392,7 @@ describe('Gateway Tests', () => {
         expect(orders).toEqual([]);
     });
 
-    it('should return mocked offramp liquidity v2', async () => {
+    it('should return mocked offramp liquidity', async () => {
         const gatewaySDK = new GatewaySDK(bob.id);
         const tokenAddress = SYMBOL_LOOKUP[bob.id]['wbtc (oft)'].address;
         const userAddress = zeroAddress;
