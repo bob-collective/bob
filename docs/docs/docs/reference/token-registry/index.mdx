@@ -154,10 +154,10 @@ Each bridged token includes bridge information in its `extensions.bridgeInfo` fi
 ```javascript
 // Fetch the tokenlist  
 const response = await fetch('https://raw.githubusercontent.com/bob-collective/bob/master/token-list.json');
-const tokens = await response.json();
+const tokenList = await response.json();
 
 // Find WBTC token info
-const wbtc = tokens.find(token => token.symbol === 'WBTC');
+const wbtc = tokenList.tokens.find(token => token.symbol === 'WBTC');
 console.log(wbtc.address); // L2 WBTC address
 
 // Get bridge information
