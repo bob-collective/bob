@@ -348,13 +348,13 @@ mod tests {
     #[tokio::test]
     async fn test_get_network() -> Result<()> {
         let esplora_client = EsploraClient::new(Network::Bitcoin)?;
-        matches!(esplora_client.get_bitcoin_network().await?, Network::Bitcoin);
+        assert_eq!(esplora_client.get_bitcoin_network().await?, Network::Bitcoin);
 
         let esplora_client = EsploraClient::new(Network::Testnet)?;
-        matches!(esplora_client.get_bitcoin_network().await?, Network::Testnet);
+        assert_eq!(esplora_client.get_bitcoin_network().await?, Network::Testnet);
 
         let esplora_client = EsploraClient::new(Network::Signet)?;
-        matches!(esplora_client.get_bitcoin_network().await?, Network::Signet);
+        assert_eq!(esplora_client.get_bitcoin_network().await?, Network::Signet);
 
         Ok(())
     }
