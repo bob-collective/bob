@@ -1423,7 +1423,7 @@ describe('Gateway Tests', () => {
         const tokenAddress = SYMBOL_LOOKUP[bob.id]['wbtc (oft)'].address;
         const userAddress = zeroAddress;
 
-        const mockk_offramp_liquidity = {
+        const mock_offramp_liquidity = {
             tokenAddress,
             maxOrderAmountInSats: 50000000,
             totalOfframpLiquidityInSats: 53304097,
@@ -1439,11 +1439,11 @@ describe('Gateway Tests', () => {
                 tokenAddress,
                 userAddress,
             })
-            .reply(200, mockk_offramp_liquidity);
+            .reply(200, mock_offramp_liquidity);
 
         const offrampLiquidityV2 = await gatewaySDK.fetchOfframpLiquidityV2(tokenAddress, userAddress);
 
-        expect(offrampLiquidityV2).toEqual(mockk_offramp_liquidity);
+        expect(offrampLiquidityV2).toEqual(mock_offramp_liquidity);
     });
 
     it('should return mocked onramp liquidity', async () => {
