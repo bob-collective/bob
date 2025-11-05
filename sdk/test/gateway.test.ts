@@ -767,32 +767,6 @@ describe('Gateway Tests', () => {
         expect(result).toBe(true);
     });
 
-    it('fetches the correct offramp liquidity', async () => {
-        const gatewaySDK = new GatewaySDK(bobSepolia.id);
-        const tokenAddress = '0x4496ebE7C8666a8103713EE6e0c08cA0cD25b888'.toLowerCase();
-        nock(SIGNET_GATEWAY_BASE_URL).persist().get(`/offramp-liquidity/${tokenAddress}`).reply(200, {
-            tokenAddress,
-            maxOrderAmount: '861588',
-            totalOfframpLiquidity: '861588',
-        });
-
-        const offrampLiquidityTokenAddressAsParam = await gatewaySDK.fetchOfframpLiquidity(tokenAddress);
-
-        expect(offrampLiquidityTokenAddressAsParam).toEqual({
-            token: tokenAddress,
-            maxOrderAmount: BigInt('861588'),
-            totalOfframpLiquidity: BigInt('861588'),
-        });
-
-        const offrampLiquidityTokenSymbolAsParam = await gatewaySDK.fetchOfframpLiquidity('bobBTC');
-
-        expect(offrampLiquidityTokenSymbolAsParam).toEqual({
-            token: tokenAddress,
-            maxOrderAmount: BigInt('861588'),
-            totalOfframpLiquidity: BigInt('861588'),
-        });
-    });
-
     it('should return btc txid for onramp', async () => {
         const gatewaySDK = new GatewaySDK(bob.id);
         const mockBtcSigner = {
@@ -1441,10 +1415,10 @@ describe('Gateway Tests', () => {
             })
             .reply(200, mock_offramp_liquidity);
 
-        const offrampLiquidityV2 = await gatewaySDK.fetchOfframpLiquidityV2(tokenAddress, userAddress);
+        const offrampLiquidity = await gatewaySDK.fetchOfframpLiquidity(tokenAddress, userAddress);
 
         const normalized = JSON.parse(
-            JSON.stringify(offrampLiquidityV2, (_, v) => (typeof v === 'bigint' ? Number(v) : v))
+            JSON.stringify(offrampLiquidity, (_, v) => (typeof v === 'bigint' ? Number(v) : v))
         );
 
         // Match only the liquidity details, skip tokenAddress
@@ -1484,23 +1458,23 @@ describe('Gateway Tests', () => {
         async () => {
             const gatewaySDK = new GatewaySDK(bob.id);
             const tokenAddress = SYMBOL_LOOKUP[bob.id]['wbtc (oft)'].address as Address;
-            const offrampLiquidityV2 = await gatewaySDK.fetchOfframpLiquidityV2(tokenAddress, zeroAddress);
+            const offrampLiquidity = await gatewaySDK.fetchOfframpLiquidity(tokenAddress, zeroAddress);
 
             const minGatewayQuoteOnly = await gatewaySDK.fetchOfframpQuote(
                 tokenAddress,
-                offrampLiquidityV2.minimumOfframpQuote.minimumAmountInSats,
+                offrampLiquidity.minimumOfframpQuote.minimumAmountInSats,
                 zeroAddress
             );
             expect(BigInt(minGatewayQuoteOnly.amountLockInSat)).toEqual(
-                offrampLiquidityV2.minimumOfframpQuote.minimumAmountInSats
+                offrampLiquidity.minimumOfframpQuote.minimumAmountInSats
             );
 
             const maxGatewayQuoteOnly = await gatewaySDK.fetchOfframpQuote(
                 tokenAddress,
-                offrampLiquidityV2.maxOrderAmountInSats,
+                offrampLiquidity.maxOrderAmountInSats,
                 zeroAddress
             );
-            expect(BigInt(maxGatewayQuoteOnly.amountLockInSat)).toEqual(offrampLiquidityV2.maxOrderAmountInSats);
+            expect(BigInt(maxGatewayQuoteOnly.amountLockInSat)).toEqual(offrampLiquidity.maxOrderAmountInSats);
         },
         { timeout: 30000 } // 30 seconds
     );

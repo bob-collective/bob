@@ -44,18 +44,8 @@ export interface OfframpQuote {
     feeBreakdown: OfframpFeeBreakdown;
 }
 
-/** @dev Offramp Available Liquidity */
-export interface OfframpLiquidity {
-    /** @dev Token address used for payment */
-    token: Address;
-    /** @dev Max token amount a *single* order can be served with (in token decimals) */
-    maxOrderAmount: bigint;
-    /** @dev Total liquidity across all solver addresses (in token decimals) */
-    totalOfframpLiquidity: bigint;
-}
-
 /** @dev Offramp available liquidity details */
-export interface OfframpLiquidityV2 {
+export interface OfframpLiquidity {
     /** @dev Address of the token accepted for offramp payments */
     tokenAddress: Address;
     /** @dev Maximum sats amount that a *single* order can be served with for a specific user address */

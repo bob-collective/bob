@@ -41,7 +41,6 @@ import {
     GetQuoteParams,
     OfframpCreateOrderParams,
     OfframpLiquidity,
-    OfframpLiquidityV2,
     OfframpOrder,
     OfframpOrderStatus,
     OfframpQuote,
@@ -450,37 +449,6 @@ export class GatewayApiClient extends BaseClient {
     }
 
     /**
-     * Fetches available offramp liquidity for a specific token.
-     *
-     * @param token Token symbol or address
-     * @returns Promise resolving to liquidity information
-     * @throws {Error} If API request fails
-     */
-    async fetchOfframpLiquidity(token: string): Promise<OfframpLiquidity> {
-        const tokenAddress = getTokenAddress(this.chainId, token.toLowerCase());
-
-        const response = await this.safeFetch(
-            `${this.baseUrl}/offramp-liquidity/${tokenAddress}`,
-            undefined,
-            'Failed to get offramp liquidity'
-        );
-
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => null);
-            const errorMessage = errorData?.message || 'Failed to get offramp liquidity';
-            throw new Error(errorMessage);
-        }
-
-        const rawLiquidity = await response.json();
-
-        return {
-            token: rawLiquidity.tokenAddress as Address,
-            maxOrderAmount: BigInt(rawLiquidity.maxOrderAmount),
-            totalOfframpLiquidity: BigInt(rawLiquidity.totalOfframpLiquidity),
-        };
-    }
-
-    /**
      * Fetches available offramp liquidity.
      *
      * @param token Token symbol or address
@@ -488,7 +456,7 @@ export class GatewayApiClient extends BaseClient {
      * @returns Promise resolving to liquidity information
      * @throws {Error} If API request fails
      */
-    async fetchOfframpLiquidityV2(token: string, userAddress: Address): Promise<OfframpLiquidityV2> {
+    async fetchOfframpLiquidity(token: string, userAddress: Address): Promise<OfframpLiquidity> {
         const tokenAddress = getTokenAddress(this.chainId, token.toLowerCase());
 
         const queryParams = new URLSearchParams({
