@@ -5,23 +5,27 @@ import tokenList from '../../../token-list.json';
 
 // Storage slot mapping for tokens that need specific slot information
 const STORAGE_SLOTS_MAP: { [address: string]: { allowanceSlot: bigint; balanceSlot: bigint } } = {
-    '0x0555e30da8f98308edb960aa94c0db47230d2b9c': { // WBTC (OFT)
+    '0x0555e30da8f98308edb960aa94c0db47230d2b9c': {
+        // WBTC (OFT)
         allowanceSlot: 6n,
         balanceSlot: 5n,
     },
-    '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599': { // WBTC (Ethereum)
+    '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599': {
+        // WBTC (Ethereum)
         allowanceSlot: 2n,
         balanceSlot: 0n,
     },
-    '0xadce1ab74c8e64c155953a8bde37cbb06cf7086d': { // BTC (Bob Sepolia)
+    '0xadce1ab74c8e64c155953a8bde37cbb06cf7086d': {
+        // BTC (Bob Sepolia)
         allowanceSlot: 1n,
         balanceSlot: 0n,
     },
 };
 
-const bobTokens = tokenList
-    .filter(token => token.chainId === 60808)
-    .map(token => {
+const bobTokens = tokenList.tokens
+    .filter((token) => token.chainId === 60808)
+    .filter((token) => token.address !== '0x03C7054BCB39f7b2e5B2c7AcB37583e32D70Cfa3') // Exclude the old WBTC
+    .map((token) => {
         const address = token.address.toLowerCase();
         const slots = STORAGE_SLOTS_MAP[address];
 
@@ -32,18 +36,23 @@ const bobTokens = tokenList
             decimals: token.decimals,
             chainId: token.chainId,
             logoURI: token.logoURI,
-            ...(slots ? { allowanceSlot: slots.allowanceSlot, balanceSlot: slots.balanceSlot } : {}),
+            ...(slots
+                ? {
+                      allowanceSlot: slots.allowanceSlot,
+                      balanceSlot: slots.balanceSlot,
+                  }
+                : {}),
         };
     });
 
 const bobSepoliaTokens = [
     {
-        name: "BTC",
-        address: "0xAdCE1AB74C8e64c155953A8BdE37cBB06Cf7086D",
-        symbol: "BTC",
+        name: 'BTC',
+        address: '0xAdCE1AB74C8e64c155953A8BdE37cBB06Cf7086D',
+        symbol: 'BTC',
         decimals: 18,
         chainId: 808813,
-        logoURI: "https://raw.githubusercontent.com/bob-collective/bob/master/assets/btc.svg",
+        logoURI: 'https://raw.githubusercontent.com/bob-collective/bob/master/assets/btc.svg',
         allowanceSlot: 1n,
         balanceSlot: 0n,
     },
@@ -122,12 +131,7 @@ const TOKENS: Array<{
     logoURI: string;
     allowanceSlot?: bigint; // optional
     balanceSlot?: bigint; // optional
-}> = [
-        ...bobTokens,
-        ...bobSepoliaTokens,
-        ...optimismTokens,
-        ...ethereumTokens,
-    ];
+}> = [...bobTokens, ...bobSepoliaTokens, ...optimismTokens, ...ethereumTokens];
 
 /** @description Tokens supported on BOB and BOB Sepolia */
 export const SYMBOL_LOOKUP: { [key in number]: { [key in string]: Token } } = {};
@@ -166,22 +170,19 @@ export const tokenToStrategyTypeMap = new Map([
     ...bobTokens.map((token) => [token.address.toLowerCase(), 'bob'] as const),
     ...bobSepoliaTokens.map((token) => [token.address.toLowerCase(), 'bob'] as const),
     ...[
-        "0xD30288EA9873f376016A0250433b7eA375676077",
-        "0x6265C05158f672016B771D6Fb7422823ed2CbcDd",
-        "0x5EF2B8fbCc8aea2A9Dbe2729F0acf33E073Fa43e",
-        "0x7848F0775EebaBbF55cB74490ce6D3673E68773A"
+        '0xD30288EA9873f376016A0250433b7eA375676077',
+        '0x6265C05158f672016B771D6Fb7422823ed2CbcDd',
+        '0x5EF2B8fbCc8aea2A9Dbe2729F0acf33E073Fa43e',
+        '0x7848F0775EebaBbF55cB74490ce6D3673E68773A',
     ].map((address) => [address.toLowerCase(), 'segment'] as const),
+    ...['0x68e0e4d875FDe34fc4698f40ccca0Db5b67e3693', '0xEBc8a7EE7f1D6534eBF45Bd5311203BF0A17493c'].map(
+        (address) => [address.toLowerCase(), 'ionic'] as const
+    ),
+    ...['0x9998e05030Aee3Af9AD3df35A34F5C51e1628779'].map((address) => [address.toLowerCase(), 'veda'] as const),
     ...[
-        "0x68e0e4d875FDe34fc4698f40ccca0Db5b67e3693",
-        "0xEBc8a7EE7f1D6534eBF45Bd5311203BF0A17493c"
-    ].map((address) => [address.toLowerCase(), 'ionic'] as const),
-    ...[
-        "0x9998e05030Aee3Af9AD3df35A34F5C51e1628779"
-    ].map((address) => [address.toLowerCase(), 'veda'] as const),
-    ...[
-        "0x5E007Ed35c7d89f5889eb6FD0cdCAa38059560ef",
-        "0xd6890176e8d912142AC489e8B5D8D93F8dE74D60",
-        "0x2E6500A7Add9a788753a897e4e3477f651c612eb"
+        '0x5E007Ed35c7d89f5889eb6FD0cdCAa38059560ef',
+        '0xd6890176e8d912142AC489e8B5D8D93F8dE74D60',
+        '0x2E6500A7Add9a788753a897e4e3477f651c612eb',
     ].map((address) => [address.toLowerCase(), 'avalon'] as const),
 ]);
 
@@ -194,9 +195,7 @@ export function getTokenAddress(chainId: number, token: string): Address {
         throw new Error('Unknown output token');
     }
 }
-export function getTokenSlots(
-    tokenAddress: Address,
-): { allowanceSlot: bigint; balanceSlot: bigint } {
+export function getTokenSlots(tokenAddress: Address): { allowanceSlot: bigint; balanceSlot: bigint } {
     const lowerAddress = tokenAddress.toLowerCase();
 
     // Look up the token in the master TOKENS array

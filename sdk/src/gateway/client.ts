@@ -273,9 +273,7 @@ export class GatewayApiClient extends BaseClient {
 
         const fee = feeValues.maxFeePerGas ?? gasPrice;
 
-        const slots = getTokenSlots(
-            offrampOrder.quote.token as Address,
-        );
+        const slots = getTokenSlots(offrampOrder.quote.token as Address);
         const user = params.fromUserAddress;
 
         const allowanceSlot = computeAllowanceSlot(
@@ -1144,8 +1142,8 @@ export class GatewayApiClient extends BaseClient {
                             : (base as NonNullable<typeof base>) // failed
                         : (base as NonNullable<typeof base>) // success
                     : order.strategyAddress // pending
-                        ? (output as NonNullable<typeof output>)
-                        : (base as NonNullable<typeof base>);
+                      ? (output as NonNullable<typeof output>)
+                      : (base as NonNullable<typeof base>);
             }
             const getTokenAddress = (): string => {
                 return getFinal(order.baseTokenAddress, outputTokenAddress);
@@ -1179,8 +1177,8 @@ export class GatewayApiClient extends BaseClient {
                 const tokens = order.tokensReceived
                     ? order.tokensReceived
                     : outputTokenAmount && outputTokenAddress
-                        ? [{ amount: outputTokenAmount, tokenAddress: outputTokenAddress }]
-                        : [];
+                      ? [{ amount: outputTokenAmount, tokenAddress: outputTokenAddress }]
+                      : [];
 
                 return tokens
                     .map(({ amount, tokenAddress }) => ({
@@ -1283,12 +1281,12 @@ export class GatewayApiClient extends BaseClient {
                 },
                 outputToken: outputToken
                     ? {
-                        symbol: outputToken.symbol,
-                        address: outputToken.address,
-                        logo: outputToken.logoURI,
-                        decimals: outputToken.decimals,
-                        chain: chainName,
-                    }
+                          symbol: outputToken.symbol,
+                          address: outputToken.address,
+                          logo: outputToken.logoURI,
+                          decimals: outputToken.decimals,
+                          chain: chainName,
+                      }
                     : null,
             };
         });
