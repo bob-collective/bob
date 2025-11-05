@@ -1420,7 +1420,7 @@ describe('Gateway Tests', () => {
 
     it('should return mocked offramp liquidity v2', async () => {
         const gatewaySDK = new GatewaySDK(bob.id);
-        const tokenAddress = '0x0555e30da8f98308edb960aa94c0db47230d2b9c';
+        const tokenAddress = SYMBOL_LOOKUP[bob.id]['wbtc (oft)'].address;
         const userAddress = zeroAddress;
 
         const mockk_offramp_liquidity = {
@@ -1448,7 +1448,7 @@ describe('Gateway Tests', () => {
 
     it('should return mocked onramp liquidity', async () => {
         const gatewaySDK = new GatewaySDK(bob.id);
-        const tokenAddress = '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c'.toLowerCase() as Address;
+        const tokenAddress = SYMBOL_LOOKUP[bob.id]['wbtc (oft)'].address as Address;
         const userAddress = '0xFAEe001465dE6D7E8414aCDD9eF4aC5A35B2B808' as Address;
 
         const mock_onramp_liquidity = {
@@ -1466,7 +1466,7 @@ describe('Gateway Tests', () => {
             })
             .reply(200, mock_onramp_liquidity);
 
-        const onrampLiquidity = await gatewaySDK.fetchOnrampLiquidity(tokenAddress, userAddress, null);
+        const onrampLiquidity = await gatewaySDK.fetchOnrampLiquidity(tokenAddress, userAddress, undefined);
 
         expect(onrampLiquidity).toEqual(mock_onramp_liquidity);
     });
@@ -1475,7 +1475,7 @@ describe('Gateway Tests', () => {
         'get offramp liquidity and get quote e2e',
         async () => {
             const gatewaySDK = new GatewaySDK(bob.id);
-            const tokenAddress = '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c'.toLowerCase() as Address;
+            const tokenAddress = SYMBOL_LOOKUP[bob.id]['wbtc (oft)'].address as Address;
             const offrampLiquidityV2 = await gatewaySDK.fetchOfframpLiquidityV2(tokenAddress, zeroAddress);
 
             const minGatewayQuoteOnly = await gatewaySDK.fetchOfframpQuote(
@@ -1501,9 +1501,9 @@ describe('Gateway Tests', () => {
         'get onramp liquidity and get quote e2e',
         async () => {
             const gatewaySDK = new GatewaySDK(bob.id);
-            const tokenAddress = '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c'.toLowerCase() as Address;
+            const tokenAddress = SYMBOL_LOOKUP[bob.id]['wbtc (oft)'].address as Address;
             const userAddress = '0xFAEe001465dE6D7E8414aCDD9eF4aC5A35B2B808' as Address;
-            const onrampLiquidity = await gatewaySDK.fetchOnrampLiquidity(tokenAddress, userAddress, null);
+            const onrampLiquidity = await gatewaySDK.fetchOnrampLiquidity(tokenAddress, userAddress, undefined);
 
             const minGatewayQuoteOnly = await gatewaySDK.getOnrampQuote({
                 fromUserAddress: userAddress,
