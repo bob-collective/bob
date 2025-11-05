@@ -505,7 +505,17 @@ export class GatewayApiClient extends BaseClient {
             throw new Error(errorMessage);
         }
 
-        return await response.json();
+        const rawLiquidity = await response.json();
+
+        return {
+            tokenAddress: rawLiquidity.tokenAddress as Address,
+            maxOrderAmountInSats: BigInt(rawLiquidity.maxOrderAmountInSats),
+            totalOfframpLiquidityInSats: BigInt(rawLiquidity.totalOfframpLiquidityInSats),
+            minimumOfframpQuote: {
+                minimumAmountInSats: BigInt(rawLiquidity.minimumOfframpQuote.minimumAmountInSats),
+                calculatedForFeeRate: BigInt(rawLiquidity.minimumOfframpQuote.calculatedForFeeRate),
+            },
+        };
     }
 
     /**
@@ -538,7 +548,14 @@ export class GatewayApiClient extends BaseClient {
             throw new Error(errorMessage);
         }
 
-        return await response.json();
+        const rawLiquidity = await response.json();
+
+        return {
+            tokenAddress: rawLiquidity.tokenAddress as Address,
+            maxOrderAmountInSats: BigInt(rawLiquidity.maxOrderAmountInSats),
+            totalOnrampLiquidityInSats: BigInt(rawLiquidity.totalOnrampLiquidityInSats),
+            minSatsAmount: BigInt(rawLiquidity.minSatsAmount),
+        };
     }
 
     /**

@@ -57,7 +57,7 @@ export interface OfframpLiquidity {
 /** @dev Offramp available liquidity details */
 export interface OfframpLiquidityV2 {
     /** @dev Address of the token accepted for offramp payments */
-    token: Address;
+    tokenAddress: Address;
     /** @dev Maximum sats amount that a *single* order can be served with for a specific user address */
     maxOrderAmountInSats: bigint;
     /** @dev Total available offramp liquidity across all solver addresses */

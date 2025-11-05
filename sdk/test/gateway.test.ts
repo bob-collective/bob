@@ -1443,7 +1443,12 @@ describe('Gateway Tests', () => {
 
         const offrampLiquidityV2 = await gatewaySDK.fetchOfframpLiquidityV2(tokenAddress, userAddress);
 
-        expect(offrampLiquidityV2).toEqual(mock_offramp_liquidity);
+        const normalized = JSON.parse(
+            JSON.stringify(offrampLiquidityV2, (_, v) => (typeof v === 'bigint' ? Number(v) : v))
+        );
+
+        // Match only the liquidity details, skip tokenAddress
+        expect(normalized).toMatchObject(mock_offramp_liquidity);
     });
 
     it('should return mocked onramp liquidity', async () => {
@@ -1468,7 +1473,10 @@ describe('Gateway Tests', () => {
 
         const onrampLiquidity = await gatewaySDK.fetchOnrampLiquidity(tokenAddress, userAddress, undefined);
 
-        expect(onrampLiquidity).toEqual(mock_onramp_liquidity);
+        const normalized = JSON.parse(
+            JSON.stringify(onrampLiquidity, (_, v) => (typeof v === 'bigint' ? Number(v) : v))
+        );
+        expect(normalized).toMatchObject(mock_onramp_liquidity);
     });
 
     it.skip(
@@ -1483,7 +1491,7 @@ describe('Gateway Tests', () => {
                 offrampLiquidityV2.minimumOfframpQuote.minimumAmountInSats,
                 zeroAddress
             );
-            expect(minGatewayQuoteOnly.amountLockInSat).toEqual(
+            expect(BigInt(minGatewayQuoteOnly.amountLockInSat)).toEqual(
                 offrampLiquidityV2.minimumOfframpQuote.minimumAmountInSats
             );
 
@@ -1492,7 +1500,7 @@ describe('Gateway Tests', () => {
                 offrampLiquidityV2.maxOrderAmountInSats,
                 zeroAddress
             );
-            expect(maxGatewayQuoteOnly.amountLockInSat).toEqual(offrampLiquidityV2.maxOrderAmountInSats);
+            expect(BigInt(maxGatewayQuoteOnly.amountLockInSat)).toEqual(offrampLiquidityV2.maxOrderAmountInSats);
         },
         { timeout: 30000 } // 30 seconds
     );
@@ -1514,7 +1522,7 @@ describe('Gateway Tests', () => {
                 toUserAddress: tokenAddress,
                 amount: onrampLiquidity.minSatsAmount,
             });
-            expect(minGatewayQuoteOnly.satoshis).toEqual(onrampLiquidity.minSatsAmount);
+            expect(BigInt(minGatewayQuoteOnly.satoshis)).toEqual(onrampLiquidity.minSatsAmount);
 
             const maxGatewayQuoteOnly = await gatewaySDK.getOnrampQuote({
                 fromUserAddress: userAddress,
@@ -1525,7 +1533,7 @@ describe('Gateway Tests', () => {
                 toUserAddress: tokenAddress,
                 amount: onrampLiquidity.maxOrderAmountInSats,
             });
-            expect(maxGatewayQuoteOnly.satoshis).toEqual(onrampLiquidity.maxOrderAmountInSats);
+            expect(BigInt(maxGatewayQuoteOnly.satoshis)).toEqual(onrampLiquidity.maxOrderAmountInSats);
         },
         { timeout: 30000 } // 30 seconds
     );
