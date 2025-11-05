@@ -605,7 +605,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
 
         if (chain.id === mainnet.id) {
             // WBTC mainnet
-            const wbtcMainnetSlots = getTokenSlots(wbtcMainnetAddress, 'ethereum');
+            const wbtcMainnetSlots = getTokenSlots(wbtcMainnetAddress);
             const allowanceSlot = computeAllowanceSlot(
                 user as Address,
                 wbtcOftAddress as Address,
@@ -628,7 +628,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
             });
         } else {
             // WBTC OFT
-            const wbtcOftSlots = getTokenSlots(wbtcOftAddress as Address, fromChain);
+            const wbtcOftSlots = getTokenSlots(wbtcOftAddress as Address);
 
             const oftBalanceSlot = computeBalanceSlot(user as Address, wbtcOftSlots.balanceSlot);
 

@@ -445,11 +445,11 @@
   },
   {
     "name": "Bitcoin+",
-    "address": "0xe9B0A4e7E8A07Ca3eDbcce7d0cbb509eF3e0C653",
+    "address": "0x4Ca70811E831db42072CBa1f0d03496EF126fAad",
     "symbol": "BTC+",
     "decimals": 18,
     "chainId": 60808,
-    "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x3506424f91fd33084466f402d5d97f05f8e3b4af/logo.png",
+    "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/master/assets/solvBTC.plus.svg",
     "extensions": {
       "bridgeInfo": {
         "1": {
@@ -461,12 +461,12 @@
     }
   },
   {
-    "name": "HybridBTC (Pendle)",
-    "address": "0x87E4fE3fAA1E0d03A47aFC7651D38af2C4e25EBf",
+    "name": "Hybrid Bitcoin",
+    "address": "0x9998e05030Aee3Af9AD3df35A34F5C51e1628779",
     "symbol": "HybridBTC.pendle",
     "decimals": 8,
     "chainId": 60808,
-    "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x808507121b80c02388fad14726482e061b8da827/logo.png"
+    "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/master/assets/hybridBTC-pendle"
   },
   {
     "name": "Threshold Network Token",
@@ -535,5 +535,93 @@
         }
       }
     }
+  },
+  {
+    "name": "Shoebill tBTC v2",
+    "address": "0x2925dF9Eb2092B53B06A06353A7249aF3a8B139e",
+    "symbol": "sbtBTC",
+    "decimals": 8,
+    "chainId": 60808,
+    "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/master/assets/shoebill.svg"
+  },
+  {
+    "name": "Shoebill Wrapped BTC",
+    "address": "0x5c46D274ed8AbCAe2964B63c0360ad3Ccc384dAa",
+    "symbol": "sbWBTC",
+    "decimals": 8,
+    "chainId": 60808,
+    "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/master/assets/shoebill.svg"
+  },
+  {
+    "name": "Segment TBTC",
+    "address": "0xD30288EA9873f376016A0250433b7eA375676077",
+    "symbol": "seTBTC",
+    "decimals": 8,
+    "chainId": 60808,
+    "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/master/assets/segment.svg"
+  },
+  {
+    "name": "Segment WBTC",
+    "address": "0x6265C05158f672016B771D6Fb7422823ed2CbcDd",
+    "symbol": "seWBTC",
+    "decimals": 8,
+    "chainId": 60808,
+    "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/master/assets/segment.svg"
+  },
+  {
+    "name": "Segment SOLVBTCBBN",
+    "address": "0x5EF2B8fbCc8aea2A9Dbe2729F0acf33E073Fa43e",
+    "symbol": "seSOLVBTCBBN",
+    "decimals": 8,
+    "chainId": 60808,
+    "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/master/assets/segment.svg"
+  },
+  {
+    "name": "Segment UNIBTC",
+    "address": "0x7848F0775EebaBbF55cB74490ce6D3673E68773A",
+    "symbol": "seUNIBTC",
+    "decimals": 8,
+    "chainId": 60808,
+    "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/master/assets/segment.svg"
+  },
+  {
+    "name": "Avalon TBTC",
+    "address": "0x5E007Ed35c7d89f5889eb6FD0cdCAa38059560ef",
+    "symbol": "aBOBTBTC",
+    "decimals": 18,
+    "chainId": 60808,
+    "logoURI": "https://app.avalonfinance.xyz/icons/tokens/avalon.svg"
+  },
+  {
+    "name": "Avalon WBTC",
+    "address": "0xd6890176e8d912142AC489e8B5D8D93F8dE74D60",
+    "symbol": "aBOBWBTC",
+    "decimals": 8,
+    "chainId": 60808,
+    "logoURI": "https://app.avalonfinance.xyz/icons/tokens/avalon.svg"
+  },
+  {
+    "name": "Avalon SOLVBTCBBN",
+    "address": "0x2E6500A7Add9a788753a897e4e3477f651c612eb",
+    "symbol": "aBOBSOLVBTCBBN",
+    "decimals": 18,
+    "chainId": 60808,
+    "logoURI": "https://app.avalonfinance.xyz/icons/tokens/avalon.svg"
+  },
+  {
+    "name": "Ionic TBTC",
+    "address": "0x68e0e4d875FDe34fc4698f40ccca0Db5b67e3693",
+    "symbol": "iontBTC",
+    "decimals": 18,
+    "chainId": 60808,
+    "logoURI": "https://doc.ionic.money/~gitbook/image?url=https://1954749119-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%252F4L4EczL4rCp3jyJhAxHG%252Fuploads%252FPy57T6N8vDpy1jGqxElR%252FTwitter%2520Avatar%2520green.png?alt%3Dmedia%26token%3D1808baa5-0996-41d1-ad6d-fe09c7188cdc&width=768&dpr=4&quality=100&sign=14802451&sv=2"
+  },
+  {
+    "name": "Ionic Wrapped BTC",
+    "address": "0xEBc8a7EE7f1D6534eBF45Bd5311203BF0A17493c",
+    "symbol": "ionWBTC",
+    "decimals": 8,
+    "chainId": 60808,
+    "logoURI": "https://doc.ionic.money/~gitbook/image?url=https://1954749119-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%252F4L4EczL4rCp3jyJhAxHG%252Fuploads%252FPy57T6N8vDpy1jGqxElR%252FTwitter%2520Avatar%2520green.png?alt%3Dmedia%26token%3D1808baa5-0996-41d1-ad6d-fe09c7188cdc&width=768&dpr=4&quality=100&sign=14802451&sv=2"
   }
 ]

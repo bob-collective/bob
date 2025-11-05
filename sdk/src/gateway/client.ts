@@ -24,7 +24,7 @@ import { createBitcoinPsbt } from '../wallet';
 import { claimDelayAbi, offrampCaller, strategyCaller } from './abi';
 import { BaseClient } from './base-client';
 import StrategyClient from './strategy';
-import { ADDRESS_LOOKUP, getTokenAddress, getTokenDecimals, getTokenSlots } from './tokens';
+import { ADDRESS_LOOKUP, getTokenAddress, getTokenSlots } from './tokens';
 import {
     BitcoinSigner,
     BumpFeeParams,
@@ -275,7 +275,6 @@ export class GatewayApiClient extends BaseClient {
 
         const slots = getTokenSlots(
             offrampOrder.quote.token as Address,
-            this.chainId === bob.id ? 'bob' : 'bob-sepolia'
         );
         const user = params.fromUserAddress;
 
@@ -725,7 +724,7 @@ export class GatewayApiClient extends BaseClient {
         satFeesMax: bigint,
         userAddress: Address
     ): Promise<[boolean, bigint, string?]> {
-        const decimals = getTokenDecimals(token);
+        const decimals = ADDRESS_LOOKUP[this.chainId][token.toLowerCase()]?.decimals;
         if (decimals === undefined) {
             throw new Error('Tokens with less than 8 decimals are not supported');
         }
@@ -1145,8 +1144,8 @@ export class GatewayApiClient extends BaseClient {
                             : (base as NonNullable<typeof base>) // failed
                         : (base as NonNullable<typeof base>) // success
                     : order.strategyAddress // pending
-                      ? (output as NonNullable<typeof output>)
-                      : (base as NonNullable<typeof base>);
+                        ? (output as NonNullable<typeof output>)
+                        : (base as NonNullable<typeof base>);
             }
             const getTokenAddress = (): string => {
                 return getFinal(order.baseTokenAddress, outputTokenAddress);
@@ -1180,8 +1179,8 @@ export class GatewayApiClient extends BaseClient {
                 const tokens = order.tokensReceived
                     ? order.tokensReceived
                     : outputTokenAmount && outputTokenAddress
-                      ? [{ amount: outputTokenAmount, tokenAddress: outputTokenAddress }]
-                      : [];
+                        ? [{ amount: outputTokenAmount, tokenAddress: outputTokenAddress }]
+                        : [];
 
                 return tokens
                     .map(({ amount, tokenAddress }) => ({
@@ -1284,12 +1283,12 @@ export class GatewayApiClient extends BaseClient {
                 },
                 outputToken: outputToken
                     ? {
-                          symbol: outputToken.symbol,
-                          address: outputToken.address,
-                          logo: outputToken.logoURI,
-                          decimals: outputToken.decimals,
-                          chain: chainName,
-                      }
+                        symbol: outputToken.symbol,
+                        address: outputToken.address,
+                        logo: outputToken.logoURI,
+                        decimals: outputToken.decimals,
+                        chain: chainName,
+                    }
                     : null,
             };
         });
@@ -1359,7 +1358,7 @@ export class GatewayApiClient extends BaseClient {
 
         return Promise.all(
             tokens.map(async (address, i) => {
-                const token = ADDRESS_LOOKUP[this.chainId][address];
+                const token = ADDRESS_LOOKUP[this.chainId][address.toLowerCase()];
                 const tokenIncentives = tokensIncentives[i];
 
                 const { address: underlyingAddress, totalUnderlying } =
