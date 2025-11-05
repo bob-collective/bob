@@ -488,7 +488,7 @@ export class GatewayApiClient extends BaseClient {
      * @returns Promise resolving to liquidity information
      * @throws {Error} If API request fails
      */
-    async fetchOfframpLiquidityV2(token: Address, userAddress: Address): Promise<OfframpLiquidityV2> {
+    async fetchOfframpLiquidityV2(token: string, userAddress: Address): Promise<OfframpLiquidityV2> {
         const tokenAddress = getTokenAddress(this.chainId, token.toLowerCase());
 
         const queryParams = new URLSearchParams({
@@ -527,7 +527,7 @@ export class GatewayApiClient extends BaseClient {
      * @returns Promise resolving to liquidity information
      * @throws {Error} If API request fails
      */
-    async fetchOnrampLiquidity(token: Address, userAddress: Address, gasRefill?: bigint): Promise<OnrampLiquidity> {
+    async fetchOnrampLiquidity(token: string, userAddress: Address, gasRefill?: bigint): Promise<OnrampLiquidity> {
         const tokenAddress = getTokenAddress(this.chainId, token.toLowerCase());
 
         const queryParams = new URLSearchParams({
