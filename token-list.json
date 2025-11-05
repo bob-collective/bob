@@ -425,5 +425,115 @@
     "decimals": 18,
     "chainId": 60808,
     "logoURI": "https://s2.coinmarketcap.com/static/img/coins/64x64/27494.png"
+  },
+  {
+    "name": "Baby",
+    "address": "0xB56E1C725C6B9DaFD8bE6E7d6e73a00Ae19FEB7b",
+    "symbol": "BABY",
+    "decimals": 18,
+    "chainId": 60808,
+    "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x33a3d962955a3862c8093d1273344719f03ca17c/logo.png",
+    "extensions": {
+      "bridgeInfo": {
+        "1": {
+          "tokenAddress": "0x33a3d962955a3862c8093d1273344719f03ca17c",
+          "originBridgeAddress": "0x4200000000000000000000000000000000000010",
+          "destBridgeAddress": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+        }
+      }
+    }
+  },
+  {
+    "name": "Bitcoin+",
+    "address": "0xe9B0A4e7E8A07Ca3eDbcce7d0cbb509eF3e0C653",
+    "symbol": "BTC+",
+    "decimals": 18,
+    "chainId": 60808,
+    "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x3506424f91fd33084466f402d5d97f05f8e3b4af/logo.png",
+    "extensions": {
+      "bridgeInfo": {
+        "1": {
+          "tokenAddress": "0x3506424f91fd33084466f402d5d97f05f8e3b4af",
+          "originBridgeAddress": "0x4200000000000000000000000000000000000010",
+          "destBridgeAddress": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+        }
+      }
+    }
+  },
+  {
+    "name": "HybridBTC (Pendle)",
+    "address": "0x87E4fE3fAA1E0d03A47aFC7651D38af2C4e25EBf",
+    "symbol": "HybridBTC.pendle",
+    "decimals": 8,
+    "chainId": 60808,
+    "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x808507121b80c02388fad14726482e061b8da827/logo.png"
+  },
+  {
+    "name": "Threshold Network Token",
+    "address": "0x8A0cdfab62ed35b836DC0633482798421C81b3Ec",
+    "symbol": "T",
+    "decimals": 18,
+    "chainId": 60808,
+    "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xcdf7028ceab81fa0c6971208e83fa7872994bee5/logo.png",
+    "extensions": {
+      "bridgeInfo": {
+        "1": {
+          "tokenAddress": "0xcdf7028ceab81fa0c6971208e83fa7872994bee5",
+          "originBridgeAddress": "0x4200000000000000000000000000000000000010",
+          "destBridgeAddress": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+        }
+      }
+    }
+  },
+  {
+    "name": "Tellor Tributes",
+    "address": "0x0cc2Db5Cb9a09d8F78D8a6bB7A1600baC1b7256C",
+    "symbol": "TRB",
+    "decimals": 18,
+    "chainId": 60808,
+    "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x88df592f8eb5d7bd38bfef7deb0fbc02cf3778a0/logo.png",
+    "extensions": {
+      "bridgeInfo": {
+        "1": {
+          "tokenAddress": "0x88df592f8eb5d7bd38bfef7deb0fbc02cf3778a0",
+          "originBridgeAddress": "0x4200000000000000000000000000000000000010",
+          "destBridgeAddress": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+        }
+      }
+    }
+  },
+  {
+    "name": "Uniswap",
+    "address": "0x8b11aFcFfD0472ae89eaFB0E0B4Bc55a61d0e1B0",
+    "symbol": "UNI",
+    "decimals": 18,
+    "chainId": 60808,
+    "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x1f9840a85d5af5bf1d1762f925bdaddc4201f984/logo.png",
+    "extensions": {
+      "bridgeInfo": {
+        "1": {
+          "tokenAddress": "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984",
+          "originBridgeAddress": "0x4200000000000000000000000000000000000010",
+          "destBridgeAddress": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+        }
+      }
+    }
+  },
+  {
+    "name": "Wrapped Bitcoin (Old)",
+    "address": "0x03C7054BCB39f7b2e5B2c7AcB37583e32D70Cfa3",
+    "symbol": "WBTC",
+    "decimals": 8,
+    "chainId": 60808,
+    "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x2260fac5e5542a773aa44fbcfedf7c193bc2c599/logo.png",
+    "extensions": {
+      "bridgeInfo": {
+        "1": {
+          "tokenAddress": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+          "originBridgeAddress": "0x4200000000000000000000000000000000000010",
+          "destBridgeAddress": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+        }
+      }
+    }
   }
 ]
