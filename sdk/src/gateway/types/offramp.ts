@@ -54,6 +54,36 @@ export interface OfframpLiquidity {
     totalOfframpLiquidity: bigint;
 }
 
+/** @dev Offramp Available Liquidity */
+export interface OfframpLiquidityV2 {
+    /** @dev Token address used for payment */
+    token: Address;
+    /** @dev Max sats amount a *single* order can be served with for a given user address */
+    maxOrderAmountInSats: bigint;
+    /** @dev Total liquidity across all solver addresses */
+    totalOfframpLiquidityInSats: bigint;
+    /** @dev Minimum offramp quote liquidity details */
+    minimumOfframpQuote: MinimumOfframpQuote;
+}
+
+export interface MinimumOfframpQuote {
+    /** @dev Minimum sats amount a *single* order can be served */
+    minimumAmountInSats: bigint;
+    /** @dev Minimum offramp quote calculated for fee rate */
+    calculatedForFeeRate: bigint;
+}
+
+export interface OnrampLiquidity {
+    /** @dev Token address used for payment */
+    tokenAddress: Address;
+    /** @dev Max sats amount a *single* order can be served with for a given user address */
+    maxOrderAmountInSats: bigint;
+    /** @dev Total liquidity across all gateway addresses */
+    totalOnrampLiquidityInSats: bigint;
+    /** @dev Minimum sats onramp quote liquidity details */
+    minSatsAmount: bigint;
+}
+
 /** @dev Params used for createOrder call on the off-ramp contract */
 export type OfframpCreateOrderParams = {
     quote: OfframpQuote;

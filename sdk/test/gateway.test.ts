@@ -1417,4 +1417,116 @@ describe('Gateway Tests', () => {
 
         expect(orders).toEqual([]);
     });
+
+    it('should return mocked offramp liquidity v2', async () => {
+        const gatewaySDK = new GatewaySDK(bob.id);
+        const tokenAddress = '0x0555e30da8f98308edb960aa94c0db47230d2b9c';
+        const userAddress = zeroAddress;
+
+        const mockk_offramp_liquidity = {
+            tokenAddress,
+            maxOrderAmountInSats: 50000000,
+            totalOfframpLiquidityInSats: 53304097,
+            minimumOfframpQuote: {
+                minimumAmountInSats: 666,
+                calculatedForFeeRate: 1,
+            },
+        };
+
+        nock(MAINNET_GATEWAY_BASE_URL)
+            .get('/v2/offramp-liquidity')
+            .query({
+                tokenAddress,
+                userAddress,
+            })
+            .reply(200, mockk_offramp_liquidity);
+
+        const offrampLiquidityV2 = await gatewaySDK.fetchOfframpLiquidityV2(tokenAddress, userAddress);
+
+        expect(offrampLiquidityV2).toEqual(mockk_offramp_liquidity);
+    });
+
+    it('should return mocked onramp liquidity', async () => {
+        const gatewaySDK = new GatewaySDK(bob.id);
+        const tokenAddress = '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c'.toLowerCase() as Address;
+        const userAddress = '0xFAEe001465dE6D7E8414aCDD9eF4aC5A35B2B808' as Address;
+
+        const mock_onramp_liquidity = {
+            tokenAddress,
+            maxOrderAmountInSats: 50000000,
+            totalOnrampLiquidityInSats: 53408586,
+            minSatsAmount: 86,
+        };
+
+        nock(MAINNET_GATEWAY_BASE_URL)
+            .get('/onramp-liquidity')
+            .query({
+                tokenAddress,
+                userAddress,
+            })
+            .reply(200, mock_onramp_liquidity);
+
+        const onrampLiquidity = await gatewaySDK.fetchOnrampLiquidity(tokenAddress, userAddress, null);
+
+        expect(onrampLiquidity).toEqual(mock_onramp_liquidity);
+    });
+
+    it.skip(
+        'get offramp liquidity and get quote e2e',
+        async () => {
+            const gatewaySDK = new GatewaySDK(bob.id);
+            const tokenAddress = '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c'.toLowerCase() as Address;
+            const offrampLiquidityV2 = await gatewaySDK.fetchOfframpLiquidityV2(tokenAddress, zeroAddress);
+
+            const minGatewayQuoteOnly = await gatewaySDK.fetchOfframpQuote(
+                tokenAddress,
+                offrampLiquidityV2.minimumOfframpQuote.minimumAmountInSats,
+                zeroAddress
+            );
+            expect(minGatewayQuoteOnly.amountLockInSat).toEqual(
+                offrampLiquidityV2.minimumOfframpQuote.minimumAmountInSats
+            );
+
+            const maxGatewayQuoteOnly = await gatewaySDK.fetchOfframpQuote(
+                tokenAddress,
+                offrampLiquidityV2.maxOrderAmountInSats,
+                zeroAddress
+            );
+            expect(maxGatewayQuoteOnly.amountLockInSat).toEqual(offrampLiquidityV2.maxOrderAmountInSats);
+        },
+        { timeout: 30000 } // 30 seconds
+    );
+
+    it.skip(
+        'get onramp liquidity and get quote e2e',
+        async () => {
+            const gatewaySDK = new GatewaySDK(bob.id);
+            const tokenAddress = '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c'.toLowerCase() as Address;
+            const userAddress = '0xFAEe001465dE6D7E8414aCDD9eF4aC5A35B2B808' as Address;
+            const onrampLiquidity = await gatewaySDK.fetchOnrampLiquidity(tokenAddress, userAddress, null);
+
+            const minGatewayQuoteOnly = await gatewaySDK.getOnrampQuote({
+                fromUserAddress: userAddress,
+                fromChain: 'Bitcoin',
+                fromToken: 'bitcoin',
+                toChain: bob.id,
+                toToken: 'WBTC (OFT)',
+                toUserAddress: tokenAddress,
+                amount: onrampLiquidity.minSatsAmount,
+            });
+            expect(minGatewayQuoteOnly.satoshis).toEqual(onrampLiquidity.minSatsAmount);
+
+            const maxGatewayQuoteOnly = await gatewaySDK.getOnrampQuote({
+                fromUserAddress: userAddress,
+                fromChain: 'Bitcoin',
+                fromToken: 'bitcoin',
+                toChain: bob.id,
+                toToken: 'WBTC (OFT)',
+                toUserAddress: tokenAddress,
+                amount: onrampLiquidity.maxOrderAmountInSats,
+            });
+            expect(maxGatewayQuoteOnly.satoshis).toEqual(onrampLiquidity.maxOrderAmountInSats);
+        },
+        { timeout: 30000 } // 30 seconds
+    );
 });
