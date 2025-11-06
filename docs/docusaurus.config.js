@@ -87,6 +87,11 @@ const config = {
           {
             from: "/learn/user-guides/bob-pay",
             to: "/docs/deprecated/bob-pay",
+          },
+          // PDF redirects
+          {
+            from: "/docs/reference/mica-whitepaper",
+            to: "https://static.gobob.xyz/BOB_Foundation_Token_Whitepaper_ATTR_V1.pdf"
           }
         ],
       },
