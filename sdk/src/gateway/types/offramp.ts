@@ -42,6 +42,8 @@ export interface OfframpQuote {
     token: Address;
     /** @dev Detailed fee breakdown */
     feeBreakdown: OfframpFeeBreakdown;
+    /** @dev The address of the affiliate who will receive the affiliate fee */
+    affiliateFeeRecipient: Address;
 }
 
 /** @dev Offramp Available Liquidity */
@@ -65,7 +67,11 @@ export type OfframpCreateOrderParams = {
             /** @dev Amount of sats to lock in the order */
             satAmountToLock: bigint;
             /** @dev Max sats to be paid as fees */
-            satFeesMax: bigint;
+            satSolverFeeMax: bigint;
+            /** @dev Amount of fee to be paid to affiliate */
+            satAffiliateFee: bigint;
+            /** @dev The address of the affiliate who will receive the affiliate fee */
+            affiliateFeeRecipient: Address;
             /** @dev Timestamp by which the order must be created */
             creationDeadline: bigint;
             /** @dev Output script for Bitcoin settlement */
@@ -104,6 +110,16 @@ export type OfframpOrder = {
     canOrderBeUnlocked: boolean;
     /** @dev The offramp registry address the order is related to */
     offrampRegistryAddress: Address;
+    /** @dev The affiliate fee (in satoshis) given part of the order. */
+    satAffiliateFee: bigint;
+    /** @dev The address of the affiliate who will receive the affiliate fee. */
+    affiliateFeeRecipient: Address;
+    /** @dev The version number of the Offramp Registry contract used for this order. */
+    offrampRegistryVersion: number;
+    /** @dev The additional fee amount (in satoshis) required to bump the transaction to get accepted, or `null` if not applicable. */
+    bumpFeeAmountInSats: bigint | null;
+    /** @dev The address of the user who placed the order. */
+    userAddress: Address;
 };
 
 /** @dev Internal, On-chain fetched state of an active/processed/refunded order */
@@ -142,6 +158,12 @@ export interface OfframpRawOrder {
     submitOrderEvmTx: string | null;
     shouldFeesBeBumped: boolean;
     refundedEvmTx: string | null;
+    offrampRegistryAddress: string;
+    satAffiliateFee: string;
+    affiliateFeeRecipient: string;
+    offrampRegistryVersion: string;
+    bumpFeeAmountInSats: string | null;
+    userAddress: string;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
@@ -152,9 +174,11 @@ export type OfframpExecuteQuoteParams<T = {}> = BaseExecuteQuoteParams<T> & {
 
 export interface BumpFeeParams {
     orderId: bigint;
+    offrampRegistryAddress: Address;
 }
 
 export interface UnlockOrderParams {
     orderId: bigint;
     receiver: Address;
+    offrampRegistryAddress: Address;
 }

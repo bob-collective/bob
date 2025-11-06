@@ -654,6 +654,7 @@ describe('Gateway Tests', () => {
                 },
                 registryAddress: '0x',
                 token: '0xda472456b1a6a2fc9ae7edb0e007064224d4284c',
+                affiliateFeeRecipient: zeroAddress,
             },
             {
                 fromToken: '0xda472456b1a6a2fc9ae7edb0e007064224d4284c',
@@ -668,7 +669,9 @@ describe('Gateway Tests', () => {
 
         expect(result.offrampArgs[0]).to.deep.equal({
             satAmountToLock: BigInt('10'),
-            satFeesMax: BigInt('100'),
+            satSolverFeeMax: BigInt('100'),
+            satAffiliateFee: BigInt('0'),
+            affiliateFeeRecipient: zeroAddress,
             creationDeadline: result.offrampArgs[0].creationDeadline, // timestamp is dynamic
             outputScript: '0x1600149d5e60f3b5cc2d246f990692ee4b267d1cd58477',
             token: '0xda472456b1a6a2fc9ae7edb0e007064224d4284c',
@@ -687,25 +690,40 @@ describe('Gateway Tests', () => {
                 token: '0x4496ebE7C8666a8103713EE6e0c08cA0cD25b888',
                 satAmountLocked: '0x3e8',
                 satFeesMax: '0x181',
+                satAffiliateFee: '0x181',
                 status: 'Processed',
                 btcTx: 'e8d52d6ef6ebf079f2d082dc683c9455178b64e0685c10e93882effaedde4474',
                 evmTx: null,
                 orderTimestamp: 1743679342,
                 shouldFeesBeBumped: false,
+                bumpFeeAmountInSats: null,
+                userAddress: zeroAddress,
+                affiliateFeeRecipient: zeroAddress,
+                offrampRegistryAddress: '0x70e5e53b4f48be863a5a076ff6038a91377da0dd',
+                offrampRegistryVersion: '0x0',
+                submitOrderEvmTx: '0xc02c65d88719d92a189d36da2f71108df3cc4d2611e711a5e049c896a4e06283',
             },
         ];
 
         // Dynamically parse expected result from mockResponse
         const expectedResult = mockResponse.map((order: any) => ({
-            ...order,
+            affiliateFeeRecipient: order.affiliateFeeRecipient as Address,
+            btcTx: order.btcTx,
+            offrampRegistryVersion: Number(order.offrampRegistryVersion),
+            refundedEvmTx: order.refundedEvmTx,
+            status: order.status,
             token: order.token as Address,
             orderId: BigInt(order.orderId.toString()),
             satAmountLocked: BigInt(order.satAmountLocked.toString()),
             satFeesMax: BigInt(order.satFeesMax.toString()),
+            satAffiliateFee: BigInt(order.satAffiliateFee.toString()),
             orderTimestamp: order.orderTimestamp,
             canOrderBeUnlocked: false,
             shouldFeesBeBumped: false,
-            offrampRegistryAddress: '0xb74a5af78520075f90f4be803153673a162a9776',
+            bumpFeeAmountInSats: null,
+            offrampRegistryAddress: '0x70e5e53b4f48be863a5a076ff6038a91377da0dd',
+            userAddress: order.userAddress,
+            submitOrderEvmTx: order.submitOrderEvmTx,
         }));
 
         nock(SIGNET_GATEWAY_BASE_URL).get(`/offramp-orders/${userAddress}`).reply(200, mockResponse);
@@ -715,10 +733,6 @@ describe('Gateway Tests', () => {
             registryAddress: '0xd7b27b178f6bf290155201109906ad203b6d99b1',
             feeRate: 1,
         });
-        nock(SIGNET_GATEWAY_BASE_URL)
-            .get('/offramp-registry-address')
-            .reply(200, '0xb74a5af78520075f90f4be803153673a162a9776');
-
         const result: OfframpOrder[] = await gatewaySDK.getOfframpOrders(userAddress);
 
         // Assertion
@@ -742,13 +756,9 @@ describe('Gateway Tests', () => {
     it('fetches the correct offramp registry address', async () => {
         const gatewaySDK = new GatewaySDK(bobSepolia.id);
 
-        nock(SIGNET_GATEWAY_BASE_URL)
-            .get('/offramp-registry-address')
-            .reply(200, '0xb74a5af78520075f90f4be803153673a162a9776');
+        const result = gatewaySDK.getOfframpRegistryAddress();
 
-        const result = await gatewaySDK.fetchOfframpRegistryAddress();
-
-        expect(result).toBe('0xb74a5af78520075f90f4be803153673a162a9776');
+        expect(result).toBe('0x70e5e53b4f48be863a5a076ff6038a91377da0dd');
     });
 
     it('should return true when the order has passed the claim delay', async () => {
@@ -760,7 +770,7 @@ describe('Gateway Tests', () => {
         const result = await gatewaySDK.canOrderBeUnlocked(
             status,
             orderTimestamp,
-            '0xb74a5af78520075f90f4be803153673a162a9776' as Address
+            '0x70e5e53b4f48be863a5a076ff6038a91377da0dd' as Address
         );
 
         // Assert the result is true (claim delay has passed)
@@ -890,7 +900,7 @@ describe('Gateway Tests', () => {
         } as unknown as Parameters<typeof gatewaySDK.executeQuote>[0]['publicClient'];
 
         const createOfframpOrderSpy = vi.spyOn(gatewaySDK, 'createOfframpOrder');
-        const fetchOfframpRegistryAddressSpy = vi.spyOn(gatewaySDK, 'fetchOfframpRegistryAddress');
+        const fetchOfframpRegistryAddressSpy = vi.spyOn(gatewaySDK, 'getOfframpRegistryAddress');
 
         const outputTokenAddress = getTokenAddress(bobSepolia.id, 'bobbtc');
         const searchParams = new URLSearchParams({
@@ -968,16 +978,11 @@ describe('Gateway Tests', () => {
         expect(getOfframpOrdersSpy).toHaveBeenCalledOnce();
     });
 
-    it(
+    // TODO: will only work once new V2 offramp registry contract is deployed
+    it.skip(
         'get offramp gas cost for BOB and Ethereum',
         async () => {
             const gatewaySDK = new GatewaySDK(bob.id);
-
-            // deployed offramp registry address
-            nock(MAINNET_GATEWAY_BASE_URL)
-                .persist()
-                .get('/offramp-registry-address')
-                .reply(200, '0x3d65cd168f27aeddeb08ca31cac5e5c12f3bb16d');
 
             nock(MAINNET_GATEWAY_BASE_URL)
                 .persist()

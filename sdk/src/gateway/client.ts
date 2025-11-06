@@ -89,6 +89,16 @@ export const SIGNET_GATEWAY_BASE_URL = 'https://gateway-api-signet.gobob.xyz';
  */
 export const ORDER_DEADLINE_IN_SECONDS = 30 * 60; // 30 minutes
 
+/**
+ * Address of the Offramp Registry contract on the BOB Mainnet.
+ */
+export const MAINNET_OFFRAMP_REGISTRY_ADDRESS: Address = '0x3D65CD168f27aeddEb08Ca31CAC5e5C12F3BB16D'; // TODO: Replace with new v2 address
+
+/**
+ * Address of the Offramp Registry contract on the BOB Testnet (Signet).
+ */
+export const TESTNET_OFFRAMP_REGISTRY_ADDRESS: Address = '0x70e5e53b4f48be863a5a076ff6038a91377da0dd'; // TODO: Replace with new v2 address
+
 interface EvmWalletClientParams {
     /**
      * The wallet client used to interact with the EVM chain.
@@ -182,6 +192,37 @@ export class GatewayApiClient extends BaseClient {
         return this.chain.id;
     }
 
+    private async mapRawOrderToOfframpOrder(order: OfframpRawOrder): Promise<OfframpOrder> {
+        const status = order.status as OfframpOrderStatus;
+        const offrampRegistryAddress = order.offrampRegistryAddress as Address;
+
+        const canOrderBeUnlocked = await this.canOrderBeUnlocked(
+            status,
+            Number(order.orderTimestamp),
+            offrampRegistryAddress
+        );
+
+        return {
+            orderId: BigInt(order.orderId),
+            token: order.token as Address,
+            satAmountLocked: BigInt(order.satAmountLocked),
+            satFeesMax: BigInt(order.satFeesMax),
+            status,
+            orderTimestamp: Number(order.orderTimestamp),
+            submitOrderEvmTx: order.submitOrderEvmTx,
+            refundedEvmTx: order.refundedEvmTx,
+            btcTx: order.btcTx,
+            shouldFeesBeBumped: order.shouldFeesBeBumped,
+            canOrderBeUnlocked,
+            offrampRegistryAddress,
+            satAffiliateFee: BigInt(order.satAffiliateFee),
+            affiliateFeeRecipient: order.affiliateFeeRecipient as Address,
+            offrampRegistryVersion: Number(order.offrampRegistryVersion),
+            bumpFeeAmountInSats: order.bumpFeeAmountInSats !== null ? BigInt(order.bumpFeeAmountInSats) : null,
+            userAddress: order.userAddress as Address,
+        };
+    }
+
     /**
      * Fetches a quote for token swaps between Bitcoin and BOB.
      *
@@ -266,7 +307,7 @@ export class GatewayApiClient extends BaseClient {
 
         const [offrampOrder, offrampRegistryAddress, feeValues, gasPrice] = await Promise.all([
             this.createOfframpOrder(offrampQuote, params),
-            this.fetchOfframpRegistryAddress(),
+            this.getOfframpRegistryAddress(),
             publicClient.estimateFeesPerGas(),
             publicClient.getGasPrice(),
         ]);
@@ -430,21 +471,17 @@ export class GatewayApiClient extends BaseClient {
     /**
      * Fetches the offramp registry contract address.
      *
-     * @returns Promise resolving to the registry contract address
+     * @returns The registry contract address.
      */
-    async fetchOfframpRegistryAddress(): Promise<Address> {
-        const response = await this.safeFetch(
-            `${this.baseUrl}/offramp-registry-address`,
-            undefined,
-            'Failed to fetch offramp registry contract address'
-        );
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => null);
-            const apiMessage = errorData?.message;
-            const errorMessage = apiMessage || 'Failed to fetch offramp registry contract';
-            throw new Error(errorMessage);
+    getOfframpRegistryAddress(): Address {
+        const chainId = this.chainId;
+        if (chainId === bob.id) {
+            return MAINNET_OFFRAMP_REGISTRY_ADDRESS;
+        } else if (chainId === bobSepolia.id) {
+            return TESTNET_OFFRAMP_REGISTRY_ADDRESS;
+        } else {
+            throw new Error('Invalid output chain: could not find chain id');
         }
-        return response.text() as Promise<Address>;
     }
 
     /**
@@ -534,6 +571,7 @@ export class GatewayApiClient extends BaseClient {
                 fastestFeeRate: rawQuote.feeBreakdown.fastestFeeRate,
             },
             amountReceiveInSat: rawQuote.amountLockInSat - rawQuote.feeBreakdown.overallFeeSats,
+            affiliateFeeRecipient: zeroAddress as Address, //TODO: fix latter
         };
     }
 
@@ -564,7 +602,9 @@ export class GatewayApiClient extends BaseClient {
             offrampArgs: [
                 {
                     satAmountToLock: BigInt(quote.amountLockInSat),
-                    satFeesMax: BigInt(quote.feeBreakdown.overallFeeSats),
+                    satSolverFeeMax: BigInt(quote.feeBreakdown.overallFeeSats),
+                    satAffiliateFee: BigInt(quote.feeBreakdown.affiliateFeeSats),
+                    affiliateFeeRecipient: quote.affiliateFeeRecipient,
                     creationDeadline: BigInt(quote.deadline),
                     outputScript: receiverAddress as Hex,
                     token: quote.token,
@@ -583,40 +623,27 @@ export class GatewayApiClient extends BaseClient {
      */
     async bumpFeeForOfframpOrder({
         orderId,
+        offrampRegistryAddress,
         walletClient,
         publicClient,
     }: BumpFeeParams & EvmWalletClientParams): Promise<Hash> {
         // check order status via viem should be Active/Accepted
-        const orderDetails: OnchainOfframpOrderDetails = await this.fetchOfframpOrder(orderId);
+        const orderDetails = await this.fetchOfframpOrder(orderId, offrampRegistryAddress);
 
         if (orderDetails.status !== 'Active') {
             throw new Error(`Offramp order needs to be Active for bumping fees`);
         }
 
-        const [shouldFeesBeBumped, newFeeSat, error] = await this.getBumpFeeRequirement(
-            orderDetails.token,
-            orderDetails.satAmountLocked,
-            orderDetails.satFeesMax,
-            orderDetails.owner
-        );
-
-        if (error) {
-            throw new Error(`Unable to calculate a new quote for the order. reason: (${error.toString()}).`);
+        // Ensure bump fee is required
+        if (orderDetails.bumpFeeAmountInSats === null) {
+            throw new Error(`No need to bump fees, the current fees are sufficient`);
         }
-
-        if (!shouldFeesBeBumped) {
-            throw new Error(
-                `Current fees (${orderDetails.satFeesMax.toString()} sat) are sufficient to satisfy the order, as the new required fees (${newFeeSat.toString()} sat) are lower or equal.`
-            );
-        }
-
-        const offrampRegistryAddress: Address = await this.fetchOfframpRegistryAddress();
 
         const { request } = await publicClient.simulateContract({
             address: offrampRegistryAddress,
             abi: offrampCaller,
             functionName: 'bumpFeeOfExistingOrder',
-            args: [orderId, BigInt(newFeeSat)],
+            args: [orderId, BigInt(orderDetails.bumpFeeAmountInSats)],
             account: walletClient.account,
         });
 
@@ -636,18 +663,17 @@ export class GatewayApiClient extends BaseClient {
     async unlockOfframpOrder({
         orderId,
         receiver,
+        offrampRegistryAddress,
         walletClient,
         publicClient,
     }: UnlockOrderParams & EvmWalletClientParams): Promise<Hash> {
         // check order status via viem should be Active/Accepted
-        const orderDetails: OnchainOfframpOrderDetails = await this.fetchOfframpOrder(orderId);
+        const orderDetails: OfframpOrder = await this.fetchOfframpOrder(orderId, offrampRegistryAddress); // Use API to get status
 
         // Processed and refunded order can't be unlocked
         if (orderDetails.status == 'Processed' || orderDetails.status == 'Refunded') {
             throw new Error(`Offramp order already processed / refunded`);
         }
-
-        const offrampRegistryAddress: Address = await this.fetchOfframpRegistryAddress();
 
         // Active order can be unlocked and Accepted order can be unlocked after delay
         if (
@@ -683,63 +709,8 @@ export class GatewayApiClient extends BaseClient {
             'Failed to fetch offramp orders'
         );
         const rawOrders: OfframpRawOrder[] = await response.json();
-        const offrampRegistryAddress: Address = await this.fetchOfframpRegistryAddress();
 
-        return Promise.all(
-            rawOrders.map(async (order) => {
-                const status = order.status as OfframpOrderStatus;
-                const canOrderBeUnlocked = await this.canOrderBeUnlocked(
-                    status,
-                    Number(order.orderTimestamp),
-                    offrampRegistryAddress
-                );
-
-                return {
-                    ...order,
-                    status,
-                    token: order.token as Address,
-                    orderId: BigInt(order.orderId.toString()),
-                    satAmountLocked: BigInt(order.satAmountLocked.toString()),
-                    satFeesMax: BigInt(order.satFeesMax.toString()),
-                    orderTimestamp: Number(order.orderTimestamp),
-                    shouldFeesBeBumped: order.shouldFeesBeBumped,
-                    canOrderBeUnlocked,
-                    offrampRegistryAddress,
-                };
-            })
-        );
-    }
-
-    /**
-     * Determines if an offramp order requires a fee bump based on current market rates.
-     *
-     * @param token Token address
-     * @param satAmountLocked Amount locked in satoshis
-     * @param satFeesMax Current maximum fee in satoshis
-     * @returns Promise resolving to [shouldBump, newFeeSat, error?]
-     * @throws {Error} If quote fetch fails
-     */
-    private async getBumpFeeRequirement(
-        token: Address,
-        satAmountLocked: bigint,
-        satFeesMax: bigint,
-        userAddress: Address
-    ): Promise<[boolean, bigint, string?]> {
-        const decimals = getTokenDecimals(token);
-        if (decimals === undefined) {
-            throw new Error('Tokens with less than 8 decimals are not supported');
-        }
-
-        const amountInToken = satAmountLocked * BigInt(10 ** (decimals - 8));
-
-        try {
-            const offrampQuote = await this.fetchOfframpQuote(token, amountInToken, userAddress);
-            const shouldBump = satFeesMax < offrampQuote.feeBreakdown.overallFeeSats;
-            return [shouldBump, BigInt(offrampQuote.feeBreakdown.overallFeeSats)];
-        } catch (err) {
-            // Return false and 0n with an error message if fetching the quote fails
-            throw new Error(`Error fetching offramp quote: ${err.message || err}`);
-        }
+        return Promise.all(rawOrders.map((order) => this.mapRawOrderToOfframpOrder(order)));
     }
 
     async canOrderBeUnlocked(
@@ -768,32 +739,30 @@ export class GatewayApiClient extends BaseClient {
      * Fetches on-chain details for a specific offramp order.
      *
      * @param orderId The order ID
+     * @param registryAddress The registry Address the order ID belongs to
      * @returns Promise resolving to on-chain order details
      */
-    private async fetchOfframpOrder(orderId: bigint): Promise<OnchainOfframpOrderDetails> {
-        const offrampRegistryAddress: Address = await this.fetchOfframpRegistryAddress();
-        const publicClient = viemClient(this.chain);
-
-        const order = await publicClient.readContract({
-            address: offrampRegistryAddress,
-            abi: offrampCaller,
-            functionName: 'getOrderDetails',
-            args: [orderId],
+    private async fetchOfframpOrder(orderId: bigint, registryAddress: Address): Promise<OfframpOrder> {
+        const queryParams = new URLSearchParams({
+            registryAddress: registryAddress.toString(),
+            orderId: orderId.toString(),
         });
 
-        return {
-            orderId,
-            token: order.token as Address,
-            satAmountLocked: order.satAmountLocked,
-            satFeesMax: order.satFeesMax,
-            owner: order.owner as Address,
-            solverOwner: order.solverOwner !== (zeroAddress as Address) ? (order.solverOwner as Address) : null,
-            solverRecipient:
-                order.solverRecipient !== (zeroAddress as Address) ? (order.solverRecipient as Address) : null,
-            outputScript: order.outputScript,
-            status: parseOrderStatus(Number(order.status)) as OnchainOfframpOrderDetails['status'],
-            orderTimestamp: Number(order.timestamp),
-        };
+        const response = await this.safeFetch(
+            `${this.baseUrl}/offramp-order?${queryParams}`,
+            undefined,
+            'Failed to fetch offramp order'
+        );
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => null);
+            const apiMessage = errorData?.message;
+            const errorMessage = apiMessage || `Failed to get offramp order`;
+            throw new Error(`${errorMessage}`);
+        }
+
+        const offrampRawOrder: OfframpRawOrder = await response.json();
+        return await this.mapRawOrderToOfframpOrder(offrampRawOrder);
     }
 
     /**
@@ -939,7 +908,7 @@ export class GatewayApiClient extends BaseClient {
             const tokenAddress = getTokenAddress(this.chainId, params.fromToken.toLowerCase());
             const [offrampOrder, offrampRegistryAddress] = await Promise.all([
                 this.createOfframpOrder(data, params),
-                this.fetchOfframpRegistryAddress(),
+                this.getOfframpRegistryAddress(),
             ]);
 
             const accountAddress = walletClient.account?.address ?? (params.fromUserAddress as Address);
