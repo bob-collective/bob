@@ -326,23 +326,6 @@
       }
     },
     {
-      "name": "ALEX",
-      "address": "0xa669e059fDcbDFC532A2edd658eb2922799EEDb8",
-      "symbol": "ALEX",
-      "decimals": 18,
-      "chainId": 60808,
-      "logoURI": "https://raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/ALEX/logo.svg",
-      "extensions": {
-        "bridgeInfo": {
-          "1": {
-            "tokenAddress": "0xe7c3755482d0dA522678Af05945062d4427e0923",
-            "originBridgeAddress": "0x4200000000000000000000000000000000000010",
-            "destBridgeAddress": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
-          }
-        }
-      }
-    },
-    {
       "name": "DLLR",
       "address": "0xf3107eEC1e6F067552C035FD87199e1A5169CB20",
       "symbol": "DLLR",
