@@ -45,7 +45,7 @@
     "dependencies": {
         "@bitcoinerlab/secp256k1": "^1.2.0",
         "@eslint/eslintrc": "^3.3.1",
-        "@eslint/js": "^9.34.0",
+        "@eslint/js": "^9.39.1",
         "@gobob/sats-wagmi": "^0.3.23",
         "@magiceden-oss/runestone-lib": "^1.0.2",
         "@scure/base": "^1.2.4",
