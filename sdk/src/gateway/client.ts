@@ -24,7 +24,7 @@ import { createBitcoinPsbt } from '../wallet';
 import { claimDelayAbi, offrampCaller, strategyCaller } from './abi';
 import { BaseClient } from './base-client';
 import StrategyClient from './strategy';
-import { ADDRESS_LOOKUP, getTokenAddress, getTokenDecimals, getTokenSlots } from './tokens';
+import { ADDRESS_LOOKUP, getTokenAddress, getTokenSlots } from './tokens';
 import {
     BitcoinSigner,
     BumpFeeParams,
@@ -273,10 +273,7 @@ export class GatewayApiClient extends BaseClient {
 
         const fee = feeValues.maxFeePerGas ?? gasPrice;
 
-        const slots = getTokenSlots(
-            offrampOrder.quote.token as Address,
-            this.chainId === bob.id ? 'bob' : 'bob-sepolia'
-        );
+        const slots = getTokenSlots(offrampOrder.quote.token as Address);
         const user = params.fromUserAddress;
 
         const allowanceSlot = computeAllowanceSlot(
@@ -725,7 +722,7 @@ export class GatewayApiClient extends BaseClient {
         satFeesMax: bigint,
         userAddress: Address
     ): Promise<[boolean, bigint, string?]> {
-        const decimals = getTokenDecimals(token);
+        const decimals = ADDRESS_LOOKUP[this.chainId][token.toLowerCase()]?.decimals;
         if (decimals === undefined) {
             throw new Error('Tokens with less than 8 decimals are not supported');
         }
@@ -1359,7 +1356,7 @@ export class GatewayApiClient extends BaseClient {
 
         return Promise.all(
             tokens.map(async (address, i) => {
-                const token = ADDRESS_LOOKUP[this.chainId][address];
+                const token = ADDRESS_LOOKUP[this.chainId][address.toLowerCase()];
                 const tokenIncentives = tokensIncentives[i];
 
                 const { address: underlyingAddress, totalUnderlying } =
