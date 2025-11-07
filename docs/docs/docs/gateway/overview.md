@@ -123,7 +123,7 @@ These limits apply across all users and liquidity providers in the system:
 - **Daily Total Limit**: 2 BTC
 - **Hourly Total Limit**: 1 BTC
 
-#### Offramp (ERC20 → BTC)  
+#### Offramp (ERC20 → BTC)
 - **Daily Total Limit**: 2 BTC
 - **Hourly Total Limit**: 1 BTC
 
