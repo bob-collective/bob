@@ -47,6 +47,7 @@ import {
     OfframpRawOrder,
     OnchainOfframpOrderDetails,
     OnrampFeeBreakdownRaw,
+    OnrampLiquidity,
     OnrampOrder,
     OnrampOrderResponse,
     OnrampOrderStatus,
@@ -445,33 +446,80 @@ export class GatewayApiClient extends BaseClient {
     }
 
     /**
-     * Fetches available offramp liquidity for a specific token.
+     * Fetches available offramp liquidity.
      *
      * @param token Token symbol or address
+     * @param userAddress User address to get liquidity for
      * @returns Promise resolving to liquidity information
      * @throws {Error} If API request fails
      */
-    async fetchOfframpLiquidity(token: string): Promise<OfframpLiquidity> {
+    async fetchOfframpLiquidity(token: string, userAddress: Address): Promise<OfframpLiquidity> {
         const tokenAddress = getTokenAddress(this.chainId, token.toLowerCase());
 
-        const response = await this.safeFetch(
-            `${this.baseUrl}/offramp-liquidity/${tokenAddress}`,
-            undefined,
-            'Failed to get offramp liquidity'
-        );
+        const queryParams = new URLSearchParams({
+            tokenAddress: tokenAddress,
+            userAddress: userAddress,
+        });
+
+        const requestUrl = `${this.baseUrl}/v2/offramp-liquidity?${queryParams.toString()}`;
+        const response = await this.safeFetch(requestUrl, undefined, 'Failed to get offramp v2 liquidity');
 
         if (!response.ok) {
             const errorData = await response.json().catch(() => null);
-            const errorMessage = errorData?.message || 'Failed to get offramp liquidity';
+            const errorMessage = errorData?.message || 'Failed to get offramp v2 liquidity';
             throw new Error(errorMessage);
         }
 
         const rawLiquidity = await response.json();
 
         return {
-            token: rawLiquidity.tokenAddress as Address,
-            maxOrderAmount: BigInt(rawLiquidity.maxOrderAmount),
-            totalOfframpLiquidity: BigInt(rawLiquidity.totalOfframpLiquidity),
+            tokenAddress: rawLiquidity.tokenAddress as Address,
+            maxOrderAmountInSats: BigInt(rawLiquidity.maxOrderAmountInSats),
+            totalOfframpLiquidityInSats: BigInt(rawLiquidity.totalOfframpLiquidityInSats),
+            minimumOfframpQuote: {
+                minimumAmountInSats: BigInt(rawLiquidity.minimumOfframpQuote.minimumAmountInSats),
+                calculatedForFeeRate: BigInt(rawLiquidity.minimumOfframpQuote.calculatedForFeeRate),
+            },
+        };
+    }
+
+    /**
+     * Fetches available onramp liquidity.
+     *
+     * @param token Token symbol or address
+     * @param userAddress User address to get liquidity for
+     * @param gasRefill The amount of gas refill user wants in wei
+     * @returns Promise resolving to liquidity information
+     * @throws {Error} If API request fails
+     */
+    async fetchOnrampLiquidity(token: string, userAddress: Address, gasRefill?: bigint): Promise<OnrampLiquidity> {
+        const tokenAddress = getTokenAddress(this.chainId, token.toLowerCase());
+
+        const queryParams = new URLSearchParams({
+            tokenAddress: tokenAddress,
+            userAddress: userAddress,
+        });
+
+        if (gasRefill) {
+            queryParams.append('gasRefill', gasRefill.toString());
+        }
+
+        const requestUrl = `${this.baseUrl}/onramp-liquidity?${queryParams.toString()}`;
+        const response = await this.safeFetch(requestUrl, undefined, 'Failed to get onramp liquidity');
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => null);
+            const errorMessage = errorData?.message || 'Failed to get onramp liquidity';
+            throw new Error(errorMessage);
+        }
+
+        const rawLiquidity = await response.json();
+
+        return {
+            tokenAddress: rawLiquidity.tokenAddress as Address,
+            maxOrderAmountInSats: BigInt(rawLiquidity.maxOrderAmountInSats),
+            totalOnrampLiquidityInSats: BigInt(rawLiquidity.totalOnrampLiquidityInSats),
+            minSatsAmount: BigInt(rawLiquidity.minSatsAmount),
         };
     }
 
