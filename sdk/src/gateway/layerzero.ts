@@ -2,10 +2,12 @@ import ecc from '@bitcoinerlab/secp256k1';
 import * as bitcoin from 'bitcoinjs-lib';
 import {
     Address,
+    CallExecutionError,
     ContractFunctionExecutionError,
     encodeAbiParameters,
     encodePacked,
     Hex,
+    InsufficientFundsError,
     isAddress,
     isAddressEqual,
     maxUint256,
@@ -516,11 +518,15 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                     return txHash;
                 } catch (error) {
                     if (error instanceof ContractFunctionExecutionError) {
-                        // https://github.com/wevm/viem/blob/3aa882692d2c4af3f5e9cc152099e07cde28e551/src/actions/public/simulateContract.test.ts#L711
-                        // throw new error
-                        throw new Error(
-                            'Insufficient native funds for source and destination gas fees, please add more native funds to your account'
-                        );
+                        if (error.cause instanceof CallExecutionError) {
+                            if (error.cause.cause instanceof InsufficientFundsError) {
+                                // https://github.com/wevm/viem/blob/3aa882692d2c4af3f5e9cc152099e07cde28e551/src/actions/public/simulateContract.test.ts#L711
+                                // throw new error
+                                throw new Error(
+                                    'Insufficient native funds for source and destination gas fees, please add more native funds to your account'
+                                );
+                            }
+                        }
                     }
 
                     throw error;
