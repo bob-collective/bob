@@ -1,5 +1,5 @@
 import { Address } from 'viem';
-import { offrampCaller } from '../abi';
+import { offrampCallerV2 } from '../abi';
 import { BaseExecuteQuoteParams } from './quote';
 import { GatewayOrderType } from './order';
 
@@ -36,8 +36,6 @@ export interface OfframpQuote {
     amountReceiveInSat: number;
     /** @dev Deadline for order creation (unix timestamp) */
     deadline: number;
-    /** @dev Address of the off-ramp registry handling the order */
-    registryAddress: Address;
     /** @dev Token address used for payment */
     token: Address;
     /** @dev Detailed fee breakdown */
@@ -60,7 +58,7 @@ export interface OfframpLiquidity {
 export type OfframpCreateOrderParams = {
     quote: OfframpQuote;
     feeBreakdown: OfframpFeeBreakdown;
-    offrampABI: typeof offrampCaller;
+    offrampABI: typeof offrampCallerV2;
     offrampFunctionName: 'createOrder';
     offrampArgs: [
         {

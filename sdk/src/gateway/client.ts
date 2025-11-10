@@ -21,7 +21,7 @@ import { bob, bobSepolia } from 'viem/chains';
 import { EsploraClient } from '../esplora';
 import { bigIntToFloatingNumber } from '../utils';
 import { createBitcoinPsbt } from '../wallet';
-import { claimDelayAbi, offrampCaller, strategyCaller } from './abi';
+import { claimDelayAbi, offrampCallerV2, strategyCaller } from './abi';
 import { BaseClient } from './base-client';
 import StrategyClient from './strategy';
 import { ADDRESS_LOOKUP, getTokenAddress, getTokenDecimals, getTokenSlots } from './tokens';
@@ -560,7 +560,6 @@ export class GatewayApiClient extends BaseClient {
 
         return {
             amountLockInSat: rawQuote.amountLockInSat,
-            registryAddress: rawQuote.registryAddress as Address,
             deadline: deadline,
             token: token as Address,
             feeBreakdown: {
@@ -596,7 +595,7 @@ export class GatewayApiClient extends BaseClient {
 
         return {
             quote,
-            offrampABI: offrampCaller,
+            offrampABI: offrampCallerV2,
             feeBreakdown: quote.feeBreakdown,
             offrampFunctionName: 'createOrder' as const,
             offrampArgs: [
@@ -641,7 +640,7 @@ export class GatewayApiClient extends BaseClient {
 
         const { request } = await publicClient.simulateContract({
             address: offrampRegistryAddress,
-            abi: offrampCaller,
+            abi: offrampCallerV2,
             functionName: 'bumpFeeOfExistingOrder',
             args: [orderId, BigInt(orderDetails.bumpFeeAmountInSats)],
             account: walletClient.account,
@@ -684,7 +683,7 @@ export class GatewayApiClient extends BaseClient {
 
         const { request } = await publicClient.simulateContract({
             address: offrampRegistryAddress,
-            abi: offrampCaller,
+            abi: offrampCallerV2,
             functionName: 'refundOrder',
             args: [orderId, receiver],
             account: walletClient.account,
