@@ -98,8 +98,6 @@ export type StrategyParams = {
     strategyAddress: Address;
     /** @description The token address being staked */
     token: Address;
-    /** @description The sender's wallet address (must be an EVM address) */
-    sender: Address;
     /** @description The receiver's wallet address (must be an EVM address) */
     receiver: Address;
     /** @description The amount of tokens to stake (in smallest unit, e.g., wei for ERC-20 tokens) */
