@@ -55,6 +55,8 @@ export interface GatewayQuoteParams {
 
     /** @description Cross chain message - strategy data */
     message?: Hex;
+    /** @description Gas limit for the cross chain message */
+    destinationGasLimit?: number;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type

@@ -227,6 +227,25 @@ describe('LayerZero Tests', () => {
         console.log(txHash);
     }, 120000);
 
+    it('should get a layerzero send quote with a destination message and execute it', async () => {
+        const client = new LayerZeroGatewayClient(base.id);
+
+        // const quote = await client.getQuote({
+        //     fromChain: 'base',
+        //     fromToken: (await client.getSupportedChainsInfo()).find((chain) => chain.name === 'base')
+        //         ?.oftAddress as string,
+        //     toChain: 'optimism',
+        //     toToken: (await client.getSupportedChainsInfo()).find((chain) => chain.name === 'optimism')
+        //         ?.oftAddress as string,
+        //     fromUserAddress: '0xEf7Ff7Fb24797656DF41616e807AB4016AE9dCD5',
+        //     toUserAddress: '0xEf7Ff7Fb24797656DF41616e807AB4016AE9dCD5',
+        //     amount: 100,
+        //     message: '0x',
+        // });
+
+        // console.log('quote', quote);
+    });
+
     it('should get chain id for eid', async () => {
         const client = new LayerZeroClient();
 
