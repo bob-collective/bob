@@ -1061,7 +1061,7 @@ export class GatewayApiClient extends BaseClient {
             abi: strategyCaller,
             functionName: 'handleGatewayMessageWithSlippageArgs', // TODO: encode args
             args: [params.token, params.amount, params.receiver, { amountOutMin: params.amountOutMin }],
-            account: params.sender,
+            account: walletClient.account,
         });
 
         const transactionHash = await walletClient.writeContract(request);
