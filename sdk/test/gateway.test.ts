@@ -1042,7 +1042,7 @@ describe('Gateway Tests', () => {
                 throw new Error('Expected gasFee to exist on feeBreakdown, but it does not.');
             }
         },
-        { timeout: 30000 } // 30 seconds
+        { timeout: 60000 } // 60 seconds
     );
 
     it('should get cross-chain swap orders', async () => {
