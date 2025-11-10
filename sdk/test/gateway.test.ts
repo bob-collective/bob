@@ -1,8 +1,8 @@
 import * as bitcoin from 'bitcoinjs-lib';
 import nock from 'nock';
-import { zeroAddress } from 'viem';
-import { Address } from 'viem/accounts';
-import { bob, bobSepolia } from 'viem/chains';
+import { createPublicClient, createWalletClient, erc20Abi, http, maxUint256, webSocket, zeroAddress } from 'viem';
+import { Address, privateKeyToAccount } from 'viem/accounts';
+import { bob, bobSepolia, mainnet } from 'viem/chains';
 import { afterEach, assert, describe, expect, it, vi } from 'vitest';
 import { GatewaySDK, LayerZeroGatewayClient } from '../src/gateway';
 import { MAINNET_GATEWAY_BASE_URL, SIGNET_GATEWAY_BASE_URL } from '../src/gateway/client';
@@ -16,6 +16,7 @@ import {
     OrderDetailsRaw,
 } from '../src/gateway/types';
 import { convertOrderDetailsRawToOrderDetails, toHexScriptPubKey } from '../src/gateway/utils';
+import { strategyCaller } from '../src/gateway/abi';
 
 const TBTC = SYMBOL_LOOKUP[bob.id]['tbtc'];
 const TBTC_ADDRESS = TBTC.address;
@@ -1417,4 +1418,42 @@ describe('Gateway Tests', () => {
 
         expect(orders).toEqual([]);
     });
+
+    it('my test', { timeout: 50000 }, async () => {
+        const gatewaySDK = new GatewaySDK(bob.id);
+        const SolvBTCPlusStrategy = '0xeBBFbc110d7DCda24E1f548030ceE80154B5Cfd1' as Address;
+        const privateKey = '0x..';
+        const account = privateKeyToAccount(privateKey);
+        const publicClient = createPublicClient({
+            chain: bob,
+            transport: http(),
+        });
+
+        const walletClient = createWalletClient({
+            chain: bob,
+            transport: http(),
+            account, // signer-enabled account required
+        });
+
+        const params = {
+            strategyAddress: SolvBTCPlusStrategy,
+            token: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c' as Address, // replace with ERC20 test token
+            sender: account.address,
+            receiver: account.address,
+            amount: BigInt(10),
+            amountOutMin: BigInt(0),
+        };
+
+        // --- Execute strategy ---
+        const txHash = await gatewaySDK.executeStrategy({
+            walletClient,
+            publicClient,
+            ...params,
+        });
+
+        // --- Verify Results ---
+        const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
+        expect(receipt.status).toBe('success');
+    });
+
 });
