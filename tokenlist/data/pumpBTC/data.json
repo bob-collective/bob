@@ -3,7 +3,6 @@
   "symbol": "pumpBTC",
   "decimals": 8,
   "description": "",
-  "logoURI": "https://s2.coinmarketcap.com/static/img/coins/200x200/36166.png",
   "tokens": {
     "ethereum": {
       "address": "0xF469fBD2abcd6B9de8E169d128226C0Fc90a012e",

@@ -2,7 +2,6 @@
   "name": "Threshold USD",
   "symbol": "thUSD",
   "decimals": 18,
-  "chainId": 60808,
   "tokens": {
     "ethereum": {
       "address": "0xCFC5bD99915aAa815401C5a41A927aB7a38d29cf"

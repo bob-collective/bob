@@ -2,7 +2,6 @@
   "name": "Segment SOLVBTCBBN",
   "symbol": "seSOLVBTCBBN",
   "decimals": 8,
-  "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/master/assets/segment.svg",
   "tokens": {
     "bob": {
       "address": "0x5EF2B8fbCc8aea2A9Dbe2729F0acf33E073Fa43e"
