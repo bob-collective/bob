@@ -43,6 +43,7 @@
         "yargs": "^18.0.0"
     },
     "dependencies": {
+        "@gobob/tokenlist": "file:../tokenlist",
         "@bitcoinerlab/secp256k1": "^1.2.0",
         "@eslint/eslintrc": "^3.3.1",
         "@eslint/js": "^9.39.1",

@@ -1,0 +1,11 @@
+{
+  "name": "sb Wrapped BTC",
+  "symbol": "sbWBTC",
+  "decimals": 8,
+  "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/master/assets/shoebill.svg",
+  "tokens": {
+    "bob": {
+      "address": "0x5c46D274ed8AbCAe2964B63c0360ad3Ccc384dAa"
+    }
+  }
+}

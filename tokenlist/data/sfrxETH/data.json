@@ -8,10 +8,16 @@
   "nobridge": true,
   "tokens": {
     "ethereum": {
-      "address": "0xac3E018457B222d93114458476f3E3416Abbe38F"
+      "address": "0xac3E018457B222d93114458476f3E3416Abbe38F",
+      "bridge": {
+        "bob": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+      }
     },
     "bob": {
-      "address": "0x249d2952D1C678843e7cD7bF654EfCeC52f2F9E8"
+      "address": "0x249d2952D1C678843e7cD7bF654EfCeC52f2F9E8",
+      "bridge": {
+        "ethereum": "0x4200000000000000000000000000000000000010"
+      }
     }
   }
 }

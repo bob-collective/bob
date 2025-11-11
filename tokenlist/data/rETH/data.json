@@ -6,11 +6,16 @@
   "twitter": "@Rocket_Pool",
   "tokens": {
     "ethereum": {
-      "address": "0xae78736cd615f374d3085123a210448e74fc6393"
+      "address": "0xae78736cd615f374d3085123a210448e74fc6393",
+      "bridge": {
+        "bob": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+      }
     },
-
     "bob": {
-      "address": "0xB5686c4f60904Ec2BDA6277d6FE1F7cAa8D1b41a"
+      "address": "0xB5686c4f60904Ec2BDA6277d6FE1F7cAa8D1b41a",
+      "bridge": {
+        "ethereum": "0x4200000000000000000000000000000000000010"
+      }
     }
   }
 }

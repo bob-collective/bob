@@ -8,7 +8,7 @@ import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
 
 const SCHEMA_URL = 'https://raw.githubusercontent.com/Uniswap/token-lists/refs/heads/main/src/tokenlist.schema.json';
-const tokenlistPath = path.join(__dirname, '../../../token-list.json');
+const tokenlistPath = path.join(__dirname, '../../../tokenlist/token-list.json');
 
 // ERC20 ABI for name, symbol, decimals
 const erc20Abi = parseAbi([

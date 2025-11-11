@@ -1,0 +1,21 @@
+{
+  "name": "pumpBTC",
+  "symbol": "pumpBTC",
+  "decimals": 8,
+  "description": "",
+  "logoURI": "https://s2.coinmarketcap.com/static/img/coins/200x200/36166.png",
+  "tokens": {
+    "ethereum": {
+      "address": "0xF469fBD2abcd6B9de8E169d128226C0Fc90a012e",
+      "bridge": {
+        "bob": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+      }
+    },
+    "bob": {
+      "address": "0x1fCca65fb6Ae3b2758b9b2B394CB227eAE404e1E",
+      "bridge": {
+        "ethereum": "0x4200000000000000000000000000000000000010"
+      }
+    }
+  }
+}

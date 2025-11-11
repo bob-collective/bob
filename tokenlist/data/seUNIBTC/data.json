@@ -1,0 +1,11 @@
+{
+  "name": "Segment UNIBTC",
+  "symbol": "seUNIBTC",
+  "decimals": 8,
+  "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/master/assets/segment.svg",
+  "tokens": {
+    "bob": {
+      "address": "0x7848F0775EebaBbF55cB74490ce6D3673E68773A"
+    }
+  }
+}

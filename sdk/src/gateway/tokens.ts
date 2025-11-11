@@ -1,7 +1,7 @@
 import { Token } from './types';
 import { Address, isAddress } from 'viem';
 import { bob, bobSepolia, mainnet, optimism } from 'viem/chains';
-import tokenList from '../assets/token-list.json';
+import tokenList from '@gobob/tokenlist/token-list.json';
 
 // Storage slot mapping for tokens that need specific slot information
 const STORAGE_SLOTS_MAP: { [address: string]: { allowanceSlot: bigint; balanceSlot: bigint } } = {

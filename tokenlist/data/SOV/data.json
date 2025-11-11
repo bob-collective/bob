@@ -4,10 +4,16 @@
   "decimals": 18,
   "tokens": {
     "ethereum": {
-      "address": "0xbdab72602e9AD40FC6a6852CAf43258113B8F7a5"
+      "address": "0xbdab72602e9AD40FC6a6852CAf43258113B8F7a5",
+      "bridge": {
+        "bob": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+      }
     },
     "bob": {
-      "address": "0xba20a5e63eeEFfFA6fD365E7e540628F8fC61474"
+      "address": "0xba20a5e63eeEFfFA6fD365E7e540628F8fC61474",
+      "bridge": {
+        "ethereum": "0x4200000000000000000000000000000000000010"
+      }
     }
   }
 }

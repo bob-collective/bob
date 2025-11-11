@@ -1,6 +1,7 @@
 {
+  "$schema": "https://raw.githubusercontent.com/Uniswap/token-lists/refs/heads/main/src/tokenlist.schema.json",
   "name": "BOB Tokens",
-  "timestamp": "2025-11-10T21:39:16.729Z",
+  "timestamp": "2025-11-11T15:14:30.298Z",
   "version": {
     "major": 1,
     "minor": 0,
@@ -9,13 +10,47 @@
   "tokens": [
     {
       "chainId": 60808,
+      "address": "0x2E6500A7Add9a788753a897e4e3477f651c612eb",
+      "name": "Avalon Avalon SOLVBTCBBN",
+      "symbol": "aBOBSOLVBTCBBN",
+      "decimals": 18,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/aBOBSOLVBTCBBN/logo.svg",
+      "extensions": {
+        "tokenId": "aBOBSOLVBTCBBN"
+      }
+    },
+    {
+      "chainId": 60808,
+      "address": "0x5E007Ed35c7d89f5889eb6FD0cdCAa38059560ef",
+      "name": "Avalon Avalon TBTC",
+      "symbol": "aBOBTBTC",
+      "decimals": 18,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/aBOBTBTC/logo.svg",
+      "extensions": {
+        "tokenId": "aBOBTBTC"
+      }
+    },
+    {
+      "chainId": 60808,
+      "address": "0xd6890176e8d912142AC489e8B5D8D93F8dE74D60",
+      "name": "Avalon Avalon WBTC",
+      "symbol": "aBOBWBTC",
+      "decimals": 8,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/aBOBWBTC/logo.svg",
+      "extensions": {
+        "tokenId": "aBOBWBTC"
+      }
+    },
+    {
+      "chainId": 60808,
       "address": "0xe53dCec07d16D88e386AE0710E86d9a400f83c31",
       "name": "Babylon",
       "symbol": "BABY",
       "decimals": 6,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/BABY/logo.svg",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/BABY/logo.svg",
       "extensions": {
-        "opTokenId": "BABY"
+        "tokenId": "BABY",
+        "bridge": ""
       }
     },
     {
@@ -24,9 +59,9 @@
       "name": "Babylon",
       "symbol": "BABY",
       "decimals": 6,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/BABY/logo.svg",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/BABY/logo.svg",
       "extensions": {
-        "opTokenId": "BABY"
+        "tokenId": "BABY"
       }
     },
     {
@@ -35,9 +70,9 @@
       "name": "BTC+",
       "symbol": "BTC+",
       "decimals": 18,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/BTC+/logo.svg",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/BTC+/logo.svg",
       "extensions": {
-        "opTokenId": "BTC+"
+        "tokenId": "BTC+"
       }
     },
     {
@@ -46,9 +81,9 @@
       "name": "BTC+",
       "symbol": "BTC+",
       "decimals": 18,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/BTC+/logo.svg",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/BTC+/logo.svg",
       "extensions": {
-        "opTokenId": "BTC+"
+        "tokenId": "BTC+"
       }
     },
     {
@@ -57,9 +92,12 @@
       "name": "Dai Stablecoin",
       "symbol": "DAI",
       "decimals": 18,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/DAI/logo.svg",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/DAI/logo.svg",
       "extensions": {
-        "opTokenId": "DAI"
+        "tokenId": "DAI",
+        "bridge": {
+          "ethereum": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+        }
       }
     },
     {
@@ -68,9 +106,12 @@
       "name": "Dai Stablecoin",
       "symbol": "DAI",
       "decimals": 18,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/DAI/logo.svg",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/DAI/logo.svg",
       "extensions": {
-        "opTokenId": "DAI"
+        "tokenId": "DAI",
+        "bridge": {
+          "bob": "0x4200000000000000000000000000000000000010"
+        }
       }
     },
     {
@@ -79,9 +120,12 @@
       "name": "Sovryn DLLR",
       "symbol": "DLLR",
       "decimals": 18,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/DLLR/logo.svg",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/DLLR/logo.svg",
       "extensions": {
-        "opTokenId": "DLLR"
+        "tokenId": "DLLR",
+        "bridge": {
+          "bob": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+        }
       }
     },
     {
@@ -90,9 +134,12 @@
       "name": "Sovryn DLLR",
       "symbol": "DLLR",
       "decimals": 18,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/DLLR/logo.svg",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/DLLR/logo.svg",
       "extensions": {
-        "opTokenId": "DLLR"
+        "tokenId": "DLLR",
+        "bridge": {
+          "ethereum": "0x4200000000000000000000000000000000000010"
+        }
       }
     },
     {
@@ -101,9 +148,9 @@
       "name": "Ether",
       "symbol": "ETH",
       "decimals": 18,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/ETH/logo.svg",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/ETH/logo.svg",
       "extensions": {
-        "opTokenId": "ETH"
+        "tokenId": "ETH"
       }
     },
     {
@@ -112,31 +159,31 @@
       "name": "Ether",
       "symbol": "ETH",
       "decimals": 18,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/ETH/logo.svg",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/ETH/logo.svg",
       "extensions": {
-        "opTokenId": "ETH"
+        "tokenId": "ETH"
       }
     },
     {
       "chainId": 60808,
-      "address": "0xDeadDeAddeAddEAddeadDEaDDEAdDeaDDeAD0000",
+      "address": "0x0000000000000000000000000000000000000000",
       "name": "Ether",
       "symbol": "ETH",
       "decimals": 18,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/ETH/logo.svg",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/ETH/logo.svg",
       "extensions": {
-        "opTokenId": "ETH"
+        "tokenId": "ETH"
       }
     },
     {
       "chainId": 808813,
-      "address": "0xDeadDeAddeAddEAddeadDEaDDEAdDeaDDeAD0000",
+      "address": "0x0000000000000000000000000000000000000000",
       "name": "Ether",
       "symbol": "ETH",
       "decimals": 18,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/ETH/logo.svg",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/ETH/logo.svg",
       "extensions": {
-        "opTokenId": "ETH"
+        "tokenId": "ETH"
       }
     },
     {
@@ -145,9 +192,12 @@
       "name": "Fire Bitcoin",
       "symbol": "FBTC",
       "decimals": 8,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/FBTC/logo.webp",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/FBTC/logo.webp",
       "extensions": {
-        "opTokenId": "FBTC"
+        "tokenId": "FBTC",
+        "bridge": {
+          "bob": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+        }
       }
     },
     {
@@ -156,9 +206,12 @@
       "name": "Fire Bitcoin",
       "symbol": "FBTC",
       "decimals": 8,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/FBTC/logo.webp",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/FBTC/logo.webp",
       "extensions": {
-        "opTokenId": "FBTC"
+        "tokenId": "FBTC",
+        "bridge": {
+          "ethereum": "0x4200000000000000000000000000000000000010"
+        }
       }
     },
     {
@@ -167,9 +220,12 @@
       "name": "FRAX",
       "symbol": "FRAX",
       "decimals": 18,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/FRAX/logo.svg",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/FRAX/logo.svg",
       "extensions": {
-        "opTokenId": "FRAX"
+        "tokenId": "FRAX",
+        "bridge": {
+          "bob": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+        }
       }
     },
     {
@@ -178,9 +234,12 @@
       "name": "FRAX",
       "symbol": "FRAX",
       "decimals": 18,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/FRAX/logo.svg",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/FRAX/logo.svg",
       "extensions": {
-        "opTokenId": "FRAX"
+        "tokenId": "FRAX",
+        "bridge": {
+          "ethereum": "0x4200000000000000000000000000000000000010"
+        }
       }
     },
     {
@@ -189,9 +248,9 @@
       "name": "FXS",
       "symbol": "FXS",
       "decimals": 18,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/FXS/logo.svg",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/FXS/logo.svg",
       "extensions": {
-        "opTokenId": "FXS"
+        "tokenId": "FXS"
       }
     },
     {
@@ -200,9 +259,9 @@
       "name": "FXS",
       "symbol": "FXS",
       "decimals": 18,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/FXS/logo.svg",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/FXS/logo.svg",
       "extensions": {
-        "opTokenId": "FXS"
+        "tokenId": "FXS"
       }
     },
     {
@@ -211,9 +270,9 @@
       "name": "Hybrid BTC",
       "symbol": "HybridBTC.pendle",
       "decimals": 8,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/HybridBTC.pendle/logo.svg",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/HybridBTC.pendle/logo.svg",
       "extensions": {
-        "opTokenId": "HybridBTC.pendle"
+        "tokenId": "HybridBTC.pendle"
       }
     },
     {
@@ -222,9 +281,31 @@
       "name": "Hybrid BTC",
       "symbol": "HybridBTC.pendle",
       "decimals": 8,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/HybridBTC.pendle/logo.svg",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/HybridBTC.pendle/logo.svg",
       "extensions": {
-        "opTokenId": "HybridBTC.pendle"
+        "tokenId": "HybridBTC.pendle"
+      }
+    },
+    {
+      "chainId": 60808,
+      "address": "0x68e0e4d875FDe34fc4698f40ccca0Db5b67e3693",
+      "name": "Ionic tBTC v2",
+      "symbol": "iontBTC",
+      "decimals": 18,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/iontBTC/logo.svg",
+      "extensions": {
+        "tokenId": "iontBTC"
+      }
+    },
+    {
+      "chainId": 60808,
+      "address": "0xEBc8a7EE7f1D6534eBF45Bd5311203BF0A17493c",
+      "name": "Ionic Wrapped BTC",
+      "symbol": "ionWBTC",
+      "decimals": 8,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/iontWBTC/logo.svg",
+      "extensions": {
+        "tokenId": "iontWBTC"
       }
     },
     {
@@ -233,9 +314,12 @@
       "name": "Lombard Staked BTC",
       "symbol": "LBTC",
       "decimals": 8,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/LBTC/logo.svg",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/LBTC/logo.svg",
       "extensions": {
-        "opTokenId": "LBTC"
+        "tokenId": "LBTC",
+        "bridge": {
+          "bob": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+        }
       }
     },
     {
@@ -244,9 +328,12 @@
       "name": "Lombard Staked BTC",
       "symbol": "LBTC",
       "decimals": 8,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/LBTC/logo.svg",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/LBTC/logo.svg",
       "extensions": {
-        "opTokenId": "LBTC"
+        "tokenId": "LBTC",
+        "bridge": {
+          "ethereum": "0x4200000000000000000000000000000000000010"
+        }
       }
     },
     {
@@ -255,9 +342,9 @@
       "name": "OpenUSDT",
       "symbol": "oUSDT",
       "decimals": 6,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/oUSDT/logo.webp",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/oUSDT/logo.webp",
       "extensions": {
-        "opTokenId": "oUSDT"
+        "tokenId": "oUSDT"
       }
     },
     {
@@ -266,20 +353,51 @@
       "name": "OpenUSDT",
       "symbol": "oUSDT",
       "decimals": 6,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/oUSDT/logo.webp",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/oUSDT/logo.webp",
       "extensions": {
-        "opTokenId": "oUSDT"
+        "tokenId": "oUSDT"
       }
     },
     {
       "chainId": 1,
-      "address": "0xae78736cd615f374d3085123a210448e74fc6393",
+      "address": "0xF469fBD2abcd6B9de8E169d128226C0Fc90a012e",
+      "name": "pumpBTC",
+      "symbol": "pumpBTC",
+      "decimals": 8,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/pumpBTC/logo.webp",
+      "extensions": {
+        "tokenId": "pumpBTC",
+        "bridge": {
+          "bob": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+        }
+      }
+    },
+    {
+      "chainId": 60808,
+      "address": "0x1fCca65fb6Ae3b2758b9b2B394CB227eAE404e1E",
+      "name": "pumpBTC",
+      "symbol": "pumpBTC",
+      "decimals": 8,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/pumpBTC/logo.webp",
+      "extensions": {
+        "tokenId": "pumpBTC",
+        "bridge": {
+          "ethereum": "0x4200000000000000000000000000000000000010"
+        }
+      }
+    },
+    {
+      "chainId": 1,
+      "address": "0xae78736Cd615f374D3085123A210448E74Fc6393",
       "name": "Rocket Pool ETH",
       "symbol": "rETH",
       "decimals": 18,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/rETH/logo.svg",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/rETH/logo.svg",
       "extensions": {
-        "opTokenId": "rETH"
+        "tokenId": "rETH",
+        "bridge": {
+          "bob": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+        }
       }
     },
     {
@@ -288,19 +406,34 @@
       "name": "Rocket Pool ETH",
       "symbol": "rETH",
       "decimals": 18,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/rETH/logo.svg",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/rETH/logo.svg",
       "extensions": {
-        "opTokenId": "rETH"
+        "tokenId": "rETH",
+        "bridge": {
+          "ethereum": "0x4200000000000000000000000000000000000010"
+        }
       }
     },
     {
-      "chainId": 1,
-      "name": "sb tBTC v2",
-      "symbol": "sbtBTC",
-      "decimals": 8,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/sbtBTC/logo.svg",
+      "chainId": 60808,
+      "address": "0x78Fea795cBFcC5fFD6Fb5B845a4f53d25C283bDB",
+      "name": "Satoshi Stablecoin",
+      "symbol": "satUSD",
+      "decimals": 18,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/satUSD/logo.webp",
       "extensions": {
-        "opTokenId": "sbtBTC"
+        "tokenId": "satUSD"
+      }
+    },
+    {
+      "chainId": 60808,
+      "address": "0xecf21b335B41f9d5A89f6186A99c19a3c467871f",
+      "name": "Satoshi Stablecoin V2",
+      "symbol": "satUSD",
+      "decimals": 18,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/satUSDv2/logo.webp",
+      "extensions": {
+        "tokenId": "satUSDv2"
       }
     },
     {
@@ -309,9 +442,64 @@
       "name": "sb tBTC v2",
       "symbol": "sbtBTC",
       "decimals": 8,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/sbtBTC/logo.svg",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/sbtBTC/logo.svg",
       "extensions": {
-        "opTokenId": "sbtBTC"
+        "tokenId": "sbtBTC"
+      }
+    },
+    {
+      "chainId": 60808,
+      "address": "0x5c46D274ed8AbCAe2964B63c0360ad3Ccc384dAa",
+      "name": "sb Wrapped BTC",
+      "symbol": "sbWBTC",
+      "decimals": 8,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/sbWBTC/logo.svg",
+      "extensions": {
+        "tokenId": "sbWBTC"
+      }
+    },
+    {
+      "chainId": 60808,
+      "address": "0x5EF2B8fbCc8aea2A9Dbe2729F0acf33E073Fa43e",
+      "name": "Segment SOLVBTCBBN",
+      "symbol": "seSOLVBTCBBN",
+      "decimals": 8,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/seSOLVBTCBBN/logo.svg",
+      "extensions": {
+        "tokenId": "seSOLVBTCBBN"
+      }
+    },
+    {
+      "chainId": 60808,
+      "address": "0xD30288EA9873f376016A0250433b7eA375676077",
+      "name": "Segment TBTC",
+      "symbol": "seTBTC",
+      "decimals": 8,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/seTBTC/logo.svg",
+      "extensions": {
+        "tokenId": "seTBTC"
+      }
+    },
+    {
+      "chainId": 60808,
+      "address": "0x7848F0775EebaBbF55cB74490ce6D3673E68773A",
+      "name": "Segment UNIBTC",
+      "symbol": "seUNIBTC",
+      "decimals": 8,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/seUNIBTC/logo.svg",
+      "extensions": {
+        "tokenId": "seUNIBTC"
+      }
+    },
+    {
+      "chainId": 60808,
+      "address": "0x6265C05158f672016B771D6Fb7422823ed2CbcDd",
+      "name": "Segment WBTC",
+      "symbol": "seWBTC",
+      "decimals": 8,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/seWBTC/logo.svg",
+      "extensions": {
+        "tokenId": "seWBTC"
       }
     },
     {
@@ -320,9 +508,12 @@
       "name": "Staked Frax",
       "symbol": "sFRAX",
       "decimals": 18,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/sFRAX/logo.svg",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/sFRAX/logo.svg",
       "extensions": {
-        "opTokenId": "sFRAX"
+        "tokenId": "sFRAX",
+        "bridge": {
+          "bob": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+        }
       }
     },
     {
@@ -331,9 +522,12 @@
       "name": "Staked Frax",
       "symbol": "sFRAX",
       "decimals": 18,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/sFRAX/logo.svg",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/sFRAX/logo.svg",
       "extensions": {
-        "opTokenId": "sFRAX"
+        "tokenId": "sFRAX",
+        "bridge": {
+          "ethereum": "0x4200000000000000000000000000000000000010"
+        }
       }
     },
     {
@@ -342,9 +536,12 @@
       "name": "Staked Frax Ether",
       "symbol": "sfrxETH",
       "decimals": 18,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/sfrxETH/logo.svg",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/sfrxETH/logo.svg",
       "extensions": {
-        "opTokenId": "sfrxETH"
+        "tokenId": "sfrxETH",
+        "bridge": {
+          "bob": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+        }
       }
     },
     {
@@ -353,9 +550,12 @@
       "name": "Staked Frax Ether",
       "symbol": "sfrxETH",
       "decimals": 18,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/sfrxETH/logo.svg",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/sfrxETH/logo.svg",
       "extensions": {
-        "opTokenId": "sfrxETH"
+        "tokenId": "sfrxETH",
+        "bridge": {
+          "ethereum": "0x4200000000000000000000000000000000000010"
+        }
       }
     },
     {
@@ -364,9 +564,9 @@
       "name": "Solv Protocol SolvBTC",
       "symbol": "SolvBTC",
       "decimals": 18,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/SolvBTC/logo.svg",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/SolvBTC/logo.svg",
       "extensions": {
-        "opTokenId": "SolvBTC"
+        "tokenId": "SolvBTC"
       }
     },
     {
@@ -375,9 +575,9 @@
       "name": "Solv Protocol SolvBTC",
       "symbol": "SolvBTC",
       "decimals": 18,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/SolvBTC/logo.svg",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/SolvBTC/logo.svg",
       "extensions": {
-        "opTokenId": "SolvBTC"
+        "tokenId": "SolvBTC"
       }
     },
     {
@@ -386,9 +586,9 @@
       "name": "Solv Protocol SolvBTC Jupiter",
       "symbol": "SolvBTC.JUP",
       "decimals": 18,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/SolvBTC.JUP/logo.svg",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/SolvBTC.JUP/logo.svg",
       "extensions": {
-        "opTokenId": "SolvBTC.JUP"
+        "tokenId": "SolvBTC.JUP"
       }
     },
     {
@@ -397,9 +597,12 @@
       "name": "SOV",
       "symbol": "SOV",
       "decimals": 18,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/SOV/logo.svg",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/SOV/logo.svg",
       "extensions": {
-        "opTokenId": "SOV"
+        "tokenId": "SOV",
+        "bridge": {
+          "bob": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+        }
       }
     },
     {
@@ -408,9 +611,12 @@
       "name": "SOV",
       "symbol": "SOV",
       "decimals": 18,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/SOV/logo.svg",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/SOV/logo.svg",
       "extensions": {
-        "opTokenId": "SOV"
+        "tokenId": "SOV",
+        "bridge": {
+          "ethereum": "0x4200000000000000000000000000000000000010"
+        }
       }
     },
     {
@@ -419,9 +625,12 @@
       "name": "StakeStone Ether",
       "symbol": "STONE",
       "decimals": 18,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/STONE/logo.webp",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/STONE/logo.webp",
       "extensions": {
-        "opTokenId": "STONE"
+        "tokenId": "STONE",
+        "bridge": {
+          "bob": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+        }
       }
     },
     {
@@ -430,9 +639,12 @@
       "name": "StakeStone Ether",
       "symbol": "STONE",
       "decimals": 18,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/STONE/logo.webp",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/STONE/logo.webp",
       "extensions": {
-        "opTokenId": "STONE"
+        "tokenId": "STONE",
+        "bridge": {
+          "ethereum": "0x4200000000000000000000000000000000000010"
+        }
       }
     },
     {
@@ -441,9 +653,12 @@
       "name": "Threshold Network Token",
       "symbol": "T",
       "decimals": 18,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/T/logo.svg",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/T/logo.svg",
       "extensions": {
-        "opTokenId": "T"
+        "tokenId": "T",
+        "bridge": {
+          "bob": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+        }
       }
     },
     {
@@ -452,9 +667,12 @@
       "name": "Threshold Network Token",
       "symbol": "T",
       "decimals": 18,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/T/logo.svg",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/T/logo.svg",
       "extensions": {
-        "opTokenId": "T"
+        "tokenId": "T",
+        "bridge": {
+          "ethereum": "0x4200000000000000000000000000000000000010"
+        }
       }
     },
     {
@@ -463,9 +681,12 @@
       "name": "tBTC v2",
       "symbol": "tBTC",
       "decimals": 18,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/tBTC/logo.svg",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/tBTC/logo.svg",
       "extensions": {
-        "opTokenId": "tBTC"
+        "tokenId": "tBTC",
+        "bridge": {
+          "bob": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+        }
       }
     },
     {
@@ -474,9 +695,9 @@
       "name": "tBTC v2",
       "symbol": "tBTC",
       "decimals": 18,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/tBTC/logo.svg",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/tBTC/logo.svg",
       "extensions": {
-        "opTokenId": "tBTC"
+        "tokenId": "tBTC"
       }
     },
     {
@@ -485,9 +706,12 @@
       "name": "tBTC v2",
       "symbol": "tBTC",
       "decimals": 18,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/tBTC/logo.svg",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/tBTC/logo.svg",
       "extensions": {
-        "opTokenId": "tBTC"
+        "tokenId": "tBTC",
+        "bridge": {
+          "ethereum": "0x4200000000000000000000000000000000000010"
+        }
       }
     },
     {
@@ -496,20 +720,45 @@
       "name": "tBTC v2",
       "symbol": "tBTC",
       "decimals": 18,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/tBTC/logo.svg",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/tBTC/logo.svg",
       "extensions": {
-        "opTokenId": "tBTC"
+        "tokenId": "tBTC"
       }
     },
     {
       "chainId": 1,
-      "address": "0x88df592f8eb5d7bd38bfef7deb0fbc02cf3778a0",
+      "address": "0xCFC5bD99915aAa815401C5a41A927aB7a38d29cf",
+      "name": "Threshold USD",
+      "symbol": "thUSD",
+      "decimals": 18,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/thUSD/logo.svg",
+      "extensions": {
+        "tokenId": "thUSD"
+      }
+    },
+    {
+      "chainId": 60808,
+      "address": "0xf7EF136751D7496021858c048FFA4f978C27831A",
+      "name": "Threshold USD",
+      "symbol": "thUSD",
+      "decimals": 18,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/thUSD/logo.svg",
+      "extensions": {
+        "tokenId": "thUSD"
+      }
+    },
+    {
+      "chainId": 1,
+      "address": "0x88dF592F8eb5D7Bd38bFeF7dEb0fBc02cf3778a0",
       "name": "Tellor",
       "symbol": "TRB",
       "decimals": 18,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/TRB/logo.webp",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/TRB/logo.webp",
       "extensions": {
-        "opTokenId": "TRB"
+        "tokenId": "TRB",
+        "bridge": {
+          "bob": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+        }
       }
     },
     {
@@ -518,9 +767,12 @@
       "name": "Tellor",
       "symbol": "TRB",
       "decimals": 18,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/TRB/logo.webp",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/TRB/logo.webp",
       "extensions": {
-        "opTokenId": "TRB"
+        "tokenId": "TRB",
+        "bridge": {
+          "ethereum": "0x4200000000000000000000000000000000000010"
+        }
       }
     },
     {
@@ -529,9 +781,12 @@
       "name": "Uniswap",
       "symbol": "UNI",
       "decimals": 18,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/UNI/logo.webp",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/UNI/logo.webp",
       "extensions": {
-        "opTokenId": "UNI"
+        "tokenId": "UNI",
+        "bridge": {
+          "bob": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+        }
       }
     },
     {
@@ -540,20 +795,23 @@
       "name": "Uniswap",
       "symbol": "UNI",
       "decimals": 18,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/UNI/logo.webp",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/UNI/logo.webp",
       "extensions": {
-        "opTokenId": "UNI"
+        "tokenId": "UNI",
+        "bridge": {
+          "ethereum": "0x4200000000000000000000000000000000000010"
+        }
       }
     },
     {
       "chainId": 1,
-      "address": "0x004e9c3ef86bc1ca1f0bb5c7662861ee93350568",
+      "address": "0x004E9C3EF86bc1ca1f0bB5C7662861Ee93350568",
       "name": "Universal BTC",
       "symbol": "uniBTC",
       "decimals": 8,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/uniBTC/logo.svg",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/uniBTC/logo.svg",
       "extensions": {
-        "opTokenId": "uniBTC"
+        "tokenId": "uniBTC"
       }
     },
     {
@@ -562,23 +820,22 @@
       "name": "Universal BTC",
       "symbol": "uniBTC",
       "decimals": 8,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/uniBTC/logo.svg",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/uniBTC/logo.svg",
       "extensions": {
-        "opTokenId": "uniBTC"
+        "tokenId": "uniBTC"
       }
     },
     {
       "chainId": 1,
-      "address": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+      "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
       "name": "USD Coin",
       "symbol": "USDC",
       "decimals": 6,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/USDC/logo.webp",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/USDC/logo.webp",
       "extensions": {
-        "opTokenId": "USDC",
+        "tokenId": "USDC",
         "bridge": {
-          "bob": "0x450D55a4B4136805B0e5A6BB59377c71FC4FaCBb",
-          "bob-sepolia": "0xA932eD4b73972c37DC4a691E8eC6f2C8a13951BE"
+          "bob": "0x450D55a4B4136805B0e5A6BB59377c71FC4FaCBb"
         }
       }
     },
@@ -588,9 +845,9 @@
       "name": "USDC",
       "symbol": "USDC",
       "decimals": 6,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/USDC/logo.webp",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/USDC/logo.webp",
       "extensions": {
-        "opTokenId": "USDC"
+        "tokenId": "USDC"
       }
     },
     {
@@ -599,10 +856,12 @@
       "name": "Bridged USDC",
       "symbol": "USDC.e",
       "decimals": 6,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/USDC/logo.webp",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/USDC/logo.webp",
       "extensions": {
-        "opTokenId": "USDC",
-        "bridge": "0xe497788F8Fcc30B773C9A181a0FFE2e60645cE90"
+        "tokenId": "USDC",
+        "bridge": {
+          "ethereum": "0xe497788F8Fcc30B773C9A181a0FFE2e60645cE90"
+        }
       }
     },
     {
@@ -611,21 +870,26 @@
       "name": "Bridged USDC",
       "symbol": "USDC.e",
       "decimals": 6,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/USDC/logo.webp",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/USDC/logo.webp",
       "extensions": {
-        "opTokenId": "USDC",
-        "bridge": "0x5C2A45A35ba99d8Ee58c4bB96e2Ce30dA86C530b"
+        "tokenId": "USDC",
+        "bridge": {
+          "sepolia": "0x5C2A45A35ba99d8Ee58c4bB96e2Ce30dA86C530b"
+        }
       }
     },
     {
       "chainId": 1,
-      "address": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+      "address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
       "name": "Tether USD",
       "symbol": "USDT",
       "decimals": 6,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/USDT/logo.webp",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/USDT/logo.webp",
       "extensions": {
-        "opTokenId": "USDT"
+        "tokenId": "USDT",
+        "bridge": {
+          "bob": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+        }
       }
     },
     {
@@ -634,20 +898,26 @@
       "name": "Bridged USDT",
       "symbol": "USDT",
       "decimals": 6,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/USDT/logo.webp",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/USDT/logo.webp",
       "extensions": {
-        "opTokenId": "USDT"
+        "tokenId": "USDT",
+        "bridge": {
+          "ethereum": "0x4200000000000000000000000000000000000010"
+        }
       }
     },
     {
       "chainId": 1,
-      "address": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+      "address": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
       "name": "Wrapped BTC",
       "symbol": "WBTC",
       "decimals": 8,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/WBTC/logo.svg",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/WBTC/logo.svg",
       "extensions": {
-        "opTokenId": "WBTC"
+        "tokenId": "WBTC",
+        "bridge": {
+          "bob": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+        }
       }
     },
     {
@@ -656,9 +926,12 @@
       "name": "Bridged WBTC",
       "symbol": "WBTC",
       "decimals": 8,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/WBTC/logo.svg",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/WBTC/logo.svg",
       "extensions": {
-        "opTokenId": "WBTC"
+        "tokenId": "WBTC",
+        "bridge": {
+          "ethereum": "0x4200000000000000000000000000000000000010"
+        }
       }
     },
     {
@@ -667,9 +940,9 @@
       "name": "Wrapped BTC",
       "symbol": "WBTC",
       "decimals": 8,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/WBTCOFT/logo.svg",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/WBTCOFT/logo.svg",
       "extensions": {
-        "opTokenId": "WBTCOFT"
+        "tokenId": "WBTCOFT"
       }
     },
     {
@@ -678,9 +951,12 @@
       "name": "Wrapped Ether",
       "symbol": "WETH",
       "decimals": 18,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/WETH/logo.webp",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/WETH/logo.webp",
       "extensions": {
-        "opTokenId": "WETH"
+        "tokenId": "WETH",
+        "bridge": {
+          "bob": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+        }
       }
     },
     {
@@ -689,9 +965,9 @@
       "name": "Wrapped Ether",
       "symbol": "WETH",
       "decimals": 18,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/WETH/logo.webp",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/WETH/logo.webp",
       "extensions": {
-        "opTokenId": "WETH"
+        "tokenId": "WETH"
       }
     },
     {
@@ -700,9 +976,12 @@
       "name": "Wrapped Ether",
       "symbol": "WETH",
       "decimals": 18,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/WETH/logo.webp",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/WETH/logo.webp",
       "extensions": {
-        "opTokenId": "WETH"
+        "tokenId": "WETH",
+        "bridge": {
+          "ethereum": "0x4200000000000000000000000000000000000010"
+        }
       }
     },
     {
@@ -711,9 +990,9 @@
       "name": "Wrapped Ether",
       "symbol": "WETH",
       "decimals": 18,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/WETH/logo.webp",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/WETH/logo.webp",
       "extensions": {
-        "opTokenId": "WETH"
+        "tokenId": "WETH"
       }
     },
     {
@@ -722,9 +1001,9 @@
       "name": "Wrapped liquid staked Ether 2.0",
       "symbol": "wstETH",
       "decimals": 18,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/wstETH/logo.svg",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/wstETH/logo.svg",
       "extensions": {
-        "opTokenId": "wstETH",
+        "tokenId": "wstETH",
         "bridge": {
           "bob": "0x091dF5E1284E49fA682407096aD34cfD42B95B72"
         }
@@ -736,9 +1015,9 @@
       "name": "Wrapped liquid staked Ether 2.0",
       "symbol": "wstETH",
       "decimals": 18,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/wstETH/logo.svg",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/wstETH/logo.svg",
       "extensions": {
-        "opTokenId": "wstETH"
+        "tokenId": "wstETH"
       }
     },
     {
@@ -747,10 +1026,12 @@
       "name": "Wrapped liquid staked Ether 2.0",
       "symbol": "wstETH",
       "decimals": 18,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/wstETH/logo.svg",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/wstETH/logo.svg",
       "extensions": {
-        "opTokenId": "wstETH",
-        "bridge": "0xd1559523374D93972E0F7fE1AA98642754f5c4d1"
+        "tokenId": "wstETH",
+        "bridge": {
+          "ethereum": "0xd1559523374D93972E0F7fE1AA98642754f5c4d1"
+        }
       }
     },
     {
@@ -759,9 +1040,9 @@
       "name": "Solv Protocol Staked BTC",
       "symbol": "xSolvBTC",
       "decimals": 18,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/xSolvBTC/logo.svg",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/xSolvBTC/logo.svg",
       "extensions": {
-        "opTokenId": "xSolvBTC"
+        "tokenId": "xSolvBTC"
       }
     },
     {
@@ -770,9 +1051,9 @@
       "name": "Solv Protocol Staked BTC",
       "symbol": "xSolvBTC",
       "decimals": 18,
-      "logoURI": "https:/raw.githubusercontent.com/bob-collective/ethereum-optimism.github.io/refs/heads/master/data/xSolvBTC/logo.svg",
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/xSolvBTC/logo.svg",
       "extensions": {
-        "opTokenId": "xSolvBTC"
+        "tokenId": "xSolvBTC"
       }
     }
   ]

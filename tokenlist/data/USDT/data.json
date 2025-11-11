@@ -7,10 +7,16 @@
   "twitter": "@Tether_to",
   "tokens": {
     "ethereum": {
-      "address": "0xdac17f958d2ee523a2206206994597c13d831ec7"
+      "address": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+      "bridge": {
+        "bob": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+      }
     },
     "bob": {
       "address": "0x05D032ac25d322df992303dCa074EE7392C117b9",
+      "bridge": {
+        "ethereum": "0x4200000000000000000000000000000000000010"
+      },
       "overrides": {
         "name": "Bridged USDT"
       }

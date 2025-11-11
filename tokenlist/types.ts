@@ -13,7 +13,7 @@ export type Entries<T> = [keyof T, ValueOf<T>][];
 export type SuppertedChain = keyof typeof supportedChainMapping;
 
 type Overrides = Partial<
-  Pick<TokenData, Exclude<keyof TokenData, 'tokens'>> & {
+  Pick<TokenData, 'name' | 'symbol'> & {
     bridge: Record<SuppertedChain, Address>;
   }
 >;
@@ -29,6 +29,7 @@ export type TokenData = {
     SuppertedChain,
     {
       address: Address;
+      bridge?: Record<SuppertedChain, Address>;
       overrides?: Overrides;
     }
   >;
@@ -42,7 +43,7 @@ export type Token = {
   chainId: number;
   logoURI: string;
   extensions: {
-    opTokenId: string;
+    tokenId: string;
     bridge?: Record<SuppertedChain, Address>;
   };
 };

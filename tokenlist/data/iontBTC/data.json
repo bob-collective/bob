@@ -1,0 +1,11 @@
+{
+  "name": "Ionic tBTC v2",
+  "symbol": "iontBTC",
+  "decimals": 18,
+  "logoURI": "https://doc.ionic.money/~gitbook/image?url=https://1954749119-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%252F4L4EczL4rCp3jyJhAxHG%252Fuploads%252FPy57T6N8vDpy1jGqxElR%252FTwitter%2520Avatar%2520green.png?alt%3Dmedia%26token%3D1808baa5-0996-41d1-ad6d-fe09c7188cdc&width=768&dpr=4&quality=100&sign=14802451&sv=2",
+  "tokens": {
+    "bob": {
+      "address": "0x68e0e4d875FDe34fc4698f40ccca0Db5b67e3693"
+    }
+  }
+}

@@ -1,0 +1,90 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Token Schema",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "The name of the token",
+      "minLength": 0,
+      "maxLength": 60,
+      "anyOf": [
+        {
+          "const": ""
+        },
+        {
+          "pattern": "^[ \\S+]+$"
+        }
+      ],
+      "examples": ["USD Coin"]
+    },
+    "symbol": {
+      "type": "string",
+      "description": "The symbol for the token",
+      "minLength": 0,
+      "maxLength": 20,
+      "anyOf": [
+        {
+          "const": ""
+        },
+        {
+          "pattern": "^\\S+$"
+        }
+      ],
+      "examples": ["USDC"]
+    },
+    "decimals": {
+      "type": "integer",
+      "description": "The number of decimals for the token balance",
+      "minimum": 0,
+      "maximum": 255,
+      "examples": [18]
+    },
+    "description": {
+      "type": "string",
+      "description": "A description of the token or project (can be empty)"
+    },
+    "website": {
+      "type": "string",
+      "description": "URL of the project's website",
+      "format": "uri",
+      "pattern": "^https?://.+"
+    },
+    "twitter": {
+      "type": "string",
+      "description": "Twitter handle of the project, e.g., '@gobob'",
+      "pattern": "^@?[A-Za-z0-9_]+$"
+    },
+    "tokens": {
+      "type": "object",
+      "description": "Network-specific token addresses",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "string",
+            "description": "The checksummed address of the token on the specified chain ID",
+            "pattern": "^(0x[a-fA-F0-9]{40}|[1-9A-HJ-NP-Za-km-z]{32,44})$",
+            "examples": [
+              "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+              "So11111111111111111111111111111111111111112"
+            ]
+          }
+        },
+        "required": ["address"],
+        "additionalProperties": false
+      },
+      "minProperties": 1
+    }
+  },
+  "required": [
+    "name",
+    "symbol",
+    "decimals",
+    "description",
+    "website",
+    "twitter",
+    "tokens"
+  ],
+  "additionalProperties": false
+}

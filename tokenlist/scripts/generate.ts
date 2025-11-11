@@ -1,9 +1,17 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import url from 'node:url';
 import { glob } from 'glob';
-import { baseUrl, datadir, outfile, supportedChainMapping } from '../config';
+import {
+  baseUrl,
+  datadir,
+  outfile,
+  schema,
+  supportedChainMapping,
+} from '../config';
 import { Entries, Token, TokenData } from '../types';
 import { version } from '../package.json';
+import { getAddress } from 'viem';
 
 const [major, minor, patch] = version.split('.');
 
@@ -16,24 +24,24 @@ const content = fs
     const data: TokenData = JSON.parse(
       fs.readFileSync(path.join(datadir, folder, 'data.json'), 'utf8'),
     );
-    const logofiles = glob.sync(
-      `${path.join(datadir, folder)}/logo.{webp,svg}`,
-    );
+    const logofiles = glob.sync(path.join(datadir, folder, 'logo.{webp,svg}'));
     const logoext = logofiles[0].endsWith('webp') ? 'webp' : 'svg';
 
     return (Object.entries(data.tokens) as Entries<typeof data.tokens>).map(
       ([chain, token]) => {
-        console.log('===', chain);
         const out = {
           chainId: supportedChainMapping[chain].id,
-          address: token.address,
+          address: getAddress(token.address),
           name: token.overrides?.name ?? data.name,
           symbol: token.overrides?.symbol ?? data.symbol,
-          decimals: token.overrides?.decimals ?? data.decimals,
-          logoURI: path.join(baseUrl, 'data', folder, `logo.${logoext}`),
+          decimals: data.decimals,
+          logoURI: url.resolve(
+            baseUrl,
+            path.join(datadir, folder, `logo.${logoext}`),
+          ),
           extensions: {
-            opTokenId: folder,
-            bridge: token.overrides?.bridge,
+            tokenId: folder,
+            bridge: token.bridge,
           },
         };
         return out;
@@ -47,6 +55,7 @@ const content = fs
       return list;
     },
     {
+      $schema: schema,
       name: 'BOB Tokens',
       timestamp: new Date().toISOString(),
       version: {

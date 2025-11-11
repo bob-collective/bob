@@ -7,10 +7,16 @@
   "twitter": "@TheTNetwork",
   "tokens": {
     "ethereum": {
-      "address": "0xCdF7028ceAB81fA0C6971208e83fa7872994beE5"
+      "address": "0xCdF7028ceAB81fA0C6971208e83fa7872994beE5",
+      "bridge": {
+        "bob": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+      }
     },
     "bob": {
-      "address": "0xF14e82E192a36Df7d09Fe726F6ECF70310f73438"
+      "address": "0xF14e82E192a36Df7d09Fe726F6ECF70310f73438",
+      "bridge": {
+        "ethereum": "0x4200000000000000000000000000000000000010"
+      }
     }
   }
 }
