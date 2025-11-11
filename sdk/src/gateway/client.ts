@@ -95,7 +95,7 @@ export const MAINNET_OFFRAMP_REGISTRY_ADDRESS: Address = '0x3D65CD168f27aeddEb08
 /**
  * Address of the Offramp Registry contract on the BOB Testnet (Signet).
  */
-export const TESTNET_OFFRAMP_REGISTRY_ADDRESS: Address = '0x70e5e53b4f48be863a5a076ff6038a91377da0dd'; // TODO: Replace with new v2 address
+export const TESTNET_OFFRAMP_REGISTRY_ADDRESS: Address = '0xa828ec14ef052d04522fd168563da332298f905d';
 
 interface EvmWalletClientParams {
     /**
