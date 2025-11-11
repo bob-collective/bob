@@ -405,6 +405,11 @@ export class GatewayApiClient extends BaseClient {
         if (params.gasRefill) url.searchParams.append('ethAmountToReceive', `${params.gasRefill}`);
         if (params.message) url.searchParams.append('strategyExtraData', `${params.message}`);
 
+        if (params.affiliateFeeRecipient && params.affiliateFeeSats) {
+            url.searchParams.append('affiliateFee', params.affiliateFeeSats.toString());
+            url.searchParams.append('affiliateFeeRecipient', params.affiliateFeeRecipient.toString());
+        }
+
         const response = await this.safeFetch(
             url,
             {
@@ -466,7 +471,9 @@ export class GatewayApiClient extends BaseClient {
             tokenAddress,
             BigInt(params.amount || 0),
             params.fromUserAddress as Address,
-            params.toUserAddress
+            params.toUserAddress,
+            params.affiliateFeeRecipient,
+            params.affiliateFeeSats
         );
 
         return quote;
@@ -533,7 +540,9 @@ export class GatewayApiClient extends BaseClient {
         token: Address,
         amountInToken: bigint,
         userAddress: Address,
-        toUserAddress?: string
+        toUserAddress?: string,
+        affiliateFeeRecipient?: Address,
+        affiliate_fee?: bigint
     ): Promise<OfframpQuote> {
         const queryParams = new URLSearchParams({
             amountInWrappedToken: amountInToken.toString(),
@@ -543,6 +552,11 @@ export class GatewayApiClient extends BaseClient {
 
         if (toUserAddress) {
             queryParams.append('userBtcAddress', toUserAddress);
+        }
+
+        if (affiliateFeeRecipient && affiliate_fee) {
+            queryParams.append('affiliateFee', affiliate_fee.toString());
+            queryParams.append('affiliateFeeRecipient', affiliateFeeRecipient.toString());
         }
 
         const response = await this.safeFetch(
@@ -561,6 +575,7 @@ export class GatewayApiClient extends BaseClient {
         const rawQuote: OfframpQuote = await response.json();
         const currentUnixTimeInSec = Math.floor(Date.now() / 1000);
         const deadline = currentUnixTimeInSec + ORDER_DEADLINE_IN_SECONDS;
+        const normalizedAffiliateFeeRecipient = affiliateFeeRecipient ?? zeroAddress;
 
         return {
             amountLockInSat: rawQuote.amountLockInSat,
@@ -574,7 +589,7 @@ export class GatewayApiClient extends BaseClient {
                 fastestFeeRate: rawQuote.feeBreakdown.fastestFeeRate,
             },
             amountReceiveInSat: rawQuote.amountLockInSat - rawQuote.feeBreakdown.overallFeeSats,
-            affiliateFeeRecipient: zeroAddress as Address, //TODO: fix latter
+            affiliateFeeRecipient: normalizedAffiliateFeeRecipient as Address,
         };
     }
 
