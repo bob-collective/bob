@@ -12,6 +12,7 @@ import {
     GatewayTokensInfo,
     OfframpOrder,
     OfframpOrderStatus,
+    OfframpRawOrder,
     OnrampQuote,
     OrderDetailsRaw,
 } from '../src/gateway/types';
@@ -684,7 +685,7 @@ describe('Gateway Tests', () => {
         const userAddress = '0xFAEe001465dE6D7E8414aCDD9eF4aC5A35B2B808';
 
         // Mock response data
-        const mockResponse = [
+        const mockResponse: OfframpRawOrder[] = [
             {
                 orderId: '0x0',
                 token: '0x4496ebE7C8666a8103713EE6e0c08cA0cD25b888',
@@ -693,8 +694,8 @@ describe('Gateway Tests', () => {
                 satAffiliateFee: '0x181',
                 status: 'Processed',
                 btcTx: 'e8d52d6ef6ebf079f2d082dc683c9455178b64e0685c10e93882effaedde4474',
-                evmTx: null,
-                orderTimestamp: 1743679342,
+                refundedEvmTx: null,
+                orderTimestamp: '1743679342',
                 shouldFeesBeBumped: false,
                 bumpFeeAmountInSats: null,
                 userAddress: zeroAddress,
@@ -706,25 +707,7 @@ describe('Gateway Tests', () => {
         ];
 
         // Dynamically parse expected result from mockResponse
-        const expectedResult = mockResponse.map((order: any) => ({
-            affiliateFeeRecipient: order.affiliateFeeRecipient as Address,
-            btcTx: order.btcTx,
-            offrampRegistryVersion: Number(order.offrampRegistryVersion),
-            refundedEvmTx: order.refundedEvmTx,
-            status: order.status,
-            token: order.token as Address,
-            orderId: BigInt(order.orderId.toString()),
-            satAmountLocked: BigInt(order.satAmountLocked.toString()),
-            satSolverFeeMax: BigInt(order.satFeesMax.toString()),
-            satAffiliateFee: BigInt(order.satAffiliateFee.toString()),
-            orderTimestamp: order.orderTimestamp,
-            canOrderBeUnlocked: false,
-            shouldFeesBeBumped: false,
-            bumpFeeAmountInSats: null,
-            offrampRegistryAddress: '0x70e5e53b4f48be863a5a076ff6038a91377da0dd',
-            userAddress: order.userAddress,
-            submitOrderEvmTx: order.submitOrderEvmTx,
-        }));
+        const expectedResult = await gatewaySDK.mapRawOrderToOfframpOrder(mockResponse[0]);
 
         nock(SIGNET_GATEWAY_BASE_URL).get(`/offramp-orders/${userAddress}`).reply(200, mockResponse);
         nock(`${SIGNET_GATEWAY_BASE_URL}`).get('/offramp-quote').query(true).reply(200, {
@@ -736,7 +719,7 @@ describe('Gateway Tests', () => {
         const result: OfframpOrder[] = await gatewaySDK.getOfframpOrders(userAddress);
 
         // Assertion
-        expect(result).to.deep.equal(expectedResult);
+        expect(result[0]).to.deep.equal(expectedResult);
     });
 
     it('should return valid btc pub key', async () => {

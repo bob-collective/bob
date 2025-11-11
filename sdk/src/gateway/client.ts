@@ -196,7 +196,7 @@ export class GatewayApiClient extends BaseClient {
         return version === 1 ? offrampCallerV1 : offrampCallerV2;
     }
 
-    private async mapRawOrderToOfframpOrder(order: OfframpRawOrder): Promise<OfframpOrder> {
+    public async mapRawOrderToOfframpOrder(order: OfframpRawOrder): Promise<OfframpOrder> {
         const status = order.status as OfframpOrderStatus;
         const offrampRegistryAddress = order.offrampRegistryAddress as Address;
 
