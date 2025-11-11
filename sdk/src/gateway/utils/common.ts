@@ -70,14 +70,6 @@ export function slugify(str: string): string {
         .replace(/[^\w-]+/g, '');
 }
 
-const STATUSES = ['Active', 'Accepted', 'Processed', 'Refunded'] as const;
-
-export function parseOrderStatus(value: number): OfframpOrderStatus {
-    const status = STATUSES[value];
-    if (status) return status;
-    throw new Error(`Invalid order status: ${value}`);
-}
-
 export function viemClient(chain: ViemChain) {
     return createPublicClient({ chain, transport: http() });
 }

@@ -120,30 +120,6 @@ export type OfframpOrder = {
     userAddress: Address;
 };
 
-/** @dev Internal, On-chain fetched state of an active/processed/refunded order */
-export type OnchainOfframpOrderDetails = {
-    /** @dev Unique identifier for the off-ramp order */
-    orderId: bigint;
-    /** @dev The token address used for payment */
-    token: Address;
-    /** @dev Amount locked in sats */
-    satAmountLocked: bigint;
-    /** @dev Max sats for fee */
-    satFeesMax: bigint;
-    /** @dev Address that created the order */
-    owner: Address;
-    /** @dev Optional solver owner address */
-    solverOwner: Address | null;
-    /** @dev Optional solver recipient address */
-    solverRecipient: Address | null;
-    /** @dev Output script for Bitcoin tx */
-    outputScript: string;
-    /** @dev Order status */
-    status: OfframpOrderStatus;
-    /** @dev When the order was created (unix timestamp) */
-    orderTimestamp: number;
-};
-
 /** @dev Internal */
 export interface OfframpRawOrder {
     orderId: string;
