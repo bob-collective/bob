@@ -90,12 +90,12 @@ export const ORDER_DEADLINE_IN_SECONDS = 30 * 60; // 30 minutes
 /**
  * Address of the Offramp Registry contract on the BOB Mainnet.
  */
-export const MAINNET_OFFRAMP_REGISTRY_ADDRESS: Address = '0x3D65CD168f27aeddEb08Ca31CAC5e5C12F3BB16D'; // TODO: Replace with new v2 address
+export const MAINNET_TARGET_OFFRAMP_REGISTRY_ADDRESS: Address = '0x3D65CD168f27aeddEb08Ca31CAC5e5C12F3BB16D'; // TODO: Replace with new v2 address
 
 /**
  * Address of the Offramp Registry contract on the BOB Testnet (Signet).
  */
-export const TESTNET_OFFRAMP_REGISTRY_ADDRESS: Address = '0xa828ec14ef052d04522fd168563da332298f905d';
+export const TESTNET_TARGET_OFFRAMP_REGISTRY_ADDRESS: Address = '0xa828ec14ef052d04522fd168563da332298f905d';
 
 interface EvmWalletClientParams {
     /**
@@ -309,7 +309,7 @@ export class GatewayApiClient extends BaseClient {
 
         const [offrampOrder, offrampRegistryAddress, feeValues, gasPrice] = await Promise.all([
             this.createOfframpOrder(offrampQuote, params),
-            this.getOfframpRegistryAddress(),
+            this.getTargetOfframpRegistryAddress(),
             publicClient.estimateFeesPerGas(),
             publicClient.getGasPrice(),
         ]);
@@ -479,12 +479,12 @@ export class GatewayApiClient extends BaseClient {
      *
      * @returns The registry contract address.
      */
-    getOfframpRegistryAddress(): Address {
+    getTargetOfframpRegistryAddress(): Address {
         const chainId = this.chainId;
         if (chainId === bob.id) {
-            return MAINNET_OFFRAMP_REGISTRY_ADDRESS;
+            return MAINNET_TARGET_OFFRAMP_REGISTRY_ADDRESS;
         } else if (chainId === bobSepolia.id) {
-            return TESTNET_OFFRAMP_REGISTRY_ADDRESS;
+            return TESTNET_TARGET_OFFRAMP_REGISTRY_ADDRESS;
         } else {
             throw new Error('Invalid output chain: could not find chain id');
         }
@@ -925,7 +925,7 @@ export class GatewayApiClient extends BaseClient {
             const tokenAddress = getTokenAddress(this.chainId, params.fromToken.toLowerCase());
             const [offrampOrder, offrampRegistryAddress] = await Promise.all([
                 this.createOfframpOrder(data, params),
-                this.getOfframpRegistryAddress(),
+                this.getTargetOfframpRegistryAddress(),
             ]);
 
             const accountAddress = walletClient.account?.address ?? (params.fromUserAddress as Address);

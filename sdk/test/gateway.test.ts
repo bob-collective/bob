@@ -739,7 +739,7 @@ describe('Gateway Tests', () => {
     it('fetches the correct offramp registry address', async () => {
         const gatewaySDK = new GatewaySDK(bobSepolia.id);
 
-        const result = gatewaySDK.getOfframpRegistryAddress();
+        const result = gatewaySDK.getTargetOfframpRegistryAddress();
 
         expect(result).toBe('0x70e5e53b4f48be863a5a076ff6038a91377da0dd');
     });
@@ -883,7 +883,7 @@ describe('Gateway Tests', () => {
         } as unknown as Parameters<typeof gatewaySDK.executeQuote>[0]['publicClient'];
 
         const createOfframpOrderSpy = vi.spyOn(gatewaySDK, 'createOfframpOrder');
-        const fetchOfframpRegistryAddressSpy = vi.spyOn(gatewaySDK, 'getOfframpRegistryAddress');
+        const fetchOfframpRegistryAddressSpy = vi.spyOn(gatewaySDK, 'getTargetOfframpRegistryAddress');
 
         const outputTokenAddress = getTokenAddress(bobSepolia.id, 'bobbtc');
         const searchParams = new URLSearchParams({
