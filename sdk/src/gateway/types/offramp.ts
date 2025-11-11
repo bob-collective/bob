@@ -90,8 +90,8 @@ export type OfframpOrder = {
     token: Address;
     /** @dev The amount of sats that is locked */
     satAmountLocked: bigint;
-    /** @dev The amount of fees to pay in sat */
-    satFeesMax: bigint;
+    /** @dev The amount of fees to pay in sat to the solver */
+    satSolverFeeMax: bigint;
     /** @dev The current status of the order */
     status: OfframpOrderStatus;
     /** @dev The timestamp when the order was created or updated */

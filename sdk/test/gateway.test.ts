@@ -715,7 +715,7 @@ describe('Gateway Tests', () => {
             token: order.token as Address,
             orderId: BigInt(order.orderId.toString()),
             satAmountLocked: BigInt(order.satAmountLocked.toString()),
-            satFeesMax: BigInt(order.satFeesMax.toString()),
+            satSolverFeeMax: BigInt(order.satFeesMax.toString()),
             satAffiliateFee: BigInt(order.satAffiliateFee.toString()),
             orderTimestamp: order.orderTimestamp,
             canOrderBeUnlocked: false,

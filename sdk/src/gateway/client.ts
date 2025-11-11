@@ -21,7 +21,7 @@ import { bob, bobSepolia } from 'viem/chains';
 import { EsploraClient } from '../esplora';
 import { bigIntToFloatingNumber } from '../utils';
 import { createBitcoinPsbt } from '../wallet';
-import { claimDelayAbi, offrampCallerV2, strategyCaller } from './abi';
+import { claimDelayAbi, offrampCallerV1, offrampCallerV2, strategyCaller } from './abi';
 import { BaseClient } from './base-client';
 import StrategyClient from './strategy';
 import { ADDRESS_LOOKUP, getTokenAddress, getTokenDecimals, getTokenSlots } from './tokens';
@@ -192,6 +192,10 @@ export class GatewayApiClient extends BaseClient {
         return this.chain.id;
     }
 
+    private getOfframpAbi(version: number) {
+        return version === 1 ? offrampCallerV1 : offrampCallerV2;
+    }
+
     private async mapRawOrderToOfframpOrder(order: OfframpRawOrder): Promise<OfframpOrder> {
         const status = order.status as OfframpOrderStatus;
         const offrampRegistryAddress = order.offrampRegistryAddress as Address;
@@ -206,7 +210,7 @@ export class GatewayApiClient extends BaseClient {
             orderId: BigInt(order.orderId),
             token: order.token as Address,
             satAmountLocked: BigInt(order.satAmountLocked),
-            satFeesMax: BigInt(order.satFeesMax),
+            satSolverFeeMax: BigInt(order.satFeesMax),
             status,
             orderTimestamp: Number(order.orderTimestamp),
             submitOrderEvmTx: order.submitOrderEvmTx,
@@ -638,9 +642,11 @@ export class GatewayApiClient extends BaseClient {
             throw new Error(`No need to bump fees, the current fees are sufficient`);
         }
 
+        const abi = this.getOfframpAbi(orderDetails.offrampRegistryVersion);
+
         const { request } = await publicClient.simulateContract({
             address: offrampRegistryAddress,
-            abi: offrampCallerV2,
+            abi,
             functionName: 'bumpFeeOfExistingOrder',
             args: [orderId, BigInt(orderDetails.bumpFeeAmountInSats)],
             account: walletClient.account,
@@ -681,9 +687,11 @@ export class GatewayApiClient extends BaseClient {
             throw new Error(`Offramp order is still within the 7-day claim delay and cannot be unlocked yet.`);
         }
 
+        const abi = this.getOfframpAbi(orderDetails.offrampRegistryVersion);
+
         const { request } = await publicClient.simulateContract({
             address: offrampRegistryAddress,
-            abi: offrampCallerV2,
+            abi,
             functionName: 'refundOrder',
             args: [orderId, receiver],
             account: walletClient.account,

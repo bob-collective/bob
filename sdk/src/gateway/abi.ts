@@ -74,9 +74,8 @@ export const offrampCallerV1 = [
         ],
         outputs: [],
         stateMutability: 'nonpayable',
-    }
+    },
 ] as const;
-
 
 export const offrampCallerV2 = [
     {
