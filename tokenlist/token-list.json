@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/Uniswap/token-lists/refs/heads/main/src/tokenlist.schema.json",
   "name": "BOB Tokens",
-  "timestamp": "2025-11-11T19:21:04.438Z",
+  "timestamp": "2025-11-11T22:29:17.046Z",
   "version": {
     "major": 1,
     "minor": 0,
@@ -11,7 +11,7 @@
     {
       "chainId": 60808,
       "address": "0x2E6500A7Add9a788753a897e4e3477f651c612eb",
-      "name": "Avalon Avalon SOLVBTCBBN",
+      "name": "Avalon SOLVBTCBBN",
       "symbol": "aBOBSOLVBTCBBN",
       "decimals": 18,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/aBOBSOLVBTCBBN/logo.svg",
@@ -23,7 +23,7 @@
     {
       "chainId": 60808,
       "address": "0x5E007Ed35c7d89f5889eb6FD0cdCAa38059560ef",
-      "name": "Avalon Avalon TBTC",
+      "name": "Avalon TBTC",
       "symbol": "aBOBTBTC",
       "decimals": 18,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/aBOBTBTC/logo.svg",
@@ -35,7 +35,7 @@
     {
       "chainId": 60808,
       "address": "0xd6890176e8d912142AC489e8B5D8D93F8dE74D60",
-      "name": "Avalon Avalon WBTC",
+      "name": "Avalon WBTC",
       "symbol": "aBOBWBTC",
       "decimals": 8,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/aBOBWBTC/logo.svg",
