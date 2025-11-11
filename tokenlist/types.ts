@@ -1,22 +1,17 @@
 import { Address } from 'viem';
-import { supportedChainMapping } from './config';
+import { supportedChainMapping, supportedChains } from './config';
 
-export type KebabCase<T extends string> = T extends `${infer S}${infer E}`
-  ? E extends `${Uncapitalize<E>}`
-    ? `${Uncapitalize<S>}${KebabCase<E>}`
-    : `${Uncapitalize<S>}-${KebabCase<E>}`
-  : T;
+export type KebabCase<T extends string> = T extends `${infer S} ${infer E}`
+  ? `${Lowercase<S>}-${KebabCase<E>}`
+  : Lowercase<T>;
 
 export type ValueOf<T> = T[keyof T];
 export type Entries<T> = [keyof T, ValueOf<T>][];
 
 export type SuppertedChain = keyof typeof supportedChainMapping;
+export type SupportedChainId = (typeof supportedChains)[number]['id'];
 
-type Overrides = Partial<
-  Pick<TokenData, 'name' | 'symbol'> & {
-    bridge: Record<SuppertedChain, Address>;
-  }
->;
+type Overrides = Partial<Pick<TokenData, 'name' | 'symbol'>>;
 
 export type TokenData = {
   name: string;
@@ -44,6 +39,6 @@ export type Token = {
   logoURI: string;
   extensions: {
     tokenId: string;
-    bridge?: Record<SuppertedChain, Address>;
+    bridge?: Record<SupportedChainId, Address>;
   };
 };

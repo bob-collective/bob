@@ -20,7 +20,13 @@ The presence of a token on this page does not imply any endorsement of the token
 export const TokenTable = () => {
   // Sort tokens alphabetically by name
   const tokenList = tokenListData.tokens;
-  const sortedTokens = [...tokenList].sort((a, b) => a.name.localeCompare(b.name));
+  const bobTokens = tokenList.filter(token => token.chainId === 60808);
+  const mainnetTokens = tokenList.filter(token => token.chainId === 1);
+  const mainnetTokensMapping = mainnetTokens.reduce((acc, token) => {
+    acc[token.extensions.tokenId] = token;
+    return acc;
+  }, {});
+  const sortedTokens = bobTokens.toSorted((a, b) => a.name.localeCompare(b.name));
 
   const formatAddress = (address) => {
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
@@ -40,14 +46,16 @@ export const TokenTable = () => {
       </thead>
       <tbody>
         {sortedTokens.map((token, index) => {
-          const bridgeInfo = token.extensions?.bridgeInfo?.["1"];
+          const bobBridgeAddress = token.extensions?.bridge?.["1"];
+          const mainnetToken = mainnetTokensMapping[token.extensions.tokenId];
+          const mainnetBridgeAddress = mainnetToken?.extensions?.bridge?.["60808"];
 
           // L1 Token
           let l1Token = 'L2 Native Token';
-          if (bridgeInfo?.tokenAddress) {
-            const shortL1 = formatAddress(bridgeInfo.tokenAddress);
+          if (mainnetBridgeAddress && mainnetToken?.address) {
+            const shortL1 = formatAddress(mainnetToken?.address);
             l1Token = (
-              <a href={`https://etherscan.io/address/${bridgeInfo.tokenAddress}`} target="_blank" rel="noopener noreferrer">
+              <a href={`https://etherscan.io/address/${mainnetToken?.address}`} target="_blank" rel="noopener noreferrer">
                 {shortL1}
               </a>
             );
@@ -68,19 +76,19 @@ export const TokenTable = () => {
           let bridgeL1 = 'N/A';
           let bridgeL2 = 'N/A';
 
-          if (bridgeInfo?.destBridgeAddress) {
-            const shortBridgeL1 = formatAddress(bridgeInfo.destBridgeAddress);
+          if (mainnetBridgeAddress) {
+            const shortBridgeL1 = formatAddress(mainnetBridgeAddress);
             bridgeL1 = (
-              <a href={`https://etherscan.io/address/${bridgeInfo.destBridgeAddress}`} target="_blank" rel="noopener noreferrer">
+              <a href={`https://etherscan.io/address/${mainnetBridgeAddress}`} target="_blank" rel="noopener noreferrer">
                 {shortBridgeL1}
               </a>
             );
           }
 
-          if (bridgeInfo?.originBridgeAddress) {
-            const shortBridgeL2 = formatAddress(bridgeInfo.originBridgeAddress);
+          if (bobBridgeAddress) {
+            const shortBridgeL2 = formatAddress(bobBridgeAddress);
             bridgeL2 = (
-              <a href={`https://explorer.gobob.xyz/address/${bridgeInfo.originBridgeAddress}`} target="_blank" rel="noopener noreferrer">
+              <a href={`https://explorer.gobob.xyz/address/${bobBridgeAddress}`} target="_blank" rel="noopener noreferrer">
                 {shortBridgeL2}
               </a>
             );
@@ -145,10 +153,8 @@ Each bridged token includes bridge information in its `extensions.bridgeInfo` fi
   "chainId": 60808,
   "logoURI": "https://...",
   "extensions": {
-    "bridgeInfo": {
-      "1": {
-        "tokenAddress": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599"
-      }
+    "bridge": {
+      "1": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
     }
   }
 }

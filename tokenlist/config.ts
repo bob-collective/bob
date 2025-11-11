@@ -10,8 +10,11 @@ export const baseUrl =
 
 const supportedMainnetChains = [mainnet, bob];
 const supportedTestnetChains = [sepolia, bobSepolia];
-const supportedChain = [...supportedMainnetChains, ...supportedTestnetChains];
+export const supportedChains = [
+  ...supportedMainnetChains,
+  ...supportedTestnetChains,
+];
 
 export const supportedMainnetChainsMapping = mapByName(supportedMainnetChains);
 export const supportedTestnetChainsMapping = mapByName(supportedTestnetChains);
-export const supportedChainMapping = mapByName(supportedChain);
+export const supportedChainMapping = mapByName(supportedChains);

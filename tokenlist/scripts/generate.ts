@@ -11,7 +11,7 @@ import {
 } from '../config';
 import { Entries, Token, TokenData } from '../types';
 import { version } from '../package.json';
-import { getAddress } from 'viem';
+import { Address, getAddress } from 'viem';
 
 const [major, minor, patch] = version.split('.');
 
@@ -29,6 +29,16 @@ const content = fs
 
     return (Object.entries(data.tokens) as Entries<typeof data.tokens>).map(
       ([chain, token]) => {
+        const bridges = (
+          Object.entries(token.bridge || {}) as Entries<
+            NonNullable<typeof token.bridge>
+          >
+        ).reduce((acc, [chain, bridgeAddress]) => {
+          acc[supportedChainMapping[chain].id] = bridgeAddress;
+
+          return acc;
+        }, {} as Record<number, Address>);
+
         const out = {
           chainId: supportedChainMapping[chain].id,
           address: getAddress(token.address),
@@ -41,7 +51,7 @@ const content = fs
           ),
           extensions: {
             tokenId: folder,
-            bridge: token.bridge,
+            bridge: bridges,
           },
         };
         return out;

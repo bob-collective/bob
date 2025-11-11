@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/Uniswap/token-lists/refs/heads/main/src/tokenlist.schema.json",
   "name": "BOB Tokens",
-  "timestamp": "2025-11-11T15:14:30.298Z",
+  "timestamp": "2025-11-11T16:40:28.912Z",
   "version": {
     "major": 1,
     "minor": 0,
@@ -16,7 +16,8 @@
       "decimals": 18,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/aBOBSOLVBTCBBN/logo.svg",
       "extensions": {
-        "tokenId": "aBOBSOLVBTCBBN"
+        "tokenId": "aBOBSOLVBTCBBN",
+        "bridge": {}
       }
     },
     {
@@ -27,7 +28,8 @@
       "decimals": 18,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/aBOBTBTC/logo.svg",
       "extensions": {
-        "tokenId": "aBOBTBTC"
+        "tokenId": "aBOBTBTC",
+        "bridge": {}
       }
     },
     {
@@ -38,7 +40,8 @@
       "decimals": 8,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/aBOBWBTC/logo.svg",
       "extensions": {
-        "tokenId": "aBOBWBTC"
+        "tokenId": "aBOBWBTC",
+        "bridge": {}
       }
     },
     {
@@ -50,7 +53,7 @@
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/BABY/logo.svg",
       "extensions": {
         "tokenId": "BABY",
-        "bridge": ""
+        "bridge": {}
       }
     },
     {
@@ -61,7 +64,8 @@
       "decimals": 6,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/BABY/logo.svg",
       "extensions": {
-        "tokenId": "BABY"
+        "tokenId": "BABY",
+        "bridge": {}
       }
     },
     {
@@ -72,7 +76,8 @@
       "decimals": 18,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/BTC+/logo.svg",
       "extensions": {
-        "tokenId": "BTC+"
+        "tokenId": "BTC+",
+        "bridge": {}
       }
     },
     {
@@ -83,7 +88,8 @@
       "decimals": 18,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/BTC+/logo.svg",
       "extensions": {
-        "tokenId": "BTC+"
+        "tokenId": "BTC+",
+        "bridge": {}
       }
     },
     {
@@ -96,7 +102,7 @@
       "extensions": {
         "tokenId": "DAI",
         "bridge": {
-          "ethereum": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+          "60808": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
         }
       }
     },
@@ -110,7 +116,7 @@
       "extensions": {
         "tokenId": "DAI",
         "bridge": {
-          "bob": "0x4200000000000000000000000000000000000010"
+          "1": "0x4200000000000000000000000000000000000010"
         }
       }
     },
@@ -124,7 +130,7 @@
       "extensions": {
         "tokenId": "DLLR",
         "bridge": {
-          "bob": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+          "60808": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
         }
       }
     },
@@ -138,7 +144,7 @@
       "extensions": {
         "tokenId": "DLLR",
         "bridge": {
-          "ethereum": "0x4200000000000000000000000000000000000010"
+          "1": "0x4200000000000000000000000000000000000010"
         }
       }
     },
@@ -150,7 +156,8 @@
       "decimals": 18,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/ETH/logo.svg",
       "extensions": {
-        "tokenId": "ETH"
+        "tokenId": "ETH",
+        "bridge": {}
       }
     },
     {
@@ -161,7 +168,8 @@
       "decimals": 18,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/ETH/logo.svg",
       "extensions": {
-        "tokenId": "ETH"
+        "tokenId": "ETH",
+        "bridge": {}
       }
     },
     {
@@ -172,7 +180,8 @@
       "decimals": 18,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/ETH/logo.svg",
       "extensions": {
-        "tokenId": "ETH"
+        "tokenId": "ETH",
+        "bridge": {}
       }
     },
     {
@@ -183,7 +192,8 @@
       "decimals": 18,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/ETH/logo.svg",
       "extensions": {
-        "tokenId": "ETH"
+        "tokenId": "ETH",
+        "bridge": {}
       }
     },
     {
@@ -196,7 +206,7 @@
       "extensions": {
         "tokenId": "FBTC",
         "bridge": {
-          "bob": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+          "60808": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
         }
       }
     },
@@ -210,7 +220,7 @@
       "extensions": {
         "tokenId": "FBTC",
         "bridge": {
-          "ethereum": "0x4200000000000000000000000000000000000010"
+          "1": "0x4200000000000000000000000000000000000010"
         }
       }
     },
@@ -224,7 +234,7 @@
       "extensions": {
         "tokenId": "FRAX",
         "bridge": {
-          "bob": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+          "60808": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
         }
       }
     },
@@ -238,7 +248,7 @@
       "extensions": {
         "tokenId": "FRAX",
         "bridge": {
-          "ethereum": "0x4200000000000000000000000000000000000010"
+          "1": "0x4200000000000000000000000000000000000010"
         }
       }
     },
@@ -250,7 +260,8 @@
       "decimals": 18,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/FXS/logo.svg",
       "extensions": {
-        "tokenId": "FXS"
+        "tokenId": "FXS",
+        "bridge": {}
       }
     },
     {
@@ -261,7 +272,8 @@
       "decimals": 18,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/FXS/logo.svg",
       "extensions": {
-        "tokenId": "FXS"
+        "tokenId": "FXS",
+        "bridge": {}
       }
     },
     {
@@ -272,7 +284,8 @@
       "decimals": 8,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/HybridBTC.pendle/logo.svg",
       "extensions": {
-        "tokenId": "HybridBTC.pendle"
+        "tokenId": "HybridBTC.pendle",
+        "bridge": {}
       }
     },
     {
@@ -283,7 +296,8 @@
       "decimals": 8,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/HybridBTC.pendle/logo.svg",
       "extensions": {
-        "tokenId": "HybridBTC.pendle"
+        "tokenId": "HybridBTC.pendle",
+        "bridge": {}
       }
     },
     {
@@ -294,7 +308,8 @@
       "decimals": 18,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/iontBTC/logo.svg",
       "extensions": {
-        "tokenId": "iontBTC"
+        "tokenId": "iontBTC",
+        "bridge": {}
       }
     },
     {
@@ -305,7 +320,8 @@
       "decimals": 8,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/iontWBTC/logo.svg",
       "extensions": {
-        "tokenId": "iontWBTC"
+        "tokenId": "iontWBTC",
+        "bridge": {}
       }
     },
     {
@@ -318,7 +334,7 @@
       "extensions": {
         "tokenId": "LBTC",
         "bridge": {
-          "bob": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+          "60808": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
         }
       }
     },
@@ -332,7 +348,7 @@
       "extensions": {
         "tokenId": "LBTC",
         "bridge": {
-          "ethereum": "0x4200000000000000000000000000000000000010"
+          "1": "0x4200000000000000000000000000000000000010"
         }
       }
     },
@@ -344,7 +360,8 @@
       "decimals": 6,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/oUSDT/logo.webp",
       "extensions": {
-        "tokenId": "oUSDT"
+        "tokenId": "oUSDT",
+        "bridge": {}
       }
     },
     {
@@ -355,7 +372,8 @@
       "decimals": 6,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/oUSDT/logo.webp",
       "extensions": {
-        "tokenId": "oUSDT"
+        "tokenId": "oUSDT",
+        "bridge": {}
       }
     },
     {
@@ -368,7 +386,7 @@
       "extensions": {
         "tokenId": "pumpBTC",
         "bridge": {
-          "bob": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+          "60808": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
         }
       }
     },
@@ -382,7 +400,7 @@
       "extensions": {
         "tokenId": "pumpBTC",
         "bridge": {
-          "ethereum": "0x4200000000000000000000000000000000000010"
+          "1": "0x4200000000000000000000000000000000000010"
         }
       }
     },
@@ -396,7 +414,7 @@
       "extensions": {
         "tokenId": "rETH",
         "bridge": {
-          "bob": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+          "60808": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
         }
       }
     },
@@ -410,7 +428,7 @@
       "extensions": {
         "tokenId": "rETH",
         "bridge": {
-          "ethereum": "0x4200000000000000000000000000000000000010"
+          "1": "0x4200000000000000000000000000000000000010"
         }
       }
     },
@@ -422,7 +440,8 @@
       "decimals": 18,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/satUSD/logo.webp",
       "extensions": {
-        "tokenId": "satUSD"
+        "tokenId": "satUSD",
+        "bridge": {}
       }
     },
     {
@@ -433,7 +452,8 @@
       "decimals": 18,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/satUSDv2/logo.webp",
       "extensions": {
-        "tokenId": "satUSDv2"
+        "tokenId": "satUSDv2",
+        "bridge": {}
       }
     },
     {
@@ -444,7 +464,8 @@
       "decimals": 8,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/sbtBTC/logo.svg",
       "extensions": {
-        "tokenId": "sbtBTC"
+        "tokenId": "sbtBTC",
+        "bridge": {}
       }
     },
     {
@@ -455,7 +476,8 @@
       "decimals": 8,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/sbWBTC/logo.svg",
       "extensions": {
-        "tokenId": "sbWBTC"
+        "tokenId": "sbWBTC",
+        "bridge": {}
       }
     },
     {
@@ -466,7 +488,8 @@
       "decimals": 8,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/seSOLVBTCBBN/logo.svg",
       "extensions": {
-        "tokenId": "seSOLVBTCBBN"
+        "tokenId": "seSOLVBTCBBN",
+        "bridge": {}
       }
     },
     {
@@ -477,7 +500,8 @@
       "decimals": 8,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/seTBTC/logo.svg",
       "extensions": {
-        "tokenId": "seTBTC"
+        "tokenId": "seTBTC",
+        "bridge": {}
       }
     },
     {
@@ -488,7 +512,8 @@
       "decimals": 8,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/seUNIBTC/logo.svg",
       "extensions": {
-        "tokenId": "seUNIBTC"
+        "tokenId": "seUNIBTC",
+        "bridge": {}
       }
     },
     {
@@ -499,7 +524,8 @@
       "decimals": 8,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/seWBTC/logo.svg",
       "extensions": {
-        "tokenId": "seWBTC"
+        "tokenId": "seWBTC",
+        "bridge": {}
       }
     },
     {
@@ -512,7 +538,7 @@
       "extensions": {
         "tokenId": "sFRAX",
         "bridge": {
-          "bob": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+          "60808": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
         }
       }
     },
@@ -526,7 +552,7 @@
       "extensions": {
         "tokenId": "sFRAX",
         "bridge": {
-          "ethereum": "0x4200000000000000000000000000000000000010"
+          "1": "0x4200000000000000000000000000000000000010"
         }
       }
     },
@@ -540,7 +566,7 @@
       "extensions": {
         "tokenId": "sfrxETH",
         "bridge": {
-          "bob": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+          "60808": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
         }
       }
     },
@@ -554,7 +580,7 @@
       "extensions": {
         "tokenId": "sfrxETH",
         "bridge": {
-          "ethereum": "0x4200000000000000000000000000000000000010"
+          "1": "0x4200000000000000000000000000000000000010"
         }
       }
     },
@@ -566,7 +592,8 @@
       "decimals": 18,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/SolvBTC/logo.svg",
       "extensions": {
-        "tokenId": "SolvBTC"
+        "tokenId": "SolvBTC",
+        "bridge": {}
       }
     },
     {
@@ -577,7 +604,8 @@
       "decimals": 18,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/SolvBTC/logo.svg",
       "extensions": {
-        "tokenId": "SolvBTC"
+        "tokenId": "SolvBTC",
+        "bridge": {}
       }
     },
     {
@@ -588,7 +616,8 @@
       "decimals": 18,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/SolvBTC.JUP/logo.svg",
       "extensions": {
-        "tokenId": "SolvBTC.JUP"
+        "tokenId": "SolvBTC.JUP",
+        "bridge": {}
       }
     },
     {
@@ -601,7 +630,7 @@
       "extensions": {
         "tokenId": "SOV",
         "bridge": {
-          "bob": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+          "60808": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
         }
       }
     },
@@ -615,7 +644,7 @@
       "extensions": {
         "tokenId": "SOV",
         "bridge": {
-          "ethereum": "0x4200000000000000000000000000000000000010"
+          "1": "0x4200000000000000000000000000000000000010"
         }
       }
     },
@@ -629,7 +658,7 @@
       "extensions": {
         "tokenId": "STONE",
         "bridge": {
-          "bob": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+          "60808": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
         }
       }
     },
@@ -643,7 +672,7 @@
       "extensions": {
         "tokenId": "STONE",
         "bridge": {
-          "ethereum": "0x4200000000000000000000000000000000000010"
+          "1": "0x4200000000000000000000000000000000000010"
         }
       }
     },
@@ -657,7 +686,7 @@
       "extensions": {
         "tokenId": "T",
         "bridge": {
-          "bob": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+          "60808": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
         }
       }
     },
@@ -671,7 +700,7 @@
       "extensions": {
         "tokenId": "T",
         "bridge": {
-          "ethereum": "0x4200000000000000000000000000000000000010"
+          "1": "0x4200000000000000000000000000000000000010"
         }
       }
     },
@@ -685,7 +714,7 @@
       "extensions": {
         "tokenId": "tBTC",
         "bridge": {
-          "bob": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+          "60808": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
         }
       }
     },
@@ -697,7 +726,8 @@
       "decimals": 18,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/tBTC/logo.svg",
       "extensions": {
-        "tokenId": "tBTC"
+        "tokenId": "tBTC",
+        "bridge": {}
       }
     },
     {
@@ -710,7 +740,7 @@
       "extensions": {
         "tokenId": "tBTC",
         "bridge": {
-          "ethereum": "0x4200000000000000000000000000000000000010"
+          "1": "0x4200000000000000000000000000000000000010"
         }
       }
     },
@@ -722,7 +752,8 @@
       "decimals": 18,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/tBTC/logo.svg",
       "extensions": {
-        "tokenId": "tBTC"
+        "tokenId": "tBTC",
+        "bridge": {}
       }
     },
     {
@@ -733,7 +764,8 @@
       "decimals": 18,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/thUSD/logo.svg",
       "extensions": {
-        "tokenId": "thUSD"
+        "tokenId": "thUSD",
+        "bridge": {}
       }
     },
     {
@@ -744,7 +776,8 @@
       "decimals": 18,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/thUSD/logo.svg",
       "extensions": {
-        "tokenId": "thUSD"
+        "tokenId": "thUSD",
+        "bridge": {}
       }
     },
     {
@@ -757,7 +790,7 @@
       "extensions": {
         "tokenId": "TRB",
         "bridge": {
-          "bob": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+          "60808": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
         }
       }
     },
@@ -771,7 +804,7 @@
       "extensions": {
         "tokenId": "TRB",
         "bridge": {
-          "ethereum": "0x4200000000000000000000000000000000000010"
+          "1": "0x4200000000000000000000000000000000000010"
         }
       }
     },
@@ -785,7 +818,7 @@
       "extensions": {
         "tokenId": "UNI",
         "bridge": {
-          "bob": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+          "60808": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
         }
       }
     },
@@ -799,7 +832,7 @@
       "extensions": {
         "tokenId": "UNI",
         "bridge": {
-          "ethereum": "0x4200000000000000000000000000000000000010"
+          "1": "0x4200000000000000000000000000000000000010"
         }
       }
     },
@@ -811,7 +844,8 @@
       "decimals": 8,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/uniBTC/logo.svg",
       "extensions": {
-        "tokenId": "uniBTC"
+        "tokenId": "uniBTC",
+        "bridge": {}
       }
     },
     {
@@ -822,7 +856,8 @@
       "decimals": 8,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/uniBTC/logo.svg",
       "extensions": {
-        "tokenId": "uniBTC"
+        "tokenId": "uniBTC",
+        "bridge": {}
       }
     },
     {
@@ -835,7 +870,7 @@
       "extensions": {
         "tokenId": "USDC",
         "bridge": {
-          "bob": "0x450D55a4B4136805B0e5A6BB59377c71FC4FaCBb"
+          "60808": "0x450D55a4B4136805B0e5A6BB59377c71FC4FaCBb"
         }
       }
     },
@@ -847,7 +882,8 @@
       "decimals": 6,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/USDC/logo.webp",
       "extensions": {
-        "tokenId": "USDC"
+        "tokenId": "USDC",
+        "bridge": {}
       }
     },
     {
@@ -860,7 +896,7 @@
       "extensions": {
         "tokenId": "USDC",
         "bridge": {
-          "ethereum": "0xe497788F8Fcc30B773C9A181a0FFE2e60645cE90"
+          "1": "0xe497788F8Fcc30B773C9A181a0FFE2e60645cE90"
         }
       }
     },
@@ -874,7 +910,7 @@
       "extensions": {
         "tokenId": "USDC",
         "bridge": {
-          "sepolia": "0x5C2A45A35ba99d8Ee58c4bB96e2Ce30dA86C530b"
+          "11155111": "0x5C2A45A35ba99d8Ee58c4bB96e2Ce30dA86C530b"
         }
       }
     },
@@ -888,7 +924,7 @@
       "extensions": {
         "tokenId": "USDT",
         "bridge": {
-          "bob": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+          "60808": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
         }
       }
     },
@@ -902,7 +938,7 @@
       "extensions": {
         "tokenId": "USDT",
         "bridge": {
-          "ethereum": "0x4200000000000000000000000000000000000010"
+          "1": "0x4200000000000000000000000000000000000010"
         }
       }
     },
@@ -916,7 +952,7 @@
       "extensions": {
         "tokenId": "WBTC",
         "bridge": {
-          "bob": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+          "60808": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
         }
       }
     },
@@ -930,7 +966,7 @@
       "extensions": {
         "tokenId": "WBTC",
         "bridge": {
-          "ethereum": "0x4200000000000000000000000000000000000010"
+          "1": "0x4200000000000000000000000000000000000010"
         }
       }
     },
@@ -942,7 +978,8 @@
       "decimals": 8,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/WBTCOFT/logo.svg",
       "extensions": {
-        "tokenId": "WBTCOFT"
+        "tokenId": "WBTCOFT",
+        "bridge": {}
       }
     },
     {
@@ -955,7 +992,7 @@
       "extensions": {
         "tokenId": "WETH",
         "bridge": {
-          "bob": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+          "60808": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
         }
       }
     },
@@ -967,7 +1004,8 @@
       "decimals": 18,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/WETH/logo.webp",
       "extensions": {
-        "tokenId": "WETH"
+        "tokenId": "WETH",
+        "bridge": {}
       }
     },
     {
@@ -980,7 +1018,7 @@
       "extensions": {
         "tokenId": "WETH",
         "bridge": {
-          "ethereum": "0x4200000000000000000000000000000000000010"
+          "1": "0x4200000000000000000000000000000000000010"
         }
       }
     },
@@ -992,7 +1030,8 @@
       "decimals": 18,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/WETH/logo.webp",
       "extensions": {
-        "tokenId": "WETH"
+        "tokenId": "WETH",
+        "bridge": {}
       }
     },
     {
@@ -1005,7 +1044,7 @@
       "extensions": {
         "tokenId": "wstETH",
         "bridge": {
-          "bob": "0x091dF5E1284E49fA682407096aD34cfD42B95B72"
+          "60808": "0x091dF5E1284E49fA682407096aD34cfD42B95B72"
         }
       }
     },
@@ -1017,7 +1056,8 @@
       "decimals": 18,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/wstETH/logo.svg",
       "extensions": {
-        "tokenId": "wstETH"
+        "tokenId": "wstETH",
+        "bridge": {}
       }
     },
     {
@@ -1030,7 +1070,7 @@
       "extensions": {
         "tokenId": "wstETH",
         "bridge": {
-          "ethereum": "0xd1559523374D93972E0F7fE1AA98642754f5c4d1"
+          "1": "0xd1559523374D93972E0F7fE1AA98642754f5c4d1"
         }
       }
     },
@@ -1042,7 +1082,8 @@
       "decimals": 18,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/xSolvBTC/logo.svg",
       "extensions": {
-        "tokenId": "xSolvBTC"
+        "tokenId": "xSolvBTC",
+        "bridge": {}
       }
     },
     {
@@ -1053,7 +1094,8 @@
       "decimals": 18,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/xSolvBTC/logo.svg",
       "extensions": {
-        "tokenId": "xSolvBTC"
+        "tokenId": "xSolvBTC",
+        "bridge": {}
       }
     }
   ]
