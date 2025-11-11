@@ -1,0 +1,168 @@
+---
+hide_table_of_contents: true
+---
+
+import tokenListData from '../../../../../token-list.json';
+
+# Token Registry
+
+Various ERC-20 tokens originally deployed to Ethereum also have corresponding "bridged" representations on BOB Mainnet.
+
+:::info Do Your Own Research
+
+Tokens listed on this page are provided for convenience only.
+The presence of a token on this page does not imply any endorsement of the token or its minter.
+
+:::
+
+## BOB Mainnet
+
+export const TokenTable = () => {
+  // Sort tokens alphabetically by name
+  const tokenList = tokenListData.tokens;
+  const sortedTokens = [...tokenList].sort((a, b) => a.name.localeCompare(b.name));
+  
+  const formatAddress = (address) => {
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  };
+
+  return (
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Symbol</th>
+          <th>L1 Token</th>
+          <th>L2 Token</th>
+          <th>Bridge L1</th>
+          <th>Bridge L2</th>
+        </tr>
+      </thead>
+      <tbody>
+        {sortedTokens.map((token, index) => {
+          const bridgeInfo = token.extensions?.bridgeInfo?.["1"];
+          
+          // L1 Token
+          let l1Token = 'L2 Native Token';
+          if (bridgeInfo?.tokenAddress) {
+            const shortL1 = formatAddress(bridgeInfo.tokenAddress);
+            l1Token = (
+              <a href={`https://etherscan.io/address/${bridgeInfo.tokenAddress}`} target="_blank" rel="noopener noreferrer">
+                {shortL1}
+              </a>
+            );
+          } else if (token.address === '0x0000000000000000000000000000000000000000') {
+            l1Token = 'Native Asset';
+          }
+          
+          // L2 Token
+          const l2Token = token.address === '0x0000000000000000000000000000000000000000' ? (
+            'Native Asset'
+          ) : (
+            <a href={`https://explorer.gobob.xyz/address/${token.address}`} target="_blank" rel="noopener noreferrer">
+              {formatAddress(token.address)}
+            </a>
+          );
+          
+          // Bridge addresses
+          let bridgeL1 = 'N/A';
+          let bridgeL2 = 'N/A';
+          
+          if (bridgeInfo?.destBridgeAddress) {
+            const shortBridgeL1 = formatAddress(bridgeInfo.destBridgeAddress);
+            bridgeL1 = (
+              <a href={`https://etherscan.io/address/${bridgeInfo.destBridgeAddress}`} target="_blank" rel="noopener noreferrer">
+                {shortBridgeL1}
+              </a>
+            );
+          }
+          
+          if (bridgeInfo?.originBridgeAddress) {
+            const shortBridgeL2 = formatAddress(bridgeInfo.originBridgeAddress);
+            bridgeL2 = (
+              <a href={`https://explorer.gobob.xyz/address/${bridgeInfo.originBridgeAddress}`} target="_blank" rel="noopener noreferrer">
+                {shortBridgeL2}
+              </a>
+            );
+          }
+          
+          return (
+            <tr key={token.address}>
+              <td>{token.name}</td>
+              <td><code>{token.symbol}</code></td>
+              <td>{l1Token}</td>
+              <td>{l2Token}</td>
+              <td>{bridgeL1}</td>
+              <td>{bridgeL2}</td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  );
+};
+
+<TokenTable />
+
+## Bridge Information
+
+### Standard Bridge
+- **L1:** [0x3F6c...1f7](https://etherscan.io/address/0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7)
+- **L2:** [0x4200...0010](https://explorer.gobob.xyz/address/0x4200000000000000000000000000000000000010)
+
+### USDC Bridge  
+- **L1:** [0x450D...aCBb](https://etherscan.io/address/0x450D55a4B4136805B0e5A6BB59377c71FC4FaCBb)
+- **L2:** [0xe497...cE90](https://explorer.gobob.xyz/address/0xe497788F8Fcc30B773C9A181a0FFE2e60645cE90)
+
+### wstETH Bridge
+- **L1:** [0x091d...5B72](https://etherscan.io/address/0x091dF5E1284E49fA682407096aD34cfD42B95B72)  
+- **L2:** [0xd155...c4d1](https://explorer.gobob.xyz/address/0xd1559523374D93972E0F7fE1AA98642754f5c4d1)
+
+### Chainlink CCIP
+Cross-chain interoperability protocol for select tokens like SolvBTC, xSolvBTC, and uniBTC.
+
+## TokenList Integration
+
+This token registry is automatically generated from our **[token-list.json](https://raw.githubusercontent.com/bob-collective/bob/master/token-list.json)** which follows the [Uniswap Token List Standard](https://tokenlists.org/) with bridge extensions.
+
+**Total Tokens:** {tokenListData.tokens.length}
+
+### Bridge Extensions
+
+Each bridged token includes bridge information in its `extensions.bridgeInfo` field:
+
+```json
+{
+  "name": "Wrapped BTC",
+  "address": "0x0555E30da8f98308EdB960aa94C0Db47230d2B9c",
+  "symbol": "WBTC",
+  "decimals": 8,
+  "chainId": 60808,
+  "logoURI": "https://...",
+  "extensions": {
+    "bridgeInfo": {
+      "1": {
+        "tokenAddress": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599"
+      }
+    }
+  }
+}
+```
+
+### Usage Examples
+
+```javascript
+// Fetch the tokenlist  
+const response = await fetch('https://raw.githubusercontent.com/bob-collective/bob/master/token-list.json');
+const tokenList = await response.json();
+
+// Find WBTC token info
+const wbtc = tokenList.tokens.find(token => token.symbol === 'WBTC');
+console.log(wbtc.address); // L2 WBTC address
+
+// Get bridge information
+const bridgeInfo = wbtc.extensions?.bridgeInfo?.["1"];
+console.log(bridgeInfo.tokenAddress); // L1 WBTC address
+console.log(bridgeInfo.destBridgeAddress); // L1 bridge address
+console.log(bridgeInfo.originBridgeAddress); // L2 bridge address
+```

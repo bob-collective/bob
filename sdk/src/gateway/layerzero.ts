@@ -2,9 +2,12 @@ import ecc from '@bitcoinerlab/secp256k1';
 import * as bitcoin from 'bitcoinjs-lib';
 import {
     Address,
+    CallExecutionError,
+    ContractFunctionExecutionError,
     encodeAbiParameters,
     encodePacked,
     Hex,
+    InsufficientFundsError,
     isAddress,
     isAddressEqual,
     maxUint256,
@@ -499,19 +502,35 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                     args: [sendParam, false],
                 });
 
-                const { request } = await publicClient.simulateContract({
-                    account: walletClient.account,
-                    abi: layerZeroOftAbi,
-                    address: wbtcOftAddress as Hex,
-                    functionName: 'send',
-                    args: [sendParam, sendFees, params.fromUserAddress as Address],
-                    value: sendFees.nativeFee,
-                });
+                try {
+                    const { request } = await publicClient.simulateContract({
+                        account: walletClient.account,
+                        abi: layerZeroOftAbi,
+                        address: wbtcOftAddress as Hex,
+                        functionName: 'send',
+                        args: [sendParam, sendFees, params.fromUserAddress as Address],
+                        value: sendFees.nativeFee,
+                    });
 
-                const txHash = await walletClient.writeContract(request);
-                await publicClient.waitForTransactionReceipt({ hash: txHash });
+                    const txHash = await walletClient.writeContract(request);
+                    await publicClient.waitForTransactionReceipt({ hash: txHash });
 
-                return txHash;
+                    return txHash;
+                } catch (error) {
+                    if (error instanceof ContractFunctionExecutionError) {
+                        if (error.cause instanceof CallExecutionError) {
+                            if (error.cause.cause instanceof InsufficientFundsError) {
+                                // https://github.com/wevm/viem/blob/3aa882692d2c4af3f5e9cc152099e07cde28e551/src/actions/public/simulateContract.test.ts#L711
+                                // throw new error
+                                throw new Error(
+                                    'Insufficient native funds for source and destination gas fees, please add more native funds to your account'
+                                );
+                            }
+                        }
+                    }
+
+                    throw error;
+                }
             }
             case GatewayOrderType.CrossChainSwap: {
                 const { data, params } = quote;
@@ -532,19 +551,31 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                     lzTokenFee: data.feeBreakdown.lzTokenFee,
                 };
 
-                const { request } = await publicClient.simulateContract({
-                    account: walletClient.account,
-                    abi: layerZeroOftAbi,
-                    address: oftAddress,
-                    functionName: 'send',
-                    args: [sendParam, sendFees, params.fromUserAddress as Address],
-                    value: sendFees.nativeFee,
-                });
+                try {
+                    const { request } = await publicClient.simulateContract({
+                        account: walletClient.account,
+                        abi: layerZeroOftAbi,
+                        address: oftAddress,
+                        functionName: 'send',
+                        args: [sendParam, sendFees, params.fromUserAddress as Address],
+                        value: sendFees.nativeFee,
+                    });
 
-                const txHash = await walletClient.writeContract(request);
-                await publicClient.waitForTransactionReceipt({ hash: txHash });
+                    const txHash = await walletClient.writeContract(request);
+                    await publicClient.waitForTransactionReceipt({ hash: txHash });
 
-                return txHash;
+                    return txHash;
+                } catch (error) {
+                    if (error instanceof ContractFunctionExecutionError) {
+                        // https://github.com/wevm/viem/blob/3aa882692d2c4af3f5e9cc152099e07cde28e551/src/actions/public/simulateContract.test.ts#L711
+                        // throw new error
+                        throw new Error(
+                            'Insufficient native funds for source and destination gas fees, please add more native funds to your account'
+                        );
+                    }
+
+                    throw error;
+                }
             }
             default:
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -605,7 +636,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
 
         if (chain.id === mainnet.id) {
             // WBTC mainnet
-            const wbtcMainnetSlots = getTokenSlots(wbtcMainnetAddress, 'ethereum');
+            const wbtcMainnetSlots = getTokenSlots(wbtcMainnetAddress);
             const allowanceSlot = computeAllowanceSlot(
                 user as Address,
                 wbtcOftAddress as Address,
@@ -628,7 +659,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
             });
         } else {
             // WBTC OFT
-            const wbtcOftSlots = getTokenSlots(wbtcOftAddress as Address, fromChain);
+            const wbtcOftSlots = getTokenSlots(wbtcOftAddress as Address);
 
             const oftBalanceSlot = computeBalanceSlot(user as Address, wbtcOftSlots.balanceSlot);
 
