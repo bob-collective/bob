@@ -1,0 +1,20 @@
+{
+  "name": "Wrapped Ether",
+  "symbol": "WETH",
+  "decimals": 18,
+  "nobridge": true,
+  "tokens": {
+    "ethereum": {
+      "address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+    },
+    "sepolia": {
+      "address": "0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9"
+    },
+    "bob": {
+      "address": "0x4200000000000000000000000000000000000006"
+    },
+    "bob-sepolia": {
+      "address": "0x4200000000000000000000000000000000000006"
+    }
+  }
+}

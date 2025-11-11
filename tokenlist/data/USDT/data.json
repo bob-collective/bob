@@ -1,0 +1,19 @@
+{
+  "name": "Tether USD",
+  "symbol": "USDT",
+  "decimals": 6,
+  "description": "Bringing real world currency to the blockchain.",
+  "website": "https://tether.to/",
+  "twitter": "@Tether_to",
+  "tokens": {
+    "ethereum": {
+      "address": "0xdac17f958d2ee523a2206206994597c13d831ec7"
+    },
+    "bob": {
+      "address": "0x05D032ac25d322df992303dCa074EE7392C117b9",
+      "overrides": {
+        "name": "Bridged USDT"
+      }
+    }
+  }
+}

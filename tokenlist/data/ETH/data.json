@@ -1,0 +1,19 @@
+{
+  "name": "Ether",
+  "symbol": "ETH",
+  "decimals": 18,
+  "tokens": {
+    "ethereum": {
+      "address": "0x0000000000000000000000000000000000000000"
+    },
+    "sepolia": {
+      "address": "0x0000000000000000000000000000000000000000"
+    },
+    "bob": {
+      "address": "0xDeadDeAddeAddEAddeadDEaDDEAdDeaDDeAD0000"
+    },
+    "bob-sepolia": {
+      "address": "0xDeadDeAddeAddEAddeadDEaDDEAdDeaDDeAD0000"
+    }
+  }
+}

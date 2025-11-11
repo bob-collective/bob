@@ -1,0 +1,16 @@
+{
+  "name": "Rocket Pool ETH",
+  "symbol": "rETH",
+  "decimals": 18,
+  "website": "https://rocketpool.net/",
+  "twitter": "@Rocket_Pool",
+  "tokens": {
+    "ethereum": {
+      "address": "0xae78736cd615f374d3085123a210448e74fc6393"
+    },
+
+    "bob": {
+      "address": "0xB5686c4f60904Ec2BDA6277d6FE1F7cAa8D1b41a"
+    }
+  }
+}

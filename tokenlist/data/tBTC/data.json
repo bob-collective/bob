@@ -1,0 +1,23 @@
+{
+  "name": "tBTC v2",
+  "symbol": "tBTC",
+  "decimals": 18,
+  "description": "Decentralized, Permissionless Bitcoin Bridge",
+  "website": "https://threshold.network",
+  "twitter": "@TheTNetwork",
+  "nobridge": true,
+  "tokens": {
+    "ethereum": {
+      "address": "0x18084fbA666a33d37592fA2633fD49a74DD93a88"
+    },
+    "sepolia": {
+      "address": "0x517f2982701695D4E52f1ECFBEf3ba31Df470161"
+    },
+    "bob": {
+      "address": "0xBBa2eF945D523C4e2608C9E1214C2Cc64D4fc2e2"
+    },
+    "bob-sepolia": {
+      "address": "0xD23F06550b0A7bC98B20eb81D4c21572a97598FA"
+    }
+  }
+}

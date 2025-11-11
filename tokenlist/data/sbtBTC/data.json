@@ -1,0 +1,13 @@
+{
+  "name": "sb tBTC v2",
+  "symbol": "sbtBTC",
+  "decimals": 8,
+  "chainId": 60808,
+  "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/master/assets/shoebill.svg",
+  "tokens": {
+    "ethereum": {},
+    "bob": {
+      "address": "0x2925dF9Eb2092B53B06A06353A7249aF3a8B139e"
+    }
+  }
+}

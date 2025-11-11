@@ -1,0 +1,24 @@
+{
+  "name": "Wrapped liquid staked Ether 2.0",
+  "symbol": "wstETH",
+  "decimals": 18,
+  "tokens": {
+    "ethereum": {
+      "address": "0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0",
+      "overrides": {
+        "bridge": {
+          "bob": "0x091dF5E1284E49fA682407096aD34cfD42B95B72"
+        }
+      }
+    },
+    "sepolia": {
+      "address": "0xB82381A3fBD3FaFA77B3a7bE693342618240067b"
+    },
+    "bob": {
+      "address": "0x85008aE6198BC91aC0735CB5497CF125ddAAc528",
+      "overrides": {
+        "bridge": "0xd1559523374D93972E0F7fE1AA98642754f5c4d1"
+      }
+    }
+  }
+}

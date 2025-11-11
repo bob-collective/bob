@@ -1,0 +1,13 @@
+{
+  "name": "Uniswap",
+  "symbol": "UNI",
+  "decimals": 18,
+  "tokens": {
+    "ethereum": {
+      "address": "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984"
+    },
+    "bob": {
+      "address": "0x6fD31f56eb971113bEA12C5883deC68337b3B7b5"
+    }
+  }
+}
