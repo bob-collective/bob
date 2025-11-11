@@ -17,9 +17,9 @@ export type TokenData = {
   name: string;
   symbol: string;
   decimals: number;
-  description: string;
-  website: string;
-  twitter: string;
+  description?: string;
+  website?: string;
+  twitter?: string;
   tokens: Record<
     SuppertedChain,
     {
