@@ -5,7 +5,11 @@ import { Address } from 'viem/accounts';
 import { bob, bobSepolia } from 'viem/chains';
 import { afterEach, assert, describe, expect, it, vi } from 'vitest';
 import { GatewaySDK, LayerZeroGatewayClient } from '../src/gateway';
-import { MAINNET_GATEWAY_BASE_URL, SIGNET_GATEWAY_BASE_URL } from '../src/gateway/client';
+import {
+    MAINNET_GATEWAY_BASE_URL,
+    SIGNET_GATEWAY_BASE_URL,
+    TESTNET_TARGET_OFFRAMP_REGISTRY_ADDRESS,
+} from '../src/gateway/client';
 import { getTokenAddress, SYMBOL_LOOKUP } from '../src/gateway/tokens';
 import {
     GatewayOrderType,
@@ -741,7 +745,7 @@ describe('Gateway Tests', () => {
 
         const result = gatewaySDK.getTargetOfframpRegistryAddress();
 
-        expect(result).toBe('0x70e5e53b4f48be863a5a076ff6038a91377da0dd');
+        expect(result).toBe(TESTNET_TARGET_OFFRAMP_REGISTRY_ADDRESS);
     });
 
     it('should return true when the order has passed the claim delay', async () => {
