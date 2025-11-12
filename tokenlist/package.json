@@ -1,12 +1,14 @@
 {
   "name": "@gobob/tokenlist",
   "version": "1.0.0",
-  "description": "",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "description": "BOB token list data and utilities",
+  "license": "MIT",
+  "files": [
+    "dist",
+    "token-list.json"
+  ],
   "scripts": {
-    "build": "tsx ./scripts/generate.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsx ./scripts/generate.ts"
   },
   "devDependencies": {
     "@types/lodash": "^4.17.20",
@@ -16,6 +18,5 @@
     "tsx": "^4.20.6",
     "typescript": "^5.9.3",
     "viem": "^2.38.6"
-  },
-  "packageManager": "pnpm@10.21.0+sha512.da3337267e400fdd3d479a6c68079ac6db01d8ca4f67572083e722775a796788a7a9956613749e000fac20d424b594f7a791a5f4e2e13581c5ef947f26968a40"
+  }
 }
