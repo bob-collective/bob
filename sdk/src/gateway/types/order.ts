@@ -80,6 +80,7 @@ export type GatewayStartOrder = GatewayCreateOrderResponse & {
     psbtBase64?: string;
 };
 
+// TODO: rename crosschain to something more layerzero specific.
 export enum GatewayOrderType {
     Onramp = 'onramp',
     Offramp = 'offramp',
