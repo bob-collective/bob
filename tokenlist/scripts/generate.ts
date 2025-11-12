@@ -29,7 +29,7 @@ const content = fs
 
     return (Object.entries(data.tokens) as Entries<typeof data.tokens>).map(
       ([chain, token]) => {
-        const bridges = (
+        const bridge = (
           Object.entries(token.bridge || {}) as Entries<
             NonNullable<typeof token.bridge>
           >
@@ -51,7 +51,7 @@ const content = fs
           ),
           extensions: {
             tokenId: folder,
-            bridge: bridges,
+            bridge,
           },
         };
         return out;
