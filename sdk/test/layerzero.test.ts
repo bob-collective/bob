@@ -228,23 +228,42 @@ describe('LayerZero Tests', () => {
     }, 120000);
 
     it('should get a layerzero send quote with a destination message and execute it', async () => {
-        const client = new LayerZeroGatewayClient(base.id);
+        const client = new LayerZeroGatewayClient(bob.id);
 
-        // const quote = await client.getQuote({
-        //     fromChain: 'base',
-        //     fromToken: (await client.getSupportedChainsInfo()).find((chain) => chain.name === 'base')
-        //         ?.oftAddress as string,
-        //     toChain: 'optimism',
-        //     toToken: (await client.getSupportedChainsInfo()).find((chain) => chain.name === 'optimism')
-        //         ?.oftAddress as string,
-        //     fromUserAddress: '0xEf7Ff7Fb24797656DF41616e807AB4016AE9dCD5',
-        //     toUserAddress: '0xEf7Ff7Fb24797656DF41616e807AB4016AE9dCD5',
-        //     amount: 100,
-        //     message: '0x',
-        // });
+        const quote = await client.getQuote({
+            fromChain: 'BNB Smart Chain',
+            fromToken: (await client.getSupportedChainsInfo()).find((chain) => chain.name === 'base')
+                ?.oftAddress as string,
+            toChain: 'base',
+            toToken: (await client.getSupportedChainsInfo()).find((chain) => chain.name === 'optimism')
+                ?.oftAddress as string,
+            fromUserAddress: '0xEf7Ff7Fb24797656DF41616e807AB4016AE9dCD5',
+            toUserAddress: '0xEf7Ff7Fb24797656DF41616e807AB4016AE9dCD5',
+            amount: 100,
+            message: '0x1234',
+        });
 
-        // console.log('quote', quote);
-    });
+        console.log('quote', quote);
+
+        const publicClient = createPublicClient({
+            chain: base,
+            transport: http(),
+        });
+
+        const walletClient = createWalletClient({
+            chain: base,
+            transport: http(),
+            account: privateKeyToAccount(process.env.PRIVATE_KEY as Hex),
+        });
+
+        const txHash = await client.executeQuote({
+            quote,
+            walletClient,
+            publicClient: publicClient as PublicClient<Transport>,
+        });
+
+        console.log(txHash);
+    }, 120000);
 
     it('should get chain id for eid', async () => {
         const client = new LayerZeroClient();

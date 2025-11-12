@@ -174,9 +174,9 @@ export class LayerZeroClient {
         return null;
     }
 
-    // TODO: Implement this
+    // Where possible, the destination composer address should be a Create3 Singleton deployment so the address should be the same on all chains.
     async getDestinationComposerAddress(eid: number): Promise<Hex | null> {
-        return '0x0000000000000000000000000000000000000000' as Hex;
+        return '0x2878dc77E9188f348FC667fd97aA1938900f7385' as Hex;
     }
 
     private async getJson<T>(url: string): Promise<T> {
@@ -637,15 +637,65 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                 const { data, params } = quote;
                 const { oftAddress, destinationEid } = data;
 
-                const sendParam: LayerZeroSendParam = {
-                    dstEid: destinationEid,
-                    to: padHex(params.toUserAddress as Hex) as Hex,
-                    amountLD: BigInt(params.amount),
-                    minAmountLD: BigInt(params.amount),
-                    extraOptions: '0x',
-                    composeMsg: '0x',
-                    oftCmd: '0x',
-                };
+                let sendParam: LayerZeroSendParam;
+                if (params.message?.length === 0) {
+                    // No destination message, standard L0 send
+                    sendParam = {
+                        dstEid: destinationEid,
+                        to: padHex(params.toUserAddress as Hex),
+                        amountLD: BigInt(params.amount),
+                        minAmountLD: BigInt(params.amount),
+                        extraOptions: '0x',
+                        composeMsg: '0x',
+                        oftCmd: '0x',
+                    };
+                } else {
+                    // There is a destination message, so we encode options to handle the compose message.
+                    const destinationComposer = await this.l0Client.getDestinationComposerAddress(destinationEid);
+                    const toChain = resolveChainName(destinationEid);
+                    if (!destinationComposer) {
+                        throw new Error(`Destination composer not found for chain: ${toChain}`);
+                    }
+
+                    const extraOptions = encodePacked(
+                        [
+                            'uint16',
+                            'uint8',
+                            'uint16',
+                            'uint8',
+                            'uint128',
+                            'uint8',
+                            'uint16',
+                            'uint8',
+                            'uint16',
+                            'uint128',
+                        ],
+                        [
+                            // https://github.com/LayerZero-Labs/LayerZero-v2/blob/200cda254120375f40ed0a7e89931afb897b8891/packages/layerzero-v2/evm/oapp/contracts/oapp/libs/OptionsBuilder.sol#L22
+                            3, // TYPE_3
+                            // https://github.com/LayerZero-Labs/LayerZero-v2/blob/200cda254120375f40ed0a7e89931afb897b8891/packages/layerzero-v2/evm/messagelib/contracts/libs/ExecutorOptions.sol#L10
+                            1, // WORKER_ID
+                            17, // 16+1 option length
+                            1, // OPTION_TYPE_LZRECEIVE
+                            BigInt(100000),
+                            1, // WORKER_ID
+                            19, // 18+1 option length
+                            3, // OPTION_TYPE_LZCOMPOSE
+                            0, // index for compose function
+                            BigInt(params.destinationGasLimit || 300000), // gas limit for compose function, default to 300k if not provided
+                        ]
+                    );
+
+                    sendParam = {
+                        dstEid: destinationEid,
+                        to: padHex(destinationComposer, { size: 32 }),
+                        amountLD: BigInt(params.amount),
+                        minAmountLD: BigInt(params.amount),
+                        extraOptions: extraOptions,
+                        composeMsg: params.message as Hex,
+                        oftCmd: '0x' as Hex,
+                    };
+                }
 
                 const sendFees = {
                     nativeFee: data.feeBreakdown.nativeFee,
