@@ -3,8 +3,9 @@
   "version": "1.0.0",
   "description": "BOB token list data and utilities",
   "license": "MIT",
+  "main": "index.ts",
   "files": [
-    "dist",
+    "index.ts",
     "token-list.json"
   ],
   "scripts": {

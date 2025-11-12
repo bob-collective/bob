@@ -84,10 +84,18 @@
           "bridge": {
             "type": "object",
             "properties": {
-              "bob": { "$ref": "#/definitions/Address" },
-              "bob-sepolia": { "$ref": "#/definitions/Address" },
-              "ethereum": { "$ref": "#/definitions/Address" },
-              "sepolia": { "$ref": "#/definitions/Address" }
+              "bob": {
+                "$ref": "#/definitions/Address"
+              },
+              "bob-sepolia": {
+                "$ref": "#/definitions/Address"
+              },
+              "ethereum": {
+                "$ref": "#/definitions/Address"
+              },
+              "sepolia": {
+                "$ref": "#/definitions/Address"
+              }
             }
           },
           "overrides": {
