@@ -18,7 +18,21 @@ import {
     toHex,
     zeroAddress,
 } from 'viem';
-import { bob, bobSepolia, mainnet } from 'viem/chains';
+import {
+    bob,
+    mainnet,
+    base,
+    berachain,
+    bsc,
+    unichain,
+    avalanche,
+    sonic,
+    soneium,
+    telos,
+    swellchain,
+    optimism,
+    sei,
+} from 'viem/chains';
 import { layerZeroOftAbi, quoterV2Abi } from './abi';
 import { AllWalletClientParams, GatewayApiClient } from './client';
 import { getTokenAddress, getTokenSlots } from './tokens';
@@ -75,9 +89,23 @@ export class LayerZeroClient {
         return this.getChainDeploymentsPromiseCache;
     }
 
+    // Resolve viem chain name to layerzero chain name
+    private resolveViemChainName(chainKey: string): string {
+        switch (chainKey) {
+            case bsc.name.toLowerCase():
+                return 'bsc';
+            case optimism.name.toLowerCase():
+                return 'optimism';
+            default:
+                return chainKey;
+        }
+    }
+
     async getEidForChain(chainKey: string) {
         const data = await this.getChainDeployments();
-        const eid = data[chainKey]?.deployments?.find((item) => item.version === 2)?.eid;
+        const resolvedChainName = this.resolveViemChainName(chainKey);
+        console.log('resolvedChainName', resolvedChainName);
+        const eid = data[resolvedChainName]?.deployments?.find((item) => item.version === 2)?.eid;
         return eid !== undefined && eid !== null ? Number(eid) : null;
     }
 
@@ -110,7 +138,8 @@ export class LayerZeroClient {
 
     async getOftAddressForChain(chainKey: string): Promise<string | null> {
         const deployments = await this.getWbtcDeployments();
-        return deployments[chainKey]?.address || null;
+        const resolvedChainName = this.resolveViemChainName(chainKey);
+        return deployments[resolvedChainName]?.address || null;
     }
 
     async getSupportedChainsInfo(): Promise<Array<LayerZeroChainInfo>> {
@@ -160,15 +189,36 @@ export class LayerZeroClient {
     }
 }
 
+// Viem chain names are used to identify chains
 function resolveChainName(chain: number | string): string {
     if (typeof chain === 'number') {
         switch (chain) {
             case bob.id:
                 return bob.name.toLowerCase();
-            case bobSepolia.id:
-                return bobSepolia.name.toLowerCase();
+            case base.id:
+                return base.name.toLowerCase();
+            case berachain.id:
+                return berachain.name.toLowerCase();
+            case bsc.id:
+                return bsc.name.toLowerCase();
+            case unichain.id:
+                return unichain.name.toLowerCase();
+            case avalanche.id:
+                return avalanche.name.toLowerCase();
+            case sonic.id:
+                return sonic.name.toLowerCase();
+            case soneium.id:
+                return soneium.name.toLowerCase();
+            case telos.id:
+                return telos.name.toLowerCase();
+            case swellchain.id:
+                return swellchain.name.toLowerCase();
+            case optimism.id:
+                return optimism.name.toLowerCase();
+            case sei.id:
+                return sei.name.toLowerCase();
             case mainnet.id:
-                return 'mainnet';
+                return mainnet.name.toLowerCase();
             default:
                 throw new Error(`Unsupported chain ID: ${chain}`);
         }
@@ -180,11 +230,9 @@ function resolveChainName(chain: number | string): string {
 export class LayerZeroGatewayClient extends GatewayApiClient {
     private l0Client: LayerZeroClient;
 
-    constructor(chainId: number, options?: { rpcUrl?: string }) {
-        if (chainId !== bob.id) {
-            throw new Error('LayerZeroGatewayClient only supports BOB mainnet');
-        }
-        super(chainId, options);
+    // TODO: remove constructor, set the config from `getQuote`
+    constructor(options?: { rpcUrl?: string }) {
+        super(bob.id, options);
         this.l0Client = new LayerZeroClient();
     }
 
