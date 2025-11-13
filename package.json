@@ -1,0 +1,19 @@
+{
+  "name": "bob-monorepo",
+  "private": true,
+  "workspaces": [
+    "tokenlist",
+    "sdk"
+  ],
+  "scripts": {
+    "build:tokenlist": "cd tokenlist && npm run build",
+    "build:sdk": "cd sdk && npm run build",
+    "build": "npm run build:tokenlist && npm run build:sdk",
+    "changeset": "changeset",
+    "changeset:version": "changeset version",
+    "changeset:publish": "npm run build && changeset publish"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.27.1"
+  }
+}
