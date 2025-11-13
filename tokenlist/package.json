@@ -3,14 +3,17 @@
   "version": "1.0.0",
   "description": "BOB token list data and utilities",
   "license": "MIT",
-  "main": "index.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "files": [
-    "index.ts",
-    "token-list.json"
+    "dist/**/*",
+    "token-list.json",
+    "token-list-bob.json"
   ],
   "scripts": {
-    "build": "tsx ./scripts/generate.ts",
-    "verify": "tsx ./scripts/verify.ts"
+    "generate": "tsx ./scripts/generate.ts",
+    "verify": "tsx ./scripts/verify.ts",
+    "build": "tsc"
   },
   "dependencies": {
     "lodash": "^4.17.21",
