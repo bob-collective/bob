@@ -3,23 +3,35 @@ name: SDK NPM Publish
 on:
   push:
     tags:
-      - "*"
+      - '*'
 jobs:
   publish:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./sdk
     steps:
       - uses: actions/checkout@v5
       - name: setup node
         uses: actions/setup-node@v6
         with:
-          node-version: "20"
-          registry-url: "https://registry.npmjs.org"
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
           always-auth: true
-      - run: npm ci
-      - run: npm run build
-      - run: npm publish --access public
+
+      # Install dependencies in sdk
+      - name: Install dependencies in sdk
+        run: npm ci
+        working-directory: ./sdk
+
+      # Install dependencies in tokenlist
+      - name: Install dependencies in tokenlist
+        run: npm ci
+        working-directory: ./tokenlist
+
+      - name: Build sdk
+        run: npm run build
+        working-directory: ./sdk
+
+      - name: Publish sdk
+        run: npm publish --access public
+        working-directory: ./sdk
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
