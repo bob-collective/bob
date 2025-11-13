@@ -13,6 +13,7 @@ import {
 import { Entries, Token, TokenData } from '../types';
 import { version } from '../package.json';
 import { Address, getAddress } from 'viem';
+import { bob } from 'viem/chains';
 
 const [major, minor, patch] = version.split('.');
 
@@ -83,7 +84,7 @@ fs.writeFileSync(outfile, JSON.stringify(tokenlist, null, 2));
 const bobTokenlist = structuredClone(tokenlist);
 
 bobTokenlist.tokens = tokenlist.tokens.filter(
-  (token) => token.chainId === 60808,
+  (token) => token.chainId === bob.id,
 );
 
 fs.writeFileSync(outfileBob, JSON.stringify(bobTokenlist, null, 2));

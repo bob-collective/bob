@@ -123,8 +123,8 @@ async function validateToken(token: Token): Promise<ValidationResult> {
   };
 
   // Validate chain ID
-  if (token.chainId !== 60808) {
-    issues.push(`Invalid chainId: expected 60808, got ${token.chainId}`);
+  if (token.chainId !== bob.id) {
+    issues.push(`Invalid chainId: expected ${bob.id}, got ${token.chainId}`);
   }
 
   // Validate address format and checksum
@@ -176,8 +176,8 @@ async function validateToken(token: Token): Promise<ValidationResult> {
     issues.push('Invalid logoURI: must start with http or ipfs://');
   }
 
-  if (token.extensions && token.extensions['bridge']['1']) {
-    const bridge = token.extensions['bridge']['1'];
+  if (token.extensions && token.extensions['bridge'][mainnet.id]) {
+    const bridge = token.extensions['bridge'][mainnet.id];
     const l1TokenAddress = bridge['tokenAddress'];
     if (l1TokenAddress) {
       if (!validateTokenAddress(l1TokenAddress)) {
