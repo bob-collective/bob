@@ -6,6 +6,7 @@ import {
   baseUrl,
   datadir,
   outfile,
+  outfileBob,
   schema,
   supportedChainMapping,
 } from '../config';
@@ -15,7 +16,7 @@ import { Address, getAddress } from 'viem';
 
 const [major, minor, patch] = version.split('.');
 
-const content = fs
+const tokenlist = fs
   .readdirSync(datadir)
   .sort((a, b) => {
     return a.toLowerCase().localeCompare(b.toLowerCase());
@@ -77,4 +78,12 @@ const content = fs
     },
   );
 
-fs.writeFileSync(outfile, JSON.stringify(content, null, 2));
+fs.writeFileSync(outfile, JSON.stringify(tokenlist, null, 2));
+
+const bobTokenlist = structuredClone(tokenlist);
+
+bobTokenlist.tokens = tokenlist.tokens.filter(
+  (token) => token.chainId === 60808,
+);
+
+fs.writeFileSync(outfileBob, JSON.stringify(bobTokenlist, null, 2));
