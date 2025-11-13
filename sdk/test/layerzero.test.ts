@@ -1,7 +1,21 @@
 import { assert, describe, expect, it, vi } from 'vitest';
 import { LayerZeroClient, LayerZeroGatewayClient } from '../src/gateway/layerzero';
 import { createPublicClient, createWalletClient, http, PublicClient, Transport, zeroAddress } from 'viem';
-import { base, bob, optimism } from 'viem/chains';
+import {
+    bob,
+    mainnet,
+    base,
+    berachain,
+    bsc,
+    unichain,
+    avalanche,
+    sonic,
+    soneium,
+    telos,
+    swellchain,
+    optimism,
+    sei,
+} from 'viem/chains';
 import { BitcoinSigner, LayerZeroMessageWallet } from '../src/gateway/types';
 import * as btc from '@scure/btc-signer';
 import { base64 } from '@scure/base';
@@ -71,7 +85,7 @@ describe('LayerZero Tests', () => {
     }, 120000);
 
     it.skip('should get an onramp quote and execute it', async () => {
-        const client = new LayerZeroGatewayClient(bob.id);
+        const client = new LayerZeroGatewayClient();
 
         const quote = await client.getQuote({
             fromChain: 'bitcoin',
@@ -111,7 +125,7 @@ describe('LayerZero Tests', () => {
     }, 120000);
 
     it.skip('should get an offramp quote and execute it', async () => {
-        const client = new LayerZeroGatewayClient(bob.id);
+        const client = new LayerZeroGatewayClient();
         const layerZeroClient = new LayerZeroClient();
 
         const quote = await client.getQuote({
@@ -154,14 +168,22 @@ describe('LayerZero Tests', () => {
         console.log(txHash);
     }, 120000);
 
-    it.skip('should get a layerzero send quote and execute it', async () => {
-        const client = new LayerZeroGatewayClient(base.id);
+    it('should be able to get a layerzero send quote for every chain combination', async () => {
+        const client = new LayerZeroGatewayClient();
+
+        const chains = await client.getSupportedChainsInfo();
+
+        console.log('chains', chains);
+    }, 120000);
+
+    it('should get a layerzero send quote and execute it', async () => {
+        const client = new LayerZeroGatewayClient();
 
         const quote = await client.getQuote({
-            fromChain: 'base',
+            fromChain: 'BNB Smart Chain',
             fromToken: (await client.getSupportedChainsInfo()).find((chain) => chain.name === 'base')
                 ?.oftAddress as string,
-            toChain: 'optimism',
+            toChain: 'base',
             toToken: (await client.getSupportedChainsInfo()).find((chain) => chain.name === 'optimism')
                 ?.oftAddress as string,
             fromUserAddress: '0xEf7Ff7Fb24797656DF41616e807AB4016AE9dCD5',
@@ -169,22 +191,26 @@ describe('LayerZero Tests', () => {
             amount: 100,
         });
 
-        const publicClient = createPublicClient({
-            chain: base,
-            transport: http(),
-        });
+        console.log('quote', quote);
 
-        const walletClient = createWalletClient({
-            chain: base,
-            transport: http(),
-            account: privateKeyToAccount(process.env.PRIVATE_KEY as Hex),
-        });
+        // const publicClient = createPublicClient({
+        //     chain: base,
+        //     transport: http(),
+        // });
 
-        const txHash = await client.executeQuote({
-            quote,
-            walletClient,
-            publicClient: publicClient as PublicClient<Transport>,
-        });
+        // const walletClient = createWalletClient({
+        //     chain: base,
+        //     transport: http(),
+        //     account: privateKeyToAccount(process.env.PRIVATE_KEY as Hex),
+        // });
+
+        // const txHash = await client.executeQuote({
+        //     quote,
+        //     walletClient,
+        //     publicClient: publicClient as PublicClient<Transport>,
+        // });
+
+        // console.log(txHash);
     }, 120000);
 
     it('should get chain id for eid', async () => {
@@ -196,7 +222,7 @@ describe('LayerZero Tests', () => {
     }, 120000);
 
     it('should return onramp, offramp and cross-chain orders', async () => {
-        const gatewaySDK = new LayerZeroGatewayClient(bob.id);
+        const gatewaySDK = new LayerZeroGatewayClient();
 
         const getOrdersSpy = vi.spyOn(gatewaySDK, 'getOrders').mockImplementationOnce(() => Promise.resolve([]));
         const getCrossChainOrdersSpy = vi

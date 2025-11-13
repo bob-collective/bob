@@ -157,6 +157,7 @@ export class GatewayApiClient extends BaseClient {
      * });
      * ```
      */
+    // TODO: remove constructor, set the config from `getQuote`
     constructor(chainId: number, options?: { rpcUrl?: string }) {
         super();
         switch (chainId) {
