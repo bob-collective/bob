@@ -4,28 +4,42 @@ on:
   pull_request:
     paths:
       - 'tokenlist/**'
-      - '.github/workflows/tokenlist-changesets.yml'
-      - 'tokenlist/.changeset/**'
+
 jobs:
-  changesets:
+  release:
+    name: Release
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: write
-    defaults:
-      run:
-        working-directory: ./tokenlist
     steps:
-      - uses: actions/checkout@v5
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - name: Checkout branch
+        uses: actions/checkout@v4
+
+      - name: Install
+        uses: ./.github/common-actions/install
         with:
-          node-version: '20'
-      - name: Install dependencies
-        run: npm ci
-      - name: Install Changesets CLI
-        run: npm install --no-save --package-lock=false @changesets/cli@^2.27.8
-      - name: Check for changeset
+          NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
+
+      - name: Build
+        run: pnpm build
+
+      - name: Create Release Pull Request or Publish to NPM
+        id: changesets
         uses: changesets/action@v1
         with:
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          publish: pnpm release
+          title: 'ci(changesets): :package: version packages'
+          commit: 'ci(changesets): version packages'
+          setupGitUser: false
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create @dev release
+        if: steps.changesets.outputs.published != 'true'
+        run: |
+          git checkout main
+          pnpm version:dev
+          pnpm release:dev
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
