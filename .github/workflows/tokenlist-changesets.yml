@@ -1,0 +1,31 @@
+---
+name: Tokenlist Changesets
+on:
+  pull_request:
+    paths:
+      - 'tokenlist/**'
+      - '.github/workflows/tokenlist-changesets.yml'
+      - 'tokenlist/.changeset/**'
+jobs:
+  changesets:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    defaults:
+      run:
+        working-directory: ./tokenlist
+    steps:
+      - uses: actions/checkout@v5
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Changesets CLI
+        run: npm install --no-save --package-lock=false @changesets/cli@^2.27.8
+      - name: Check for changeset
+        uses: changesets/action@v1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
