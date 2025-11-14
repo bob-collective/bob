@@ -46,6 +46,11 @@ import {
 
 bitcoin.initEccLib(ecc);
 
+/**
+ * L0 recipient that forwards messages to create offramp orders on-chain.
+ */
+export const OFFRAMP_COMPOSER = '0xDeEbEed29d8aeF2610fa924bc87fd1C9DF94e655';
+
 export class LayerZeroClient {
     private basePath: string;
 
@@ -432,8 +437,6 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
 
                 const layerZeroClient = new LayerZeroClient();
 
-                // The recipient address of the layer zero send, this contract will create the offramp order
-                const offrampComposer = '0xd455e08a6ecfac74e1a159fd3853ef14e6b99c7f';
                 const receiverAddress = toHexScriptPubKey(params.toUserAddress, bitcoin.networks.bitcoin);
 
                 const dstEid = await layerZeroClient.getEidForChain('bob');
@@ -466,7 +469,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
 
                 const sendParam: LayerZeroSendParam = {
                     dstEid,
-                    to: padHex(offrampComposer, { size: 32 }),
+                    to: padHex(OFFRAMP_COMPOSER, { size: 32 }),
                     minAmountLD: BigInt(params.amount),
                     amountLD: BigInt(params.amount),
                     oftCmd: '0x',

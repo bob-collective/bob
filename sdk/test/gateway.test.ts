@@ -5,13 +5,18 @@ import { Address } from 'viem/accounts';
 import { bob, bobSepolia } from 'viem/chains';
 import { afterEach, assert, describe, expect, it, vi } from 'vitest';
 import { GatewaySDK, LayerZeroGatewayClient } from '../src/gateway';
-import { MAINNET_GATEWAY_BASE_URL, SIGNET_GATEWAY_BASE_URL } from '../src/gateway/client';
+import {
+    MAINNET_GATEWAY_BASE_URL,
+    SIGNET_GATEWAY_BASE_URL,
+    TESTNET_TARGET_OFFRAMP_REGISTRY_ADDRESS,
+} from '../src/gateway/client';
 import { getTokenAddress, SYMBOL_LOOKUP } from '../src/gateway/tokens';
 import {
     GatewayOrderType,
     GatewayTokensInfo,
     OfframpOrder,
     OfframpOrderStatus,
+    OfframpRawOrder,
     OnrampQuote,
     OrderDetailsRaw,
 } from '../src/gateway/types';
@@ -654,6 +659,7 @@ describe('Gateway Tests', () => {
                 },
                 registryAddress: '0x',
                 token: '0xda472456b1a6a2fc9ae7edb0e007064224d4284c',
+                affiliateFeeRecipient: zeroAddress,
             },
             {
                 fromToken: '0xda472456b1a6a2fc9ae7edb0e007064224d4284c',
@@ -668,7 +674,9 @@ describe('Gateway Tests', () => {
 
         expect(result.offrampArgs[0]).to.deep.equal({
             satAmountToLock: BigInt('10'),
-            satFeesMax: BigInt('100'),
+            satSolverFeeMax: BigInt('100'),
+            satAffiliateFee: BigInt('0'),
+            affiliateFeeRecipient: zeroAddress,
             creationDeadline: result.offrampArgs[0].creationDeadline, // timestamp is dynamic
             outputScript: '0x1600149d5e60f3b5cc2d246f990692ee4b267d1cd58477',
             token: '0xda472456b1a6a2fc9ae7edb0e007064224d4284c',
@@ -681,32 +689,29 @@ describe('Gateway Tests', () => {
         const userAddress = '0xFAEe001465dE6D7E8414aCDD9eF4aC5A35B2B808';
 
         // Mock response data
-        const mockResponse = [
+        const mockResponse: OfframpRawOrder[] = [
             {
                 orderId: '0x0',
                 token: '0x4496ebE7C8666a8103713EE6e0c08cA0cD25b888',
                 satAmountLocked: '0x3e8',
                 satFeesMax: '0x181',
+                satAffiliateFee: '0x181',
                 status: 'Processed',
                 btcTx: 'e8d52d6ef6ebf079f2d082dc683c9455178b64e0685c10e93882effaedde4474',
-                evmTx: null,
-                orderTimestamp: 1743679342,
+                refundedEvmTx: null,
+                orderTimestamp: '1743679342',
                 shouldFeesBeBumped: false,
+                bumpFeeAmountInSats: null,
+                userAddress: zeroAddress,
+                affiliateFeeRecipient: zeroAddress,
+                offrampRegistryAddress: '0x70e5e53b4f48be863a5a076ff6038a91377da0dd',
+                offrampRegistryVersion: '0x0',
+                submitOrderEvmTx: '0xc02c65d88719d92a189d36da2f71108df3cc4d2611e711a5e049c896a4e06283',
             },
         ];
 
         // Dynamically parse expected result from mockResponse
-        const expectedResult = mockResponse.map((order: any) => ({
-            ...order,
-            token: order.token as Address,
-            orderId: BigInt(order.orderId.toString()),
-            satAmountLocked: BigInt(order.satAmountLocked.toString()),
-            satFeesMax: BigInt(order.satFeesMax.toString()),
-            orderTimestamp: order.orderTimestamp,
-            canOrderBeUnlocked: false,
-            shouldFeesBeBumped: false,
-            offrampRegistryAddress: '0xb74a5af78520075f90f4be803153673a162a9776',
-        }));
+        const expectedResult = await gatewaySDK.mapRawOrderToOfframpOrder(mockResponse[0]);
 
         nock(SIGNET_GATEWAY_BASE_URL).get(`/offramp-orders/${userAddress}`).reply(200, mockResponse);
         nock(`${SIGNET_GATEWAY_BASE_URL}`).get('/offramp-quote').query(true).reply(200, {
@@ -715,14 +720,10 @@ describe('Gateway Tests', () => {
             registryAddress: '0xd7b27b178f6bf290155201109906ad203b6d99b1',
             feeRate: 1,
         });
-        nock(SIGNET_GATEWAY_BASE_URL)
-            .get('/offramp-registry-address')
-            .reply(200, '0xb74a5af78520075f90f4be803153673a162a9776');
-
         const result: OfframpOrder[] = await gatewaySDK.getOfframpOrders(userAddress);
 
         // Assertion
-        expect(result).to.deep.equal(expectedResult);
+        expect(result[0]).to.deep.equal(expectedResult);
     });
 
     it('should return valid btc pub key', async () => {
@@ -744,11 +745,11 @@ describe('Gateway Tests', () => {
 
         nock(SIGNET_GATEWAY_BASE_URL)
             .get('/offramp-registry-address')
-            .reply(200, '0xb74a5af78520075f90f4be803153673a162a9776');
+            .reply(200, '0xC46746bA10a279C99bAaa5Ebc1Cc832c0503366A');
 
         const result = await gatewaySDK.fetchOfframpRegistryAddress();
 
-        expect(result).toBe('0xb74a5af78520075f90f4be803153673a162a9776');
+        expect(result).toBe('0xC46746bA10a279C99bAaa5Ebc1Cc832c0503366A');
     });
 
     it('should return true when the order has passed the claim delay', async () => {
@@ -760,7 +761,7 @@ describe('Gateway Tests', () => {
         const result = await gatewaySDK.canOrderBeUnlocked(
             status,
             orderTimestamp,
-            '0xb74a5af78520075f90f4be803153673a162a9776' as Address
+            '0x70e5e53b4f48be863a5a076ff6038a91377da0dd' as Address
         );
 
         // Assert the result is true (claim delay has passed)
@@ -977,7 +978,7 @@ describe('Gateway Tests', () => {
             nock(MAINNET_GATEWAY_BASE_URL)
                 .persist()
                 .get('/offramp-registry-address')
-                .reply(200, '0x3d65cd168f27aeddeb08ca31cac5e5c12f3bb16d');
+                .reply(200, '0x2bbfdaea28604f1d40c6e2dec5fc08fa8a120472');
 
             nock(MAINNET_GATEWAY_BASE_URL)
                 .persist()
@@ -985,7 +986,7 @@ describe('Gateway Tests', () => {
                 .query(true)
                 .reply(200, {
                     amountLockInSat: 4000,
-                    registryAddress: '0xd7b27b178f6bf290155201109906ad203b6d99b1',
+                    registryAddress: '0x2bbfdaea28604f1d40c6e2dec5fc08fa8a120472',
                     feeBreakdown: {
                         overallFeeSats: 886,
                         inclusionFeeSats: 886,

@@ -1,4 +1,4 @@
-import { Hex } from 'viem';
+import { Address, Hex } from 'viem';
 import { Optional } from './utils';
 import { OnrampExecuteQuoteParams } from './onramp';
 import { OfframpExecuteQuoteParams } from './offramp';
@@ -48,6 +48,10 @@ export interface GatewayQuoteParams {
     strategyAddress?: string;
     /** @description Campaign id for tracking */
     campaignId?: string;
+    /** @description Affiliate-related fee */
+    affiliateFeeSats?: bigint;
+    /** @description The address of the affiliate who will receive the affiliate fee */
+    affiliateFeeRecipient?: Address;
 
     /** @description Cross chain message - strategy data */
     message?: Hex;

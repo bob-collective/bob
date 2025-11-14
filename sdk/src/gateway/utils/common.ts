@@ -15,7 +15,6 @@ import {
 import { avalanche, base, berachain, bob, bsc, mainnet, optimism, sei, soneium, sonic, unichain } from 'viem/chains';
 import {
     GatewayCreateOrderRequest,
-    OfframpOrderStatus,
     OnrampFeeBreakdown,
     OnrampFeeBreakdownRaw,
     OrderDetails,
@@ -68,14 +67,6 @@ export function slugify(str: string): string {
         .toLowerCase()
         .replace(/ /g, '-')
         .replace(/[^\w-]+/g, '');
-}
-
-const STATUSES = ['Active', 'Accepted', 'Processed', 'Refunded'] as const;
-
-export function parseOrderStatus(value: number): OfframpOrderStatus {
-    const status = STATUSES[value];
-    if (status) return status;
-    throw new Error(`Invalid order status: ${value}`);
 }
 
 export function viemClient(chain: ViemChain) {
@@ -226,4 +217,20 @@ export function computeBalanceSlot(user: Address, balancesMappingSlot: bigint): 
     );
 
     return balanceSlot;
+}
+
+export function safeBigInt(value: string): bigint {
+    try {
+        return BigInt(value);
+    } catch {
+        throw new Error(`Invalid BigInt for value "${value}"`);
+    }
+}
+
+export function safeNumber(value: string): number {
+    const n = Number(value);
+    if (Number.isNaN(n)) {
+        throw new Error(`Invalid number for value  "${value}"`);
+    }
+    return n;
 }
