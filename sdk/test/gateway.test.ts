@@ -743,9 +743,13 @@ describe('Gateway Tests', () => {
     it('fetches the correct offramp registry address', async () => {
         const gatewaySDK = new GatewaySDK(bobSepolia.id);
 
-        const result = gatewaySDK.getTargetOfframpRegistryAddress();
+        nock(SIGNET_GATEWAY_BASE_URL)
+            .get('/offramp-registry-address')
+            .reply(200, '0xC46746bA10a279C99bAaa5Ebc1Cc832c0503366A');
 
-        expect(result).toBe(TESTNET_TARGET_OFFRAMP_REGISTRY_ADDRESS);
+        const result = await gatewaySDK.fetchOfframpRegistryAddress();
+
+        expect(result).toBe('0xC46746bA10a279C99bAaa5Ebc1Cc832c0503366A');
     });
 
     it('should return true when the order has passed the claim delay', async () => {
@@ -887,7 +891,7 @@ describe('Gateway Tests', () => {
         } as unknown as Parameters<typeof gatewaySDK.executeQuote>[0]['publicClient'];
 
         const createOfframpOrderSpy = vi.spyOn(gatewaySDK, 'createOfframpOrder');
-        const fetchOfframpRegistryAddressSpy = vi.spyOn(gatewaySDK, 'getTargetOfframpRegistryAddress');
+        const fetchOfframpRegistryAddressSpy = vi.spyOn(gatewaySDK, 'fetchOfframpRegistryAddress');
 
         const outputTokenAddress = getTokenAddress(bobSepolia.id, 'bobbtc');
         const searchParams = new URLSearchParams({
