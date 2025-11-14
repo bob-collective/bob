@@ -24,6 +24,7 @@ import { HDKey } from '@scure/bip32';
 import { Hex } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { getCrossChainStatus } from '../src/gateway/utils/layerzero';
+import { supportedChainsMapping } from '../src/gateway/utils/common';
 
 describe('LayerZero Tests', () => {
     it.skip('should get chains', async () => {
@@ -168,23 +169,37 @@ describe('LayerZero Tests', () => {
         console.log(txHash);
     }, 120000);
 
-    it('should be able to get a layerzero send quote for every chain combination', async () => {
+    it.skip('should be able to get a layerzero send quote for every chain', async () => {
         const client = new LayerZeroGatewayClient();
 
-        const chains = await client.getSupportedChainsInfo();
+        const l0ChainsInfo = await client.getSupportedChainsInfo();
+        const toChain = l0ChainsInfo.find((chain) => chain.name === 'bob')!;
 
-        console.log('chains', chains);
+        for (const fromChain of l0ChainsInfo) {
+            if (fromChain.name !== toChain.name) {
+                const quote = await client.getQuote({
+                    fromChain: fromChain.nativeChainId as number,
+                    toChain: toChain.nativeChainId as number,
+                    fromToken: fromChain.oftAddress as string,
+                    toToken: toChain.oftAddress as string,
+                    fromUserAddress: '0xEf7Ff7Fb24797656DF41616e807AB4016AE9dCD5',
+                    toUserAddress: '0xEf7Ff7Fb24797656DF41616e807AB4016AE9dCD5',
+                    amount: 100,
+                });
+                console.log(fromChain.name, toChain.name);
+            }
+        }
     }, 120000);
 
-    it('should get a layerzero send quote and execute it', async () => {
+    it.skip('should get a layerzero send quote and execute it', async () => {
         const client = new LayerZeroGatewayClient();
 
         const quote = await client.getQuote({
             fromChain: 'BNB Smart Chain',
-            fromToken: (await client.getSupportedChainsInfo()).find((chain) => chain.name === 'base')
+            fromToken: (await client.getSupportedChainsInfo()).find((chain) => chain.name === 'BNB Smart Chain')
                 ?.oftAddress as string,
             toChain: 'base',
-            toToken: (await client.getSupportedChainsInfo()).find((chain) => chain.name === 'optimism')
+            toToken: (await client.getSupportedChainsInfo()).find((chain) => chain.name === 'base')
                 ?.oftAddress as string,
             fromUserAddress: '0xEf7Ff7Fb24797656DF41616e807AB4016AE9dCD5',
             toUserAddress: '0xEf7Ff7Fb24797656DF41616e807AB4016AE9dCD5',
@@ -193,24 +208,24 @@ describe('LayerZero Tests', () => {
 
         console.log('quote', quote);
 
-        // const publicClient = createPublicClient({
-        //     chain: base,
-        //     transport: http(),
-        // });
+        const publicClient = createPublicClient({
+            chain: bsc,
+            transport: http(),
+        });
 
-        // const walletClient = createWalletClient({
-        //     chain: base,
-        //     transport: http(),
-        //     account: privateKeyToAccount(process.env.PRIVATE_KEY as Hex),
-        // });
+        const walletClient = createWalletClient({
+            chain: bsc,
+            transport: http(),
+            account: privateKeyToAccount(process.env.PRIVATE_KEY as Hex),
+        });
 
-        // const txHash = await client.executeQuote({
-        //     quote,
-        //     walletClient,
-        //     publicClient: publicClient as PublicClient<Transport>,
-        // });
+        const txHash = await client.executeQuote({
+            quote,
+            walletClient,
+            publicClient: publicClient as PublicClient<Transport>,
+        });
 
-        // console.log(txHash);
+        console.log(txHash);
     }, 120000);
 
     it('should get chain id for eid', async () => {
