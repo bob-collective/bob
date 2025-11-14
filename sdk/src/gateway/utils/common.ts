@@ -15,7 +15,6 @@ import {
 import { avalanche, base, berachain, bob, bsc, mainnet, optimism, sei, soneium, sonic, unichain } from 'viem/chains';
 import {
     GatewayCreateOrderRequest,
-    OfframpOrderStatus,
     OnrampFeeBreakdown,
     OnrampFeeBreakdownRaw,
     OrderDetails,
