@@ -59,7 +59,7 @@ export type OfframpCreateOrderParams = {
     quote: OfframpQuote;
     feeBreakdown: OfframpFeeBreakdown;
     offrampABI: typeof offrampCallerV2;
-    offrampFunctionName: 'createOrder';
+    offrampFunctionName: 'createOrderV2';
     offrampArgs: [
         {
             /** @dev Amount of sats to lock in the order */
