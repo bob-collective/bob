@@ -87,16 +87,6 @@ export const SIGNET_GATEWAY_BASE_URL = 'https://gateway-api-signet.gobob.xyz';
  */
 export const ORDER_DEADLINE_IN_SECONDS = 30 * 60; // 30 minutes
 
-/**
- * Address of the Offramp Registry contract on the BOB Mainnet.
- */
-export const MAINNET_TARGET_OFFRAMP_REGISTRY_ADDRESS: Address = '0x3D65CD168f27aeddEb08Ca31CAC5e5C12F3BB16D'; // TODO: Replace with new v2 address
-
-/**
- * Address of the Offramp Registry contract on the BOB Testnet (Signet).
- */
-export const TESTNET_TARGET_OFFRAMP_REGISTRY_ADDRESS: Address = '0xa828ec14ef052d04522fd168563da332298f905d';
-
 interface EvmWalletClientParams {
     /**
      * The wallet client used to interact with the EVM chain.
@@ -309,7 +299,7 @@ export class GatewayApiClient extends BaseClient {
 
         const [offrampOrder, offrampRegistryAddress, feeValues, gasPrice] = await Promise.all([
             this.createOfframpOrder(offrampQuote, params),
-            this.getTargetOfframpRegistryAddress(),
+            this.fetchOfframpRegistryAddress(),
             publicClient.estimateFeesPerGas(),
             publicClient.getGasPrice(),
         ]);
@@ -477,18 +467,23 @@ export class GatewayApiClient extends BaseClient {
     /**
      * Fetches the offramp registry contract address.
      *
-     * @returns The registry contract address.
+     * @returns Promise resolving to the registry contract address
      */
-    getTargetOfframpRegistryAddress(): Address {
-        const chainId = this.chainId;
-        if (chainId === bob.id) {
-            return MAINNET_TARGET_OFFRAMP_REGISTRY_ADDRESS;
-        } else if (chainId === bobSepolia.id) {
-            return TESTNET_TARGET_OFFRAMP_REGISTRY_ADDRESS;
-        } else {
-            throw new Error('Invalid output chain: could not find chain id');
+    async fetchOfframpRegistryAddress(): Promise<Address> {
+        const response = await this.safeFetch(
+            `${this.baseUrl}/offramp-registry-address`,
+            undefined,
+            'Failed to fetch offramp registry contract address'
+        );
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => null);
+            const apiMessage = errorData?.message;
+            const errorMessage = apiMessage || 'Failed to fetch offramp registry contract';
+            throw new Error(errorMessage);
         }
+        return response.text() as Promise<Address>;
     }
+
 
     /**
      * Fetches available offramp liquidity for a specific token.
@@ -925,7 +920,7 @@ export class GatewayApiClient extends BaseClient {
             const tokenAddress = getTokenAddress(this.chainId, params.fromToken.toLowerCase());
             const [offrampOrder, offrampRegistryAddress] = await Promise.all([
                 this.createOfframpOrder(data, params),
-                this.getTargetOfframpRegistryAddress(),
+                this.fetchOfframpRegistryAddress(),
             ]);
 
             const accountAddress = walletClient.account?.address ?? (params.fromUserAddress as Address);
