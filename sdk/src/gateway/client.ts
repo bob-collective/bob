@@ -21,7 +21,7 @@ import { bob, bobSepolia } from 'viem/chains';
 import { EsploraClient } from '../esplora';
 import { bigIntToFloatingNumber } from '../utils';
 import { createBitcoinPsbt } from '../wallet';
-import { claimDelayAbi, offrampCallerV1, offrampCallerV2, strategyCaller } from './abi';
+import { claimDelayAbi, offrampCallerV2, strategyCaller } from './abi';
 import { BaseClient } from './base-client';
 import StrategyClient from './strategy';
 import { ADDRESS_LOOKUP, getTokenAddress, getTokenSlots } from './tokens';
@@ -178,10 +178,6 @@ export class GatewayApiClient extends BaseClient {
 
     private get chainId(): number {
         return this.chain.id;
-    }
-
-    private getOfframpAbi(version: number) {
-        return version === 1 ? offrampCallerV1 : offrampCallerV2;
     }
 
     public async mapRawOrderToOfframpOrder(order: OfframpRawOrder): Promise<OfframpOrder> {
@@ -484,7 +480,6 @@ export class GatewayApiClient extends BaseClient {
         return response.text() as Promise<Address>;
     }
 
-
     /**
      * Fetches available offramp liquidity for a specific token.
      *
@@ -647,11 +642,9 @@ export class GatewayApiClient extends BaseClient {
             throw new Error(`No need to bump fees, the current fees are sufficient`);
         }
 
-        const abi = this.getOfframpAbi(orderDetails.offrampRegistryVersion);
-
         const { request } = await publicClient.simulateContract({
             address: offrampRegistryAddress,
-            abi,
+            abi: offrampCallerV2,
             functionName: 'bumpFeeOfExistingOrder',
             args: [orderId, BigInt(orderDetails.bumpFeeAmountInSats)],
             account: walletClient.account,
@@ -692,11 +685,9 @@ export class GatewayApiClient extends BaseClient {
             throw new Error(`Offramp order is still within the 7-day claim delay and cannot be unlocked yet.`);
         }
 
-        const abi = this.getOfframpAbi(orderDetails.offrampRegistryVersion);
-
         const { request } = await publicClient.simulateContract({
             address: offrampRegistryAddress,
-            abi,
+            abi: offrampCallerV2,
             functionName: 'refundOrder',
             args: [orderId, receiver],
             account: walletClient.account,

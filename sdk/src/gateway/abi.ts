@@ -38,45 +38,6 @@ export const strategyCaller = [
     },
 ] as const;
 
-export const offrampCallerV1 = [
-    {
-        type: 'function',
-        name: 'bumpFeeOfExistingOrder',
-        inputs: [
-            {
-                name: 'orderId',
-                type: 'uint256',
-                internalType: 'uint256',
-            },
-            {
-                name: 'newFeeSat',
-                type: 'uint256',
-                internalType: 'uint256',
-            },
-        ],
-        outputs: [],
-        stateMutability: 'nonpayable',
-    },
-    {
-        type: 'function',
-        name: 'refundOrder',
-        inputs: [
-            {
-                name: 'orderId',
-                type: 'uint256',
-                internalType: 'uint256',
-            },
-            {
-                name: 'receiver',
-                type: 'address',
-                internalType: 'address',
-            },
-        ],
-        outputs: [],
-        stateMutability: 'nonpayable',
-    },
-] as const;
-
 export const offrampCallerV2 = [
     {
         type: 'function',
