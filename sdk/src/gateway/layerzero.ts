@@ -6,6 +6,7 @@ import {
     ContractFunctionExecutionError,
     encodeAbiParameters,
     encodePacked,
+    extractChain,
     Hex,
     InsufficientFundsError,
     isAddress,
@@ -57,6 +58,7 @@ import {
     toHexScriptPubKey,
     viemClient,
 } from './utils';
+import { supportedChainsMapping } from './utils/common';
 
 bitcoin.initEccLib(ecc);
 
@@ -89,13 +91,19 @@ export class LayerZeroClient {
         return this.getChainDeploymentsPromiseCache;
     }
 
-    // Resolve viem chain name to layerzero chain name
-    private resolveViemChainName(chainKey: string): string {
-        switch (chainKey) {
+    // Resolve viem and layerzero chain names
+    resolveViemChainName(chainKey: string): string {
+        switch (chainKey.toLowerCase()) {
             case bsc.name.toLowerCase():
                 return 'bsc';
             case optimism.name.toLowerCase():
                 return 'optimism';
+            case sei.name.toLowerCase():
+                return 'sei';
+            case soneium.name.toLowerCase():
+                return 'soneium';
+            case berachain.name.toLowerCase():
+                return 'bera';
             default:
                 return chainKey;
         }
@@ -104,7 +112,6 @@ export class LayerZeroClient {
     async getEidForChain(chainKey: string) {
         const data = await this.getChainDeployments();
         const resolvedChainName = this.resolveViemChainName(chainKey);
-        console.log('resolvedChainName', resolvedChainName);
         const eid = data[resolvedChainName]?.deployments?.find((item) => item.version === 2)?.eid;
         return eid !== undefined && eid !== null ? Number(eid) : null;
     }
@@ -144,26 +151,32 @@ export class LayerZeroClient {
 
     async getSupportedChainsInfo(): Promise<Array<LayerZeroChainInfo>> {
         const chains = await this.getChainDeployments();
-        const chainLookup = Object.fromEntries(
-            Object.entries(chains).map(([, chainData]) => [
-                chainData.chainKey,
-                {
-                    eid: chainData.deployments?.find((item) => item.version === 2)?.eid,
-                    nativeChainId: chainData.chainDetails?.nativeChainId,
-                },
-            ])
-        );
-
         const deployments = await this.getWbtcDeployments();
-        return Object.entries(deployments).map(([chainKey, deployment]) => {
-            const chainInfo = chainLookup[chainKey];
-            return {
-                name: chainKey,
-                eid: chainInfo?.eid,
-                oftAddress: deployment.address,
-                nativeChainId: chainInfo?.nativeChainId,
-            };
+
+        const supportedLayerZeroChainKeys = new Set<string>();
+        const layerZeroKeyToViemName: Record<string, string> = {};
+
+        Object.values(supportedChainsMapping).forEach((chainConfig) => {
+            const viemChainName = chainConfig.name.toLowerCase();
+            const layerZeroChainKey = this.resolveViemChainName(viemChainName);
+            supportedLayerZeroChainKeys.add(layerZeroChainKey);
+            layerZeroKeyToViemName[layerZeroChainKey] = viemChainName;
         });
+
+        // Filter layerzero chains that are in supportedChainsMapping
+        return Object.entries(chains)
+            .filter(([layerZeroChainKey]) => supportedLayerZeroChainKeys.has(layerZeroChainKey))
+            .map(([layerZeroChainKey, chainData]) => {
+                const viemChainName = layerZeroKeyToViemName[layerZeroChainKey];
+                const deployment = deployments[layerZeroChainKey];
+
+                return {
+                    name: viemChainName,
+                    eid: chainData.deployments?.find((item) => item.version === 2)?.eid,
+                    oftAddress: deployment.address,
+                    nativeChainId: chainData.chainDetails?.nativeChainId,
+                };
+            });
     }
 
     async getChainId(eid: number): Promise<number | null> {
@@ -190,38 +203,13 @@ export class LayerZeroClient {
 }
 
 // Viem chain names are used to identify chains
+function resolveChainId(chain: number): string {
+    return getChainConfig(chain).name.toLowerCase();
+}
+
 function resolveChainName(chain: number | string): string {
     if (typeof chain === 'number') {
-        switch (chain) {
-            case bob.id:
-                return bob.name.toLowerCase();
-            case base.id:
-                return base.name.toLowerCase();
-            case berachain.id:
-                return berachain.name.toLowerCase();
-            case bsc.id:
-                return bsc.name.toLowerCase();
-            case unichain.id:
-                return unichain.name.toLowerCase();
-            case avalanche.id:
-                return avalanche.name.toLowerCase();
-            case sonic.id:
-                return sonic.name.toLowerCase();
-            case soneium.id:
-                return soneium.name.toLowerCase();
-            case telos.id:
-                return telos.name.toLowerCase();
-            case swellchain.id:
-                return swellchain.name.toLowerCase();
-            case optimism.id:
-                return optimism.name.toLowerCase();
-            case sei.id:
-                return sei.name.toLowerCase();
-            case mainnet.id:
-                return mainnet.name.toLowerCase();
-            default:
-                throw new Error(`Unsupported chain ID: ${chain}`);
-        }
+        return resolveChainId(chain);
     }
     return chain.toLowerCase();
 }
@@ -271,8 +259,8 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
     }
 
     async getQuote(params: GetQuoteParams<LayerZeroQuoteParamsExt>): Promise<ExecuteQuoteParams> {
-        const fromChain = resolveChainName(params.fromChain);
-        const toChain = resolveChainName(params.toChain);
+        const fromChain = typeof params.fromChain === 'number' ? resolveChainId(params.fromChain) : params.fromChain;
+        const toChain = typeof params.toChain === 'number' ? resolveChainId(params.toChain) : params.toChain;
 
         if (fromChain === 'bitcoin' && toChain === bob.name.toLowerCase()) {
             // Handle bitcoin -> bob: use normal flow

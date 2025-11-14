@@ -129,7 +129,7 @@ export function formatBtc(btc: bigint) {
     return formatUnits(btc, 8);
 }
 
-const supportedChainsMapping = {
+export const supportedChainsMapping = {
     bob,
     ethereum: mainnet,
     sonic,
@@ -152,9 +152,14 @@ const chainIdToChainConfigMapping = Object.values(supportedChainsMapping).reduce
 );
 
 function getChainIdByName(chainName: string) {
-    const chain = supportedChainsMapping[chainName.toLowerCase()];
+    const chain = Object.values(supportedChainsMapping).find(
+        (chain) => chain.name.toLowerCase() === chainName.toLowerCase()
+    );
+
     if (!chain) {
-        throw new Error(`Chain id for "${chainName}" not found. Allowed values ${Object.keys(supportedChainsMapping)}`);
+        throw new Error(
+            `Chain id for "${chainName}" not found. Allowed values ${Object.values(supportedChainsMapping).map((chain) => chain.name)}`
+        );
     }
     return chain.id;
 }
