@@ -69,7 +69,7 @@ export type LayerZeroSendParam = {
 };
 
 export type LayerZeroChainInfo = {
-    name: string;
+    name: string; // viem chain name
     eid?: string;
     oftAddress: string;
     nativeChainId?: number;

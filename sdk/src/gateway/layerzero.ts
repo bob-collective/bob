@@ -6,6 +6,7 @@ import {
     ContractFunctionExecutionError,
     encodeAbiParameters,
     encodePacked,
+    extractChain,
     Hex,
     InsufficientFundsError,
     isAddress,
@@ -18,7 +19,21 @@ import {
     toHex,
     zeroAddress,
 } from 'viem';
-import { bob, bobSepolia, mainnet } from 'viem/chains';
+import {
+    bob,
+    mainnet,
+    base,
+    berachain,
+    bsc,
+    unichain,
+    avalanche,
+    sonic,
+    soneium,
+    telos,
+    swellchain,
+    optimism,
+    sei,
+} from 'viem/chains';
 import { layerZeroOftAbi, quoterV2Abi } from './abi';
 import { AllWalletClientParams, GatewayApiClient } from './client';
 import { getTokenAddress, getTokenSlots } from './tokens';
@@ -43,6 +58,7 @@ import {
     toHexScriptPubKey,
     viemClient,
 } from './utils';
+import { supportedChainsMapping } from './utils/common';
 
 bitcoin.initEccLib(ecc);
 
@@ -70,9 +86,28 @@ export class LayerZeroClient {
         return this.getChainDeploymentsPromiseCache;
     }
 
+    // Resolve viem and layerzero chain names
+    resolveViemChainName(chainKey: string): string {
+        switch (chainKey.toLowerCase()) {
+            case bsc.name.toLowerCase():
+                return 'bsc';
+            case optimism.name.toLowerCase():
+                return 'optimism';
+            case sei.name.toLowerCase():
+                return 'sei';
+            case soneium.name.toLowerCase():
+                return 'soneium';
+            case berachain.name.toLowerCase():
+                return 'bera';
+            default:
+                return chainKey;
+        }
+    }
+
     async getEidForChain(chainKey: string) {
         const data = await this.getChainDeployments();
-        const eid = data[chainKey]?.deployments?.find((item) => item.version === 2)?.eid;
+        const resolvedChainName = this.resolveViemChainName(chainKey);
+        const eid = data[resolvedChainName]?.deployments?.find((item) => item.version === 2)?.eid;
         return eid !== undefined && eid !== null ? Number(eid) : null;
     }
 
@@ -105,31 +140,38 @@ export class LayerZeroClient {
 
     async getOftAddressForChain(chainKey: string): Promise<string | null> {
         const deployments = await this.getWbtcDeployments();
-        return deployments[chainKey]?.address || null;
+        const resolvedChainName = this.resolveViemChainName(chainKey);
+        return deployments[resolvedChainName]?.address || null;
     }
 
     async getSupportedChainsInfo(): Promise<Array<LayerZeroChainInfo>> {
         const chains = await this.getChainDeployments();
-        const chainLookup = Object.fromEntries(
-            Object.entries(chains).map(([, chainData]) => [
-                chainData.chainKey,
-                {
-                    eid: chainData.deployments?.find((item) => item.version === 2)?.eid,
-                    nativeChainId: chainData.chainDetails?.nativeChainId,
-                },
-            ])
-        );
-
         const deployments = await this.getWbtcDeployments();
-        return Object.entries(deployments).map(([chainKey, deployment]) => {
-            const chainInfo = chainLookup[chainKey];
-            return {
-                name: chainKey,
-                eid: chainInfo?.eid,
-                oftAddress: deployment.address,
-                nativeChainId: chainInfo?.nativeChainId,
-            };
+
+        const supportedLayerZeroChainKeys = new Set<string>();
+        const layerZeroKeyToViemName: Record<string, string> = {};
+
+        Object.values(supportedChainsMapping).forEach((chainConfig) => {
+            const viemChainName = chainConfig.name.toLowerCase();
+            const layerZeroChainKey = this.resolveViemChainName(viemChainName);
+            supportedLayerZeroChainKeys.add(layerZeroChainKey);
+            layerZeroKeyToViemName[layerZeroChainKey] = viemChainName;
         });
+   
+        // Filter layerzero chains that are in supportedChainsMapping
+        return Object.entries(chains)
+            .filter(([layerZeroChainKey]) => supportedLayerZeroChainKeys.has(layerZeroChainKey))
+            .map(([layerZeroChainKey, chainData]) => {
+                const viemChainName = layerZeroKeyToViemName[layerZeroChainKey];
+                const deployment = deployments[layerZeroChainKey];
+
+                return {
+                    name: viemChainName,
+                    eid: chainData.deployments?.find((item) => item.version === 2)?.eid,
+                    oftAddress: deployment.address,
+                    nativeChainId: chainData.chainDetails?.nativeChainId,
+                };
+            });
     }
 
     async getChainId(eid: number): Promise<number | null> {
@@ -146,6 +188,11 @@ export class LayerZeroClient {
         return null;
     }
 
+    // Where possible, the destination composer address should be a Create3 Singleton deployment so the address should be the same on all chains.
+    async getDestinationComposerAddress(eid: number): Promise<Hex | null> {
+        return '0x2878dc77E9188f348FC667fd97aA1938900f7385' as Hex;
+    }
+
     private async getJson<T>(url: string): Promise<T> {
         const response = await fetch(url);
         if (!response.ok) {
@@ -155,18 +202,14 @@ export class LayerZeroClient {
     }
 }
 
+// Viem chain names are used to identify chains
+function resolveChainId(chain: number): string {
+    return getChainConfig(chain).name.toLowerCase();
+}
+
 function resolveChainName(chain: number | string): string {
     if (typeof chain === 'number') {
-        switch (chain) {
-            case bob.id:
-                return bob.name.toLowerCase();
-            case bobSepolia.id:
-                return bobSepolia.name.toLowerCase();
-            case mainnet.id:
-                return 'mainnet';
-            default:
-                throw new Error(`Unsupported chain ID: ${chain}`);
-        }
+        return resolveChainId(chain);
     }
     return chain.toLowerCase();
 }
@@ -175,11 +218,9 @@ function resolveChainName(chain: number | string): string {
 export class LayerZeroGatewayClient extends GatewayApiClient {
     private l0Client: LayerZeroClient;
 
-    constructor(chainId: number, options?: { rpcUrl?: string }) {
-        if (chainId !== bob.id) {
-            throw new Error('LayerZeroGatewayClient only supports BOB mainnet');
-        }
-        super(chainId, options);
+    // TODO: remove constructor, set the config from `getQuote`
+    constructor(options?: { rpcUrl?: string }) {
+        super(bob.id, options);
         this.l0Client = new LayerZeroClient();
     }
 
@@ -218,8 +259,8 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
     }
 
     async getQuote(params: GetQuoteParams<LayerZeroQuoteParamsExt>): Promise<ExecuteQuoteParams> {
-        const fromChain = resolveChainName(params.fromChain);
-        const toChain = resolveChainName(params.toChain);
+        const fromChain = typeof params.fromChain === 'number' ? resolveChainId(params.fromChain) : params.fromChain;
+        const toChain = typeof params.toChain === 'number' ? resolveChainId(params.toChain) : params.toChain;
 
         if (fromChain === 'bitcoin' && toChain === bob.name.toLowerCase()) {
             // Handle bitcoin -> bob: use normal flow
@@ -239,29 +280,67 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                 throw new Error(`WBTC OFT not found for chain: ${fromChain}`);
             }
 
-            // TODO: Will need to generalize this if we want to support other option sets. Its manual ABI encoding so a little complex.
-            const extraOptions = encodePacked(
-                ['uint16', 'uint8', 'uint16', 'uint8', 'uint128'],
-                [
-                    // https://github.com/LayerZero-Labs/LayerZero-v2/blob/200cda254120375f40ed0a7e89931afb897b8891/packages/layerzero-v2/evm/oapp/contracts/oapp/libs/OptionsBuilder.sol#L22
-                    3, // TYPE_3
-                    // https://github.com/LayerZero-Labs/LayerZero-v2/blob/200cda254120375f40ed0a7e89931afb897b8891/packages/layerzero-v2/evm/messagelib/contracts/libs/ExecutorOptions.sol#L10
-                    1, // WORKER_ID
-                    17, // 16+1 for optionType
-                    1, // OPTION_TYPE_LZRECEIVE
-                    BigInt(65000),
-                ]
-            );
+            let sendParam: LayerZeroSendParam;
+            if (params.message?.length === 0) {
+                // No destination message, so we encode options for a standard L0 send with no compose message.
+                const extraOptions = encodePacked(
+                    ['uint16', 'uint8', 'uint16', 'uint8', 'uint128'],
+                    [
+                        // https://github.com/LayerZero-Labs/LayerZero-v2/blob/200cda254120375f40ed0a7e89931afb897b8891/packages/layerzero-v2/evm/oapp/contracts/oapp/libs/OptionsBuilder.sol#L22
+                        3, // TYPE_3
+                        // https://github.com/LayerZero-Labs/LayerZero-v2/blob/200cda254120375f40ed0a7e89931afb897b8891/packages/layerzero-v2/evm/messagelib/contracts/libs/ExecutorOptions.sol#L10
+                        1, // WORKER_ID
+                        17, // 16+1 for optionType
+                        1, // OPTION_TYPE_LZRECEIVE
+                        BigInt(65000),
+                    ]
+                );
 
-            const sendParam: LayerZeroSendParam = {
-                dstEid,
-                to: padHex(params.toUserAddress as Hex),
-                amountLD: BigInt(0), // will be added inside the strategy
-                minAmountLD: BigInt(0), // will be added inside the strategy
-                extraOptions: extraOptions,
-                composeMsg: '0x' as Hex,
-                oftCmd: '0x' as Hex,
-            };
+                sendParam = {
+                    dstEid,
+                    to: padHex(params.toUserAddress as Hex),
+                    amountLD: BigInt(0), // will be added inside the strategy
+                    minAmountLD: BigInt(0), // will be added inside the strategy
+                    extraOptions: extraOptions,
+                    composeMsg: '0x' as Hex,
+                    oftCmd: '0x' as Hex,
+                };
+            } else {
+                // There is a destination message, so we encode options to handle the compose message.
+
+                const destinationComposer = await this.l0Client.getDestinationComposerAddress(dstEid);
+                if (!destinationComposer) {
+                    throw new Error(`Destination composer not found for chain: ${toChain}`);
+                }
+
+                const extraOptions = encodePacked(
+                    ['uint16', 'uint8', 'uint16', 'uint8', 'uint128', 'uint8', 'uint16', 'uint8', 'uint16', 'uint128'],
+                    [
+                        // https://github.com/LayerZero-Labs/LayerZero-v2/blob/200cda254120375f40ed0a7e89931afb897b8891/packages/layerzero-v2/evm/oapp/contracts/oapp/libs/OptionsBuilder.sol#L22
+                        3, // TYPE_3
+                        // https://github.com/LayerZero-Labs/LayerZero-v2/blob/200cda254120375f40ed0a7e89931afb897b8891/packages/layerzero-v2/evm/messagelib/contracts/libs/ExecutorOptions.sol#L10
+                        1, // WORKER_ID
+                        17, // 16+1 option length
+                        1, // OPTION_TYPE_LZRECEIVE
+                        BigInt(100000),
+                        1, // WORKER_ID
+                        19, // 18+1 option length
+                        3, // OPTION_TYPE_LZCOMPOSE
+                        0, // index for compose function
+                        BigInt(params.destinationGasLimit || 300000), // gas limit for compose function, default to 300k if not provided
+                    ]
+                );
+
+                sendParam = {
+                    dstEid,
+                    to: padHex(destinationComposer, { size: 32 }),
+                    amountLD: BigInt(0), // will be added inside the strategy
+                    minAmountLD: BigInt(0), // will be added inside the strategy
+                    extraOptions: extraOptions,
+                    composeMsg: params.message as Hex,
+                    oftCmd: '0x' as Hex,
+                };
+            }
 
             // TODO: expose via params
             const publicClient = viemClient(bob);
@@ -370,15 +449,53 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
             const chain = getChainConfig(params.fromChain);
             const publicClient = viemClient(chain);
 
-            const sendParam: LayerZeroSendParam = {
-                dstEid,
-                to: padHex(params.toUserAddress as Hex),
-                amountLD: BigInt(params.amount),
-                minAmountLD: BigInt(params.amount),
-                extraOptions: '0x',
-                composeMsg: '0x',
-                oftCmd: '0x',
-            };
+            let sendParam: LayerZeroSendParam;
+            if (params.message?.length === 0) {
+                // No destination message, standard L0 send
+                sendParam = {
+                    dstEid,
+                    to: padHex(params.toUserAddress as Hex),
+                    amountLD: BigInt(params.amount),
+                    minAmountLD: BigInt(params.amount),
+                    extraOptions: '0x',
+                    composeMsg: '0x',
+                    oftCmd: '0x',
+                };
+            } else {
+                // There is a destination message, so we encode options to handle the compose message.                
+                const destinationComposer = await this.l0Client.getDestinationComposerAddress(dstEid);
+                if (!destinationComposer) {
+                    throw new Error(`Destination composer not found for chain: ${toChain}`);
+                }
+
+                const extraOptions = encodePacked(
+                    ['uint16', 'uint8', 'uint16', 'uint8', 'uint128', 'uint8', 'uint16', 'uint8', 'uint16', 'uint128'],
+                    [
+                        // https://github.com/LayerZero-Labs/LayerZero-v2/blob/200cda254120375f40ed0a7e89931afb897b8891/packages/layerzero-v2/evm/oapp/contracts/oapp/libs/OptionsBuilder.sol#L22
+                        3, // TYPE_3
+                        // https://github.com/LayerZero-Labs/LayerZero-v2/blob/200cda254120375f40ed0a7e89931afb897b8891/packages/layerzero-v2/evm/messagelib/contracts/libs/ExecutorOptions.sol#L10
+                        1, // WORKER_ID
+                        17, // 16+1 option length
+                        1, // OPTION_TYPE_LZRECEIVE
+                        BigInt(100000),
+                        1, // WORKER_ID
+                        19, // 18+1 option length
+                        3, // OPTION_TYPE_LZCOMPOSE
+                        0, // index for compose function
+                        BigInt(params.destinationGasLimit || 300000), // gas limit for compose function, default to 300k if not provided
+                    ]
+                );
+
+                sendParam = {
+                    dstEid,
+                    to: padHex(destinationComposer, { size: 32 }),
+                    amountLD: BigInt(params.amount),
+                    minAmountLD: BigInt(params.amount),
+                    extraOptions: extraOptions,
+                    composeMsg: params.message as Hex,
+                    oftCmd: '0x' as Hex,
+                };
+            }
 
             const sendFees = await publicClient.readContract({
                 abi: layerZeroOftAbi,
@@ -536,15 +653,64 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                 const { data, params } = quote;
                 const { oftAddress, destinationEid } = data;
 
-                const sendParam: LayerZeroSendParam = {
-                    dstEid: destinationEid,
-                    to: padHex(params.toUserAddress as Hex) as Hex,
-                    amountLD: BigInt(params.amount),
-                    minAmountLD: BigInt(params.amount),
-                    extraOptions: '0x',
-                    composeMsg: '0x',
-                    oftCmd: '0x',
-                };
+                let sendParam: LayerZeroSendParam;
+                if (params.message?.length === 0) {
+                    // No destination message, standard L0 send
+                    sendParam = {
+                        dstEid: destinationEid,
+                        to: padHex(params.toUserAddress as Hex),
+                        amountLD: BigInt(params.amount),
+                        minAmountLD: BigInt(params.amount),
+                        extraOptions: '0x',
+                        composeMsg: '0x',
+                        oftCmd: '0x',
+                    };
+                } else {
+                    // There is a destination message, so we encode options to handle the compose message.
+                    const destinationComposer = await this.l0Client.getDestinationComposerAddress(destinationEid);
+                    if (!destinationComposer) {
+                        throw new Error(`Destination composer not found for chain: ${params.toChain}`);
+                    }
+
+                    const extraOptions = encodePacked(
+                        [
+                            'uint16',
+                            'uint8',
+                            'uint16',
+                            'uint8',
+                            'uint128',
+                            'uint8',
+                            'uint16',
+                            'uint8',
+                            'uint16',
+                            'uint128',
+                        ],
+                        [
+                            // https://github.com/LayerZero-Labs/LayerZero-v2/blob/200cda254120375f40ed0a7e89931afb897b8891/packages/layerzero-v2/evm/oapp/contracts/oapp/libs/OptionsBuilder.sol#L22
+                            3, // TYPE_3
+                            // https://github.com/LayerZero-Labs/LayerZero-v2/blob/200cda254120375f40ed0a7e89931afb897b8891/packages/layerzero-v2/evm/messagelib/contracts/libs/ExecutorOptions.sol#L10
+                            1, // WORKER_ID
+                            17, // 16+1 option length
+                            1, // OPTION_TYPE_LZRECEIVE
+                            BigInt(100000),
+                            1, // WORKER_ID
+                            19, // 18+1 option length
+                            3, // OPTION_TYPE_LZCOMPOSE
+                            0, // index for compose function
+                            BigInt(params.destinationGasLimit || 300000), // gas limit for compose function, default to 300k if not provided
+                        ]
+                    );
+
+                    sendParam = {
+                        dstEid: destinationEid,
+                        to: padHex(destinationComposer, { size: 32 }),
+                        amountLD: BigInt(params.amount),
+                        minAmountLD: BigInt(params.amount),
+                        extraOptions: extraOptions,
+                        composeMsg: params.message as Hex,
+                        oftCmd: '0x' as Hex,
+                    };
+                }
 
                 const sendFees = {
                     nativeFee: data.feeBreakdown.nativeFee,
@@ -565,7 +731,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                     await publicClient.waitForTransactionReceipt({ hash: txHash });
 
                     return txHash;
-                } catch (error) {
+                } catch (error) {  
                     if (error instanceof ContractFunctionExecutionError) {
                         // https://github.com/wevm/viem/blob/3aa882692d2c4af3f5e9cc152099e07cde28e551/src/actions/public/simulateContract.test.ts#L711
                         // throw new error
