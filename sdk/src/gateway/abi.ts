@@ -41,7 +41,7 @@ export const strategyCaller = [
 export const offrampCallerV2 = [
     {
         type: 'function',
-        name: 'createOrder',
+        name: 'createOrderV2',
         inputs: [
             {
                 name: 'offrampOrderArgs',

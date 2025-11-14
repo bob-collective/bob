@@ -969,11 +969,16 @@ describe('Gateway Tests', () => {
         expect(getOfframpOrdersSpy).toHaveBeenCalledOnce();
     });
 
-    // TODO: will only work once new V2 offramp registry contract is deployed
-    it.skip(
+    it(
         'get offramp gas cost for BOB and Ethereum',
         async () => {
             const gatewaySDK = new GatewaySDK(bob.id);
+
+            // deployed offramp registry address
+            nock(MAINNET_GATEWAY_BASE_URL)
+                .persist()
+                .get('/offramp-registry-address')
+                .reply(200, '0x2bbfdaea28604f1d40c6e2dec5fc08fa8a120472');
 
             nock(MAINNET_GATEWAY_BASE_URL)
                 .persist()
@@ -981,7 +986,7 @@ describe('Gateway Tests', () => {
                 .query(true)
                 .reply(200, {
                     amountLockInSat: 4000,
-                    registryAddress: '0xd7b27b178f6bf290155201109906ad203b6d99b1',
+                    registryAddress: '0x2bbfdaea28604f1d40c6e2dec5fc08fa8a120472',
                     feeBreakdown: {
                         overallFeeSats: 886,
                         inclusionFeeSats: 886,

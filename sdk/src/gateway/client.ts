@@ -601,7 +601,7 @@ export class GatewayApiClient extends BaseClient {
             quote,
             offrampABI: offrampCallerV2,
             feeBreakdown: quote.feeBreakdown,
-            offrampFunctionName: 'createOrder' as const,
+            offrampFunctionName: 'createOrderV2' as const,
             offrampArgs: [
                 {
                     satAmountToLock: BigInt(quote.amountLockInSat),
