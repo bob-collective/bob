@@ -6,6 +6,7 @@ import {
     ContractFunctionExecutionError,
     encodeAbiParameters,
     encodePacked,
+    extractChain,
     Hex,
     InsufficientFundsError,
     isAddress,
@@ -18,7 +19,21 @@ import {
     toHex,
     zeroAddress,
 } from 'viem';
-import { bob, bobSepolia, mainnet } from 'viem/chains';
+import {
+    bob,
+    mainnet,
+    base,
+    berachain,
+    bsc,
+    unichain,
+    avalanche,
+    sonic,
+    soneium,
+    telos,
+    swellchain,
+    optimism,
+    sei,
+} from 'viem/chains';
 import { layerZeroOftAbi, quoterV2Abi } from './abi';
 import { AllWalletClientParams, GatewayApiClient } from './client';
 import { getTokenAddress, getTokenSlots } from './tokens';
@@ -43,6 +58,7 @@ import {
     toHexScriptPubKey,
     viemClient,
 } from './utils';
+import { supportedChainsMapping } from './utils/common';
 
 bitcoin.initEccLib(ecc);
 
@@ -70,9 +86,28 @@ export class LayerZeroClient {
         return this.getChainDeploymentsPromiseCache;
     }
 
+    // Resolve viem and layerzero chain names
+    resolveViemChainName(chainKey: string): string {
+        switch (chainKey.toLowerCase()) {
+            case bsc.name.toLowerCase():
+                return 'bsc';
+            case optimism.name.toLowerCase():
+                return 'optimism';
+            case sei.name.toLowerCase():
+                return 'sei';
+            case soneium.name.toLowerCase():
+                return 'soneium';
+            case berachain.name.toLowerCase():
+                return 'bera';
+            default:
+                return chainKey;
+        }
+    }
+
     async getEidForChain(chainKey: string) {
         const data = await this.getChainDeployments();
-        const eid = data[chainKey]?.deployments?.find((item) => item.version === 2)?.eid;
+        const resolvedChainName = this.resolveViemChainName(chainKey);
+        const eid = data[resolvedChainName]?.deployments?.find((item) => item.version === 2)?.eid;
         return eid !== undefined && eid !== null ? Number(eid) : null;
     }
 
@@ -105,31 +140,38 @@ export class LayerZeroClient {
 
     async getOftAddressForChain(chainKey: string): Promise<string | null> {
         const deployments = await this.getWbtcDeployments();
-        return deployments[chainKey]?.address || null;
+        const resolvedChainName = this.resolveViemChainName(chainKey);
+        return deployments[resolvedChainName]?.address || null;
     }
 
     async getSupportedChainsInfo(): Promise<Array<LayerZeroChainInfo>> {
         const chains = await this.getChainDeployments();
-        const chainLookup = Object.fromEntries(
-            Object.entries(chains).map(([, chainData]) => [
-                chainData.chainKey,
-                {
-                    eid: chainData.deployments?.find((item) => item.version === 2)?.eid,
-                    nativeChainId: chainData.chainDetails?.nativeChainId,
-                },
-            ])
-        );
-
         const deployments = await this.getWbtcDeployments();
-        return Object.entries(deployments).map(([chainKey, deployment]) => {
-            const chainInfo = chainLookup[chainKey];
-            return {
-                name: chainKey,
-                eid: chainInfo?.eid,
-                oftAddress: deployment.address,
-                nativeChainId: chainInfo?.nativeChainId,
-            };
+
+        const supportedLayerZeroChainKeys = new Set<string>();
+        const layerZeroKeyToViemName: Record<string, string> = {};
+
+        Object.values(supportedChainsMapping).forEach((chainConfig) => {
+            const viemChainName = chainConfig.name.toLowerCase();
+            const layerZeroChainKey = this.resolveViemChainName(viemChainName);
+            supportedLayerZeroChainKeys.add(layerZeroChainKey);
+            layerZeroKeyToViemName[layerZeroChainKey] = viemChainName;
         });
+
+        // Filter layerzero chains that are in supportedChainsMapping
+        return Object.entries(chains)
+            .filter(([layerZeroChainKey]) => supportedLayerZeroChainKeys.has(layerZeroChainKey))
+            .map(([layerZeroChainKey, chainData]) => {
+                const viemChainName = layerZeroKeyToViemName[layerZeroChainKey];
+                const deployment = deployments[layerZeroChainKey];
+
+                return {
+                    name: viemChainName,
+                    eid: chainData.deployments?.find((item) => item.version === 2)?.eid,
+                    oftAddress: deployment.address,
+                    nativeChainId: chainData.chainDetails?.nativeChainId,
+                };
+            });
     }
 
     async getChainId(eid: number): Promise<number | null> {
@@ -155,18 +197,14 @@ export class LayerZeroClient {
     }
 }
 
+// Viem chain names are used to identify chains
+function resolveChainId(chain: number): string {
+    return getChainConfig(chain).name.toLowerCase();
+}
+
 function resolveChainName(chain: number | string): string {
     if (typeof chain === 'number') {
-        switch (chain) {
-            case bob.id:
-                return bob.name.toLowerCase();
-            case bobSepolia.id:
-                return bobSepolia.name.toLowerCase();
-            case mainnet.id:
-                return 'mainnet';
-            default:
-                throw new Error(`Unsupported chain ID: ${chain}`);
-        }
+        return resolveChainId(chain);
     }
     return chain.toLowerCase();
 }
@@ -175,11 +213,9 @@ function resolveChainName(chain: number | string): string {
 export class LayerZeroGatewayClient extends GatewayApiClient {
     private l0Client: LayerZeroClient;
 
-    constructor(chainId: number, options?: { rpcUrl?: string }) {
-        if (chainId !== bob.id) {
-            throw new Error('LayerZeroGatewayClient only supports BOB mainnet');
-        }
-        super(chainId, options);
+    // TODO: remove constructor, set the config from `getQuote`
+    constructor(options?: { rpcUrl?: string }) {
+        super(bob.id, options);
         this.l0Client = new LayerZeroClient();
     }
 
@@ -218,8 +254,8 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
     }
 
     async getQuote(params: GetQuoteParams<LayerZeroQuoteParamsExt>): Promise<ExecuteQuoteParams> {
-        const fromChain = resolveChainName(params.fromChain);
-        const toChain = resolveChainName(params.toChain);
+        const fromChain = typeof params.fromChain === 'number' ? resolveChainId(params.fromChain) : params.fromChain;
+        const toChain = typeof params.toChain === 'number' ? resolveChainId(params.toChain) : params.toChain;
 
         if (fromChain === 'bitcoin' && toChain === bob.name.toLowerCase()) {
             // Handle bitcoin -> bob: use normal flow
