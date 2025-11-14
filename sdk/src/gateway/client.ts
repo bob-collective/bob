@@ -63,6 +63,8 @@ import {
     convertOrderDetailsToRaw,
     formatBtc,
     getChainConfig,
+    safeBigInt,
+    safeNumber,
     slugify,
     stripHexPrefix,
     toHexScriptPubKey,
@@ -191,22 +193,22 @@ export class GatewayApiClient extends BaseClient {
         );
 
         return {
-            orderId: BigInt(order.orderId),
+            orderId: safeBigInt(order.orderId),
             token: order.token as Address,
-            satAmountLocked: BigInt(order.satAmountLocked),
-            satSolverFeeMax: BigInt(order.satFeesMax),
+            satAmountLocked: safeBigInt(order.satAmountLocked),
+            satSolverFeeMax: safeBigInt(order.satFeesMax),
             status,
-            orderTimestamp: Number(order.orderTimestamp),
+            orderTimestamp: safeNumber(order.orderTimestamp),
             submitOrderEvmTx: order.submitOrderEvmTx,
             refundedEvmTx: order.refundedEvmTx,
             btcTx: order.btcTx,
             shouldFeesBeBumped: order.shouldFeesBeBumped,
             canOrderBeUnlocked,
             offrampRegistryAddress,
-            satAffiliateFee: BigInt(order.satAffiliateFee),
+            satAffiliateFee: safeBigInt(order.satAffiliateFee),
             affiliateFeeRecipient: order.affiliateFeeRecipient as Address,
-            offrampRegistryVersion: Number(order.offrampRegistryVersion),
-            bumpFeeAmountInSats: order.bumpFeeAmountInSats !== null ? BigInt(order.bumpFeeAmountInSats) : null,
+            offrampRegistryVersion: safeNumber(order.offrampRegistryVersion),
+            bumpFeeAmountInSats: order.bumpFeeAmountInSats !== null ? safeBigInt(order.bumpFeeAmountInSats) : null,
             userAddress: order.userAddress as Address,
         };
     }
@@ -527,7 +529,7 @@ export class GatewayApiClient extends BaseClient {
         userAddress: Address,
         toUserAddress?: string,
         affiliateFeeRecipient?: Address,
-        affiliate_fee?: bigint
+        affiliateFeeSats?: bigint
     ): Promise<OfframpQuote> {
         const queryParams = new URLSearchParams({
             amountInWrappedToken: amountInToken.toString(),
@@ -539,8 +541,8 @@ export class GatewayApiClient extends BaseClient {
             queryParams.append('userBtcAddress', toUserAddress);
         }
 
-        if (affiliateFeeRecipient && affiliate_fee) {
-            queryParams.append('affiliateFee', affiliate_fee.toString());
+        if (affiliateFeeRecipient && affiliateFeeSats) {
+            queryParams.append('affiliateFee', affiliateFeeSats.toString());
             queryParams.append('affiliateFeeRecipient', affiliateFeeRecipient.toString());
         }
 
@@ -760,7 +762,8 @@ export class GatewayApiClient extends BaseClient {
         if (!response.ok) {
             const errorData = await response.json().catch(() => null);
             const apiMessage = errorData?.message;
-            const errorMessage = apiMessage || `Failed to get offramp order`;
+            const errorMessage =
+                apiMessage || `Failed to get offramp order (status: ${response.status} ${response.statusText})`;
             throw new Error(`${errorMessage}`);
         }
 

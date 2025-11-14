@@ -218,3 +218,19 @@ export function computeBalanceSlot(user: Address, balancesMappingSlot: bigint): 
 
     return balanceSlot;
 }
+
+export function safeBigInt(value: string): bigint {
+    try {
+        return BigInt(value);
+    } catch {
+        throw new Error(`Invalid BigInt for value "${value}"`);
+    }
+}
+
+export function safeNumber(value: string): number {
+    const n = Number(value);
+    if (Number.isNaN(n)) {
+        throw new Error(`Invalid number for value  "${value}"`);
+    }
+    return n;
+}
