@@ -142,7 +142,7 @@ export class LayerZeroClient {
             supportedLayerZeroChainKeys.add(layerZeroChainKey);
             layerZeroKeyToViemName[layerZeroChainKey] = viemChainName;
         });
-
+   
         // Filter layerzero chains that are in supportedChainsMapping
         return Object.entries(chains)
             .filter(([layerZeroChainKey]) => supportedLayerZeroChainKeys.has(layerZeroChainKey))
@@ -448,7 +448,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                     oftCmd: '0x',
                 };
             } else {
-                // There is a destination message, so we encode options to handle the compose message.
+                // There is a destination message, so we encode options to handle the compose message.                
                 const destinationComposer = await this.l0Client.getDestinationComposerAddress(dstEid);
                 if (!destinationComposer) {
                     throw new Error(`Destination composer not found for chain: ${toChain}`);
@@ -652,9 +652,8 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                 } else {
                     // There is a destination message, so we encode options to handle the compose message.
                     const destinationComposer = await this.l0Client.getDestinationComposerAddress(destinationEid);
-                    const toChain = resolveChainName(destinationEid);
                     if (!destinationComposer) {
-                        throw new Error(`Destination composer not found for chain: ${toChain}`);
+                        throw new Error(`Destination composer not found for chain: ${params.toChain}`);
                     }
 
                     const extraOptions = encodePacked(
@@ -716,7 +715,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                     await publicClient.waitForTransactionReceipt({ hash: txHash });
 
                     return txHash;
-                } catch (error) {
+                } catch (error) {  
                     if (error instanceof ContractFunctionExecutionError) {
                         // https://github.com/wevm/viem/blob/3aa882692d2c4af3f5e9cc152099e07cde28e551/src/actions/public/simulateContract.test.ts#L711
                         // throw new error

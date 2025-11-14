@@ -194,11 +194,11 @@ describe('LayerZero Tests', () => {
         const client = new LayerZeroGatewayClient();
 
         const quote = await client.getQuote({
-            fromChain: 'BNB Smart Chain',
-            fromToken: (await client.getSupportedChainsInfo()).find((chain) => chain.name === 'BNB Smart Chain')
+            fromChain: bsc.id,
+            fromToken: (await client.getSupportedChainsInfo()).find((chain) => chain.name.toLowerCase() === bsc.name.toLowerCase())
                 ?.oftAddress as string,
-            toChain: 'base',
-            toToken: (await client.getSupportedChainsInfo()).find((chain) => chain.name === 'base')
+            toChain: base.id,
+            toToken: (await client.getSupportedChainsInfo()).find((chain) => chain.name.toLowerCase() === base.name.toLowerCase())
                 ?.oftAddress as string,
             fromUserAddress: '0xEf7Ff7Fb24797656DF41616e807AB4016AE9dCD5',
             toUserAddress: '0xEf7Ff7Fb24797656DF41616e807AB4016AE9dCD5',
@@ -228,30 +228,31 @@ describe('LayerZero Tests', () => {
     }, 120000);
 
     it('should get a layerzero send quote with a destination message and execute it', async () => {
-        const client = new LayerZeroGatewayClient(bob.id);
+        const client = new LayerZeroGatewayClient();
 
         const quote = await client.getQuote({
-            fromChain: 'BNB Smart Chain',
-            fromToken: (await client.getSupportedChainsInfo()).find((chain) => chain.name === 'base')
+            fromChain: bsc.id,
+            fromToken: (await client.getSupportedChainsInfo()).find((chain) => chain.name.toLowerCase() === bsc.name.toLowerCase())
                 ?.oftAddress as string,
-            toChain: 'base',
-            toToken: (await client.getSupportedChainsInfo()).find((chain) => chain.name === 'optimism')
+            toChain: base.id,
+            toToken: (await client.getSupportedChainsInfo()).find((chain) => chain.name.toLowerCase() === base.name.toLowerCase())
                 ?.oftAddress as string,
             fromUserAddress: '0xEf7Ff7Fb24797656DF41616e807AB4016AE9dCD5',
             toUserAddress: '0xEf7Ff7Fb24797656DF41616e807AB4016AE9dCD5',
             amount: 100,
-            message: '0x1234',
+            message: '0x0000000000000000000000006813eb9362372eef6200f3b1dbc3f819671cba690000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000000555e30da8f98308edb960aa94c0db47230d2b9c000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000044a9059cbb0000000000000000000000002b5ad5c4795c026514f8317c7a215e218dccd6cf000000000000000000000000000000000000000000000000000000000000006400000000000000000000000000000000000000000000000000000000',
+            destinationGasLimit: 100000,
         });
 
         console.log('quote', quote);
 
         const publicClient = createPublicClient({
-            chain: base,
+            chain: bsc,
             transport: http(),
         });
 
         const walletClient = createWalletClient({
-            chain: base,
+            chain: bsc,
             transport: http(),
             account: privateKeyToAccount(process.env.PRIVATE_KEY as Hex),
         });
