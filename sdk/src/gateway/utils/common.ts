@@ -129,21 +129,21 @@ export function formatBtc(btc: bigint) {
     return formatUnits(btc, 8);
 }
 
-const supportedChains = [
+const supportedChainsMapping = {
     bob,
-    mainnet,
+    ethereum: mainnet,
     sonic,
     bsc,
     unichain,
-    berachain,
+    bera: berachain,
     sei,
     avalanche,
     base,
     soneium,
     optimism,
-] as const;
+} as const;
 
-const chainIdToChainConfigMapping = supportedChains.reduce(
+const chainIdToChainConfigMapping = Object.values(supportedChainsMapping).reduce(
     (acc, chain) => {
         acc[chain.id] = chain;
         return acc;
@@ -151,29 +151,19 @@ const chainIdToChainConfigMapping = supportedChains.reduce(
     {} as Record<ViemChain['id'], ViemChain>
 );
 
-const chainNameToChainIdMapping = supportedChains.reduce(
-    (acc, chain) => {
-        acc[chain.name.toLowerCase()] = chain.id;
-        return acc;
-    },
-    {} as Record<ViemChain['name'], ViemChain['id']>
-);
-
 function getChainIdByName(chainName: string) {
-    const chainId = chainNameToChainIdMapping[chainName.toLowerCase()];
-    if (!chainId) {
-        throw new Error(
-            `Chain id for "${chainName}" not found. Allowed values ${supportedChains.map((chain) => chain.name)}`
-        );
+    const chain = supportedChainsMapping[chainName.toLowerCase()];
+    if (!chain) {
+        throw new Error(`Chain id for "${chainName}" not found. Allowed values ${Object.keys(supportedChainsMapping)}`);
     }
-    return chainId;
+    return chain.id;
 }
 
 function getChainConfigById(chainId: number) {
     const config = chainIdToChainConfigMapping[chainId];
     if (!config) {
         throw new Error(
-            `Chain id for "${chainId}" not found. Allowed values ${supportedChains.map((chain) => chain.id)}`
+            `Chain id for "${chainId}" not found. Allowed values ${Object.values(supportedChainsMapping).map((chain) => chain.id)}`
         );
     }
 
