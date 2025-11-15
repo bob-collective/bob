@@ -1,0 +1,13 @@
+{
+  "name": "Solv",
+  "symbol": "SOLV",
+  "decimals": 18,
+  "description": "",
+  "website": "https://app.solv.finance/",
+  "twitter": "@SolvProtocol",
+  "tokens": {
+    "ethereum": {
+      "address": "0x04830a96a23ea718faa695a5aae74695aae3a23f"
+    }
+  }
+}

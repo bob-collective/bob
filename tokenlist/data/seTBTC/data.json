@@ -1,0 +1,10 @@
+{
+  "name": "Segment TBTC",
+  "symbol": "seTBTC",
+  "decimals": 8,
+  "tokens": {
+    "bob": {
+      "address": "0xD30288EA9873f376016A0250433b7eA375676077"
+    }
+  }
+}

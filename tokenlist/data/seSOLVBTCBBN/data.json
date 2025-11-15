@@ -1,0 +1,10 @@
+{
+  "name": "Segment SOLVBTCBBN",
+  "symbol": "seSOLVBTCBBN",
+  "decimals": 8,
+  "tokens": {
+    "bob": {
+      "address": "0x5EF2B8fbCc8aea2A9Dbe2729F0acf33E073Fa43e"
+    }
+  }
+}

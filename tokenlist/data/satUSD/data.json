@@ -1,0 +1,10 @@
+{
+  "name": "Satoshi Stablecoin",
+  "symbol": "satUSD",
+  "decimals": 18,
+  "tokens": {
+    "bob": {
+      "address": "0x78Fea795cBFcC5fFD6Fb5B845a4f53d25C283bDB"
+    }
+  }
+}

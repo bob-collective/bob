@@ -1,0 +1,10 @@
+{
+  "name": "Ionic Wrapped BTC",
+  "symbol": "ionWBTC",
+  "decimals": 8,
+  "tokens": {
+    "bob": {
+      "address": "0xEBc8a7EE7f1D6534eBF45Bd5311203BF0A17493c"
+    }
+  }
+}
