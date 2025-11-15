@@ -80,7 +80,7 @@ contract SolvBTCStrategy is IStrategyWithSlippageArgs, Context {
 
         solvBTC.safeTransfer(recipient, solvBTCAmount);
 
-        emit TokenOutput(address(solvBTC), solvBTCAmount);
+        emit TokenOutput(_msgSender(), address(solvBTC), solvBTCAmount);
     }
 }
 
@@ -119,7 +119,7 @@ contract XSolvBTCStrategy is IStrategyWithSlippageArgs, Context {
 
         xSolvBTC.safeTransfer(recipient, xSolvBTCAmount);
 
-        emit TokenOutput(address(xSolvBTC), xSolvBTCAmount);
+        emit TokenOutput(_msgSender(), address(xSolvBTC), xSolvBTCAmount);
     }
 }
 
@@ -168,7 +168,7 @@ contract SolvBTCJUPStrategy is IStrategyWithSlippageArgs, Context {
 
         solvBTCJUP.safeTransfer(recipient, solvBTCJUPAmount);
 
-        emit TokenOutput(address(solvBTCJUP), solvBTCJUPAmount);
+        emit TokenOutput(_msgSender(), address(solvBTCJUP), solvBTCJUPAmount);
     }
 }
 
@@ -199,6 +199,6 @@ contract SolvBTCPlusStrategy is IStrategyWithSlippageArgs, Context {
 
         solvBTCPlus.safeTransfer(recipient, solvBTCPlusAmount);
 
-        emit TokenOutput(address(solvBTCPlus), solvBTCPlusAmount);
+        emit TokenOutput(_msgSender(), address(solvBTCPlus), solvBTCPlusAmount);
     }
 }

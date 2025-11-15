@@ -70,7 +70,7 @@ contract AvalonLendingStrategy is IStrategyWithSlippageArgs, Context {
         uint256 amountOut = amountAfter - amountBefore;
         require(amountOut >= args.amountOutMin, "Insufficient output amount");
 
-        emit TokenOutput(address(avBep20), amountOut);
+        emit TokenOutput(_msgSender(), address(avBep20), amountOut);
     }
 }
 

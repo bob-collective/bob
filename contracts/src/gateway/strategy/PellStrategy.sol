@@ -55,7 +55,7 @@ contract PellStrategy is IStrategyWithSlippageArgs, Context {
         uint256 shares = pellStrategyManager.depositIntoStrategyWithStaker(recipient, pellStrategy, tokenSent, amountIn);
         require(shares >= args.amountOutMin, "Insufficient output amount");
 
-        emit TokenOutput(address(0), shares);
+        emit TokenOutput(_msgSender(), address(0), shares);
     }
 
     function stakerStrategyShares(address recipient) public view returns (uint256) {

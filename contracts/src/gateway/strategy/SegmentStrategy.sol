@@ -57,7 +57,7 @@ contract SegmentStrategy is IStrategyWithSlippageArgs, Context {
         uint256 amountOut = amountAfter - amountBefore;
         require(amountOut >= args.amountOutMin, "Insufficient output amount");
 
-        emit TokenOutput(address(token), amountOut);
+        emit TokenOutput(_msgSender(), address(token), amountOut);
     }
 }
 

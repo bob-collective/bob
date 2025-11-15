@@ -52,6 +52,6 @@ contract ShoebillStrategy is IStrategyWithSlippageArgs, Context {
 
         token.safeTransfer(recipient, amountOut);
 
-        emit TokenOutput(address(token), amountOut);
+        emit TokenOutput(_msgSender(), address(token), amountOut);
     }
 }

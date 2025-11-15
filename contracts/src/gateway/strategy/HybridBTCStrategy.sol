@@ -51,6 +51,6 @@ contract HybridBTCStrategy is IStrategyWithSlippageArgs, Context {
         uint256 amountOut = amountAfter - amountBefore;
         require(amountOut >= args.amountOutMin, "Insufficient output amount");
 
-        emit TokenOutput(address(boringVault), amountOut);
+        emit TokenOutput(_msgSender(), address(boringVault), amountOut);
     }
 }

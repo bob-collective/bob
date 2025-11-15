@@ -90,6 +90,6 @@ contract IonicStrategy is IStrategyWithSlippageArgs, Context {
         require(amountOut >= args.amountOutMin, "Insufficient output amount");
 
         // Emit an event to record the token output
-        emit TokenOutput(address(ionicToken), amountOut);
+        emit TokenOutput(_msgSender(), address(ionicToken), amountOut);
     }
 }

@@ -52,6 +52,6 @@ contract BedrockStrategy is IStrategyWithSlippageArgs, Context {
         // ToDo: Missing corner case to check Insufficient supply provided.
         uniBTC.safeTransfer(recipient, uniBTCAmount);
 
-        emit TokenOutput(address(uniBTC), uniBTCAmount);
+        emit TokenOutput(_msgSender(), address(uniBTC), uniBTCAmount);
     }
 }
