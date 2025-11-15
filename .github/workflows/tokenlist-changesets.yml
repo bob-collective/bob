@@ -35,8 +35,9 @@ jobs:
 
       - name: Check for changeset
         uses: changesets/action@v1
-        with:
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   release:
     name: Version and Release
