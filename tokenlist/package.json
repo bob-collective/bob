@@ -10,9 +10,13 @@
   ],
   "scripts": {
     "build": "tsx ./scripts/generate.ts",
-    "verify": "tsx ./scripts/verify.ts"
+    "verify": "tsx ./scripts/verify.ts",
+    "changeset": "changeset",
+    "version": "changeset version",
+    "release": "npm run build && changeset publish"
   },
   "devDependencies": {
+    "@changesets/cli": "^2.27.8",
     "@types/lodash": "^4.17.20",
     "@types/node": "^24.10.0",
     "ajv": "^8.17.1",
