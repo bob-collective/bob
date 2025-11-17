@@ -9,6 +9,7 @@ export const baseUrl =
 export const datadir = './data';
 export const outfile = 'token-list.json';
 export const outfileBob = 'token-list-bob.json';
+export const outfileUI = 'token-list-overrides.json';
 
 const supportedMainnetChains = [mainnet, bob];
 const supportedTestnetChains = [sepolia, bobSepolia];

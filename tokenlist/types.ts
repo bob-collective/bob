@@ -24,6 +24,8 @@ export type TokenData = {
     SupportedChain,
     {
       address: Address;
+      name?: string;
+      symbol?: string;
       bridge?: Record<SupportedChain, Address>;
       overrides?: Overrides;
     }

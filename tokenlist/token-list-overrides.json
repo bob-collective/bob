@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/Uniswap/token-lists/refs/heads/main/src/tokenlist.schema.json",
   "name": "BOB Tokens",
-  "timestamp": "2025-11-17T20:28:31.391Z",
+  "timestamp": "2025-11-17T20:28:31.393Z",
   "version": {
     "major": 1,
     "minor": 0,
@@ -901,7 +901,7 @@
     {
       "chainId": 11155111,
       "address": "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
-      "name": "USD Coin",
+      "name": "USDC",
       "symbol": "USDC",
       "decimals": 6,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/USDC/logo.webp",
@@ -927,8 +927,8 @@
     {
       "chainId": 808813,
       "address": "0x2c1f73d37E7cdbA2792156139b0d35A765d595C5",
-      "name": "USD Coin",
-      "symbol": "USDC",
+      "name": "Bridged USDC",
+      "symbol": "USDC.e",
       "decimals": 6,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/USDC/logo.webp",
       "extensions": {
@@ -955,7 +955,7 @@
     {
       "chainId": 60808,
       "address": "0x05D032ac25d322df992303dCa074EE7392C117b9",
-      "name": "Tether USD",
+      "name": "Bridged USDT",
       "symbol": "USDT",
       "decimals": 6,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/USDT/logo.webp",
@@ -983,7 +983,7 @@
     {
       "chainId": 60808,
       "address": "0x03C7054BCB39f7b2e5B2c7AcB37583e32D70Cfa3",
-      "name": "Wrapped BTC",
+      "name": "Bridged WBTC",
       "symbol": "WBTC",
       "decimals": 8,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/WBTC/logo.svg",

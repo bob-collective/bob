@@ -19,12 +19,14 @@
       }
     },
     "bob": {
+      "name": "Bridged USDC (BOB)",
+      "symbol": "USDC.e",
       "address": "0xe75D0fB2C24A55cA1e3F96781a2bCC7bdba058F0",
       "bridge": {
         "ethereum": "0xe497788F8Fcc30B773C9A181a0FFE2e60645cE90"
       },
       "overrides": {
-        "name": "Bridged USDC",
+        "name": "Bridged USDC (BOB)",
         "symbol": "USDC.e"
       }
     },

@@ -78,6 +78,12 @@
       "additionalProperties": {
         "type": "object",
         "properties": {
+          "name": {
+            "$ref": "#/definitions/Name"
+          },
+          "symbol": {
+            "$ref": "#/definitions/Symbol"
+          },
           "address": {
             "$ref": "#/definitions/Address"
           },

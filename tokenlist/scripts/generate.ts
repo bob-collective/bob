@@ -7,6 +7,7 @@ import {
   datadir,
   outfile,
   outfileBob,
+  outfileUI,
   schema,
   supportedChainMapping,
 } from '../config';
@@ -17,50 +18,8 @@ import { bob } from 'viem/chains';
 
 const [major, minor, patch] = version.split('.');
 
-const tokenlist = fs
-  .readdirSync(datadir)
-  .sort((a, b) => {
-    return a.toLowerCase().localeCompare(b.toLowerCase());
-  })
-  .map((folder) => {
-    const data: TokenData = JSON.parse(
-      fs.readFileSync(path.join(datadir, folder, 'data.json'), 'utf8'),
-    );
-    const logofiles = glob.sync(path.join(datadir, folder, 'logo.{webp,svg}'));
-    const logoext = logofiles[0].endsWith('webp') ? 'webp' : 'svg';
-
-    return (Object.entries(data.tokens) as Entries<typeof data.tokens>).map(
-      ([chain, token]) => {
-        const bridge = (
-          Object.entries(token.bridge || {}) as Entries<
-            NonNullable<typeof token.bridge>
-          >
-        ).reduce((acc, [chain, bridgeAddress]) => {
-          acc[supportedChainMapping[chain].id] = bridgeAddress;
-
-          return acc;
-        }, {} as Record<number, Address>);
-
-        const out = {
-          chainId: supportedChainMapping[chain].id,
-          address: getAddress(token.address),
-          name: token.overrides?.name ?? data.name,
-          symbol: token.overrides?.symbol ?? data.symbol,
-          decimals: data.decimals,
-          logoURI: url.resolve(
-            baseUrl,
-            path.join(datadir, folder, `logo.${logoext}`),
-          ),
-          extensions: {
-            tokenId: folder,
-            bridge,
-          },
-        };
-        return out;
-      },
-    );
-  })
-  .reduce(
+function addTokens(tokens: Token[][]) {
+  return tokens.reduce(
     (list, tokens) => {
       list.tokens.push(...tokens);
 
@@ -78,9 +37,97 @@ const tokenlist = fs
       tokens: [] as Token[],
     },
   );
+}
+
+function mapToTokenlist(data: [string, TokenData, string][]) {
+  return data.map(([tokenId, tokenData, logoURI]) => {
+    return (
+      Object.entries(tokenData.tokens) as Entries<typeof tokenData.tokens>
+    ).map(([chain, token]) => {
+      const bridge = (
+        Object.entries(token.bridge || {}) as Entries<
+          NonNullable<typeof token.bridge>
+        >
+      ).reduce((acc, [chain, bridgeAddress]) => {
+        acc[supportedChainMapping[chain].id] = bridgeAddress;
+
+        return acc;
+      }, {} as Record<number, Address>);
+
+      const out: Token = {
+        chainId: supportedChainMapping[chain].id,
+        address: getAddress(token.address),
+        name: token.name ?? tokenData.name,
+        symbol: token.symbol ?? tokenData.symbol,
+        decimals: tokenData.decimals,
+        logoURI,
+        extensions: {
+          tokenId,
+          bridge,
+        },
+      };
+      return out;
+    });
+  });
+}
+
+function mapToOverridesTokenlist(data: [string, TokenData, string][]) {
+  return data.map(([tokenId, tokenData, logoURI]) => {
+    return (
+      Object.entries(tokenData.tokens) as Entries<typeof tokenData.tokens>
+    ).map(([chain, token]) => {
+      const bridge = (
+        Object.entries(token.bridge || {}) as Entries<
+          NonNullable<typeof token.bridge>
+        >
+      ).reduce((acc, [chain, bridgeAddress]) => {
+        acc[supportedChainMapping[chain].id] = bridgeAddress;
+
+        return acc;
+      }, {} as Record<number, Address>);
+
+      const out: Token = {
+        chainId: supportedChainMapping[chain].id,
+        address: getAddress(token.address),
+        name: token.overrides?.name ?? token.name ?? tokenData.name,
+        symbol: token.overrides?.symbol ?? token.symbol ?? tokenData.symbol,
+        decimals: tokenData.decimals,
+        logoURI,
+        extensions: {
+          tokenId,
+          bridge,
+        },
+      };
+      return out;
+    });
+  });
+}
+
+const tokenlistData = fs
+  .readdirSync(datadir)
+  .sort((a, b) => {
+    return a.toLowerCase().localeCompare(b.toLowerCase());
+  })
+  .map<[string, TokenData, string]>((folder) => {
+    const data: TokenData = JSON.parse(
+      fs.readFileSync(path.join(datadir, folder, 'data.json'), 'utf8'),
+    );
+    const logofiles = glob.sync(path.join(datadir, folder, 'logo.{webp,svg}'));
+    const logoext = logofiles[0].endsWith('webp') ? 'webp' : 'svg';
+
+    return [
+      folder,
+      data,
+      url.resolve(baseUrl, path.join(datadir, folder, `logo.${logoext}`)),
+    ];
+  });
+
+// ---- create tokenlist ----
+const tokenlist = addTokens(mapToTokenlist(tokenlistData));
 
 fs.writeFileSync(outfile, JSON.stringify(tokenlist, null, 2));
 
+// ---- create BOB tokenlist ----
 const bobTokenlist = structuredClone(tokenlist);
 
 bobTokenlist.tokens = tokenlist.tokens.filter(
@@ -88,3 +135,8 @@ bobTokenlist.tokens = tokenlist.tokens.filter(
 );
 
 fs.writeFileSync(outfileBob, JSON.stringify(bobTokenlist, null, 2));
+
+// ---- create tokenlist with overrides ----
+const uiTokenlist = addTokens(mapToOverridesTokenlist(tokenlistData));
+
+fs.writeFileSync(outfileUI, JSON.stringify(uiTokenlist, null, 2));
