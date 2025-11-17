@@ -4,7 +4,7 @@ import { bob, bobSepolia, mainnet, optimism } from 'viem/chains';
 import tokenList from '@gobob/tokenlist/token-list.json';
 import { type Token as TokenlistToken } from '@gobob/tokenlist';
 
-const ethereumTokensMapping = tokenList.tokens.reduce(
+const ethereumTokenByIdMapping = tokenList.tokens.reduce(
     (acc, token) => {
         acc[token.extensions.tokenId] = token as unknown as TokenlistToken;
 
@@ -112,8 +112,8 @@ const optimismTokens = [
 ];
 
 const ethereumTokens = [
-    ethereumTokensMapping['Solv'],
-    { ...ethereumTokensMapping['WBTC'], allowanceSlot: 2n, balanceSlot: 0n },
+    ethereumTokenByIdMapping['Solv'],
+    { ...ethereumTokenByIdMapping['WBTC'], ...STORAGE_SLOTS_MAP[ethereumTokenByIdMapping['WBTC'].address] },
 ];
 
 const TOKENS: Array<{

@@ -8,7 +8,7 @@ export type KebabCase<T extends string> = T extends `${infer S} ${infer E}`
 export type ValueOf<T> = T[keyof T];
 export type Entries<T> = [keyof T, ValueOf<T>][];
 
-export type SuppertedChain = keyof typeof supportedChainMapping;
+export type SupportedChain = keyof typeof supportedChainMapping;
 export type SupportedChainId = (typeof supportedChains)[number]['id'];
 
 type Overrides = Partial<Pick<TokenData, 'name' | 'symbol'>>;
@@ -21,10 +21,10 @@ export type TokenData = {
   website?: string;
   twitter?: string;
   tokens: Record<
-    SuppertedChain,
+    SupportedChain,
     {
       address: Address;
-      bridge?: Record<SuppertedChain, Address>;
+      bridge?: Record<SupportedChain, Address>;
       overrides?: Overrides;
     }
   >;

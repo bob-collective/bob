@@ -10,6 +10,7 @@
   ],
   "scripts": {
     "build": "tsx ./scripts/generate.ts",
+    "postbuild": "npm run verify",
     "verify": "tsx ./scripts/verify.ts",
     "changeset": "changeset",
     "version": "changeset version",
