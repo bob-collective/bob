@@ -36,6 +36,10 @@ BOB's most novel product is our intent-based Bitcoin bridge, called "[BOB Gatewa
 - September 2024: BOB Gateway V3 Smart Contract Security Review. [Report](Pashov-Audit-Report-2024-v3.pdf)
 - March 2025: BOB Gateway Offramp Registry Smart Contract Security Review. [Report](BOB-security-review_2025-03-17.pdf)
 - August 2025: BOB Gateway Offramp Solver Security Audit. [Report](Pashov-Audit-Report-2025-offramp-solver.pdf)
+- February 2025: BOB Token Audit. [Report](BobToken-Pashov-Audit-Report-Feb-2025.pdf)
+- March 2025: BOB Staking Audit. [Report](BobStaking-security-review_2025-03-04.pdf)
+- October 2025: BOB Token V2 Audit. [Report](BobTokenV2-Pashov-Audit-Report-Oct-2025.pdf)
+- October 2025: BOB Staking Audit. [Report](BobStaking-security-review_2025-10-18.pdf)
 
 ## USDC Bridge
 
