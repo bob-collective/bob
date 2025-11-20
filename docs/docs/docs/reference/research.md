@@ -12,6 +12,18 @@ Our team members have co-authored over 30 scientific publications in collaborati
 
 ## Latest Research Papers
 
+### <a href="/liquidation-engine.pdf">Bitcoin Vaults Liquidation Engine</a>
+
+<details>
+  <summary>Read abstract</summary>
+
+We present a novel trust-minimized liquidation engine for Bitcoin vaults that enable native BTC as collateral for lending and stablecoins on DeFi chains like Ethereum, Base, BOB, Solana, and others. Our solution addresses limitations in BitVM-style Bitcoin vaults, where liquidations take several days to process, the entire BTC amount must be liquidated, and the liquidator set is static and predefined. The Bitcoin Vault Liquidation Engine restores atomic liquidations with an open liquidator set as used by lending protocols today. The liquidation engine maintains trust minimization for the depositor: the depositor needs to trust the Bitcoin and DeFi chain consensus, as well as the correct implementation of the DeFi protocol and the Bitcoin vault. The depositor can (1) enforce withdrawal of their BTC via a proof powered by BitVM on Bitcoin without having to trust bridge operators, and (2) receive exact BTC from their deposit UTXO, offsetting concerns around receiving BTC from unknown third parties.
+
+</details>
+
+- **Harz D**
+- BOB Research, October 2025
+
 ### <a href="/documents/BitVM_Status_Report_Feb_2025.pdf">BitVM Status Report</a>
 
 <details>
