@@ -139,7 +139,6 @@
           "$ref": "#/definitions/ChainProperties"
         }
       },
-
       "minProperties": 1
     }
   },
