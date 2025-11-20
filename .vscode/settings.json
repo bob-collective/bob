@@ -1,0 +1,8 @@
+{
+  "json.schemas": [
+    {
+      "fileMatch": ["tokenlist/data/**/data.json"],
+      "url": "./tokenlist/token.schema.json"
+    }
+  ]
+}
