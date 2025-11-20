@@ -3,6 +3,53 @@
   "title": "Token Schema",
   "type": "object",
   "definitions": {
+    "ChainProperties": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "$ref": "#/definitions/Name"
+        },
+        "symbol": {
+          "$ref": "#/definitions/Symbol"
+        },
+        "address": {
+          "$ref": "#/definitions/Address"
+        },
+        "bridge": {
+          "type": "object",
+          "properties": {
+            "bob": {
+              "$ref": "#/definitions/Address"
+            },
+            "bob-sepolia": {
+              "$ref": "#/definitions/Address"
+            },
+            "ethereum": {
+              "$ref": "#/definitions/Address"
+            },
+            "sepolia": {
+              "$ref": "#/definitions/Address"
+            },
+            "bnb-smart-chain": {
+              "$ref": "#/definitions/Address"
+            }
+          }
+        },
+        "overrides": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "$ref": "#/definitions/Name"
+            },
+            "symbol": {
+              "$ref": "#/definitions/Symbol"
+            }
+          }
+        }
+      },
+      "required": ["address"],
+      "additionalProperties": false
+    },
     "Address": {
       "type": "string",
       "description": "The checksummed address of the token on the specified chain ID",
@@ -75,50 +122,24 @@
     "tokens": {
       "type": "object",
       "description": "Network-specific token addresses",
-      "additionalProperties": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "$ref": "#/definitions/Name"
-          },
-          "symbol": {
-            "$ref": "#/definitions/Symbol"
-          },
-          "address": {
-            "$ref": "#/definitions/Address"
-          },
-          "bridge": {
-            "type": "object",
-            "properties": {
-              "bob": {
-                "$ref": "#/definitions/Address"
-              },
-              "bob-sepolia": {
-                "$ref": "#/definitions/Address"
-              },
-              "ethereum": {
-                "$ref": "#/definitions/Address"
-              },
-              "sepolia": {
-                "$ref": "#/definitions/Address"
-              }
-            }
-          },
-          "overrides": {
-            "type": "object",
-            "properties": {
-              "name": {
-                "$ref": "#/definitions/Name"
-              },
-              "symbol": {
-                "$ref": "#/definitions/Symbol"
-              }
-            }
-          }
+      "properties": {
+        "bob": {
+          "$ref": "#/definitions/ChainProperties"
         },
-        "required": ["address"],
-        "additionalProperties": false
+        "bob-sepolia": {
+          "$ref": "#/definitions/ChainProperties"
+        },
+        "ethereum": {
+          "$ref": "#/definitions/ChainProperties"
+        },
+        "sepolia": {
+          "$ref": "#/definitions/ChainProperties"
+        },
+        "bnb-smart-chain": {
+          "$ref": "#/definitions/ChainProperties"
+        }
       },
+
       "minProperties": 1
     }
   },
