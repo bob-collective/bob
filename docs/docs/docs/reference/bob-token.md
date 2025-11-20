@@ -42,7 +42,7 @@ All contracts are verified on their respective explorers. Always reference the f
 
 ### CCIP Token Flow
 
-- **BOB Mainnet:** CCIP locks/unlocks the existing L2 token when bridging in or out. Total BBO supply on BOB reflects supply across all chains.
+- **BOB Mainnet:** CCIP locks/unlocks the existing L2 token when bridging in or out. Total BOB supply on BOB reflects supply across all chains.
 - **Ethereum & BNB Smart Chain:** CCIP burns the source token and mints on the destination chain. On Etheruem and BSC, the total token supply is only the supply on that particular chain.
 
 You can audit pool parameters, supply, and admin roles in the [Chainlink Token Manager dashboard](https://tokenmanager.chain.link/dashboard/ethereum-mainnet,0xc9746f73cc33a36c2cd55b8aefd732586946cedd).  
