@@ -17,6 +17,6 @@
         "outDir": "./dist",
         "skipLibCheck": true
     },
-    "include": ["src/**/*"],
+    "include": ["src/**/*", "src/assets/token-list.json"],
     "exclude": ["./node_modules/*"]
 }
