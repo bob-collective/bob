@@ -7,8 +7,7 @@
   "files": [
     "index.ts",
     "tokenlist.json",
-    "tokenlist-bob.json",
-    "tokenlist-overrides.json"
+    "tokenlist*.json"
   ],
   "scripts": {
     "build": "tsx ./scripts/generate.ts",
