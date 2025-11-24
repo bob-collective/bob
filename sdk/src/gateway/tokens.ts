@@ -14,18 +14,20 @@ const ethereumTokenByIdMapping = tokenList.tokens.reduce(
 );
 
 // Storage slot mapping for tokens that need specific slot information
-const STORAGE_SLOTS_MAP: { [address: string]: { allowanceSlot: bigint; balanceSlot: bigint } } = {
-    '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c': {
+const STORAGE_SLOTS_MAP: {
+    [address: string]: { allowanceSlot: bigint; balanceSlot: bigint };
+} = {
+    [getAddress('0x0555E30da8f98308EdB960aa94C0Db47230d2B9c')]: {
         // WBTC (OFT)
         allowanceSlot: 6n,
         balanceSlot: 5n,
     },
-    '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599': {
+    [getAddress('0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599')]: {
         // WBTC (Ethereum)
         allowanceSlot: 2n,
         balanceSlot: 0n,
     },
-    '0xAdCE1AB74C8e64c155953A8BdE37cBB06Cf7086D': {
+    [getAddress('0xAdCE1AB74C8e64c155953A8BdE37cBB06Cf7086D')]: {
         // BTC (Bob Sepolia)
         allowanceSlot: 1n,
         balanceSlot: 0n,
@@ -36,7 +38,7 @@ const OLD_WBTC = '0x03C7054BCB39f7b2e5B2c7AcB37583e32D70Cfa3';
 
 const bobTokens = tokenList.tokens
     .filter((token) => token.chainId === 60808)
-    .filter((token) => getAddress(token.address) !== OLD_WBTC)
+    .filter((token) => getAddress(token.address) !== getAddress(OLD_WBTC))
     .map((token) => {
         const slots = STORAGE_SLOTS_MAP[token.address];
 
