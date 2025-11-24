@@ -31,6 +31,13 @@ describe('Ordinal API Tests', () => {
             satpoint: SatPoint.fromString('b61b0172d95e266c18aea0c624db987e971a5d6d4ebc2aaed85da4642d635735:0:0'),
             timestamp: 1678248991,
             value: 10000,
+            properties: {
+                attributes: {
+                    title: null,
+                    traits: {},
+                },
+                gallery: [],
+            },
         };
 
         assert.deepStrictEqual(inscriptionJson, expectedInscriptionJson);

@@ -277,6 +277,34 @@ export interface SatJson<InscriptionId> {
     inscriptions: InscriptionId[];
 }
 
+type TraitValue = string | number | boolean | null;
+
+type Traits = Record<string, TraitValue>;
+
+type Attributes = {
+    title?: string | null;
+    traits?: Traits;
+    // allow forward‑compat extra fields
+    [key: string]: unknown;
+};
+
+type GalleryItem = {
+    // serialized inscription id: 32‑byte txid + 4‑byte LE index (possibly trimmed)
+    id: string;
+    attributes?: Attributes;
+    // allow forward‑compat extra fields
+    [key: string]: unknown;
+};
+
+type Properties = {
+    // inscription-level attributes
+    attributes?: Attributes;
+    // gallery items
+    gallery?: GalleryItem[];
+    // allow forward‑compat extra top‑level fields
+    [key: string]: unknown;
+};
+
 /**
  * @ignore
  */
@@ -369,6 +397,11 @@ export interface InscriptionJson<InscriptionId, SatPoint> {
      * The output value of the inscription.
      */
     value: number | null;
+
+    /**
+     * New properties object.
+     */
+    properties: Properties;
 }
 
 export class OrdinalsClient {
