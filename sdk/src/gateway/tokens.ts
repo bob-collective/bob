@@ -1,7 +1,17 @@
 import { Token } from './types';
 import { Address, isAddress } from 'viem';
 import { bob, bobSepolia, mainnet, optimism } from 'viem/chains';
-import tokenList from '../assets/token-list.json';
+import tokenList from '../../assets/tokenlist.json';
+import { type Token as TokenlistToken } from '@gobob/tokenlist';
+
+const ethereumTokenByIdMapping = tokenList.tokens.reduce(
+    (acc, token) => {
+        acc[token.extensions.tokenId] = token as unknown as TokenlistToken;
+
+        return acc;
+    },
+    {} as Record<string, TokenlistToken>
+);
 
 // Storage slot mapping for tokens that need specific slot information
 const STORAGE_SLOTS_MAP: { [address: string]: { allowanceSlot: bigint; balanceSlot: bigint } } = {
@@ -101,24 +111,8 @@ const optimismTokens = [
 ];
 
 const ethereumTokens = [
-    {
-        name: 'Solv',
-        address: '0x04830a96a23ea718faa695a5aae74695aae3a23f',
-        symbol: 'SOLV',
-        decimals: 18,
-        chainId: 1,
-        logoURI: 'https://raw.githubusercontent.com/bob-collective/bob/master/assets/SOLV.svg',
-    },
-    {
-        name: 'Wrapped BTC',
-        address: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599',
-        symbol: 'WBTC',
-        decimals: 8,
-        chainId: 1,
-        logoURI: 'https://raw.githubusercontent.com/bob-collective/bob/master/assets/wbtc.svg',
-        allowanceSlot: 2n,
-        balanceSlot: 0n,
-    },
+    ethereumTokenByIdMapping['Solv'],
+    { ...ethereumTokenByIdMapping['WBTC'], ...STORAGE_SLOTS_MAP[ethereumTokenByIdMapping['WBTC'].address] },
 ];
 
 const TOKENS: Array<{
