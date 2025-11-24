@@ -3,7 +3,7 @@ name: SDK NPM Publish
 on:
   push:
     tags:
-      - "*"
+      - '*'
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -15,9 +15,12 @@ jobs:
       - name: setup node
         uses: actions/setup-node@v6
         with:
-          node-version: "20"
-          registry-url: "https://registry.npmjs.org"
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
           always-auth: true
+      - name: install tokenlist dependencies
+        working-directory: ./tokenlist
+        run: npm ci
       - run: npm ci
       - run: npm run build
       - run: npm publish --access public
