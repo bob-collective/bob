@@ -1,6 +1,6 @@
 import * as bitcoin from 'bitcoinjs-lib';
 import nock from 'nock';
-import { zeroAddress } from 'viem';
+import { getAddress, zeroAddress } from 'viem';
 import { Address } from 'viem/accounts';
 import { bob, bobSepolia } from 'viem/chains';
 import { afterEach, assert, describe, expect, it, vi } from 'vitest';
@@ -770,7 +770,7 @@ describe('Gateway Tests', () => {
 
     it('fetches the correct offramp liquidity', async () => {
         const gatewaySDK = new GatewaySDK(bobSepolia.id);
-        const tokenAddress = '0x4496ebE7C8666a8103713EE6e0c08cA0cD25b888'.toLowerCase();
+        const tokenAddress = '0x4496ebE7C8666a8103713EE6e0c08cA0cD25b888';
         nock(SIGNET_GATEWAY_BASE_URL).persist().get(`/offramp-liquidity/${tokenAddress}`).reply(200, {
             tokenAddress,
             maxOrderAmount: '861588',
@@ -1417,5 +1417,14 @@ describe('Gateway Tests', () => {
         const orders = await gatewaySDK.getCrossChainSwapOrders(userAddress);
 
         expect(orders).toEqual([]);
+    });
+
+    it('resolves token address for symbol or address input', async () => {
+        let outputTokenAddress = getTokenAddress(bob.id, '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c');
+        outputTokenAddress = getTokenAddress(bob.id, 'WBTC');
+        outputTokenAddress = getTokenAddress(bob.id, 'wbtc');
+        outputTokenAddress = getTokenAddress(bob.id, '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c'.toLowerCase());
+
+        expect(outputTokenAddress).toBe(getAddress('0x0555e30da8f98308edb960aa94c0db47230d2b9c'));
     });
 });
