@@ -1,5 +1,5 @@
 import { Token } from './types';
-import { Address, getAddress, isAddress } from 'viem';
+import { Address, getAddress, isAddress, isAddressEqual } from 'viem';
 import { bob, bobSepolia, mainnet, optimism } from 'viem/chains';
 import tokenList from '../../assets/tokenlist.json';
 import { type Token as TokenlistToken } from '@gobob/tokenlist';
@@ -38,7 +38,7 @@ const OLD_WBTC = '0x03C7054BCB39f7b2e5B2c7AcB37583e32D70Cfa3';
 
 const bobTokens = tokenList.tokens
     .filter((token) => token.chainId === 60808)
-    .filter((token) => getAddress(token.address) !== getAddress(OLD_WBTC))
+    .filter((token) => !isAddressEqual(getAddress(token.address), getAddress(OLD_WBTC)))
     .map((token) => {
         const slots = STORAGE_SLOTS_MAP[token.address];
 

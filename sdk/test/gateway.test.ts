@@ -1420,11 +1420,10 @@ describe('Gateway Tests', () => {
     });
 
     it('resolves token address for symbol or address input', async () => {
-        let outputTokenAddress = getTokenAddress(bob.id, '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c');
-        outputTokenAddress = getTokenAddress(bob.id, 'WBTC');
-        outputTokenAddress = getTokenAddress(bob.id, 'wbtc');
-        outputTokenAddress = getTokenAddress(bob.id, '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c'.toLowerCase());
-
-        expect(outputTokenAddress).toBe(getAddress('0x0555e30da8f98308edb960aa94c0db47230d2b9c'));
+        expect(getTokenAddress(bob.id, 'WBTC')).toBe(getAddress('0x0555e30da8f98308edb960aa94c0db47230d2b9c'));
+        expect(getTokenAddress(bob.id, 'wbtc')).toBe(getAddress('0x0555e30da8f98308edb960aa94c0db47230d2b9c'));
+        expect(getTokenAddress(bob.id, '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c')).toBe(
+            getAddress('0x0555e30da8f98308edb960aa94c0db47230d2b9c')
+        );
     });
 });
