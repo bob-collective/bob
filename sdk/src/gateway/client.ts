@@ -16,6 +16,7 @@ import {
     Chain as ViemChain,
     WalletClient,
     zeroAddress,
+    getAddress,
 } from 'viem';
 import { bob, bobSepolia } from 'viem/chains';
 import { EsploraClient } from '../esplora';
@@ -377,8 +378,7 @@ export class GatewayApiClient extends BaseClient {
             throw new Error('Invalid output chain');
         }
 
-        const toToken = params.toToken.toLowerCase();
-        const outputTokenAddress = getTokenAddress(this.chainId, toToken);
+        const outputTokenAddress = getTokenAddress(this.chainId, params.toToken);
         const strategyAddress = params.strategyAddress?.startsWith('0x') ? params.strategyAddress : undefined;
 
         const url = new URL(`${this.baseUrl}/v4/quote/${outputTokenAddress}`);
@@ -449,7 +449,7 @@ export class GatewayApiClient extends BaseClient {
             throw new Error('`fromToken` must be specified for offramp');
         }
 
-        const tokenAddress = getTokenAddress(this.chainId, params.fromToken.toLowerCase());
+        const tokenAddress = getTokenAddress(this.chainId, params.fromToken);
         const quote = await this.fetchOfframpQuote(
             tokenAddress,
             BigInt(params.amount || 0),
@@ -490,7 +490,7 @@ export class GatewayApiClient extends BaseClient {
      * @throws {Error} If API request fails
      */
     async fetchOfframpLiquidity(token: string): Promise<OfframpLiquidity> {
-        const tokenAddress = getTokenAddress(this.chainId, token.toLowerCase());
+        const tokenAddress = getTokenAddress(this.chainId, token);
 
         const response = await this.safeFetch(
             `${this.baseUrl}/offramp-liquidity/${tokenAddress}`,
@@ -911,7 +911,7 @@ export class GatewayApiClient extends BaseClient {
         } else if (quote.type === 'offramp') {
             const { params, data } = quote;
 
-            const tokenAddress = getTokenAddress(this.chainId, params.fromToken.toLowerCase());
+            const tokenAddress = getTokenAddress(this.chainId, params.fromToken);
             const [offrampOrder, offrampRegistryAddress] = await Promise.all([
                 this.createOfframpOrder(data, params),
                 this.fetchOfframpRegistryAddress(),
@@ -1224,7 +1224,7 @@ export class GatewayApiClient extends BaseClient {
         const strategies: GatewayStrategy[] = await response.json();
         return strategies.map((strategy) => {
             const strategySlug = slugify(strategy.strategyName);
-            const inputToken = ADDRESS_LOOKUP[chainId][strategy.inputTokenAddress];
+            const inputToken = ADDRESS_LOOKUP[chainId][getAddress(strategy.inputTokenAddress)];
             const outputToken = strategy.outputTokenAddress
                 ? ADDRESS_LOOKUP[chainId][strategy.outputTokenAddress]
                 : undefined;

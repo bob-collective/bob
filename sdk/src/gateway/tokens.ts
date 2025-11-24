@@ -1,5 +1,5 @@
 import { Token } from './types';
-import { Address, isAddress } from 'viem';
+import { Address, getAddress, isAddress, isAddressEqual } from 'viem';
 import { bob, bobSepolia, mainnet, optimism } from 'viem/chains';
 import tokenList from '../../assets/tokenlist.json';
 import { type Token as TokenlistToken } from '@gobob/tokenlist';
@@ -14,27 +14,31 @@ const ethereumTokenByIdMapping = tokenList.tokens.reduce(
 );
 
 // Storage slot mapping for tokens that need specific slot information
-const STORAGE_SLOTS_MAP: { [address: string]: { allowanceSlot: bigint; balanceSlot: bigint } } = {
-    '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c': {
+const STORAGE_SLOTS_MAP: {
+    [address: string]: { allowanceSlot: bigint; balanceSlot: bigint };
+} = {
+    [getAddress('0x0555E30da8f98308EdB960aa94C0Db47230d2B9c')]: {
         // WBTC (OFT)
         allowanceSlot: 6n,
         balanceSlot: 5n,
     },
-    '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599': {
+    [getAddress('0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599')]: {
         // WBTC (Ethereum)
         allowanceSlot: 2n,
         balanceSlot: 0n,
     },
-    '0xAdCE1AB74C8e64c155953A8BdE37cBB06Cf7086D': {
+    [getAddress('0xAdCE1AB74C8e64c155953A8BdE37cBB06Cf7086D')]: {
         // BTC (Bob Sepolia)
         allowanceSlot: 1n,
         balanceSlot: 0n,
     },
 };
 
+const OLD_WBTC = '0x03C7054BCB39f7b2e5B2c7AcB37583e32D70Cfa3';
+
 const bobTokens = tokenList.tokens
     .filter((token) => token.chainId === 60808)
-    .filter((token) => token.address !== '0x03C7054BCB39f7b2e5B2c7AcB37583e32D70Cfa3') // Exclude the old WBTC
+    .filter((token) => !isAddressEqual(getAddress(token.address), getAddress(OLD_WBTC)))
     .map((token) => {
         const slots = STORAGE_SLOTS_MAP[token.address];
 
@@ -110,10 +114,7 @@ const optimismTokens = [
     },
 ];
 
-const ethereumTokens = [
-    ethereumTokenByIdMapping['Solv'],
-    { ...ethereumTokenByIdMapping['WBTC'], ...STORAGE_SLOTS_MAP[ethereumTokenByIdMapping['WBTC'].address] },
-];
+const ethereumTokens = [ethereumTokenByIdMapping['Solv']];
 
 const TOKENS: Array<{
     name: string;
@@ -144,7 +145,7 @@ function addToken(address: string, token: (typeof TOKENS)[number]) {
     const lowerAddress = address.toLowerCase();
     const lowerToken: Token = {
         chainId: token.chainId,
-        address: lowerAddress as Address,
+        address: getAddress(lowerAddress),
         name: token.name,
         symbol: token.symbol,
         decimals: token.decimals,
@@ -152,7 +153,7 @@ function addToken(address: string, token: (typeof TOKENS)[number]) {
     };
 
     SYMBOL_LOOKUP[token.chainId][lowerToken.symbol.toLowerCase()] = lowerToken;
-    ADDRESS_LOOKUP[token.chainId][lowerAddress] = lowerToken;
+    ADDRESS_LOOKUP[token.chainId][getAddress(lowerAddress)] = lowerToken;
 }
 
 for (const token of TOKENS) {
@@ -181,18 +182,17 @@ export const tokenToStrategyTypeMap = new Map([
 
 export function getTokenAddress(chainId: number, token: string): Address {
     if (isAddress(token)) {
-        return token;
-    } else if (SYMBOL_LOOKUP[chainId][token]) {
-        return SYMBOL_LOOKUP[chainId][token].address;
+        return getAddress(token);
+    } else if (SYMBOL_LOOKUP[chainId][token.toLowerCase()]) {
+        return getAddress(SYMBOL_LOOKUP[chainId][token.toLowerCase()].address);
     } else {
         throw new Error('Unknown output token');
     }
 }
-export function getTokenSlots(tokenAddress: Address): { allowanceSlot: bigint; balanceSlot: bigint } {
-    const lowerAddress = tokenAddress.toLowerCase();
 
+export function getTokenSlots(tokenAddress: Address): { allowanceSlot: bigint; balanceSlot: bigint } {
     // Look up the token in the master TOKENS array
-    const slots = STORAGE_SLOTS_MAP[lowerAddress];
+    const slots = STORAGE_SLOTS_MAP[tokenAddress];
     if (!slots) {
         throw new Error(`Slots not found for address ${tokenAddress}`);
     }
