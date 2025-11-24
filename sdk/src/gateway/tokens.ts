@@ -190,6 +190,7 @@ export function getTokenAddress(chainId: number, token: string): Address {
 }
 export function getTokenSlots(tokenAddress: Address): { allowanceSlot: bigint; balanceSlot: bigint } {
     const lowerAddress = tokenAddress.toLowerCase();
+
     // Look up the token in the master TOKENS array
     const slots = STORAGE_SLOTS_MAP[lowerAddress];
     if (!slots) {
