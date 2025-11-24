@@ -15,17 +15,17 @@ const ethereumTokenByIdMapping = tokenList.tokens.reduce(
 
 // Storage slot mapping for tokens that need specific slot information
 const STORAGE_SLOTS_MAP: { [address: string]: { allowanceSlot: bigint; balanceSlot: bigint } } = {
-    '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c': {
+    '0x0555e30da8f98308edb960aa94c0db47230d2b9c': {
         // WBTC (OFT)
         allowanceSlot: 6n,
         balanceSlot: 5n,
     },
-    '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599': {
+    '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599': {
         // WBTC (Ethereum)
         allowanceSlot: 2n,
         balanceSlot: 0n,
     },
-    '0xAdCE1AB74C8e64c155953A8BdE37cBB06Cf7086D': {
+    '0xadce1ab74c8e64c155953a8bde37cbb06cf7086d': {
         // BTC (Bob Sepolia)
         allowanceSlot: 1n,
         balanceSlot: 0n,
@@ -190,7 +190,6 @@ export function getTokenAddress(chainId: number, token: string): Address {
 }
 export function getTokenSlots(tokenAddress: Address): { allowanceSlot: bigint; balanceSlot: bigint } {
     const lowerAddress = tokenAddress.toLowerCase();
-
     // Look up the token in the master TOKENS array
     const slots = STORAGE_SLOTS_MAP[lowerAddress];
     if (!slots) {
