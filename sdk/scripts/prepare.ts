@@ -2,7 +2,7 @@ import { copyFile, mkdir } from 'fs/promises';
 import path from 'path';
 
 const tokenlist = path.resolve('..', 'tokenlist', 'tokenlist.json');
-const assetsDir = path.resolve('assets');
+const assetsDir = path.resolve('src', 'assets');
 const DEST = path.join(assetsDir, 'tokenlist.json');
 
 async function main() {
