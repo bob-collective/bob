@@ -1,0 +1,19 @@
+{
+  "name": "Tellor Tributes",
+  "symbol": "TRB",
+  "decimals": 18,
+  "tokens": {
+    "ethereum": {
+      "address": "0x88df592f8eb5d7bd38bfef7deb0fbc02cf3778a0",
+      "bridge": {
+        "bob": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"
+      }
+    },
+    "bob": {
+      "address": "0x665060707c3Ea3c31b3eaBaD7F409072446E1D50",
+      "bridge": {
+        "ethereum": "0x4200000000000000000000000000000000000010"
+      }
+    }
+  }
+}

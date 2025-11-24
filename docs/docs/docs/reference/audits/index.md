@@ -17,6 +17,13 @@ Our dispute game differs from the standard OP Stack implementation by using [Kai
 - May 2025: Kailua Security Audit. [Report](veridise-kailua-20250522.pdf)
 - June 2025: Kailua Security Audit. [Report](veridise-kailua-20250616.pdf)
 
+## BOB Token
+
+- February 2025: BOB Token Audit. [Report](BobToken-Pashov-Audit-Report-Feb-2025.pdf)
+- March 2025: BOB Staking Audit. [Report](BobStaking-security-review_2025-03-04.pdf)
+- October 2025: BOB Token V2 Audit. [Report](BobTokenV2-Pashov-Audit-Report-Oct-2025.pdf)
+- October 2025: BOB Staking Audit. [Report](BobStaking-security-review_2025-10-18.pdf)
+
 ## BOB Gateway
 
 BOB's most novel product is our intent-based Bitcoin bridge, called "[BOB Gateway](/docs/user-hub/onboard-to-bob/bob-gateway/)." The reports below show the results of audits for every major release so far.

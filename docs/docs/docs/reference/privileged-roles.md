@@ -183,3 +183,28 @@ All other ERC20 contracts on BOB are not upgradable by this proxy.
 
 - USDC and wstETH Contract Upgrade Proxy is a 3-of-5 [multisig](https://explorer.gobob.xyz/address/0xAE554F69fEd747006BF48481A6629921c3cD2Ba5).
 - tBTC Contract Upgrade Proxy is a 3-of-5 [multisig](https://explorer.gobob.xyz/address/0x694DeC29F197c76eb13d4Cc549cE38A1e06Cd24C).
+
+## BOB Token Admin Multisig
+
+### Description
+
+The BOB token contracts on BOB, Ethereum, and BNB Smart Chain share a single admin multisig at `0x71083c7F1dCa054E3D96c833Eb38500aA6881Db9`. Today it operates as a 2-of-4 multisig with an upgrade plan to move to a 3-of-4 threshold.
+
+This multisig owns each BOB token proxy contract and can:
+
+- Upgrade implementation logic
+- Mint or burn supply
+- Configure Chainlink CCIP bridge parameters (adding chains, adjusting rate limits, pausing flows)
+
+### Risks
+
+- A compromised multisig could mint unlimited BOB, impose malicious upgrades, or block all transfers/bridging by altering CCIP parameters.
+
+### Mitigations
+
+- Multisig threshold (moving to 3-of-4) distributes key custody across independent signers.
+- CCIP rate-limit changes and new chain listings follow internal change-management reviews before execution.
+
+### Address
+
+- **BOB / Ethereum / BSC:** [`0x71083c7F1dCa054E3D96c833Eb38500aA6881Db9`](https://explorer.gobob.xyz/address/0x71083c7F1dCa054E3D96c833Eb38500aA6881Db9)
