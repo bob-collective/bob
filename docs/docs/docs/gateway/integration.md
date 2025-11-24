@@ -68,6 +68,41 @@ const quote = await gatewaySDK.getQuote({
 });
 ```
 
+### Monetization
+Gateway supports optional affiliate fees, allowing integrators to earn revenue every time users execute Bitcoin onramp or offramp flows through their app.
+You may pass the following two optional fields in your `getQuote` call:
+
+```ts
+/** @description Affiliate-related fee */
+affiliateFeeSats?: bigint;
+
+/** @description The EVM address of the affiliate who will receive the affiliate fee */
+affiliateFeeRecipient?: Address;
+```
+
+Example With Affiliate Fee: 
+
+```ts
+import { parseEther } from 'viem';
+import { parseBtc } from '@gobob/bob-sdk';
+
+const quote = await gatewaySDK.getQuote({
+  fromChain: 'bitcoin',
+  fromToken: 'BTC',
+  fromUserAddress: 'bc1qafk4yhqvj4wep57m62dgrmutldusqde8adh20d',
+  toChain: 'bob',
+  toUserAddress: '0x2D2E86236a5bC1c8a5e5499C517E17Fb88Dbc18c',
+  toToken: 'wBTC',
+  amount: parseBtc("0.1"), // BTC
+  // The amount of ETH to receive (this is subtracted from the amount)
+  gasRefill: parseEther("0.00001"), // ETH
+  // Monetization (optional)
+  affiliateFeeSats: 500n,                  // 500 sats affiliate fee
+  affiliateFeeRecipient: '0xDeaDDEaDDeAdDeAdDEAdDEaddeAddEAdDEAd0001',    // Affiliate / partner EVM address
+});
+```
+
+
 ### Execute the Quote
 
 This locks in the quote, placing a hold on the LP's funds. Internally, this creates a Bitcoin transaction that sends the quoted `amount` of BTC to the LP. This also publishes a hash of the order's parameters in the `OP_RETURN` of the transaction so the Gateway can trustlessly verify the order on BOB. Gateway will broadcast the Bitcoin transaction to the mempool; you can pass the transaction to the SDK without broadcasting from the user's wallet.

@@ -102,7 +102,6 @@ BOB Gateway SDK enables developers to seamlessly integrate native Bitcoin functi
 
 - **[Technical Overview](./overview.md)** - Complete Gateway technical overview
 - **[Integration Guide](./integration.md)** - Get started with Gateway integration
-- **[Monetization](./monetization.md)** - Learn how apps can earn revenue from Gateway flows
 - **[On-Chain Actions](./strategy.md)** - Learn about Gateway strategies
 - **[Bitcoin Wallets](./wallets.md)** - Learn about Bitcoin wallet support
 
