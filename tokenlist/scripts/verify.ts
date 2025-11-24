@@ -16,7 +16,7 @@ import addFormats from 'ajv-formats';
 
 const SCHEMA_URL =
   'https://raw.githubusercontent.com/Uniswap/token-lists/refs/heads/main/src/tokenlist.schema.json';
-const tokenlistPath = path.join(__dirname, '../token-list-bob.json');
+const tokenlistPath = path.join(__dirname, '../tokenlist-bob.json');
 
 // ERC20 ABI for name, symbol, decimals
 const erc20Abi = parseAbi([

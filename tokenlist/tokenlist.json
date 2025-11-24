@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/Uniswap/token-lists/refs/heads/main/src/tokenlist.schema.json",
   "name": "BOB Tokens",
-  "timestamp": "2025-11-20T15:23:55.886Z",
+  "timestamp": "2025-11-23T12:45:56.648Z",
   "version": {
     "major": 1,
     "minor": 0,
@@ -96,6 +96,18 @@
           "1": "0x827716e74F769AB7b6bb374A29235d9c2156932C",
           "56": "0x827716e74F769AB7b6bb374A29235d9c2156932C"
         }
+      }
+    },
+    {
+      "chainId": 808813,
+      "address": "0x49D6FBFa3Ee5462626D65Cd22FC0CFb03ed907DB",
+      "name": "BOB",
+      "symbol": "BOB",
+      "decimals": 18,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/BOB/logo.svg",
+      "extensions": {
+        "tokenId": "BOB",
+        "bridge": {}
       }
     },
     {
