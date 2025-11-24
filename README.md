@@ -2,6 +2,22 @@
 
 BOB is a Bitcoin-augmented rollup bringing experimentation and freedom of choice to builders to make a real-world impact. BOBs vision is to onboard the next billion users to Bitcoin.
 
+## BOB Token
+
+- **Name:** BOB
+- **Symbol:** `BOB`
+- **Decimals:** `18`
+- **Standard:** ERC-20 (OpenZeppelin implementation, no transfer fees or hooks)
+- **Bridging:** Chainlink CCIP (lock/unlock on BOB, burn/mint on other chains)
+
+### Deployments
+
+| Network | Chain ID | Contract |
+| --- | --- | --- |
+| BOB Mainnet | `60808` (`0xED88`) | [`0xb0bd54846a92b214c04a63b26ad7dc5e19a60808`](https://explorer.gobob.xyz/address/0xb0bd54846a92b214c04a63b26ad7dc5e19a60808) |
+| Ethereum Mainnet | `1` (`0x1`) | [`0xC9746F73cC33a36c2cD55b8aEFD732586946Cedd`](https://etherscan.io/address/0xC9746F73cC33a36c2cD55b8aEFD732586946Cedd) |
+| BNB Smart Chain (BSC) | `56` (`0x38`) | [`0x52B5fB4B0F6572B8C44d0251Cc224513ac5eB7E7`](https://bscscan.com/address/0x52B5fB4B0F6572B8C44d0251Cc224513ac5eB7E7) |
+
 ## Learn more
 
 - [Website](https://www.gobob.xyz/)
