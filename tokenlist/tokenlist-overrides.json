@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/Uniswap/token-lists/refs/heads/main/src/tokenlist.schema.json",
   "name": "BOB Tokens",
-  "timestamp": "2025-11-23T12:45:56.650Z",
+  "timestamp": "2025-11-24T11:36:45.934Z",
   "version": {
     "major": 1,
     "minor": 0,
@@ -41,6 +41,30 @@
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/aBOBWBTC/logo.svg",
       "extensions": {
         "tokenId": "aBOBWBTC",
+        "bridge": {}
+      }
+    },
+    {
+      "chainId": 1,
+      "address": "0xe7c3755482d0dA522678Af05945062d4427e0923",
+      "name": "ALEX",
+      "symbol": "ALEX",
+      "decimals": 18,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/ALEX/logo.svg",
+      "extensions": {
+        "tokenId": "ALEX",
+        "bridge": {}
+      }
+    },
+    {
+      "chainId": 60808,
+      "address": "0xa669e059fDcbDFC532A2edd658eb2922799EEDb8",
+      "name": "ALEX",
+      "symbol": "ALEX",
+      "decimals": 18,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/ALEX/logo.svg",
+      "extensions": {
+        "tokenId": "ALEX",
         "bridge": {}
       }
     },
