@@ -18,16 +18,16 @@ This is a **readiness upgrade** to make BOB protocol compatible with Ethereum's 
 
 If you or your partners are running external nodes, please ensure the following steps are completed:
 
-- **op-node**: Update to version [v1.14.1](https://github.com/ethereum-optimism/optimism/releases/tag/op-node%2Fv1.14.1)
-- **op-geth**: Update to version [v1.101603.1](https://github.com/ethereum-optimism/op-geth/releases/tag/v1.101603.1)
+- **op-node**: Update to version [v1.16.2](https://github.com/ethereum-optimism/optimism/releases/tag/op-node%2Fv1.16.2)
+- **op-geth**: Update to version [v1.101603.5](https://github.com/ethereum-optimism/op-geth/releases/tag/v1.101603.5)
 - **L1 Beacon Node**: Ensure your L1 beacon node endpoint can serve all blobs and is configured with the appropriate Fusaka flags before the fork
 
 **Required Actions for Chain Operators**
 
-- **op-batcher**: Update to [v1.16.0](https://github.com/ethereum-optimism/optimism/releases/tag/op-batcher%2Fv1.16.0) with `OP_BATCHER_TXMGR_ENABLE_CELL_PROOFS: true` and restart just after Fusaka activates on L1
+- **op-batcher**: Update to [v1.16.2](https://github.com/ethereum-optimism/optimism/releases/tag/op-batcher%2Fv1.16.2) with `OP_BATCHER_TXMGR_ENABLE_CELL_PROOFS: true` and restart just after Fusaka activates on L1
 
-- **proxyd**: Update to [v4.19.0](https://github.com/ethereum-optimism/infra/releases/tag/proxyd%2Fv4.19.0) or greater (requires whitelisting `eth_blobBaseFee` RPC)
-- **op-challenger**: Update to [v1.6.0](https://github.com/ethereum-optimism/optimism/releases/tag/op-challenger%2Fv1.6.0) if using permissionless fault proofs
+- **proxyd**: Update to [v4.23.0](https://github.com/ethereum-optimism/infra/releases/tag/proxyd%2Fv4.23.0) or greater (requires whitelisting `eth_blobBaseFee` RPC)
+- **op-challenger**: Update to [v1.7.0](https://github.com/ethereum-optimism/optimism/releases/tag/op-challenger%2Fv1.7.0) if using permissionless fault proofs
 
 **Previous Upgrades**
 
@@ -107,14 +107,14 @@ OP_NODE_METRICS_ENABLED=true
 ```yml title="docker-compose.yml"
 services:
   opgeth:
-    image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-geth:v1.101603.1
+    image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-geth:v1.101603.5
     env_file: op-geth.env
     volumes:
       - ./op-geth-data:/opt/op-geth/
     network_mode: host
 
   opnode:
-    image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node:v1.14.1
+    image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node:v1.16.2
     env_file: op-node.env
     command:
       - op-node
