@@ -1229,6 +1229,10 @@ export class GatewayApiClient extends BaseClient {
         return strategies.map((strategy) => {
             const strategySlug = slugify(strategy.strategyName);
             const inputToken = getTokenDetails(chainId, strategy.inputTokenAddress);
+            if (!inputToken) {
+                throw new Error(`Token not found: ${strategy.inputTokenAddress} on chain ${chainId}`);
+            }
+
             const outputToken = strategy.outputTokenAddress
                 ? getTokenDetails(chainId, strategy.outputTokenAddress)
                 : undefined;
@@ -1339,6 +1343,9 @@ export class GatewayApiClient extends BaseClient {
         return Promise.all(
             tokens.map(async (address, i) => {
                 const token = getTokenDetails(this.chainId, address);
+                if (!token) {
+                    throw new Error(`Token not found: ${address} on chain ${this.chainId}`);
+                }
                 const tokenIncentives = tokensIncentives[i];
 
                 const { address: underlyingAddress, totalUnderlying } =

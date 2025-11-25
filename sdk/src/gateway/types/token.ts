@@ -28,7 +28,7 @@ export interface EnrichedToken extends Token {
 
 export type GatewayTokensInfo = {
     /** @description The base token (e.g. wBTC or tBTC) */
-    baseToken: Token;
+    baseToken: Token | undefined;
     /** @description The output token (e.g. uniBTC or xSolvBTC) */
     outputToken?: Token;
 };

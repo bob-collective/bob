@@ -205,7 +205,6 @@ export function getTokenSlots(tokenAddress: Address): { allowanceSlot: bigint; b
     return slots;
 }
 
-export function getTokenDetails(chainId: number, token: string): Token {
-    const tokenAddress = getTokenAddress(chainId, token);
-    return ADDRESS_LOOKUP[chainId][tokenAddress];
+export function getTokenDetails(chainId: number, token: string): Token | undefined {
+    return ADDRESS_LOOKUP[chainId][getAddress(token)];
 }
