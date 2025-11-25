@@ -250,31 +250,11 @@ export default class StrategyClient {
             return new Map();
         }
     }
-
     private resolveTokens(tokens: string[] | undefined | null): Token[] {
-        if (!tokens) {
-            return [];
-        }
+        if (!tokens) return [];
 
         return tokens
-            .map((t) => {
-                try {
-                    // Try BOB first
-                    return getTokenDetails(bob.id, t);
-                } catch (_) {}
-
-                try {
-                    // Then Optimism
-                    return getTokenDetails(optimism.id, t);
-                } catch (_) {}
-
-                try {
-                    // Finally Mainnet
-                    return getTokenDetails(mainnet.id, t);
-                } catch (_) {}
-
-                return null;
-            })
+            .map((t) => getTokenDetails(bob.id, t) || getTokenDetails(optimism.id, t) || getTokenDetails(mainnet.id, t))
             .filter((tok): tok is Token => tok !== null);
     }
 
