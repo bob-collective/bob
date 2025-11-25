@@ -255,7 +255,7 @@ export default class StrategyClient {
 
         return tokens
             .map((t) => getTokenDetails(bob.id, t) || getTokenDetails(optimism.id, t) || getTokenDetails(mainnet.id, t))
-            .filter((tok): tok is Token => tok !== null);
+            .filter((tok): tok is Token => Boolean(tok));
     }
 
     async getStrategyAssetState(token: Token): Promise<StrategyAssetState> {
