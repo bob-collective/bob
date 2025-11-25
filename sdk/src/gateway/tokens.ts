@@ -204,3 +204,7 @@ export function getTokenSlots(tokenAddress: Address): { allowanceSlot: bigint; b
 
     return slots;
 }
+
+export function getTokenDetails(chainId: number, token: string): Token | undefined {
+    return ADDRESS_LOOKUP[chainId][getAddress(token)];
+}
