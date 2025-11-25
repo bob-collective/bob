@@ -25,7 +25,7 @@ import { createBitcoinPsbt } from '../wallet';
 import { claimDelayAbi, offrampCallerV2, strategyCaller } from './abi';
 import { BaseClient } from './base-client';
 import StrategyClient from './strategy';
-import { ADDRESS_LOOKUP, getTokenAddress, getTokenSlots } from './tokens';
+import { getTokenDetails, getTokenAddress, getTokenSlots } from './tokens';
 import {
     BitcoinSigner,
     BumpFeeParams,
@@ -432,8 +432,8 @@ export class GatewayApiClient extends BaseClient {
         return {
             ...quote,
             outputSatoshis: quote.satoshis - quote.fee,
-            baseToken: ADDRESS_LOOKUP[this.chainId][quote.baseTokenAddress],
-            outputToken: quote.strategyAddress ? ADDRESS_LOOKUP[this.chainId][outputTokenAddress] : undefined,
+            baseToken: getTokenDetails(this.chainId, quote.baseTokenAddress),
+            outputToken: quote.strategyAddress ? getTokenDetails(this.chainId, outputTokenAddress) : undefined,
         };
     }
 
@@ -1137,7 +1137,11 @@ export class GatewayApiClient extends BaseClient {
                 return getFinal(amount, outputTokenAmount);
             };
             const getToken = (): Token | undefined => {
-                return ADDRESS_LOOKUP[chainId][getTokenAddress()];
+                try {
+                    return getTokenDetails(chainId, getTokenAddress());
+                } catch {
+                    return undefined;
+                }
             };
             const getConfirmations = async (esploraClient: EsploraClient, latestHeight?: number) => {
                 const txStatus = await esploraClient.getTransactionStatus(order.txid);
@@ -1161,7 +1165,7 @@ export class GatewayApiClient extends BaseClient {
                 return tokens
                     .map(({ amount, tokenAddress }) => ({
                         amount: amount,
-                        token: ADDRESS_LOOKUP[chainId][tokenAddress],
+                        token: getTokenDetails(chainId, tokenAddress),
                     }))
                     .filter((x) => x.token);
             };
@@ -1173,7 +1177,7 @@ export class GatewayApiClient extends BaseClient {
 
                 return tokens.map(({ amount, tokenAddress }) => ({
                     amount: amount,
-                    token: ADDRESS_LOOKUP[chainId][tokenAddress],
+                    token: getTokenDetails(chainId, tokenAddress),
                 }));
             };
 
@@ -1181,8 +1185,8 @@ export class GatewayApiClient extends BaseClient {
                 ...order,
                 orderDetails,
                 gasRefill: order.satsToConvertToEth,
-                baseToken: ADDRESS_LOOKUP[chainId][order.baseTokenAddress],
-                outputToken: ADDRESS_LOOKUP[chainId][order.outputTokenAddress!],
+                baseToken: getTokenDetails(chainId, order.baseTokenAddress),
+                outputToken: order.outputTokenAddress ? getTokenDetails(chainId, order.outputTokenAddress) : undefined,
                 getTokenAddress,
                 getToken,
                 getTokenAmount,
@@ -1224,9 +1228,9 @@ export class GatewayApiClient extends BaseClient {
         const strategies: GatewayStrategy[] = await response.json();
         return strategies.map((strategy) => {
             const strategySlug = slugify(strategy.strategyName);
-            const inputToken = ADDRESS_LOOKUP[chainId][getAddress(strategy.inputTokenAddress)];
+            const inputToken = getTokenDetails(chainId, strategy.inputTokenAddress);
             const outputToken = strategy.outputTokenAddress
-                ? ADDRESS_LOOKUP[chainId][strategy.outputTokenAddress]
+                ? getTokenDetails(chainId, strategy.outputTokenAddress)
                 : undefined;
             return {
                 id: strategySlug,
@@ -1300,7 +1304,7 @@ export class GatewayApiClient extends BaseClient {
     async getTokens(includeStrategies: boolean = true): Promise<Token[]> {
         // https://github.com/ethereum-optimism/ecosystem/blob/c6faa01455f9e846f31c0343a0be4c03cbeb2a6d/packages/op-app/src/hooks/useOPTokens.ts#L10
         const tokens = await this.getTokenAddresses(includeStrategies);
-        return tokens.map((token) => ADDRESS_LOOKUP[this.chainId][token]).filter((token) => token !== undefined);
+        return tokens.map((token) => getTokenDetails(this.chainId, token)).filter((token) => token !== undefined);
     }
 
     // TODO: should get price from the gateway API
@@ -1334,7 +1338,7 @@ export class GatewayApiClient extends BaseClient {
 
         return Promise.all(
             tokens.map(async (address, i) => {
-                const token = ADDRESS_LOOKUP[this.chainId][address.toLowerCase()];
+                const token = getTokenDetails(this.chainId, address);
                 const tokenIncentives = tokensIncentives[i];
 
                 const { address: underlyingAddress, totalUnderlying } =
@@ -1348,7 +1352,7 @@ export class GatewayApiClient extends BaseClient {
                     };
                 }
 
-                const underlyingToken = ADDRESS_LOOKUP[this.chainId][underlyingAddress.toLowerCase()];
+                const underlyingToken = getTokenDetails(this.chainId, underlyingAddress);
 
                 if (!underlyingToken) {
                     return {

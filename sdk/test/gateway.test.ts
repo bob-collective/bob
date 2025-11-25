@@ -336,6 +336,7 @@ describe('Gateway Tests', () => {
             .get(`/v4/quote/${TBTC_ADDRESS}?satoshis=1000&strategy=${zeroAddress}&userAddress=${zeroAddress}`)
             .times(4)
             .reply(200, {
+                baseTokenAddress: TBTC_ADDRESS,
                 gatewayAddress: zeroAddress,
                 dustThreshold: 1000,
                 satoshis: 1000,
@@ -461,7 +462,7 @@ describe('Gateway Tests', () => {
                 // staking - failed (wBTC)
                 {
                     ...mockOrder,
-                    baseTokenAddress: SYMBOL_LOOKUP[bob.id]['wbtc'],
+                    baseTokenAddress: SYMBOL_LOOKUP[bob.id]['wbtc'].address,
                     satoshis: 1000,
                     fee: 0,
                     status: true,
@@ -470,7 +471,7 @@ describe('Gateway Tests', () => {
                 // swapping - success (wBTC)
                 {
                     ...mockOrder,
-                    baseTokenAddress: SYMBOL_LOOKUP[bob.id]['wbtc'],
+                    baseTokenAddress: SYMBOL_LOOKUP[bob.id]['wbtc'].address,
                     satoshis: 1000,
                     fee: 0,
                     status: true,
@@ -478,7 +479,7 @@ describe('Gateway Tests', () => {
                 // swapping - success (layerzero wBTC optimism)
                 {
                     ...mockOrder,
-                    baseTokenAddress: SYMBOL_LOOKUP[bob.id]['wbtc'],
+                    baseTokenAddress: SYMBOL_LOOKUP[bob.id]['wbtc'].address,
                     satoshis: 1000,
                     fee: 0,
                     status: true,
