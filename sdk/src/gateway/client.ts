@@ -1136,11 +1136,7 @@ export class GatewayApiClient extends BaseClient {
                 return getFinal(amount, outputTokenAmount);
             };
             const getToken = (): Token | undefined => {
-                try {
-                    return getTokenDetails(chainId, getTokenAddress());
-                } catch {
-                    return undefined;
-                }
+                return getTokenDetails(chainId, getTokenAddress());
             };
             const getConfirmations = async (esploraClient: EsploraClient, latestHeight?: number) => {
                 const txStatus = await esploraClient.getTransactionStatus(order.txid);
