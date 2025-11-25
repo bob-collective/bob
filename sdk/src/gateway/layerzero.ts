@@ -338,8 +338,8 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
             const baseQuote = await super.getQuote(params);
             return {
                 ...baseQuote,
-                finalOutputSats: baseQuote.finalOutputSats - Number(maxTokensToSwapForLayerZeroFees),
-                finalFeeSats: baseQuote.finalFeeSats + Number(maxTokensToSwapForLayerZeroFees),
+                finalOutputSats: baseQuote.finalOutputSats - Number(tokensToSwapForLayerZeroFees),
+                finalFeeSats: baseQuote.finalFeeSats + Number(tokensToSwapForLayerZeroFees),
             };
         } else if (fromChain !== 'bitcoin' && toChain === 'bitcoin') {
             const dstEid = await this.l0Client.getEidForChain(fromChain);
