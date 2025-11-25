@@ -19,21 +19,7 @@ import {
     toHex,
     zeroAddress,
 } from 'viem';
-import {
-    bob,
-    mainnet,
-    base,
-    berachain,
-    bsc,
-    unichain,
-    avalanche,
-    sonic,
-    soneium,
-    telos,
-    swellchain,
-    optimism,
-    sei,
-} from 'viem/chains';
+import { bob, mainnet, berachain, bsc, soneium, optimism, sei } from 'viem/chains';
 import { layerZeroOftAbi, quoterV2Abi } from './abi';
 import { AllWalletClientParams, GatewayApiClient } from './client';
 import { getTokenAddress, getTokenSlots } from './tokens';
@@ -93,20 +79,14 @@ export class LayerZeroClient {
 
     // Resolve viem and layerzero chain names
     resolveViemChainName(chainKey: string): string {
-        switch (chainKey.toLowerCase()) {
-            case bsc.name.toLowerCase():
-                return 'bsc';
-            case optimism.name.toLowerCase():
-                return 'optimism';
-            case sei.name.toLowerCase():
-                return 'sei';
-            case soneium.name.toLowerCase():
-                return 'soneium';
-            case berachain.name.toLowerCase():
-                return 'bera';
-            default:
-                return chainKey;
-        }
+        const chainNameMapping: Record<string, string> = {
+            [bsc.name.toLowerCase()]: 'bsc',
+            [optimism.name.toLowerCase()]: 'optimism',
+            [sei.name.toLowerCase()]: 'sei',
+            [soneium.name.toLowerCase()]: 'soneium',
+            [berachain.name.toLowerCase()]: 'bera',
+        };
+        return chainNameMapping[chainKey.toLowerCase()] || chainKey;
     }
 
     async getEidForChain(chainKey: string) {
@@ -166,6 +146,7 @@ export class LayerZeroClient {
         // Filter layerzero chains that are in supportedChainsMapping
         return Object.entries(chains)
             .filter(([layerZeroChainKey]) => supportedLayerZeroChainKeys.has(layerZeroChainKey))
+            .filter(([layerZeroChainKey]) => deployments[layerZeroChainKey]?.address)
             .map(([layerZeroChainKey, chainData]) => {
                 const viemChainName = layerZeroKeyToViemName[layerZeroChainKey];
                 const deployment = deployments[layerZeroChainKey];
@@ -173,7 +154,7 @@ export class LayerZeroClient {
                 return {
                     name: viemChainName,
                     eid: chainData.deployments?.find((item) => item.version === 2)?.eid,
-                    oftAddress: deployment.address,
+                    oftAddress: deployment?.address,
                     nativeChainId: chainData.chainDetails?.nativeChainId,
                 };
             });
