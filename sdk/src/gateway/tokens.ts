@@ -1,7 +1,7 @@
 import { Token } from './types';
 import { Address, getAddress, isAddress, isAddressEqual } from 'viem';
 import { bob, bobSepolia, mainnet, optimism } from 'viem/chains';
-import tokenList from '../../assets/tokenlist.json';
+import tokenList from '../assets/tokenlist.json';
 import { type Token as TokenlistToken } from '@gobob/tokenlist';
 
 const ethereumTokenByIdMapping = tokenList.tokens.reduce(
