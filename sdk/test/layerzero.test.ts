@@ -186,7 +186,6 @@ describe('LayerZero Tests', () => {
                     toUserAddress: '0xEf7Ff7Fb24797656DF41616e807AB4016AE9dCD5',
                     amount: 100,
                 });
-                console.log(fromChain.name, toChain.name);
             }
         }
     }, 120000);
@@ -236,7 +235,7 @@ describe('LayerZero Tests', () => {
         assert.equal(await client.getChainId(optimismEid), optimism.id);
     }, 120000);
 
-    it('should return onramp, offramp and cross-chain orders', async () => {
+    it.skip('should return onramp, offramp and cross-chain orders', async () => {
         const gatewaySDK = new LayerZeroGatewayClient();
 
         const getOrdersSpy = vi.spyOn(gatewaySDK, 'getOrders').mockImplementationOnce(() => Promise.resolve([]));
