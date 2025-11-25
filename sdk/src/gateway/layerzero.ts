@@ -142,7 +142,7 @@ export class LayerZeroClient {
             supportedLayerZeroChainKeys.add(layerZeroChainKey);
             layerZeroKeyToViemName[layerZeroChainKey] = viemChainName;
         });
-   
+
         // Filter layerzero chains that are in supportedChainsMapping
         return Object.entries(chains)
             .filter(([layerZeroChainKey]) => supportedLayerZeroChainKeys.has(layerZeroChainKey))
@@ -175,8 +175,12 @@ export class LayerZeroClient {
     }
 
     // Where possible, the destination composer address should be a Create3 Singleton deployment so the address should be the same on all chains.
-    async getDestinationComposerAddress(eid: number): Promise<Hex | null> {
-        return '0x2878dc77E9188f348FC667fd97aA1938900f7385' as Hex;
+    async getDestinationComposerAddress(chainKey: string): Promise<Hex | null> {
+        const allowed = ['bob', 'base', 'ethereum', 'sonic'];
+        if (allowed.includes(chainKey.toLowerCase())) {
+            return '0x814347a131B08679087F9A4842d493B1e788ea7a' as Hex;
+        }
+        return null;
     }
 
     private async getJson<T>(url: string): Promise<T> {
@@ -293,8 +297,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                 };
             } else {
                 // There is a destination message, so we encode options to handle the compose message.
-
-                const destinationComposer = await this.l0Client.getDestinationComposerAddress(dstEid);
+                const destinationComposer = await this.l0Client.getDestinationComposerAddress(toChain);
                 if (!destinationComposer) {
                     throw new Error(`Destination composer not found for chain: ${toChain}`);
                 }
@@ -448,7 +451,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                     oftCmd: '0x',
                 };
             } else {
-                // There is a destination message, so we encode options to handle the compose message.                
+                // There is a destination message, so we encode options to handle the compose message.
                 const destinationComposer = await this.l0Client.getDestinationComposerAddress(dstEid);
                 if (!destinationComposer) {
                     throw new Error(`Destination composer not found for chain: ${toChain}`);
@@ -715,7 +718,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                     await publicClient.waitForTransactionReceipt({ hash: txHash });
 
                     return txHash;
-                } catch (error) {  
+                } catch (error) {
                     if (error instanceof ContractFunctionExecutionError) {
                         // https://github.com/wevm/viem/blob/3aa882692d2c4af3f5e9cc152099e07cde28e551/src/actions/public/simulateContract.test.ts#L711
                         // throw new error
