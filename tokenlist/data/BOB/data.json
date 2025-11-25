@@ -20,6 +20,9 @@
         "bnb-smart-chain": "0x827716e74F769AB7b6bb374A29235d9c2156932C"
       }
     },
+    "bob-sepolia": {
+      "address": "0x49D6FBFa3Ee5462626D65Cd22FC0CFb03ed907DB"
+    },
     "bnb-smart-chain": {
       "address": "0x52B5fB4B0F6572B8C44d0251Cc224513ac5eB7E7",
       "bridge": {

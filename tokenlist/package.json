@@ -6,9 +6,8 @@
   "main": "index.ts",
   "files": [
     "index.ts",
-    "token-list.json",
-    "token-list-bob.json",
-    "token-list-overrides.json"
+    "tokenlist.json",
+    "tokenlist*.json"
   ],
   "scripts": {
     "build": "tsx ./scripts/generate.ts",

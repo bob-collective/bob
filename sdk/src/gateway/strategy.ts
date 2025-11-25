@@ -1,5 +1,5 @@
 import { createPublicClient, http, type PublicClient, type Chain, erc20Abi, Address, zeroAddress } from 'viem';
-import { ADDRESS_LOOKUP, tokenToStrategyTypeMap } from './tokens';
+import { getTokenDetails, tokenToStrategyTypeMap } from './tokens';
 import {
     type DefiLlamaPool,
     type EnrichedToken,
@@ -250,20 +250,12 @@ export default class StrategyClient {
             return new Map();
         }
     }
-
     private resolveTokens(tokens: string[] | undefined | null): Token[] {
-        if (!tokens) {
-            return [];
-        }
+        if (!tokens) return [];
 
         return tokens
-            .map(
-                (addr) =>
-                    ADDRESS_LOOKUP[bob.id]?.[addr.toLowerCase()] ??
-                    ADDRESS_LOOKUP[optimism.id]?.[addr.toLowerCase()] ??
-                    ADDRESS_LOOKUP[mainnet.id]?.[addr.toLowerCase()]
-            )
-            .filter((t): t is Token => Boolean(t));
+            .map((t) => getTokenDetails(bob.id, t) || getTokenDetails(optimism.id, t) || getTokenDetails(mainnet.id, t))
+            .filter((tok): tok is Token => Boolean(tok));
     }
 
     async getStrategyAssetState(token: Token): Promise<StrategyAssetState> {

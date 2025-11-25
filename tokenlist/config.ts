@@ -7,9 +7,9 @@ export const baseUrl =
   'https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/';
 
 export const datadir = './data';
-export const outfile = 'token-list.json';
-export const outfileBob = 'token-list-bob.json';
-export const outfileUI = 'token-list-overrides.json';
+export const outfile = 'tokenlist.json';
+export const outfileBob = 'tokenlist-bob.json';
+export const outfileUI = 'tokenlist-overrides.json';
 
 const supportedMainnetChains = [mainnet, bob, bsc];
 const supportedTestnetChains = [sepolia, bobSepolia];
