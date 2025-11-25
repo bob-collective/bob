@@ -16,7 +16,6 @@ import {
     Chain as ViemChain,
     WalletClient,
     zeroAddress,
-    getAddress,
 } from 'viem';
 import { bob, bobSepolia } from 'viem/chains';
 import { EsploraClient } from '../esplora';
