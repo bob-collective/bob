@@ -206,5 +206,11 @@ export function getTokenSlots(tokenAddress: Address): { allowanceSlot: bigint; b
 }
 
 export function getTokenDetails(chainId: number, token: string): Token | undefined {
-    return ADDRESS_LOOKUP[chainId][getAddress(token)];
+    try {
+        const checksum = getAddress(token);
+        return ADDRESS_LOOKUP[chainId]?.[checksum];
+    } catch {
+        // invalid address or failed lookup
+        return undefined;
+    }
 }
