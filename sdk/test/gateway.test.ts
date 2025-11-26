@@ -1470,7 +1470,7 @@ describe('Gateway Tests', () => {
         'get offramp liquidity and get quote e2e',
         async () => {
             const gatewaySDK = new GatewaySDK(bob.id);
-            const tokenAddress = SYMBOL_LOOKUP[bob.id]['wbtc (oft)'].address as Address;
+            const tokenAddress = SYMBOL_LOOKUP[bob.id]['wbtc'].address as Address;
             const offrampLiquidity = await gatewaySDK.fetchOfframpLiquidity(tokenAddress, zeroAddress);
 
             const minGatewayQuoteOnly = await gatewaySDK.fetchOfframpQuote(
@@ -1505,7 +1505,7 @@ describe('Gateway Tests', () => {
                 fromChain: 'Bitcoin',
                 fromToken: 'bitcoin',
                 toChain: bob.id,
-                toToken: 'WBTC (OFT)',
+                toToken: 'wbtc',
                 toUserAddress: tokenAddress,
                 amount: onrampLiquidity.minSatsAmount,
             });
@@ -1516,7 +1516,7 @@ describe('Gateway Tests', () => {
                 fromChain: 'Bitcoin',
                 fromToken: 'bitcoin',
                 toChain: bob.id,
-                toToken: 'WBTC (OFT)',
+                toToken: 'wbtc',
                 toUserAddress: tokenAddress,
                 amount: onrampLiquidity.maxOrderAmountInSats,
             });

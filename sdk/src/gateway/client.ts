@@ -499,7 +499,7 @@ export class GatewayApiClient extends BaseClient {
             userAddress: userAddress,
         });
 
-        const requestUrl = `${this.baseUrl}/v2/offramp-liquidity?${queryParams.toString()}`;
+        const requestUrl = `${this.baseUrl}/v2/offramp-liquidity?${queryParams}`;
         const response = await this.safeFetch(requestUrl, undefined, 'Failed to get offramp v2 liquidity');
 
         if (!response.ok) {
