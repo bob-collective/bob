@@ -260,6 +260,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
             // Handle bob -> bitcoin: use normal flow
             return super.getQuote(params);
         } else if (fromChain === 'bitcoin' && toChain !== 'bitcoin') {
+            // Handle bitcoin -> l0 chain
             const dstEid = await this.l0Client.getEidForChain(toChain);
             if (!dstEid) {
                 throw new Error(`Unsupported destination chain: ${toChain}`);
@@ -272,8 +273,8 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
             }
 
             let sendParam: LayerZeroSendParam;
-            if (params.message?.length === 0) {
-                // No destination message, so we encode options for a standard L0 send with no compose message.
+            if (!params.destinationCalls && (params.message?.length === 0 || !params.message)) {
+                // No destination calls, so we encode options for a standard L0 send with no compose message.
                 const extraOptions = encodePacked(
                     ['uint16', 'uint8', 'uint16', 'uint8', 'uint128'],
                     [
@@ -298,6 +299,12 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                 };
             } else {
                 // There is a destination message, so we encode options to handle the compose message.
+
+                // revert if both destinationCalls and message are provided
+                if (params.destinationCalls && params.message) {
+                    throw new Error('Both destinationCalls and message cannot be provided. Please provide only one.');
+                }
+
                 const destinationComposer = await this.l0Client.getDestinationComposerAddress(toChain);
                 if (!destinationComposer) {
                     throw new Error(`Custom actions not supported for chain: ${toChain}`);
@@ -317,9 +324,21 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                         19, // 18+1 option length
                         3, // OPTION_TYPE_LZCOMPOSE
                         0, // index for compose function
-                        BigInt(params.destinationGasLimit || 300000), // gas limit for compose function, default to 300k if not provided
+                        BigInt(params.destinationCalls?.gasLimit || 300000), // gas limit for compose function, default to 300k if not provided
                     ]
                 );
+
+                // encode calldata for the destination composer if destinationCalls are provided, otherwise use params.message
+                const composeMsg = params.destinationCalls
+                    ? encodeAbiParameters(parseAbiParameters(['address', '(address,bytes,uint256)[]']), [
+                          params.destinationCalls.leftoverRecipient,
+                          params.destinationCalls.calls.map((call): readonly [Address, Hex, bigint] => [
+                              call.target,
+                              call.callData,
+                              call.value,
+                          ]),
+                      ])
+                    : (params.message as Hex);
 
                 sendParam = {
                     dstEid,
@@ -327,7 +346,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                     amountLD: BigInt(0), // will be added inside the strategy
                     minAmountLD: BigInt(0), // will be added inside the strategy
                     extraOptions: extraOptions,
-                    composeMsg: params.message as Hex,
+                    composeMsg: composeMsg,
                     oftCmd: '0x' as Hex,
                 };
             }
@@ -421,6 +440,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
             response.params.fromChain = fromChain;
             return response;
         } else if (fromChain !== 'bitcoin' && toChain !== 'bitcoin') {
+            // Handle l0 -> l0 chain
             const dstEid = await this.l0Client.getEidForChain(toChain);
             if (!dstEid) {
                 throw new Error(`Destination EID not found for chain: ${toChain}`);
@@ -440,7 +460,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
             const publicClient = viemClient(chain);
 
             let sendParam: LayerZeroSendParam;
-            if (params.message?.length === 0) {
+            if (!params.destinationCalls && (params.message?.length === 0 || !params.message)) {
                 // No destination message, standard L0 send
                 sendParam = {
                     dstEid,
@@ -472,9 +492,21 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                         19, // 18+1 option length
                         3, // OPTION_TYPE_LZCOMPOSE
                         0, // index for compose function
-                        BigInt(params.destinationGasLimit || 300000), // gas limit for compose function, default to 300k if not provided
+                        BigInt(params.destinationCalls?.gasLimit || 300000), // gas limit for compose function, default to 300k if not provided
                     ]
                 );
+
+                // Encode destinationCalls if provided, otherwise use params.message
+                const composeMsg = params.destinationCalls
+                    ? encodeAbiParameters(parseAbiParameters(['address', '(address,bytes,uint256)[]']), [
+                          params.destinationCalls.leftoverRecipient,
+                          params.destinationCalls.calls.map((call): readonly [Address, Hex, bigint] => [
+                              call.target,
+                              call.callData,
+                              call.value,
+                          ]),
+                      ])
+                    : (params.message as Hex);
 
                 sendParam = {
                     dstEid,
@@ -482,7 +514,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                     amountLD: BigInt(params.amount),
                     minAmountLD: BigInt(params.amount),
                     extraOptions: extraOptions,
-                    composeMsg: params.message as Hex,
+                    composeMsg: composeMsg,
                     oftCmd: '0x' as Hex,
                 };
             }
@@ -644,7 +676,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                 const toChain = resolveChainName(params.toChain);
 
                 let sendParam: LayerZeroSendParam;
-                if (params.message?.length === 0) {
+                if (!params.destinationCalls && (params.message?.length === 0 || !params.message)) {
                     // No destination message, standard L0 send
                     sendParam = {
                         dstEid: destinationEid,
@@ -687,9 +719,21 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                             19, // 18+1 option length
                             3, // OPTION_TYPE_LZCOMPOSE
                             0, // index for compose function
-                            BigInt(params.destinationGasLimit || 300000), // gas limit for compose function, default to 300k if not provided
+                            BigInt(params.destinationCalls?.gasLimit || 300000), // gas limit for compose function, default to 300k if not provided
                         ]
                     );
+
+                    // Encode destinationCalls if provided, otherwise use params.message
+                    const composeMsg = params.destinationCalls
+                        ? encodeAbiParameters(parseAbiParameters(['address', '(address,bytes,uint256)[]']), [
+                              params.destinationCalls.leftoverRecipient,
+                              params.destinationCalls.calls.map((call): readonly [Address, Hex, bigint] => [
+                                  call.target,
+                                  call.callData,
+                                  call.value,
+                              ]),
+                          ])
+                        : (params.message as Hex);
 
                     sendParam = {
                         dstEid: destinationEid,
@@ -697,7 +741,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                         amountLD: BigInt(params.amount),
                         minAmountLD: BigInt(params.amount),
                         extraOptions: extraOptions,
-                        composeMsg: params.message as Hex,
+                        composeMsg: composeMsg,
                         oftCmd: '0x' as Hex,
                     };
                 }

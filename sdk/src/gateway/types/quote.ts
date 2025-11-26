@@ -55,8 +55,21 @@ export interface GatewayQuoteParams {
 
     /** @description Cross chain message - strategy data */
     message?: Hex;
-    /** @description Gas limit for the cross chain message */
-    destinationGasLimit?: number;
+
+    /** @description Calls to be executed on the destination chain */
+    destinationCalls?: DestinationCalls;
+}
+
+export interface DestinationCall {
+    target: Address;
+    callData: Hex;
+    value: bigint;
+}
+
+export interface DestinationCalls {
+    calls: DestinationCall[];
+    leftoverRecipient: Address;
+    gasLimit?: number;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
