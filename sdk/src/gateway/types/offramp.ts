@@ -44,14 +44,36 @@ export interface OfframpQuote {
     affiliateFeeRecipient: Address;
 }
 
-/** @dev Offramp Available Liquidity */
+/** @dev Offramp available liquidity details */
 export interface OfframpLiquidity {
-    /** @dev Token address used for payment */
-    token: Address;
-    /** @dev Max token amount a *single* order can be served with (in token decimals) */
-    maxOrderAmount: bigint;
-    /** @dev Total liquidity across all solver addresses (in token decimals) */
-    totalOfframpLiquidity: bigint;
+    /** @dev Address of the token accepted for offramp payments */
+    tokenAddress: Address;
+    /** @dev Maximum sats amount that a *single* order can be served with for a specific user address */
+    maxOrderAmountInSats: bigint;
+    /** @dev Total available offramp liquidity across all solver addresses */
+    totalOfframpLiquidityInSats: bigint;
+    /** @dev Details about the minimum offramp quote, including fee rate */
+    minimumOfframpQuote: MinimumOfframpQuote;
+}
+
+/** @dev Minimum offramp quote information */
+export interface MinimumOfframpQuote {
+    /** @dev Minimum sats amount that can be processed for a single offramp order */
+    minimumAmountInSats: bigint;
+    /** @dev Fee rate used to calculate the minimum offramp quote */
+    calculatedForFeeRate: bigint;
+}
+
+/** @dev Onramp available liquidity details */
+export interface OnrampLiquidity {
+    /** @dev Address of the token accepted for onramp payments */
+    tokenAddress: Address;
+    /** @dev Maximum sats amount that a *single* order can be served with for a specific user address */
+    maxOrderAmountInSats: bigint;
+    /** @dev Total available onramp liquidity across all gateway addresses */
+    totalOnrampLiquidityInSats: bigint;
+    /** @dev Minimum sats amount that can be processed for an onramp order */
+    minSatsAmount: bigint;
 }
 
 /** @dev Params used for createOrder call on the off-ramp contract */
