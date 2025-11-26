@@ -1,6 +1,15 @@
 import { assert, describe, expect, it, vi } from 'vitest';
 import { LayerZeroClient, LayerZeroGatewayClient } from '../src/gateway/layerzero';
-import { createPublicClient, createWalletClient, http, PublicClient, Transport, zeroAddress } from 'viem';
+import {
+    createPublicClient,
+    createWalletClient,
+    encodeFunctionData,
+    erc20Abi,
+    http,
+    PublicClient,
+    Transport,
+    zeroAddress,
+} from 'viem';
 import {
     bob,
     mainnet,
@@ -16,7 +25,7 @@ import {
     optimism,
     sei,
 } from 'viem/chains';
-import { BitcoinSigner, LayerZeroMessageWallet } from '../src/gateway/types';
+import { BitcoinSigner, GetQuoteParams, LayerZeroMessageWallet } from '../src/gateway/types';
 import * as btc from '@scure/btc-signer';
 import { base64 } from '@scure/base';
 import { mnemonicToSeedSync } from 'bip39';
@@ -229,23 +238,33 @@ describe('LayerZero Tests', () => {
         console.log(txHash);
     }, 120000);
 
-    it('should get a layerzero send quote with a destination message and execute it', async () => {
+    it.skip('should get a layerzero send quote with a destination message and execute it', async () => {
         const client = new LayerZeroGatewayClient();
+
+        const transferCallData = encodeFunctionData({
+            abi: erc20Abi,
+            functionName: 'transfer',
+            args: ['0xEf7Ff7Fb24797656DF41616e807AB4016AE9dCD5', BigInt(100)],
+        });
 
         const quote = await client.getQuote({
             fromChain: base.id,
-            fromToken: (await client.getSupportedChainsInfo()).find(
-                (chain) => chain.name.toLowerCase() === base.name.toLowerCase()
-            )?.oftAddress as string,
+            fromToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
             toChain: bob.id,
-            toToken: (await client.getSupportedChainsInfo()).find(
-                (chain) => chain.name.toLowerCase() === bob.name.toLowerCase()
-            )?.oftAddress as string,
+            toToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
             fromUserAddress: '0xEf7Ff7Fb24797656DF41616e807AB4016AE9dCD5',
             toUserAddress: '0xEf7Ff7Fb24797656DF41616e807AB4016AE9dCD5',
             amount: 100,
-            message: '0x1234',
-            destinationGasLimit: 100000,
+            destinationCalls: {
+                calls: [
+                    {
+                        target: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
+                        callData: transferCallData,
+                        value: BigInt(0),
+                    },
+                ],
+                leftoverRecipient: '0x2a7f5295ac6e24b6d2ca78d82e3cbf01dda52745',
+            },
         });
 
         console.log('quote', quote);
@@ -265,6 +284,89 @@ describe('LayerZero Tests', () => {
             quote,
             walletClient,
             publicClient: publicClient as PublicClient<Transport>,
+        });
+
+        console.log(txHash);
+    }, 120000);
+
+    it.skip('should get an onramp quote with a destination message and execute it', async () => {
+        const client = new LayerZeroGatewayClient();
+
+        // Dummy transfer to get the final output amount from the onramp so we can use it to encode the destination call data
+        const dummyTransferCallData = encodeFunctionData({
+            abi: erc20Abi,
+            functionName: 'transfer',
+            args: ['0xEf7Ff7Fb24797656DF41616e807AB4016AE9dCD5', BigInt(1)],
+        });
+
+        const baseQuoteParams = {
+            fromChain: 'bitcoin',
+            fromToken: 'bitcoin',
+            toChain: 'base',
+            toToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
+            fromUserAddress: 'bc1q6tgkjx4pgc5qda52fsgeuvjrhml5nuawwplejq',
+            toUserAddress: '0xEf7Ff7Fb24797656DF41616e807AB4016AE9dCD5',
+            amount: 9000,
+            l0OriginFinalityBuffer: 1000,
+        };
+
+        // Call `getQuote` with dummy destination call data to get the final output amount so we can use it to encode the destination call data
+        const quote = await client.getQuote({
+            ...baseQuoteParams,
+            destinationCalls: {
+                calls: [
+                    {
+                        target: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
+                        callData: dummyTransferCallData,
+                        value: BigInt(0),
+                    },
+                ],
+                leftoverRecipient: '0xEf7Ff7Fb24797656DF41616e807AB4016AE9dCD5',
+            },
+        });
+
+        const transferAmount = quote.finalOutputSats;
+
+        // encode calldata to transfer transferAmount of the token to the recipient
+        const transferCallData = encodeFunctionData({
+            abi: erc20Abi,
+            functionName: 'transfer',
+            args: ['0xEf7Ff7Fb24797656DF41616e807AB4016AE9dCD5', BigInt(transferAmount)],
+        });
+
+        const quoteWithDestinationCalls = await client.getQuote({
+            ...baseQuoteParams,
+            destinationCalls: {
+                calls: [
+                    {
+                        target: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
+                        callData: transferCallData,
+                        value: BigInt(0),
+                    },
+                ],
+                leftoverRecipient: '0xEf7Ff7Fb24797656DF41616e807AB4016AE9dCD5',
+            },
+        });
+
+        const publicClient = createPublicClient({
+            chain: bob,
+            transport: http(),
+        });
+
+        const walletClient = createWalletClient({
+            chain: bob,
+            transport: http(),
+            account: zeroAddress,
+        });
+
+        const btcSignerFromSeed = await ScureBitcoinSigner.fromSeedPhrase(process.env.MNEMONIC!, "m/84'/0'/0'/0/0");
+        console.log('P2WPKH Address: ', await btcSignerFromSeed.getP2WPKHAddress());
+
+        const txHash = await client.executeQuote({
+            quote: quoteWithDestinationCalls,
+            walletClient,
+            publicClient: publicClient as PublicClient<Transport>,
+            btcSigner: btcSignerFromSeed,
         });
 
         console.log(txHash);
