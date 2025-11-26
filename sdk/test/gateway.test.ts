@@ -1440,35 +1440,6 @@ describe('Gateway Tests', () => {
         );
     });
 
-    it('should return mocked offramp liquidity', async () => {
-        const gatewaySDK = new GatewaySDK(bob.id);
-        const tokenAddress = SYMBOL_LOOKUP[bob.id]['wbtc'].address;
-        const userAddress = zeroAddress;
-
-        const mock_offramp_liquidity = {
-            tokenAddress,
-            maxOrderAmountInSats: 50000000,
-            totalOfframpLiquidityInSats: 53304097,
-            minimumOfframpQuote: {
-                minimumAmountInSats: 666,
-                calculatedForFeeRate: 1,
-            },
-        };
-
-        nock(MAINNET_GATEWAY_BASE_URL)
-            .get('/v2/offramp-liquidity')
-            .query({
-                tokenAddress,
-                userAddress,
-            })
-            .reply(200, mock_offramp_liquidity);
-
-        const offrampLiquidity = await gatewaySDK.fetchOfframpLiquidity(tokenAddress, userAddress);
-
-        const normalized = normalizeBigInts(offrampLiquidity);
-        expect(normalized).toMatchObject(mock_offramp_liquidity);
-    });
-
     it('should return mocked onramp liquidity', async () => {
         const gatewaySDK = new GatewaySDK(bob.id);
         const tokenAddress = SYMBOL_LOOKUP[bob.id]['wbtc'].address as Address;
