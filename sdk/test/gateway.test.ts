@@ -769,30 +769,42 @@ describe('Gateway Tests', () => {
         expect(result).toBe(true);
     });
 
+    function normalizeBigInts<T>(value: T): T {
+        return JSON.parse(JSON.stringify(value, (_, v) => (typeof v === 'bigint' ? Number(v) : v)));
+    }
+
     it('fetches the correct offramp liquidity', async () => {
-        const gatewaySDK = new GatewaySDK(bobSepolia.id);
-        const tokenAddress = '0x4496ebE7C8666a8103713EE6e0c08cA0cD25b888';
-        nock(SIGNET_GATEWAY_BASE_URL).persist().get(`/offramp-liquidity/${tokenAddress}`).reply(200, {
+        const gatewaySDK = new GatewaySDK(bob.id);
+        const tokenAddress = SYMBOL_LOOKUP[bob.id]['wbtc'].address;
+        const userAddress = zeroAddress;
+
+        const mock_offramp_liquidity = {
             tokenAddress,
-            maxOrderAmount: '861588',
-            totalOfframpLiquidity: '861588',
-        });
+            maxOrderAmountInSats: 50_000_000,
+            totalOfframpLiquidityInSats: 53_304_097,
+            minimumOfframpQuote: {
+                minimumAmountInSats: 666,
+                calculatedForFeeRate: 1,
+            },
+        };
 
-        const offrampLiquidityTokenAddressAsParam = await gatewaySDK.fetchOfframpLiquidity(tokenAddress);
+        nock(MAINNET_GATEWAY_BASE_URL)
+            .persist()
+            .get('/v2/offramp-liquidity')
+            .query({ tokenAddress, userAddress })
+            .reply(200, mock_offramp_liquidity);
 
-        expect(offrampLiquidityTokenAddressAsParam).toEqual({
-            token: tokenAddress,
-            maxOrderAmount: BigInt('861588'),
-            totalOfframpLiquidity: BigInt('861588'),
-        });
+        // --- Query using tokenAddress ---
+        const liquidityByAddress = await gatewaySDK.fetchOfframpLiquidity(tokenAddress, userAddress);
 
-        const offrampLiquidityTokenSymbolAsParam = await gatewaySDK.fetchOfframpLiquidity('bobBTC');
+        const normalized = normalizeBigInts(liquidityByAddress);
+        expect(normalized).toMatchObject(mock_offramp_liquidity);
 
-        expect(offrampLiquidityTokenSymbolAsParam).toEqual({
-            token: tokenAddress,
-            maxOrderAmount: BigInt('861588'),
-            totalOfframpLiquidity: BigInt('861588'),
-        });
+        // --- Query using symbol ('wbtc') ---
+        const liquidityBySymbol = await gatewaySDK.fetchOfframpLiquidity('wbtc', userAddress);
+
+        const normalizedBySymbol = normalizeBigInts(liquidityBySymbol);
+        expect(normalizedBySymbol).toMatchObject(mock_offramp_liquidity);
     });
 
     it('should return btc txid for onramp', async () => {
@@ -1430,7 +1442,8 @@ describe('Gateway Tests', () => {
 
     it('should return mocked offramp liquidity', async () => {
         const gatewaySDK = new GatewaySDK(bob.id);
-        const tokenAddress = SYMBOL_LOOKUP[bob.id]['wbtc (oft)'].address;
+        console.log('SYMBOL_LOOKUP: ', SYMBOL_LOOKUP);
+        const tokenAddress = SYMBOL_LOOKUP[bob.id]['wbtc'].address;
         const userAddress = zeroAddress;
 
         const mock_offramp_liquidity = {
@@ -1453,17 +1466,13 @@ describe('Gateway Tests', () => {
 
         const offrampLiquidity = await gatewaySDK.fetchOfframpLiquidity(tokenAddress, userAddress);
 
-        const normalized = JSON.parse(
-            JSON.stringify(offrampLiquidity, (_, v) => (typeof v === 'bigint' ? Number(v) : v))
-        );
-
-        // Match only the liquidity details, skip tokenAddress
+        const normalized = normalizeBigInts(offrampLiquidity);
         expect(normalized).toMatchObject(mock_offramp_liquidity);
     });
 
     it('should return mocked onramp liquidity', async () => {
         const gatewaySDK = new GatewaySDK(bob.id);
-        const tokenAddress = SYMBOL_LOOKUP[bob.id]['wbtc (oft)'].address as Address;
+        const tokenAddress = SYMBOL_LOOKUP[bob.id]['wbtc'].address as Address;
         const userAddress = '0xFAEe001465dE6D7E8414aCDD9eF4aC5A35B2B808' as Address;
 
         const mock_onramp_liquidity = {
@@ -1483,9 +1492,7 @@ describe('Gateway Tests', () => {
 
         const onrampLiquidity = await gatewaySDK.fetchOnrampLiquidity(tokenAddress, userAddress, undefined);
 
-        const normalized = JSON.parse(
-            JSON.stringify(onrampLiquidity, (_, v) => (typeof v === 'bigint' ? Number(v) : v))
-        );
+        const normalized = normalizeBigInts(onrampLiquidity);
         expect(normalized).toMatchObject(mock_onramp_liquidity);
     });
 
@@ -1519,7 +1526,7 @@ describe('Gateway Tests', () => {
         'get onramp liquidity and get quote e2e',
         async () => {
             const gatewaySDK = new GatewaySDK(bob.id);
-            const tokenAddress = SYMBOL_LOOKUP[bob.id]['wbtc (oft)'].address as Address;
+            const tokenAddress = SYMBOL_LOOKUP[bob.id]['wbtc'].address as Address;
             const userAddress = '0xFAEe001465dE6D7E8414aCDD9eF4aC5A35B2B808' as Address;
             const onrampLiquidity = await gatewaySDK.fetchOnrampLiquidity(tokenAddress, userAddress, undefined);
 
