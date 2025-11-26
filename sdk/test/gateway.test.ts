@@ -1442,7 +1442,6 @@ describe('Gateway Tests', () => {
 
     it('should return mocked offramp liquidity', async () => {
         const gatewaySDK = new GatewaySDK(bob.id);
-        console.log('SYMBOL_LOOKUP: ', SYMBOL_LOOKUP);
         const tokenAddress = SYMBOL_LOOKUP[bob.id]['wbtc'].address;
         const userAddress = zeroAddress;
 
