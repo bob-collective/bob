@@ -1,13 +1,5 @@
 # Node Providers
 
-## BlastAPI
-
-[BlastAPI](https://blastapi.io/public-api/bob) provides fast and reliable decentralized blockchain APIs by partnering with third-party Node Providers. BlastAPI offers users the ability to [generate their own dedicated RPC endpoint](https://blastapi.io/login?app=consumer) or [become a node provider](https://blastapi.io/login?app=provider) for BOB.
-
-**Supported Networks**
-
-- BOB Mainnet
-
 ## Conduit
 
 Follow [Conduit's guide](https://docs.conduit.xyz/guides/run-a-node/op-stack-node) to run your own BOB node. Search "BOB" on their [Browse rollups page](https://app.conduit.xyz/browse-networks) and click "Run a node" to get started.

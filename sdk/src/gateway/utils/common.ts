@@ -15,7 +15,6 @@ import {
 import { avalanche, base, berachain, bob, bsc, mainnet, optimism, sei, soneium, sonic, unichain } from 'viem/chains';
 import {
     GatewayCreateOrderRequest,
-    OfframpOrderStatus,
     OnrampFeeBreakdown,
     OnrampFeeBreakdownRaw,
     OrderDetails,
@@ -68,14 +67,6 @@ export function slugify(str: string): string {
         .toLowerCase()
         .replace(/ /g, '-')
         .replace(/[^\w-]+/g, '');
-}
-
-const STATUSES = ['Active', 'Accepted', 'Processed', 'Refunded'] as const;
-
-export function parseOrderStatus(value: number): OfframpOrderStatus {
-    const status = STATUSES[value];
-    if (status) return status;
-    throw new Error(`Invalid order status: ${value}`);
 }
 
 export function viemClient(chain: ViemChain) {
@@ -138,21 +129,21 @@ export function formatBtc(btc: bigint) {
     return formatUnits(btc, 8);
 }
 
-const supportedChains = [
+export const supportedChainsMapping = {
     bob,
-    mainnet,
+    ethereum: mainnet,
     sonic,
     bsc,
     unichain,
-    berachain,
+    bera: berachain,
     sei,
     avalanche,
     base,
     soneium,
     optimism,
-] as const;
+} as const;
 
-const chainIdToChainConfigMapping = supportedChains.reduce(
+const chainIdToChainConfigMapping = Object.values(supportedChainsMapping).reduce(
     (acc, chain) => {
         acc[chain.id] = chain;
         return acc;
@@ -160,29 +151,24 @@ const chainIdToChainConfigMapping = supportedChains.reduce(
     {} as Record<ViemChain['id'], ViemChain>
 );
 
-const chainNameToChainIdMapping = supportedChains.reduce(
-    (acc, chain) => {
-        acc[chain.name.toLowerCase()] = chain.id;
-        return acc;
-    },
-    {} as Record<ViemChain['name'], ViemChain['id']>
-);
-
 function getChainIdByName(chainName: string) {
-    const chainId = chainNameToChainIdMapping[chainName.toLowerCase()];
-    if (!chainId) {
+    const chain = Object.values(supportedChainsMapping).find(
+        (chain) => chain.name.toLowerCase() === chainName.toLowerCase()
+    );
+
+    if (!chain) {
         throw new Error(
-            `Chain id for "${chainName}" not found. Allowed values ${supportedChains.map((chain) => chain.name)}`
+            `Chain id for "${chainName}" not found. Allowed values ${Object.values(supportedChainsMapping).map((chain) => chain.name)}`
         );
     }
-    return chainId;
+    return chain.id;
 }
 
 function getChainConfigById(chainId: number) {
     const config = chainIdToChainConfigMapping[chainId];
     if (!config) {
         throw new Error(
-            `Chain id for "${chainId}" not found. Allowed values ${supportedChains.map((chain) => chain.id)}`
+            `Chain id for "${chainId}" not found. Allowed values ${Object.values(supportedChainsMapping).map((chain) => chain.id)}`
         );
     }
 
@@ -236,4 +222,20 @@ export function computeBalanceSlot(user: Address, balancesMappingSlot: bigint): 
     );
 
     return balanceSlot;
+}
+
+export function safeBigInt(value: string): bigint {
+    try {
+        return BigInt(value);
+    } catch {
+        throw new Error(`Invalid BigInt for value "${value}"`);
+    }
+}
+
+export function safeNumber(value: string): number {
+    const n = Number(value);
+    if (Number.isNaN(n)) {
+        throw new Error(`Invalid number for value  "${value}"`);
+    }
+    return n;
 }

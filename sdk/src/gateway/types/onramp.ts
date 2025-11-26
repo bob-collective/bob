@@ -144,9 +144,9 @@ export type OnrampOrder = Omit<
     /** @description Get the actual order status */
     getStatus(esploraClient: EsploraClient, latestHeight?: number): Promise<OnrampOrderStatus>;
     /** @description Get all the output tokens */
-    getOutputTokens(): { amount: string; token: Token }[];
+    getOutputTokens(): { amount: string; token: Token | undefined }[];
     /** @description Get all the tokens */
-    getTokens(): { amount: string | number; token: Token }[];
+    getTokens(): { amount: string | number; token: Token | undefined }[];
 } & GatewayTokensInfo;
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type

@@ -8,6 +8,19 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 /**
+ * @dev Solv ABI for their router v1.
+ */
+interface ISolvBTCRouterV1 {
+    /**
+     * Subscribe with payment currency (i.e. WBTC) and receive SolvBTC.
+     * @param poolId SolvBTC fund ID.
+     * @param currencyAmount Amount of currency to be paid.
+     * @return shareValue Amount of SolvBTC to be received after subscription.
+     */
+    function createSubscription(bytes32 poolId, uint256 currencyAmount) external returns (uint256 shareValue);
+}
+
+/**
  * @dev Solv ABI for their router v2.
  */
 interface ISolvBTCRouterV2 {
@@ -107,5 +120,85 @@ contract XSolvBTCStrategy is IStrategyWithSlippageArgs, Context {
         xSolvBTC.safeTransfer(recipient, xSolvBTCAmount);
 
         emit TokenOutput(address(xSolvBTC), xSolvBTCAmount);
+    }
+}
+
+contract SolvBTCJUPStrategy is IStrategyWithSlippageArgs, Context {
+    using SafeERC20 for IERC20;
+
+    ISolvBTCRouterV1 public immutable solvBTCRouterV1;
+    ISolvBTCRouterV2 public immutable solvBTCRouterV2;
+    bytes32 public immutable poolId;
+    IERC20 public immutable solvBTC;
+    IERC20 public immutable solvBTCJUP;
+
+    constructor(
+        ISolvBTCRouterV1 _solvBTCRouterV1,
+        ISolvBTCRouterV2 _solvBTCRouterV2,
+        bytes32 _poolId,
+        IERC20 _solvBTC,
+        IERC20 _solvBTCJUP
+    ) {
+        solvBTCRouterV1 = _solvBTCRouterV1;
+        solvBTCRouterV2 = _solvBTCRouterV2;
+        poolId = _poolId;
+        solvBTC = _solvBTC;
+        solvBTCJUP = _solvBTCJUP;
+    }
+
+    function handleGatewayMessageWithSlippageArgs(
+        IERC20 tokenSent,
+        uint256 amountIn,
+        address recipient,
+        StrategySlippageArgs memory args
+    ) public override {
+        tokenSent.safeTransferFrom(_msgSender(), address(this), amountIn);
+        tokenSent.safeIncreaseAllowance(address(solvBTCRouterV2), amountIn);
+
+        // Expiry time must be in the future, so we use 1 second from now since the deposit will happen atomically
+        // deposit input token into SolvBTC
+        uint256 solvBTCAmount = solvBTCRouterV2.deposit(
+            address(solvBTC), address(tokenSent), amountIn, args.amountOutMin, uint64(block.timestamp + 1)
+        );
+
+        solvBTC.safeIncreaseAllowance(address(solvBTCRouterV1), solvBTCAmount);
+
+        // now deposit SolvBTC for SolvBTC.JUP
+        uint256 solvBTCJUPAmount = solvBTCRouterV1.createSubscription(poolId, solvBTCAmount);
+
+        solvBTCJUP.safeTransfer(recipient, solvBTCJUPAmount);
+
+        emit TokenOutput(address(solvBTCJUP), solvBTCJUPAmount);
+    }
+}
+
+contract SolvBTCPlusStrategy is IStrategyWithSlippageArgs, Context {
+    using SafeERC20 for IERC20;
+
+    ISolvBTCRouterV2 public immutable solvBTCRouter;
+    IERC20 public immutable solvBTCPlus;
+
+    constructor(ISolvBTCRouterV2 _solvBTCRouter, IERC20 _solvBTCPlus) {
+        solvBTCRouter = _solvBTCRouter;
+        solvBTCPlus = _solvBTCPlus;
+    }
+
+    function handleGatewayMessageWithSlippageArgs(
+        IERC20 tokenSent,
+        uint256 amountIn,
+        address recipient,
+        StrategySlippageArgs memory args
+    ) public override {
+        tokenSent.safeTransferFrom(_msgSender(), address(this), amountIn);
+        tokenSent.safeIncreaseAllowance(address(solvBTCRouter), amountIn);
+
+        // Expiry time must be in the future, so we use 1 second from now since the deposit will happen atomically
+        uint256 solvBTCPlusAmount = solvBTCRouter.deposit(
+            address(solvBTCPlus), address(tokenSent), amountIn, args.amountOutMin, uint64(block.timestamp + 1)
+        );
+
+        solvBTCPlus.safeTransfer(recipient, solvBTCPlusAmount);
+
+        emit TokenOutput(address(solvBTCPlus), solvBTCPlusAmount);
     }
 }

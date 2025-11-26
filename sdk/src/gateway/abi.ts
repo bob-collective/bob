@@ -38,10 +38,10 @@ export const strategyCaller = [
     },
 ] as const;
 
-export const offrampCaller = [
+export const offrampCallerV2 = [
     {
         type: 'function',
-        name: 'createOrder',
+        name: 'createOrderV2',
         inputs: [
             {
                 name: 'offrampOrderArgs',
@@ -54,9 +54,19 @@ export const offrampCaller = [
                         internalType: 'uint256',
                     },
                     {
-                        name: 'satFeesMax',
+                        name: 'satSolverFeeMax',
                         type: 'uint256',
                         internalType: 'uint256',
+                    },
+                    {
+                        name: 'satAffiliateFee',
+                        type: 'uint256',
+                        internalType: 'uint256',
+                    },
+                    {
+                        name: 'affiliateFeeRecipient',
+                        type: 'address',
+                        internalType: 'address',
                     },
                     {
                         name: 'creationDeadline',
@@ -119,36 +129,6 @@ export const offrampCaller = [
         ],
         outputs: [],
         stateMutability: 'nonpayable',
-    },
-    {
-        type: 'function',
-        name: 'getOrderDetails',
-        inputs: [
-            {
-                name: 'orderId',
-                type: 'uint256',
-                internalType: 'uint256',
-            },
-        ],
-        outputs: [
-            {
-                name: '',
-                type: 'tuple',
-                internalType: 'struct OfframpOrderDetails',
-                components: [
-                    { name: 'satAmountLocked', type: 'uint256', internalType: 'uint256' },
-                    { name: 'satFeesMax', type: 'uint256', internalType: 'uint256' },
-                    { name: 'owner', type: 'address', internalType: 'address' },
-                    { name: 'outputScript', type: 'bytes', internalType: 'bytes' },
-                    { name: 'status', type: 'uint8', internalType: 'enum OfframpOrderStatus' },
-                    { name: 'timestamp', type: 'uint256', internalType: 'uint256' },
-                    { name: 'token', type: 'address', internalType: 'address' },
-                    { name: 'solverOwner', type: 'address', internalType: 'address' },
-                    { name: 'solverRecipient', type: 'address', internalType: 'address' },
-                ],
-            },
-        ],
-        stateMutability: 'view',
     },
 ] as const;
 

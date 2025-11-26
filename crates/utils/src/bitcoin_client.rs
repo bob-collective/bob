@@ -259,6 +259,16 @@ impl BitcoinClient {
         }
     }
 
+    pub fn new_with_wallet(
+        url: &str,
+        wallet_name: &str,
+        rpc_user: impl Into<String>,
+        rpc_pass: impl Into<String>,
+    ) -> Self {
+        let rpc_url_with_wallet = format!("{}/wallet/{}", url.trim_end_matches('/'), wallet_name);
+        Self::new(&rpc_url_with_wallet, rpc_user, rpc_pass)
+    }
+
     pub async fn connect(&self, connection_timeout: Duration) -> Result<(), Error> {
         info!("Connecting to bitcoin...");
         timeout(connection_timeout, async move {

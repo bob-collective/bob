@@ -111,6 +111,36 @@ Frontends can also charge additional fees on top. The BOB bridge and staking pag
 
 For an up-to-date info on fees, please see the quotes provided on the BOB bridge and staking pages or use the SDK if you are a builder.
 
+## Rate Limits
+
+BOB Gateway implements rate limits to protect against potential abuse and ensure fair usage across all participants. These limits apply to both onramp (BTC → ERC20) and offramp (ERC20 → BTC) operations.
+
+### Global Rate Limits
+
+These limits apply across all users and liquidity providers in the system:
+
+#### Onramp (BTC → ERC20)
+- **Daily Total Limit**: 2 BTC
+- **Hourly Total Limit**: 1 BTC
+
+#### Offramp (ERC20 → BTC)
+- **Daily Total Limit**: 2 BTC
+- **Hourly Total Limit**: 1 BTC
+
+### Per-Account Rate Limits
+
+These limits apply to individual user accounts to prevent concentration of usage:
+
+#### Onramp (BTC → ERC20)
+- **Per Account Daily Limit**: 0.5 BTC
+
+#### Offramp (ERC20 → BTC)
+- **Per Account Daily Limit**: 0.5 BTC
+
+:::info Rate Limit Implementation
+Rate limits are enforced by the off-chain relayer and help maintain system stability. These limits may be adjusted as the protocol evolves and scales.
+:::
+
 ## Trust Assumptions
 
 While development for BOB Gateway is advancing rapidly, there are still some training wheels in place that introduce additional trust assumptions to the architecture. These are going to be addressed and replaced with trustless or trust-minimized equivalents as the product matures.

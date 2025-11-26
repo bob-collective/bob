@@ -1,0 +1,10 @@
+{
+  "name": "Avalon Avalon WBTC",
+  "symbol": "aBOBWBTC",
+  "decimals": 8,
+  "tokens": {
+    "bob": {
+      "address": "0xd6890176e8d912142AC489e8B5D8D93F8dE74D60"
+    }
+  }
+}

@@ -1,5 +1,5 @@
 import { createPublicClient, http, type PublicClient, type Chain, erc20Abi, Address, zeroAddress } from 'viem';
-import { ADDRESS_LOOKUP, tokenToStrategyTypeMap } from './tokens';
+import { getTokenDetails, tokenToStrategyTypeMap } from './tokens';
 import {
     type DefiLlamaPool,
     type EnrichedToken,
@@ -173,8 +173,6 @@ const tokenToSolvStrategyMap = new Map<string, string>([
     ],
 ]);
 
-const hybridBTCEndDate = new Date('2025-09-08T00:00:00.000Z');
-
 export default class StrategyClient {
     private viemClient: PublicClient;
 
@@ -211,11 +209,7 @@ export default class StrategyClient {
 
             if (defillamaPool) {
                 return {
-                    // HACK: set HybridBTC APY to 2% until 2025-09-08
-                    apyBase:
-                        defillamaPoolId === 'e8bfea35-ff6d-48db-aa08-51599b363219' && new Date() < hybridBTCEndDate
-                            ? 2
-                            : (defillamaPool?.apyBase ?? 0),
+                    apyBase: defillamaPool?.apyBase ?? 0,
                     apyReward: defillamaPool?.apyReward ?? 0,
                     rewardTokens: this.resolveTokens(defillamaPool?.rewardTokens),
                     points,
@@ -256,20 +250,12 @@ export default class StrategyClient {
             return new Map();
         }
     }
-
     private resolveTokens(tokens: string[] | undefined | null): Token[] {
-        if (!tokens) {
-            return [];
-        }
+        if (!tokens) return [];
 
         return tokens
-            .map(
-                (addr) =>
-                    ADDRESS_LOOKUP[bob.id]?.[addr.toLowerCase()] ??
-                    ADDRESS_LOOKUP[optimism.id]?.[addr.toLowerCase()] ??
-                    ADDRESS_LOOKUP[mainnet.id]?.[addr.toLowerCase()]
-            )
-            .filter((t): t is Token => Boolean(t));
+            .map((t) => getTokenDetails(bob.id, t) || getTokenDetails(optimism.id, t) || getTokenDetails(mainnet.id, t))
+            .filter((tok): tok is Token => Boolean(tok));
     }
 
     async getStrategyAssetState(token: Token): Promise<StrategyAssetState> {

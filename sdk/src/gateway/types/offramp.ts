@@ -1,5 +1,5 @@
 import { Address } from 'viem';
-import { offrampCaller } from '../abi';
+import { offrampCallerV2 } from '../abi';
 import { BaseExecuteQuoteParams } from './quote';
 import { GatewayOrderType } from './order';
 
@@ -36,12 +36,12 @@ export interface OfframpQuote {
     amountReceiveInSat: number;
     /** @dev Deadline for order creation (unix timestamp) */
     deadline: number;
-    /** @dev Address of the off-ramp registry handling the order */
-    registryAddress: Address;
     /** @dev Token address used for payment */
     token: Address;
     /** @dev Detailed fee breakdown */
     feeBreakdown: OfframpFeeBreakdown;
+    /** @dev The address of the affiliate who will receive the affiliate fee */
+    affiliateFeeRecipient: Address;
 }
 
 /** @dev Offramp available liquidity details */
@@ -80,14 +80,18 @@ export interface OnrampLiquidity {
 export type OfframpCreateOrderParams = {
     quote: OfframpQuote;
     feeBreakdown: OfframpFeeBreakdown;
-    offrampABI: typeof offrampCaller;
-    offrampFunctionName: 'createOrder';
+    offrampABI: typeof offrampCallerV2;
+    offrampFunctionName: 'createOrderV2';
     offrampArgs: [
         {
             /** @dev Amount of sats to lock in the order */
             satAmountToLock: bigint;
             /** @dev Max sats to be paid as fees */
-            satFeesMax: bigint;
+            satSolverFeeMax: bigint;
+            /** @dev Amount of fee to be paid to affiliate */
+            satAffiliateFee: bigint;
+            /** @dev The address of the affiliate who will receive the affiliate fee */
+            affiliateFeeRecipient: Address;
             /** @dev Timestamp by which the order must be created */
             creationDeadline: bigint;
             /** @dev Output script for Bitcoin settlement */
@@ -108,8 +112,8 @@ export type OfframpOrder = {
     token: Address;
     /** @dev The amount of sats that is locked */
     satAmountLocked: bigint;
-    /** @dev The amount of fees to pay in sat */
-    satFeesMax: bigint;
+    /** @dev The amount of fees to pay in sat to the solver */
+    satSolverFeeMax: bigint;
     /** @dev The current status of the order */
     status: OfframpOrderStatus;
     /** @dev The timestamp when the order was created or updated */
@@ -126,30 +130,16 @@ export type OfframpOrder = {
     canOrderBeUnlocked: boolean;
     /** @dev The offramp registry address the order is related to */
     offrampRegistryAddress: Address;
-};
-
-/** @dev Internal, On-chain fetched state of an active/processed/refunded order */
-export type OnchainOfframpOrderDetails = {
-    /** @dev Unique identifier for the off-ramp order */
-    orderId: bigint;
-    /** @dev The token address used for payment */
-    token: Address;
-    /** @dev Amount locked in sats */
-    satAmountLocked: bigint;
-    /** @dev Max sats for fee */
-    satFeesMax: bigint;
-    /** @dev Address that created the order */
-    owner: Address;
-    /** @dev Optional solver owner address */
-    solverOwner: Address | null;
-    /** @dev Optional solver recipient address */
-    solverRecipient: Address | null;
-    /** @dev Output script for Bitcoin tx */
-    outputScript: string;
-    /** @dev Order status */
-    status: OfframpOrderStatus;
-    /** @dev When the order was created (unix timestamp) */
-    orderTimestamp: number;
+    /** @dev The affiliate fee (in satoshis) given part of the order. */
+    satAffiliateFee: bigint;
+    /** @dev The address of the affiliate who will receive the affiliate fee. */
+    affiliateFeeRecipient: Address;
+    /** @dev The version number of the Offramp Registry contract used for this order. */
+    offrampRegistryVersion: number;
+    /** @dev The additional fee amount (in satoshis) required to bump the transaction to get accepted, or `null` if not applicable. */
+    bumpFeeAmountInSats: bigint | null;
+    /** @dev The address of the user who placed the order. */
+    userAddress: Address;
 };
 
 /** @dev Internal */
@@ -164,6 +154,12 @@ export interface OfframpRawOrder {
     submitOrderEvmTx: string | null;
     shouldFeesBeBumped: boolean;
     refundedEvmTx: string | null;
+    offrampRegistryAddress: string;
+    satAffiliateFee: string;
+    affiliateFeeRecipient: string;
+    offrampRegistryVersion: string;
+    bumpFeeAmountInSats: string | null;
+    userAddress: string;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
@@ -174,9 +170,11 @@ export type OfframpExecuteQuoteParams<T = {}> = BaseExecuteQuoteParams<T> & {
 
 export interface BumpFeeParams {
     orderId: bigint;
+    offrampRegistryAddress: Address;
 }
 
 export interface UnlockOrderParams {
     orderId: bigint;
     receiver: Address;
+    offrampRegistryAddress: Address;
 }

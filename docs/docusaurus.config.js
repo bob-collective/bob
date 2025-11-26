@@ -16,7 +16,7 @@ const FORUM = "https://forum.gobob.xyz";
 const PRESS_KIT =
   "https://build-on-bitcoin.notion.site/BOB-Press-Kit-1be66c38713d480eab01000bdd164206";
 const BRAND_KIT =
-  "https://drive.google.com/drive/u/0/folders/1c30QDkyWgaV8xSEpCXFWJj1WQyUjSm7N";
+  "https://build-on-bitcoin.notion.site/Brand-Assets-2163a8aad3b48072afe8e134fc04e720";
 const ONE_PAGER =
   "https://build-on-bitcoin.notion.site/BOB-Summary-23fad2d446ff467d8551b924eb3338fc";
 
@@ -87,6 +87,11 @@ const config = {
           {
             from: "/learn/user-guides/bob-pay",
             to: "/docs/deprecated/bob-pay",
+          },
+          // PDF redirects
+          {
+            from: "/docs/reference/mica-whitepaper",
+            to: "https://static.gobob.xyz/BOB_Foundation_Token_Whitepaper_ATTR_V1.pdf"
           }
         ],
       },
