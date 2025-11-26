@@ -51,7 +51,8 @@ bitcoin.initEccLib(ecc);
 /**
  * L0 recipient that forwards messages to create offramp orders on-chain.
  */
-export const OFFRAMP_COMPOSER = '0xDeEbEed29d8aeF2610fa924bc87fd1C9DF94e655';
+export const OFFRAMP_COMPOSER = '0xaffBF9ECC4a23adfFe887FB859654B8B780CCed0';
+export const LAYERZERO_STRATEGY = '0x4572ce66cB33255B60a15e3c6cb2ef9c65A30ebC';
 
 export class LayerZeroClient {
     private basePath: string;
@@ -299,7 +300,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                 // There is a destination message, so we encode options to handle the compose message.
                 const destinationComposer = await this.l0Client.getDestinationComposerAddress(toChain);
                 if (!destinationComposer) {
-                    throw new Error(`Destination composer not found for chain: ${toChain}`);
+                    throw new Error(`Custom actions not supported for chain: ${toChain}`);
                 }
 
                 const extraOptions = encodePacked(
@@ -392,7 +393,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
             );
 
             // encode bob -> l0 chain calldata
-            params.strategyAddress = '0x5Fd9B934c219663C7f4f432f39682be2dC42eDC7';
+            params.strategyAddress = LAYERZERO_STRATEGY;
             params.message = encodedParameters;
             // change to BOB chain for bridging
             params.toChain = bob.id;
@@ -452,7 +453,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                 };
             } else {
                 // There is a destination message, so we encode options to handle the compose message.
-                const destinationComposer = await this.l0Client.getDestinationComposerAddress(dstEid);
+                const destinationComposer = await this.l0Client.getDestinationComposerAddress(toChain);
                 if (!destinationComposer) {
                     throw new Error(`Destination composer not found for chain: ${toChain}`);
                 }
@@ -640,6 +641,8 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                 const { data, params } = quote;
                 const { oftAddress, destinationEid } = data;
 
+                const toChain = resolveChainName(params.toChain);
+
                 let sendParam: LayerZeroSendParam;
                 if (params.message?.length === 0) {
                     // No destination message, standard L0 send
@@ -654,9 +657,9 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                     };
                 } else {
                     // There is a destination message, so we encode options to handle the compose message.
-                    const destinationComposer = await this.l0Client.getDestinationComposerAddress(destinationEid);
+                    const destinationComposer = await this.l0Client.getDestinationComposerAddress(toChain);
                     if (!destinationComposer) {
-                        throw new Error(`Destination composer not found for chain: ${params.toChain}`);
+                        throw new Error(`Destination composer not found for chain: ${toChain}`);
                     }
 
                     const extraOptions = encodePacked(
