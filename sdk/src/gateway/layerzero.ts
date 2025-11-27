@@ -6,6 +6,7 @@ import {
     ContractFunctionExecutionError,
     encodeAbiParameters,
     encodePacked,
+    erc20Abi,
     Hex,
     InsufficientFundsError,
     isAddress,
@@ -18,7 +19,7 @@ import {
     toHex,
     zeroAddress,
 } from 'viem';
-import { bob, mainnet, berachain, bsc, soneium, optimism, sei } from 'viem/chains';
+import { berachain, bob, bsc, mainnet, optimism, sei, soneium } from 'viem/chains';
 import { layerZeroOftAbi, quoterV2Abi } from './abi';
 import { AllWalletClientParams, GatewayApiClient } from './client';
 import { getTokenAddress, getTokenSlots } from './tokens';
@@ -751,6 +752,33 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                 };
 
                 try {
+                    // ETH -> %any_chain%
+                    if (data.sourceEid === 30101) {
+                        const wbtcMainnetAddress = getTokenAddress(mainnet.id, 'wbtc');
+
+                        const allowance = await publicClient.readContract({
+                            account: walletClient.account,
+                            address: wbtcMainnetAddress,
+                            abi: erc20Abi,
+                            functionName: 'allowance',
+                            args: [params.fromUserAddress as Address, oftAddress],
+                        });
+
+                        if (allowance < sendParam.amountLD) {
+                            const { request } = await publicClient.simulateContract({
+                                account: walletClient.account,
+                                address: wbtcMainnetAddress,
+                                abi: erc20Abi,
+                                functionName: 'approve',
+                                args: [oftAddress, maxUint256],
+                            });
+
+                            const txHash = await walletClient.writeContract(request);
+
+                            await publicClient.waitForTransactionReceipt({ hash: txHash });
+                        }
+                    }
+
                     const { request } = await publicClient.simulateContract({
                         account: walletClient.account,
                         abi: layerZeroOftAbi,
