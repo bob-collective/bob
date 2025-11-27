@@ -236,7 +236,7 @@ export class GatewayApiClient extends BaseClient {
                 type: GatewayOrderType.Onramp,
                 params,
                 finalOutputSats: data.outputSatoshis,
-                finalFeeSats: data.feeBreakdown.overallFeeSats,
+                finalFeeSats: data.feeBreakdown.overallFeeSats + data.feeBreakdown.affiliateFeeSats, // onramp fee + affiliate fee
                 data,
             };
         } else if (params.toChain.toString().toLowerCase() === 'bitcoin') {
@@ -253,7 +253,7 @@ export class GatewayApiClient extends BaseClient {
                 type: GatewayOrderType.Offramp,
                 params,
                 finalOutputSats: data.amountReceiveInSat,
-                finalFeeSats: data.feeBreakdown.overallFeeSats,
+                finalFeeSats: data.feeBreakdown.overallFeeSats + data.feeBreakdown.affiliateFeeSats, // offramp fee + affiliate fee
                 data: {
                     ...data,
                     feeBreakdown: {
@@ -432,7 +432,7 @@ export class GatewayApiClient extends BaseClient {
 
         return {
             ...quote,
-            outputSatoshis: quote.satoshis - quote.fee,
+            outputSatoshis: quote.satoshis - quote.feeBreakdown.overallFeeSats - quote.feeBreakdown.affiliateFeeSats,
             baseToken: getTokenDetails(this.chainId, quote.baseTokenAddress),
             outputToken: quote.strategyAddress ? getTokenDetails(this.chainId, outputTokenAddress) : undefined,
         };
@@ -593,7 +593,7 @@ export class GatewayApiClient extends BaseClient {
 
         if (affiliateFeeRecipient && affiliateFeeSats) {
             queryParams.append('affiliateFee', affiliateFeeSats.toString());
-            queryParams.append('affiliateFeeRecipient', affiliateFeeRecipient.toString());
+            queryParams.append('affiliateRecipient', affiliateFeeRecipient.toString());
         }
 
         const response = await this.safeFetch(
@@ -625,7 +625,10 @@ export class GatewayApiClient extends BaseClient {
                 affiliateFeeSats: rawQuote.feeBreakdown.affiliateFeeSats,
                 fastestFeeRate: rawQuote.feeBreakdown.fastestFeeRate,
             },
-            amountReceiveInSat: rawQuote.amountLockInSat - rawQuote.feeBreakdown.overallFeeSats,
+            amountReceiveInSat:
+                rawQuote.amountLockInSat -
+                rawQuote.feeBreakdown.overallFeeSats -
+                rawQuote.feeBreakdown.affiliateFeeSats,
             affiliateFeeRecipient: normalizedAffiliateFeeRecipient as Address,
         };
     }
