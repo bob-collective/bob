@@ -6,7 +6,6 @@ import {
     ContractFunctionExecutionError,
     encodeAbiParameters,
     encodePacked,
-    extractChain,
     Hex,
     InsufficientFundsError,
     isAddress,
