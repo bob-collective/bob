@@ -1,6 +1,8 @@
 # Build on Bitcoin
 
-BOB is a Bitcoin-augmented rollup bringing experimentation and freedom of choice to builders to make a real-world impact. BOBs vision is to onboard the next billion users to Bitcoin.
+BOB is building the Gateway to Bitcoin DeFi, unlocking real utility for the world’s most important asset. By fusing Bitcoin’s unmatched security with Ethereum’s versatility, BOB creates the premier destination for Bitcoin liquidity, applications, and institutions.
+
+BOB’s hybrid chain uniquely combines ZK proofs and BTC staking to create native bridges to both Ethereum and Bitcoin (BitVM). BOB’s multichain gateway lets users swap Bitcoin into any asset or deposit directly into DeFi across 11+ chains, powered by BTC intents.
 
 ## BOB Token
 
