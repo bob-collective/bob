@@ -2,23 +2,25 @@
 sidebar_position: 3
 ---
 
-# On-Chain Actions
+# 1 Click DeFi Actions
 
 ## Introduction
 
-BOB Gateway allows Bitcoin users to interact with DeFi protocols using a single Bitcoin transaction. There are two ways to integrate:
+BOB Gateway Onramp allows Bitcoin users to interact with DeFi protocols using a single Bitcoin transaction. There are three ways to integrate:
 
-1. **Custom Strategy Contract** - Implement a smart contract that receives wrapped BTC and executes your protocol logic
-2. **Multicall Integration** - Use the built-in multicall handler to interact with existing contracts without deploying new ones
+1. **Custom Strategy on BOB Chain** - Implement a strategy smart contract that receives wrapped BTC and executes your protocol logic
+2. **Multicall Strategy Integration on BOB Chain** - Use the built-in multicall strategy to interact with existing contracts without deploying new ones
+3. **Destination Multicall Strategy on LayerZero Chains** - Execute calls on destination chains after LayerZero cross-chain transfers (LayerZero only)
 
 :::info Gateway Overview
 For a detailed explanation of Gateway's architecture and user flow, see the [technical overview](./overview.md).
 :::
 
-Which approach should I choose - Custom Strategy or Multicall?
+Which approach should I choose?
 
 - **Custom Strategy**: Choose this if you need complex logic, gas optimization, custom events, or want full control over the execution flow
-- **Multicall**: Choose this if you want to integrate with existing contracts without deploying new ones, or for simple approve + deposit patterns
+- **Multicall Strategy**: Choose this if you want to integrate with existing contracts on BOB without deploying new ones, or for simple approve + deposit patterns
+- **LayerZero Destination Strategy**: Choose this for cross-chain swaps where you want to execute calls on the destination chain (e.g., deposit into a lending protocol on Base after bridging from Bitcoin). See the [LayerZero documentation](./layerzero.md#destination-actions-cross-chain-calls) for details.
 
 ## Option 1: Custom Strategy Contract
 
@@ -95,7 +97,7 @@ contract SolvBTCStrategy {
 }
 ```
 
-## Option 2: Using Multicall
+## Option 2: Using the Multicall Strategy
 
 Instead of deploying a custom strategy, you can use the multicall handler to execute multiple contract calls:
 
@@ -139,6 +141,142 @@ function generateMulticallMessage(userAddress: Address, depositAmount: bigint) {
 const quote = await gatewaySDK.getQuote({
     // ... other parameters
     message: generateMulticallMessage(userAddress, depositAmount),
+});
+```
+
+## Option 3: Using the LayerZero Destination Strategy
+
+For cross-chain swaps via LayerZero, you can execute calls on the destination chain after tokens arrive. This enables complex DeFi interactions like depositing into lending protocols, staking, or swapping tokens - all in a single cross-chain transaction.
+
+### When to Use Destination Actions
+
+- **Cross-Chain Swaps**: When bridging from Bitcoin to another chain (e.g., Base, Ethereum) and want to execute actions on the destination chain
+- **No Contract Deployment**: Similar to multicall, but for destination chains - no need to deploy contracts
+- **Multi-Step Operations**: Execute approve + deposit patterns or other sequential calls on the destination chain
+
+### Complete Example: Deposit into Lending Protocol
+
+Here's a full example that bridges BTC to Base and deposits wBTC into a lending protocol:
+
+```typescript
+import { LayerZeroGatewayClient, parseBtc } from '@gobob/bob-sdk';
+import { encodeFunctionData, erc20Abi, parseAbi, maxUint256 } from 'viem';
+
+const client = new LayerZeroGatewayClient();
+
+const wbtcAddress = '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c';
+const lendingPoolAddress = '0x...'; // Your lending protocol address
+const userAddress = '0x...'; // User's address on destination chain
+
+// Step 1: Approve lending pool to spend wBTC
+const approveCallData = encodeFunctionData({
+    abi: erc20Abi,
+    functionName: 'approve',
+    args: [lendingPoolAddress, maxUint256],
+});
+
+// Step 2: Deposit wBTC into lending pool
+const lendingAbi = parseAbi([
+    'function deposit(address asset, uint256 amount, address onBehalfOf, uint16 referralCode)',
+]);
+
+// Get quote first to determine the amount that will arrive
+const initialQuote = await client.getQuote({
+    fromChain: 'bitcoin',
+    fromToken: 'BTC',
+    toChain: 'base',
+    toToken: wbtcAddress,
+    fromUserAddress: 'bc1q...',
+    toUserAddress: userAddress,
+    amount: parseBtc("0.1"),
+});
+
+const depositAmount = BigInt(initialQuote.finalOutputSats);
+
+const depositCallData = encodeFunctionData({
+    abi: lendingAbi,
+    functionName: 'deposit',
+    args: [wbtcAddress, depositAmount, userAddress, 0],
+});
+
+// Get final quote with destination calls
+const quote = await client.getQuote({
+    fromChain: 'bitcoin',
+    fromToken: 'BTC',
+    toChain: 'base',
+    toToken: wbtcAddress,
+    fromUserAddress: 'bc1q...',
+    toUserAddress: userAddress,
+    amount: parseBtc("0.1"),
+    destinationCalls: {
+        calls: [
+            {
+                target: wbtcAddress,
+                callData: approveCallData,
+                value: BigInt(0),
+            },
+            {
+                target: lendingPoolAddress,
+                callData: depositCallData,
+                value: BigInt(0),
+            },
+        ],
+        leftoverRecipient: userAddress, // Receive any leftover tokens
+        gasLimit: 500000, // Higher gas limit for multiple calls
+    },
+});
+```
+
+### Simple Example: Transfer Tokens
+
+For a simpler use case, transfer tokens to a recipient on the destination chain:
+
+```typescript
+import { LayerZeroGatewayClient, parseBtc } from '@gobob/bob-sdk';
+import { encodeFunctionData, erc20Abi } from 'viem';
+
+const client = new LayerZeroGatewayClient();
+
+// Get quote to determine output amount
+const initialQuote = await client.getQuote({
+    fromChain: 'bitcoin',
+    fromToken: 'BTC',
+    toChain: 'base',
+    toToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
+    fromUserAddress: 'bc1q...',
+    toUserAddress: '0x...',
+    amount: parseBtc("0.1"),
+});
+
+const transferAmount = BigInt(initialQuote.finalOutputSats);
+const recipientAddress = '0xEf7Ff7Fb24797656DF41616e807AB4016AE9dCD5';
+
+// Encode transfer call
+const transferCallData = encodeFunctionData({
+    abi: erc20Abi,
+    functionName: 'transfer',
+    args: [recipientAddress, transferAmount],
+});
+
+// Get quote with destination call
+const quote = await client.getQuote({
+    fromChain: 'bitcoin',
+    fromToken: 'BTC',
+    toChain: 'base',
+    toToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
+    fromUserAddress: 'bc1q...',
+    toUserAddress: '0x...',
+    amount: parseBtc("0.1"),
+    destinationCalls: {
+        calls: [
+            {
+                target: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
+                callData: transferCallData,
+                value: BigInt(0),
+            },
+        ],
+        leftoverRecipient: recipientAddress,
+    },
 });
 ```
 

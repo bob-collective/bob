@@ -391,7 +391,7 @@ export class GatewayApiClient extends BaseClient {
 
         if (params.affiliateFeeRecipient && params.affiliateFeeSats) {
             url.searchParams.append('affiliateFee', params.affiliateFeeSats.toString());
-            url.searchParams.append('affiliateFeeRecipient', params.affiliateFeeRecipient.toString());
+            url.searchParams.append('affiliateRecipient', params.affiliateFeeRecipient.toString());
         }
 
         const response = await this.safeFetch(
