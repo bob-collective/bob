@@ -2,15 +2,15 @@
 sidebar_position: 3
 ---
 
-# On-Chain Actions
+# 1 Click DeFi Actions
 
 ## Introduction
 
-BOB Gateway allows Bitcoin users to interact with DeFi protocols using a single Bitcoin transaction. There are three ways to integrate:
+BOB Gateway Onramp allows Bitcoin users to interact with DeFi protocols using a single Bitcoin transaction. There are three ways to integrate:
 
-1. **Custom Strategy Contract on BOB Chain** - Implement a smart contract that receives wrapped BTC and executes your protocol logic
-2. **Multicall Strategy Integration on BOB Chain** - Use the built-in multicall handler to interact with existing contracts without deploying new ones
-3. **Destination Actions on LayerZero Chains** - Execute calls on destination chains after LayerZero cross-chain transfers (LayerZero only)
+1. **Custom Strategy on BOB Chain** - Implement a strategy smart contract that receives wrapped BTC and executes your protocol logic
+2. **Multicall Strategy Integration on BOB Chain** - Use the built-in multicall strategy to interact with existing contracts without deploying new ones
+3. **Destination Multicall Strategy on LayerZero Chains** - Execute calls on destination chains after LayerZero cross-chain transfers (LayerZero only)
 
 :::info Gateway Overview
 For a detailed explanation of Gateway's architecture and user flow, see the [technical overview](./overview.md).
@@ -19,8 +19,8 @@ For a detailed explanation of Gateway's architecture and user flow, see the [tec
 Which approach should I choose?
 
 - **Custom Strategy**: Choose this if you need complex logic, gas optimization, custom events, or want full control over the execution flow
-- **Multicall**: Choose this if you want to integrate with existing contracts without deploying new ones, or for simple approve + deposit patterns
-- **LayerZero Destination Actions**: Choose this for cross-chain swaps where you want to execute calls on the destination chain (e.g., deposit into a lending protocol on Base after bridging from Bitcoin). See the [LayerZero documentation](./layerzero.md#destination-actions-cross-chain-calls) for details.
+- **Multicall Strategy**: Choose this if you want to integrate with existing contracts on BOB without deploying new ones, or for simple approve + deposit patterns
+- **LayerZero Destination Strategy**: Choose this for cross-chain swaps where you want to execute calls on the destination chain (e.g., deposit into a lending protocol on Base after bridging from Bitcoin). See the [LayerZero documentation](./layerzero.md#destination-actions-cross-chain-calls) for details.
 
 ## Option 1: Custom Strategy Contract
 
@@ -97,7 +97,7 @@ contract SolvBTCStrategy {
 }
 ```
 
-## Option 2: Using Multicall
+## Option 2: Using the Multicall Strategy
 
 Instead of deploying a custom strategy, you can use the multicall handler to execute multiple contract calls:
 
@@ -144,7 +144,7 @@ const quote = await gatewaySDK.getQuote({
 });
 ```
 
-## Option 3: LayerZero Destination Actions
+## Option 3: Using the LayerZero Destination Strategy
 
 For cross-chain swaps via LayerZero, you can execute calls on the destination chain after tokens arrive. This enables complex DeFi interactions like depositing into lending protocols, staking, or swapping tokens - all in a single cross-chain transaction.
 

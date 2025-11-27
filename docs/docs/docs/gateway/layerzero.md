@@ -214,12 +214,12 @@ console.log('Transaction hash:', txHash);
 
 All LayerZero operations route through BOB:
 
-- **BOB Strategy Contract**: `0x5Fd9B934c219663C7f4f432f39682be2dC42eDC7`
+- **BOB Strategy Contract**: `0x4572ce66cB33255B60a15e3c6cb2ef9c65A30ebC`
   - Handles Bitcoin → LayerZero bridging
   - Swaps portion of wBTC to ETH for LayerZero fees
   - Executes LayerZero `send()` with proper parameters
 
-- **Offramp Composer**: `0xc05AA3D7BD9c61B8b94EaCC937d1F542c3E5b94a`
+- **Offramp Composer**: `0xaffBF9ECC4a23adfFe887FB859654B8B780CCed0`
   - Receives LayerZero → BOB transfers
   - Creates Gateway offramp orders for Bitcoin withdrawal
 
@@ -231,10 +231,12 @@ LayerZero uses standardized wBTC OFT contracts across supported chains:
 
 #### MulticallComposer Contract
 
-The `MulticallComposer` contract (`0x814347a131B08679087F9A4842d493B1e788ea7a` on all supported chains) handles destination actions:
+The `MulticallComposer` contract (`0x814347a131B08679087F9A4842d493B1e788ea7a` on all supported chains) handles destination actions on LayerZero chains:
 - Receives tokens from LayerZero OFT transfers
 - Executes user-specified calls on the destination chain
 - Sends leftover tokens to the specified recipient
 - Provides safety mechanisms to prevent token loss
 
 **Supported Chains**: BOB, Base, Ethereum, Sonic
+
+Reach out to the BOB Team if there is a chain which you would like us to add support for!
