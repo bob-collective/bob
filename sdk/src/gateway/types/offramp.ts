@@ -32,7 +32,7 @@ export interface OfframpFeeBreakdown {
 export interface OfframpQuote {
     /** @dev Amount to lock in satoshis */
     amountLockInSat: number;
-    /** @dev Amount the user will receive after deducting fees (in satoshis) */
+    /** @dev Amount the user will receive after deducting offramp and affiliate fee (in satoshis) */
     amountReceiveInSat: number;
     /** @dev Deadline for order creation (unix timestamp) */
     deadline: number;

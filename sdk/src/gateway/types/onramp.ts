@@ -33,7 +33,7 @@ export type OnrampQuote = {
     dustThreshold: number;
     /** @description The satoshi input amount */
     satoshis: number;
-    /** @description The satoshi output amount (amount user receives after fees) */
+    /** @description The satoshi output amount (amount user receives after deducting onramp fee and affiliate fee) */
     outputSatoshis: number;
     /** @description The fee paid in satoshis (includes gas refill, l1 data fee and estimated prove tx fee) */
     fee: number;
