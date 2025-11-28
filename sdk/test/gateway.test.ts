@@ -72,8 +72,8 @@ describe('Gateway Tests', () => {
             outputToken: TBTC,
             feeBreakdown: {
                 overallFeeSats: 10,
-                protocolFeeSats: 0,
-                affiliateFeeSats: 0,
+                protocolFeeSats: 10,
+                affiliateFeeSats: 2,
                 executionFeeWei: BigInt(0),
                 l1DataFeeWei: BigInt(0),
             },
@@ -81,7 +81,7 @@ describe('Gateway Tests', () => {
 
         const assertMockQuote = {
             ...mockQuote,
-            outputSatoshis: mockQuote.satoshis - mockQuote.fee,
+            outputSatoshis: mockQuote.satoshis - mockQuote.fee - mockQuote.feeBreakdown.affiliateFeeSats,
             orderDetails: orderDetails,
         };
 
@@ -111,8 +111,8 @@ describe('Gateway Tests', () => {
             {
                 type: GatewayOrderType.Onramp,
                 data: assertMockQuote,
-                finalOutputSats: mockQuote.satoshis - mockQuote.fee,
-                finalFeeSats: mockQuote.fee,
+                finalOutputSats: mockQuote.satoshis - mockQuote.fee - mockQuote.feeBreakdown.affiliateFeeSats,
+                finalFeeSats: mockQuote.fee + mockQuote.feeBreakdown.affiliateFeeSats,
                 params: {
                     fromChain: 'Bitcoin',
                     fromToken: 'bitcoin',
@@ -135,8 +135,8 @@ describe('Gateway Tests', () => {
             {
                 type: GatewayOrderType.Onramp,
                 data: assertMockQuote,
-                finalOutputSats: mockQuote.satoshis - mockQuote.fee,
-                finalFeeSats: mockQuote.fee,
+                finalOutputSats: mockQuote.satoshis - mockQuote.fee - mockQuote.feeBreakdown.affiliateFeeSats,
+                finalFeeSats: mockQuote.fee + mockQuote.feeBreakdown.affiliateFeeSats,
                 params: {
                     fromChain: 'Bitcoin',
                     fromToken: 'bitcoin',
@@ -159,8 +159,8 @@ describe('Gateway Tests', () => {
             {
                 type: GatewayOrderType.Onramp,
                 data: assertMockQuote,
-                finalOutputSats: mockQuote.satoshis - mockQuote.fee,
-                finalFeeSats: mockQuote.fee,
+                finalOutputSats: mockQuote.satoshis - mockQuote.fee - mockQuote.feeBreakdown.affiliateFeeSats,
+                finalFeeSats: mockQuote.fee + mockQuote.feeBreakdown.affiliateFeeSats,
                 params: {
                     fromChain: 'Bitcoin',
                     fromToken: 'bitcoin',
@@ -183,8 +183,8 @@ describe('Gateway Tests', () => {
             {
                 type: GatewayOrderType.Onramp,
                 data: assertMockQuote,
-                finalOutputSats: mockQuote.satoshis - mockQuote.fee,
-                finalFeeSats: mockQuote.fee,
+                finalOutputSats: mockQuote.satoshis - mockQuote.fee - mockQuote.feeBreakdown.affiliateFeeSats,
+                finalFeeSats: mockQuote.fee + mockQuote.feeBreakdown.affiliateFeeSats,
                 params: {
                     fromChain: 'Bitcoin',
                     fromToken: 'bitcoin',
@@ -222,8 +222,8 @@ describe('Gateway Tests', () => {
             {
                 type: GatewayOrderType.Onramp,
                 data: assertMockQuote,
-                finalOutputSats: mockQuote.satoshis - mockQuote.fee,
-                finalFeeSats: mockQuote.fee,
+                finalOutputSats: mockQuote.satoshis - mockQuote.fee - mockQuote.feeBreakdown.affiliateFeeSats,
+                finalFeeSats: mockQuote.fee + mockQuote.feeBreakdown.affiliateFeeSats,
                 params: {
                     fromChain: 'Bitcoin',
                     fromToken: 'bitcoin',
@@ -917,11 +917,11 @@ describe('Gateway Tests', () => {
                 amountLockInSat: 10_000,
                 registryAddress: zeroAddress,
                 feeBreakdown: {
-                    overallFeeSats: 932,
+                    overallFeeSats: 931,
                     inclusionFeeSats: 930,
                     protocolFeeSats: 1,
                     affiliateFeeSats: 1,
-                    fastestFeeRate: 1000,
+                    fastestFeeRate: 2,
                 },
             });
 
