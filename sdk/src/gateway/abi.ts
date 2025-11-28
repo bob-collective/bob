@@ -243,6 +243,19 @@ export const layerZeroOftAbi = [
         ],
         stateMutability: 'payable',
     },
+    {
+        inputs: [],
+        name: 'approvalRequired',
+        outputs: [
+            {
+                internalType: 'bool',
+                name: '',
+                type: 'bool',
+            },
+        ],
+        stateMutability: 'pure',
+        type: 'function',
+    },
 ] as const;
 
 export const quoterV2Abi = [
