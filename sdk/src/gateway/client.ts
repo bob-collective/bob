@@ -487,16 +487,16 @@ export class GatewayApiClient extends BaseClient {
      * Fetches available offramp liquidity.
      *
      * @param token Token symbol or address
-     * @param userAddress User address to get liquidity for. Pass `zeroAddress` if the user wallet is not connected
+     * @param userAddress (Optional) User address to query liquidity for. Defaults to `zeroAddress` when not provided
      * @returns Promise resolving to liquidity information
      * @throws {Error} If API request fails
      */
-    async fetchOfframpLiquidity(token: string, userAddress: Address): Promise<OfframpLiquidity> {
+    async fetchOfframpLiquidity(token: string, userAddress?: Address): Promise<OfframpLiquidity> {
         const tokenAddress = getTokenAddress(this.chainId, token);
-
+        const finalUserAddress = userAddress ?? zeroAddress;
         const queryParams = new URLSearchParams({
             tokenAddress: tokenAddress,
-            userAddress: userAddress,
+            userAddress: finalUserAddress,
         });
 
         const requestUrl = `${this.baseUrl}/v2/offramp-liquidity?${queryParams}`;
@@ -525,17 +525,17 @@ export class GatewayApiClient extends BaseClient {
      * Fetches available onramp liquidity.
      *
      * @param token Token symbol or address
-     * @param userAddress User address to get liquidity for. Pass `zeroAddress` if the user wallet is not connected
+     * @param userAddress (Optional) User address to query liquidity for. Defaults to `zeroAddress` when not provided
      * @param gasRefill The amount of gas refill user wants in wei
      * @returns Promise resolving to liquidity information
      * @throws {Error} If API request fails
      */
-    async fetchOnrampLiquidity(token: string, userAddress: Address, gasRefill?: bigint): Promise<OnrampLiquidity> {
+    async fetchOnrampLiquidity(token: string, userAddress?: Address, gasRefill?: bigint): Promise<OnrampLiquidity> {
         const tokenAddress = getTokenAddress(this.chainId, token.toLowerCase());
-
+        const finalUserAddress = userAddress ?? zeroAddress;
         const queryParams = new URLSearchParams({
             tokenAddress: tokenAddress,
-            userAddress: userAddress,
+            userAddress: finalUserAddress,
         });
 
         if (gasRefill) {
