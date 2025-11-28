@@ -51,7 +51,11 @@ bitcoin.initEccLib(ecc);
 /**
  * L0 recipient that forwards messages to create offramp orders on-chain.
  */
-export const OFFRAMP_COMPOSER = '0xaffBF9ECC4a23adfFe887FB859654B8B780CCed0';
+export const OFFRAMP_COMPOSER = '0x7E6E65FaeB4ef08557928F78d71fa089a409299F';
+
+/**
+ * Strategy contract that handles layerzero cross chain swaps after the onramp is completed
+ */
 export const LAYERZERO_STRATEGY = '0x4572ce66cB33255B60a15e3c6cb2ef9c65A30ebC';
 
 export class LayerZeroClient {
@@ -610,12 +614,14 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                     extraOptions: extraOptions,
                     composeMsg: encodeAbiParameters(
                         parseAbiParameters([
-                            '(uint256 satAmountToLock, uint256 satFeesMax, uint256 creationDeadline, bytes outputScript, address token, address owner)',
+                            '(uint256 satAmountToLock, uint256 satSolverFeeMax, uint256 satAffiliateFee, address affiliateFeeRecipient, uint256 creationDeadline, bytes outputScript, address token, address owner)',
                         ]),
                         [
                             {
                                 satAmountToLock: BigInt(data.amountLockInSat),
-                                satFeesMax: BigInt(data.feeBreakdown.overallFeeSats),
+                                satSolverFeeMax: BigInt(data.feeBreakdown.overallFeeSats),
+                                satAffiliateFee: BigInt(data.feeBreakdown.affiliateFeeSats),
+                                affiliateFeeRecipient: data.affiliateFeeRecipient as Address,
                                 creationDeadline: BigInt(data.deadline),
                                 outputScript: receiverAddress as Hex,
                                 token: data.token,
