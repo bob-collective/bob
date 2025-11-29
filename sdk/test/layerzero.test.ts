@@ -646,7 +646,7 @@ describe('LayerZero Tests', () => {
         });
 
         expect(txHash).toBeDefined();
-        expect(publicClientReadContractSpy).toHaveBeenCalledTimes(0);
+        expect(publicClientReadContractSpy).toHaveBeenCalledTimes(2);
         expect(publicClientWaitForTransactionReceiptSpy).toHaveBeenCalledTimes(2);
         expect(publicClientSimulateContractSpy).toHaveBeenCalledTimes(2);
         expect(walletClientWriteContractSpy).toHaveBeenCalledTimes(2);
