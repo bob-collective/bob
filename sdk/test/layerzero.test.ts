@@ -605,7 +605,7 @@ describe('LayerZero Tests', () => {
         };
 
         const publicClient = createPublicClient({
-            chain: bsc,
+            chain: mainnet,
             transport: http(),
         });
 
@@ -613,6 +613,79 @@ describe('LayerZero Tests', () => {
             .spyOn(publicClient, 'readContract')
             .mockImplementationOnce(() => Promise.resolve(true))
             .mockImplementationOnce(() => Promise.resolve(10n));
+
+        const publicClientWaitForTransactionReceiptSpy = vi
+            .spyOn(publicClient, 'waitForTransactionReceipt')
+            .mockImplementation(() => {
+                const txReceipt: TransactionReceipt = {} as TransactionReceipt;
+                return Promise.resolve(txReceipt);
+            });
+
+        const publicClientSimulateContractSpy = vi.spyOn(publicClient, 'simulateContract').mockImplementation(() => {
+            const simulateContractReturnType: Awaited<ReturnType<typeof publicClient.simulateContract>> = {} as Awaited<
+                ReturnType<typeof publicClient.simulateContract>
+            >;
+            return Promise.resolve(simulateContractReturnType);
+        });
+
+        const walletClient = createWalletClient({
+            chain: mainnet,
+            transport: http(),
+            account: privateKeyToAccount(process.env.PRIVATE_KEY as Hex),
+        });
+
+        const walletClientWriteContractSpy = vi.spyOn(walletClient, 'writeContract').mockImplementation(() => {
+            const writeContractReturnType = {} as Awaited<ReturnType<typeof walletClient.writeContract>>;
+            return Promise.resolve(writeContractReturnType);
+        });
+
+        const txHash = await client.executeQuote({
+            quote: mockQuote,
+            walletClient,
+            publicClient: publicClient as PublicClient<Transport>,
+        });
+
+        expect(txHash).toBeDefined();
+        expect(publicClientReadContractSpy).toHaveBeenCalledTimes(2);
+        expect(publicClientWaitForTransactionReceiptSpy).toHaveBeenCalledTimes(2);
+        expect(publicClientSimulateContractSpy).toHaveBeenCalledTimes(2);
+        expect(walletClientWriteContractSpy).toHaveBeenCalledTimes(2);
+    }, 120000);
+
+    it('should skip approve step', async () => {
+        const client = new LayerZeroGatewayClient();
+
+        const mockQuote: ExecuteQuoteParams = {
+            type: GatewayOrderType.CrossChainSwap,
+            finalOutputSats: 100000,
+            finalFeeSats: 0,
+            params: {
+                fromChain: 'bsc',
+                fromToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
+                toChain: 'bob',
+                toToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
+                fromUserAddress: '0x5AC6f7ee4D571872333845e8Abc0bDef200B4Df6',
+                toUserAddress: '0x5AC6f7ee4D571872333845e8Abc0bDef200B4Df6',
+                amount: '100000',
+                feeRate: 1,
+            },
+            data: {
+                oftAddress: '0x0555e30da8f98308edb960aa94c0db47230d2b9c',
+                destinationEid: 30279,
+                sourceEid: 30102,
+                feeBreakdown: {
+                    nativeFee: BigInt('245222054031895'),
+                    lzTokenFee: BigInt('0'),
+                },
+            },
+        };
+
+        const publicClient = createPublicClient({
+            chain: bsc,
+            transport: http(),
+        });
+
+        const publicClientReadContractSpy = vi.spyOn(publicClient, 'readContract');
 
         const publicClientWaitForTransactionReceiptSpy = vi
             .spyOn(publicClient, 'waitForTransactionReceipt')
@@ -646,10 +719,10 @@ describe('LayerZero Tests', () => {
         });
 
         expect(txHash).toBeDefined();
-        expect(publicClientReadContractSpy).toHaveBeenCalledTimes(2);
-        expect(publicClientWaitForTransactionReceiptSpy).toHaveBeenCalledTimes(2);
-        expect(publicClientSimulateContractSpy).toHaveBeenCalledTimes(2);
-        expect(walletClientWriteContractSpy).toHaveBeenCalledTimes(2);
+        expect(publicClientReadContractSpy).toHaveBeenCalledTimes(0);
+        expect(publicClientWaitForTransactionReceiptSpy).toHaveBeenCalledTimes(1);
+        expect(publicClientSimulateContractSpy).toHaveBeenCalledTimes(1);
+        expect(walletClientWriteContractSpy).toHaveBeenCalledTimes(1);
     }, 120000);
 });
 
