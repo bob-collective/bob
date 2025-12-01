@@ -758,13 +758,17 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                 };
 
                 try {
-                    // ETH -> %any_chain%
-                    if (data.sourceEid === 30101) {
-                        const wbtcMainnetAddress = getTokenAddress(mainnet.id, 'wbtc');
+                    const approvalRequired = await publicClient.readContract({
+                        account: walletClient.account,
+                        address: oftAddress,
+                        abi: layerZeroOftAbi,
+                        functionName: 'approvalRequired',
+                    });
 
+                    if (approvalRequired) {
                         const allowance = await publicClient.readContract({
                             account: walletClient.account,
-                            address: wbtcMainnetAddress,
+                            address: oftAddress,
                             abi: erc20Abi,
                             functionName: 'allowance',
                             args: [params.fromUserAddress as Address, oftAddress],
@@ -773,7 +777,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                         if (allowance < sendParam.amountLD) {
                             const { request } = await publicClient.simulateContract({
                                 account: walletClient.account,
-                                address: wbtcMainnetAddress,
+                                address: oftAddress,
                                 abi: erc20Abi,
                                 functionName: 'approve',
                                 args: [oftAddress, maxUint256],
