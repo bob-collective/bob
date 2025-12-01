@@ -927,14 +927,28 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
         return createOrderGasEstimate * fee;
     }
 
+    /**
+     * Fetches cross-chain swap orders initiated by a given wallet.
+     *
+     * Queries LayerZero Scan for messages originating from the provided
+     * user address and returns those whose destination compose status is `"N/A"`.
+     * The order amount is decoded from the last 8 bytes of the payload.
+     *
+     * @param _userAddress - Wallet address the message originated from.
+     * @returns Array of normalized cross-chain orders.
+     */
     async getCrossChainSwapOrders(_userAddress: Address): Promise<CrossChainOrder[]> {
         const url = new URL(`https://scan.layerzero-api.com/v1/messages/wallet/${_userAddress}`);
 
         const response = await super.safeFetch(url.toString(), undefined, 'Failed to fetch LayerZero send orders');
 
         if (!response.ok) {
-            const errorData = await response.json().catch(() => null);
-            throw new Error(errorData?.message || 'Failed to fetch LayerZero send orders');
+            // Note: The API returns an error instead of an empty JSON if the address is not found
+            console.warn('Failed to fetch LayerZero send orders. Status:', response.status, response.statusText);
+            // Attempt to read error body (optional)
+            await response.json().catch(() => null);
+
+            return [];
         }
 
         const json: LayerZeroMessagesWalletResponse = await response.json();
