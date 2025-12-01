@@ -946,10 +946,6 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
             if (response.status === 404) {
                 // Note: The API returns an error instead of an empty JSON if the address is not found
                 console.warn('LayerZero send orders not found. Status:', response.status, response.statusText);
-
-                // Try reading error body (optional)
-                await response.json().catch(() => null);
-
                 return [];
             }
 
