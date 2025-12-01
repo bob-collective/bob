@@ -930,10 +930,6 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
     /**
      * Fetches cross-chain swap orders initiated by a given wallet.
      *
-     * Queries LayerZero Scan for messages originating from the provided
-     * user address and returns those whose destination compose status is `"N/A"`.
-     * The order amount is decoded from the last 8 bytes of the payload.
-     *
      * @param _userAddress - Wallet address the message originated from.
      * @returns Array of normalized cross-chain orders.
      */
