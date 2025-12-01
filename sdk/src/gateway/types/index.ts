@@ -8,4 +8,5 @@ export * from './order';
 export * from './quote';
 export * from './strategy';
 export * from './token';
+export * from './swaps';
 export * from './utils';
