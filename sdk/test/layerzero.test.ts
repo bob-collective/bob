@@ -140,19 +140,19 @@ describe('LayerZero Tests', () => {
         async () => {
             const client = new LayerZeroGatewayClient();
 
-            // Case 1: Address with no cross-chain swap orders and no gateway orders
-            const noSwapAddress = '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c';
-            const noSwapOrders = await client.getCrossChainSwapOrders(noSwapAddress);
-            expect(noSwapOrders.length).toBeGreaterThanOrEqual(1); // if expected
-            const allNoSwapOrders = await client.getOrders(noSwapAddress);
-            expect(allNoSwapOrders.length).toHaveLength(0);
+            // Case 1: Address with no cross-chain swap orders and no with gateway orders
+            const noCrossChainSwapAddress = '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c';
+            let crossChainSwapOrders = await client.getCrossChainSwapOrders(noCrossChainSwapAddress);
+            expect(crossChainSwapOrders.length).toBeGreaterThanOrEqual(0); // if expected
+            let allOrders = await client.getOrders(noCrossChainSwapAddress);
+            expect(allOrders).toHaveLength(0);
 
             // Case 2: Address that has done cross-chain swaps and gateway orders
             const swapAddress = '0x9BD3befca3660D38F5125C48BB21bEf3e8789787';
-            const swapOrders = await client.getCrossChainSwapOrders(swapAddress);
-            expect(swapOrders.length).toBeGreaterThanOrEqual(1);
-            const allSwapOrders = await client.getOrders(swapAddress);
-            expect(allSwapOrders.length).toBeGreaterThanOrEqual(1);
+            crossChainSwapOrders = await client.getCrossChainSwapOrders(swapAddress);
+            expect(crossChainSwapOrders.length).toBeGreaterThanOrEqual(1);
+            allOrders = await client.getOrders(swapAddress);
+            expect(allOrders.length).toBeGreaterThanOrEqual(1);
         },
         { timeout: 30000 }
     );
