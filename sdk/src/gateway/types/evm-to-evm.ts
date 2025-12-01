@@ -2,7 +2,9 @@ import { Address } from 'viem';
 import { GatewayOrderType } from './order';
 import { BaseExecuteQuoteParams } from './quote';
 
-export type CrossChainOrderStatus =
+// Currently this order type just supports L0 WBTC swaps between EVM chains
+
+export type EVMToEVMOrderStatus =
     | 'source-pending'
     | 'source-confirmed'
     | 'destination-pending'
@@ -11,10 +13,10 @@ export type CrossChainOrderStatus =
     | 'destination-failed'
     | 'unknown';
 
-export interface CrossChainOrder {
+export interface EVMToEVMOrder {
     amount: bigint;
     timestamp: number;
-    status: CrossChainOrderStatus;
+    status: EVMToEVMOrderStatus;
     source: {
         eid: number;
         txHash: string;
@@ -28,20 +30,20 @@ export interface CrossChainOrder {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export type CrossChainSwapQuoteParams<T = {}> = BaseExecuteQuoteParams<T> & {
-    type: GatewayOrderType.CrossChainSwap;
-    data: CrossChainSwapQuote;
+export type EVMToEVMQuoteParams<T = {}> = BaseExecuteQuoteParams<T> & {
+    type: GatewayOrderType.EVMToEVM;
+    data: EVMToEVMSwapQuote;
 };
 
-export type CrossChainFeeBreakdown = {
+export type EVMToEVMSwapFeeBreakdown = {
     nativeFee: bigint;
     lzTokenFee: bigint;
     // gasFee: bigint;
 };
 
-export interface CrossChainSwapQuote {
+export interface EVMToEVMSwapQuote {
     sourceEid: number;
     destinationEid: number;
     oftAddress: Address;
-    feeBreakdown: CrossChainFeeBreakdown;
+    feeBreakdown: EVMToEVMSwapFeeBreakdown;
 }

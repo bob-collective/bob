@@ -1,7 +1,7 @@
 import { Address, Hex } from 'viem';
 import { OnrampOrder } from './onramp';
 import { OfframpOrder } from './offramp';
-import { CrossChainOrder } from './crosschain-swap';
+import { EVMToEVMOrder } from './evm-to-evm';
 
 export type OrderDetailsRaw = {
     version: string;
@@ -80,14 +80,13 @@ export type GatewayStartOrder = GatewayCreateOrderResponse & {
     psbtBase64?: string;
 };
 
-// TODO: rename crosschain to something more layerzero specific.
 export enum GatewayOrderType {
     Onramp = 'onramp',
     Offramp = 'offramp',
-    CrossChainSwap = 'crosschain-swap',
+    EVMToEVM = 'evm-to-evm',
 }
 
 export type GatewayOrder =
     | { type: GatewayOrderType.Onramp; order: OnrampOrder }
     | { type: GatewayOrderType.Offramp; order: OfframpOrder }
-    | { type: GatewayOrderType.CrossChainSwap; order: CrossChainOrder };
+    | { type: GatewayOrderType.EVMToEVM; order: EVMToEVMOrder };

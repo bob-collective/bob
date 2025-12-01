@@ -2,7 +2,7 @@ import { Address, Hex } from 'viem';
 import { Optional } from './utils';
 import { OnrampExecuteQuoteParams } from './onramp';
 import { OfframpExecuteQuoteParams } from './offramp';
-import { CrossChainSwapQuoteParams } from './crosschain-swap';
+import { EVMToEVMQuoteParams } from './evm-to-evm';
 
 type ChainSlug = string | number;
 type TokenSymbol = string;
@@ -86,4 +86,4 @@ export type BaseExecuteQuoteParams<T = {}> = {
 export type ExecuteQuoteParams<T = {}> =
     | OnrampExecuteQuoteParams<T>
     | OfframpExecuteQuoteParams<T>
-    | CrossChainSwapQuoteParams<T>;
+    | EVMToEVMQuoteParams<T>;
