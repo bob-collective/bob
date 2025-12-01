@@ -943,12 +943,19 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
         const response = await super.safeFetch(url.toString(), undefined, 'Failed to fetch LayerZero send orders');
 
         if (!response.ok) {
-            // Note: The API returns an error instead of an empty JSON if the address is not found
-            console.warn('Failed to fetch LayerZero send orders. Status:', response.status, response.statusText);
-            // Attempt to read error body (optional)
-            await response.json().catch(() => null);
+            if (response.status === 404) {
+                // Note: The API returns an error instead of an empty JSON if the address is not found
+                console.warn('LayerZero send orders not found. Status:', response.status, response.statusText);
 
-            return [];
+                // Try reading error body (optional)
+                await response.json().catch(() => null);
+
+                return [];
+            }
+
+            // For all other errors: throw
+            const errorData = await response.json().catch(() => null);
+            throw new Error(errorData?.message || 'Failed to fetch LayerZero send orders');
         }
 
         const json: LayerZeroMessagesWalletResponse = await response.json();
