@@ -7,6 +7,7 @@ import {
     encodeAbiParameters,
     encodePacked,
     erc20Abi,
+    getAddress,
     Hex,
     InsufficientFundsError,
     isAddress,
@@ -24,7 +25,7 @@ import { layerZeroOftAbi, quoterV2Abi } from './abi';
 import { AllWalletClientParams, GatewayApiClient } from './client';
 import { getTokenAddress, getTokenSlots } from './tokens';
 import {
-    EVMToEVMOrder,
+    EVMToEVMWithLayerZeroOrder,
     ExecuteQuoteParams,
     GatewayOrder,
     GatewayOrderType,
@@ -159,6 +160,26 @@ export class LayerZeroClient {
             });
     }
 
+    async isChainAndTokenSupported(chainKey: string, token: string): Promise<boolean> {
+        const supportedChains = await this.getSupportedChainsInfo();
+
+        // Find the chain info matching the chainKey (case-insensitive)
+        const chainInfo = supportedChains.find((chain) => chain.name.toLowerCase() === chainKey.toLowerCase());
+
+        if (!chainInfo) {
+            return false;
+        }
+
+        // Token can either be the wbtc string, or the specific OFT address for wbtc on the chain
+        const isWbtcToken = token.toLowerCase() === 'wbtc';
+        const isOftAddress =
+            isAddress(token) && isAddress(chainInfo.oftAddress)
+                ? isAddressEqual(getAddress(token), getAddress(chainInfo.oftAddress))
+                : false;
+
+        return isWbtcToken || isOftAddress;
+    }
+
     async getChainId(eid: number): Promise<number | null> {
         const chains = await this.getChainDeployments();
 
@@ -203,6 +224,10 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
 
     async getSupportedChainsInfo(): Promise<Array<LayerZeroChainInfo>> {
         return this.l0Client.getSupportedChainsInfo();
+    }
+
+    async isChainAndTokenSupported(chainKey: string, token: string): Promise<boolean> {
+        return this.l0Client.isChainAndTokenSupported(chainKey, token);
     }
 
     /**
@@ -405,6 +430,8 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
 
             // Handle bitcoin -> l0 chain: need to add calldata
             const baseQuote = await super.getQuote(params);
+            // change the type to OnrampWithLayerZero
+            baseQuote.type = GatewayOrderType.OnrampWithLayerZero;
             return {
                 ...baseQuote,
                 finalOutputSats: baseQuote.finalOutputSats - Number(tokensToSwapForLayerZeroFees),
@@ -424,6 +451,8 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
             const response = await super.getQuote(params);
             // revert fromChain for handling in executeQuote
             response.params.fromChain = fromChain;
+            // change the type to OfframpWithLayerZero
+            response.type = GatewayOrderType.OfframpWithLayerZero;
             return response;
         } else if (fromChain !== 'bitcoin' && toChain !== 'bitcoin') {
             // Handle l0 -> l0 chain
@@ -515,7 +544,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
             // const gasFee = await this.getL0CreateOrderGasCost(params, sendParam, sendFees, fromChain);
 
             return {
-                type: GatewayOrderType.EVMToEVM,
+                type: GatewayOrderType.EVMToEVMWithLayerZero,
                 finalOutputSats: Number(params.amount),
                 finalFeeSats: 0, // LayerZero sends don't have Bitcoin fees
                 params,
