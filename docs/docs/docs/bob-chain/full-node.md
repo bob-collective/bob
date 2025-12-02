@@ -37,7 +37,7 @@ Feel free to reach out with any questions or concerns.
 :::info
 There is no protocol level incentive to run a BOB full node. If you're interested in accessing the BOB chain, but you don't want to set up your own node, see our [Node Providers](/docs/tools/node-providers) to get RPC access to fully-managed nodes hosted by a third-party provider.
 
-To stay updated on node upgrades and announcements, join our [Telegram channel](https://t.me/+dmxnLC3uDwgyYWQy).
+To stay updated on node upgrades and announcements, join our [Telegram channel](https://t.me/bobupgradechannel).
 :::
 
 ## Requirements
