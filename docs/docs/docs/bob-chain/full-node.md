@@ -29,11 +29,6 @@ Nodes that are not upgraded correctly will stop syncing after activation.
 
 - Use existing external RPC nodes directly
 
-**Required Actions for Chain Operators**
-
-- **op-node**: Update to [v1.16.2](https://github.com/ethereum-optimism/optimism/releases/tag/op-node%2Fv1.16.2)
-- **op-geth**: Update to [v1.101603.5](https://github.com/ethereum-optimism/op-geth/releases/tag/v1.101603.5)
-
 **More Info**
 For full details, please refer to the [Fusaka Upgrade Notice](https://docs.optimism.io/notices/fusaka-notice#for-node-operators)
 Feel free to reach out with any questions or concerns.
