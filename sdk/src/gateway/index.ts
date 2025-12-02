@@ -3,10 +3,6 @@ export { ReownWalletAdapter } from './adapters/reown';
 export { GatewayApiClient as GatewaySDK } from './client';
 export { LayerZeroGatewayClient } from './layerzero';
 export {
-    CrossChainOrder,
-    CrossChainOrderStatus,
-    CrossChainSwapQuote,
-    CrossChainSwapQuoteParams,
     ExecuteQuoteParams,
     GatewayOrderType,
     GatewayQuoteParams,
