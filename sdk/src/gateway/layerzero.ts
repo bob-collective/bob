@@ -160,7 +160,7 @@ export class LayerZeroClient {
             });
     }
 
-    async isChainAndTokenSupported(chainKey: string, token: string): Promise<boolean> {
+    async isChainAndTokenSupportedByLayerZero(chainKey: string, token: string): Promise<boolean> {
         const supportedChains = await this.getSupportedChainsInfo();
 
         // Find the chain info matching the chainKey (case-insensitive)
@@ -226,8 +226,8 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
         return this.l0Client.getSupportedChainsInfo();
     }
 
-    async isChainAndTokenSupported(chainKey: string, token: string): Promise<boolean> {
-        return this.l0Client.isChainAndTokenSupported(chainKey, token);
+    async isChainAndTokenSupportedByLayerZero(chainKey: string, token: string): Promise<boolean> {
+        return this.l0Client.isChainAndTokenSupportedByLayerZero(chainKey, token);
     }
 
     /**
