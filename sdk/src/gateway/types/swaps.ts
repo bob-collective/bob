@@ -1,4 +1,7 @@
 import { Address, Hex } from 'viem';
+import { BaseExecuteQuoteParams } from './quote';
+import { GatewayOrderType } from './order';
+import { GatewayTokensInfo } from './token';
 
 type ActionType = 'swap-action' | 'evm-calldata-tx ';
 
@@ -9,7 +12,7 @@ export interface ActionsParams {
     sender: Address;
     srcChainId: number;
     srcToken: Address;
-    dstChainId: Address;
+    dstChainId: number;
     dstToken: Address;
     slippage: number; // Required range: 0 <= x <= 10000
     amount: string; // swap-action
@@ -790,3 +793,14 @@ export interface PathsResponse {
     paths: Path[];
     timestamp: string;
 }
+
+export interface SwapsQuote {
+    actionResponse: ActionsResponse;
+    actionParams: ActionsParams;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export type SwapsExecuteQuoteParams<T = {}> = BaseExecuteQuoteParams<T> & {
+    type: GatewayOrderType.EVMToEVMWithSwaps | GatewayOrderType.OnrampWithSwaps | GatewayOrderType.OfframpWithSwaps;
+    data: SwapsQuote & GatewayTokensInfo;
+};

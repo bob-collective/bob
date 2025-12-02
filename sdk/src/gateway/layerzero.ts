@@ -26,6 +26,7 @@ import { AllWalletClientParams, GatewayApiClient } from './client';
 import { getTokenAddress, getTokenSlots } from './tokens';
 import {
     EVMToEVMWithLayerZeroOrder,
+    EVMToEVMWithLayerZeroQuote,
     ExecuteQuoteParams,
     GatewayOrder,
     GatewayOrderType,
@@ -33,13 +34,13 @@ import {
     LayerZeroChainInfo,
     LayerZeroDeploymentsMetadataResponse,
     LayerZeroMessagesWalletResponse,
-    LayerZeroQuoteParamsExt,
     LayerZeroSendParam,
     LayerZeroTokenDeploymentsResponse,
+    CrossChainSwapQuoteParamsExt,
 } from './types';
 import { computeAllowanceSlot, computeBalanceSlot, getChainConfig, toHexScriptPubKey, viemClient } from './utils';
 import { supportedChainsMapping, resolveChainId, resolveChainName } from './utils/common';
-import { getEVMToEVMStatus } from './utils/layerzero';
+import { getEVMToEVMWithLayerZeroStatus } from './utils/layerzero';
 
 bitcoin.initEccLib(ecc);
 
@@ -260,7 +261,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
         return this.l0Client.getOftAddressForChain(chainKey);
     }
 
-    async getQuote(params: GetQuoteParams<LayerZeroQuoteParamsExt>): Promise<ExecuteQuoteParams> {
+    async getQuote(params: GetQuoteParams<CrossChainSwapQuoteParamsExt>): Promise<ExecuteQuoteParams> {
         const fromChain = typeof params.fromChain === 'number' ? resolveChainId(params.fromChain) : params.fromChain;
         const toChain = typeof params.toChain === 'number' ? resolveChainId(params.toChain) : params.toChain;
 
@@ -371,11 +372,11 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
             //      This is 30 mins plus, therefore a large buffer is needed for values to remain valid over this period.
             //  2) Bob Finality on the destination chain (destination finality).
             //      This is much shorter, not more than a few minutes, therefore a smaller/zero buffer can be used.
-            const originFinalityBuffer = params.l0OriginFinalityBuffer
-                ? BigInt(params.l0OriginFinalityBuffer)
+            const originFinalityBuffer = params.originFinalityBuffer
+                ? BigInt(params.originFinalityBuffer)
                 : BigInt(10000); // 100% default origin finality buffer
-            const destinationFinalityBuffer = params.l0DestinationFinalityBuffer
-                ? BigInt(params.l0DestinationFinalityBuffer)
+            const destinationFinalityBuffer = params.destinationFinalityBuffer
+                ? BigInt(params.destinationFinalityBuffer)
                 : BigInt(0); // 0% default destination finality buffer
 
             // Getting the layer zero fee gas so we know how much we need to swap from the order
@@ -445,7 +446,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
             }
 
             params.fromChain = bob.id;
-            params.l0ChainId = await this.l0Client.getChainId(dstEid);
+            params.destinationChainId = await this.l0Client.getChainId(dstEid);
 
             // Handle l0 -> bitcoin: estimate bob -> bitcoin
             const response = await super.getQuote(params);
@@ -686,9 +687,9 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                     throw error;
                 }
             }
-            case GatewayOrderType.EVMToEVM: {
+            case GatewayOrderType.EVMToEVMWithLayerZero: {
                 const { data, params } = quote;
-                const { oftAddress, destinationEid } = data;
+                const { oftAddress, destinationEid } = data as EVMToEVMWithLayerZeroQuote;
 
                 const toChain = resolveChainName(params.toChain);
 
@@ -843,7 +844,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
      * @returns Promise resolving to the estimated gas cost in wei (as bigint)
      */
     async getL0CreateOrderGasCost(
-        params: GetQuoteParams<LayerZeroQuoteParamsExt>,
+        params: GetQuoteParams<CrossChainSwapQuoteParamsExt>,
         sendParams: LayerZeroSendParam,
         sendFees: {
             nativeFee: bigint;
@@ -851,7 +852,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
         },
         fromChain: string
     ): Promise<bigint> {
-        const chain = getChainConfig(params.l0ChainId ?? params.fromChain);
+        const chain = getChainConfig(params.destinationChainId ?? params.fromChain);
         const publicClient = viemClient(chain);
 
         if (
@@ -948,7 +949,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
      * @param _userAddress - Wallet address the message originated from.
      * @returns Array of normalized evm-to-evm orders.
      */
-    async getEVMToEVMOrders(_userAddress: Address): Promise<EVMToEVMOrder[]> {
+    async getEVMToEVMWithLayerZeroOrders(_userAddress: Address): Promise<EVMToEVMWithLayerZeroOrder[]> {
         const url = new URL(`https://scan.layerzero-api.com/v1/messages/wallet/${_userAddress}`);
 
         const response = await super.safeFetch(url.toString(), undefined, 'Failed to fetch LayerZero send orders');
@@ -969,7 +970,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
 
         const items = json.data.filter((item) => item.destination.lzCompose.status === 'N/A');
 
-        return items.map((item): EVMToEVMOrder => {
+        return items.map((item): EVMToEVMWithLayerZeroOrder => {
             const { payload, blockTimestamp, txHash: sourceTxHash } = item.source.tx;
             const { txHash: destinationTxHash } = item.destination.tx;
 
@@ -993,7 +994,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
             return {
                 amount,
                 timestamp: blockTimestamp,
-                status: getEVMToEVMStatus(item),
+                status: getEVMToEVMWithLayerZeroStatus(item),
                 source: {
                     eid: item.pathway.srcEid,
                     txHash: sourceTxHash,
@@ -1015,11 +1016,17 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
      * @returns Promise resolving to array of typed orders
      */
     async getOrders(userAddress: Address): Promise<Array<GatewayOrder>> {
-        const [orders, evmToEVMOrders] = await Promise.all([
+        const [orders, evmToEVMWithLayerZeroOrders] = await Promise.all([
             super.getOrders(userAddress),
-            this.getEVMToEVMOrders(userAddress),
+            this.getEVMToEVMWithLayerZeroOrders(userAddress),
         ]);
 
-        return [...orders, ...evmToEVMOrders.map((order) => ({ type: GatewayOrderType.EVMToEVM as const, order }))];
+        return [
+            ...orders,
+            ...evmToEVMWithLayerZeroOrders.map((order) => ({
+                type: GatewayOrderType.EVMToEVMWithLayerZero as const,
+                order,
+            })),
+        ];
     }
 }

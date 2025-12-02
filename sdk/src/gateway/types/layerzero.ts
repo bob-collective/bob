@@ -101,15 +101,6 @@ export type LayerZeroTokenDeploymentsResponse = {
     };
 };
 
-export interface LayerZeroQuoteParamsExt {
-    /** @description temporary field for chain ID */
-    l0ChainId?: number | null;
-    /** @description Buffer in BPS to account for Bitcoin to BOB finality delay (30 mins+) when using the L0 Strategy */
-    l0OriginFinalityBuffer?: number | bigint;
-    /** @description Buffer in BPS to account for BOB to destination finality delay (a few minutes) when using the L0 Strategy */
-    l0DestinationFinalityBuffer?: number | bigint;
-}
-
 // Types for EVM to EVM swaps with LayerZero
 
 export type EVMToEVMWithLayerZeroOrderStatus =

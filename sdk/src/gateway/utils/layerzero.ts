@@ -1,7 +1,7 @@
 import { LayerZeroMessageWallet } from '../types';
-import { EVMToEVMOrderStatus } from '../types/evm-to-evm';
+import { EVMToEVMWithLayerZeroOrderStatus } from '../types/layerzero';
 
-export const getEVMToEVMStatus = (item: LayerZeroMessageWallet): EVMToEVMOrderStatus => {
+export const getEVMToEVMWithLayerZeroStatus = (item: LayerZeroMessageWallet): EVMToEVMWithLayerZeroOrderStatus => {
     const { source, destination } = item;
 
     // Handle source transaction states first
