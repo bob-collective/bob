@@ -1,5 +1,4 @@
 export * from './bitcoin';
-export * from './evm-to-evm';
 export * from './defiLlama';
 export * from './layerzero';
 export * from './offramp';

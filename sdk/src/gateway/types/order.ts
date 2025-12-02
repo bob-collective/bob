@@ -1,7 +1,7 @@
 import { Address, Hex } from 'viem';
 import { OnrampOrder } from './onramp';
 import { OfframpOrder } from './offramp';
-import { EVMToEVMOrder } from './evm-to-evm';
+import { EVMToEVMWithLayerZeroOrder } from './layerzero';
 
 export type OrderDetailsRaw = {
     version: string;
@@ -81,12 +81,25 @@ export type GatewayStartOrder = GatewayCreateOrderResponse & {
 };
 
 export enum GatewayOrderType {
-    Onramp = 'onramp',
-    Offramp = 'offramp',
-    EVMToEVM = 'evm-to-evm',
+    Onramp = 'onramp', // BTC -> WBTC on Bob
+    Offramp = 'offramp', // WBTC on Bob -> BTC
+
+    OnrampWithLayerZero = 'onramp-with-layerzero', // BTC -> WBTC on LayerZero supported chains
+    OfframpWithLayerZero = 'offramp-with-layerzero', // WBTC on LayerZero supported chains -> BTC
+
+    OnrampWithSwaps = 'onramp-with-swaps', // BTC -> Swaps supported asset on Swaps supported chains
+    OfframpWithSwaps = 'offramp-with-swaps', // Swaps supported asset on Swaps supported chains -> BTC
+
+    EVMToEVMWithLayerZero = 'evm-to-evm-with-layerzero', // WBTC on LayerZero supported chains -> WBTC on LayerZero supported chains
+    EVMToEVMWithSwaps = 'evm-to-evm-with-swaps', // Swaps supported asset on Swaps supported chains -> Swaps supported asset on Swaps supported chains
 }
 
 export type GatewayOrder =
     | { type: GatewayOrderType.Onramp; order: OnrampOrder }
     | { type: GatewayOrderType.Offramp; order: OfframpOrder }
-    | { type: GatewayOrderType.EVMToEVM; order: EVMToEVMOrder };
+    | { type: GatewayOrderType.OnrampWithLayerZero; order: OnrampOrder }
+    | { type: GatewayOrderType.OfframpWithLayerZero; order: OfframpOrder }
+    // | { type: GatewayOrderType.OnrampWithSwaps; order: OnrampOrder };
+    // | { type: GatewayOrderType.OfframpWithSwaps; order: OfframpOrder };
+    | { type: GatewayOrderType.EVMToEVMWithLayerZero; order: EVMToEVMWithLayerZeroOrder };
+// | { type: GatewayOrderType.EVMToEVMWithSwaps; order: EVMToEVMOrder };
