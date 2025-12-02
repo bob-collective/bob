@@ -5,11 +5,15 @@ import { resolveChainId } from './utils/common';
 import { GatewayOrderType } from './types/order';
 import { LayerZeroGatewayClient } from './layerzero';
 import { LayerZeroQuoteParamsExt } from './types/layerzero';
+import { SwapsClient } from './swaps';
 
 export class CrossChainSwapGatewayClient extends LayerZeroGatewayClient {
+    private swapsClient: SwapsClient;
+
     // TODO: remove constructor, set the config from `getQuote`
     constructor(options?: { rpcUrl?: string }) {
         super(options);
+        this.swapsClient = new SwapsClient();
     }
 
     async getQuote(params: GetQuoteParams<LayerZeroQuoteParamsExt>): Promise<ExecuteQuoteParams> {
