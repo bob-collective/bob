@@ -5,49 +5,44 @@ sidebar_label: Run a Full Node
 
 # Run a Full Node
 
-:::warning Upcoming BOB Fusaka Readiness Upgrade – October 14, 2025 (Sepolia), Early December 2025 (Mainnet)
+:::warning Fusaka Activation on Ethereum Mainnet
 **What's Included in the Upgrade**
 This is a **readiness upgrade** to make BOB protocol compatible with Ethereum's Fusaka hardfork on L1. This is NOT Fusaka adoption on L2—that will happen in a future upgrade.
 
 **Important Dates**
 
 - Ethereum Sepolia Fusaka hard fork: Tuesday, October 14th, 2025 07:36:00 UTC (BOB testnet already upgraded)
-- Ethereum Mainnet Fusaka hard fork: Expected early December 2025
+- Ethereum Mainnet Fusaka hard fork: December 3rd, 2025 21:49:11 UTC
 
 **Required Actions for Node Operators**
 
-If you or your partners are running external nodes, please ensure the following steps are completed:
+If you operate a BOB mainnet node, you must upgrade op-node and op-geth to the versions specified in the official notice:
 
 - **op-node**: Update to version [v1.16.2](https://github.com/ethereum-optimism/optimism/releases/tag/op-node%2Fv1.16.2)
 - **op-geth**: Update to version [v1.101603.5](https://github.com/ethereum-optimism/op-geth/releases/tag/v1.101603.5)
-- **L1 Beacon Node**: Ensure your L1 beacon node endpoint can serve all blobs and is configured with the appropriate Fusaka flags before the fork
 
-**Required Actions for Chain Operators**
+Official notice: [https://docs.optimism.io/notices/fusaka-notice#for-node-operators](https://docs.optimism.io/notices/fusaka-notice#for-node-operators)
 
-- **op-batcher**: Update to [v1.16.2](https://github.com/ethereum-optimism/optimism/releases/tag/op-batcher%2Fv1.16.2) with `OP_BATCHER_TXMGR_ENABLE_CELL_PROOFS: true` and restart just after Fusaka activates on L1
+Nodes that are not upgraded correctly will stop syncing after activation.
 
-- **proxyd**: Update to [v4.23.0](https://github.com/ethereum-optimism/infra/releases/tag/proxyd%2Fv4.23.0) or greater (requires whitelisting `eth_blobBaseFee` RPC)
-- **op-challenger**: Update to [v1.7.0](https://github.com/ethereum-optimism/optimism/releases/tag/op-challenger%2Fv1.7.0) if using permissionless fault proofs
+**NO action required if you:**
 
-**Previous Upgrades**
-
-- **Isthmus**: Active on May 9, 2025, 16:00:01 UTC
-- **Granite and Holocene**: Active on BOB mainnet
+- Use existing external RPC nodes directly
 
 **More Info**
-For full details, please refer to the [Fusaka Upgrade Notice](https://docs.optimism.io/notices/fusaka-notice)
+For full details, please refer to the [Fusaka Upgrade Notice](https://docs.optimism.io/notices/fusaka-notice#for-node-operators)
 Feel free to reach out with any questions or concerns.
 :::
 
 :::info
 There is no protocol level incentive to run a BOB full node. If you're interested in accessing the BOB chain, but you don't want to set up your own node, see our [Node Providers](/docs/tools/node-providers) to get RPC access to fully-managed nodes hosted by a third-party provider.
 
-To stay updated on node upgrades and announcements, join our [Telegram channel](https://t.me/+dmxnLC3uDwgyYWQy).
+To stay updated on node upgrades and announcements, join our [Telegram channel](https://t.me/bobupgradechannel).
 :::
 
 ## Requirements
 
-As of May 2025 we recommend you have at least the following hardware configuration to run a node:
+As of December 2025 we recommend you have at least the following hardware configuration to run a node:
 
 - at least 8 GB RAM
 - an SSD, preferably NVME drive with at least 100 GB free
