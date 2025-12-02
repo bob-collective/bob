@@ -25,7 +25,7 @@ Official notice: [https://docs.optimism.io/notices/fusaka-notice#for-node-operat
 
 Nodes that are not upgraded correctly will stop syncing after activation.
 
-🔴 **NO action required if you:**
+**NO action required if you:**
 
 - Use existing external RPC nodes directly
 
@@ -33,11 +33,6 @@ Nodes that are not upgraded correctly will stop syncing after activation.
 
 - **op-node**: Update to [v1.16.2](https://github.com/ethereum-optimism/optimism/releases/tag/op-node%2Fv1.16.2)
 - **op-geth**: Update to [v1.101603.5](https://github.com/ethereum-optimism/op-geth/releases/tag/v1.101603.5)
-
-**Previous Upgrades**
-
-- **Isthmus**: Active on May 9, 2025, 16:00:01 UTC
-- **Granite and Holocene**: Active on BOB mainnet
 
 **More Info**
 For full details, please refer to the [Fusaka Upgrade Notice](https://docs.optimism.io/notices/fusaka-notice#for-node-operators)
