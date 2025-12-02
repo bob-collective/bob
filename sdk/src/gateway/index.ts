@@ -4,6 +4,11 @@ export { GatewayApiClient as GatewaySDK } from './client';
 export { CrossChainSwapGatewayClient } from './cross-chain-swap';
 export { LayerZeroGatewayClient } from './layerzero';
 export {
+    EVMToEVMWithLayerZeroOrder,
+    EVMToEVMWithLayerZeroOrderStatus,
+    EVMToEVMWithLayerZeroQuote,
+    EVMToEVMWithLayerZeroExecuteQuoteParams,
+    EVMToEVMWithLayerZeroFeeBreakdown,
     ExecuteQuoteParams,
     GatewayOrderType,
     GatewayQuoteParams,

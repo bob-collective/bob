@@ -131,8 +131,7 @@ export class LayerZeroClient {
     }
 
     async getSupportedChainsInfo(): Promise<Array<LayerZeroChainInfo>> {
-        const chains = await this.getChainDeployments();
-        const deployments = await this.getWbtcDeployments();
+        const [chains, deployments] = await Promise.all([this.getChainDeployments(), this.getWbtcDeployments()]);
 
         const supportedLayerZeroChainKeys = new Set<string>();
         const layerZeroKeyToViemName: Record<string, string> = {};
