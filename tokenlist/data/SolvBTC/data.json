@@ -11,6 +11,21 @@
     },
     "bob": {
       "address": "0x541FD749419CA806a8bc7da8ac23D346f2dF8B77"
+    },
+    "arbitrum-one": {
+      "address": "0x3647c54c4c2c65bc7a2d63c0da2809b399dbbdc0"
+    },
+    "avalanche": {
+      "address": "0xbc78d84ba0c46dfe32cf2895a19939c86b81a777"
+    },
+    "base": {
+      "address": "0x3b86ad95859b6ab773f55f8d94b4b9d443ee931f"
+    },
+    "polygon": {
+      "address": "0xae4efbc7736f963982aacb17efa37fcbab924cb3"
+    },
+    "bnb-smart-chain": {
+      "address": "0x4aae823a6a0b376de6a78e74ecc5b079d38cbcf7"
     }
   }
 }
