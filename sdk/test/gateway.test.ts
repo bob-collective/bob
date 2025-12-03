@@ -1214,7 +1214,7 @@ describe('Gateway Tests', () => {
             .get(`/v1/messages/wallet/${userAddress}`)
             .reply(200, mockLayerZeroResponse);
 
-        const orders = await gatewaySDK.getCrossChainSwapOrders(userAddress);
+        const orders = await gatewaySDK.getEVMToEVMOrders(userAddress);
 
         expect(orders).toHaveLength(2); // Third order should be filtered out
 
@@ -1253,7 +1253,7 @@ describe('Gateway Tests', () => {
         });
     });
 
-    it('should handle edge cases in getCrossChainSwapOrders', async () => {
+    it('should handle edge cases in getEVMToEVMOrders', async () => {
         const gatewaySDK = new LayerZeroGatewayClient(bob.id);
         const userAddress = '0xFAEe001465dE6D7E8414aCDD9eF4aC5A35B2B808';
 
@@ -1358,7 +1358,7 @@ describe('Gateway Tests', () => {
 
         nock('https://scan.layerzero-api.com').get(`/v1/messages/wallet/${userAddress}`).reply(200, mockResponse);
 
-        const orders = await gatewaySDK.getCrossChainSwapOrders(userAddress);
+        const orders = await gatewaySDK.getEVMToEVMOrders(userAddress);
 
         expect(orders).toHaveLength(2);
 
@@ -1397,7 +1397,7 @@ describe('Gateway Tests', () => {
         });
     });
 
-    it('should handle API error for getCrossChainSwapOrders', async () => {
+    it('should handle API error for getEVMToEVMOrders', async () => {
         const gatewaySDK = new LayerZeroGatewayClient(bob.id);
         const userAddress = '0xFAEe001465dE6D7E8414aCDD9eF4aC5A35B2B808';
 
@@ -1405,10 +1405,10 @@ describe('Gateway Tests', () => {
             .get(`/v1/messages/wallet/${userAddress}`)
             .reply(500, { message: 'Internal Server Error' });
 
-        await expect(gatewaySDK.getCrossChainSwapOrders(userAddress)).rejects.toThrow('Internal Server Error');
+        await expect(gatewaySDK.getEVMToEVMOrders(userAddress)).rejects.toThrow('Internal Server Error');
     });
 
-    it('should handle network error for getCrossChainSwapOrders', async () => {
+    it('should handle network error for getEVMToEVMOrders', async () => {
         const gatewaySDK = new LayerZeroGatewayClient(bob.id);
         const userAddress = '0xFAEe001465dE6D7E8414aCDD9eF4aC5A35B2B808';
 
@@ -1416,7 +1416,7 @@ describe('Gateway Tests', () => {
             .get(`/v1/messages/wallet/${userAddress}`)
             .replyWithError(new TypeError('Failed to fetch'));
 
-        await expect(gatewaySDK.getCrossChainSwapOrders(userAddress)).rejects.toThrow(
+        await expect(gatewaySDK.getEVMToEVMOrders(userAddress)).rejects.toThrow(
             'Failed to fetch LayerZero send orders'
         );
     });
@@ -1427,7 +1427,7 @@ describe('Gateway Tests', () => {
 
         nock('https://scan.layerzero-api.com').get(`/v1/messages/wallet/${userAddress}`).reply(200, { data: [] });
 
-        const orders = await gatewaySDK.getCrossChainSwapOrders(userAddress);
+        const orders = await gatewaySDK.getEVMToEVMOrders(userAddress);
 
         expect(orders).toEqual([]);
     });

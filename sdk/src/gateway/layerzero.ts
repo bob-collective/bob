@@ -7,6 +7,7 @@ import {
     encodeAbiParameters,
     encodePacked,
     erc20Abi,
+    getAddress,
     Hex,
     InsufficientFundsError,
     isAddress,
@@ -24,7 +25,8 @@ import { layerZeroOftAbi, quoterV2Abi } from './abi';
 import { AllWalletClientParams, GatewayApiClient } from './client';
 import { getTokenAddress, getTokenSlots } from './tokens';
 import {
-    CrossChainOrder,
+    EVMToEVMWithLayerZeroOrder,
+    EVMToEVMWithLayerZeroQuote,
     ExecuteQuoteParams,
     GatewayOrder,
     GatewayOrderType,
@@ -32,19 +34,13 @@ import {
     LayerZeroChainInfo,
     LayerZeroDeploymentsMetadataResponse,
     LayerZeroMessagesWalletResponse,
-    LayerZeroQuoteParamsExt,
     LayerZeroSendParam,
     LayerZeroTokenDeploymentsResponse,
+    CrossChainSwapQuoteParamsExt,
 } from './types';
-import {
-    computeAllowanceSlot,
-    computeBalanceSlot,
-    getChainConfig,
-    getCrossChainStatus,
-    toHexScriptPubKey,
-    viemClient,
-} from './utils';
-import { supportedChainsMapping } from './utils/common';
+import { computeAllowanceSlot, computeBalanceSlot, getChainConfig, toHexScriptPubKey, viemClient } from './utils';
+import { supportedChainsMapping, resolveChainId, resolveChainName } from './utils/common';
+import { getEVMToEVMWithLayerZeroStatus } from './utils/layerzero';
 
 bitcoin.initEccLib(ecc);
 
@@ -135,8 +131,7 @@ export class LayerZeroClient {
     }
 
     async getSupportedChainsInfo(): Promise<Array<LayerZeroChainInfo>> {
-        const chains = await this.getChainDeployments();
-        const deployments = await this.getWbtcDeployments();
+        const [chains, deployments] = await Promise.all([this.getChainDeployments(), this.getWbtcDeployments()]);
 
         const supportedLayerZeroChainKeys = new Set<string>();
         const layerZeroKeyToViemName: Record<string, string> = {};
@@ -163,6 +158,26 @@ export class LayerZeroClient {
                     nativeChainId: chainData.chainDetails?.nativeChainId,
                 };
             });
+    }
+
+    async isChainAndTokenSupportedByLayerZero(chainKey: string, token: string): Promise<boolean> {
+        const supportedChains = await this.getSupportedChainsInfo();
+
+        // Find the chain info matching the chainKey (case-insensitive)
+        const chainInfo = supportedChains.find((chain) => chain.name.toLowerCase() === chainKey.toLowerCase());
+
+        if (!chainInfo) {
+            return false;
+        }
+
+        // Token can either be the wbtc string, or the specific OFT address for wbtc on the chain
+        const isWbtcToken = token.toLowerCase() === 'wbtc';
+        const isOftAddress =
+            isAddress(token) && isAddress(chainInfo.oftAddress)
+                ? isAddressEqual(getAddress(token), getAddress(chainInfo.oftAddress))
+                : false;
+
+        return isWbtcToken || isOftAddress;
     }
 
     async getChainId(eid: number): Promise<number | null> {
@@ -197,18 +212,6 @@ export class LayerZeroClient {
     }
 }
 
-// Viem chain names are used to identify chains
-function resolveChainId(chain: number): string {
-    return getChainConfig(chain).name.toLowerCase();
-}
-
-function resolveChainName(chain: number | string): string {
-    if (typeof chain === 'number') {
-        return resolveChainId(chain);
-    }
-    return chain.toLowerCase();
-}
-
 // TODO: support bob sepolia
 export class LayerZeroGatewayClient extends GatewayApiClient {
     private l0Client: LayerZeroClient;
@@ -221,6 +224,10 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
 
     async getSupportedChainsInfo(): Promise<Array<LayerZeroChainInfo>> {
         return this.l0Client.getSupportedChainsInfo();
+    }
+
+    async isChainAndTokenSupportedByLayerZero(chainKey: string, token: string): Promise<boolean> {
+        return this.l0Client.isChainAndTokenSupportedByLayerZero(chainKey, token);
     }
 
     /**
@@ -253,7 +260,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
         return this.l0Client.getOftAddressForChain(chainKey);
     }
 
-    async getQuote(params: GetQuoteParams<LayerZeroQuoteParamsExt>): Promise<ExecuteQuoteParams> {
+    async getQuote(params: GetQuoteParams<CrossChainSwapQuoteParamsExt>): Promise<ExecuteQuoteParams> {
         const fromChain = typeof params.fromChain === 'number' ? resolveChainId(params.fromChain) : params.fromChain;
         const toChain = typeof params.toChain === 'number' ? resolveChainId(params.toChain) : params.toChain;
 
@@ -364,11 +371,11 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
             //      This is 30 mins plus, therefore a large buffer is needed for values to remain valid over this period.
             //  2) Bob Finality on the destination chain (destination finality).
             //      This is much shorter, not more than a few minutes, therefore a smaller/zero buffer can be used.
-            const originFinalityBuffer = params.l0OriginFinalityBuffer
-                ? BigInt(params.l0OriginFinalityBuffer)
+            const originFinalityBuffer = params.originFinalityBuffer
+                ? BigInt(params.originFinalityBuffer)
                 : BigInt(10000); // 100% default origin finality buffer
-            const destinationFinalityBuffer = params.l0DestinationFinalityBuffer
-                ? BigInt(params.l0DestinationFinalityBuffer)
+            const destinationFinalityBuffer = params.destinationFinalityBuffer
+                ? BigInt(params.destinationFinalityBuffer)
                 : BigInt(0); // 0% default destination finality buffer
 
             // Getting the layer zero fee gas so we know how much we need to swap from the order
@@ -423,6 +430,8 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
 
             // Handle bitcoin -> l0 chain: need to add calldata
             const baseQuote = await super.getQuote(params);
+            // change the type to OnrampWithLayerZero
+            baseQuote.type = GatewayOrderType.OnrampWithLayerZero;
             return {
                 ...baseQuote,
                 finalOutputSats: baseQuote.finalOutputSats - Number(tokensToSwapForLayerZeroFees),
@@ -436,12 +445,14 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
             }
 
             params.fromChain = bob.id;
-            params.l0ChainId = await this.l0Client.getChainId(dstEid);
+            params.destinationChainId = await this.l0Client.getChainId(dstEid);
 
             // Handle l0 -> bitcoin: estimate bob -> bitcoin
             const response = await super.getQuote(params);
             // revert fromChain for handling in executeQuote
             response.params.fromChain = fromChain;
+            // change the type to OfframpWithLayerZero
+            response.type = GatewayOrderType.OfframpWithLayerZero;
             return response;
         } else if (fromChain !== 'bitcoin' && toChain !== 'bitcoin') {
             // Handle l0 -> l0 chain
@@ -533,7 +544,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
             // const gasFee = await this.getL0CreateOrderGasCost(params, sendParam, sendFees, fromChain);
 
             return {
-                type: GatewayOrderType.CrossChainSwap,
+                type: GatewayOrderType.EVMToEVMWithLayerZero,
                 finalOutputSats: Number(params.amount),
                 finalFeeSats: 0, // LayerZero sends don't have Bitcoin fees
                 params,
@@ -675,9 +686,9 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                     throw error;
                 }
             }
-            case GatewayOrderType.CrossChainSwap: {
+            case GatewayOrderType.EVMToEVMWithLayerZero: {
                 const { data, params } = quote;
-                const { oftAddress, destinationEid } = data;
+                const { oftAddress, destinationEid } = data as EVMToEVMWithLayerZeroQuote;
 
                 const toChain = resolveChainName(params.toChain);
 
@@ -832,7 +843,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
      * @returns Promise resolving to the estimated gas cost in wei (as bigint)
      */
     async getL0CreateOrderGasCost(
-        params: GetQuoteParams<LayerZeroQuoteParamsExt>,
+        params: GetQuoteParams<CrossChainSwapQuoteParamsExt>,
         sendParams: LayerZeroSendParam,
         sendFees: {
             nativeFee: bigint;
@@ -840,7 +851,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
         },
         fromChain: string
     ): Promise<bigint> {
-        const chain = getChainConfig(params.l0ChainId ?? params.fromChain);
+        const chain = getChainConfig(params.destinationChainId ?? params.fromChain);
         const publicClient = viemClient(chain);
 
         if (
@@ -932,12 +943,12 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
     }
 
     /**
-     * Fetches cross-chain swap orders initiated by a given wallet.
+     * Fetches evm-to-evm swap orders initiated by a given wallet.
      *
      * @param _userAddress - Wallet address the message originated from.
-     * @returns Array of normalized cross-chain orders.
+     * @returns Array of normalized evm-to-evm orders.
      */
-    async getCrossChainSwapOrders(_userAddress: Address): Promise<CrossChainOrder[]> {
+    async getEVMToEVMWithLayerZeroOrders(_userAddress: Address): Promise<EVMToEVMWithLayerZeroOrder[]> {
         const url = new URL(`https://scan.layerzero-api.com/v1/messages/wallet/${_userAddress}`);
 
         const response = await super.safeFetch(url.toString(), undefined, 'Failed to fetch LayerZero send orders');
@@ -958,7 +969,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
 
         const items = json.data.filter((item) => item.destination.lzCompose.status === 'N/A');
 
-        return items.map((item): CrossChainOrder => {
+        return items.map((item): EVMToEVMWithLayerZeroOrder => {
             const { payload, blockTimestamp, txHash: sourceTxHash } = item.source.tx;
             const { txHash: destinationTxHash } = item.destination.tx;
 
@@ -982,7 +993,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
             return {
                 amount,
                 timestamp: blockTimestamp,
-                status: getCrossChainStatus(item),
+                status: getEVMToEVMWithLayerZeroStatus(item),
                 source: {
                     eid: item.pathway.srcEid,
                     txHash: sourceTxHash,
@@ -998,20 +1009,23 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
     }
 
     /**
-     * Retrieves all orders (onramp, offramp, and crosschain swaps) for a specific user address.
+     * Retrieves all orders (onramp, offramp, and evm-to-evm swaps) for a specific user address.
      *
      * @param userAddress The user's EVM address
      * @returns Promise resolving to array of typed orders
      */
     async getOrders(userAddress: Address): Promise<Array<GatewayOrder>> {
-        const [orders, crossChainSwapOrders] = await Promise.all([
+        const [orders, evmToEVMWithLayerZeroOrders] = await Promise.all([
             super.getOrders(userAddress),
-            this.getCrossChainSwapOrders(userAddress),
+            this.getEVMToEVMWithLayerZeroOrders(userAddress),
         ]);
 
         return [
             ...orders,
-            ...crossChainSwapOrders.map((order) => ({ type: GatewayOrderType.CrossChainSwap as const, order })),
+            ...evmToEVMWithLayerZeroOrders.map((order) => ({
+                type: GatewayOrderType.EVMToEVMWithLayerZero as const,
+                order,
+            })),
         ];
     }
 }

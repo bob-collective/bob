@@ -184,6 +184,18 @@ export function getChainConfig(fromChain: string | number) {
     return getChainConfigById(fromChain);
 }
 
+// Viem chain names are used to identify chains
+export function resolveChainId(chain: number): string {
+    return getChainConfig(chain).name.toLowerCase();
+}
+
+export function resolveChainName(chain: number | string): string {
+    if (typeof chain === 'number') {
+        return resolveChainId(chain);
+    }
+    return chain.toLowerCase();
+}
+
 // Compute the final ERC20 allowance storage slot
 export function computeAllowanceSlot(owner: Address, spender: Address, tokenAllowanceSlot: bigint): Hex {
     const innerSlot = keccak256(

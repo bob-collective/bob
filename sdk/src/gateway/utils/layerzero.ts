@@ -1,7 +1,7 @@
 import { LayerZeroMessageWallet } from '../types';
-import { CrossChainOrderStatus } from '../types/crosschain-swap';
+import { EVMToEVMWithLayerZeroOrderStatus } from '../types/layerzero';
 
-export const getCrossChainStatus = (item: LayerZeroMessageWallet): CrossChainOrderStatus => {
+export const getEVMToEVMWithLayerZeroStatus = (item: LayerZeroMessageWallet): EVMToEVMWithLayerZeroOrderStatus => {
     const { source, destination } = item;
 
     // Handle source transaction states first
