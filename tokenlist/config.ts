@@ -20,7 +20,7 @@ export const baseUrl =
 export const datadir = './data';
 export const outfile = 'tokenlist.json';
 export const outfileBob = 'tokenlist-bob.json';
-export const outfileUI = 'tokenlist-overrides.json';
+export const outfileOverrides = 'tokenlist-overrides.json';
 
 const supportedMainnetChains = [
   mainnet,
