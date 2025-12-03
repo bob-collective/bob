@@ -603,7 +603,7 @@ describe('LayerZero Tests', () => {
         const client = new LayerZeroGatewayClient();
 
         const mockQuote: ExecuteQuoteParams = {
-            type: GatewayOrderType.CrossChainSwap,
+            type: GatewayOrderType.EVMToEVMWithLayerZero,
             finalOutputSats: 100000,
             finalFeeSats: 0,
             params: {
@@ -679,7 +679,7 @@ describe('LayerZero Tests', () => {
         const client = new LayerZeroGatewayClient();
 
         const mockQuote: ExecuteQuoteParams = {
-            type: GatewayOrderType.CrossChainSwap,
+            type: GatewayOrderType.EVMToEVMWithLayerZero,
             finalOutputSats: 100000,
             finalFeeSats: 0,
             params: {

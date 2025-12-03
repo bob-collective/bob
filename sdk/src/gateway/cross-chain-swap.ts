@@ -4,7 +4,13 @@ import { ExecuteQuoteParams, GetQuoteParams } from './types/quote';
 import { resolveChainId, getChainConfig } from './utils/common';
 import { GatewayOrderType } from './types/order';
 import { LayerZeroGatewayClient } from './layerzero';
-import { CrossChainSwapQuoteParamsExt, SwapsExecuteQuoteParams, ActionsParams } from './types';
+import {
+    CrossChainSwapQuoteParamsExt,
+    ActionsParams,
+    EVMToEVMWithSwapsExecuteQuoteParams,
+    OnrampWithSwapsExecuteQuoteParams,
+    OfframpWithSwapsExecuteQuoteParams,
+} from './types';
 import { SwapsClient } from './swaps';
 import { getTokenAddress } from './tokens';
 import { isAddress } from 'viem';
@@ -66,7 +72,9 @@ export class CrossChainSwapGatewayClient extends LayerZeroGatewayClient {
             | GatewayOrderType.EVMToEVMWithSwaps
             | GatewayOrderType.OnrampWithSwaps
             | GatewayOrderType.OfframpWithSwaps
-    ): Promise<SwapsExecuteQuoteParams> {
+    ): Promise<
+        EVMToEVMWithSwapsExecuteQuoteParams | OnrampWithSwapsExecuteQuoteParams | OfframpWithSwapsExecuteQuoteParams
+    > {
         // Resolve chain IDs
         const fromChainId =
             typeof params.fromChain === 'number' ? params.fromChain : getChainConfig(params.fromChain).id;

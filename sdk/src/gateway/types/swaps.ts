@@ -800,7 +800,19 @@ export interface SwapsQuote {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export type SwapsExecuteQuoteParams<T = {}> = BaseExecuteQuoteParams<T> & {
-    type: GatewayOrderType.EVMToEVMWithSwaps | GatewayOrderType.OnrampWithSwaps | GatewayOrderType.OfframpWithSwaps;
+export type EVMToEVMWithSwapsExecuteQuoteParams<T = {}> = BaseExecuteQuoteParams<T> & {
+    type: GatewayOrderType.EVMToEVMWithSwaps;
+    data: SwapsQuote & GatewayTokensInfo;
+};
+
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export type OnrampWithSwapsExecuteQuoteParams<T = {}> = BaseExecuteQuoteParams<T> & {
+    type: GatewayOrderType.OnrampWithSwaps;
+    data: SwapsQuote & GatewayTokensInfo;
+};
+
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export type OfframpWithSwapsExecuteQuoteParams<T = {}> = BaseExecuteQuoteParams<T> & {
+    type: GatewayOrderType.OfframpWithSwaps;
     data: SwapsQuote & GatewayTokensInfo;
 };

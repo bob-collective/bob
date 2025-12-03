@@ -7,7 +7,11 @@ import {
     OfframpWithLayerZeroExecuteQuoteParams,
     EVMToEVMWithLayerZeroExecuteQuoteParams,
 } from './layerzero';
-import { SwapsExecuteQuoteParams } from './swaps';
+import {
+    EVMToEVMWithSwapsExecuteQuoteParams,
+    OnrampWithSwapsExecuteQuoteParams,
+    OfframpWithSwapsExecuteQuoteParams,
+} from './swaps';
 
 type ChainSlug = string | number;
 type TokenSymbol = string;
@@ -103,4 +107,6 @@ export type ExecuteQuoteParams<T = {}> =
     | OnrampWithLayerZeroExecuteQuoteParams<T>
     | OfframpWithLayerZeroExecuteQuoteParams<T>
     | EVMToEVMWithLayerZeroExecuteQuoteParams<T>
-    | SwapsExecuteQuoteParams<T>;
+    | EVMToEVMWithSwapsExecuteQuoteParams<T>
+    | OnrampWithSwapsExecuteQuoteParams<T>
+    | OfframpWithSwapsExecuteQuoteParams<T>;
