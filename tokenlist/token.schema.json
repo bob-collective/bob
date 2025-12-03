@@ -32,6 +32,21 @@
             },
             "bnb-smart-chain": {
               "$ref": "#/definitions/Address"
+            },
+            "base": {
+              "$ref": "#/definitions/Address"
+            },
+            "op-mainnet": {
+              "$ref": "#/definitions/Address"
+            },
+            "arbitrum-one": {
+              "$ref": "#/definitions/Address"
+            },
+            "polygon": {
+              "$ref": "#/definitions/Address"
+            },
+            "avalanche": {
+              "$ref": "#/definitions/Address"
             }
           }
         },
@@ -136,6 +151,21 @@
           "$ref": "#/definitions/ChainProperties"
         },
         "bnb-smart-chain": {
+          "$ref": "#/definitions/ChainProperties"
+        },
+        "base": {
+          "$ref": "#/definitions/ChainProperties"
+        },
+        "op-mainnet": {
+          "$ref": "#/definitions/ChainProperties"
+        },
+        "arbitrum-one": {
+          "$ref": "#/definitions/ChainProperties"
+        },
+        "polygon": {
+          "$ref": "#/definitions/ChainProperties"
+        },
+        "avalanche": {
           "$ref": "#/definitions/ChainProperties"
         }
       },
