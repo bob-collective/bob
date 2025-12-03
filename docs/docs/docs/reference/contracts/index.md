@@ -40,7 +40,7 @@ These are OP Stack related contracts. If an API is preferred, here is the [Condu
 - DelayedWETHPermissionedGameProxy: [`0x3a1D54496cf461fFc96d3b1a8A0B43B091ea3c13`](https://etherscan.io/address/0x3a1D54496cf461fFc96d3b1a8A0B43B091ea3c13)
 - DisputeGameFactoryImpl: [`0x4bba758f006ef09402ef31724203f316ab74e4a0`](https://etherscan.io/address/0x4bba758f006ef09402ef31724203f316ab74e4a0)
 - DisputeGameFactoryProxy: [`0x96123dbFC3253185B594c6a7472EE5A21E9B1079`](https://etherscan.io/address/0x96123dbFC3253185B594c6a7472EE5A21E9B1079)
-- KailuaTreasury: [`0x0e4152204995877DF34BD26d6dab78baf9393Ae2`](https://etherscan.io/address/0x0e4152204995877DF34BD26d6dab78baf9393Ae2)
+- KailuaTreasury: [`0x220C56BCB401001e5D218604c143D38DA107fC4a`](https://etherscan.io/address/0x220C56BCB401001e5D218604c143D38DA107fC4a)
 - L1CrossDomainMessengerImpl: [`0x5d5a095665886119693f0b41d8dfee78da033e8b`](https://etherscan.io/address/0x5d5a095665886119693f0b41d8dfee78da033e8b)
 - L1CrossDomainMessengerProxy: [`0xE3d981643b806FB8030CDB677D6E60892E547EdA`](https://etherscan.io/address/0xE3d981643b806FB8030CDB677D6E60892E547EdA)
 - L1ERC721BridgeImpl: [`0x7ae1d3bd877a4c5ca257404ce26be93a02c98013`](https://etherscan.io/address/0x7ae1d3bd877a4c5ca257404ce26be93a02c98013)

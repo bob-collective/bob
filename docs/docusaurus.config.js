@@ -91,7 +91,7 @@ const config = {
           // PDF redirects
           {
             from: "/docs/reference/mica-whitepaper",
-            to: "https://static.gobob.xyz/BOB_Foundation_Token_Whitepaper_ATTR_V1.pdf"
+            to: "https://static.gobob.xyz/BOB_Foundation_Token_Whitepaper_ATTR_V2.pdf"
           }
         ],
       },
