@@ -12,7 +12,20 @@ import {
     Chain as ViemChain,
     zeroAddress,
 } from 'viem';
-import { avalanche, base, berachain, bob, bsc, mainnet, optimism, sei, soneium, sonic, unichain } from 'viem/chains';
+import {
+    avalanche,
+    base,
+    berachain,
+    bob,
+    bsc,
+    mainnet,
+    optimism,
+    sei,
+    soneium,
+    sonic,
+    unichain,
+    arbitrum,
+} from 'viem/chains';
 import {
     GatewayCreateOrderRequest,
     OnrampFeeBreakdown,
@@ -141,6 +154,7 @@ export const supportedChainsMapping = {
     base,
     soneium,
     optimism,
+    arbitrum,
 } as const;
 
 const chainIdToChainConfigMapping = Object.values(supportedChainsMapping).reduce(
