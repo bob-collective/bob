@@ -80,10 +80,10 @@ export class CrossChainSwapGatewayClient extends LayerZeroGatewayClient {
             return super.getQuote(params);
         } else if (fromChain === 'bitcoin' && toChain !== 'bitcoin') {
             // Handle cross chain swap (with onramp)
-            // if (params.toToken && (await this.isChainAndTokenSupportedByLayerZero(toChain, params.toToken))) {
-            //     // If toChain and toToken are supported by layerzero, use LayerZero flow
-            //     return super.getQuote(params);
-            // }
+            if (params.toToken && (await this.isChainAndTokenSupportedByLayerZero(toChain, params.toToken))) {
+                // If toChain and toToken are supported by layerzero, use LayerZero flow
+                return super.getQuote(params);
+            }
 
             // Otherwise use Swaps flow
             return this.getSwapsOnrampQuote(params);
