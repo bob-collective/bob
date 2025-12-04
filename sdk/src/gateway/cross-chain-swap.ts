@@ -44,6 +44,41 @@ export class CrossChainSwapGatewayClient extends LayerZeroGatewayClient {
         this.swapsClient = new SwapsClient();
     }
 
+    /**
+     * Encodes the calldata for MulticallStrategy with approve and swap calls
+     * @param swapTo The swap contract address
+     * @param swapCalldata The swap transaction calldata
+     * @param amountToApprove The amount to approve for the swap contract
+     * @param tokenAddress The token address to approve (defaults to WBTC on BOB)
+     * @returns Encoded calls array for MulticallStrategy.handleGatewayMessage
+     */
+    private encodeMulticallCalls(
+        swapTo: Address,
+        swapCalldata: Hex,
+        amountToApprove: bigint,
+        tokenAddress: Address = BOB_WBTC
+    ): Hex {
+        // Encode ERC20 approve call: approve(swapTo, amountToApprove)
+        const approveCalldata = encodeFunctionData({
+            abi: erc20Abi,
+            functionName: 'approve',
+            args: [swapTo, amountToApprove],
+        });
+
+        // Encode the calls array for MulticallStrategy
+        // First call: approve the swap contract to spend the token
+        // Second call: execute the swap
+        // The Call struct is: struct Call { address target; bytes callData; uint256 value; }
+        // MulticallStrategy.handleGatewayMessage expects: abi.decode(message, (Call[]))
+        // So we encode as: (address,bytes,uint256)[]
+        return encodeAbiParameters(parseAbiParameters(['(address,bytes,uint256)[]']), [
+            [
+                [tokenAddress, approveCalldata, 0n] as readonly [Address, Hex, bigint],
+                [swapTo, swapCalldata, 0n] as readonly [Address, Hex, bigint],
+            ],
+        ]);
+    }
+
     async getQuote(params: GetQuoteParams<CrossChainSwapQuoteParamsExt>): Promise<ExecuteQuoteParams> {
         const fromChain = typeof params.fromChain === 'number' ? resolveChainId(params.fromChain) : params.fromChain;
         const toChain = typeof params.toChain === 'number' ? resolveChainId(params.toChain) : params.toChain;
@@ -429,40 +464,5 @@ export class CrossChainSwapGatewayClient extends LayerZeroGatewayClient {
         await publicClient.waitForTransactionReceipt({ hash: transactionHash });
 
         return transactionHash;
-    }
-
-    /**
-     * Encodes the calldata for MulticallStrategy with approve and swap calls
-     * @param swapTo The swap contract address
-     * @param swapCalldata The swap transaction calldata
-     * @param amountToApprove The amount to approve for the swap contract
-     * @param tokenAddress The token address to approve (defaults to WBTC on BOB)
-     * @returns Encoded calls array for MulticallStrategy.handleGatewayMessage
-     */
-    private encodeMulticallCalls(
-        swapTo: Address,
-        swapCalldata: Hex,
-        amountToApprove: bigint,
-        tokenAddress: Address = BOB_WBTC
-    ): Hex {
-        // Encode ERC20 approve call: approve(swapTo, amountToApprove)
-        const approveCalldata = encodeFunctionData({
-            abi: erc20Abi,
-            functionName: 'approve',
-            args: [swapTo, amountToApprove],
-        });
-
-        // Encode the calls array for MulticallStrategy
-        // First call: approve the swap contract to spend the token
-        // Second call: execute the swap
-        // The Call struct is: struct Call { address target; bytes callData; uint256 value; }
-        // MulticallStrategy.handleGatewayMessage expects: abi.decode(message, (Call[]))
-        // So we encode as: (address,bytes,uint256)[]
-        return encodeAbiParameters(parseAbiParameters(['(address,bytes,uint256)[]']), [
-            [
-                [tokenAddress, approveCalldata, 0n] as readonly [Address, Hex, bigint],
-                [swapTo, swapCalldata, 0n] as readonly [Address, Hex, bigint],
-            ],
-        ]);
     }
 }
