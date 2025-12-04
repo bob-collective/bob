@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/Uniswap/token-lists/refs/heads/main/src/tokenlist.schema.json",
   "name": "BOB Tokens",
-  "timestamp": "2025-12-03T18:39:49.220Z",
+  "timestamp": "2025-12-04T10:43:02.778Z",
   "version": {
     "major": 1,
     "minor": 0,
@@ -1468,18 +1468,6 @@
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/WBTC/logo.svg",
       "extensions": {
         "tokenId": "WBTC",
-        "bridge": {}
-      }
-    },
-    {
-      "chainId": 1,
-      "address": "0x0555E30da8f98308EdB960aa94C0Db47230d2B9c",
-      "name": "Wrapped BTC",
-      "symbol": "WBTC",
-      "decimals": 8,
-      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/WBTCOFT/logo.svg",
-      "extensions": {
-        "tokenId": "WBTCOFT",
         "bridge": {}
       }
     },

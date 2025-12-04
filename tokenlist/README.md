@@ -23,7 +23,7 @@ Import the token list and use it in your app. The package exposes a JSON token l
 Example (ESM):
 
 ```js
-import tokenList from '@gobob/tokenlist';
+import tokenList from '@gobob/tokenlist/tokenlist.json';
 // or
 // const tokenList = require('@gobob/tokenlist')
 
