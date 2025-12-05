@@ -14,6 +14,15 @@
       "bridge": {
         "ethereum": "0x4200000000000000000000000000000000000010"
       }
+    },
+    "base": {
+      "address": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+    },
+    "bnb-smart-chain": {
+      "address": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+    },
+    "arbitrum-one": {
+      "address": "0xc96de26018a54d51c097160568752c4e3bd6c364"
     }
   }
 }

@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/Uniswap/token-lists/refs/heads/main/src/tokenlist.schema.json",
   "name": "BOB Tokens",
-  "timestamp": "2025-12-05T10:08:11.166Z",
+  "timestamp": "2025-12-05T10:20:35.121Z",
   "version": {
     "major": 1,
     "minor": 0,
@@ -186,6 +186,18 @@
       }
     },
     {
+      "chainId": 42161,
+      "address": "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf",
+      "name": "Coinbase Wrapped BTC",
+      "symbol": "cbBTC",
+      "decimals": 8,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/cbBTC/logo.webp",
+      "extensions": {
+        "tokenId": "cbBTC",
+        "bridge": {}
+      }
+    },
+    {
       "chainId": 1,
       "address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
       "name": "Dai Stablecoin",
@@ -211,6 +223,66 @@
         "bridge": {
           "1": "0x4200000000000000000000000000000000000010"
         }
+      }
+    },
+    {
+      "chainId": 137,
+      "address": "0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063",
+      "name": "Dai Stablecoin",
+      "symbol": "DAI",
+      "decimals": 18,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/DAI/logo.svg",
+      "extensions": {
+        "tokenId": "DAI",
+        "bridge": {}
+      }
+    },
+    {
+      "chainId": 42161,
+      "address": "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1",
+      "name": "Dai Stablecoin",
+      "symbol": "DAI",
+      "decimals": 18,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/DAI/logo.svg",
+      "extensions": {
+        "tokenId": "DAI",
+        "bridge": {}
+      }
+    },
+    {
+      "chainId": 56,
+      "address": "0x1AF3F329e8BE154074D8769D1FFa4eE058B1DBc3",
+      "name": "Dai Stablecoin",
+      "symbol": "DAI",
+      "decimals": 18,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/DAI/logo.svg",
+      "extensions": {
+        "tokenId": "DAI",
+        "bridge": {}
+      }
+    },
+    {
+      "chainId": 10,
+      "address": "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1",
+      "name": "Dai Stablecoin",
+      "symbol": "DAI",
+      "decimals": 18,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/DAI/logo.svg",
+      "extensions": {
+        "tokenId": "DAI",
+        "bridge": {}
+      }
+    },
+    {
+      "chainId": 8453,
+      "address": "0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb",
+      "name": "Dai Stablecoin",
+      "symbol": "DAI",
+      "decimals": 18,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/DAI/logo.svg",
+      "extensions": {
+        "tokenId": "DAI",
+        "bridge": {}
       }
     },
     {
@@ -327,6 +399,42 @@
         "bridge": {
           "1": "0x4200000000000000000000000000000000000010"
         }
+      }
+    },
+    {
+      "chainId": 8453,
+      "address": "0xC96dE26018A54D51c097160568752c4E3BD6C364",
+      "name": "Fire Bitcoin",
+      "symbol": "FBTC",
+      "decimals": 8,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/FBTC/logo.webp",
+      "extensions": {
+        "tokenId": "FBTC",
+        "bridge": {}
+      }
+    },
+    {
+      "chainId": 56,
+      "address": "0xC96dE26018A54D51c097160568752c4E3BD6C364",
+      "name": "Fire Bitcoin",
+      "symbol": "FBTC",
+      "decimals": 8,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/FBTC/logo.webp",
+      "extensions": {
+        "tokenId": "FBTC",
+        "bridge": {}
+      }
+    },
+    {
+      "chainId": 42161,
+      "address": "0xC96dE26018A54D51c097160568752c4E3BD6C364",
+      "name": "Fire Bitcoin",
+      "symbol": "FBTC",
+      "decimals": 8,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/FBTC/logo.webp",
+      "extensions": {
+        "tokenId": "FBTC",
+        "bridge": {}
       }
     },
     {
@@ -458,6 +566,30 @@
       }
     },
     {
+      "chainId": 56,
+      "address": "0xecAc9C5F704e954931349Da37F60E39f515c11c1",
+      "name": "Lombard Staked Bitcoin",
+      "symbol": "LBTC",
+      "decimals": 8,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/LBTC/logo.svg",
+      "extensions": {
+        "tokenId": "LBTC",
+        "bridge": {}
+      }
+    },
+    {
+      "chainId": 8453,
+      "address": "0xecAc9C5F704e954931349Da37F60E39f515c11c1",
+      "name": "Lombard Staked Bitcoin",
+      "symbol": "LBTC",
+      "decimals": 8,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/LBTC/logo.svg",
+      "extensions": {
+        "tokenId": "LBTC",
+        "bridge": {}
+      }
+    },
+    {
       "chainId": 1,
       "address": "0x1217BfE6c773EEC6cc4A38b5Dc45B92292B6E189",
       "name": "OpenUSDT",
@@ -471,6 +603,30 @@
     },
     {
       "chainId": 60808,
+      "address": "0x1217BfE6c773EEC6cc4A38b5Dc45B92292B6E189",
+      "name": "OpenUSDT",
+      "symbol": "oUSDT",
+      "decimals": 6,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/oUSDT/logo.webp",
+      "extensions": {
+        "tokenId": "oUSDT",
+        "bridge": {}
+      }
+    },
+    {
+      "chainId": 10,
+      "address": "0x1217BfE6c773EEC6cc4A38b5Dc45B92292B6E189",
+      "name": "OpenUSDT",
+      "symbol": "oUSDT",
+      "decimals": 6,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/oUSDT/logo.webp",
+      "extensions": {
+        "tokenId": "oUSDT",
+        "bridge": {}
+      }
+    },
+    {
+      "chainId": 8453,
       "address": "0x1217BfE6c773EEC6cc4A38b5Dc45B92292B6E189",
       "name": "OpenUSDT",
       "symbol": "oUSDT",
@@ -726,6 +882,66 @@
       }
     },
     {
+      "chainId": 42161,
+      "address": "0x3647c54c4c2C65bC7a2D63c0Da2809B399DBBDC0",
+      "name": "Solv BTC",
+      "symbol": "SolvBTC",
+      "decimals": 18,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/SolvBTC/logo.svg",
+      "extensions": {
+        "tokenId": "SolvBTC",
+        "bridge": {}
+      }
+    },
+    {
+      "chainId": 43114,
+      "address": "0xbc78D84Ba0c46dFe32cf2895a19939c86b81a777",
+      "name": "Solv BTC",
+      "symbol": "SolvBTC",
+      "decimals": 18,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/SolvBTC/logo.svg",
+      "extensions": {
+        "tokenId": "SolvBTC",
+        "bridge": {}
+      }
+    },
+    {
+      "chainId": 8453,
+      "address": "0x3B86Ad95859b6AB773f55f8d94B4b9d443EE931f",
+      "name": "Solv BTC",
+      "symbol": "SolvBTC",
+      "decimals": 18,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/SolvBTC/logo.svg",
+      "extensions": {
+        "tokenId": "SolvBTC",
+        "bridge": {}
+      }
+    },
+    {
+      "chainId": 137,
+      "address": "0xaE4EFbc7736f963982aACb17EFA37fCBAb924cB3",
+      "name": "Solv BTC",
+      "symbol": "SolvBTC",
+      "decimals": 18,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/SolvBTC/logo.svg",
+      "extensions": {
+        "tokenId": "SolvBTC",
+        "bridge": {}
+      }
+    },
+    {
+      "chainId": 56,
+      "address": "0x4aae823a6a0b376De6A78e74eCC5b079d38cBCf7",
+      "name": "Solv BTC",
+      "symbol": "SolvBTC",
+      "decimals": 18,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/SolvBTC/logo.svg",
+      "extensions": {
+        "tokenId": "SolvBTC",
+        "bridge": {}
+      }
+    },
+    {
       "chainId": 60808,
       "address": "0x6b062AA7F5FC52b530Cb13967aE2E6bc0D8Dd3E4",
       "name": "SolvBTC Jupiter",
@@ -874,6 +1090,30 @@
       }
     },
     {
+      "chainId": 10,
+      "address": "0x6c84a8f1c29108F47a79964b5Fe888D4f4D0dE40",
+      "name": "tBTC v2",
+      "symbol": "tBTC",
+      "decimals": 18,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/tBTC/logo.svg",
+      "extensions": {
+        "tokenId": "tBTC",
+        "bridge": {}
+      }
+    },
+    {
+      "chainId": 42161,
+      "address": "0x6c84a8f1c29108F47a79964b5Fe888D4f4D0dE40",
+      "name": "tBTC v2",
+      "symbol": "tBTC",
+      "decimals": 18,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/tBTC/logo.svg",
+      "extensions": {
+        "tokenId": "tBTC",
+        "bridge": {}
+      }
+    },
+    {
       "chainId": 1,
       "address": "0xCFC5bD99915aAa815401C5a41A927aB7a38d29cf",
       "name": "Threshold USD",
@@ -978,6 +1218,54 @@
       }
     },
     {
+      "chainId": 10,
+      "address": "0x93919784C523f39CACaa98Ee0a9d96c3F32b593e",
+      "name": "uniBTC",
+      "symbol": "uniBTC",
+      "decimals": 8,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/uniBTC/logo.svg",
+      "extensions": {
+        "tokenId": "uniBTC",
+        "bridge": {}
+      }
+    },
+    {
+      "chainId": 42161,
+      "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "name": "uniBTC",
+      "symbol": "uniBTC",
+      "decimals": 8,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/uniBTC/logo.svg",
+      "extensions": {
+        "tokenId": "uniBTC",
+        "bridge": {}
+      }
+    },
+    {
+      "chainId": 8453,
+      "address": "0x93919784C523f39CACaa98Ee0a9d96c3F32b593e",
+      "name": "uniBTC",
+      "symbol": "uniBTC",
+      "decimals": 8,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/uniBTC/logo.svg",
+      "extensions": {
+        "tokenId": "uniBTC",
+        "bridge": {}
+      }
+    },
+    {
+      "chainId": 56,
+      "address": "0x6B2a01A5f79dEb4c2f3c0eDa7b01DF456FbD726a",
+      "name": "uniBTC",
+      "symbol": "uniBTC",
+      "decimals": 8,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/uniBTC/logo.svg",
+      "extensions": {
+        "tokenId": "uniBTC",
+        "bridge": {}
+      }
+    },
+    {
       "chainId": 1,
       "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
       "name": "USD Coin",
@@ -1032,6 +1320,66 @@
       }
     },
     {
+      "chainId": 10,
+      "address": "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85",
+      "name": "USD Coin",
+      "symbol": "USDC",
+      "decimals": 6,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/USDC/logo.webp",
+      "extensions": {
+        "tokenId": "USDC",
+        "bridge": {}
+      }
+    },
+    {
+      "chainId": 137,
+      "address": "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359",
+      "name": "USD Coin",
+      "symbol": "USDC",
+      "decimals": 6,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/USDC/logo.webp",
+      "extensions": {
+        "tokenId": "USDC",
+        "bridge": {}
+      }
+    },
+    {
+      "chainId": 43114,
+      "address": "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E",
+      "name": "USD Coin",
+      "symbol": "USDC",
+      "decimals": 6,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/USDC/logo.webp",
+      "extensions": {
+        "tokenId": "USDC",
+        "bridge": {}
+      }
+    },
+    {
+      "chainId": 42161,
+      "address": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+      "name": "USD Coin",
+      "symbol": "USDC",
+      "decimals": 6,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/USDC/logo.webp",
+      "extensions": {
+        "tokenId": "USDC",
+        "bridge": {}
+      }
+    },
+    {
+      "chainId": 8453,
+      "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+      "name": "USD Coin",
+      "symbol": "USDC",
+      "decimals": 6,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/USDC/logo.webp",
+      "extensions": {
+        "tokenId": "USDC",
+        "bridge": {}
+      }
+    },
+    {
       "chainId": 1,
       "address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
       "name": "Tether USD",
@@ -1057,6 +1405,30 @@
         "bridge": {
           "1": "0x4200000000000000000000000000000000000010"
         }
+      }
+    },
+    {
+      "chainId": 43114,
+      "address": "0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7",
+      "name": "Tether USD",
+      "symbol": "USDT",
+      "decimals": 6,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/USDT/logo.webp",
+      "extensions": {
+        "tokenId": "USDT",
+        "bridge": {}
+      }
+    },
+    {
+      "chainId": 8453,
+      "address": "0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2",
+      "name": "Bridged USDT",
+      "symbol": "USDT",
+      "decimals": 6,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/USDT/logo.webp",
+      "extensions": {
+        "tokenId": "USDT",
+        "bridge": {}
       }
     },
     {
@@ -1088,7 +1460,79 @@
       }
     },
     {
+      "chainId": 42161,
+      "address": "0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f",
+      "name": "Wrapped BTC",
+      "symbol": "WBTC",
+      "decimals": 8,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/WBTC/logo.svg",
+      "extensions": {
+        "tokenId": "WBTC",
+        "bridge": {}
+      }
+    },
+    {
+      "chainId": 10,
+      "address": "0x68f180fcCe6836688e9084f035309E29Bf0A2095",
+      "name": "Wrapped BTC",
+      "symbol": "WBTC",
+      "decimals": 8,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/WBTC/logo.svg",
+      "extensions": {
+        "tokenId": "WBTC",
+        "bridge": {}
+      }
+    },
+    {
       "chainId": 60808,
+      "address": "0x0555E30da8f98308EdB960aa94C0Db47230d2B9c",
+      "name": "Wrapped BTC",
+      "symbol": "WBTC",
+      "decimals": 8,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/WBTCOFT/logo.svg",
+      "extensions": {
+        "tokenId": "WBTCOFT",
+        "bridge": {}
+      }
+    },
+    {
+      "chainId": 56,
+      "address": "0x0555E30da8f98308EdB960aa94C0Db47230d2B9c",
+      "name": "Wrapped BTC",
+      "symbol": "WBTC",
+      "decimals": 8,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/WBTCOFT/logo.svg",
+      "extensions": {
+        "tokenId": "WBTCOFT",
+        "bridge": {}
+      }
+    },
+    {
+      "chainId": 10,
+      "address": "0xC3f854B2970f8727D28527ECE33176faC67FeF48",
+      "name": "Wrapped BTC",
+      "symbol": "WBTC",
+      "decimals": 8,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/WBTCOFT/logo.svg",
+      "extensions": {
+        "tokenId": "WBTCOFT",
+        "bridge": {}
+      }
+    },
+    {
+      "chainId": 8453,
+      "address": "0x0555E30da8f98308EdB960aa94C0Db47230d2B9c",
+      "name": "Wrapped BTC",
+      "symbol": "WBTC",
+      "decimals": 8,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/WBTCOFT/logo.svg",
+      "extensions": {
+        "tokenId": "WBTCOFT",
+        "bridge": {}
+      }
+    },
+    {
+      "chainId": 43114,
       "address": "0x0555E30da8f98308EdB960aa94C0Db47230d2B9c",
       "name": "Wrapped BTC",
       "symbol": "WBTC",
@@ -1206,6 +1650,66 @@
     {
       "chainId": 60808,
       "address": "0xCC0966D8418d412c599A6421b760a847eB169A8c",
+      "name": "xSolvBTC",
+      "symbol": "xSolvBTC",
+      "decimals": 18,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/xSolvBTC/logo.svg",
+      "extensions": {
+        "tokenId": "xSolvBTC",
+        "bridge": {}
+      }
+    },
+    {
+      "chainId": 56,
+      "address": "0x1346b618dC92810EC74163e4c27004c921D446a5",
+      "name": "xSolvBTC",
+      "symbol": "xSolvBTC",
+      "decimals": 18,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/xSolvBTC/logo.svg",
+      "extensions": {
+        "tokenId": "xSolvBTC",
+        "bridge": {}
+      }
+    },
+    {
+      "chainId": 43114,
+      "address": "0xCC0966D8418d412c599A6421b760a847eB169A8c",
+      "name": "xSolvBTC",
+      "symbol": "xSolvBTC",
+      "decimals": 18,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/xSolvBTC/logo.svg",
+      "extensions": {
+        "tokenId": "xSolvBTC",
+        "bridge": {}
+      }
+    },
+    {
+      "chainId": 8453,
+      "address": "0xC26C9099BD3789107888c35bb41178079B282561",
+      "name": "xSolvBTC",
+      "symbol": "xSolvBTC",
+      "decimals": 18,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/xSolvBTC/logo.svg",
+      "extensions": {
+        "tokenId": "xSolvBTC",
+        "bridge": {}
+      }
+    },
+    {
+      "chainId": 42161,
+      "address": "0x346c574C56e1A4aAa8dc88Cda8F7EB12b39947aB",
+      "name": "xSolvBTC",
+      "symbol": "xSolvBTC",
+      "decimals": 18,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/xSolvBTC/logo.svg",
+      "extensions": {
+        "tokenId": "xSolvBTC",
+        "bridge": {}
+      }
+    },
+    {
+      "chainId": 137,
+      "address": "0xc99F5c922DAE05B6e2ff83463ce705eF7C91F077",
       "name": "xSolvBTC",
       "symbol": "xSolvBTC",
       "decimals": 18,
