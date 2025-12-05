@@ -2,8 +2,10 @@ import { Address, Hex } from 'viem';
 import { BaseExecuteQuoteParams } from './quote';
 import { GatewayOrderType } from './order';
 import { GatewayTokensInfo } from './token';
+import { OnrampQuote } from './onramp';
+import { OfframpQuote } from './offramp';
 
-type ActionType = 'swap-action' | 'evm-calldata-tx ';
+type ActionType = 'swap-action' | 'evm-calldata-tx';
 
 type SwapDirection = 'exact-amount-in' | 'exact-amount-out';
 
@@ -794,25 +796,23 @@ export interface PathsResponse {
     timestamp: string;
 }
 
-export interface SwapsQuote {
-    actionResponse: ActionsResponse;
-    actionParams: ActionsParams;
+export interface SwapsTransaction {
+    to: Address;
+    data: Hex;
+    value: string;
+    chainId: number;
 }
-
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export type EVMToEVMWithSwapsExecuteQuoteParams<T = {}> = BaseExecuteQuoteParams<T> & {
-    type: GatewayOrderType.EVMToEVMWithSwaps;
-    data: SwapsQuote & GatewayTokensInfo;
-};
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export type OnrampWithSwapsExecuteQuoteParams<T = {}> = BaseExecuteQuoteParams<T> & {
     type: GatewayOrderType.OnrampWithSwaps;
-    data: SwapsQuote & GatewayTokensInfo;
+    data: OnrampQuote & GatewayTokensInfo;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export type OfframpWithSwapsExecuteQuoteParams<T = {}> = BaseExecuteQuoteParams<T> & {
     type: GatewayOrderType.OfframpWithSwaps;
-    data: SwapsQuote & GatewayTokensInfo;
+    data: OfframpQuote & {
+        tx: SwapsTransaction; // Transaction from Swaps API to execute
+    };
 };
