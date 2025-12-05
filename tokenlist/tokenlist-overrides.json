@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/Uniswap/token-lists/refs/heads/main/src/tokenlist.schema.json",
   "name": "BOB Tokens",
-  "timestamp": "2025-12-05T10:20:35.121Z",
+  "timestamp": "2025-12-05T11:24:14.307Z",
   "version": {
     "major": 1,
     "minor": 0,
@@ -89,6 +89,30 @@
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/BABY/logo.svg",
       "extensions": {
         "tokenId": "BABY",
+        "bridge": {}
+      }
+    },
+    {
+      "chainId": 1,
+      "address": "0xB8c77482e45F1F44dE1745F52C74426C631bDD52",
+      "name": "BNB",
+      "symbol": "BNB",
+      "decimals": 18,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/BNB/logo.svg",
+      "extensions": {
+        "tokenId": "BNB",
+        "bridge": {}
+      }
+    },
+    {
+      "chainId": 56,
+      "address": "0x0000000000000000000000000000000000000000",
+      "name": "BNB",
+      "symbol": "BNB",
+      "decimals": 18,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/BNB/logo.svg",
+      "extensions": {
+        "tokenId": "BNB",
         "bridge": {}
       }
     },
@@ -354,18 +378,6 @@
       "address": "0x0000000000000000000000000000000000000000",
       "name": "Ether",
       "symbol": "ETH",
-      "decimals": 18,
-      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/ETH/logo.svg",
-      "extensions": {
-        "tokenId": "ETH",
-        "bridge": {}
-      }
-    },
-    {
-      "chainId": 56,
-      "address": "0x0000000000000000000000000000000000000000",
-      "name": "BNB",
-      "symbol": "BNB",
       "decimals": 18,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/ETH/logo.svg",
       "extensions": {
