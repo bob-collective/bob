@@ -23,6 +23,12 @@
     },
     "bob-sepolia": {
       "address": "0xD23F06550b0A7bC98B20eb81D4c21572a97598FA"
+    },
+    "op-mainnet": {
+      "address": "0x6c84a8f1c29108F47a79964b5Fe888D4f4D0dE40"
+    },
+    "arbitrum-one": {
+      "address": "0x6c84a8f1c29108F47a79964b5Fe888D4f4D0dE40"
     }
   }
 }

@@ -11,6 +11,18 @@
     },
     "bob": {
       "address": "0x236f8c0a61dA474dB21B693fB2ea7AAB0c803894"
+    },
+    "op-mainnet": {
+      "address": "0x93919784c523f39cacaa98ee0a9d96c3f32b593e"
+    },
+    "arbitrum-one": {
+      "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+    },
+    "base": {
+      "address": "0x93919784c523f39cacaa98ee0a9d96c3f32b593e"
+    },
+    "bnb-smart-chain": {
+      "address": "0x6b2a01a5f79deb4c2f3c0eda7b01df456fbd726a"
     }
   }
 }

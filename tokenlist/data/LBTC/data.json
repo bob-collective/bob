@@ -17,6 +17,12 @@
       "bridge": {
         "ethereum": "0x4200000000000000000000000000000000000010"
       }
+    },
+    "bnb-smart-chain": {
+      "address": "0xecac9c5f704e954931349da37f60e39f515c11c1"
+    },
+    "base": {
+      "address": "0xecac9c5f704e954931349da37f60e39f515c11c1"
     }
   }
 }

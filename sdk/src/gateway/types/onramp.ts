@@ -54,6 +54,7 @@ interface TokenReceived {
     tokenAddress: Address;
 }
 
+// TODO: move l0 fields to a separate interface
 export interface OnrampOrderResponse {
     /** @description The gateway address */
     gatewayAddress: Address;

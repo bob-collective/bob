@@ -12,7 +12,20 @@ import {
     Chain as ViemChain,
     zeroAddress,
 } from 'viem';
-import { avalanche, base, berachain, bob, bsc, mainnet, optimism, sei, soneium, sonic, unichain } from 'viem/chains';
+import {
+    avalanche,
+    base,
+    berachain,
+    bob,
+    bsc,
+    mainnet,
+    optimism,
+    sei,
+    soneium,
+    sonic,
+    unichain,
+    arbitrum,
+} from 'viem/chains';
 import {
     GatewayCreateOrderRequest,
     OnrampFeeBreakdown,
@@ -141,6 +154,7 @@ export const supportedChainsMapping = {
     base,
     soneium,
     optimism,
+    arbitrum,
 } as const;
 
 const chainIdToChainConfigMapping = Object.values(supportedChainsMapping).reduce(
@@ -182,6 +196,18 @@ export function getChainConfig(fromChain: string | number) {
     }
 
     return getChainConfigById(fromChain);
+}
+
+// Viem chain names are used to identify chains
+export function resolveChainId(chain: number): string {
+    return getChainConfig(chain).name.toLowerCase();
+}
+
+export function resolveChainName(chain: number | string): string {
+    if (typeof chain === 'number') {
+        return resolveChainId(chain);
+    }
+    return chain.toLowerCase();
 }
 
 // Compute the final ERC20 allowance storage slot

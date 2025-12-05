@@ -20,6 +20,15 @@
       "overrides": {
         "name": "Bridged USDT"
       }
+    },
+    "avalanche": {
+      "address": "0x9702230a8ea53601f5cd2dc00fdbc13d4df4a8c7"
+    },
+    "base": {
+      "address": "0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2",
+      "overrides": {
+        "name": "Bridged USDT"
+      }
     }
   }
 }

@@ -20,6 +20,12 @@
       "overrides": {
         "name": "Bridged WBTC"
       }
+    },
+    "arbitrum-one": {
+      "address": "0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f"
+    },
+    "op-mainnet": {
+      "address": "0x68f180fcce6836688e9084f035309e29bf0a2095"
     }
   }
 }

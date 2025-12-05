@@ -1,5 +1,4 @@
 export * from './bitcoin';
-export * from './crosschain-swap';
 export * from './defiLlama';
 export * from './layerzero';
 export * from './offramp';
@@ -8,4 +7,5 @@ export * from './order';
 export * from './quote';
 export * from './strategy';
 export * from './token';
+export * from './swaps';
 export * from './utils';

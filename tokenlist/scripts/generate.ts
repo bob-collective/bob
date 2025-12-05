@@ -7,7 +7,7 @@ import {
   datadir,
   outfile,
   outfileBob,
-  outfileUI,
+  outfileOverrides,
   schema,
   supportedChainMapping,
 } from '../config';
@@ -139,4 +139,4 @@ fs.writeFileSync(outfileBob, JSON.stringify(bobTokenlist, null, 2));
 // ---- create tokenlist with overrides ----
 const uiTokenlist = addTokens(mapToOverridesTokenlist(tokenlistData));
 
-fs.writeFileSync(outfileUI, JSON.stringify(uiTokenlist, null, 2));
+fs.writeFileSync(outfileOverrides, JSON.stringify(uiTokenlist, null, 2));
