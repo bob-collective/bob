@@ -295,7 +295,7 @@ export class CrossChainSwapGatewayClient extends LayerZeroGatewayClient {
 
         // Validate required addresses
         if (!params.fromUserAddress) {
-            throw new Error('fromUserAddress is required for Swaps API');
+            params.fromUserAddress = '0x1111111111111111111111111111111111111111';
         }
 
         // Convert amount to string
