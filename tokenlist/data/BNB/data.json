@@ -3,9 +3,6 @@
   "symbol": "BNB",
   "decimals": 18,
   "tokens": {
-    "ethereum": {
-      "address": "0xb8c77482e45f1f44de1745f52c74426c631bdd52"
-    },
     "bnb-smart-chain": {
       "address": "0x0000000000000000000000000000000000000000"
     }
