@@ -182,9 +182,10 @@ export class CrossChainSwapGatewayClient extends LayerZeroGatewayClient {
         const dstToken = isAddress(params.toToken) ? params.toToken : getTokenAddress(toChainId, params.toToken);
 
         // Validate required addresses
-        if (!params.fromUserAddress) {
-            throw new Error('fromUserAddress is required for Swaps API');
-        }
+        // if (!params.fromUserAddress) {
+        //     // params.fromUserAddress = '0x1111111111111111111111111111111111111111';
+        //     throw new Error('fromUserAddress is required for Swaps API');
+        // }
         if (!params.toUserAddress) {
             throw new Error('toUserAddress is required for Swaps API');
         }
