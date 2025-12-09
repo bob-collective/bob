@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/Uniswap/token-lists/refs/heads/main/src/tokenlist.schema.json",
   "name": "BOB Tokens",
-  "timestamp": "2025-12-09T10:04:49.130Z",
+  "timestamp": "2025-12-09T10:40:19.589Z",
   "version": {
     "major": 1,
     "minor": 0,
@@ -1330,7 +1330,7 @@
     {
       "chainId": 60808,
       "address": "0xe75D0fB2C24A55cA1e3F96781a2bCC7bdba058F0",
-      "name": "Bridged USDC (BOB)",
+      "name": "Bridged USDC",
       "symbol": "USDC.e",
       "decimals": 6,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/USDC/logo.webp",
