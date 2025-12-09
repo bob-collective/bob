@@ -491,7 +491,7 @@ export enum BridgeProtocolId {
 type Period = 'day' | 'week' | 'month' | 'allTime';
 
 export interface TransactionParams {
-    appIds: string; //Comma-separated list of your app IDs. By default, a request to this endpoint will return transactions across all appIds in your org. Each API key has a unique app ID. Multiple app IDs can exist within a single org ID.
+    appIds: string; // Comma-separated list of your app IDs. By default, a request to this endpoint will return transactions across all appIds in your org. Each API key has a unique app ID. Multiple app IDs can exist within a single org ID.
     walletAddress: Address;
     chainIds: string; // Comma-separated list of chain IDs to filter by Example: "1,42161,10"
     page: number;
@@ -502,15 +502,15 @@ export interface TransactionParams {
 }
 
 interface Transaction {
-    status: 'success';
+    status: Status;
     sender: Address;
     srcChainId: number;
-    dstChainId: 42161;
+    dstChainId: number;
     srcTxHash: Hex;
     dstTxHash: Hex;
     bridgeDetails: {
-        isBridge: true;
-        bridgeTime: 420;
+        isBridge: boolean;
+        bridgeTime: number;
         txPath: [
             {
                 chainId: number;
@@ -716,21 +716,21 @@ interface Transaction {
         ];
     };
     org: {
-        appId: 'app_123';
-        affiliateId: 'affiliate_123';
+        appId: string;
+        affiliateId: string;
     };
     usdValue: number;
     srcTx: {
         toAddress: Address;
         txHash: Hex;
         chainId: number;
-        value: '1000000000000000000n';
+        value: `${number}n`;
         timestamp: `${number}`;
         paymentToken: {
-            name: 'Ethereum';
-            symbol: 'ETH';
-            decimals: 18;
-            amount: '1000000000000000000n';
+            name: string;
+            symbol: string;
+            decimals: number;
+            amount: `${number}n`;
             address: Address;
         };
     };
@@ -738,13 +738,13 @@ interface Transaction {
         toAddress: Address;
         txHash: Hex;
         chainId: number;
-        value: '1000000000000000000n';
+        value: `${number}n`;
         timestamp: `${number}`;
         paymentToken: {
-            name: 'Ethereum';
-            symbol: 'ETH';
-            decimals: 18;
-            amount: '1000000000000000000n';
+            name: string;
+            symbol: string;
+            decimals: number;
+            amount: `${number}n`;
             address: Address;
         };
     };
@@ -816,3 +816,22 @@ export type OfframpWithSwapsExecuteQuoteParams<T = {}> = BaseExecuteQuoteParams<
         tx: SwapsTransaction; // Transaction from Swaps API to execute
     };
 };
+
+// success, pending, requires refund, refunded, failed
+export type EVMToEVMWithSwapsOrderStatus = 'pending' | 'success' | 'requires refund' | 'refunded' | 'failed';
+
+export interface EVMToEVMWithSwapsOrder {
+    amount: bigint;
+    timestamp: number;
+    status: EVMToEVMWithSwapsOrderStatus;
+    source: {
+        chainId: number;
+        txHash: string;
+        token: Address;
+    };
+    destination: {
+        chainId: number;
+        txHash: string;
+        token: Address;
+    };
+}

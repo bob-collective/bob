@@ -117,12 +117,12 @@ export interface EVMToEVMWithLayerZeroOrder {
     timestamp: number;
     status: EVMToEVMWithLayerZeroOrderStatus;
     source: {
-        eid: number;
+        chainId: number;
         txHash: string;
         token: Address;
     };
     destination: {
-        eid: number;
+        chainId: number;
         txHash: string;
         token: Address;
     };

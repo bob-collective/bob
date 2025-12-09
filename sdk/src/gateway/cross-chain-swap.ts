@@ -2,7 +2,7 @@ import { bob } from 'viem/chains';
 import { AllWalletClientParams } from './client';
 import { ExecuteQuoteParams, GetQuoteParams } from './types/quote';
 import { resolveChainId, getChainConfig } from './utils/common';
-import { GatewayOrderType } from './types/order';
+import { GatewayOrder, GatewayOrderType } from './types/order';
 import { LayerZeroGatewayClient } from './layerzero';
 import { GatewayApiClient } from './client';
 import {
@@ -10,7 +10,6 @@ import {
     OnrampWithSwapsExecuteQuoteParams,
     OfframpWithSwapsExecuteQuoteParams,
     ActionsParams,
-    TransactionParams,
 } from './types';
 import { SwapsClient } from './swaps';
 import { getTokenAddress } from './tokens';
@@ -162,8 +161,38 @@ export class CrossChainSwapGatewayClient extends LayerZeroGatewayClient {
         }
     }
 
-    getTransactions(params: TransactionParams) {
-        return this.swapsClient.getTransactions(params);
+    /**
+     * Retrieves all orders (onramp, offramp, and evm-to-evm swaps) for a specific user address.
+     *
+     * @param {TransactionParams} params query params for the swaps api
+     * @returns Promise resolving to array of typed orders
+     */
+    async getOrders(userAddress: Address): Promise<Array<GatewayOrder>> {
+        const [swapOrders, gatewayOrders] = await Promise.all([
+            this.swapsClient.getTransactions(userAddress),
+            super.getOrders(userAddress),
+        ]);
+
+        const orders = swapOrders.txs.map<GatewayOrder>((order) => ({
+            type: GatewayOrderType.EVMToEVMWithSwaps as const,
+            order: {
+                amount: BigInt(order.actionResponse.amountOut.amount),
+                timestamp: new Date(order.srcTx.timestamp).getTime(),
+                status: order.status,
+                source: {
+                    chainId: order.srcTx.chainId,
+                    txHash: order.srcTxHash,
+                    token: order.srcTx.paymentToken.address,
+                },
+                destination: {
+                    chainId: order.dstTx.chainId,
+                    txHash: order.dstTxHash,
+                    token: order.dstTx.paymentToken.address,
+                },
+            },
+        }));
+
+        return [...gatewayOrders, ...orders];
     }
 
     private async getSwapsOnrampQuote(

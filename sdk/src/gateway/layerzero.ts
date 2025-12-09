@@ -969,43 +969,50 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
 
         const items = json.data.filter((item) => item.destination.lzCompose.status === 'N/A');
 
-        return items.map((item): EVMToEVMWithLayerZeroOrder => {
-            const { payload, blockTimestamp, txHash: sourceTxHash } = item.source.tx;
-            const { txHash: destinationTxHash } = item.destination.tx;
+        return Promise.all(
+            items.map(async (item): Promise<EVMToEVMWithLayerZeroOrder> => {
+                const { payload, blockTimestamp, txHash: sourceTxHash } = item.source.tx;
+                const { txHash: destinationTxHash } = item.destination.tx;
 
-            let amount = 0n;
+                let amount = 0n;
 
-            if (payload && typeof payload === 'string') {
-                // LayerZero payload format: the order size is encoded in the last 8 bytes (16 hex chars)
-                const hex = payload.startsWith('0x') ? payload.slice(2) : payload;
-                // Validate minimum expected payload length
-                if (hex.length >= 16 && hex.length % 2 === 0) {
-                    const last16 = hex.slice(-16);
-                    try {
-                        amount = BigInt('0x' + last16);
-                    } catch {
-                        console.warn('Failed to parse order size from LayerZero payload');
-                        amount = 0n;
+                if (payload && typeof payload === 'string') {
+                    // LayerZero payload format: the order size is encoded in the last 8 bytes (16 hex chars)
+                    const hex = payload.startsWith('0x') ? payload.slice(2) : payload;
+                    // Validate minimum expected payload length
+                    if (hex.length >= 16 && hex.length % 2 === 0) {
+                        const last16 = hex.slice(-16);
+                        try {
+                            amount = BigInt('0x' + last16);
+                        } catch {
+                            console.warn('Failed to parse order size from LayerZero payload');
+                            amount = 0n;
+                        }
                     }
                 }
-            }
 
-            return {
-                amount,
-                timestamp: blockTimestamp,
-                status: getEVMToEVMWithLayerZeroStatus(item),
-                source: {
-                    eid: item.pathway.srcEid,
-                    txHash: sourceTxHash,
-                    token: item.pathway.sender.address as Address,
-                },
-                destination: {
-                    eid: item.pathway.dstEid,
-                    txHash: destinationTxHash,
-                    token: item.pathway.receiver.address as Address,
-                },
-            };
-        });
+                const [fromChain, toChain] = (await Promise.all([
+                    this.getChainIdForEid(item.pathway.srcEid),
+                    this.getChainIdForEid(item.pathway.dstEid),
+                ])) as [number, number];
+
+                return {
+                    amount,
+                    timestamp: blockTimestamp,
+                    status: getEVMToEVMWithLayerZeroStatus(item),
+                    source: {
+                        chainId: fromChain,
+                        txHash: sourceTxHash,
+                        token: item.pathway.sender.address as Address,
+                    },
+                    destination: {
+                        chainId: toChain,
+                        txHash: destinationTxHash,
+                        token: item.pathway.receiver.address as Address,
+                    },
+                };
+            })
+        );
     }
 
     /**
