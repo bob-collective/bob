@@ -63,14 +63,15 @@ export class SwapsClient {
     }
 
     private async getJson<T>(url: string): Promise<T> {
-        if (!process.env.SWAPS_API_KEY) throw new Error('process.env.SWAPS_API_KEY is missing');
+        if (!process.env.NEXT_PUBLIC_SWAPS_API_KEY && !process.env.SWAPS_API_KEY)
+            throw new Error('process.env.NEXT_PUBLIC_SWAPS_API_KEY or process.env.SWAPS_API_KEY is missing');
 
         const response = await fetch(url, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
                 Accept: 'application/json',
-                'x-api-key': process.env.SWAPS_API_KEY as string,
+                'x-api-key': process.env.NEXT_PUBLIC_SWAPS_API_KEY || (process.env.SWAPS_API_KEY as string),
             },
         });
         if (!response.ok) {
