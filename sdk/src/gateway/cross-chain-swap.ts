@@ -243,7 +243,8 @@ export class CrossChainSwapGatewayClient extends LayerZeroGatewayClient {
         params.toToken = BOB_WBTC;
 
         // Get the actual onramp quote from GatewayApiClient (skip LayerZeroGatewayClient)
-        const baseQuote = await GatewayApiClient.prototype.getQuote.call(this, params);
+        const baseQuote: Awaited<ReturnType<typeof GatewayApiClient.prototype.getQuote>> =
+            await GatewayApiClient.prototype.getQuote.call(this, params);
 
         // Now refetch the Swap calldata using the finalOutputSats as the amount
         const actionParams2: ActionsParams = {
@@ -268,10 +269,10 @@ export class CrossChainSwapGatewayClient extends LayerZeroGatewayClient {
                 message: encodedCalls2,
             },
             type: GatewayOrderType.OnrampWithSwaps,
-            finalOutputSats: baseQuote.finalOutputSats,
+            finalOutputSats: Number(actionResponse2.amountOut.amount),
             finalFeeSats: baseQuote.finalFeeSats,
             data: baseQuote.data,
-        };
+        } as OnrampWithSwapsExecuteQuoteParams;
     }
 
     private async getSwapsOfframpQuote(
@@ -342,7 +343,8 @@ export class CrossChainSwapGatewayClient extends LayerZeroGatewayClient {
         };
 
         // Get the bob -> bitcoin offramp quote from GatewayApiClient
-        const baseQuote = await GatewayApiClient.prototype.getQuote.call(this, offrampParams);
+        const baseQuote: Awaited<ReturnType<typeof GatewayApiClient.prototype.getQuote>> =
+            await GatewayApiClient.prototype.getQuote.call(this, offrampParams);
 
         if (baseQuote.type !== GatewayOrderType.Offramp) {
             throw new Error('Expected offramp quote but got different type');
