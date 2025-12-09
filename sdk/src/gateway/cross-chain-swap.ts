@@ -10,6 +10,7 @@ import {
     OnrampWithSwapsExecuteQuoteParams,
     OfframpWithSwapsExecuteQuoteParams,
     ActionsParams,
+    TransactionParams,
 } from './types';
 import { SwapsClient } from './swaps';
 import { getTokenAddress } from './tokens';
@@ -159,6 +160,10 @@ export class CrossChainSwapGatewayClient extends LayerZeroGatewayClient {
                 });
             }
         }
+    }
+
+    getTransactions(params: TransactionParams) {
+        return this.swapsClient.getTransactions(params);
     }
 
     private async getSwapsOnrampQuote(
