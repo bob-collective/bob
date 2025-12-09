@@ -130,6 +130,19 @@ export class CrossChainSwapGatewayClient extends LayerZeroGatewayClient {
         btcSigner,
     }: { quote: ExecuteQuoteParams } & AllWalletClientParams): Promise<string> {
         switch (quote.type) {
+            case GatewayOrderType.OnrampWithLayerZero: {
+                // Cast quote type to Onramp
+                const onrampQuote = {
+                    ...quote,
+                    type: GatewayOrderType.Onramp as const,
+                };
+                return super.executeQuote({
+                    quote: onrampQuote,
+                    walletClient,
+                    publicClient,
+                    btcSigner,
+                });
+            }
             case GatewayOrderType.OnrampWithSwaps: {
                 // Cast quote type to Onramp
                 const onrampQuote = {
