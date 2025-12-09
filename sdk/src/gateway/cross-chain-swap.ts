@@ -287,7 +287,7 @@ export class CrossChainSwapGatewayClient extends LayerZeroGatewayClient {
             throw new Error('fromToken is required for Swaps API');
         }
         if (!params.toUserAddress) {
-            throw new Error('Bitcoin address is required for offramp');
+            throw new Error('Bitcoin wallet is required for offramp');
         }
 
         const srcToken = isAddress(params.fromToken)
