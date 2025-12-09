@@ -53,7 +53,16 @@
       "address": "0xaf88d065e77c8cc2239327c5edb3a432268e5831"
     },
     "base": {
-      "address": "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913"
+      "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+    },
+    "unichain": {
+      "address": "0x078D782b760474a361dDA0AF3839290b0EF57AD6",
+      "overrides": {
+        "name": "USDC"
+      }
+    },
+    "bnb-smart-chain": {
+      "address": "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d"
     }
   }
 }

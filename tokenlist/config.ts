@@ -9,6 +9,7 @@ import {
   optimism,
   polygon,
   sepolia,
+  unichain,
 } from 'viem/chains';
 import { mapByName } from './utils';
 
@@ -31,6 +32,7 @@ const supportedMainnetChains = [
   arbitrum,
   polygon,
   avalanche,
+  unichain,
 ];
 const supportedTestnetChains = [sepolia, bobSepolia];
 export const supportedChains = [

@@ -47,6 +47,9 @@
             },
             "avalanche": {
               "$ref": "#/definitions/Address"
+            },
+            "unichain": {
+              "$ref": "#/definitions/Address"
             }
           }
         },
@@ -166,6 +169,9 @@
           "$ref": "#/definitions/ChainProperties"
         },
         "avalanche": {
+          "$ref": "#/definitions/ChainProperties"
+        },
+        "unichain": {
           "$ref": "#/definitions/ChainProperties"
         }
       },
