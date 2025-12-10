@@ -91,7 +91,7 @@ const config = {
           // PDF redirects
           {
             from: "/docs/reference/mica-whitepaper",
-            to: "https://static.gobob.xyz/BOB_Foundation_Token_Whitepaper_ATTR_V2.pdf"
+            to: "https://www.notion.so/build-on-bitcoin/BOB-MiCA-White-Paper-2c33a8aad3b48057a35afb9451211fe9"
           }
         ],
       },
