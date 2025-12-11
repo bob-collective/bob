@@ -6,6 +6,9 @@
   "main": "index.ts",
   "files": [
     "index.ts",
+    "config.ts",
+    "types.ts",
+    "utils.ts",
     "tokenlist.json",
     "tokenlist*.json"
   ],

@@ -1,34 +1,32 @@
-import { bob } from 'viem/chains';
-import { AllWalletClientParams } from './client';
-import { ExecuteQuoteParams, GetQuoteParams } from './types/quote';
-import { resolveChainId, getChainConfig, viemClient } from './utils/common';
-import { GatewayOrderType } from './types/order';
-import { LayerZeroGatewayClient } from './layerzero';
-import { GatewayApiClient } from './client';
+import * as bitcoin from 'bitcoinjs-lib';
 import {
-    CrossChainSwapQuoteParamsExt,
-    OnrampWithSwapsExecuteQuoteParams,
-    OfframpWithSwapsExecuteQuoteParams,
-    ActionsParams,
-} from './types';
+    encodeAbiParameters,
+    encodeFunctionData,
+    erc20Abi,
+    isAddress,
+    parseAbiParameters,
+    type Address,
+    type Chain,
+    type Hex,
+    type PublicClient,
+    type Transport,
+    type WalletClient,
+} from 'viem';
+import { bob } from 'viem/chains';
+import { offrampCallerV2, quoterV2Abi } from './abi';
+import { AllWalletClientParams, GatewayApiClient } from './client';
+import { LayerZeroGatewayClient } from './layerzero';
 import { SwapsClient } from './swaps';
 import { getTokenAddress } from './tokens';
 import {
-    isAddress,
-    encodeAbiParameters,
-    parseAbiParameters,
-    encodeFunctionData,
-    erc20Abi,
-    type Address,
-    type Hex,
-    type PublicClient,
-    type WalletClient,
-    type Transport,
-    type Chain,
-} from 'viem';
-import { offrampCallerV2, quoterV2Abi } from './abi';
-import { toHexScriptPubKey } from './utils/common';
-import * as bitcoin from 'bitcoinjs-lib';
+    ActionsParams,
+    CrossChainSwapQuoteParamsExt,
+    OfframpWithSwapsExecuteQuoteParams,
+    OnrampWithSwapsExecuteQuoteParams,
+} from './types';
+import { GatewayOrder, GatewayOrderType } from './types/order';
+import { ExecuteQuoteParams, GetQuoteParams } from './types/quote';
+import { getChainConfig, resolveChainId, toHexScriptPubKey, viemClient } from './utils/common';
 
 export const BOB_WBTC = '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c';
 
@@ -130,6 +128,19 @@ export class CrossChainSwapGatewayClient extends LayerZeroGatewayClient {
         btcSigner,
     }: { quote: ExecuteQuoteParams } & AllWalletClientParams): Promise<string> {
         switch (quote.type) {
+            case GatewayOrderType.OnrampWithLayerZero: {
+                // Cast quote type to Onramp
+                const onrampQuote = {
+                    ...quote,
+                    type: GatewayOrderType.Onramp as const,
+                };
+                return super.executeQuote({
+                    quote: onrampQuote,
+                    walletClient,
+                    publicClient,
+                    btcSigner,
+                });
+            }
             case GatewayOrderType.OnrampWithSwaps: {
                 // Cast quote type to Onramp
                 const onrampQuote = {
@@ -137,6 +148,19 @@ export class CrossChainSwapGatewayClient extends LayerZeroGatewayClient {
                     type: GatewayOrderType.Onramp,
                 };
                 return GatewayApiClient.prototype.executeQuote.call(this, {
+                    quote: onrampQuote,
+                    walletClient,
+                    publicClient,
+                    btcSigner,
+                });
+            }
+            case GatewayOrderType.OfframpWithLayerZero: {
+                // Cast quote type to Offramp
+                const onrampQuote = {
+                    ...quote,
+                    type: GatewayOrderType.Offramp as const,
+                };
+                return super.executeQuote({
                     quote: onrampQuote,
                     walletClient,
                     publicClient,
@@ -159,6 +183,40 @@ export class CrossChainSwapGatewayClient extends LayerZeroGatewayClient {
                 });
             }
         }
+    }
+
+    /**
+     * Retrieves all orders (onramp, offramp, and evm-to-evm swaps) for a specific user address.
+     *
+     * @param {TransactionParams} params query params for the swaps api
+     * @returns Promise resolving to array of typed orders
+     */
+    async getOrders(userAddress: Address): Promise<Array<GatewayOrder>> {
+        const [swapOrders, gatewayOrders] = await Promise.all([
+            this.swapsClient.getTransactions(userAddress),
+            super.getOrders(userAddress),
+        ]);
+
+        const orders = swapOrders.txs.map<GatewayOrder>((order) => ({
+            type: GatewayOrderType.EVMToEVMWithSwaps as const,
+            order: {
+                amount: BigInt(order.actionResponse.amountOut.amount),
+                timestamp: new Date(order.srcTx.timestamp).getTime(),
+                status: order.status,
+                source: {
+                    chainId: order.srcTx.chainId,
+                    txHash: order.srcTxHash,
+                    token: order.srcTx.paymentToken.address,
+                },
+                destination: {
+                    chainId: order.dstTx.chainId,
+                    txHash: order.dstTxHash,
+                    token: order.dstTx.paymentToken.address,
+                },
+            },
+        }));
+
+        return [...gatewayOrders, ...orders];
     }
 
     private async getSwapsOnrampQuote(
@@ -195,8 +253,8 @@ export class CrossChainSwapGatewayClient extends LayerZeroGatewayClient {
             typeof params.amount === 'bigint'
                 ? params.amount.toString()
                 : typeof params.amount === 'number'
-                    ? params.amount.toString()
-                    : params.amount;
+                  ? params.amount.toString()
+                  : params.amount;
 
         // Convert maxSlippage (0.01-0.03) to slippage (0-10000)
         // maxSlippage is a percentage (e.g., 0.03 = 3%)
@@ -247,8 +305,7 @@ export class CrossChainSwapGatewayClient extends LayerZeroGatewayClient {
                 ],
             });
             const tokensToSwapForSwapFees = quote[0];
-            const maxTokensToSwapForSwapFees =
-                (tokensToSwapForSwapFees * (10000n + BigInt(300))) / 10000n; // 3%
+            const maxTokensToSwapForSwapFees = (tokensToSwapForSwapFees * (10000n + BigInt(300))) / 10000n; // 3%
 
             maxTokensToSwap = maxTokensToSwapForSwapFees;
             finalAmount -= maxTokensToSwap;
@@ -263,7 +320,7 @@ export class CrossChainSwapGatewayClient extends LayerZeroGatewayClient {
                 [swapValue, maxTokensToSwap, swapTo, swapCalldata]
             );
 
-            params.strategyAddress = "0x20A68781116EBdC3b2C92040eFdf6fcc72ad1BF6" as Address;
+            params.strategyAddress = '0x20A68781116EBdC3b2C92040eFdf6fcc72ad1BF6' as Address;
             params.message = encodedParameters;
         } else {
             // Encode the calls array for MulticallStrategy
@@ -304,7 +361,8 @@ export class CrossChainSwapGatewayClient extends LayerZeroGatewayClient {
         }
 
         // Get the actual onramp quote from GatewayApiClient (skip LayerZeroGatewayClient)
-        const baseQuote = await GatewayApiClient.prototype.getQuote.call(this, params);
+        const baseQuote: Awaited<ReturnType<typeof GatewayApiClient.prototype.getQuote>> =
+            await GatewayApiClient.prototype.getQuote.call(this, params);
         finalAmount = BigInt(baseQuote.finalOutputSats) - maxTokensToSwap;
 
         // Now refetch the Swap calldata using the finalOutputSats as the amount
@@ -340,10 +398,10 @@ export class CrossChainSwapGatewayClient extends LayerZeroGatewayClient {
                 message: params.message,
             },
             type: GatewayOrderType.OnrampWithSwaps,
-            finalOutputSats: baseQuote.finalOutputSats,
+            finalOutputSats: Number(actionResponse3.amountOut.amount),
             finalFeeSats: baseQuote.finalFeeSats,
             data: baseQuote.data,
-        };
+        } as OnrampWithSwapsExecuteQuoteParams;
     }
 
     private async getSwapsOfframpQuote(
@@ -358,7 +416,7 @@ export class CrossChainSwapGatewayClient extends LayerZeroGatewayClient {
             throw new Error('fromToken is required for Swaps API');
         }
         if (!params.toUserAddress) {
-            throw new Error('toUserAddress (Bitcoin address) is required for offramp');
+            throw new Error('Bitcoin wallet is required for offramp');
         }
 
         const srcToken = isAddress(params.fromToken)
@@ -375,8 +433,8 @@ export class CrossChainSwapGatewayClient extends LayerZeroGatewayClient {
             typeof params.amount === 'bigint'
                 ? params.amount.toString()
                 : typeof params.amount === 'number'
-                    ? params.amount.toString()
-                    : params.amount;
+                  ? params.amount.toString()
+                  : params.amount;
 
         // Convert maxSlippage (0.01-0.03) to slippage (0-10000)
         // maxSlippage is a percentage (e.g., 0.03 = 3%)
@@ -414,7 +472,8 @@ export class CrossChainSwapGatewayClient extends LayerZeroGatewayClient {
         };
 
         // Get the bob -> bitcoin offramp quote from GatewayApiClient
-        const baseQuote = await GatewayApiClient.prototype.getQuote.call(this, offrampParams);
+        const baseQuote: Awaited<ReturnType<typeof GatewayApiClient.prototype.getQuote>> =
+            await GatewayApiClient.prototype.getQuote.call(this, offrampParams);
 
         if (baseQuote.type !== GatewayOrderType.Offramp) {
             throw new Error('Expected offramp quote but got different type');

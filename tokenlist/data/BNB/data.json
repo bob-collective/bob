@@ -1,0 +1,10 @@
+{
+  "name": "BNB",
+  "symbol": "BNB",
+  "decimals": 18,
+  "tokens": {
+    "bnb-smart-chain": {
+      "address": "0x0000000000000000000000000000000000000000"
+    }
+  }
+}

@@ -47,6 +47,27 @@
             },
             "avalanche": {
               "$ref": "#/definitions/Address"
+            },
+            "unichain": {
+              "$ref": "#/definitions/Address"
+            },
+            "sonic": {
+              "$ref": "#/definitions/Address"
+            },
+            "sei-network": {
+              "$ref": "#/definitions/Address"
+            },
+            "soneium-mainnet": {
+              "$ref": "#/definitions/Address"
+            },
+            "berachain": {
+              "$ref": "#/definitions/Address"
+            },
+            "swellchain": {
+              "$ref": "#/definitions/Address"
+            },
+            "telos": {
+              "$ref": "#/definitions/Address"
             }
           }
         },
@@ -167,9 +188,31 @@
         },
         "avalanche": {
           "$ref": "#/definitions/ChainProperties"
+        },
+        "unichain": {
+          "$ref": "#/definitions/ChainProperties"
+        },
+        "sonic": {
+          "$ref": "#/definitions/ChainProperties"
+        },
+        "sei-network": {
+          "$ref": "#/definitions/ChainProperties"
+        },
+        "soneium-mainnet": {
+          "$ref": "#/definitions/ChainProperties"
+        },
+        "berachain": {
+          "$ref": "#/definitions/ChainProperties"
+        },
+        "swellchain": {
+          "$ref": "#/definitions/ChainProperties"
+        },
+        "telos": {
+          "$ref": "#/definitions/ChainProperties"
         }
       },
-      "minProperties": 1
+      "minProperties": 1,
+      "additionalProperties": false
     }
   },
   "required": ["name", "symbol", "decimals", "tokens"],

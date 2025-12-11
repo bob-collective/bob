@@ -1,4 +1,4 @@
-import { Chain } from 'viem';
+import { Address, Chain } from 'viem';
 import {
     ActionsParams,
     ActionsResponse,
@@ -6,7 +6,6 @@ import {
     PathsResponse,
     StatusParams,
     StatusResponse,
-    TransactionParams,
     TransactionResponse,
 } from './types';
 
@@ -45,9 +44,9 @@ export class SwapsClient {
         return this.getJson(url.toString());
     }
 
-    async getTransactions(params: TransactionParams): Promise<TransactionResponse> {
+    async getTransactions(userAddress: Address): Promise<TransactionResponse> {
         const url = new URL('getTransactions', this.basePath);
-        url.search = new URLSearchParams(params as unknown as Record<string, string>).toString();
+        url.searchParams.set('walletAddress', userAddress);
         return this.getJson(url.toString());
     }
 

@@ -2,6 +2,7 @@ import { Address, Hex } from 'viem';
 import { OnrampOrder } from './onramp';
 import { OfframpOrder } from './offramp';
 import { EVMToEVMWithLayerZeroOrder } from './layerzero';
+import { EVMToEVMWithSwapsOrder } from './swaps';
 
 export type OrderDetailsRaw = {
     version: string;
@@ -101,5 +102,5 @@ export type GatewayOrder =
     | { type: GatewayOrderType.OfframpWithLayerZero; order: OfframpOrder }
     // | { type: GatewayOrderType.OnrampWithSwaps; order: OnrampOrder };
     // | { type: GatewayOrderType.OfframpWithSwaps; order: OfframpOrder };
-    | { type: GatewayOrderType.EVMToEVMWithLayerZero; order: EVMToEVMWithLayerZeroOrder };
-// | { type: GatewayOrderType.EVMToEVMWithSwaps; order: EVMToEVMOrder };
+    | { type: GatewayOrderType.EVMToEVMWithLayerZero; order: EVMToEVMWithLayerZeroOrder }
+    | { type: GatewayOrderType.EVMToEVMWithSwaps; order: EVMToEVMWithSwapsOrder };
