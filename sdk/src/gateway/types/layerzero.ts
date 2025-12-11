@@ -1,4 +1,9 @@
-import { Hex } from 'viem';
+import { Address, Hex } from 'viem';
+import { GatewayOrderType } from './order';
+import { BaseExecuteQuoteParams } from './quote';
+import { OnrampQuote } from './onramp';
+import { OfframpQuote } from './offramp';
+import { GatewayTokensInfo } from './token';
 
 interface LayerZeroMessagePathway {
     srcEid: number;
@@ -96,11 +101,60 @@ export type LayerZeroTokenDeploymentsResponse = {
     };
 };
 
-export interface LayerZeroQuoteParamsExt {
-    /** @description temporary field for chain ID */
-    l0ChainId?: number | null;
-    /** @description Buffer in BPS to account for Bitcoin to BOB finality delay (30 mins+) when using the L0 Strategy */
-    l0OriginFinalityBuffer?: number | bigint;
-    /** @description Buffer in BPS to account for BOB to destination finality delay (a few minutes) when using the L0 Strategy */
-    l0DestinationFinalityBuffer?: number | bigint;
+// Types for EVM to EVM swaps with LayerZero
+
+export type EVMToEVMWithLayerZeroOrderStatus =
+    | 'source-pending'
+    | 'source-confirmed'
+    | 'destination-pending'
+    | 'destination-confirmed'
+    | 'source-failed'
+    | 'destination-failed'
+    | 'unknown';
+
+export interface EVMToEVMWithLayerZeroOrder {
+    amount: bigint;
+    timestamp: number;
+    status: EVMToEVMWithLayerZeroOrderStatus;
+    source: {
+        chainId: number;
+        txHash: string;
+        token: Address;
+    };
+    destination: {
+        chainId: number;
+        txHash: string;
+        token: Address;
+    };
 }
+
+export type EVMToEVMWithLayerZeroFeeBreakdown = {
+    nativeFee: bigint;
+    lzTokenFee: bigint;
+    // gasFee: bigint;
+};
+
+export interface EVMToEVMWithLayerZeroQuote {
+    sourceEid: number;
+    destinationEid: number;
+    oftAddress: Address;
+    feeBreakdown: EVMToEVMWithLayerZeroFeeBreakdown;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export type OnrampWithLayerZeroExecuteQuoteParams<T = {}> = BaseExecuteQuoteParams<T> & {
+    type: GatewayOrderType.OnrampWithLayerZero;
+    data: OnrampQuote & GatewayTokensInfo;
+};
+
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export type OfframpWithLayerZeroExecuteQuoteParams<T = {}> = BaseExecuteQuoteParams<T> & {
+    type: GatewayOrderType.OfframpWithLayerZero;
+    data: OfframpQuote;
+};
+
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export type EVMToEVMWithLayerZeroExecuteQuoteParams<T = {}> = BaseExecuteQuoteParams<T> & {
+    type: GatewayOrderType.EVMToEVMWithLayerZero;
+    data: EVMToEVMWithLayerZeroQuote;
+};

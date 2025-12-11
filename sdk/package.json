@@ -1,6 +1,6 @@
 {
     "name": "@gobob/bob-sdk",
-    "version": "4.4.9",
+    "version": "4.4.10-rc10",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
     "scripts": {
@@ -27,7 +27,6 @@
         "@types/yargs": "^17.0.33",
         "@typescript-eslint/eslint-plugin": "^8.47.0",
         "@typescript-eslint/parser": "^8.46.3",
-        "bip39": "^3.1.0",
         "ecpair": "^2.1.0",
         "eslint-config-prettier": "^10.1.8",
         "eslint-plugin-prettier": "^5.5.1",
@@ -50,6 +49,7 @@
         "@magiceden-oss/runestone-lib": "^1.0.2",
         "@scure/base": "^1.2.4",
         "@scure/btc-signer": "^1.6.0",
+        "bip39": "^3.1.0",
         "bitcoin-address-validation": "^3.0.0",
         "bitcoinjs-lib": "^6.1.7",
         "global": "^4.4.0",

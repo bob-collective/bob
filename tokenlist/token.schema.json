@@ -32,6 +32,42 @@
             },
             "bnb-smart-chain": {
               "$ref": "#/definitions/Address"
+            },
+            "base": {
+              "$ref": "#/definitions/Address"
+            },
+            "op-mainnet": {
+              "$ref": "#/definitions/Address"
+            },
+            "arbitrum-one": {
+              "$ref": "#/definitions/Address"
+            },
+            "polygon": {
+              "$ref": "#/definitions/Address"
+            },
+            "avalanche": {
+              "$ref": "#/definitions/Address"
+            },
+            "unichain": {
+              "$ref": "#/definitions/Address"
+            },
+            "sonic": {
+              "$ref": "#/definitions/Address"
+            },
+            "sei-network": {
+              "$ref": "#/definitions/Address"
+            },
+            "soneium-mainnet": {
+              "$ref": "#/definitions/Address"
+            },
+            "berachain": {
+              "$ref": "#/definitions/Address"
+            },
+            "swellchain": {
+              "$ref": "#/definitions/Address"
+            },
+            "telos": {
+              "$ref": "#/definitions/Address"
             }
           }
         },
@@ -137,9 +173,46 @@
         },
         "bnb-smart-chain": {
           "$ref": "#/definitions/ChainProperties"
+        },
+        "base": {
+          "$ref": "#/definitions/ChainProperties"
+        },
+        "op-mainnet": {
+          "$ref": "#/definitions/ChainProperties"
+        },
+        "arbitrum-one": {
+          "$ref": "#/definitions/ChainProperties"
+        },
+        "polygon": {
+          "$ref": "#/definitions/ChainProperties"
+        },
+        "avalanche": {
+          "$ref": "#/definitions/ChainProperties"
+        },
+        "unichain": {
+          "$ref": "#/definitions/ChainProperties"
+        },
+        "sonic": {
+          "$ref": "#/definitions/ChainProperties"
+        },
+        "sei-network": {
+          "$ref": "#/definitions/ChainProperties"
+        },
+        "soneium-mainnet": {
+          "$ref": "#/definitions/ChainProperties"
+        },
+        "berachain": {
+          "$ref": "#/definitions/ChainProperties"
+        },
+        "swellchain": {
+          "$ref": "#/definitions/ChainProperties"
+        },
+        "telos": {
+          "$ref": "#/definitions/ChainProperties"
         }
       },
-      "minProperties": 1
+      "minProperties": 1,
+      "additionalProperties": false
     }
   },
   "required": ["name", "symbol", "decimals", "tokens"],

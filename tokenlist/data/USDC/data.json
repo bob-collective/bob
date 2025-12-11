@@ -26,11 +26,13 @@
         "ethereum": "0xe497788F8Fcc30B773C9A181a0FFE2e60645cE90"
       },
       "overrides": {
-        "name": "Bridged USDC (BOB)",
+        "name": "Bridged USDC",
         "symbol": "USDC.e"
       }
     },
     "bob-sepolia": {
+      "name": "Bridged USDC (BOB)",
+      "symbol": "USDC.e",
       "address": "0x2c1f73d37E7cdbA2792156139b0d35A765d595C5",
       "bridge": {
         "sepolia": "0x5C2A45A35ba99d8Ee58c4bB96e2Ce30dA86C530b"
@@ -39,6 +41,30 @@
         "name": "Bridged USDC",
         "symbol": "USDC.e"
       }
+    },
+    "op-mainnet": {
+      "address": "0x0b2c639c533813f4aa9d7837caf62653d097ff85"
+    },
+    "polygon": {
+      "address": "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359"
+    },
+    "avalanche": {
+      "address": "0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e"
+    },
+    "arbitrum-one": {
+      "address": "0xaf88d065e77c8cc2239327c5edb3a432268e5831"
+    },
+    "base": {
+      "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+    },
+    "unichain": {
+      "address": "0x078D782b760474a361dDA0AF3839290b0EF57AD6",
+      "overrides": {
+        "name": "USDC"
+      }
+    },
+    "bnb-smart-chain": {
+      "address": "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d"
     }
   }
 }

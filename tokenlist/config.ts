@@ -1,4 +1,22 @@
-import { bob, bobSepolia, bsc, mainnet, sepolia } from 'viem/chains';
+import {
+  arbitrum,
+  avalanche,
+  base,
+  berachain,
+  bob,
+  bobSepolia,
+  bsc,
+  mainnet,
+  optimism,
+  polygon,
+  sei,
+  sepolia,
+  soneium,
+  sonic,
+  swellchain,
+  telos,
+  unichain,
+} from 'viem/chains';
 import { mapByName } from './utils';
 
 export const schema =
@@ -9,9 +27,25 @@ export const baseUrl =
 export const datadir = './data';
 export const outfile = 'tokenlist.json';
 export const outfileBob = 'tokenlist-bob.json';
-export const outfileUI = 'tokenlist-overrides.json';
+export const outfileOverrides = 'tokenlist-overrides.json';
 
-const supportedMainnetChains = [mainnet, bob, bsc];
+const supportedMainnetChains = [
+  mainnet,
+  bob,
+  bsc,
+  base,
+  optimism,
+  arbitrum,
+  polygon,
+  avalanche,
+  unichain,
+  swellchain,
+  sei,
+  soneium,
+  berachain,
+  sonic,
+  telos,
+];
 const supportedTestnetChains = [sepolia, bobSepolia];
 export const supportedChains = [
   ...supportedMainnetChains,

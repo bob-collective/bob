@@ -11,6 +11,12 @@
     },
     "bob": {
       "address": "0x1217BfE6c773EEC6cc4A38b5Dc45B92292B6E189"
+    },
+    "op-mainnet": {
+      "address": "0x1217BfE6c773EEC6cc4A38b5Dc45B92292B6E189"
+    },
+    "base": {
+      "address": "0x1217BfE6c773EEC6cc4A38b5Dc45B92292B6E189"
     }
   }
 }

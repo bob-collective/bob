@@ -2,7 +2,12 @@ import { Address, Hex } from 'viem';
 import { Optional } from './utils';
 import { OnrampExecuteQuoteParams } from './onramp';
 import { OfframpExecuteQuoteParams } from './offramp';
-import { CrossChainSwapQuoteParams } from './crosschain-swap';
+import {
+    OnrampWithLayerZeroExecuteQuoteParams,
+    OfframpWithLayerZeroExecuteQuoteParams,
+    EVMToEVMWithLayerZeroExecuteQuoteParams,
+} from './layerzero';
+import { OnrampWithSwapsExecuteQuoteParams, OfframpWithSwapsExecuteQuoteParams } from './swaps';
 
 type ChainSlug = string | number;
 type TokenSymbol = string;
@@ -60,6 +65,15 @@ export interface GatewayQuoteParams {
     destinationCalls?: DestinationCalls;
 }
 
+export interface CrossChainSwapQuoteParamsExt {
+    /** @description temporary field for chain ID */
+    destinationChainId?: number | null;
+    /** @description Buffer in BPS to account for Bitcoin to BOB finality delay (30 mins+) when using the L0 Strategy */
+    originFinalityBuffer?: number | bigint;
+    /** @description Buffer in BPS to account for BOB to destination finality delay (a few minutes) when using the L0 Strategy */
+    destinationFinalityBuffer?: number | bigint;
+}
+
 export interface DestinationCall {
     target: Address;
     callData: Hex;
@@ -86,4 +100,8 @@ export type BaseExecuteQuoteParams<T = {}> = {
 export type ExecuteQuoteParams<T = {}> =
     | OnrampExecuteQuoteParams<T>
     | OfframpExecuteQuoteParams<T>
-    | CrossChainSwapQuoteParams<T>;
+    | OnrampWithLayerZeroExecuteQuoteParams<T>
+    | OfframpWithLayerZeroExecuteQuoteParams<T>
+    | EVMToEVMWithLayerZeroExecuteQuoteParams<T>
+    | OnrampWithSwapsExecuteQuoteParams<T>
+    | OfframpWithSwapsExecuteQuoteParams<T>;
