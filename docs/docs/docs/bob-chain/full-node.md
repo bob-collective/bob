@@ -18,7 +18,7 @@ This is a **readiness upgrade** to make BOB protocol compatible with Ethereum's 
 
 If you operate a BOB mainnet node, you must upgrade op-node and op-geth to the versions specified in the official notice:
 
-- **op-node**: Update to version [v1.16.2](https://github.com/ethereum-optimism/optimism/releases/tag/op-node%2Fv1.16.2)
+- **op-node**: Update to version [v1.16.3](https://github.com/ethereum-optimism/optimism/releases/tag/op-node%2Fv1.16.3)
 - **op-geth**: Update to version [v1.101603.5](https://github.com/ethereum-optimism/op-geth/releases/tag/v1.101603.5)
 
 Official notice: [https://docs.optimism.io/notices/fusaka-notice#for-node-operators](https://docs.optimism.io/notices/fusaka-notice#for-node-operators)
@@ -109,7 +109,7 @@ services:
     network_mode: host
 
   opnode:
-    image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node:v1.16.2
+    image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node:v1.16.3
     env_file: op-node.env
     command:
       - op-node
