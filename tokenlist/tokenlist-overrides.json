@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/Uniswap/token-lists/refs/heads/main/src/tokenlist.schema.json",
   "name": "BOB Tokens",
-  "timestamp": "2025-12-09T15:00:53.642Z",
+  "timestamp": "2025-12-11T14:13:48.763Z",
   "version": {
     "major": 1,
     "minor": 0,
@@ -1516,6 +1516,18 @@
       }
     },
     {
+      "chainId": 130,
+      "address": "0x9151434b16b9763660705744891fA906F660EcC5",
+      "name": "USD₮0",
+      "symbol": "USD₮0",
+      "decimals": 6,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/USDT0/logo.svg",
+      "extensions": {
+        "tokenId": "USDT0",
+        "bridge": {}
+      }
+    },
+    {
       "chainId": 1,
       "address": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
       "name": "Wrapped BTC",
@@ -1629,6 +1641,90 @@
     },
     {
       "chainId": 43114,
+      "address": "0x0555E30da8f98308EdB960aa94C0Db47230d2B9c",
+      "name": "Wrapped BTC",
+      "symbol": "WBTC",
+      "decimals": 8,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/WBTCOFT/logo.svg",
+      "extensions": {
+        "tokenId": "WBTCOFT",
+        "bridge": {}
+      }
+    },
+    {
+      "chainId": 1923,
+      "address": "0x0555E30da8f98308EdB960aa94C0Db47230d2B9c",
+      "name": "Wrapped BTC",
+      "symbol": "WBTC",
+      "decimals": 8,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/WBTCOFT/logo.svg",
+      "extensions": {
+        "tokenId": "WBTCOFT",
+        "bridge": {}
+      }
+    },
+    {
+      "chainId": 1329,
+      "address": "0x0555E30da8f98308EdB960aa94C0Db47230d2B9c",
+      "name": "Wrapped BTC",
+      "symbol": "WBTC",
+      "decimals": 8,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/WBTCOFT/logo.svg",
+      "extensions": {
+        "tokenId": "WBTCOFT",
+        "bridge": {}
+      }
+    },
+    {
+      "chainId": 1868,
+      "address": "0x0555E30da8f98308EdB960aa94C0Db47230d2B9c",
+      "name": "Wrapped BTC",
+      "symbol": "WBTC",
+      "decimals": 8,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/WBTCOFT/logo.svg",
+      "extensions": {
+        "tokenId": "WBTCOFT",
+        "bridge": {}
+      }
+    },
+    {
+      "chainId": 80094,
+      "address": "0x0555E30da8f98308EdB960aa94C0Db47230d2B9c",
+      "name": "Wrapped BTC",
+      "symbol": "WBTC",
+      "decimals": 8,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/WBTCOFT/logo.svg",
+      "extensions": {
+        "tokenId": "WBTCOFT",
+        "bridge": {}
+      }
+    },
+    {
+      "chainId": 130,
+      "address": "0x0555E30da8f98308EdB960aa94C0Db47230d2B9c",
+      "name": "Wrapped BTC",
+      "symbol": "WBTC",
+      "decimals": 8,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/WBTCOFT/logo.svg",
+      "extensions": {
+        "tokenId": "WBTCOFT",
+        "bridge": {}
+      }
+    },
+    {
+      "chainId": 146,
+      "address": "0x0555E30da8f98308EdB960aa94C0Db47230d2B9c",
+      "name": "Wrapped BTC",
+      "symbol": "WBTC",
+      "decimals": 8,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/WBTCOFT/logo.svg",
+      "extensions": {
+        "tokenId": "WBTCOFT",
+        "bridge": {}
+      }
+    },
+    {
+      "chainId": 40,
       "address": "0x0555E30da8f98308EdB960aa94C0Db47230d2B9c",
       "name": "Wrapped BTC",
       "symbol": "WBTC",

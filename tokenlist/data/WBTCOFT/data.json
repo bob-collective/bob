@@ -23,6 +23,27 @@
     },
     "avalanche": {
       "address": "0x0555e30da8f98308edb960aa94c0db47230d2b9c"
+    },
+    "swellchain": {
+      "address": "0x0555e30da8f98308edb960aa94c0db47230d2b9c"
+    },
+    "sei-network": {
+      "address": "0x0555e30da8f98308edb960aa94c0db47230d2b9c"
+    },
+    "soneium-mainnet": {
+      "address": "0x0555e30da8f98308edb960aa94c0db47230d2b9c"
+    },
+    "berachain": {
+      "address": "0x0555e30da8f98308edb960aa94c0db47230d2b9c"
+    },
+    "unichain": {
+      "address": "0x0555e30da8f98308edb960aa94c0db47230d2b9c"
+    },
+    "sonic": {
+      "address": "0x0555e30da8f98308edb960aa94c0db47230d2b9c"
+    },
+    "telos": {
+      "address": "0x0555e30da8f98308edb960aa94c0db47230d2b9c"
     }
   }
 }

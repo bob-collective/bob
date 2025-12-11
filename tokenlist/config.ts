@@ -2,13 +2,19 @@ import {
   arbitrum,
   avalanche,
   base,
+  berachain,
   bob,
   bobSepolia,
   bsc,
   mainnet,
   optimism,
   polygon,
+  sei,
   sepolia,
+  soneium,
+  sonic,
+  swellchain,
+  telos,
   unichain,
 } from 'viem/chains';
 import { mapByName } from './utils';
@@ -33,6 +39,12 @@ const supportedMainnetChains = [
   polygon,
   avalanche,
   unichain,
+  swellchain,
+  sei,
+  soneium,
+  berachain,
+  sonic,
+  telos,
 ];
 const supportedTestnetChains = [sepolia, bobSepolia];
 export const supportedChains = [

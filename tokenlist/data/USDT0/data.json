@@ -1,0 +1,13 @@
+{
+  "name": "USD₮0",
+  "symbol": "USD₮0",
+  "decimals": 6,
+  "description": "USDT0 expands the USDT standard to new ecosystems.",
+  "website": "https://usdt0.to",
+  "twitter": "@USDT0_to",
+  "tokens": {
+    "unichain": {
+      "address": "0x9151434b16b9763660705744891fA906F660EcC5"
+    }
+  }
+}
