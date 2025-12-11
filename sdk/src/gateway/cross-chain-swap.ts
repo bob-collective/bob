@@ -1,34 +1,32 @@
-import { bob } from 'viem/chains';
-import { AllWalletClientParams } from './client';
-import { ExecuteQuoteParams, GetQuoteParams } from './types/quote';
-import { resolveChainId, getChainConfig } from './utils/common';
-import { GatewayOrder, GatewayOrderType } from './types/order';
-import { LayerZeroGatewayClient } from './layerzero';
-import { GatewayApiClient } from './client';
+import * as bitcoin from 'bitcoinjs-lib';
 import {
-    CrossChainSwapQuoteParamsExt,
-    OnrampWithSwapsExecuteQuoteParams,
-    OfframpWithSwapsExecuteQuoteParams,
-    ActionsParams,
-} from './types';
+    encodeAbiParameters,
+    encodeFunctionData,
+    erc20Abi,
+    isAddress,
+    parseAbiParameters,
+    type Address,
+    type Chain,
+    type Hex,
+    type PublicClient,
+    type Transport,
+    type WalletClient,
+} from 'viem';
+import { bob } from 'viem/chains';
+import { offrampCallerV2, quoterV2Abi } from './abi';
+import { AllWalletClientParams, GatewayApiClient } from './client';
+import { LayerZeroGatewayClient } from './layerzero';
 import { SwapsClient } from './swaps';
 import { getTokenAddress } from './tokens';
 import {
-    isAddress,
-    encodeAbiParameters,
-    parseAbiParameters,
-    encodeFunctionData,
-    erc20Abi,
-    type Address,
-    type Hex,
-    type PublicClient,
-    type WalletClient,
-    type Transport,
-    type Chain,
-} from 'viem';
-import { offrampCallerV2 } from './abi';
-import { toHexScriptPubKey } from './utils/common';
-import * as bitcoin from 'bitcoinjs-lib';
+    ActionsParams,
+    CrossChainSwapQuoteParamsExt,
+    OfframpWithSwapsExecuteQuoteParams,
+    OnrampWithSwapsExecuteQuoteParams,
+} from './types';
+import { GatewayOrder, GatewayOrderType } from './types/order';
+import { ExecuteQuoteParams, GetQuoteParams } from './types/quote';
+import { getChainConfig, resolveChainId, toHexScriptPubKey, viemClient } from './utils/common';
 
 export const BOB_WBTC = '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c';
 
@@ -284,52 +282,123 @@ export class CrossChainSwapGatewayClient extends LayerZeroGatewayClient {
 
         const swapTo = actionResponse.tx.to;
         const swapCalldata = actionResponse.tx.data;
+        const swapValue = BigInt(actionResponse.tx.value);
 
-        // Encode the calls array for MulticallStrategy
-        const encodedCalls = this.encodeMulticallCalls(
-            swapTo as Address,
-            swapCalldata as Hex,
-            BigInt(amount),
-            BOB_WBTC
-        );
+        let maxTokensToSwap = BigInt(0);
+        let finalAmount = BigInt(amount);
 
-        // Set up params for onramp quote (similar to layerzero.ts line 427-433)
-        params.strategyAddress = MULTICALL_STRATEGY as Address;
-        params.message = encodedCalls;
+        if (swapValue > 0) {
+            // figure out the amount to swap
+            const publicClient = viemClient(bob);
+            const quote = await publicClient.readContract({
+                address: '0x6Aa54a43d7eEF5b239a18eed3Af4877f46522BCA',
+                abi: quoterV2Abi,
+                functionName: 'quoteExactOutputSingle',
+                args: [
+                    {
+                        tokenIn: BOB_WBTC as Hex,
+                        tokenOut: '0x4200000000000000000000000000000000000006' as Hex,
+                        amountOut: swapValue, // Desired output amount
+                        fee: 3000,
+                        sqrtPriceLimitX96: BigInt(0),
+                    },
+                ],
+            });
+            const tokensToSwapForSwapFees = quote[0];
+            const maxTokensToSwapForSwapFees = (tokensToSwapForSwapFees * (10000n + BigInt(300))) / 10000n; // 3%
+
+            maxTokensToSwap = maxTokensToSwapForSwapFees;
+            finalAmount -= maxTokensToSwap;
+
+            const encodedParameters = encodeAbiParameters(
+                parseAbiParameters([
+                    'uint256 value',
+                    'uint256 maxTokensToSwap',
+                    'address target',
+                    'bytes memory callData',
+                ]),
+                [swapValue, maxTokensToSwap, swapTo, swapCalldata]
+            );
+
+            params.strategyAddress = '0x20A68781116EBdC3b2C92040eFdf6fcc72ad1BF6' as Address;
+            params.message = encodedParameters;
+        } else {
+            // Encode the calls array for MulticallStrategy
+            const encodedCalls = this.encodeMulticallCalls(
+                swapTo as Address,
+                swapCalldata as Hex,
+                finalAmount,
+                BOB_WBTC
+            );
+
+            // Set up params for onramp quote (similar to layerzero.ts line 427-433)
+            params.strategyAddress = MULTICALL_STRATEGY as Address;
+            params.message = encodedCalls;
+        }
 
         // For onramp flows (bitcoin -> other chain), change toChain to bob.id for the quote
         // The actual destination chain is handled by the swap transaction
         params.toChain = bob.id;
         params.toToken = BOB_WBTC;
 
+        if (swapValue > 0) {
+            // Now refetch the Swap calldata using the swapped amount subtracted
+            const actionResponse2 = await this.swapsClient.getAction({
+                ...actionParams,
+                amount: finalAmount.toString(), // subtract the swap fee
+            });
+
+            // re-encode the Gateway calldata with the new tx
+            params.message = encodeAbiParameters(
+                parseAbiParameters([
+                    'uint256 value',
+                    'uint256 maxTokensToSwap',
+                    'address target',
+                    'bytes memory callData',
+                ]),
+                [swapValue, maxTokensToSwap, actionResponse2.tx.to, actionResponse2.tx.data]
+            );
+        }
+
         // Get the actual onramp quote from GatewayApiClient (skip LayerZeroGatewayClient)
         const baseQuote: Awaited<ReturnType<typeof GatewayApiClient.prototype.getQuote>> =
             await GatewayApiClient.prototype.getQuote.call(this, params);
+        finalAmount = BigInt(baseQuote.finalOutputSats) - maxTokensToSwap;
 
         // Now refetch the Swap calldata using the finalOutputSats as the amount
-        const actionParams2: ActionsParams = {
+        const actionResponse3 = await this.swapsClient.getAction({
             ...actionParams,
-            amount: baseQuote.finalOutputSats.toString(),
-        };
+            amount: finalAmount.toString(),
+        });
 
-        const actionResponse2 = await this.swapsClient.getAction(actionParams2);
-
-        // Now encode the final swap calls array for MulticallStrategy
-        const encodedCalls2 = this.encodeMulticallCalls(
-            actionResponse2.tx.to as Address,
-            actionResponse2.tx.data as Hex,
-            BigInt(baseQuote.finalOutputSats),
-            BOB_WBTC
-        );
+        // Now encode the final swap call
+        if (BigInt(actionResponse3.tx.value) > 0) {
+            params.message = encodeAbiParameters(
+                parseAbiParameters([
+                    'uint256 value',
+                    'uint256 maxTokensToSwap',
+                    'address target',
+                    'bytes memory callData',
+                ]),
+                [swapValue, maxTokensToSwap, actionResponse3.tx.to, actionResponse3.tx.data]
+            );
+        } else {
+            params.message = this.encodeMulticallCalls(
+                actionResponse3.tx.to as Address,
+                actionResponse3.tx.data as Hex,
+                BigInt(baseQuote.finalOutputSats),
+                BOB_WBTC
+            );
+        }
 
         // Construct SwapsExecuteQuoteParams
         return {
             params: {
                 ...baseQuote.params,
-                message: encodedCalls2,
+                message: params.message,
             },
             type: GatewayOrderType.OnrampWithSwaps,
-            finalOutputSats: Number(actionResponse2.amountOut.amount),
+            finalOutputSats: Number(actionResponse3.amountOut.amount),
             finalFeeSats: baseQuote.finalFeeSats,
             data: baseQuote.data,
         } as OnrampWithSwapsExecuteQuoteParams;

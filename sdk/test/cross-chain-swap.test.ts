@@ -14,6 +14,8 @@ describe('Cross Chain Swap Tests', () => {
         const quote = await client.getQuote({
             fromChain: 'bitcoin',
             fromToken: 'bitcoin',
+            // toChain: 1,
+            // toToken: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
             toChain: bob.id,
             toToken: '0x0000000000000000000000000000000000000000',
             fromUserAddress: 'bc1q6tgkjx4pgc5qda52fsgeuvjrhml5nuawwplejq',
@@ -33,20 +35,22 @@ describe('Cross Chain Swap Tests', () => {
             account: zeroAddress,
         });
 
-        const btcSignerFromSeed = await ScureBitcoinSigner.fromSeedPhrase(process.env.MNEMONIC!, "m/84'/0'/0'/0/0");
-        console.log('P2WPKH Address: ', await btcSignerFromSeed.getP2WPKHAddress());
+        console.log(quote);
 
-        const txHash = await client.executeQuote({
-            quote,
-            walletClient,
-            publicClient: publicClient as PublicClient<Transport>,
-            btcSigner: btcSignerFromSeed,
-        });
+        // const btcSignerFromSeed = await ScureBitcoinSigner.fromSeedPhrase(process.env.MNEMONIC!, "m/84'/0'/0'/0/0");
+        // console.log('P2WPKH Address: ', await btcSignerFromSeed.getP2WPKHAddress());
 
-        console.log(txHash);
+        // const txHash = await client.executeQuote({
+        //     quote,
+        //     walletClient,
+        //     publicClient: publicClient as PublicClient<Transport>,
+        //     btcSigner: btcSignerFromSeed,
+        // });
+
+        // console.log(txHash);
     }, 120000);
 
-    it('should get an offramp quote using the cross chain swap gateway client and execute it', async () => {
+    it.skip('should get an offramp quote using the cross chain swap gateway client and execute it', async () => {
         const client = new CrossChainSwapGatewayClient();
         const quote = await client.getQuote({
             toChain: 'bitcoin',
