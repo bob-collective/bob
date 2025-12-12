@@ -14,7 +14,7 @@
     "tokenlist*.json"
   ],
   "scripts": {
-    "build": "npm run build:tokenlist && npm run generate:types",
+    "build": "npm run generate:types && npm run build:tokenlist",
     "build:tokenlist": "tsx ./scripts/generate.ts",
     "generate:types": "tsx ./scripts/generate-types.ts",
     "postbuild": "npm run verify",
