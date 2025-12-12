@@ -9,11 +9,14 @@
     "config.ts",
     "types.ts",
     "utils.ts",
+    "generated-types.ts",
     "tokenlist.json",
     "tokenlist*.json"
   ],
   "scripts": {
-    "build": "tsx ./scripts/generate.ts",
+    "build": "npm run build:tokenlist && npm run generate:types",
+    "build:tokenlist": "tsx ./scripts/generate.ts",
+    "generate:types": "tsx ./scripts/generate-types.ts",
     "postbuild": "npm run verify",
     "verify": "tsx ./scripts/verify.ts"
   },

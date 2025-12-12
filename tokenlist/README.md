@@ -27,8 +27,8 @@ import tokenList from '@gobob/tokenlist/tokenlist.json';
 // or
 // const tokenList = require('@gobob/tokenlist')
 
-console.log(tokenList.length);
-console.log(tokenList[0]);
+console.log(tokenList);
+console.log(tokenList.tokens[0]);
 ```
 
 ## Updating tokens / Contributing

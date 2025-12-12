@@ -28,6 +28,7 @@ export const datadir = './data';
 export const outfile = 'tokenlist.json';
 export const outfileBob = 'tokenlist-bob.json';
 export const outfileOverrides = 'tokenlist-overrides.json';
+export const generatedTypes = 'generated-types.ts';
 
 const supportedMainnetChains = [
   mainnet,

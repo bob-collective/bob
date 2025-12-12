@@ -15,6 +15,7 @@ import { Entries, Token, TokenData } from '../types';
 import { version } from '../package.json';
 import { Address, getAddress } from 'viem';
 import { bob } from 'viem/chains';
+import { TokenId } from '../generated-types';
 
 const [major, minor, patch] = version.split('.');
 
@@ -39,7 +40,7 @@ function addTokens(tokens: Token[][]) {
   );
 }
 
-function mapToTokenlist(data: [string, TokenData, string][]) {
+function mapToTokenlist(data: [TokenId, TokenData, string][]) {
   return data.map(([tokenId, tokenData, logoURI]) => {
     return (
       Object.entries(tokenData.tokens) as Entries<typeof tokenData.tokens>
@@ -71,7 +72,7 @@ function mapToTokenlist(data: [string, TokenData, string][]) {
   });
 }
 
-function mapToOverridesTokenlist(data: [string, TokenData, string][]) {
+function mapToOverridesTokenlist(data: [TokenId, TokenData, string][]) {
   return data.map(([tokenId, tokenData, logoURI]) => {
     return (
       Object.entries(tokenData.tokens) as Entries<typeof tokenData.tokens>
@@ -108,7 +109,7 @@ const tokenlistData = fs
   .sort((a, b) => {
     return a.toLowerCase().localeCompare(b.toLowerCase());
   })
-  .map<[string, TokenData, string]>((folder) => {
+  .map<[TokenId, TokenData, string]>((folder) => {
     const data: TokenData = JSON.parse(
       fs.readFileSync(path.join(datadir, folder, 'data.json'), 'utf8'),
     );
@@ -116,7 +117,7 @@ const tokenlistData = fs
     const logoext = logofiles[0].endsWith('webp') ? 'webp' : 'svg';
 
     return [
-      folder,
+      folder as TokenId,
       data,
       url.resolve(baseUrl, path.join(datadir, folder, `logo.${logoext}`)),
     ];

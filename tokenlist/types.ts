@@ -1,5 +1,6 @@
 import { Address } from 'viem';
 import { supportedChainMapping, supportedChains } from './config';
+import { TokenId } from './generated-types';
 
 export type KebabCase<T extends string> = T extends `${infer S} ${infer E}`
   ? `${Lowercase<S>}-${KebabCase<E>}`
@@ -40,7 +41,7 @@ export type Token = {
   chainId: number;
   logoURI: string;
   extensions: {
-    tokenId: string;
+    tokenId: TokenId;
     bridge?: Record<SupportedChainId, Address>;
   };
 };
