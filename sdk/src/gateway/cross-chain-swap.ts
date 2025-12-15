@@ -277,6 +277,7 @@ export class CrossChainSwapGatewayClient extends LayerZeroGatewayClient {
             amount: amount,
             swapDirection: 'exact-amount-in',
             recipient: params.toUserAddress as Address,
+            refundTo: params.toUserAddress as Address,
         };
 
         // Call Swaps API
@@ -512,6 +513,7 @@ export class CrossChainSwapGatewayClient extends LayerZeroGatewayClient {
         const actionParams: ActionsParams = {
             actionType: 'evm-calldata-tx',
             sender: params.fromUserAddress as Address,
+            refundTo: params.fromUserAddress as Address,
             srcChainId: fromChainId,
             srcToken: srcToken,
             dstChainId: bob.id,
