@@ -1,9 +1,11 @@
 import * as bitcoin from 'bitcoinjs-lib';
 import {
+    ContractFunctionExecutionError,
     encodeAbiParameters,
     encodeFunctionData,
     erc20Abi,
     isAddress,
+    maxUint256,
     parseAbiParameters,
     type Address,
     type Chain,
@@ -253,8 +255,8 @@ export class CrossChainSwapGatewayClient extends LayerZeroGatewayClient {
             typeof params.amount === 'bigint'
                 ? params.amount.toString()
                 : typeof params.amount === 'number'
-                  ? params.amount.toString()
-                  : params.amount;
+                    ? params.amount.toString()
+                    : params.amount;
 
         // Convert maxSlippage (0.01-0.03) to slippage (0-10000)
         // maxSlippage is a percentage (e.g., 0.03 = 3%)
@@ -434,8 +436,8 @@ export class CrossChainSwapGatewayClient extends LayerZeroGatewayClient {
             typeof params.amount === 'bigint'
                 ? params.amount.toString()
                 : typeof params.amount === 'number'
-                  ? params.amount.toString()
-                  : params.amount;
+                    ? params.amount.toString()
+                    : params.amount;
 
         // Convert maxSlippage (0.01-0.03) to slippage (0-10000)
         // maxSlippage is a percentage (e.g., 0.03 = 3%)
@@ -534,6 +536,7 @@ export class CrossChainSwapGatewayClient extends LayerZeroGatewayClient {
             data: {
                 ...offrampQuote,
                 tx: actionResponse.tx,
+                amountInMax: actionResponse.amountInMax
             },
         };
     }
@@ -572,6 +575,30 @@ export class CrossChainSwapGatewayClient extends LayerZeroGatewayClient {
 
         if (!walletClient.account) {
             throw new Error('Wallet client account is required');
+        }
+
+        if (!quote.data.amountInMax.isNative) {
+            const allowance = await publicClient.readContract({
+                account: walletClient.account,
+                address: quote.data.amountInMax.address,
+                abi: erc20Abi,
+                functionName: 'allowance',
+                args: [quote.params.fromUserAddress as Address, quote.data.tx.to],
+            });
+
+            const amountIn = BigInt(quote.data.amountInMax.amount);
+            if (allowance < amountIn) {
+                const { request } = await publicClient.simulateContract({
+                    account: walletClient.account,
+                    address: quote.data.amountInMax.address,
+                    abi: erc20Abi,
+                    functionName: 'approve',
+                    args: [quote.data.tx.to, maxUint256],
+                });
+
+                const txHash = await walletClient.writeContract(request);
+                await publicClient.waitForTransactionReceipt({ hash: txHash });
+            }
         }
 
         // Estimate gas to check if transaction will succeed

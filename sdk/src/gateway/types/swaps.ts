@@ -814,6 +814,15 @@ export type OfframpWithSwapsExecuteQuoteParams<T = {}> = BaseExecuteQuoteParams<
     type: GatewayOrderType.OfframpWithSwaps;
     data: OfframpQuote & {
         tx: SwapsTransaction; // Transaction from Swaps API to execute
+        amountInMax: {
+            address: Address;
+            decimals: number;
+            symbol: string;
+            name: string;
+            chainId: number;
+            isNative: boolean;
+            amount: string;
+        }
     };
 };
 
