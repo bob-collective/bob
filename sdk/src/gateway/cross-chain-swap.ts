@@ -255,8 +255,8 @@ export class CrossChainSwapGatewayClient extends LayerZeroGatewayClient {
             typeof params.amount === 'bigint'
                 ? params.amount.toString()
                 : typeof params.amount === 'number'
-                    ? params.amount.toString()
-                    : params.amount;
+                  ? params.amount.toString()
+                  : params.amount;
 
         // Convert maxSlippage (0.01-0.03) to slippage (0-10000)
         // maxSlippage is a percentage (e.g., 0.03 = 3%)
@@ -436,8 +436,8 @@ export class CrossChainSwapGatewayClient extends LayerZeroGatewayClient {
             typeof params.amount === 'bigint'
                 ? params.amount.toString()
                 : typeof params.amount === 'number'
-                    ? params.amount.toString()
-                    : params.amount;
+                  ? params.amount.toString()
+                  : params.amount;
 
         // Convert maxSlippage (0.01-0.03) to slippage (0-10000)
         // maxSlippage is a percentage (e.g., 0.03 = 3%)
@@ -536,7 +536,7 @@ export class CrossChainSwapGatewayClient extends LayerZeroGatewayClient {
             data: {
                 ...offrampQuote,
                 tx: actionResponse.tx,
-                amountInMax: actionResponse.amountInMax
+                amountInMax: actionResponse.amountInMax,
             },
         };
     }

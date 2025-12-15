@@ -822,7 +822,7 @@ export type OfframpWithSwapsExecuteQuoteParams<T = {}> = BaseExecuteQuoteParams<
             chainId: number;
             isNative: boolean;
             amount: string;
-        }
+        };
     };
 };
 
