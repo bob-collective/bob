@@ -4,6 +4,7 @@ import {
     encodeAbiParameters,
     encodeFunctionData,
     erc20Abi,
+    getAddress,
     isAddress,
     maxUint256,
     parseAbiParameters,
@@ -590,16 +591,59 @@ export class CrossChainSwapGatewayClient extends LayerZeroGatewayClient {
 
             const amountIn = BigInt(quote.data.amountInMax.amount);
             if (allowance < amountIn) {
-                const { request } = await publicClient.simulateContract({
-                    account: walletClient.account,
-                    address: quote.data.amountInMax.address,
-                    abi: erc20Abi,
-                    functionName: 'approve',
-                    args: [quote.data.tx.to, maxUint256],
-                });
+                if (
+                    getAddress(quote.data.amountInMax.address) ===
+                    getAddress('0xdAC17F958D2ee523a2206206994597C13D831ec7')
+                ) {
+                    // USDT has a non-standard approve function that doesn't return bool
+                    // First reset allowance to 0, then set to desired amount
+                    const usdtAbi = [
+                        {
+                            constant: false,
+                            inputs: [
+                                { name: '_spender', type: 'address' },
+                                { name: '_value', type: 'uint256' },
+                            ],
+                            name: 'approve',
+                            outputs: [],
+                            type: 'function',
+                        },
+                    ] as const;
 
-                const txHash = await walletClient.writeContract(request);
-                await publicClient.waitForTransactionReceipt({ hash: txHash });
+                    // Reset to 0 first
+                    const { request: resetRequest } = await publicClient.simulateContract({
+                        account: walletClient.account,
+                        address: quote.data.amountInMax.address,
+                        abi: usdtAbi,
+                        functionName: 'approve',
+                        args: [quote.data.tx.to, 0n],
+                    });
+                    const resetTxHash = await walletClient.writeContract(resetRequest);
+                    await publicClient.waitForTransactionReceipt({ hash: resetTxHash });
+
+                    // Set to max
+                    const { request } = await publicClient.simulateContract({
+                        account: walletClient.account,
+                        address: quote.data.amountInMax.address,
+                        abi: usdtAbi,
+                        functionName: 'approve',
+                        args: [quote.data.tx.to, maxUint256],
+                    });
+
+                    const txHash = await walletClient.writeContract(request);
+                    await publicClient.waitForTransactionReceipt({ hash: txHash });
+                } else {
+                    const { request } = await publicClient.simulateContract({
+                        account: walletClient.account,
+                        address: quote.data.amountInMax.address,
+                        abi: erc20Abi,
+                        functionName: 'approve',
+                        args: [quote.data.tx.to, maxUint256],
+                    });
+
+                    const txHash = await walletClient.writeContract(request);
+                    await publicClient.waitForTransactionReceipt({ hash: txHash });
+                }
             }
         }
 
