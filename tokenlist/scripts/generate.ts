@@ -60,7 +60,7 @@ function mapToTokenlist(data: [TokenId, TokenData, string][]) {
         address: getAddress(token.address),
         name: token.name ?? tokenData.name,
         symbol: token.symbol ?? tokenData.symbol,
-        decimals: tokenData.decimals,
+        decimals: token.decimals ?? tokenData.decimals,
         logoURI,
         extensions: {
           tokenId,
@@ -93,7 +93,7 @@ function mapToOverridesTokenlist(data: [TokenId, TokenData, string][]) {
         name: token.overrides?.name ?? token.name ?? tokenData.name,
         symbol: token.overrides?.symbol ?? token.symbol ?? tokenData.symbol,
         decimals:
-          token.overrides?.decimals ?? token?.decimals ?? tokenData.decimals,
+          token.overrides?.decimals ?? token.decimals ?? tokenData.decimals,
         logoURI,
         extensions: {
           tokenId,
