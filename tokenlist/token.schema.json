@@ -15,6 +15,9 @@
         "address": {
           "$ref": "#/definitions/Address"
         },
+        "decimals": {
+          "$ref": "#/definitions/Decimals"
+        },
         "bridge": {
           "type": "object",
           "properties": {
@@ -79,12 +82,22 @@
             },
             "symbol": {
               "$ref": "#/definitions/Symbol"
+            },
+            "decimals": {
+              "$ref": "#/definitions/Decimals"
             }
           }
         }
       },
       "required": ["address"],
       "additionalProperties": false
+    },
+    "Decimals": {
+      "type": "integer",
+      "description": "The number of decimals for the token balance",
+      "minimum": 0,
+      "maximum": 255,
+      "examples": [18]
     },
     "Address": {
       "type": "string",
@@ -134,11 +147,7 @@
       "$ref": "#/definitions/Symbol"
     },
     "decimals": {
-      "type": "integer",
-      "description": "The number of decimals for the token balance",
-      "minimum": 0,
-      "maximum": 255,
-      "examples": [18]
+      "$ref": "#/definitions/Decimals"
     },
     "description": {
       "type": "string",
