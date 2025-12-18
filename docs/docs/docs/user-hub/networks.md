@@ -48,10 +48,10 @@ BOB Sepolia is the test network where you can experiment without risking real as
 
 To get testnet ETH for BOB Sepolia:
 
-1. Get BOB Sepolia ETH from a faucet:
-   - [ethfaucet.com](https://ethfaucet.com?utm_source=bob_docs&utm_medium=docs)
+- **Get BOB Sepolia ETH directly from a faucet:**
+  - [ethfaucet.com](https://ethfaucet.com?utm_source=bob_docs&utm_medium=docs)
   
-or
+- **Or, get Sepolia ETH and bridge it:**
 
 1. Get Sepolia ETH from a faucet:
    - [Alchemy Sepolia Faucet](https://sepoliafaucet.com/)
