@@ -256,6 +256,13 @@ export const layerZeroOftAbi = [
         stateMutability: 'pure',
         type: 'function',
     },
+    {
+        type: 'function',
+        name: 'token',
+        inputs: [],
+        outputs: [{ name: '', type: 'address', internalType: 'address' }],
+        stateMutability: 'view',
+    },
 ] as const;
 
 export const quoterV2Abi = [

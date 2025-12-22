@@ -777,9 +777,15 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                     });
 
                     if (approvalRequired) {
-                        const allowance = await publicClient.readContract({
+                        const tokenAddress = await publicClient.readContract({
                             account: walletClient.account,
                             address: oftAddress,
+                            abi: layerZeroOftAbi,
+                            functionName: 'token',
+                        });
+                        const allowance = await publicClient.readContract({
+                            account: walletClient.account,
+                            address: tokenAddress,
                             abi: erc20Abi,
                             functionName: 'allowance',
                             args: [params.fromUserAddress as Address, oftAddress],
@@ -788,7 +794,7 @@ export class LayerZeroGatewayClient extends GatewayApiClient {
                         if (allowance < sendParam.amountLD) {
                             const { request } = await publicClient.simulateContract({
                                 account: walletClient.account,
-                                address: oftAddress,
+                                address: tokenAddress,
                                 abi: erc20Abi,
                                 functionName: 'approve',
                                 args: [oftAddress, maxUint256],
