@@ -1,16 +1,6 @@
 import { Address, Hex } from 'viem';
 import { Optional } from './utils';
-import { OnrampExecuteQuoteParams } from './onramp';
-import { OfframpExecuteQuoteParams } from './offramp';
-import {
-    OnrampWithLayerZeroExecuteQuoteParams,
-    OfframpWithLayerZeroExecuteQuoteParams,
-    EVMToEVMWithLayerZeroExecuteQuoteParams,
-} from './layerzero';
-import { OnrampWithSwapsExecuteQuoteParams, OfframpWithSwapsExecuteQuoteParams } from './swaps';
-
-type ChainSlug = string | number;
-type TokenSymbol = string;
+import { GatewayQuote } from '../generated-client';
 
 /**
  * Designed to be compatible with the Swing SDK.
@@ -18,13 +8,13 @@ type TokenSymbol = string;
  */
 export interface GatewayQuoteParams {
     /** @description Source chain slug or ID */
-    fromChain: ChainSlug;
+    fromChain: string;
     /** @description Destination chain slug or ID */
-    toChain: ChainSlug;
+    toChain: string;
     /** @description Token symbol or address on source chain */
-    fromToken: TokenSymbol;
+    fromToken: string;
     /** @description Token symbol or address on destination chain */
-    toToken: TokenSymbol;
+    toToken: string;
     /** @description Wallet address on source chain */
     fromUserAddress: string;
     /** @description Wallet address on destination chain */
@@ -65,15 +55,6 @@ export interface GatewayQuoteParams {
     destinationCalls?: DestinationCalls;
 }
 
-export interface CrossChainSwapQuoteParamsExt {
-    /** @description temporary field for chain ID */
-    destinationChainId?: number | null;
-    /** @description Buffer in BPS to account for Bitcoin to BOB finality delay (30 mins+) when using the L0 Strategy */
-    originFinalityBuffer?: number | bigint;
-    /** @description Buffer in BPS to account for BOB to destination finality delay (a few minutes) when using the L0 Strategy */
-    destinationFinalityBuffer?: number | bigint;
-}
-
 export interface DestinationCall {
     target: Address;
     callData: Hex;
@@ -88,20 +69,3 @@ export interface DestinationCalls {
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export type GetQuoteParams<T = {}> = Optional<GatewayQuoteParams & T, 'fromUserAddress'>;
-
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export type BaseExecuteQuoteParams<T = {}> = {
-    finalOutputSats: number;
-    finalFeeSats: number;
-    params: GetQuoteParams;
-} & T;
-
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export type ExecuteQuoteParams<T = {}> =
-    | OnrampExecuteQuoteParams<T>
-    | OfframpExecuteQuoteParams<T>
-    | OnrampWithLayerZeroExecuteQuoteParams<T>
-    | OfframpWithLayerZeroExecuteQuoteParams<T>
-    | EVMToEVMWithLayerZeroExecuteQuoteParams<T>
-    | OnrampWithSwapsExecuteQuoteParams<T>
-    | OfframpWithSwapsExecuteQuoteParams<T>;

@@ -41,6 +41,11 @@ We use `pnpm` in the examples below. But the steps below should also work when u
 
 ```shell
 pnpm i
+
+openapi-generator-cli generate --skip-validate-spec \
+    -i https://gateway-api-staging.gobob.xyz/api-doc.json \
+    -g typescript-fetch \
+    -o ./src/gateway/generated-client
 ```
 
 ### Build
