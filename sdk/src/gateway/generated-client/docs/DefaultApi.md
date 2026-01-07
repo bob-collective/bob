@@ -357,7 +357,7 @@ No authorization required
 
 ## registerBtcTx
 
-> registerBtcTx(registerBtcTx)
+> string registerBtcTx(registerBtcTx)
 
 Register a Bitcoin tx for an onramp request.
 
@@ -402,7 +402,7 @@ example().catch(console.error);
 
 ### Return type
 
-`void` (Empty response body)
+**string**
 
 ### Authorization
 
@@ -411,7 +411,7 @@ No authorization required
 ### HTTP request headers
 
 - **Content-Type**: `application/json`
-- **Accept**: Not defined
+- **Accept**: `text/plain`
 
 
 ### HTTP response details

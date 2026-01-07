@@ -339,7 +339,7 @@ export class DefaultApi extends runtime.BaseAPI {
      * Required for the Solver to track and execute an onramp request.
      * Register a Bitcoin tx for an onramp request.
      */
-    async registerBtcTxRaw(requestParameters: RegisterBtcTxRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
+    async registerBtcTxRaw(requestParameters: RegisterBtcTxRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<string>> {
         if (requestParameters['registerBtcTx'] == null) {
             throw new runtime.RequiredError(
                 'registerBtcTx',
@@ -364,15 +364,20 @@ export class DefaultApi extends runtime.BaseAPI {
             body: RegisterBtcTxToJSON(requestParameters['registerBtcTx']),
         }, initOverrides);
 
-        return new runtime.VoidApiResponse(response);
+        if (this.isJsonMime(response.headers.get('content-type'))) {
+            return new runtime.JSONApiResponse<string>(response);
+        } else {
+            return new runtime.TextApiResponse(response) as any;
+        }
     }
 
     /**
      * Required for the Solver to track and execute an onramp request.
      * Register a Bitcoin tx for an onramp request.
      */
-    async registerBtcTx(requestParameters: RegisterBtcTxRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
-        await this.registerBtcTxRaw(requestParameters, initOverrides);
+    async registerBtcTx(requestParameters: RegisterBtcTxRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<string> {
+        const response = await this.registerBtcTxRaw(requestParameters, initOverrides);
+        return await response.value();
     }
 
     /**

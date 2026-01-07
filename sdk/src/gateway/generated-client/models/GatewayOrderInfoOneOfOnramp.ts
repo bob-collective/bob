@@ -37,6 +37,12 @@ export interface GatewayOrderInfoOneOfOnramp {
      * @memberof GatewayOrderInfoOneOfOnramp
      */
     bobExplorerUrl?: string | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof GatewayOrderInfoOneOfOnramp
+     */
+    layerzeroExplorerUrl?: string | null;
 }
 
 /**
@@ -60,6 +66,7 @@ export function GatewayOrderInfoOneOfOnrampFromJSONTyped(json: any, ignoreDiscri
         'amount': json['amount'],
         'bitcoinExplorerUrl': json['bitcoin_explorer_url'] == null ? undefined : json['bitcoin_explorer_url'],
         'bobExplorerUrl': json['bob_explorer_url'] == null ? undefined : json['bob_explorer_url'],
+        'layerzeroExplorerUrl': json['layerzero_explorer_url'] == null ? undefined : json['layerzero_explorer_url'],
     };
 }
 
@@ -77,6 +84,7 @@ export function GatewayOrderInfoOneOfOnrampToJSONTyped(value?: GatewayOrderInfoO
         'amount': value['amount'],
         'bitcoin_explorer_url': value['bitcoinExplorerUrl'],
         'bob_explorer_url': value['bobExplorerUrl'],
+        'layerzero_explorer_url': value['layerzeroExplorerUrl'],
     };
 }
 

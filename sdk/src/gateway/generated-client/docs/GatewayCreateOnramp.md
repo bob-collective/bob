@@ -7,7 +7,9 @@ Created new Gateway order
 
 Name | Type
 ------------ | -------------
+`address` | string
 `id` | string
+`opReturnData` | string
 `psbt` | string
 
 ## Example
@@ -17,7 +19,9 @@ import type { GatewayCreateOnramp } from ''
 
 // TODO: Update the object below with actual values
 const example = {
+  "address": null,
   "id": 1,
+  "opReturnData": null,
   "psbt": null,
 } satisfies GatewayCreateOnramp
 

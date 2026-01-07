@@ -9,6 +9,7 @@ Name | Type
 `amount` | string
 `bitcoinExplorerUrl` | string
 `bobExplorerUrl` | string
+`layerzeroExplorerUrl` | string
 
 ## Example
 
@@ -20,6 +21,7 @@ const example = {
   "amount": null,
   "bitcoinExplorerUrl": null,
   "bobExplorerUrl": null,
+  "layerzeroExplorerUrl": null,
 } satisfies GatewayOrderInfoOneOfOnramp
 
 console.log(example)

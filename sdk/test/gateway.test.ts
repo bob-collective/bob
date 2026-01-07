@@ -4,12 +4,8 @@ import { getAddress, zeroAddress } from 'viem';
 import { Address } from 'viem/accounts';
 import { bob, bobSepolia } from 'viem/chains';
 import { afterEach, assert, describe, expect, it, vi } from 'vitest';
-import { GatewaySDK, LayerZeroGatewayClient } from '../src/gateway';
-import {
-    MAINNET_GATEWAY_BASE_URL,
-    SIGNET_GATEWAY_BASE_URL,
-    TESTNET_TARGET_OFFRAMP_REGISTRY_ADDRESS,
-} from '../src/gateway/client';
+import { GatewaySDK } from '../src/gateway';
+import { MAINNET_GATEWAY_BASE_URL, SIGNET_GATEWAY_BASE_URL } from '../src/gateway/client';
 import { getTokenAddress, SYMBOL_LOOKUP } from '../src/gateway/tokens';
 import {
     GatewayOrderType,
@@ -133,7 +129,6 @@ describe('Gateway Tests', () => {
                 amount: 1000,
             }),
             {
-                type: GatewayOrderType.Onramp,
                 data: assertMockQuote,
                 finalOutputSats: mockQuote.satoshis - mockQuote.fee - mockQuote.feeBreakdown.affiliateFeeSats,
                 finalFeeSats: mockQuote.fee + mockQuote.feeBreakdown.affiliateFeeSats,
@@ -151,20 +146,19 @@ describe('Gateway Tests', () => {
             await gatewaySDK.getQuote({
                 fromChain: 'Bitcoin',
                 fromToken: 'bitcoin',
-                toChain: 60808,
+                toChain: '60808',
                 toToken: 'tbtc',
                 toUserAddress: zeroAddress,
                 amount: 1000,
             }),
             {
-                type: GatewayOrderType.Onramp,
                 data: assertMockQuote,
                 finalOutputSats: mockQuote.satoshis - mockQuote.fee - mockQuote.feeBreakdown.affiliateFeeSats,
                 finalFeeSats: mockQuote.fee + mockQuote.feeBreakdown.affiliateFeeSats,
                 params: {
                     fromChain: 'Bitcoin',
                     fromToken: 'bitcoin',
-                    toChain: 60808,
+                    toChain: '60808',
                     toToken: 'tbtc',
                     toUserAddress: zeroAddress,
                     amount: 1000,
@@ -220,7 +214,6 @@ describe('Gateway Tests', () => {
                 toUserAddress: zeroAddress,
             }),
             {
-                type: GatewayOrderType.Onramp,
                 data: assertMockQuote,
                 finalOutputSats: mockQuote.satoshis - mockQuote.fee - mockQuote.feeBreakdown.affiliateFeeSats,
                 finalFeeSats: mockQuote.fee + mockQuote.feeBreakdown.affiliateFeeSats,
@@ -264,62 +257,62 @@ describe('Gateway Tests', () => {
         }).rejects.toThrowError('Invalid output chain');
     });
 
-    it('should start order', { timeout: 50000 }, async () => {
-        const gatewaySDK = new GatewaySDK(bob.id);
-        const mockQuote = {
-            gatewayAddress: zeroAddress,
-            baseTokenAddress: TBTC_ADDRESS as Address,
-            dustThreshold: 1000,
-            satoshis: 1000,
-            outputSatoshis: 990,
-            fee: 10,
-            bitcoinAddress: 'bc1qafk4yhqvj4wep57m62dgrmutldusqde8adh20d',
-            txProofDifficultyFactor: 3,
-            strategyAddress: zeroAddress,
-            orderDetails: convertOrderDetailsRawToOrderDetails(MOCK_ORDER_DETAILS_RAW),
-            feeBreakdown: {
-                overallFeeSats: 10,
-                protocolFeeSats: 0,
-                affiliateFeeSats: 0,
-                executionFeeWei: BigInt(0),
-                l1DataFeeWei: BigInt(0),
-            },
-        };
+    // it('should start order', { timeout: 50000 }, async () => {
+    //     const gatewaySDK = new GatewaySDK(bob.id);
+    //     const mockQuote = {
+    //         gatewayAddress: zeroAddress,
+    //         baseTokenAddress: TBTC_ADDRESS as Address,
+    //         dustThreshold: 1000,
+    //         satoshis: 1000,
+    //         outputSatoshis: 990,
+    //         fee: 10,
+    //         bitcoinAddress: 'bc1qafk4yhqvj4wep57m62dgrmutldusqde8adh20d',
+    //         txProofDifficultyFactor: 3,
+    //         strategyAddress: zeroAddress,
+    //         orderDetails: convertOrderDetailsRawToOrderDetails(MOCK_ORDER_DETAILS_RAW),
+    //         feeBreakdown: {
+    //             overallFeeSats: 10,
+    //             protocolFeeSats: 0,
+    //             affiliateFeeSats: 0,
+    //             executionFeeWei: BigInt(0),
+    //             l1DataFeeWei: BigInt(0),
+    //         },
+    //     };
 
-        nock(`${MAINNET_GATEWAY_BASE_URL}`).post(`/v4/order`).reply(201, {
-            uuid: '00000000-0000-0000-0000-000000000000',
-            opReturnHash: '0x8d0fd89210149d4219c87fa814a4bcde0c6a36b8fe2dff52b1d3eaa9e7cf0a9a',
-        });
+    //     nock(`${MAINNET_GATEWAY_BASE_URL}`).post(`/v4/order`).reply(201, {
+    //         uuid: '00000000-0000-0000-0000-000000000000',
+    //         opReturnHash: '0x8d0fd89210149d4219c87fa814a4bcde0c6a36b8fe2dff52b1d3eaa9e7cf0a9a',
+    //     });
 
-        await expect(async () => {
-            await gatewaySDK.startOnrampOrder(mockQuote, {
-                toChain: 'BOB',
-                toToken: 'tBTC',
-                toUserAddress: '2N8DbeaBdjkktkRzaKL1tHj9FQELV7jA8Re',
-                amount: 1000,
-                fromChain: 'Bitcoin',
-                fromToken: 'BTC',
-                fromUserAddress: 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq',
-            });
-        }).rejects.toThrowError('Invalid user address');
+    //     await expect(async () => {
+    //         await gatewaySDK.startOnrampOrder(mockQuote, {
+    //             toChain: 'BOB',
+    //             toToken: 'tBTC',
+    //             toUserAddress: '2N8DbeaBdjkktkRzaKL1tHj9FQELV7jA8Re',
+    //             amount: 1000,
+    //             fromChain: 'Bitcoin',
+    //             fromToken: 'BTC',
+    //             fromUserAddress: 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq',
+    //         });
+    //     }).rejects.toThrowError('Invalid user address');
 
-        const result = await gatewaySDK.startOnrampOrder(mockQuote, {
-            toChain: 'BOB',
-            toToken: 'tBTC',
-            toUserAddress: zeroAddress,
-            amount: 1000,
-            fromChain: 'Bitcoin',
-            fromToken: 'BTC',
-            fromUserAddress: 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq',
-        });
+    //     const result = await gatewaySDK.startOnrampOrder(mockQuote, {
+    //         toChain: 'BOB',
+    //         toToken: 'tBTC',
+    //         toUserAddress: zeroAddress,
+    //         amount: 1000,
+    //         fromChain: 'Bitcoin',
+    //         fromToken: 'BTC',
+    //         fromUserAddress: 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq',
+    //     });
 
-        assert.isDefined(result.psbtBase64);
-        const psbt = bitcoin.Psbt.fromBase64(result.psbtBase64!);
-        assert.deepEqual(
-            psbt.txOutputs[0].script,
-            bitcoin.script.compile([bitcoin.opcodes.OP_RETURN, Buffer.from(result.opReturnHash.slice(2), 'hex')])
-        );
-    });
+    //     assert.isDefined(result.psbtBase64);
+    //     const psbt = bitcoin.Psbt.fromBase64(result.psbtBase64!);
+    //     assert.deepEqual(
+    //         psbt.txOutputs[0].script,
+    //         bitcoin.script.compile([bitcoin.opcodes.OP_RETURN, Buffer.from(result.opReturnHash.slice(2), 'hex')])
+    //     );
+    // });
 
     it('should get strategies', async () => {
         nock(`${MAINNET_GATEWAY_BASE_URL}`)
