@@ -11,18 +11,20 @@ import {
 } from 'viem';
 import { bob, bobSepolia } from 'viem/chains';
 import { bigIntToFloatingNumber } from '../utils';
-import { createBitcoinPsbt } from '../wallet';
 import { strategyCaller } from './abi';
 import { BaseClient } from './base-client';
 import StrategyClient from './strategy';
-import {
-    BitcoinSigner,
-    EnrichedToken,
-    GetQuoteParams,
-    StrategyParams,
-} from './types';
+import { BitcoinSigner, EnrichedToken, GetQuoteParams, StrategyParams } from './types';
 
-import { DefaultApi, GatewayOrderInfo, GatewayQuote, instanceOfGatewayQuoteOneOf, instanceOfGatewayQuoteOneOf1, instanceOfGatewayQuoteOneOf2 } from './generated-client';
+import {
+    Configuration,
+    DefaultApi,
+    GatewayOrderInfo,
+    GatewayQuote,
+    instanceOfGatewayQuoteOneOf,
+    instanceOfGatewayQuoteOneOf1,
+    instanceOfGatewayQuoteOneOf2,
+} from './generated-client';
 import { getTokenDetails } from './tokens';
 
 export const WBTC_OFT_ADDRESS = '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c';
@@ -116,13 +118,21 @@ export class GatewayApiClient extends BaseClient {
             case bob.id:
                 this.chain = bob;
                 this.strategy = new StrategyClient(bob, options?.rpcUrl);
-                this.api = new DefaultApi(); // TODO: set URL
+                this.api = new DefaultApi(
+                    new Configuration({
+                        basePath: MAINNET_GATEWAY_BASE_URL,
+                    })
+                ); // TODO: set URL
                 break;
             case bobSepolia.id:
                 this.chain = bobSepolia;
                 this.strategy = new StrategyClient(bobSepolia, options?.rpcUrl);
                 // this.isSignet = true;
-                this.api = new DefaultApi(); // TODO: set URL
+                this.api = new DefaultApi(
+                    new Configuration({
+                        basePath: SIGNET_GATEWAY_BASE_URL,
+                    })
+                ); // TODO: set URL
                 break;
             default:
                 throw new Error('Invalid chain');
@@ -154,7 +164,7 @@ export class GatewayApiClient extends BaseClient {
             srcToken: params.fromToken.toString(),
             dstToken: params.toToken.toString(),
             amount: params.amount.toString(),
-            slippage: params.maxSlippage?.toString() || "0", // TODO
+            slippage: params.maxSlippage?.toString() || '0', // TODO
             gasRefill: params.gasRefill?.toString(),
         });
     }
@@ -205,10 +215,13 @@ export class GatewayApiClient extends BaseClient {
             // TODO: return txid
             await this.api.registerBtcTx({ registerBtcTx: { bitcoinTx: bitcoinTxHex, id } });
 
-            return "";
+            return '';
         } else if (instanceOfGatewayQuoteOneOf1(quote)) {
+            if (!walletClient.account) {
+                throw new Error(`walletClient is required for offramp order`);
+            }
             // const accountAddress = walletClient.account?.address ?? (params.fromUserAddress as Address);
-            const accountAddress = walletClient.account?.address!;
+            const accountAddress = walletClient.account.address;
             const tokenAddress = WBTC_OFT_ADDRESS; // TODO: get from API
 
             const spenderAddress = quote.offramp.tx.to as Address;
@@ -362,7 +375,7 @@ export class GatewayApiClient extends BaseClient {
      * @returns Promise resolving to array of token addresses
      */
     async getTokens(): Promise<Address[]> {
-        return this.api.getTokens() as any;
+        return this.api.getTokens() as Promise<Address[]>;
     }
 
     // TODO: should get price from the gateway API
