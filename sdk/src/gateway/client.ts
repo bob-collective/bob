@@ -33,7 +33,7 @@ export const WBTC_OFT_ADDRESS = '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c';
  * Base url for the mainnet Gateway API.
  * @default "https://gateway-api-mainnet.gobob.xyz"
  */
-export const MAINNET_GATEWAY_BASE_URL = 'https://gateway-api-mainnet.gobob.xyz';
+export const MAINNET_GATEWAY_BASE_URL = 'https://gateway-api-staging.gobob.xyz';
 
 /**
  * Base url for the Signet Gateway API.
