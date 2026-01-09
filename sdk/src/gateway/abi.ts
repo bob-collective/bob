@@ -38,6 +38,100 @@ export const strategyCaller = [
     },
 ] as const;
 
+export const offrampCallerV2Abi = [
+    {
+        type: 'function',
+        name: 'createOrderV2',
+        inputs: [
+            {
+                name: 'offrampOrderArgs',
+                type: 'tuple',
+                internalType: 'struct OfframpOrderArgs',
+                components: [
+                    {
+                        name: 'satAmountToLock',
+                        type: 'uint256',
+                        internalType: 'uint256',
+                    },
+                    {
+                        name: 'satSolverFeeMax',
+                        type: 'uint256',
+                        internalType: 'uint256',
+                    },
+                    {
+                        name: 'satAffiliateFee',
+                        type: 'uint256',
+                        internalType: 'uint256',
+                    },
+                    {
+                        name: 'affiliateFeeRecipient',
+                        type: 'address',
+                        internalType: 'address',
+                    },
+                    {
+                        name: 'creationDeadline',
+                        type: 'uint256',
+                        internalType: 'uint256',
+                    },
+                    {
+                        name: 'outputScript',
+                        type: 'bytes',
+                        internalType: 'bytes',
+                    },
+                    {
+                        name: 'token',
+                        type: 'address',
+                        internalType: 'address',
+                    },
+                    {
+                        name: 'owner',
+                        type: 'address',
+                        internalType: 'address',
+                    },
+                ],
+            },
+        ],
+        outputs: [],
+        stateMutability: 'nonpayable',
+    },
+    {
+        type: 'function',
+        name: 'bumpFeeOfExistingOrder',
+        inputs: [
+            {
+                name: 'orderId',
+                type: 'uint256',
+                internalType: 'uint256',
+            },
+            {
+                name: 'newFeeSat',
+                type: 'uint256',
+                internalType: 'uint256',
+            },
+        ],
+        outputs: [],
+        stateMutability: 'nonpayable',
+    },
+    {
+        type: 'function',
+        name: 'refundOrder',
+        inputs: [
+            {
+                name: 'orderId',
+                type: 'uint256',
+                internalType: 'uint256',
+            },
+            {
+                name: 'receiver',
+                type: 'address',
+                internalType: 'address',
+            },
+        ],
+        outputs: [],
+        stateMutability: 'nonpayable',
+    },
+] as const;
+
 export const compoundV2CTokenAbi = parseAbi([
     'function exchangeRateCurrent() external returns (uint256)',
     'function underlying() external view returns (address)',
