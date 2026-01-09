@@ -212,10 +212,9 @@ export class GatewayApiClient extends BaseClient {
             // bitcoinTxOrId = stripHexPrefix(bitcoinTxOrId);
             if (!bitcoinTxHex) throw new Error('Failed to get signed transaction');
 
-            // TODO: return txid
-            await this.api.registerBtcTx({ registerBtcTx: { bitcoinTx: bitcoinTxHex, id } });
+            const txId = await this.api.registerBtcTx({ registerBtcTx: { bitcoinTx: bitcoinTxHex, id } });
 
-            return '';
+            return txId;
         } else if (instanceOfGatewayQuoteOneOf1(quote)) {
             if (!walletClient.account) {
                 throw new Error(`walletClient is required for offramp order`);
