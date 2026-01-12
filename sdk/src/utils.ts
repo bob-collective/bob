@@ -174,6 +174,11 @@ export function getMerkleProof(block: Block, txHash: string, forWitness?: boolea
     const txIds = block.transactions!.map((tx) => tx.getHash(forWitness));
     const pos = txIds.map((value) => value.toString('hex')).indexOf(txHash);
 
+    // Fail fast when the transaction is absent to avoid constructing an invalid proof.
+    if (pos < 0) {
+        throw new Error('Transaction not found in block');
+    }
+
     const merkleAndRoot = createMerkleBranchAndRoot(txIds, pos);
     return {
         pos: pos,
