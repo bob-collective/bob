@@ -1,34 +1,30 @@
-
 # GatewayQuoteOneOf
-
 
 ## Properties
 
-Name | Type
------------- | -------------
-`onramp` | [GatewayOnrampQuote](GatewayOnrampQuote.md)
+| Name     | Type                                        |
+| -------- | ------------------------------------------- |
+| `onramp` | [GatewayOnrampQuote](GatewayOnrampQuote.md) |
 
 ## Example
 
 ```typescript
-import type { GatewayQuoteOneOf } from ''
+import type { GatewayQuoteOneOf } from '';
 
 // TODO: Update the object below with actual values
 const example = {
-  "onramp": null,
-} satisfies GatewayQuoteOneOf
+    onramp: null,
+} satisfies GatewayQuoteOneOf;
 
-console.log(example)
+console.log(example);
 
 // Convert the instance to a JSON string
-const exampleJSON: string = JSON.stringify(example)
-console.log(exampleJSON)
+const exampleJSON: string = JSON.stringify(example);
+console.log(exampleJSON);
 
 // Parse the JSON string back to an object
-const exampleParsed = JSON.parse(exampleJSON) as GatewayQuoteOneOf
-console.log(exampleParsed)
+const exampleParsed = JSON.parse(exampleJSON) as GatewayQuoteOneOf;
+console.log(exampleParsed);
 ```
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
-
-
