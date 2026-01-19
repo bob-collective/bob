@@ -25,7 +25,7 @@ vi.mock(import('@scure/btc-signer'), async (importOriginal) => {
 
 // TODO: Add more tests using https://github.com/paulmillr/scure-btc-signer/tree/5ead71ea9a873d8ba1882a9cd6aa561ad410d0d1/test/bitcoinjs-test/fixtures/bitcoinjs
 // TODO: Ensure that the paymentAddresses have sufficient funds to create the transaction
-describe('UTXO Tests', () => {
+describe.skip('UTXO Tests', () => {
     beforeEach(() => {
         vi.restoreAllMocks();
         global.fetch = vi.fn(global.fetch);

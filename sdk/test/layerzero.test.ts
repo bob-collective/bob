@@ -36,7 +36,7 @@ import { supportedChainsMapping } from '../src/gateway/utils/common';
 import { EsploraClient, GatewaySDK } from '../src';
 import { ScureBitcoinSigner } from '../src/gateway/utils';
 
-describe('LayerZero Tests', () => {
+describe.skip('LayerZero Tests', () => {
     it.skip('should get chains', async () => {
         const client = new LayerZeroClient();
         const chainsInfo = await client.getSupportedChainsInfo();

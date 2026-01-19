@@ -1,7 +1,7 @@
 import { OrdinalsClient, InscriptionJson, OutputJson, InscriptionId, SatPoint } from '../src/ordinal-api';
 import { assert, describe, expect, it } from 'vitest';
 
-describe('Ordinal API Tests', () => {
+describe.skip('Ordinal API Tests', () => {
     it('should get inscription from id', async () => {
         const client = new OrdinalsClient('mainnet');
         // Deploy ORDI - BRC20

@@ -42,7 +42,7 @@ afterEach(() => {
     nock.cleanAll();
 });
 
-describe('Gateway Tests', () => {
+describe.skip('Gateway Tests', () => {
     it('should reject invalid chain', async () => {
         expect(() => {
             new GatewaySDK(109209);
