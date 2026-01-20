@@ -1,14 +1,6 @@
 import { Address, Hex } from 'viem';
 import { Optional } from './utils';
 import { GatewayQuote, GetQuoteRequest } from '../generated-client';
-import { OnrampExecuteQuoteParams } from './onramp';
-import { OfframpExecuteQuoteParams } from './offramp';
-import {
-    OnrampWithLayerZeroExecuteQuoteParams,
-    OfframpWithLayerZeroExecuteQuoteParams,
-    EVMToEVMWithLayerZeroExecuteQuoteParams,
-} from './layerzero';
-import { OnrampWithSwapsExecuteQuoteParams, OfframpWithSwapsExecuteQuoteParams } from './swaps';
 
 /**
  * Designed to be compatible with the Swing SDK.
@@ -93,13 +85,3 @@ export type BaseExecuteQuoteParams<T = {}> = {
     finalFeeSats: number;
     params: GetQuoteParams;
 } & T;
-
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export type ExecuteQuoteParams<T = {}> =
-    | OnrampExecuteQuoteParams<T>
-    | OfframpExecuteQuoteParams<T>
-    | OnrampWithLayerZeroExecuteQuoteParams<T>
-    | OfframpWithLayerZeroExecuteQuoteParams<T>
-    | EVMToEVMWithLayerZeroExecuteQuoteParams<T>
-    | OnrampWithSwapsExecuteQuoteParams<T>
-    | OfframpWithSwapsExecuteQuoteParams<T>;

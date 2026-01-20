@@ -2,10 +2,8 @@ import {
     Account,
     Address,
     erc20Abi,
-    Hash,
     Hex,
     maxUint256,
-    parseAbi,
     PublicClient,
     Transport,
     Chain as ViemChain,
@@ -13,16 +11,15 @@ import {
 } from 'viem';
 import { bob, bobSepolia } from 'viem/chains';
 import { bigIntToFloatingNumber } from '../utils';
-import { offrampCallerV2Abi, strategyCaller } from './abi';
+import { strategyCaller } from './abi';
 import { BaseClient } from './base-client';
 import StrategyClient from './strategy';
-import { BitcoinSigner, EnrichedToken, GetQuoteParams, OfframpOrderStatus, StrategyParams } from './types';
+import { BitcoinSigner, EnrichedToken, GetQuoteParams, StrategyParams } from './types';
 
 import {
     Configuration,
     DefaultApi,
     GatewayOrderInfo,
-    GatewayOrderInfoOneOf1Offramp,
     GatewayQuote,
     instanceOfGatewayQuoteOneOf,
     instanceOfGatewayQuoteOneOf1,
