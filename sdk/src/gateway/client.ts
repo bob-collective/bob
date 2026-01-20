@@ -27,6 +27,7 @@ import {
     instanceOfGatewayQuoteOneOf,
     instanceOfGatewayQuoteOneOf1,
     instanceOfGatewayQuoteOneOf2,
+    RouteInfo,
 } from './generated-client';
 import { getTokenDetails } from './tokens';
 
@@ -466,118 +467,12 @@ export class GatewayApiClient extends BaseClient {
         return this.api.getChains();
     }
 
-    // /**
-    //  * Bumps fees for an active offramp order that requires higher fees.
-    //  *
-    //  * @param params Parameters including orderId and wallet clients - see {@link BumpFeeParams} & {@link EvmWalletClientParams}
-    //  * @returns Promise resolving to transaction hash
-    //  * @throws {Error} If order is not active or fees don't need bumping
-    //  */
-    // async bumpFeeForOfframpOrder({
-    //     order,
-    //     offrampRegistryAddress,
-    //     walletClient,
-    //     publicClient,
-    // }: {
-    //     order: GatewayOrderInfoOneOf1Offramp;
-    //     offrampRegistryAddress: Address;
-    // } & EvmWalletClientParams): Promise<Hash> {
-    //     // check order status via viem should be Active/Accepted
-    //     //   const orderDetails = await this.fetchOfframpOrder(orderId, offrampRegistryAddress);
-
-    //     if (order.status !== 'Active') {
-    //         throw new Error(`Offramp order needs to be Active for bumping fees`);
-    //     }
-
-    //     // Ensure bump fee is required
-    //     if (!Boolean(order.bumpFeeTx?.value)) {
-    //         throw new Error(`No need to bump fees, the current fees are sufficient`);
-    //     }
-
-    //     const { request } = await publicClient.simulateContract({
-    //         address: offrampRegistryAddress,
-    //         abi: offrampCallerV2Abi,
-    //         functionName: 'bumpFeeOfExistingOrder',
-    //         args: [order.id, BigInt(order.bumpFeeTx!.value)],
-    //         account: walletClient.account,
-    //     });
-
-    //     const transactionHash = await walletClient.writeContract(request);
-
-    //     await publicClient.waitForTransactionReceipt({ hash: transactionHash });
-
-    //     return transactionHash;
-    // }
-
-    // /**
-    //  * Unlocks funds from an unprocessed offramp order after the claim delay.
-    //  *
-    //  * @param params Parameters including orderId, receiver, and wallet clients - see {@link UnlockOrderParams} & {@link EvmWalletClientParams}
-    //  * @returns Promise resolving to transaction hash
-    //  * @throws {Error} If order cannot be unlocked yet or is already processed
-    //  */
-    // async unlockOfframpOrder({
-    //     order,
-    //     receiver,
-    //     offrampRegistryAddress,
-    //     walletClient,
-    //     publicClient,
-    // }: {
-    //     order: GatewayOrderInfo;
-    //     offrampRegistryAddress: Address;
-    //     receiver: Address;
-    // } & EvmWalletClientParams): Promise<Hash> {
-    //     // check order status via viem should be Active/Accepted
-    //     //   const orderDetails: OfframpOrder = await this.fetchOfframpOrder(orderId, offrampRegistryAddress); // Use API to get status
-
-    //     // Processed and refunded order can't be unlocked
-    //     if (order.status == 'Processed' || order.status == 'Refunded') {
-    //         throw new Error(`Offramp order already processed / refunded`);
-    //     }
-
-    //     // Active order can be unlocked and Accepted order can be unlocked after delay
-    //     if (
-    //         !(await this.canOrderBeUnlocked(order.status, order.orderTimestamp, offrampRegistryAddress, publicClient))
-    //     ) {
-    //         throw new Error(`Offramp order is still within the 7-day claim delay and cannot be unlocked yet.`);
-    //     }
-
-    //     const { request } = await publicClient.simulateContract({
-    //         address: offrampRegistryAddress,
-    //         abi: offrampCallerV2Abi,
-    //         functionName: 'refundOrder',
-    //         args: [order.id, receiver],
-    //         account: walletClient.account,
-    //     });
-
-    //     const transactionHash = await walletClient.writeContract(request);
-
-    //     await publicClient.waitForTransactionReceipt({ hash: transactionHash });
-
-    //     return transactionHash;
-    // }
-
-    // async canOrderBeUnlocked(
-    //     status: OfframpOrderStatus,
-    //     orderTimestamp: number,
-    //     offrampRegistryAddress: Address,
-    //     publicClient: PublicClient<Transport>
-    // ): Promise<boolean> {
-    //     if (status === 'Active' && Math.floor(Date.now() / 1000) - orderTimestamp >= 60) {
-    //         return true;
-    //     }
-    //     if (status !== 'Accepted') {
-    //         return false;
-    //     }
-    //     // check if Accepted order has passed claim delay
-    //     const nowInSec = Math.floor(Date.now() / 1000);
-
-    //     const claimDelay = await publicClient.readContract({
-    //         address: offrampRegistryAddress,
-    //         abi: parseAbi(['function CLAIM_DELAY() view returns (uint64)']),
-    //         functionName: 'CLAIM_DELAY',
-    //     });
-
-    //     return orderTimestamp + Number(claimDelay) <= nowInSec;
-    // }
+    /**
+     * Retrieves all supported routes.
+     *
+     * @returns Promise resolving to array of supported routes
+     */
+    async getRoutes(): Promise<Array<RouteInfo>> {
+        return  this.api.getRoutes();
+    }   
 }
