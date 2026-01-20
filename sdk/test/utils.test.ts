@@ -3,7 +3,7 @@ import { assert, describe, it } from 'vitest';
 import { MAINNET_ESPLORA_BASE_PATH } from '../src/esplora';
 import { getMerkleProof } from '../src/utils';
 
-describe.skip('Utils Tests', () => {
+describe('Utils Tests', () => {
     // NOTE: this is a bit flaky due to slow response times from electrs
     it('should construct witness merkle proof from block', { timeout: 20000, skip: true }, async () => {
         const hash = '000000000000000000015712838394aeb93f5d45d0e5bec197382c08b375016e';

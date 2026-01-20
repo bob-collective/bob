@@ -21,7 +21,7 @@ function createOrdinalTransaction(outputScript: Buffer) {
     return tx;
 }
 
-describe.skip('Inscription Tests', () => {
+describe('Inscription Tests', () => {
     it('should parse text inscription', async () => {
         const esploraClient = new EsploraClient('mainnet');
 

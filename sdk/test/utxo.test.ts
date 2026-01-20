@@ -25,13 +25,13 @@ vi.mock(import('@scure/btc-signer'), async (importOriginal) => {
 
 // TODO: Add more tests using https://github.com/paulmillr/scure-btc-signer/tree/5ead71ea9a873d8ba1882a9cd6aa561ad410d0d1/test/bitcoinjs-test/fixtures/bitcoinjs
 // TODO: Ensure that the paymentAddresses have sufficient funds to create the transaction
-describe.skip('UTXO Tests', () => {
+describe('UTXO Tests', () => {
     beforeEach(() => {
         vi.restoreAllMocks();
         global.fetch = vi.fn(global.fetch);
     });
 
-    it('should spend from address to create a transaction with an OP return output', { timeout: 50000 }, async () => {
+    it.skip('should spend from address to create a transaction with an OP return output', { timeout: 50000 }, async () => {
         // Addresses where randomly picked from blockstream.info
         const paymentAddresses = [
             // P2WPKH: https://blockstream.info/address/bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq

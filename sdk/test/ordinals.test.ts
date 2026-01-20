@@ -47,7 +47,7 @@ class StaticSigner implements RemoteSigner {
     }
 }
 
-describe.skip('Ordinal Tests', () => {
+describe('Ordinal Tests', () => {
     it('should inscribe text', async () => {
         const secret = 'fc7458de3d5616e7803fdc81d688b9642641be32fee74c4558ce680cac3d4111';
         const signer = new StaticSigner(secret);

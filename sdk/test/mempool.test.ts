@@ -26,7 +26,7 @@ const MOCKS = {
     },
 };
 
-describe.skip('Mempool Tests', () => {
+describe('Mempool Tests', () => {
     const client = new MempoolClient();
 
     beforeEach(() => {

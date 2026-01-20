@@ -4,7 +4,7 @@ import { getBitcoinTxInfo, getBitcoinTxProof } from '../src/relay';
 import * as bitcoin from 'bitcoinjs-lib';
 import { encodeRawOutput } from '../src/utils';
 
-describe.skip('Relay Tests', () => {
+describe('Relay Tests', () => {
     // doesn't do anything, but left here to build more contract tests
     it('should encode output and op return', async () => {
         const tx = new bitcoin.Transaction();
