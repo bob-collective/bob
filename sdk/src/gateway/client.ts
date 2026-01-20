@@ -473,6 +473,6 @@ export class GatewayApiClient extends BaseClient {
      * @returns Promise resolving to array of supported routes
      */
     async getRoutes(): Promise<Array<RouteInfo>> {
-        return  this.api.getRoutes();
-    }   
+        return this.api.getRoutes();
+    }
 }
