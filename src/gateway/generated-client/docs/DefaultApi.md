@@ -4,72 +4,12 @@ All URIs are relative to *http://localhost*
 
 | Method | HTTP request | Description |
 |------------- | ------------- | -------------|
-| [**getChains**](DefaultApi.md#getchains) | **GET** /api/get-chains | Get all supported chains. |
 | [**getOrders**](DefaultApi.md#getorders) | **GET** /api/get-orders/{user_address} | Get all user orders. |
 | [**getQuote**](DefaultApi.md#getquote) | **GET** /api/get-quote | Get a gateway quote. |
-| [**getReferrals**](DefaultApi.md#getreferrals) | **GET** /api/get-referrals/{user_address} | Get user referral stats. |
 | [**getRoutes**](DefaultApi.md#getroutes) | **GET** /api/get-routes | Get all supported routes. |
-| [**getTokens**](DefaultApi.md#gettokens) | **GET** /api/get-tokens | Get all supported tokens. |
 | [**registerBtcTx**](DefaultApi.md#registerbtctx) | **PATCH** /api/register-btc-tx | Register a Bitcoin tx for an onramp request. |
 | [**startOnramp**](DefaultApi.md#startonramp) | **POST** /api/start-onramp | Start a new onramp. |
 
-
-
-## getChains
-
-> Array&lt;GatewayChain&gt; getChains()
-
-Get all supported chains.
-
-### Example
-
-```ts
-import {
-  Configuration,
-  DefaultApi,
-} from '';
-import type { GetChainsRequest } from '';
-
-async function example() {
-  console.log("🚀 Testing  SDK...");
-  const api = new DefaultApi();
-
-  try {
-    const data = await api.getChains();
-    console.log(data);
-  } catch (error) {
-    console.error(error);
-  }
-}
-
-// Run the test
-example().catch(console.error);
-```
-
-### Parameters
-
-This endpoint does not need any parameter.
-
-### Return type
-
-[**Array&lt;GatewayChain&gt;**](GatewayChain.md)
-
-### Authorization
-
-No authorization required
-
-### HTTP request headers
-
-- **Content-Type**: Not defined
-- **Accept**: `application/json`
-
-
-### HTTP response details
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-| **200** | Get all supported chains |  -  |
-
-[[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
 
 
 ## getOrders
@@ -237,71 +177,6 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
 
 
-## getReferrals
-
-> ReferralInfo getReferrals(userAddress)
-
-Get user referral stats.
-
-### Example
-
-```ts
-import {
-  Configuration,
-  DefaultApi,
-} from '';
-import type { GetReferralsRequest } from '';
-
-async function example() {
-  console.log("🚀 Testing  SDK...");
-  const api = new DefaultApi();
-
-  const body = {
-    // string | User address
-    userAddress: userAddress_example,
-  } satisfies GetReferralsRequest;
-
-  try {
-    const data = await api.getReferrals(body);
-    console.log(data);
-  } catch (error) {
-    console.error(error);
-  }
-}
-
-// Run the test
-example().catch(console.error);
-```
-
-### Parameters
-
-
-| Name | Type | Description  | Notes |
-|------------- | ------------- | ------------- | -------------|
-| **userAddress** | `string` | User address | [Defaults to `undefined`] |
-
-### Return type
-
-[**ReferralInfo**](ReferralInfo.md)
-
-### Authorization
-
-No authorization required
-
-### HTTP request headers
-
-- **Content-Type**: Not defined
-- **Accept**: `application/json`
-
-
-### HTTP response details
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-| **200** | Get referral stats |  -  |
-
-[[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
-
-
 ## getRoutes
 
 > Array&lt;RouteInfo&gt; getRoutes()
@@ -355,63 +230,6 @@ No authorization required
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
 | **200** | Get all supported routes |  -  |
-
-[[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
-
-
-## getTokens
-
-> Array&lt;string&gt; getTokens()
-
-Get all supported tokens.
-
-### Example
-
-```ts
-import {
-  Configuration,
-  DefaultApi,
-} from '';
-import type { GetTokensRequest } from '';
-
-async function example() {
-  console.log("🚀 Testing  SDK...");
-  const api = new DefaultApi();
-
-  try {
-    const data = await api.getTokens();
-    console.log(data);
-  } catch (error) {
-    console.error(error);
-  }
-}
-
-// Run the test
-example().catch(console.error);
-```
-
-### Parameters
-
-This endpoint does not need any parameter.
-
-### Return type
-
-**Array<string>**
-
-### Authorization
-
-No authorization required
-
-### HTTP request headers
-
-- **Content-Type**: Not defined
-- **Accept**: `application/json`
-
-
-### HTTP response details
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-| **200** | Get all supported tokens |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
 

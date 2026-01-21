@@ -15,18 +15,14 @@
 
 import * as runtime from '../runtime';
 import type {
-  GatewayChain,
   GatewayCreateOnramp,
   GatewayOnrampQuote,
   GatewayOrderInfo,
   GatewayQuote,
-  ReferralInfo,
   RegisterBtcTx,
   RouteInfo,
 } from '../models/index';
 import {
-    GatewayChainFromJSON,
-    GatewayChainToJSON,
     GatewayCreateOnrampFromJSON,
     GatewayCreateOnrampToJSON,
     GatewayOnrampQuoteFromJSON,
@@ -35,8 +31,6 @@ import {
     GatewayOrderInfoToJSON,
     GatewayQuoteFromJSON,
     GatewayQuoteToJSON,
-    ReferralInfoFromJSON,
-    ReferralInfoToJSON,
     RegisterBtcTxFromJSON,
     RegisterBtcTxToJSON,
     RouteInfoFromJSON,
@@ -62,10 +56,6 @@ export interface GetQuoteRequest {
     affiliateId?: string;
 }
 
-export interface GetReferralsRequest {
-    userAddress: string;
-}
-
 export interface RegisterBtcTxRequest {
     registerBtcTx: RegisterBtcTx;
 }
@@ -78,35 +68,6 @@ export interface StartOnrampRequest {
  * 
  */
 export class DefaultApi extends runtime.BaseAPI {
-
-    /**
-     * Get all supported chains.
-     */
-    async getChainsRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<GatewayChain>>> {
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-
-        let urlPath = `/api/get-chains`;
-
-        const response = await this.request({
-            path: urlPath,
-            method: 'GET',
-            headers: headerParameters,
-            query: queryParameters,
-        }, initOverrides);
-
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(GatewayChainFromJSON));
-    }
-
-    /**
-     * Get all supported chains.
-     */
-    async getChains(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<GatewayChain>> {
-        const response = await this.getChainsRaw(initOverrides);
-        return await response.value();
-    }
 
     /**
      * Get all user orders.
@@ -281,43 +242,6 @@ export class DefaultApi extends runtime.BaseAPI {
     }
 
     /**
-     * Get user referral stats.
-     */
-    async getReferralsRaw(requestParameters: GetReferralsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<ReferralInfo>> {
-        if (requestParameters['userAddress'] == null) {
-            throw new runtime.RequiredError(
-                'userAddress',
-                'Required parameter "userAddress" was null or undefined when calling getReferrals().'
-            );
-        }
-
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-
-        let urlPath = `/api/get-referrals/{user_address}`;
-        urlPath = urlPath.replace(`{${"user_address"}}`, encodeURIComponent(String(requestParameters['userAddress'])));
-
-        const response = await this.request({
-            path: urlPath,
-            method: 'GET',
-            headers: headerParameters,
-            query: queryParameters,
-        }, initOverrides);
-
-        return new runtime.JSONApiResponse(response, (jsonValue) => ReferralInfoFromJSON(jsonValue));
-    }
-
-    /**
-     * Get user referral stats.
-     */
-    async getReferrals(requestParameters: GetReferralsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<ReferralInfo> {
-        const response = await this.getReferralsRaw(requestParameters, initOverrides);
-        return await response.value();
-    }
-
-    /**
      * Get all supported routes.
      */
     async getRoutesRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<RouteInfo>>> {
@@ -343,35 +267,6 @@ export class DefaultApi extends runtime.BaseAPI {
      */
     async getRoutes(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<RouteInfo>> {
         const response = await this.getRoutesRaw(initOverrides);
-        return await response.value();
-    }
-
-    /**
-     * Get all supported tokens.
-     */
-    async getTokensRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<string>>> {
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-
-        let urlPath = `/api/get-tokens`;
-
-        const response = await this.request({
-            path: urlPath,
-            method: 'GET',
-            headers: headerParameters,
-            query: queryParameters,
-        }, initOverrides);
-
-        return new runtime.JSONApiResponse<any>(response);
-    }
-
-    /**
-     * Get all supported tokens.
-     */
-    async getTokens(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<string>> {
-        const response = await this.getTokensRaw(initOverrides);
         return await response.value();
     }
 

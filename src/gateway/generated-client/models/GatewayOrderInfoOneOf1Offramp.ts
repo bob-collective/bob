@@ -27,13 +27,13 @@ import {
     TxInfoToJSON,
     TxInfoToJSONTyped,
 } from './TxInfo';
-import type { ChainDetails } from './ChainDetails';
+import type { ChainTxInfo } from './ChainTxInfo';
 import {
-    ChainDetailsFromJSON,
-    ChainDetailsFromJSONTyped,
-    ChainDetailsToJSON,
-    ChainDetailsToJSONTyped,
-} from './ChainDetails';
+    ChainTxInfoFromJSON,
+    ChainTxInfoFromJSONTyped,
+    ChainTxInfoToJSON,
+    ChainTxInfoToJSONTyped,
+} from './ChainTxInfo';
 
 /**
  * 
@@ -67,16 +67,10 @@ export interface GatewayOrderInfoOneOf1Offramp {
     bumpFeeTx?: TxInfo | null;
     /**
      * 
-     * @type {ChainDetails}
+     * @type {ChainTxInfo}
      * @memberof GatewayOrderInfoOneOf1Offramp
      */
-    destinationChain: ChainDetails;
-    /**
-     * 
-     * @type {boolean}
-     * @memberof GatewayOrderInfoOneOf1Offramp
-     */
-    done: boolean;
+    dstInfo: ChainTxInfo;
     /**
      * 
      * @type {number}
@@ -88,7 +82,7 @@ export interface GatewayOrderInfoOneOf1Offramp {
      * @type {string}
      * @memberof GatewayOrderInfoOneOf1Offramp
      */
-    feeInSats: string;
+    fees: string;
     /**
      * 
      * @type {string}
@@ -109,16 +103,16 @@ export interface GatewayOrderInfoOneOf1Offramp {
     refundOrderTx?: TxInfo | null;
     /**
      * 
-     * @type {ChainDetails}
+     * @type {ChainTxInfo}
      * @memberof GatewayOrderInfoOneOf1Offramp
      */
-    sourceChain: ChainDetails;
+    srcInfo: ChainTxInfo;
     /**
      * 
      * @type {OrderStatus}
      * @memberof GatewayOrderInfoOneOf1Offramp
      */
-    status?: OrderStatus | null;
+    status: OrderStatus;
     /**
      * 
      * @type {number}
@@ -135,12 +129,12 @@ export interface GatewayOrderInfoOneOf1Offramp {
 export function instanceOfGatewayOrderInfoOneOf1Offramp(value: object): value is GatewayOrderInfoOneOf1Offramp {
     if (!('amount' in value) || value['amount'] === undefined) return false;
     if (!('bobExplorerUrl' in value) || value['bobExplorerUrl'] === undefined) return false;
-    if (!('destinationChain' in value) || value['destinationChain'] === undefined) return false;
-    if (!('done' in value) || value['done'] === undefined) return false;
-    if (!('feeInSats' in value) || value['feeInSats'] === undefined) return false;
+    if (!('dstInfo' in value) || value['dstInfo'] === undefined) return false;
+    if (!('fees' in value) || value['fees'] === undefined) return false;
     if (!('offrampRegistryAddress' in value) || value['offrampRegistryAddress'] === undefined) return false;
     if (!('orderId' in value) || value['orderId'] === undefined) return false;
-    if (!('sourceChain' in value) || value['sourceChain'] === undefined) return false;
+    if (!('srcInfo' in value) || value['srcInfo'] === undefined) return false;
+    if (!('status' in value) || value['status'] === undefined) return false;
     if (!('timestamp' in value) || value['timestamp'] === undefined) return false;
     return true;
 }
@@ -159,15 +153,14 @@ export function GatewayOrderInfoOneOf1OfframpFromJSONTyped(json: any, ignoreDisc
         'bitcoinExplorerUrl': json['bitcoin_explorer_url'] == null ? undefined : json['bitcoin_explorer_url'],
         'bobExplorerUrl': json['bob_explorer_url'],
         'bumpFeeTx': json['bump_fee_tx'] == null ? undefined : TxInfoFromJSON(json['bump_fee_tx']),
-        'destinationChain': ChainDetailsFromJSON(json['destination_chain']),
-        'done': json['done'],
+        'dstInfo': ChainTxInfoFromJSON(json['dst_info']),
         'estimatedTimeInSecs': json['estimated_time_in_secs'] == null ? undefined : json['estimated_time_in_secs'],
-        'feeInSats': json['fee_in_sats'],
+        'fees': json['fees'],
         'offrampRegistryAddress': json['offramp_registry_address'],
         'orderId': json['order_id'],
         'refundOrderTx': json['refund_order_tx'] == null ? undefined : TxInfoFromJSON(json['refund_order_tx']),
-        'sourceChain': ChainDetailsFromJSON(json['source_chain']),
-        'status': json['status'] == null ? undefined : OrderStatusFromJSON(json['status']),
+        'srcInfo': ChainTxInfoFromJSON(json['src_info']),
+        'status': OrderStatusFromJSON(json['status']),
         'timestamp': json['timestamp'],
     };
 }
@@ -187,14 +180,13 @@ export function GatewayOrderInfoOneOf1OfframpToJSONTyped(value?: GatewayOrderInf
         'bitcoin_explorer_url': value['bitcoinExplorerUrl'],
         'bob_explorer_url': value['bobExplorerUrl'],
         'bump_fee_tx': TxInfoToJSON(value['bumpFeeTx']),
-        'destination_chain': ChainDetailsToJSON(value['destinationChain']),
-        'done': value['done'],
+        'dst_info': ChainTxInfoToJSON(value['dstInfo']),
         'estimated_time_in_secs': value['estimatedTimeInSecs'],
-        'fee_in_sats': value['feeInSats'],
+        'fees': value['fees'],
         'offramp_registry_address': value['offrampRegistryAddress'],
         'order_id': value['orderId'],
         'refund_order_tx': TxInfoToJSON(value['refundOrderTx']),
-        'source_chain': ChainDetailsToJSON(value['sourceChain']),
+        'src_info': ChainTxInfoToJSON(value['srcInfo']),
         'status': OrderStatusToJSON(value['status']),
         'timestamp': value['timestamp'],
     };

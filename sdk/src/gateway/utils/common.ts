@@ -26,40 +26,6 @@ import {
     unichain,
     arbitrum,
 } from 'viem/chains';
-import {
-    GatewayCreateOrderRequest,
-    OnrampFeeBreakdown,
-    OnrampFeeBreakdownRaw,
-    OrderDetails,
-    OrderDetailsRaw,
-} from '../types';
-
-/**
- * Should compute the same OP_RETURN hash as the Gateway API and smart contracts.
- * This is used for data integrity checking.
- */
-export function calculateOpReturnHash(req: GatewayCreateOrderRequest) {
-    return keccak256(
-        encodeAbiParameters(
-            parseAbiParameters([
-                'address gateway',
-                'address strategy',
-                'uint256 satsToConvertToEth',
-                'address recipient',
-                'bytes gatewayExtraData',
-                'bytes strategyExtraData',
-            ]),
-            [
-                req.gatewayAddress,
-                req.strategyAddress || zeroAddress,
-                BigInt(req.satsToConvertToEth),
-                req.userAddress,
-                req.gatewayExtraData || '0x',
-                req.strategyExtraData || '0x',
-            ]
-        )
-    );
-}
 
 export function toHexScriptPubKey(userAddress: string, network: bitcoin.Network): string {
     const address = bitcoin.address.toOutputScript(userAddress, network);
@@ -88,50 +54,6 @@ export function viemClient(chain: ViemChain) {
 
 function parseU256(value: string): bigint {
     return BigInt(value);
-}
-
-export function convertOrderDetailsRawToOrderDetails(order: OrderDetailsRaw): OrderDetails {
-    return {
-        version: order.version,
-        data: {
-            ethAmountToReceive: parseU256(order.data.ethAmountToReceive),
-            satsToSwapToEth: order.data.satsToSwapToEth,
-            ethTransferGasLimit: parseU256(order.data.ethTransferGasLimit),
-            strategyGasLimit: parseU256(order.data.strategyGasLimit),
-            totalUserGasLimit: parseU256(order.data.totalUserGasLimit),
-            userGasPriceLimit: parseU256(order.data.userGasPriceLimit),
-            l1DataFee: parseU256(order.data.l1DataFee),
-            extraSatsFee: order.data.extraSatsFee !== null ? parseU256(order.data.extraSatsFee) : null,
-            extraSatsFeeRecipient: order.data.extraSatsFeeRecipient,
-        },
-    };
-}
-
-export function convertOrderDetailsToRaw(order: OrderDetails): OrderDetailsRaw {
-    return {
-        version: order.version,
-        data: {
-            ethAmountToReceive: order.data.ethAmountToReceive.toString(), // bigint to string
-            satsToSwapToEth: order.data.satsToSwapToEth,
-            ethTransferGasLimit: order.data.ethTransferGasLimit.toString(),
-            strategyGasLimit: order.data.strategyGasLimit.toString(),
-            totalUserGasLimit: order.data.totalUserGasLimit.toString(),
-            userGasPriceLimit: order.data.userGasPriceLimit.toString(),
-            l1DataFee: order.data.l1DataFee.toString(),
-            extraSatsFee: order.data.extraSatsFee !== null ? order.data.extraSatsFee.toString() : null,
-            extraSatsFeeRecipient: order.data.extraSatsFeeRecipient,
-        },
-    };
-}
-
-export function convertOnrampFeeBreakdown(order: OnrampFeeBreakdownRaw): OnrampFeeBreakdown {
-    return {
-        overallFeeSats: order.overallFeeSats,
-        protocolFeeSats: order.protocolFeeSats,
-        affiliateFeeSats: order.affiliateFeeSats,
-        executionFeeWei: BigInt(order.executionFeeWei),
-        l1DataFeeWei: BigInt(order.l1DataFeeWei),
-    };
 }
 
 export function parseBtc(btc: string) {

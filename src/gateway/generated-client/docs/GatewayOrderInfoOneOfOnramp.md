@@ -9,15 +9,13 @@ Name | Type
 `amount` | string
 `bitcoinExplorerUrl` | string
 `bobExplorerUrl` | string
-`destinationChain` | [ChainDetails](ChainDetails.md)
-`done` | boolean
+`dstInfo` | [ChainTxInfo](ChainTxInfo.md)
 `estimatedTimeInSecs` | number
-`feeInSats` | string
+`fees` | string
 `layerzeroExplorerUrl` | string
 `orderId` | string
-`sourceChain` | [ChainDetails](ChainDetails.md)
+`srcInfo` | [ChainTxInfo](ChainTxInfo.md)
 `status` | [OnrampStatus](OnrampStatus.md)
-`strategyAddress` | string
 `timestamp` | number
 
 ## Example
@@ -30,15 +28,13 @@ const example = {
   "amount": null,
   "bitcoinExplorerUrl": null,
   "bobExplorerUrl": null,
-  "destinationChain": null,
-  "done": null,
+  "dstInfo": null,
   "estimatedTimeInSecs": null,
-  "feeInSats": null,
+  "fees": null,
   "layerzeroExplorerUrl": null,
   "orderId": null,
-  "sourceChain": null,
+  "srcInfo": null,
   "status": null,
-  "strategyAddress": null,
   "timestamp": null,
 } satisfies GatewayOrderInfoOneOfOnramp
 

@@ -10,14 +10,13 @@ Name | Type
 `bitcoinExplorerUrl` | string
 `bobExplorerUrl` | string
 `bumpFeeTx` | [TxInfo](TxInfo.md)
-`destinationChain` | [ChainDetails](ChainDetails.md)
-`done` | boolean
+`dstInfo` | [ChainTxInfo](ChainTxInfo.md)
 `estimatedTimeInSecs` | number
-`feeInSats` | string
+`fees` | string
 `offrampRegistryAddress` | string
 `orderId` | string
 `refundOrderTx` | [TxInfo](TxInfo.md)
-`sourceChain` | [ChainDetails](ChainDetails.md)
+`srcInfo` | [ChainTxInfo](ChainTxInfo.md)
 `status` | [OrderStatus](OrderStatus.md)
 `timestamp` | number
 
@@ -32,14 +31,13 @@ const example = {
   "bitcoinExplorerUrl": null,
   "bobExplorerUrl": null,
   "bumpFeeTx": null,
-  "destinationChain": null,
-  "done": null,
+  "dstInfo": null,
   "estimatedTimeInSecs": null,
-  "feeInSats": null,
+  "fees": null,
   "offrampRegistryAddress": null,
   "orderId": null,
   "refundOrderTx": null,
-  "sourceChain": null,
+  "srcInfo": null,
   "status": null,
   "timestamp": null,
 } satisfies GatewayOrderInfoOneOf1Offramp
