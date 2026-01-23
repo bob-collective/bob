@@ -42,6 +42,10 @@ contract LightRelay is Ownable, ILightRelay {
     using ValidateSPV for bytes;
     using RelayUtils for bytes;
 
+    /// @notice Constructor that sets the initial owner.
+    /// @param initialOwner The address that will be the initial owner.
+    constructor(address initialOwner) Ownable(initialOwner) {}
+
     /// @notice Flag indicating whether the relay is ready for use.
     bool public ready;
     // Whether the relay requires the address submitting a retarget to be
