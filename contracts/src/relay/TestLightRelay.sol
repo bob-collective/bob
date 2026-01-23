@@ -19,6 +19,10 @@ contract TestLightRelay is LightRelay {
     using BTCUtils for bytes;
     using BTCUtils for uint256;
 
+    /// @notice Constructor that sets the initial owner.
+    /// @param initialOwner The address that will be the initial owner.
+    constructor(address initialOwner) LightRelay(initialOwner) {}
+
     /// @notice Sets the current and previous difficulty based on the difficulty
     ///         inferred from the provided Bitcoin headers.
     function setDifficultyFromHeaders(bytes memory bitcoinHeaders) external {

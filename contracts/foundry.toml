@@ -5,15 +5,10 @@ fs_permissions = [
 ]
 src = "src"
 out = "out"
-libs = ["lib"]
+libs = ["dependencies"]
 script = "script"
 test = "test"
 allow_internal_expect_revert = true # Need it because: https://book.getfoundry.sh/guides/v1.0-migration#expect-revert-cheatcode-disabled-on-internal-calls-by-default
-remappings = [
-    "@bob-collective/bitcoin-spv/=lib/bitcoin-spv/src/",
-    "forge-std/=lib/forge-std/src/",
-    "@openzeppelin/=lib/openzeppelin-contracts/",
-]
 optimizer = true
 optimizer_runs = 5_000
 # solc = "0.8.17"
@@ -25,6 +20,11 @@ out = "optimized-out"
 test = "src"
 # `viaIR` flag needs to enabled since `Lightrelay.t.sol` requires it
 via_ir = true
+
+[dependencies]
+forge-std = "1.14.0"
+"@bitcoin-spv" = { version = "v1", git = "https://github.com/bob-collective/bitcoin-spv.git", rev = "fbc8c12496f351f1a4fe5ee6cb3164ed1622a5d3" }
+"@openzeppelin-contracts" = "5.4.0"
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
 
