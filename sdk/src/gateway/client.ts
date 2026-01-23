@@ -403,7 +403,14 @@ export class GatewayApiClient extends BaseClient {
      * @returns Promise resolving to array of enriched token data
      */
     async getEnrichedTokens(): Promise<EnrichedToken[]> {
-        const [tokens, prices] = await Promise.all([this.getTokens(), this.getPrices()]);
+        const [routes, prices] = await Promise.all([this.getRoutes(), this.getPrices()]);
+
+        const tokensSet = routes.reduce((acc, route) => {
+            if (route.srcChain === 'bob') acc.add(route.srcToken as Address);
+            if (route.dstChain === 'bob') acc.add(route.dstToken as Address);
+            return acc;
+        }, new Set<Address>());
+        const tokens = Array.from(tokensSet);
 
         const tokensIncentives = await this.strategy.getTokensIncentives(tokens);
 
