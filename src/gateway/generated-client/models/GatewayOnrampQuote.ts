@@ -32,6 +32,18 @@ export interface GatewayOnrampQuote {
      * @type {string}
      * @memberof GatewayOnrampQuote
      */
+    dstChain: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof GatewayOnrampQuote
+     */
+    dstToken: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof GatewayOnrampQuote
+     */
     executionFees: string;
     /**
      * 
@@ -105,6 +117,8 @@ export interface GatewayOnrampQuote {
  * Check if a given object implements the GatewayOnrampQuote interface.
  */
 export function instanceOfGatewayOnrampQuote(value: object): value is GatewayOnrampQuote {
+    if (!('dstChain' in value) || value['dstChain'] === undefined) return false;
+    if (!('dstToken' in value) || value['dstToken'] === undefined) return false;
     if (!('executionFees' in value) || value['executionFees'] === undefined) return false;
     if (!('feeBreakdown' in value) || value['feeBreakdown'] === undefined) return false;
     if (!('fees' in value) || value['fees'] === undefined) return false;
@@ -127,6 +141,8 @@ export function GatewayOnrampQuoteFromJSONTyped(json: any, ignoreDiscriminator: 
     }
     return {
         
+        'dstChain': json['dstChain'],
+        'dstToken': json['dstToken'],
         'executionFees': json['executionFees'],
         'feeBreakdown': GatewayOnrampFeeBreakdownFromJSON(json['feeBreakdown']),
         'fees': json['fees'],
@@ -153,6 +169,8 @@ export function GatewayOnrampQuoteToJSONTyped(value?: GatewayOnrampQuote | null,
 
     return {
         
+        'dstChain': value['dstChain'],
+        'dstToken': value['dstToken'],
         'executionFees': value['executionFees'],
         'feeBreakdown': GatewayOnrampFeeBreakdownToJSON(value['feeBreakdown']),
         'fees': value['fees'],
