@@ -22,10 +22,10 @@ contract RelayGenesisScript is Script {
 
         if (vm.envOr("TESTNET", false)) {
             console2.log("Deploying testnet relay");
-            relay = new TestLightRelay();
+            relay = new TestLightRelay(msg.sender);
         } else {
             console2.log("Deploying mainnet relay");
-            relay = new LightRelay();
+            relay = new LightRelay(msg.sender);
         }
 
         // initialize relay at the given block
