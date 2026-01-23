@@ -55,14 +55,6 @@ export interface GatewayQuoteParams {
     destinationCalls?: DestinationCalls;
 }
 
-export interface CrossChainSwapQuoteParamsExt {
-    /** @description temporary field for chain ID */
-    destinationChainId?: number | null;
-    /** @description Buffer in BPS to account for Bitcoin to BOB finality delay (30 mins+) when using the L0 Strategy */
-    originFinalityBuffer?: number | bigint;
-    /** @description Buffer in BPS to account for BOB to destination finality delay (a few minutes) when using the L0 Strategy */
-    destinationFinalityBuffer?: number | bigint;
-}
 
 export interface DestinationCall {
     target: Address;
@@ -78,10 +70,3 @@ export interface DestinationCalls {
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export type GetQuoteParams<T = {}> = Optional<GatewayQuoteParams & T, 'fromUserAddress'>;
-
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export type BaseExecuteQuoteParams<T = {}> = {
-    finalOutputSats: number;
-    finalFeeSats: number;
-    params: GetQuoteParams;
-} & T;

@@ -369,16 +369,6 @@ export class GatewayApiClient extends BaseClient {
         return transactionHash;
     }
 
-    /**
-     * Retrieves all supported token addresses from the Gateway API.
-     *
-     * @deprecated get-tokens api is unavailable
-     * @returns Promise resolving to array of token addresses
-     */
-    async getTokens(): Promise<Address[]> {
-        return this.api.getTokens() as Promise<Address[]>;
-    }
-
     // TODO: should get price from the gateway API
     private async getPrices(): Promise<Map<string, number>> {
         const response = await this.safeFetch(
@@ -462,14 +452,6 @@ export class GatewayApiClient extends BaseClient {
      */
     async getOrders(userAddress: Address): Promise<Array<GatewayOrderInfo>> {
         return this.api.getOrders({ userAddress: userAddress.toString() });
-    }
-    /**
-     * Retrieves all supported chains.
-     *
-     * @returns Promise resolving to array of supported chains
-     */
-    async getChains(): Promise<Array<string>> {
-        return this.api.getChains();
     }
 
     /**

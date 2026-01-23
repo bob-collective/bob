@@ -1,8 +1,7 @@
 apis/DefaultApi.ts
 apis/index.ts
-docs/ChainDetails.md
+docs/ChainTxInfo.md
 docs/DefaultApi.md
-docs/GatewayChain.md
 docs/GatewayCreateOnramp.md
 docs/GatewayLayerZeroQuote.md
 docs/GatewayOfframpFeeBreakdown.md
@@ -23,13 +22,11 @@ docs/GatewayQuoteOneOf2.md
 docs/LayerZeroOrderStatus.md
 docs/OnrampStatus.md
 docs/OrderStatus.md
-docs/ReferralInfo.md
 docs/RegisterBtcTx.md
 docs/RouteInfo.md
 docs/TxInfo.md
 index.ts
-models/ChainDetails.ts
-models/GatewayChain.ts
+models/ChainTxInfo.ts
 models/GatewayCreateOnramp.ts
 models/GatewayLayerZeroQuote.ts
 models/GatewayOfframpFeeBreakdown.ts
@@ -50,7 +47,6 @@ models/GatewayQuoteOneOf2.ts
 models/LayerZeroOrderStatus.ts
 models/OnrampStatus.ts
 models/OrderStatus.ts
-models/ReferralInfo.ts
 models/RegisterBtcTx.ts
 models/RouteInfo.ts
 models/TxInfo.ts

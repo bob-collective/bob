@@ -1,7 +1,6 @@
 /* tslint:disable */
 /* eslint-disable */
-export * from './ChainDetails';
-export * from './GatewayChain';
+export * from './ChainTxInfo';
 export * from './GatewayCreateOnramp';
 export * from './GatewayLayerZeroQuote';
 export * from './GatewayOfframpFeeBreakdown';
@@ -22,7 +21,6 @@ export * from './GatewayQuoteOneOf2';
 export * from './LayerZeroOrderStatus';
 export * from './OnrampStatus';
 export * from './OrderStatus';
-export * from './ReferralInfo';
 export * from './RegisterBtcTx';
 export * from './RouteInfo';
 export * from './TxInfo';
