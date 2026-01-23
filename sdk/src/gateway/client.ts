@@ -372,6 +372,7 @@ export class GatewayApiClient extends BaseClient {
     /**
      * Retrieves all supported token addresses from the Gateway API.
      *
+     * @deprecated get-tokens api is unavailable
      * @returns Promise resolving to array of token addresses
      */
     async getTokens(): Promise<Address[]> {
