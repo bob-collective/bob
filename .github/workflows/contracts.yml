@@ -22,35 +22,17 @@ jobs:
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
-          version: v1.5.1
-      - name: Install deps
-        run: forge install
+          version: v1.3.6
+      - name: Install deps (with retries)
+        run: |
+          for i in {1..5}; do
+            forge soldeer install && break || sleep 10
+          done
       - name: Run forge tests
         run: |
-          forge test -vvv
-
-  bindings:
-    name: Bindings
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    defaults:
-      run:
-        working-directory: contracts
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          submodules: recursive
-      - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1
-        with:
-          version: v1.3.6
-      - name: Pull library deps
-        run: forge install
+          forge test -vvv --deny-warnings
       - name: Check fmt
         run: forge fmt --check
-      - name: Build contracts before checking bindings are correct
-        run: forge build --sizes
       - name: Versions
         run: |
           forge --version
