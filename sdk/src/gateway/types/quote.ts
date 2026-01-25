@@ -55,7 +55,6 @@ export interface GatewayQuoteParams {
     destinationCalls?: DestinationCalls;
 }
 
-
 export interface DestinationCall {
     target: Address;
     callData: Hex;
