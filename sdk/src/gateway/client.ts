@@ -194,7 +194,7 @@ export class GatewayApiClient extends BaseClient {
                 throw new Error(`btcSigner is required for onramp order`);
             }
 
-            const order = await this.api.createOrder({ gatewayQuote: { onramp :quote.onramp }});
+            const order = await this.api.createOrder({ gatewayQuote: { onramp: quote.onramp } });
 
             if (!instanceOfGatewayCreateOrderOneOf(order)) {
                 throw new Error('Invalid order type returned from API');
@@ -221,10 +221,14 @@ export class GatewayApiClient extends BaseClient {
             if (!bitcoinTxHex) throw new Error('Failed to get signed transaction');
 
             const tx = await this.api.registerTx(
-                { registerTx: { onramp: {
-                    orderId: order.onramp.orderId,
-                     bitcoinTx: bitcoinTxHex
-                }} },
+                {
+                    registerTx: {
+                        onramp: {
+                            orderId: order.onramp.orderId,
+                            bitcoinTx: bitcoinTxHex,
+                        },
+                    },
+                },
                 initOverrides
             );
 
