@@ -1,26 +1,17 @@
-# ReferralInfo
+# GatewayChain
 
 ## Properties
 
-| Name                | Type   |
-| ------------------- | ------ |
-| `numberOfReferrals` | number |
-| `referrer`          | string |
-| `totalRevShareSats` | string |
-| `totalSats`         | string |
+| Name | Type |
+| ---- | ---- |
 
 ## Example
 
 ```typescript
-import type { ReferralInfo } from '';
+import type { GatewayChain } from '';
 
 // TODO: Update the object below with actual values
-const example = {
-    numberOfReferrals: null,
-    referrer: null,
-    totalRevShareSats: null,
-    totalSats: null,
-} satisfies ReferralInfo;
+const example = {} satisfies GatewayChain;
 
 console.log(example);
 
@@ -29,7 +20,7 @@ const exampleJSON: string = JSON.stringify(example);
 console.log(exampleJSON);
 
 // Parse the JSON string back to an object
-const exampleParsed = JSON.parse(exampleJSON) as ReferralInfo;
+const exampleParsed = JSON.parse(exampleJSON) as GatewayChain;
 console.log(exampleParsed);
 ```
 

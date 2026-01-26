@@ -20,6 +20,13 @@ import {
     TxInfoToJSON,
     TxInfoToJSONTyped,
 } from './TxInfo';
+import type { GatewayOfframpFeeBreakdown } from './GatewayOfframpFeeBreakdown';
+import {
+    GatewayOfframpFeeBreakdownFromJSON,
+    GatewayOfframpFeeBreakdownFromJSONTyped,
+    GatewayOfframpFeeBreakdownToJSON,
+    GatewayOfframpFeeBreakdownToJSONTyped,
+} from './GatewayOfframpFeeBreakdown';
 
 /**
  * 
@@ -27,6 +34,12 @@ import {
  * @interface GatewayOfframpQuote
  */
 export interface GatewayOfframpQuote {
+    /**
+     * 
+     * @type {GatewayOfframpFeeBreakdown}
+     * @memberof GatewayOfframpQuote
+     */
+    feeBreakdown: GatewayOfframpFeeBreakdown;
     /**
      * 
      * @type {string}
@@ -63,6 +76,7 @@ export interface GatewayOfframpQuote {
  * Check if a given object implements the GatewayOfframpQuote interface.
  */
 export function instanceOfGatewayOfframpQuote(value: object): value is GatewayOfframpQuote {
+    if (!('feeBreakdown' in value) || value['feeBreakdown'] === undefined) return false;
     if (!('fees' in value) || value['fees'] === undefined) return false;
     if (!('inputAmount' in value) || value['inputAmount'] === undefined) return false;
     if (!('outputAmount' in value) || value['outputAmount'] === undefined) return false;
@@ -81,6 +95,7 @@ export function GatewayOfframpQuoteFromJSONTyped(json: any, ignoreDiscriminator:
     }
     return {
         
+        'feeBreakdown': GatewayOfframpFeeBreakdownFromJSON(json['feeBreakdown']),
         'fees': json['fees'],
         'inputAmount': json['inputAmount'],
         'outputAmount': json['outputAmount'],
@@ -100,6 +115,7 @@ export function GatewayOfframpQuoteToJSONTyped(value?: GatewayOfframpQuote | nul
 
     return {
         
+        'feeBreakdown': GatewayOfframpFeeBreakdownToJSON(value['feeBreakdown']),
         'fees': value['fees'],
         'inputAmount': value['inputAmount'],
         'outputAmount': value['outputAmount'],

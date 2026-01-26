@@ -1,29 +1,26 @@
 
-# GatewayCreateOnramp
+# ChainTxInfo
 
-Created new Gateway order
 
 ## Properties
 
 Name | Type
 ------------ | -------------
-`address` | string
-`id` | string
-`opReturnData` | string
-`psbt` | string
+`chain` | string
+`token` | string
+`txHash` | string
 
 ## Example
 
 ```typescript
-import type { GatewayCreateOnramp } from ''
+import type { ChainTxInfo } from ''
 
 // TODO: Update the object below with actual values
 const example = {
-  "address": null,
-  "id": 1,
-  "opReturnData": null,
-  "psbt": null,
-} satisfies GatewayCreateOnramp
+  "chain": null,
+  "token": null,
+  "txHash": null,
+} satisfies ChainTxInfo
 
 console.log(example)
 
@@ -32,7 +29,7 @@ const exampleJSON: string = JSON.stringify(example)
 console.log(exampleJSON)
 
 // Parse the JSON string back to an object
-const exampleParsed = JSON.parse(exampleJSON) as GatewayCreateOnramp
+const exampleParsed = JSON.parse(exampleJSON) as ChainTxInfo
 console.log(exampleParsed)
 ```
 

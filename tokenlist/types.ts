@@ -12,7 +12,7 @@ export type Entries<T> = [keyof T, ValueOf<T>][];
 export type SupportedChain = keyof typeof supportedChainMapping;
 export type SupportedChainId = (typeof supportedChains)[number]['id'];
 
-type Overrides = Partial<Pick<TokenData, 'name' | 'symbol'>>;
+type Overrides = Partial<Pick<TokenData, 'name' | 'symbol' | 'decimals'>>;
 
 export type TokenData = {
   name: string;
@@ -27,6 +27,7 @@ export type TokenData = {
       address: Address;
       name?: string;
       symbol?: string;
+      decimals?: number;
       bridge?: Record<SupportedChain, Address>;
       overrides?: Overrides;
     }

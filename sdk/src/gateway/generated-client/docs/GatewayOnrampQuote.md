@@ -6,7 +6,10 @@
 
 Name | Type
 ------------ | -------------
+`dstChain` | string
+`dstToken` | string
 `executionFees` | string
+`feeBreakdown` | [GatewayOnrampFeeBreakdown](GatewayOnrampFeeBreakdown.md)
 `fees` | string
 `gasRefill` | string
 `inputAmount` | string
@@ -25,7 +28,10 @@ import type { GatewayOnrampQuote } from ''
 
 // TODO: Update the object below with actual values
 const example = {
+  "dstChain": null,
+  "dstToken": null,
   "executionFees": null,
+  "feeBreakdown": null,
   "fees": null,
   "gasRefill": null,
   "inputAmount": null,

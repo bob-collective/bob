@@ -6,6 +6,7 @@
 
 Name | Type
 ------------ | -------------
+`feeBreakdown` | [GatewayOfframpFeeBreakdown](GatewayOfframpFeeBreakdown.md)
 `fees` | string
 `inputAmount` | string
 `outputAmount` | string
@@ -19,6 +20,7 @@ import type { GatewayOfframpQuote } from ''
 
 // TODO: Update the object below with actual values
 const example = {
+  "feeBreakdown": null,
   "fees": null,
   "inputAmount": null,
   "outputAmount": null,

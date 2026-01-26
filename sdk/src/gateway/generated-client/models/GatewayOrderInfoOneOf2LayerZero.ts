@@ -13,6 +13,21 @@
  */
 
 import { mapValues } from '../runtime';
+import type { LayerZeroOrderStatus } from './LayerZeroOrderStatus';
+import {
+    LayerZeroOrderStatusFromJSON,
+    LayerZeroOrderStatusFromJSONTyped,
+    LayerZeroOrderStatusToJSON,
+    LayerZeroOrderStatusToJSONTyped,
+} from './LayerZeroOrderStatus';
+import type { ChainTxInfo } from './ChainTxInfo';
+import {
+    ChainTxInfoFromJSON,
+    ChainTxInfoFromJSONTyped,
+    ChainTxInfoToJSON,
+    ChainTxInfoToJSONTyped,
+} from './ChainTxInfo';
+
 /**
  * 
  * @export
@@ -27,18 +42,55 @@ export interface GatewayOrderInfoOneOf2LayerZero {
     amount: string;
     /**
      * 
+     * @type {ChainTxInfo}
+     * @memberof GatewayOrderInfoOneOf2LayerZero
+     */
+    dstInfo: ChainTxInfo;
+    /**
+     * 
+     * @type {string}
+     * @memberof GatewayOrderInfoOneOf2LayerZero
+     */
+    fees: string;
+    /**
+     * 
      * @type {string}
      * @memberof GatewayOrderInfoOneOf2LayerZero
      */
     layerzeroExplorerUrl: string;
+    /**
+     * 
+     * @type {ChainTxInfo}
+     * @memberof GatewayOrderInfoOneOf2LayerZero
+     */
+    srcInfo: ChainTxInfo;
+    /**
+     * 
+     * @type {LayerZeroOrderStatus}
+     * @memberof GatewayOrderInfoOneOf2LayerZero
+     */
+    status: LayerZeroOrderStatus;
+    /**
+     * 
+     * @type {number}
+     * @memberof GatewayOrderInfoOneOf2LayerZero
+     */
+    timestamp: number;
 }
+
+
 
 /**
  * Check if a given object implements the GatewayOrderInfoOneOf2LayerZero interface.
  */
 export function instanceOfGatewayOrderInfoOneOf2LayerZero(value: object): value is GatewayOrderInfoOneOf2LayerZero {
     if (!('amount' in value) || value['amount'] === undefined) return false;
+    if (!('dstInfo' in value) || value['dstInfo'] === undefined) return false;
+    if (!('fees' in value) || value['fees'] === undefined) return false;
     if (!('layerzeroExplorerUrl' in value) || value['layerzeroExplorerUrl'] === undefined) return false;
+    if (!('srcInfo' in value) || value['srcInfo'] === undefined) return false;
+    if (!('status' in value) || value['status'] === undefined) return false;
+    if (!('timestamp' in value) || value['timestamp'] === undefined) return false;
     return true;
 }
 
@@ -53,7 +105,12 @@ export function GatewayOrderInfoOneOf2LayerZeroFromJSONTyped(json: any, ignoreDi
     return {
         
         'amount': json['amount'],
+        'dstInfo': ChainTxInfoFromJSON(json['dst_info']),
+        'fees': json['fees'],
         'layerzeroExplorerUrl': json['layerzero_explorer_url'],
+        'srcInfo': ChainTxInfoFromJSON(json['src_info']),
+        'status': LayerZeroOrderStatusFromJSON(json['status']),
+        'timestamp': json['timestamp'],
     };
 }
 
@@ -69,7 +126,12 @@ export function GatewayOrderInfoOneOf2LayerZeroToJSONTyped(value?: GatewayOrderI
     return {
         
         'amount': value['amount'],
+        'dst_info': ChainTxInfoToJSON(value['dstInfo']),
+        'fees': value['fees'],
         'layerzero_explorer_url': value['layerzeroExplorerUrl'],
+        'src_info': ChainTxInfoToJSON(value['srcInfo']),
+        'status': LayerZeroOrderStatusToJSON(value['status']),
+        'timestamp': value['timestamp'],
     };
 }
 

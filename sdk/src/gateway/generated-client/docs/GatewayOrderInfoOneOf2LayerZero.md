@@ -7,7 +7,12 @@
 Name | Type
 ------------ | -------------
 `amount` | string
+`dstInfo` | [ChainTxInfo](ChainTxInfo.md)
+`fees` | string
 `layerzeroExplorerUrl` | string
+`srcInfo` | [ChainTxInfo](ChainTxInfo.md)
+`status` | [LayerZeroOrderStatus](LayerZeroOrderStatus.md)
+`timestamp` | number
 
 ## Example
 
@@ -17,7 +22,12 @@ import type { GatewayOrderInfoOneOf2LayerZero } from ''
 // TODO: Update the object below with actual values
 const example = {
   "amount": null,
+  "dstInfo": null,
+  "fees": null,
   "layerzeroExplorerUrl": null,
+  "srcInfo": null,
+  "status": null,
+  "timestamp": null,
 } satisfies GatewayOrderInfoOneOf2LayerZero
 
 console.log(example)

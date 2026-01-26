@@ -9,6 +9,14 @@ Name | Type
 `amount` | string
 `bitcoinExplorerUrl` | string
 `bobExplorerUrl` | string
+`dstInfo` | [ChainTxInfo](ChainTxInfo.md)
+`estimatedTimeInSecs` | number
+`fees` | string
+`layerzeroExplorerUrl` | string
+`orderId` | string
+`srcInfo` | [ChainTxInfo](ChainTxInfo.md)
+`status` | [OnrampStatus](OnrampStatus.md)
+`timestamp` | number
 
 ## Example
 
@@ -20,6 +28,14 @@ const example = {
   "amount": null,
   "bitcoinExplorerUrl": null,
   "bobExplorerUrl": null,
+  "dstInfo": null,
+  "estimatedTimeInSecs": null,
+  "fees": null,
+  "layerzeroExplorerUrl": null,
+  "orderId": null,
+  "srcInfo": null,
+  "status": null,
+  "timestamp": null,
 } satisfies GatewayOrderInfoOneOfOnramp
 
 console.log(example)

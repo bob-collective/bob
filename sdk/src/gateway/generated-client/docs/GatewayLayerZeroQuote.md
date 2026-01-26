@@ -6,6 +6,9 @@
 
 Name | Type
 ------------ | -------------
+`fees` | string
+`inputAmount` | string
+`outputAmount` | string
 `tx` | [TxInfo](TxInfo.md)
 
 ## Example
@@ -15,6 +18,9 @@ import type { GatewayLayerZeroQuote } from ''
 
 // TODO: Update the object below with actual values
 const example = {
+  "fees": null,
+  "inputAmount": null,
+  "outputAmount": null,
   "tx": null,
 } satisfies GatewayLayerZeroQuote
 

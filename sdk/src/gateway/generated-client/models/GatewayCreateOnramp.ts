@@ -20,11 +20,23 @@ import { mapValues } from '../runtime';
  */
 export interface GatewayCreateOnramp {
     /**
+     * Bitcoin address to pay to
+     * @type {string}
+     * @memberof GatewayCreateOnramp
+     */
+    address: string;
+    /**
      * Unique order id
      * @type {string}
      * @memberof GatewayCreateOnramp
      */
     id: string;
+    /**
+     * Optional OP_RETURN data
+     * @type {string}
+     * @memberof GatewayCreateOnramp
+     */
+    opReturnData?: string | null;
     /**
      * Bitcoin PSBT
      * @type {string}
@@ -37,6 +49,7 @@ export interface GatewayCreateOnramp {
  * Check if a given object implements the GatewayCreateOnramp interface.
  */
 export function instanceOfGatewayCreateOnramp(value: object): value is GatewayCreateOnramp {
+    if (!('address' in value) || value['address'] === undefined) return false;
     if (!('id' in value) || value['id'] === undefined) return false;
     if (!('psbt' in value) || value['psbt'] === undefined) return false;
     return true;
@@ -52,7 +65,9 @@ export function GatewayCreateOnrampFromJSONTyped(json: any, ignoreDiscriminator:
     }
     return {
         
+        'address': json['address'],
         'id': json['id'],
+        'opReturnData': json['opReturnData'] == null ? undefined : json['opReturnData'],
         'psbt': json['psbt'],
     };
 }
@@ -68,7 +83,9 @@ export function GatewayCreateOnrampToJSONTyped(value?: GatewayCreateOnramp | nul
 
     return {
         
+        'address': value['address'],
         'id': value['id'],
+        'opReturnData': value['opReturnData'],
         'psbt': value['psbt'],
     };
 }

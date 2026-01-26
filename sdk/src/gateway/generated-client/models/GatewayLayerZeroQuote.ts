@@ -29,6 +29,24 @@ import {
 export interface GatewayLayerZeroQuote {
     /**
      * 
+     * @type {string}
+     * @memberof GatewayLayerZeroQuote
+     */
+    fees: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof GatewayLayerZeroQuote
+     */
+    inputAmount: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof GatewayLayerZeroQuote
+     */
+    outputAmount: string;
+    /**
+     * 
      * @type {TxInfo}
      * @memberof GatewayLayerZeroQuote
      */
@@ -39,6 +57,9 @@ export interface GatewayLayerZeroQuote {
  * Check if a given object implements the GatewayLayerZeroQuote interface.
  */
 export function instanceOfGatewayLayerZeroQuote(value: object): value is GatewayLayerZeroQuote {
+    if (!('fees' in value) || value['fees'] === undefined) return false;
+    if (!('inputAmount' in value) || value['inputAmount'] === undefined) return false;
+    if (!('outputAmount' in value) || value['outputAmount'] === undefined) return false;
     if (!('tx' in value) || value['tx'] === undefined) return false;
     return true;
 }
@@ -53,6 +74,9 @@ export function GatewayLayerZeroQuoteFromJSONTyped(json: any, ignoreDiscriminato
     }
     return {
         
+        'fees': json['fees'],
+        'inputAmount': json['inputAmount'],
+        'outputAmount': json['outputAmount'],
         'tx': TxInfoFromJSON(json['tx']),
     };
 }
@@ -68,6 +92,9 @@ export function GatewayLayerZeroQuoteToJSONTyped(value?: GatewayLayerZeroQuote |
 
     return {
         
+        'fees': value['fees'],
+        'inputAmount': value['inputAmount'],
+        'outputAmount': value['outputAmount'],
         'tx': TxInfoToJSON(value['tx']),
     };
 }
