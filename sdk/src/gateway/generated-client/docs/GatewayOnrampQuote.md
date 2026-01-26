@@ -8,12 +8,12 @@ Name | Type
 ------------ | -------------
 `dstChain` | string
 `dstToken` | string
-`executionFees` | string
+`executionFees` | [GatewayTokenAmount](GatewayTokenAmount.md)
 `feeBreakdown` | [GatewayOnrampFeeBreakdown](GatewayOnrampFeeBreakdown.md)
-`fees` | string
+`fees` | [GatewayTokenAmount](GatewayTokenAmount.md)
 `gasRefill` | string
-`inputAmount` | string
-`outputAmount` | string
+`inputAmount` | [GatewayTokenAmount](GatewayTokenAmount.md)
+`outputAmount` | [GatewayTokenAmount](GatewayTokenAmount.md)
 `recipient` | string
 `sender` | string
 `slippage` | string

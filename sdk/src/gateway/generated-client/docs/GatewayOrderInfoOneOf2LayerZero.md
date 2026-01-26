@@ -6,9 +6,9 @@
 
 Name | Type
 ------------ | -------------
-`amount` | string
+`amount` | [GatewayTokenAmount](GatewayTokenAmount.md)
 `dstInfo` | [ChainTxInfo](ChainTxInfo.md)
-`fees` | string
+`fees` | [GatewayTokenAmount](GatewayTokenAmount.md)
 `layerzeroExplorerUrl` | string
 `srcInfo` | [ChainTxInfo](ChainTxInfo.md)
 `status` | [LayerZeroOrderStatus](LayerZeroOrderStatus.md)

@@ -27,6 +27,13 @@ import {
     ChainTxInfoToJSON,
     ChainTxInfoToJSONTyped,
 } from './ChainTxInfo';
+import type { GatewayTokenAmount } from './GatewayTokenAmount';
+import {
+    GatewayTokenAmountFromJSON,
+    GatewayTokenAmountFromJSONTyped,
+    GatewayTokenAmountToJSON,
+    GatewayTokenAmountToJSONTyped,
+} from './GatewayTokenAmount';
 
 /**
  * 
@@ -36,10 +43,10 @@ import {
 export interface GatewayOrderInfoOneOfOnramp {
     /**
      * 
-     * @type {string}
+     * @type {GatewayTokenAmount}
      * @memberof GatewayOrderInfoOneOfOnramp
      */
-    amount: string;
+    amount: GatewayTokenAmount;
     /**
      * 
      * @type {string}
@@ -66,10 +73,10 @@ export interface GatewayOrderInfoOneOfOnramp {
     estimatedTimeInSecs?: number | null;
     /**
      * 
-     * @type {string}
+     * @type {GatewayTokenAmount}
      * @memberof GatewayOrderInfoOneOfOnramp
      */
-    fees: string;
+    fees: GatewayTokenAmount;
     /**
      * 
      * @type {string}
@@ -128,12 +135,12 @@ export function GatewayOrderInfoOneOfOnrampFromJSONTyped(json: any, ignoreDiscri
     }
     return {
         
-        'amount': json['amount'],
+        'amount': GatewayTokenAmountFromJSON(json['amount']),
         'bitcoinExplorerUrl': json['bitcoin_explorer_url'] == null ? undefined : json['bitcoin_explorer_url'],
         'bobExplorerUrl': json['bob_explorer_url'] == null ? undefined : json['bob_explorer_url'],
         'dstInfo': ChainTxInfoFromJSON(json['dst_info']),
         'estimatedTimeInSecs': json['estimated_time_in_secs'] == null ? undefined : json['estimated_time_in_secs'],
-        'fees': json['fees'],
+        'fees': GatewayTokenAmountFromJSON(json['fees']),
         'layerzeroExplorerUrl': json['layerzero_explorer_url'] == null ? undefined : json['layerzero_explorer_url'],
         'orderId': json['order_id'],
         'srcInfo': ChainTxInfoFromJSON(json['src_info']),
@@ -153,12 +160,12 @@ export function GatewayOrderInfoOneOfOnrampToJSONTyped(value?: GatewayOrderInfoO
 
     return {
         
-        'amount': value['amount'],
+        'amount': GatewayTokenAmountToJSON(value['amount']),
         'bitcoin_explorer_url': value['bitcoinExplorerUrl'],
         'bob_explorer_url': value['bobExplorerUrl'],
         'dst_info': ChainTxInfoToJSON(value['dstInfo']),
         'estimated_time_in_secs': value['estimatedTimeInSecs'],
-        'fees': value['fees'],
+        'fees': GatewayTokenAmountToJSON(value['fees']),
         'layerzero_explorer_url': value['layerzeroExplorerUrl'],
         'order_id': value['orderId'],
         'src_info': ChainTxInfoToJSON(value['srcInfo']),

@@ -27,6 +27,13 @@ import {
     GatewayOfframpFeeBreakdownToJSON,
     GatewayOfframpFeeBreakdownToJSONTyped,
 } from './GatewayOfframpFeeBreakdown';
+import type { GatewayTokenAmount } from './GatewayTokenAmount';
+import {
+    GatewayTokenAmountFromJSON,
+    GatewayTokenAmountFromJSONTyped,
+    GatewayTokenAmountToJSON,
+    GatewayTokenAmountToJSONTyped,
+} from './GatewayTokenAmount';
 
 /**
  * 
@@ -42,22 +49,28 @@ export interface GatewayOfframpQuote {
     feeBreakdown: GatewayOfframpFeeBreakdown;
     /**
      * 
-     * @type {string}
+     * @type {GatewayTokenAmount}
      * @memberof GatewayOfframpQuote
      */
-    fees: string;
+    fees: GatewayTokenAmount;
+    /**
+     * 
+     * @type {GatewayTokenAmount}
+     * @memberof GatewayOfframpQuote
+     */
+    inputAmount: GatewayTokenAmount;
+    /**
+     * 
+     * @type {GatewayTokenAmount}
+     * @memberof GatewayOfframpQuote
+     */
+    outputAmount: GatewayTokenAmount;
     /**
      * 
      * @type {string}
      * @memberof GatewayOfframpQuote
      */
-    inputAmount: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof GatewayOfframpQuote
-     */
-    outputAmount: string;
+    srcChain: string;
     /**
      * 
      * @type {string}
@@ -80,6 +93,7 @@ export function instanceOfGatewayOfframpQuote(value: object): value is GatewayOf
     if (!('fees' in value) || value['fees'] === undefined) return false;
     if (!('inputAmount' in value) || value['inputAmount'] === undefined) return false;
     if (!('outputAmount' in value) || value['outputAmount'] === undefined) return false;
+    if (!('srcChain' in value) || value['srcChain'] === undefined) return false;
     if (!('tokenAddress' in value) || value['tokenAddress'] === undefined) return false;
     if (!('tx' in value) || value['tx'] === undefined) return false;
     return true;
@@ -96,9 +110,10 @@ export function GatewayOfframpQuoteFromJSONTyped(json: any, ignoreDiscriminator:
     return {
         
         'feeBreakdown': GatewayOfframpFeeBreakdownFromJSON(json['feeBreakdown']),
-        'fees': json['fees'],
-        'inputAmount': json['inputAmount'],
-        'outputAmount': json['outputAmount'],
+        'fees': GatewayTokenAmountFromJSON(json['fees']),
+        'inputAmount': GatewayTokenAmountFromJSON(json['inputAmount']),
+        'outputAmount': GatewayTokenAmountFromJSON(json['outputAmount']),
+        'srcChain': json['srcChain'],
         'tokenAddress': json['tokenAddress'],
         'tx': TxInfoFromJSON(json['tx']),
     };
@@ -116,9 +131,10 @@ export function GatewayOfframpQuoteToJSONTyped(value?: GatewayOfframpQuote | nul
     return {
         
         'feeBreakdown': GatewayOfframpFeeBreakdownToJSON(value['feeBreakdown']),
-        'fees': value['fees'],
-        'inputAmount': value['inputAmount'],
-        'outputAmount': value['outputAmount'],
+        'fees': GatewayTokenAmountToJSON(value['fees']),
+        'inputAmount': GatewayTokenAmountToJSON(value['inputAmount']),
+        'outputAmount': GatewayTokenAmountToJSON(value['outputAmount']),
+        'srcChain': value['srcChain'],
         'tokenAddress': value['tokenAddress'],
         'tx': TxInfoToJSON(value['tx']),
     };

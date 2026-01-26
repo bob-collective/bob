@@ -15,27 +15,35 @@
 
 import * as runtime from '../runtime';
 import type {
-  GatewayCreateOnramp,
-  GatewayOnrampQuote,
+  GatewayCreateOrder,
   GatewayOrderInfo,
   GatewayQuote,
-  RegisterBtcTx,
+  RegisterTx,
+  RegisterTxSuccess,
   RouteInfo,
 } from '../models/index';
 import {
-    GatewayCreateOnrampFromJSON,
-    GatewayCreateOnrampToJSON,
-    GatewayOnrampQuoteFromJSON,
-    GatewayOnrampQuoteToJSON,
+    GatewayCreateOrderFromJSON,
+    GatewayCreateOrderToJSON,
     GatewayOrderInfoFromJSON,
     GatewayOrderInfoToJSON,
     GatewayQuoteFromJSON,
     GatewayQuoteToJSON,
-    RegisterBtcTxFromJSON,
-    RegisterBtcTxToJSON,
+    RegisterTxFromJSON,
+    RegisterTxToJSON,
+    RegisterTxSuccessFromJSON,
+    RegisterTxSuccessToJSON,
     RouteInfoFromJSON,
     RouteInfoToJSON,
 } from '../models/index';
+
+export interface CreateOrderRequest {
+    gatewayQuote: GatewayQuote;
+}
+
+export interface GetOrderRequest {
+    orderId: string;
+}
 
 export interface GetOrdersRequest {
     userAddress: string;
@@ -56,18 +64,92 @@ export interface GetQuoteRequest {
     affiliateId?: string;
 }
 
-export interface RegisterBtcTxRequest {
-    registerBtcTx: RegisterBtcTx;
-}
-
-export interface StartOnrampRequest {
-    gatewayOnrampQuote: GatewayOnrampQuote;
+export interface RegisterTxRequest {
+    registerTx: RegisterTx;
 }
 
 /**
  * 
  */
 export class DefaultApi extends runtime.BaseAPI {
+
+    /**
+     * Creates a new request, reserves the required liquidity.
+     * Create a new gateway order.
+     */
+    async createOrderRaw(requestParameters: CreateOrderRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<GatewayCreateOrder>> {
+        if (requestParameters['gatewayQuote'] == null) {
+            throw new runtime.RequiredError(
+                'gatewayQuote',
+                'Required parameter "gatewayQuote" was null or undefined when calling createOrder().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+
+        let urlPath = `/api/create-order`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: GatewayQuoteToJSON(requestParameters['gatewayQuote']),
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => GatewayCreateOrderFromJSON(jsonValue));
+    }
+
+    /**
+     * Creates a new request, reserves the required liquidity.
+     * Create a new gateway order.
+     */
+    async createOrder(requestParameters: CreateOrderRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<GatewayCreateOrder> {
+        const response = await this.createOrderRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Get all user orders.
+     */
+    async getOrderRaw(requestParameters: GetOrderRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<GatewayOrderInfo>> {
+        if (requestParameters['orderId'] == null) {
+            throw new runtime.RequiredError(
+                'orderId',
+                'Required parameter "orderId" was null or undefined when calling getOrder().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+
+        let urlPath = `/api/get-order/{order_id}`;
+        urlPath = urlPath.replace(`{${"order_id"}}`, encodeURIComponent(String(requestParameters['orderId'])));
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => GatewayOrderInfoFromJSON(jsonValue));
+    }
+
+    /**
+     * Get all user orders.
+     */
+    async getOrder(requestParameters: GetOrderRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<GatewayOrderInfo> {
+        const response = await this.getOrderRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
 
     /**
      * Get all user orders.
@@ -271,14 +353,14 @@ export class DefaultApi extends runtime.BaseAPI {
     }
 
     /**
-     * Required for the Solver to track and execute an onramp request.
-     * Register a Bitcoin tx for an onramp request.
+     * Required for the Solver to track and execute some requests.
+     * Register a tx for a request.
      */
-    async registerBtcTxRaw(requestParameters: RegisterBtcTxRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<string>> {
-        if (requestParameters['registerBtcTx'] == null) {
+    async registerTxRaw(requestParameters: RegisterTxRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<RegisterTxSuccess>> {
+        if (requestParameters['registerTx'] == null) {
             throw new runtime.RequiredError(
-                'registerBtcTx',
-                'Required parameter "registerBtcTx" was null or undefined when calling registerBtcTx().'
+                'registerTx',
+                'Required parameter "registerTx" was null or undefined when calling registerTx().'
             );
         }
 
@@ -289,70 +371,25 @@ export class DefaultApi extends runtime.BaseAPI {
         headerParameters['Content-Type'] = 'application/json';
 
 
-        let urlPath = `/api/register-btc-tx`;
+        let urlPath = `/api/register-tx`;
 
         const response = await this.request({
             path: urlPath,
             method: 'PATCH',
             headers: headerParameters,
             query: queryParameters,
-            body: RegisterBtcTxToJSON(requestParameters['registerBtcTx']),
+            body: RegisterTxToJSON(requestParameters['registerTx']),
         }, initOverrides);
 
-        if (this.isJsonMime(response.headers.get('content-type'))) {
-            return new runtime.JSONApiResponse<string>(response);
-        } else {
-            return new runtime.TextApiResponse(response) as any;
-        }
+        return new runtime.JSONApiResponse(response, (jsonValue) => RegisterTxSuccessFromJSON(jsonValue));
     }
 
     /**
-     * Required for the Solver to track and execute an onramp request.
-     * Register a Bitcoin tx for an onramp request.
+     * Required for the Solver to track and execute some requests.
+     * Register a tx for a request.
      */
-    async registerBtcTx(requestParameters: RegisterBtcTxRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<string> {
-        const response = await this.registerBtcTxRaw(requestParameters, initOverrides);
-        return await response.value();
-    }
-
-    /**
-     * Creates a new onramp request and reserves the required liquidity.
-     * Start a new onramp.
-     */
-    async startOnrampRaw(requestParameters: StartOnrampRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<GatewayCreateOnramp>> {
-        if (requestParameters['gatewayOnrampQuote'] == null) {
-            throw new runtime.RequiredError(
-                'gatewayOnrampQuote',
-                'Required parameter "gatewayOnrampQuote" was null or undefined when calling startOnramp().'
-            );
-        }
-
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        headerParameters['Content-Type'] = 'application/json';
-
-
-        let urlPath = `/api/start-onramp`;
-
-        const response = await this.request({
-            path: urlPath,
-            method: 'POST',
-            headers: headerParameters,
-            query: queryParameters,
-            body: GatewayOnrampQuoteToJSON(requestParameters['gatewayOnrampQuote']),
-        }, initOverrides);
-
-        return new runtime.JSONApiResponse(response, (jsonValue) => GatewayCreateOnrampFromJSON(jsonValue));
-    }
-
-    /**
-     * Creates a new onramp request and reserves the required liquidity.
-     * Start a new onramp.
-     */
-    async startOnramp(requestParameters: StartOnrampRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<GatewayCreateOnramp> {
-        const response = await this.startOnrampRaw(requestParameters, initOverrides);
+    async registerTx(requestParameters: RegisterTxRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<RegisterTxSuccess> {
+        const response = await this.registerTxRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

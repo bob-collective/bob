@@ -1,7 +1,12 @@
 /* tslint:disable */
 /* eslint-disable */
 export * from './ChainTxInfo';
-export * from './GatewayCreateOnramp';
+export * from './GatewayCreateOrder';
+export * from './GatewayCreateOrderOneOf';
+export * from './GatewayCreateOrderOneOf1';
+export * from './GatewayCreateOrderOneOf1Offramp';
+export * from './GatewayCreateOrderOneOf2';
+export * from './GatewayCreateOrderOneOfOnramp';
 export * from './GatewayLayerZeroQuote';
 export * from './GatewayOfframpFeeBreakdown';
 export * from './GatewayOfframpQuote';
@@ -18,9 +23,18 @@ export * from './GatewayQuote';
 export * from './GatewayQuoteOneOf';
 export * from './GatewayQuoteOneOf1';
 export * from './GatewayQuoteOneOf2';
+export * from './GatewayTokenAmount';
 export * from './LayerZeroOrderStatus';
 export * from './OnrampStatus';
 export * from './OrderStatus';
-export * from './RegisterBtcTx';
+export * from './RegisterTx';
+export * from './RegisterTxOneOf';
+export * from './RegisterTxOneOf1';
+export * from './RegisterTxOneOf1Offramp';
+export * from './RegisterTxOneOf2';
+export * from './RegisterTxOneOfOnramp';
+export * from './RegisterTxSuccess';
+export * from './RegisterTxSuccessOneOf';
+export * from './RegisterTxSuccessOneOfOnramp';
 export * from './RouteInfo';
 export * from './TxInfo';

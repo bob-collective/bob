@@ -4,12 +4,146 @@ All URIs are relative to *http://localhost*
 
 | Method | HTTP request | Description |
 |------------- | ------------- | -------------|
+| [**createOrder**](DefaultApi.md#createorder) | **POST** /api/create-order | Create a new gateway order. |
+| [**getOrder**](DefaultApi.md#getorder) | **GET** /api/get-order/{order_id} | Get all user orders. |
 | [**getOrders**](DefaultApi.md#getorders) | **GET** /api/get-orders/{user_address} | Get all user orders. |
 | [**getQuote**](DefaultApi.md#getquote) | **GET** /api/get-quote | Get a gateway quote. |
 | [**getRoutes**](DefaultApi.md#getroutes) | **GET** /api/get-routes | Get all supported routes. |
-| [**registerBtcTx**](DefaultApi.md#registerbtctx) | **PATCH** /api/register-btc-tx | Register a Bitcoin tx for an onramp request. |
-| [**startOnramp**](DefaultApi.md#startonramp) | **POST** /api/start-onramp | Start a new onramp. |
+| [**registerTx**](DefaultApi.md#registertx) | **PATCH** /api/register-tx | Register a tx for a request. |
 
+
+
+## createOrder
+
+> GatewayCreateOrder createOrder(gatewayQuote)
+
+Create a new gateway order.
+
+Creates a new request, reserves the required liquidity.
+
+### Example
+
+```ts
+import {
+  Configuration,
+  DefaultApi,
+} from '';
+import type { CreateOrderRequest } from '';
+
+async function example() {
+  console.log("🚀 Testing  SDK...");
+  const api = new DefaultApi();
+
+  const body = {
+    // GatewayQuote
+    gatewayQuote: ...,
+  } satisfies CreateOrderRequest;
+
+  try {
+    const data = await api.createOrder(body);
+    console.log(data);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+// Run the test
+example().catch(console.error);
+```
+
+### Parameters
+
+
+| Name | Type | Description  | Notes |
+|------------- | ------------- | ------------- | -------------|
+| **gatewayQuote** | [GatewayQuote](GatewayQuote.md) |  | |
+
+### Return type
+
+[**GatewayCreateOrder**](GatewayCreateOrder.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+- **Content-Type**: `application/json`
+- **Accept**: `application/json`
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+| **201** | Created order |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
+
+
+## getOrder
+
+> GatewayOrderInfo getOrder(orderId)
+
+Get all user orders.
+
+### Example
+
+```ts
+import {
+  Configuration,
+  DefaultApi,
+} from '';
+import type { GetOrderRequest } from '';
+
+async function example() {
+  console.log("🚀 Testing  SDK...");
+  const api = new DefaultApi();
+
+  const body = {
+    // string | Order id as returned by create-order
+    orderId: orderId_example,
+  } satisfies GetOrderRequest;
+
+  try {
+    const data = await api.getOrder(body);
+    console.log(data);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+// Run the test
+example().catch(console.error);
+```
+
+### Parameters
+
+
+| Name | Type | Description  | Notes |
+|------------- | ------------- | ------------- | -------------|
+| **orderId** | `string` | Order id as returned by create-order | [Defaults to `undefined`] |
+
+### Return type
+
+[**GatewayOrderInfo**](GatewayOrderInfo.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+- **Content-Type**: Not defined
+- **Accept**: `application/json`
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+| **200** | Get order by id |  -  |
+| **404** | Order not found |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
 
 
 ## getOrders
@@ -234,13 +368,13 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
 
 
-## registerBtcTx
+## registerTx
 
-> string registerBtcTx(registerBtcTx)
+> RegisterTxSuccess registerTx(registerTx)
 
-Register a Bitcoin tx for an onramp request.
+Register a tx for a request.
 
-Required for the Solver to track and execute an onramp request.
+Required for the Solver to track and execute some requests.
 
 ### Example
 
@@ -249,19 +383,19 @@ import {
   Configuration,
   DefaultApi,
 } from '';
-import type { RegisterBtcTxRequest } from '';
+import type { RegisterTxRequest } from '';
 
 async function example() {
   console.log("🚀 Testing  SDK...");
   const api = new DefaultApi();
 
   const body = {
-    // RegisterBtcTx
-    registerBtcTx: ...,
-  } satisfies RegisterBtcTxRequest;
+    // RegisterTx
+    registerTx: ...,
+  } satisfies RegisterTxRequest;
 
   try {
-    const data = await api.registerBtcTx(body);
+    const data = await api.registerTx(body);
     console.log(data);
   } catch (error) {
     console.error(error);
@@ -277,78 +411,11 @@ example().catch(console.error);
 
 | Name | Type | Description  | Notes |
 |------------- | ------------- | ------------- | -------------|
-| **registerBtcTx** | [RegisterBtcTx](RegisterBtcTx.md) |  | |
+| **registerTx** | [RegisterTx](RegisterTx.md) |  | |
 
 ### Return type
 
-**string**
-
-### Authorization
-
-No authorization required
-
-### HTTP request headers
-
-- **Content-Type**: `application/json`
-- **Accept**: `text/plain`
-
-
-### HTTP response details
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-| **200** | Register successful |  -  |
-
-[[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
-
-
-## startOnramp
-
-> GatewayCreateOnramp startOnramp(gatewayOnrampQuote)
-
-Start a new onramp.
-
-Creates a new onramp request and reserves the required liquidity.
-
-### Example
-
-```ts
-import {
-  Configuration,
-  DefaultApi,
-} from '';
-import type { StartOnrampRequest } from '';
-
-async function example() {
-  console.log("🚀 Testing  SDK...");
-  const api = new DefaultApi();
-
-  const body = {
-    // GatewayOnrampQuote
-    gatewayOnrampQuote: ...,
-  } satisfies StartOnrampRequest;
-
-  try {
-    const data = await api.startOnramp(body);
-    console.log(data);
-  } catch (error) {
-    console.error(error);
-  }
-}
-
-// Run the test
-example().catch(console.error);
-```
-
-### Parameters
-
-
-| Name | Type | Description  | Notes |
-|------------- | ------------- | ------------- | -------------|
-| **gatewayOnrampQuote** | [GatewayOnrampQuote](GatewayOnrampQuote.md) |  | |
-
-### Return type
-
-[**GatewayCreateOnramp**](GatewayCreateOnramp.md)
+[**RegisterTxSuccess**](RegisterTxSuccess.md)
 
 ### Authorization
 
@@ -363,7 +430,7 @@ No authorization required
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-| **201** | Started onramp |  -  |
+| **200** | Register successful |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
 

@@ -1,28 +1,22 @@
 
-# GatewayLayerZeroQuote
+# GatewayCreateOrderOneOf2
 
 
 ## Properties
 
 Name | Type
 ------------ | -------------
-`fees` | [GatewayTokenAmount](GatewayTokenAmount.md)
-`inputAmount` | [GatewayTokenAmount](GatewayTokenAmount.md)
-`outputAmount` | [GatewayTokenAmount](GatewayTokenAmount.md)
-`tx` | [TxInfo](TxInfo.md)
+`layerZero` | [GatewayCreateOrderOneOf1Offramp](GatewayCreateOrderOneOf1Offramp.md)
 
 ## Example
 
 ```typescript
-import type { GatewayLayerZeroQuote } from ''
+import type { GatewayCreateOrderOneOf2 } from ''
 
 // TODO: Update the object below with actual values
 const example = {
-  "fees": null,
-  "inputAmount": null,
-  "outputAmount": null,
-  "tx": null,
-} satisfies GatewayLayerZeroQuote
+  "layerZero": null,
+} satisfies GatewayCreateOrderOneOf2
 
 console.log(example)
 
@@ -31,7 +25,7 @@ const exampleJSON: string = JSON.stringify(example)
 console.log(exampleJSON)
 
 // Parse the JSON string back to an object
-const exampleParsed = JSON.parse(exampleJSON) as GatewayLayerZeroQuote
+const exampleParsed = JSON.parse(exampleJSON) as GatewayCreateOrderOneOf2
 console.log(exampleParsed)
 ```
 

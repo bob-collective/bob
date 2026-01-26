@@ -6,15 +6,15 @@
 
 Name | Type
 ------------ | -------------
-`amount` | string
+`amount` | [GatewayTokenAmount](GatewayTokenAmount.md)
 `bitcoinExplorerUrl` | string
 `bobExplorerUrl` | string
 `bumpFeeTx` | [TxInfo](TxInfo.md)
+`contractId` | string
 `dstInfo` | [ChainTxInfo](ChainTxInfo.md)
 `estimatedTimeInSecs` | number
-`fees` | string
+`fees` | [GatewayTokenAmount](GatewayTokenAmount.md)
 `offrampRegistryAddress` | string
-`orderId` | string
 `refundOrderTx` | [TxInfo](TxInfo.md)
 `srcInfo` | [ChainTxInfo](ChainTxInfo.md)
 `status` | [OrderStatus](OrderStatus.md)
@@ -31,11 +31,11 @@ const example = {
   "bitcoinExplorerUrl": null,
   "bobExplorerUrl": null,
   "bumpFeeTx": null,
+  "contractId": null,
   "dstInfo": null,
   "estimatedTimeInSecs": null,
   "fees": null,
   "offrampRegistryAddress": null,
-  "orderId": null,
   "refundOrderTx": null,
   "srcInfo": null,
   "status": null,

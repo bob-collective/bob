@@ -20,6 +20,13 @@ import {
     TxInfoToJSON,
     TxInfoToJSONTyped,
 } from './TxInfo';
+import type { GatewayTokenAmount } from './GatewayTokenAmount';
+import {
+    GatewayTokenAmountFromJSON,
+    GatewayTokenAmountFromJSONTyped,
+    GatewayTokenAmountToJSON,
+    GatewayTokenAmountToJSONTyped,
+} from './GatewayTokenAmount';
 
 /**
  * 
@@ -29,22 +36,22 @@ import {
 export interface GatewayLayerZeroQuote {
     /**
      * 
-     * @type {string}
+     * @type {GatewayTokenAmount}
      * @memberof GatewayLayerZeroQuote
      */
-    fees: string;
+    fees: GatewayTokenAmount;
     /**
      * 
-     * @type {string}
+     * @type {GatewayTokenAmount}
      * @memberof GatewayLayerZeroQuote
      */
-    inputAmount: string;
+    inputAmount: GatewayTokenAmount;
     /**
      * 
-     * @type {string}
+     * @type {GatewayTokenAmount}
      * @memberof GatewayLayerZeroQuote
      */
-    outputAmount: string;
+    outputAmount: GatewayTokenAmount;
     /**
      * 
      * @type {TxInfo}
@@ -74,9 +81,9 @@ export function GatewayLayerZeroQuoteFromJSONTyped(json: any, ignoreDiscriminato
     }
     return {
         
-        'fees': json['fees'],
-        'inputAmount': json['inputAmount'],
-        'outputAmount': json['outputAmount'],
+        'fees': GatewayTokenAmountFromJSON(json['fees']),
+        'inputAmount': GatewayTokenAmountFromJSON(json['inputAmount']),
+        'outputAmount': GatewayTokenAmountFromJSON(json['outputAmount']),
         'tx': TxInfoFromJSON(json['tx']),
     };
 }
@@ -92,9 +99,9 @@ export function GatewayLayerZeroQuoteToJSONTyped(value?: GatewayLayerZeroQuote |
 
     return {
         
-        'fees': value['fees'],
-        'inputAmount': value['inputAmount'],
-        'outputAmount': value['outputAmount'],
+        'fees': GatewayTokenAmountToJSON(value['fees']),
+        'inputAmount': GatewayTokenAmountToJSON(value['inputAmount']),
+        'outputAmount': GatewayTokenAmountToJSON(value['outputAmount']),
         'tx': TxInfoToJSON(value['tx']),
     };
 }
