@@ -38,11 +38,11 @@ export interface GatewayCreateOrderOneOfOnramp {
      */
     orderId: string;
     /**
-     * Bitcoin PSBT
+     * Hex-encoded Bitcoin PSBT
      * @type {string}
      * @memberof GatewayCreateOrderOneOfOnramp
      */
-    psbt: string;
+    psbtHex: string;
 }
 
 /**
@@ -51,7 +51,7 @@ export interface GatewayCreateOrderOneOfOnramp {
 export function instanceOfGatewayCreateOrderOneOfOnramp(value: object): value is GatewayCreateOrderOneOfOnramp {
     if (!('address' in value) || value['address'] === undefined) return false;
     if (!('orderId' in value) || value['orderId'] === undefined) return false;
-    if (!('psbt' in value) || value['psbt'] === undefined) return false;
+    if (!('psbtHex' in value) || value['psbtHex'] === undefined) return false;
     return true;
 }
 
@@ -68,7 +68,7 @@ export function GatewayCreateOrderOneOfOnrampFromJSONTyped(json: any, ignoreDisc
         'address': json['address'],
         'opReturnData': json['op_return_data'] == null ? undefined : json['op_return_data'],
         'orderId': json['order_id'],
-        'psbt': json['psbt'],
+        'psbtHex': json['psbt_hex'],
     };
 }
 
@@ -86,7 +86,7 @@ export function GatewayCreateOrderOneOfOnrampToJSONTyped(value?: GatewayCreateOr
         'address': value['address'],
         'op_return_data': value['opReturnData'],
         'order_id': value['orderId'],
-        'psbt': value['psbt'],
+        'psbt_hex': value['psbtHex'],
     };
 }
 

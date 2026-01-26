@@ -1,28 +1,24 @@
 
-# GatewayCreateOrderOneOfOnramp
+# BitcoinData
 
 
 ## Properties
 
 Name | Type
 ------------ | -------------
-`address` | string
-`opReturnData` | string
-`orderId` | string
-`psbtHex` | string
+`bitcoinTxHex` | string
+`bitcoinTxid` | string
 
 ## Example
 
 ```typescript
-import type { GatewayCreateOrderOneOfOnramp } from ''
+import type { BitcoinData } from ''
 
 // TODO: Update the object below with actual values
 const example = {
-  "address": null,
-  "opReturnData": null,
-  "orderId": f81d4fae-7dec-11d0-a765-00a0c91e6bf6,
-  "psbtHex": null,
-} satisfies GatewayCreateOrderOneOfOnramp
+  "bitcoinTxHex": null,
+  "bitcoinTxid": null,
+} satisfies BitcoinData
 
 console.log(example)
 
@@ -31,7 +27,7 @@ const exampleJSON: string = JSON.stringify(example)
 console.log(exampleJSON)
 
 // Parse the JSON string back to an object
-const exampleParsed = JSON.parse(exampleJSON) as GatewayCreateOrderOneOfOnramp
+const exampleParsed = JSON.parse(exampleJSON) as BitcoinData
 console.log(exampleParsed)
 ```
 

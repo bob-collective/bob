@@ -6,7 +6,8 @@
 
 Name | Type
 ------------ | -------------
-`bitcoinTx` | string
+`bitcoinTxHex` | string
+`bitcoinTxid` | string
 `orderId` | string
 
 ## Example
@@ -16,7 +17,8 @@ import type { RegisterTxOneOfOnramp } from ''
 
 // TODO: Update the object below with actual values
 const example = {
-  "bitcoinTx": null,
+  "bitcoinTxHex": null,
+  "bitcoinTxid": null,
   "orderId": f81d4fae-7dec-11d0-a765-00a0c91e6bf6,
 } satisfies RegisterTxOneOfOnramp
 

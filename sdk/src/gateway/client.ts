@@ -212,7 +212,7 @@ export class GatewayApiClient extends BaseClient {
                     // isSignet: this.isSignet,
                 });
             } else if (btcSigner.signAllInputs) {
-                bitcoinTxHex = await btcSigner.signAllInputs(order.onramp.psbt);
+                bitcoinTxHex = await btcSigner.signAllInputs(order.onramp.psbtHex);
             } else {
                 throw new Error('btcSigner must implement either sendBitcoin or signAllInputs method');
             }
@@ -225,7 +225,7 @@ export class GatewayApiClient extends BaseClient {
                     registerTx: {
                         onramp: {
                             orderId: order.onramp.orderId,
-                            bitcoinTx: bitcoinTxHex,
+                            bitcoinTxHex: bitcoinTxHex,
                         },
                     },
                 },

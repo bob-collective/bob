@@ -5,6 +5,7 @@ import { afterEach, assert, describe, expect, it } from 'vitest';
 import { GatewaySDK } from '../src/gateway';
 import { MAINNET_GATEWAY_BASE_URL } from '../src/gateway/client';
 import {
+    GatewayCreateOrderOneOf,
     GatewayOrderInfo,
     GatewayQuoteOneOf,
     GatewayQuoteOneOf1,
@@ -37,17 +38,53 @@ describe('Gateway Tests', () => {
             onramp: {
                 dstChain: 'bob',
                 dstToken: TBTC_ADDRESS,
-                executionFees: '10',
-                feeBreakdown: {
-                    protocolFee: '5',
-                    affiliateFee: '2',
-                    executionFee: '3',
-                    layerzeroFee: '3',
-                    solverFee: '1',
+                executionFees: {
+                    address: zeroAddress,
+                    amount: '10',
+                    chain: 'bob',
                 },
-                fees: '10',
-                inputAmount: '1000',
-                outputAmount: '990',
+                feeBreakdown: {
+                    protocolFee: {
+                        address: zeroAddress,
+                        amount: '5',
+                        chain: 'bob',
+                    },
+                    affiliateFee: {
+                        address: zeroAddress,
+                        amount: '2',
+                        chain: 'bob',
+                    },
+                    executionFee: {
+                        address: zeroAddress,
+                        amount: '1',
+                        chain: 'bob',
+                    },
+                    layerzeroFee: {
+                        address: zeroAddress,
+                        amount: '1',
+                        chain: 'bob',
+                    },
+                    solverFee: {
+                        address: zeroAddress,
+                        amount: '1',
+                        chain: 'bob',
+                    },
+                },
+                fees: {
+                    address: zeroAddress,
+                    amount: '3',
+                    chain: 'bob',
+                },
+                inputAmount: {
+                    address: zeroAddress,
+                    amount: '1000',
+                    chain: 'bob',
+                },
+                outputAmount: {
+                    address: zeroAddress,
+                    amount: '990',
+                    chain: 'bob',
+                },
                 recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
                 sender: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
                 slippage: '0',
@@ -57,16 +94,45 @@ describe('Gateway Tests', () => {
 
         const mockOfframpQuote: GatewayQuoteOneOf1 = {
             offramp: {
+                srcChain: 'bob',
                 feeBreakdown: {
-                    protocolFee: '5',
-                    affiliateFee: '2',
-                    fastestFeeRate: '2',
-                    inclusionFee: '1',
-                    solverFee: '3',
+                    protocolFee: {
+                        address: zeroAddress,
+                        amount: '5',
+                        chain: 'bob',
+                    },
+                    affiliateFee: {
+                        address: zeroAddress,
+                        amount: '2',
+                        chain: 'bob',
+                    },
+                    inclusionFee: {
+                        address: zeroAddress,
+                        amount: '1',
+                        chain: 'bob',
+                    },
+                    solverFee: {
+                        address: zeroAddress,
+                        amount: '1',
+                        chain: 'bob',
+                    },
+                    fastestFeeRate: '6',
                 },
-                fees: '10',
-                inputAmount: '1000',
-                outputAmount: '990',
+                fees: {
+                    address: zeroAddress,
+                    amount: '3',
+                    chain: 'bob',
+                },
+                inputAmount: {
+                    address: zeroAddress,
+                    amount: '1000',
+                    chain: 'bob',
+                },
+                outputAmount: {
+                    address: zeroAddress,
+                    amount: '990',
+                    chain: 'bob',
+                },
                 tokenAddress: TBTC_ADDRESS,
                 tx: {
                     to: '0x1234567890123456789012345678901234567890',
@@ -78,9 +144,21 @@ describe('Gateway Tests', () => {
 
         const mockLayerZeroQuote: GatewayQuoteOneOf2 = {
             layerZero: {
-                fees: '10',
-                inputAmount: '1000',
-                outputAmount: '990',
+                fees: {
+                    address: zeroAddress,
+                    amount: '3',
+                    chain: 'bob',
+                },
+                inputAmount: {
+                    address: zeroAddress,
+                    amount: '1000',
+                    chain: 'bob',
+                },
+                outputAmount: {
+                    address: zeroAddress,
+                    amount: '990',
+                    chain: 'bob',
+                },
                 tx: {
                     to: '0x1234567890123456789012345678901234567890',
                     data: '0xabcdef',
@@ -159,8 +237,16 @@ describe('Gateway Tests', () => {
             {
                 onramp: {
                     status: 'btc-confirmation',
-                    amount: '1000',
-                    fees: '100',
+                    amount: {
+                        address: zeroAddress,
+                        chain: 'bob',
+                        amount: '1000',
+                    },
+                    fees: {
+                        address: zeroAddress,
+                        amount: '100',
+                        chain: 'bob',
+                    },
                     orderId: 'order123',
                     dstInfo: {
                         chain: 'bob',
@@ -180,9 +266,17 @@ describe('Gateway Tests', () => {
                 },
                 offramp: {
                     status: 'Accepted',
-                    amount: '900',
-                    fees: '100',
-                    orderId: 'order456',
+                    amount: {
+                        chain: 'bob',
+                        address: zeroAddress,
+                        amount: '900',
+                    },
+                    fees: {
+                        address: zeroAddress,
+                        amount: '100',
+                        chain: 'bob',
+                    },
+                    contractId: 'contractId123',
                     dstInfo: {
                         chain: 'bitcoin',
                         txHash: '0xghi789',
@@ -210,8 +304,16 @@ describe('Gateway Tests', () => {
                     },
                 },
                 layerZero: {
-                    amount: '1000',
-                    fees: '50',
+                    amount: {
+                        address: zeroAddress,
+                        amount: '50',
+                        chain: 'bob',
+                    },
+                    fees: {
+                        address: zeroAddress,
+                        amount: '50',
+                        chain: 'bob',
+                    },
                     dstInfo: {
                         chain: 'bsc',
                         token: TBTC_ADDRESS,
@@ -262,17 +364,53 @@ describe('Gateway Tests', () => {
             onramp: {
                 dstChain: 'bob',
                 dstToken: TBTC_ADDRESS,
-                executionFees: '10',
-                feeBreakdown: {
-                    protocolFee: '5',
-                    affiliateFee: '2',
-                    executionFee: '1',
-                    layerzeroFee: '1',
-                    solverFee: '1',
+                executionFees: {
+                    address: zeroAddress,
+                    amount: '10',
+                    chain: 'bob',
                 },
-                fees: '10',
-                inputAmount: '1000',
-                outputAmount: '990',
+                feeBreakdown: {
+                    protocolFee: {
+                        address: zeroAddress,
+                        amount: '5',
+                        chain: 'bob',
+                    },
+                    affiliateFee: {
+                        address: zeroAddress,
+                        amount: '2',
+                        chain: 'bob',
+                    },
+                    executionFee: {
+                        address: zeroAddress,
+                        amount: '1',
+                        chain: 'bob',
+                    },
+                    layerzeroFee: {
+                        address: zeroAddress,
+                        amount: '1',
+                        chain: 'bob',
+                    },
+                    solverFee: {
+                        address: zeroAddress,
+                        amount: '1',
+                        chain: 'bob',
+                    },
+                },
+                fees: {
+                    address: zeroAddress,
+                    amount: '3',
+                    chain: 'bob',
+                },
+                inputAmount: {
+                    address: zeroAddress,
+                    amount: '1000',
+                    chain: 'bob',
+                },
+                outputAmount: {
+                    address: zeroAddress,
+                    amount: '990',
+                    chain: 'bob',
+                },
                 recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
                 sender: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
                 slippage: '0',
@@ -319,17 +457,53 @@ describe('Gateway Tests', () => {
             onramp: {
                 dstChain: 'bob',
                 dstToken: TBTC_ADDRESS,
-                executionFees: '10',
-                feeBreakdown: {
-                    protocolFee: '5',
-                    affiliateFee: '2',
-                    executionFee: '1',
-                    layerzeroFee: '1',
-                    solverFee: '1',
+                executionFees: {
+                    address: zeroAddress,
+                    amount: '10',
+                    chain: 'bob',
                 },
-                fees: '10',
-                inputAmount: '1000',
-                outputAmount: '990',
+                feeBreakdown: {
+                    protocolFee: {
+                        address: zeroAddress,
+                        amount: '5',
+                        chain: 'bob',
+                    },
+                    affiliateFee: {
+                        address: zeroAddress,
+                        amount: '2',
+                        chain: 'bob',
+                    },
+                    executionFee: {
+                        address: zeroAddress,
+                        amount: '1',
+                        chain: 'bob',
+                    },
+                    layerzeroFee: {
+                        address: zeroAddress,
+                        amount: '1',
+                        chain: 'bob',
+                    },
+                    solverFee: {
+                        address: zeroAddress,
+                        amount: '1',
+                        chain: 'bob',
+                    },
+                },
+                fees: {
+                    address: zeroAddress,
+                    amount: '3',
+                    chain: 'bob',
+                },
+                inputAmount: {
+                    address: zeroAddress,
+                    amount: '1000',
+                    chain: 'bob',
+                },
+                outputAmount: {
+                    address: zeroAddress,
+                    amount: '990',
+                    chain: 'bob',
+                },
                 recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
                 sender: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
                 slippage: '0',
@@ -359,17 +533,53 @@ describe('Gateway Tests', () => {
             onramp: {
                 dstChain: 'bob',
                 dstToken: TBTC_ADDRESS,
-                executionFees: '10',
-                feeBreakdown: {
-                    protocolFee: '5',
-                    affiliateFee: '2',
-                    executionFee: '1',
-                    layerzeroFee: '1',
-                    solverFee: '1',
+                executionFees: {
+                    address: zeroAddress,
+                    amount: '10',
+                    chain: 'bob',
                 },
-                fees: '10',
-                inputAmount: '1000',
-                outputAmount: '990',
+                feeBreakdown: {
+                    protocolFee: {
+                        address: zeroAddress,
+                        amount: '5',
+                        chain: 'bob',
+                    },
+                    affiliateFee: {
+                        address: zeroAddress,
+                        amount: '2',
+                        chain: 'bob',
+                    },
+                    executionFee: {
+                        address: zeroAddress,
+                        amount: '1',
+                        chain: 'bob',
+                    },
+                    layerzeroFee: {
+                        address: zeroAddress,
+                        amount: '1',
+                        chain: 'bob',
+                    },
+                    solverFee: {
+                        address: zeroAddress,
+                        amount: '1',
+                        chain: 'bob',
+                    },
+                },
+                fees: {
+                    address: zeroAddress,
+                    amount: '10',
+                    chain: 'bob',
+                },
+                inputAmount: {
+                    address: zeroAddress,
+                    amount: '1000',
+                    chain: 'bob',
+                },
+                outputAmount: {
+                    address: zeroAddress,
+                    amount: '990',
+                    chain: 'bob',
+                },
                 recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
                 sender: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
                 slippage: '0',
@@ -407,16 +617,45 @@ describe('Gateway Tests', () => {
 
         const mockQuote: GatewayQuoteOneOf1 = {
             offramp: {
+                srcChain: 'bob',
                 feeBreakdown: {
-                    protocolFee: '0',
-                    affiliateFee: '0',
-                    fastestFeeRate: '0',
-                    inclusionFee: '0',
-                    solverFee: '0',
+                    protocolFee: {
+                        address: zeroAddress,
+                        amount: '5',
+                        chain: 'bob',
+                    },
+                    affiliateFee: {
+                        address: zeroAddress,
+                        amount: '2',
+                        chain: 'bob',
+                    },
+                    solverFee: {
+                        address: zeroAddress,
+                        amount: '1',
+                        chain: 'bob',
+                    },
+                    inclusionFee: {
+                        address: zeroAddress,
+                        amount: '1',
+                        chain: 'bob',
+                    },
+                    fastestFeeRate: '6',
                 },
-                fees: '0',
-                inputAmount: '1',
-                outputAmount: '1',
+                fees: {
+                    address: zeroAddress,
+                    amount: '3',
+                    chain: 'bob',
+                },
+                inputAmount: {
+                    address: zeroAddress,
+                    amount: '1000',
+                    chain: 'bob',
+                },
+                outputAmount: {
+                    address: zeroAddress,
+                    amount: '990',
+                    chain: 'bob',
+                },
                 tokenAddress: TBTC_ADDRESS,
                 tx: {
                     to: '0x1234567890123456789012345678901234567890',
@@ -452,16 +691,45 @@ describe('Gateway Tests', () => {
 
         const mockQuote: GatewayQuoteOneOf1 = {
             offramp: {
+                srcChain: 'bob',
                 feeBreakdown: {
-                    protocolFee: '0',
-                    affiliateFee: '0',
-                    fastestFeeRate: '0',
-                    inclusionFee: '0',
-                    solverFee: '0',
+                    protocolFee: {
+                        address: zeroAddress,
+                        amount: '5',
+                        chain: 'bob',
+                    },
+                    affiliateFee: {
+                        address: zeroAddress,
+                        amount: '2',
+                        chain: 'bob',
+                    },
+                    inclusionFee: {
+                        address: zeroAddress,
+                        amount: '1',
+                        chain: 'bob',
+                    },
+                    solverFee: {
+                        address: zeroAddress,
+                        amount: '1',
+                        chain: 'bob',
+                    },
+                    fastestFeeRate: '6',
                 },
-                fees: '0',
-                inputAmount: '1',
-                outputAmount: '1',
+                fees: {
+                    address: zeroAddress,
+                    amount: '3',
+                    chain: 'bob',
+                },
+                inputAmount: {
+                    address: zeroAddress,
+                    amount: '1000',
+                    chain: 'bob',
+                },
+                outputAmount: {
+                    address: zeroAddress,
+                    amount: '990',
+                    chain: 'bob',
+                },
                 tokenAddress: TBTC_ADDRESS,
                 tx: {
                     to: '0x1234567890123456789012345678901234567890',
@@ -495,16 +763,45 @@ describe('Gateway Tests', () => {
 
         const mockQuote: GatewayQuoteOneOf1 = {
             offramp: {
+                srcChain: 'bob',
                 feeBreakdown: {
-                    protocolFee: '0',
-                    affiliateFee: '0',
-                    fastestFeeRate: '0',
-                    inclusionFee: '0',
-                    solverFee: '0',
+                    protocolFee: {
+                        address: zeroAddress,
+                        amount: '5',
+                        chain: 'bob',
+                    },
+                    affiliateFee: {
+                        address: zeroAddress,
+                        amount: '2',
+                        chain: 'bob',
+                    },
+                    inclusionFee: {
+                        address: zeroAddress,
+                        amount: '1',
+                        chain: 'bob',
+                    },
+                    solverFee: {
+                        address: zeroAddress,
+                        amount: '1',
+                        chain: 'bob',
+                    },
+                    fastestFeeRate: '6',
                 },
-                fees: '0',
-                inputAmount: '1',
-                outputAmount: '1',
+                fees: {
+                    address: zeroAddress,
+                    amount: '3',
+                    chain: 'bob',
+                },
+                inputAmount: {
+                    address: zeroAddress,
+                    amount: '1000',
+                    chain: 'bob',
+                },
+                outputAmount: {
+                    address: zeroAddress,
+                    amount: '990',
+                    chain: 'bob',
+                },
                 tokenAddress: TBTC_ADDRESS,
                 tx: {
                     to: '0x1234567890123456789012345678901234567890',
@@ -559,17 +856,53 @@ describe('Gateway Tests', () => {
             onramp: {
                 dstChain: 'bob',
                 dstToken: TBTC_ADDRESS,
-                executionFees: '10',
-                feeBreakdown: {
-                    protocolFee: '5',
-                    affiliateFee: '2',
-                    executionFee: '1',
-                    layerzeroFee: '1',
-                    solverFee: '1',
+                executionFees: {
+                    address: zeroAddress,
+                    amount: '10',
+                    chain: 'bob',
                 },
-                fees: '10',
-                inputAmount: '1000',
-                outputAmount: '990',
+                feeBreakdown: {
+                    protocolFee: {
+                        address: zeroAddress,
+                        amount: '5',
+                        chain: 'bob',
+                    },
+                    affiliateFee: {
+                        address: zeroAddress,
+                        amount: '2',
+                        chain: 'bob',
+                    },
+                    executionFee: {
+                        address: zeroAddress,
+                        amount: '1',
+                        chain: 'bob',
+                    },
+                    layerzeroFee: {
+                        address: zeroAddress,
+                        amount: '1',
+                        chain: 'bob',
+                    },
+                    solverFee: {
+                        address: zeroAddress,
+                        amount: '1',
+                        chain: 'bob',
+                    },
+                },
+                fees: {
+                    address: zeroAddress,
+                    amount: '3',
+                    chain: 'bob',
+                },
+                inputAmount: {
+                    address: zeroAddress,
+                    amount: '1000',
+                    chain: 'bob',
+                },
+                outputAmount: {
+                    address: zeroAddress,
+                    amount: '990',
+                    chain: 'bob',
+                },
                 recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
                 sender: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
                 slippage: '0',
@@ -580,7 +913,15 @@ describe('Gateway Tests', () => {
         const mockOrderId = 'order-123';
         const mockPsbt = 'cHNidP8BAH0CAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAzwAAAAA=';
 
-        nock(`${MAINNET_GATEWAY_BASE_URL}`).post('/api/start-onramp').reply(200, { id: mockOrderId, psbt: mockPsbt });
+        const mockOrder: GatewayCreateOrderOneOf = {
+            onramp: {
+                address: zeroAddress,
+                orderId: mockOrderId,
+                psbt: mockPsbt,
+                opReturnData: '',
+            },
+        };
+        nock(`${MAINNET_GATEWAY_BASE_URL}`).post('/api/create-order').reply(200, mockOrder);
 
         const mockBtcSigner = {} as BitcoinSigner; // No methods
 

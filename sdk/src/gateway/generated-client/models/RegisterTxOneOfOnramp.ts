@@ -20,11 +20,17 @@ import { mapValues } from '../runtime';
  */
 export interface RegisterTxOneOfOnramp {
     /**
-     * Bitcoin transaction
+     * Hex-encoded full Bitcoin transaction
      * @type {string}
      * @memberof RegisterTxOneOfOnramp
      */
-    bitcoinTx: string;
+    bitcoinTxHex?: string | null;
+    /**
+     * Bitcoin transaction ID (txid)
+     * @type {string}
+     * @memberof RegisterTxOneOfOnramp
+     */
+    bitcoinTxid?: string | null;
     /**
      * Unique order id
      * @type {string}
@@ -37,7 +43,6 @@ export interface RegisterTxOneOfOnramp {
  * Check if a given object implements the RegisterTxOneOfOnramp interface.
  */
 export function instanceOfRegisterTxOneOfOnramp(value: object): value is RegisterTxOneOfOnramp {
-    if (!('bitcoinTx' in value) || value['bitcoinTx'] === undefined) return false;
     if (!('orderId' in value) || value['orderId'] === undefined) return false;
     return true;
 }
@@ -52,7 +57,8 @@ export function RegisterTxOneOfOnrampFromJSONTyped(json: any, ignoreDiscriminato
     }
     return {
         
-        'bitcoinTx': json['bitcoin_tx'],
+        'bitcoinTxHex': json['bitcoin_tx_hex'] == null ? undefined : json['bitcoin_tx_hex'],
+        'bitcoinTxid': json['bitcoin_txid'] == null ? undefined : json['bitcoin_txid'],
         'orderId': json['order_id'],
     };
 }
@@ -68,7 +74,8 @@ export function RegisterTxOneOfOnrampToJSONTyped(value?: RegisterTxOneOfOnramp |
 
     return {
         
-        'bitcoin_tx': value['bitcoinTx'],
+        'bitcoin_tx_hex': value['bitcoinTxHex'],
+        'bitcoin_txid': value['bitcoinTxid'],
         'order_id': value['orderId'],
     };
 }
