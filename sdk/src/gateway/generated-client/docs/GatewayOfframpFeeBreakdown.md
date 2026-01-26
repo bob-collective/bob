@@ -1,29 +1,30 @@
 
-# GatewayCreateOnramp
+# GatewayOfframpFeeBreakdown
 
-Created new Gateway order
 
 ## Properties
 
 Name | Type
 ------------ | -------------
-`address` | string
-`id` | string
-`opReturnData` | string
-`psbt` | string
+`affiliateFee` | string
+`fastestFeeRate` | string
+`inclusionFee` | string
+`protocolFee` | string
+`solverFee` | string
 
 ## Example
 
 ```typescript
-import type { GatewayCreateOnramp } from ''
+import type { GatewayOfframpFeeBreakdown } from ''
 
 // TODO: Update the object below with actual values
 const example = {
-  "address": null,
-  "id": 1,
-  "opReturnData": null,
-  "psbt": null,
-} satisfies GatewayCreateOnramp
+  "affiliateFee": null,
+  "fastestFeeRate": null,
+  "inclusionFee": null,
+  "protocolFee": null,
+  "solverFee": null,
+} satisfies GatewayOfframpFeeBreakdown
 
 console.log(example)
 
@@ -32,7 +33,7 @@ const exampleJSON: string = JSON.stringify(example)
 console.log(exampleJSON)
 
 // Parse the JSON string back to an object
-const exampleParsed = JSON.parse(exampleJSON) as GatewayCreateOnramp
+const exampleParsed = JSON.parse(exampleJSON) as GatewayOfframpFeeBreakdown
 console.log(exampleParsed)
 ```
 

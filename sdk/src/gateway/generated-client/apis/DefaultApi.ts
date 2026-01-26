@@ -19,8 +19,8 @@ import type {
   GatewayOnrampQuote,
   GatewayOrderInfo,
   GatewayQuote,
-  ReferralInfo,
   RegisterBtcTx,
+  RouteInfo,
 } from '../models/index';
 import {
     GatewayCreateOnrampFromJSON,
@@ -31,10 +31,10 @@ import {
     GatewayOrderInfoToJSON,
     GatewayQuoteFromJSON,
     GatewayQuoteToJSON,
-    ReferralInfoFromJSON,
-    ReferralInfoToJSON,
     RegisterBtcTxFromJSON,
     RegisterBtcTxToJSON,
+    RouteInfoFromJSON,
+    RouteInfoToJSON,
 } from '../models/index';
 
 export interface GetOrdersRequest {
@@ -53,10 +53,7 @@ export interface GetQuoteRequest {
     gasRefill?: string;
     strategyTarget?: string;
     strategyMessage?: string;
-}
-
-export interface GetReferralsRequest {
-    userAddress: string;
+    affiliateId?: string;
 }
 
 export interface RegisterBtcTxRequest {
@@ -71,35 +68,6 @@ export interface StartOnrampRequest {
  * 
  */
 export class DefaultApi extends runtime.BaseAPI {
-
-    /**
-     * Get all supported chains.
-     */
-    async getChainsRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<string>>> {
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-
-        let urlPath = `/api/get-chains`;
-
-        const response = await this.request({
-            path: urlPath,
-            method: 'GET',
-            headers: headerParameters,
-            query: queryParameters,
-        }, initOverrides);
-
-        return new runtime.JSONApiResponse<any>(response);
-    }
-
-    /**
-     * Get all supported chains.
-     */
-    async getChains(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<string>> {
-        const response = await this.getChainsRaw(initOverrides);
-        return await response.value();
-    }
 
     /**
      * Get all user orders.
@@ -245,6 +213,10 @@ export class DefaultApi extends runtime.BaseAPI {
             queryParameters['strategyMessage'] = requestParameters['strategyMessage'];
         }
 
+        if (requestParameters['affiliateId'] != null) {
+            queryParameters['affiliateId'] = requestParameters['affiliateId'];
+        }
+
         const headerParameters: runtime.HTTPHeaders = {};
 
 
@@ -270,23 +242,15 @@ export class DefaultApi extends runtime.BaseAPI {
     }
 
     /**
-     * Get user referral stats.
+     * Get all supported routes.
      */
-    async getReferralsRaw(requestParameters: GetReferralsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<ReferralInfo>>> {
-        if (requestParameters['userAddress'] == null) {
-            throw new runtime.RequiredError(
-                'userAddress',
-                'Required parameter "userAddress" was null or undefined when calling getReferrals().'
-            );
-        }
-
+    async getRoutesRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<RouteInfo>>> {
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
 
 
-        let urlPath = `/api/get-referrals/{user_address}`;
-        urlPath = urlPath.replace(`{${"user_address"}}`, encodeURIComponent(String(requestParameters['userAddress'])));
+        let urlPath = `/api/get-routes`;
 
         const response = await this.request({
             path: urlPath,
@@ -295,43 +259,14 @@ export class DefaultApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(ReferralInfoFromJSON));
+        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(RouteInfoFromJSON));
     }
 
     /**
-     * Get user referral stats.
+     * Get all supported routes.
      */
-    async getReferrals(requestParameters: GetReferralsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<ReferralInfo>> {
-        const response = await this.getReferralsRaw(requestParameters, initOverrides);
-        return await response.value();
-    }
-
-    /**
-     * Get all supported tokens.
-     */
-    async getTokensRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<string>>> {
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-
-        let urlPath = `/api/get-tokens`;
-
-        const response = await this.request({
-            path: urlPath,
-            method: 'GET',
-            headers: headerParameters,
-            query: queryParameters,
-        }, initOverrides);
-
-        return new runtime.JSONApiResponse<any>(response);
-    }
-
-    /**
-     * Get all supported tokens.
-     */
-    async getTokens(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<string>> {
-        const response = await this.getTokensRaw(initOverrides);
+    async getRoutes(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<RouteInfo>> {
+        const response = await this.getRoutesRaw(initOverrides);
         return await response.value();
     }
 
@@ -339,7 +274,7 @@ export class DefaultApi extends runtime.BaseAPI {
      * Required for the Solver to track and execute an onramp request.
      * Register a Bitcoin tx for an onramp request.
      */
-    async registerBtcTxRaw(requestParameters: RegisterBtcTxRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
+    async registerBtcTxRaw(requestParameters: RegisterBtcTxRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<string>> {
         if (requestParameters['registerBtcTx'] == null) {
             throw new runtime.RequiredError(
                 'registerBtcTx',
@@ -364,15 +299,20 @@ export class DefaultApi extends runtime.BaseAPI {
             body: RegisterBtcTxToJSON(requestParameters['registerBtcTx']),
         }, initOverrides);
 
-        return new runtime.VoidApiResponse(response);
+        if (this.isJsonMime(response.headers.get('content-type'))) {
+            return new runtime.JSONApiResponse<string>(response);
+        } else {
+            return new runtime.TextApiResponse(response) as any;
+        }
     }
 
     /**
      * Required for the Solver to track and execute an onramp request.
      * Register a Bitcoin tx for an onramp request.
      */
-    async registerBtcTx(requestParameters: RegisterBtcTxRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
-        await this.registerBtcTxRaw(requestParameters, initOverrides);
+    async registerBtcTx(requestParameters: RegisterBtcTxRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<string> {
+        const response = await this.registerBtcTxRaw(requestParameters, initOverrides);
+        return await response.value();
     }
 
     /**

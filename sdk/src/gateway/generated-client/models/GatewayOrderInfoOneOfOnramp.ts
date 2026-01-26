@@ -13,6 +13,21 @@
  */
 
 import { mapValues } from '../runtime';
+import type { OnrampStatus } from './OnrampStatus';
+import {
+    OnrampStatusFromJSON,
+    OnrampStatusFromJSONTyped,
+    OnrampStatusToJSON,
+    OnrampStatusToJSONTyped,
+} from './OnrampStatus';
+import type { ChainTxInfo } from './ChainTxInfo';
+import {
+    ChainTxInfoFromJSON,
+    ChainTxInfoFromJSONTyped,
+    ChainTxInfoToJSON,
+    ChainTxInfoToJSONTyped,
+} from './ChainTxInfo';
+
 /**
  * 
  * @export
@@ -37,13 +52,69 @@ export interface GatewayOrderInfoOneOfOnramp {
      * @memberof GatewayOrderInfoOneOfOnramp
      */
     bobExplorerUrl?: string | null;
+    /**
+     * 
+     * @type {ChainTxInfo}
+     * @memberof GatewayOrderInfoOneOfOnramp
+     */
+    dstInfo: ChainTxInfo;
+    /**
+     * 
+     * @type {number}
+     * @memberof GatewayOrderInfoOneOfOnramp
+     */
+    estimatedTimeInSecs?: number | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof GatewayOrderInfoOneOfOnramp
+     */
+    fees: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof GatewayOrderInfoOneOfOnramp
+     */
+    layerzeroExplorerUrl?: string | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof GatewayOrderInfoOneOfOnramp
+     */
+    orderId: string;
+    /**
+     * 
+     * @type {ChainTxInfo}
+     * @memberof GatewayOrderInfoOneOfOnramp
+     */
+    srcInfo: ChainTxInfo;
+    /**
+     * 
+     * @type {OnrampStatus}
+     * @memberof GatewayOrderInfoOneOfOnramp
+     */
+    status: OnrampStatus;
+    /**
+     * 
+     * @type {number}
+     * @memberof GatewayOrderInfoOneOfOnramp
+     */
+    timestamp: number;
 }
+
+
 
 /**
  * Check if a given object implements the GatewayOrderInfoOneOfOnramp interface.
  */
 export function instanceOfGatewayOrderInfoOneOfOnramp(value: object): value is GatewayOrderInfoOneOfOnramp {
     if (!('amount' in value) || value['amount'] === undefined) return false;
+    if (!('dstInfo' in value) || value['dstInfo'] === undefined) return false;
+    if (!('fees' in value) || value['fees'] === undefined) return false;
+    if (!('orderId' in value) || value['orderId'] === undefined) return false;
+    if (!('srcInfo' in value) || value['srcInfo'] === undefined) return false;
+    if (!('status' in value) || value['status'] === undefined) return false;
+    if (!('timestamp' in value) || value['timestamp'] === undefined) return false;
     return true;
 }
 
@@ -60,6 +131,14 @@ export function GatewayOrderInfoOneOfOnrampFromJSONTyped(json: any, ignoreDiscri
         'amount': json['amount'],
         'bitcoinExplorerUrl': json['bitcoin_explorer_url'] == null ? undefined : json['bitcoin_explorer_url'],
         'bobExplorerUrl': json['bob_explorer_url'] == null ? undefined : json['bob_explorer_url'],
+        'dstInfo': ChainTxInfoFromJSON(json['dst_info']),
+        'estimatedTimeInSecs': json['estimated_time_in_secs'] == null ? undefined : json['estimated_time_in_secs'],
+        'fees': json['fees'],
+        'layerzeroExplorerUrl': json['layerzero_explorer_url'] == null ? undefined : json['layerzero_explorer_url'],
+        'orderId': json['order_id'],
+        'srcInfo': ChainTxInfoFromJSON(json['src_info']),
+        'status': OnrampStatusFromJSON(json['status']),
+        'timestamp': json['timestamp'],
     };
 }
 
@@ -77,6 +156,14 @@ export function GatewayOrderInfoOneOfOnrampToJSONTyped(value?: GatewayOrderInfoO
         'amount': value['amount'],
         'bitcoin_explorer_url': value['bitcoinExplorerUrl'],
         'bob_explorer_url': value['bobExplorerUrl'],
+        'dst_info': ChainTxInfoToJSON(value['dstInfo']),
+        'estimated_time_in_secs': value['estimatedTimeInSecs'],
+        'fees': value['fees'],
+        'layerzero_explorer_url': value['layerzeroExplorerUrl'],
+        'order_id': value['orderId'],
+        'src_info': ChainTxInfoToJSON(value['srcInfo']),
+        'status': OnrampStatusToJSON(value['status']),
+        'timestamp': value['timestamp'],
     };
 }
 

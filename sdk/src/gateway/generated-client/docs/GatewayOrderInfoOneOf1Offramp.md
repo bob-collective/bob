@@ -9,6 +9,16 @@ Name | Type
 `amount` | string
 `bitcoinExplorerUrl` | string
 `bobExplorerUrl` | string
+`bumpFeeTx` | [TxInfo](TxInfo.md)
+`dstInfo` | [ChainTxInfo](ChainTxInfo.md)
+`estimatedTimeInSecs` | number
+`fees` | string
+`offrampRegistryAddress` | string
+`orderId` | string
+`refundOrderTx` | [TxInfo](TxInfo.md)
+`srcInfo` | [ChainTxInfo](ChainTxInfo.md)
+`status` | [OrderStatus](OrderStatus.md)
+`timestamp` | number
 
 ## Example
 
@@ -20,6 +30,16 @@ const example = {
   "amount": null,
   "bitcoinExplorerUrl": null,
   "bobExplorerUrl": null,
+  "bumpFeeTx": null,
+  "dstInfo": null,
+  "estimatedTimeInSecs": null,
+  "fees": null,
+  "offrampRegistryAddress": null,
+  "orderId": null,
+  "refundOrderTx": null,
+  "srcInfo": null,
+  "status": null,
+  "timestamp": null,
 } satisfies GatewayOrderInfoOneOf1Offramp
 
 console.log(example)

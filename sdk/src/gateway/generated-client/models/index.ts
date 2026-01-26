@@ -1,8 +1,11 @@
 /* tslint:disable */
 /* eslint-disable */
+export * from './ChainTxInfo';
 export * from './GatewayCreateOnramp';
 export * from './GatewayLayerZeroQuote';
+export * from './GatewayOfframpFeeBreakdown';
 export * from './GatewayOfframpQuote';
+export * from './GatewayOnrampFeeBreakdown';
 export * from './GatewayOnrampQuote';
 export * from './GatewayOrderInfo';
 export * from './GatewayOrderInfoOneOf';
@@ -15,6 +18,9 @@ export * from './GatewayQuote';
 export * from './GatewayQuoteOneOf';
 export * from './GatewayQuoteOneOf1';
 export * from './GatewayQuoteOneOf2';
-export * from './ReferralInfo';
+export * from './LayerZeroOrderStatus';
+export * from './OnrampStatus';
+export * from './OrderStatus';
 export * from './RegisterBtcTx';
+export * from './RouteInfo';
 export * from './TxInfo';

@@ -1,6 +1,6 @@
 import { Address, Hex } from 'viem';
 import { Optional } from './utils';
-import { GatewayQuote } from '../generated-client';
+import { GatewayQuote, GetQuoteRequest } from '../generated-client';
 
 /**
  * Designed to be compatible with the Swing SDK.

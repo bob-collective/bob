@@ -4,71 +4,12 @@ All URIs are relative to *http://localhost*
 
 | Method | HTTP request | Description |
 |------------- | ------------- | -------------|
-| [**getChains**](DefaultApi.md#getchains) | **GET** /api/get-chains | Get all supported chains. |
 | [**getOrders**](DefaultApi.md#getorders) | **GET** /api/get-orders/{user_address} | Get all user orders. |
 | [**getQuote**](DefaultApi.md#getquote) | **GET** /api/get-quote | Get a gateway quote. |
-| [**getReferrals**](DefaultApi.md#getreferrals) | **GET** /api/get-referrals/{user_address} | Get user referral stats. |
-| [**getTokens**](DefaultApi.md#gettokens) | **GET** /api/get-tokens | Get all supported tokens. |
+| [**getRoutes**](DefaultApi.md#getroutes) | **GET** /api/get-routes | Get all supported routes. |
 | [**registerBtcTx**](DefaultApi.md#registerbtctx) | **PATCH** /api/register-btc-tx | Register a Bitcoin tx for an onramp request. |
 | [**startOnramp**](DefaultApi.md#startonramp) | **POST** /api/start-onramp | Start a new onramp. |
 
-
-
-## getChains
-
-> Array&lt;string&gt; getChains()
-
-Get all supported chains.
-
-### Example
-
-```ts
-import {
-  Configuration,
-  DefaultApi,
-} from '';
-import type { GetChainsRequest } from '';
-
-async function example() {
-  console.log("🚀 Testing  SDK...");
-  const api = new DefaultApi();
-
-  try {
-    const data = await api.getChains();
-    console.log(data);
-  } catch (error) {
-    console.error(error);
-  }
-}
-
-// Run the test
-example().catch(console.error);
-```
-
-### Parameters
-
-This endpoint does not need any parameter.
-
-### Return type
-
-**Array<string>**
-
-### Authorization
-
-No authorization required
-
-### HTTP request headers
-
-- **Content-Type**: Not defined
-- **Accept**: `application/json`
-
-
-### HTTP response details
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-| **200** | Get all supported chains |  -  |
-
-[[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
 
 
 ## getOrders
@@ -138,7 +79,7 @@ No authorization required
 
 ## getQuote
 
-> GatewayQuote getQuote(srcChain, dstChain, sender, recipient, srcToken, dstToken, amount, slippage, gasRefill, strategyTarget, strategyMessage)
+> GatewayQuote getQuote(srcChain, dstChain, sender, recipient, srcToken, dstToken, amount, slippage, gasRefill, strategyTarget, strategyMessage, affiliateId)
 
 Get a gateway quote.
 
@@ -180,6 +121,8 @@ async function example() {
     strategyTarget: strategyTarget_example,
     // string (optional)
     strategyMessage: strategyMessage_example,
+    // string (optional)
+    affiliateId: affiliateId_example,
   } satisfies GetQuoteRequest;
 
   try {
@@ -210,6 +153,7 @@ example().catch(console.error);
 | **gasRefill** | `string` |  | [Optional] [Defaults to `undefined`] |
 | **strategyTarget** | `string` |  | [Optional] [Defaults to `undefined`] |
 | **strategyMessage** | `string` |  | [Optional] [Defaults to `undefined`] |
+| **affiliateId** | `string` |  | [Optional] [Defaults to `undefined`] |
 
 ### Return type
 
@@ -233,76 +177,11 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
 
 
-## getReferrals
+## getRoutes
 
-> Array&lt;ReferralInfo&gt; getReferrals(userAddress)
+> Array&lt;RouteInfo&gt; getRoutes()
 
-Get user referral stats.
-
-### Example
-
-```ts
-import {
-  Configuration,
-  DefaultApi,
-} from '';
-import type { GetReferralsRequest } from '';
-
-async function example() {
-  console.log("🚀 Testing  SDK...");
-  const api = new DefaultApi();
-
-  const body = {
-    // string | User address
-    userAddress: userAddress_example,
-  } satisfies GetReferralsRequest;
-
-  try {
-    const data = await api.getReferrals(body);
-    console.log(data);
-  } catch (error) {
-    console.error(error);
-  }
-}
-
-// Run the test
-example().catch(console.error);
-```
-
-### Parameters
-
-
-| Name | Type | Description  | Notes |
-|------------- | ------------- | ------------- | -------------|
-| **userAddress** | `string` | User address | [Defaults to `undefined`] |
-
-### Return type
-
-[**Array&lt;ReferralInfo&gt;**](ReferralInfo.md)
-
-### Authorization
-
-No authorization required
-
-### HTTP request headers
-
-- **Content-Type**: Not defined
-- **Accept**: `application/json`
-
-
-### HTTP response details
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-| **200** | Get referral stats |  -  |
-
-[[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
-
-
-## getTokens
-
-> Array&lt;string&gt; getTokens()
-
-Get all supported tokens.
+Get all supported routes.
 
 ### Example
 
@@ -311,14 +190,14 @@ import {
   Configuration,
   DefaultApi,
 } from '';
-import type { GetTokensRequest } from '';
+import type { GetRoutesRequest } from '';
 
 async function example() {
   console.log("🚀 Testing  SDK...");
   const api = new DefaultApi();
 
   try {
-    const data = await api.getTokens();
+    const data = await api.getRoutes();
     console.log(data);
   } catch (error) {
     console.error(error);
@@ -335,7 +214,7 @@ This endpoint does not need any parameter.
 
 ### Return type
 
-**Array<string>**
+[**Array&lt;RouteInfo&gt;**](RouteInfo.md)
 
 ### Authorization
 
@@ -350,14 +229,14 @@ No authorization required
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-| **200** | Get all supported tokens |  -  |
+| **200** | Get all supported routes |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
 
 
 ## registerBtcTx
 
-> registerBtcTx(registerBtcTx)
+> string registerBtcTx(registerBtcTx)
 
 Register a Bitcoin tx for an onramp request.
 
@@ -402,7 +281,7 @@ example().catch(console.error);
 
 ### Return type
 
-`void` (Empty response body)
+**string**
 
 ### Authorization
 
@@ -411,7 +290,7 @@ No authorization required
 ### HTTP request headers
 
 - **Content-Type**: `application/json`
-- **Accept**: Not defined
+- **Accept**: `text/plain`
 
 
 ### HTTP response details

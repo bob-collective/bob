@@ -24,6 +24,7 @@ import {
     instanceOfGatewayQuoteOneOf,
     instanceOfGatewayQuoteOneOf1,
     instanceOfGatewayQuoteOneOf2,
+    RouteInfo,
 } from './generated-client';
 import { getTokenDetails } from './tokens';
 
@@ -33,7 +34,7 @@ export const WBTC_OFT_ADDRESS = '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c';
  * Base url for the mainnet Gateway API.
  * @default "https://gateway-api-mainnet.gobob.xyz"
  */
-export const MAINNET_GATEWAY_BASE_URL = 'https://gateway-api-mainnet.gobob.xyz';
+export const MAINNET_GATEWAY_BASE_URL = 'https://gateway-api-staging.gobob.xyz';
 
 /**
  * Base url for the Signet Gateway API.
@@ -155,18 +156,21 @@ export class GatewayApiClient extends BaseClient {
      * @returns Promise resolving to quote details with either onrampQuote or offrampQuote populated
      * @throws {Error} If neither onramp nor offramp conditions are met
      */
-    async getQuote(params: GetQuoteParams): Promise<GatewayQuote> {
-        return this.api.getQuote({
-            srcChain: params.fromChain.toString(), // TODO: don't use number
-            dstChain: params.toChain.toString(), // TODO: don't use number
-            sender: params.fromUserAddress?.toString() || '',
-            recipient: params.toUserAddress.toString(),
-            srcToken: params.fromToken.toString(),
-            dstToken: params.toToken.toString(),
-            amount: params.amount.toString(),
-            slippage: params.maxSlippage?.toString() || '0', // TODO
-            gasRefill: params.gasRefill?.toString(),
-        });
+    async getQuote(params: GetQuoteParams, initOverrides?: RequestInit): Promise<GatewayQuote> {
+        return this.api.getQuote(
+            {
+                srcChain: params.fromChain.toString(), // TODO: don't use number
+                dstChain: params.toChain.toString(), // TODO: don't use number
+                sender: params.fromUserAddress?.toString() || '',
+                recipient: params.toUserAddress.toString(),
+                srcToken: params.fromToken.toString(),
+                dstToken: params.toToken.toString(),
+                amount: params.amount.toString(),
+                slippage: params.maxSlippage?.toString() || '0', // TODO
+                gasRefill: params.gasRefill?.toString(),
+            },
+            initOverrides
+        );
     }
 
     /**
@@ -179,12 +183,10 @@ export class GatewayApiClient extends BaseClient {
      * @returns Promise resolving to transaction hash
      * @throws {Error} If required signers are missing or transaction fails
      */
-    async executeQuote({
-        quote,
-        walletClient,
-        publicClient,
-        btcSigner,
-    }: { quote: GatewayQuote } & AllWalletClientParams): Promise<string> {
+    async executeQuote(
+        { quote, walletClient, publicClient, btcSigner }: { quote: GatewayQuote } & AllWalletClientParams,
+        initOverrides?: RequestInit
+    ): Promise<string> {
         if (instanceOfGatewayQuoteOneOf(quote)) {
             if (!btcSigner) {
                 throw new Error(`btcSigner is required for onramp order`);
@@ -212,10 +214,12 @@ export class GatewayApiClient extends BaseClient {
             // bitcoinTxOrId = stripHexPrefix(bitcoinTxOrId);
             if (!bitcoinTxHex) throw new Error('Failed to get signed transaction');
 
-            // TODO: return txid
-            await this.api.registerBtcTx({ registerBtcTx: { bitcoinTx: bitcoinTxHex, id } });
+            const txId = await this.api.registerBtcTx(
+                { registerBtcTx: { bitcoinTx: bitcoinTxHex, id } },
+                initOverrides
+            );
 
-            return '';
+            return txId;
         } else if (instanceOfGatewayQuoteOneOf1(quote)) {
             if (!walletClient.account) {
                 throw new Error(`walletClient is required for offramp order`);
@@ -369,20 +373,11 @@ export class GatewayApiClient extends BaseClient {
         return transactionHash;
     }
 
-    /**
-     * Retrieves all supported token addresses from the Gateway API.
-     *
-     * @returns Promise resolving to array of token addresses
-     */
-    async getTokens(): Promise<Address[]> {
-        return this.api.getTokens() as Promise<Address[]>;
-    }
-
     // TODO: should get price from the gateway API
-    private async getPrices(): Promise<Map<string, number>> {
+    private async getPrices(initOverrides?: RequestInit): Promise<Map<string, number>> {
         const response = await this.safeFetch(
             'https://fusion-api.gobob.xyz/pricefeed',
-            undefined,
+            initOverrides,
             'Failed to fetch prices from Fusion API'
         );
 
@@ -401,8 +396,15 @@ export class GatewayApiClient extends BaseClient {
      *
      * @returns Promise resolving to array of enriched token data
      */
-    async getEnrichedTokens(): Promise<EnrichedToken[]> {
-        const [tokens, prices] = await Promise.all([this.getTokens(), this.getPrices()]);
+    async getEnrichedTokens(initOverrides?: RequestInit): Promise<EnrichedToken[]> {
+        const [routes, prices] = await Promise.all([this.getRoutes(initOverrides), this.getPrices(initOverrides)]);
+
+        const tokensSet = routes.reduce((acc, route) => {
+            if (route.srcChain === 'bob') acc.add(route.srcToken as Address);
+            if (route.dstChain === 'bob') acc.add(route.dstToken as Address);
+            return acc;
+        }, new Set<Address>());
+        const tokens = Array.from(tokensSet);
 
         const tokensIncentives = await this.strategy.getTokensIncentives(tokens);
 
@@ -452,7 +454,16 @@ export class GatewayApiClient extends BaseClient {
      * @param userAddress The user's EVM address
      * @returns Promise resolving to array of typed orders
      */
-    async getOrders(userAddress: Address): Promise<Array<GatewayOrderInfo>> {
-        return this.api.getOrders({ userAddress: userAddress.toString() });
+    async getOrders(userAddress: Address, initOverrides?: RequestInit): Promise<Array<GatewayOrderInfo>> {
+        return this.api.getOrders({ userAddress: userAddress.toString() }, initOverrides);
+    }
+
+    /**
+     * Retrieves all supported routes.
+     *
+     * @returns Promise resolving to array of supported routes
+     */
+    async getRoutes(initOverrides?: RequestInit): Promise<Array<RouteInfo>> {
+        return this.api.getRoutes(initOverrides);
     }
 }
