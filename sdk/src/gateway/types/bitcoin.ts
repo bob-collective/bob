@@ -4,7 +4,7 @@ export interface BitcoinSigner {
         from: string;
         to: string;
         value: string;
-        opReturn: string;
-        isSignet: boolean;
+        opReturn?: string;
+        isSignet?: boolean;
     }) => Promise<string>;
 }

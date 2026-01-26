@@ -4,7 +4,7 @@ import { getAddressInfo } from '../../wallet';
 
 interface OkxWalletProvider {
     // https://web3.okx.com/build/dev-docs/sdks/chains/bitcoin/provider#send
-    send: (params: { from: string; to: string; value: string; memo: string }) => Promise<{ txhash: string }>;
+    send: (params: { from: string; to: string; value: string; memo?: string }) => Promise<{ txhash: string }>;
 }
 
 export class OkxWalletAdapter implements BitcoinSigner {
@@ -24,8 +24,8 @@ export class OkxWalletAdapter implements BitcoinSigner {
         from: string;
         to: string;
         value: string;
-        opReturn: string;
-        isSignet: boolean;
+        opReturn?: string;
+        isSignet?: boolean;
     }): Promise<string> {
         const { txhash } = await this.walletProvider.send({
             from,
@@ -34,7 +34,7 @@ export class OkxWalletAdapter implements BitcoinSigner {
             memo: opReturn,
         });
 
-        const network = getAddressInfo(to, isSignet).network;
+        const network = getAddressInfo(to, isSignet || false).network;
         const esploraClient = new EsploraClient(network);
         return esploraClient.getTransactionHex(txhash);
     }
