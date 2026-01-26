@@ -22,6 +22,7 @@ import {
     GatewayOrderInfo,
     GatewayQuote,
     instanceOfGatewayCreateOrderOneOf,
+    instanceOfGatewayCreateOrderOneOf1,
     instanceOfGatewayQuoteOneOf,
     instanceOfGatewayQuoteOneOf1,
     instanceOfGatewayQuoteOneOf2,
@@ -29,6 +30,7 @@ import {
     RouteInfo,
 } from './generated-client';
 import { getTokenDetails } from './tokens';
+import { formatBtc } from './utils';
 
 export const WBTC_OFT_ADDRESS = '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c';
 
@@ -202,15 +204,13 @@ export class GatewayApiClient extends BaseClient {
 
             let bitcoinTxHex: string;
             if (btcSigner.sendBitcoin) {
-                // TODO: add this
-                // bitcoinTxHex = await btcSigner.sendBitcoin({
-                //     from: params.fromUserAddress!,
-                //     to: bitcoinAddress,
-                //     value: formatBtc(BigInt(satoshis)),
-                //     opReturn: opReturnHash,
-                //     isSignet: this.isSignet,
-                // });
-                bitcoinTxHex = '';
+                bitcoinTxHex = await btcSigner.sendBitcoin({
+                    from: quote.onramp.sender,
+                    to: order.onramp.address,
+                    value: formatBtc(BigInt(quote.onramp.inputAmount.amount)),
+                    opReturn: order.onramp.opReturnData || undefined,
+                    // isSignet: this.isSignet,
+                });
             } else if (btcSigner.signAllInputs) {
                 bitcoinTxHex = await btcSigner.signAllInputs(order.onramp.psbt);
             } else {
@@ -249,7 +249,13 @@ export class GatewayApiClient extends BaseClient {
             const accountAddress = walletClient.account.address;
             const tokenAddress = WBTC_OFT_ADDRESS; // TODO: get from API
 
-            const spenderAddress = quote.offramp.tx.to as Address;
+            const order = await this.api.createOrder({ gatewayQuote: { offramp: quote.offramp } });
+
+            if (!instanceOfGatewayCreateOrderOneOf1(order)) {
+                throw new Error('Invalid order type returned from API');
+            }
+
+            const spenderAddress = order.offramp.tx.to as Address;
 
             // if (
             //     getAddress(quote.data.amountInMax.address) ===
@@ -335,12 +341,24 @@ export class GatewayApiClient extends BaseClient {
 
             const transactionHash = await walletClient.sendTransaction({
                 account: walletClient.account,
-                data: quote.offramp.tx.data as Hex,
+                data: order.offramp.tx.data as Hex,
                 to: spenderAddress,
-                value: BigInt(quote.offramp.tx.value || 0),
+                value: BigInt(order.offramp.tx.value || 0),
             });
 
             await publicClient?.waitForTransactionReceipt({ hash: transactionHash });
+
+            await this.api.registerTx(
+                {
+                    registerTx: {
+                        offramp: {
+                            orderId: order.offramp.orderId,
+                            evmTxhash: transactionHash,
+                        },
+                    },
+                },
+                initOverrides
+            );
 
             return transactionHash;
         } else if (instanceOfGatewayQuoteOneOf2(quote)) {
