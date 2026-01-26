@@ -28,6 +28,7 @@ describe('Esplora Tests', () => {
         };
 
         for (const key in expectedBlock) {
+            // @ts-ignore
             assert.equal(block[key], expectedBlock[key]);
         }
     });
