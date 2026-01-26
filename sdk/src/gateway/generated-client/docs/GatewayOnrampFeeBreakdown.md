@@ -6,11 +6,11 @@
 
 Name | Type
 ------------ | -------------
-`affiliateFee` | string
-`executionFee` | string
-`layerzeroFee` | string
-`protocolFee` | string
-`solverFee` | string
+`affiliateFee` | [GatewayTokenAmount](GatewayTokenAmount.md)
+`executionFee` | [GatewayTokenAmount](GatewayTokenAmount.md)
+`layerzeroFee` | [GatewayTokenAmount](GatewayTokenAmount.md)
+`protocolFee` | [GatewayTokenAmount](GatewayTokenAmount.md)
+`solverFee` | [GatewayTokenAmount](GatewayTokenAmount.md)
 
 ## Example
 

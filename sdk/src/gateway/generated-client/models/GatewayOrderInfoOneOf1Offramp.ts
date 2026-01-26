@@ -34,6 +34,13 @@ import {
     ChainTxInfoToJSON,
     ChainTxInfoToJSONTyped,
 } from './ChainTxInfo';
+import type { GatewayTokenAmount } from './GatewayTokenAmount';
+import {
+    GatewayTokenAmountFromJSON,
+    GatewayTokenAmountFromJSONTyped,
+    GatewayTokenAmountToJSON,
+    GatewayTokenAmountToJSONTyped,
+} from './GatewayTokenAmount';
 
 /**
  * 
@@ -43,10 +50,10 @@ import {
 export interface GatewayOrderInfoOneOf1Offramp {
     /**
      * 
-     * @type {string}
+     * @type {GatewayTokenAmount}
      * @memberof GatewayOrderInfoOneOf1Offramp
      */
-    amount: string;
+    amount: GatewayTokenAmount;
     /**
      * 
      * @type {string}
@@ -67,6 +74,12 @@ export interface GatewayOrderInfoOneOf1Offramp {
     bumpFeeTx?: TxInfo | null;
     /**
      * 
+     * @type {string}
+     * @memberof GatewayOrderInfoOneOf1Offramp
+     */
+    contractId: string;
+    /**
+     * 
      * @type {ChainTxInfo}
      * @memberof GatewayOrderInfoOneOf1Offramp
      */
@@ -79,22 +92,16 @@ export interface GatewayOrderInfoOneOf1Offramp {
     estimatedTimeInSecs?: number | null;
     /**
      * 
-     * @type {string}
+     * @type {GatewayTokenAmount}
      * @memberof GatewayOrderInfoOneOf1Offramp
      */
-    fees: string;
+    fees: GatewayTokenAmount;
     /**
      * 
      * @type {string}
      * @memberof GatewayOrderInfoOneOf1Offramp
      */
     offrampRegistryAddress: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof GatewayOrderInfoOneOf1Offramp
-     */
-    orderId: string;
     /**
      * 
      * @type {TxInfo}
@@ -129,10 +136,10 @@ export interface GatewayOrderInfoOneOf1Offramp {
 export function instanceOfGatewayOrderInfoOneOf1Offramp(value: object): value is GatewayOrderInfoOneOf1Offramp {
     if (!('amount' in value) || value['amount'] === undefined) return false;
     if (!('bobExplorerUrl' in value) || value['bobExplorerUrl'] === undefined) return false;
+    if (!('contractId' in value) || value['contractId'] === undefined) return false;
     if (!('dstInfo' in value) || value['dstInfo'] === undefined) return false;
     if (!('fees' in value) || value['fees'] === undefined) return false;
     if (!('offrampRegistryAddress' in value) || value['offrampRegistryAddress'] === undefined) return false;
-    if (!('orderId' in value) || value['orderId'] === undefined) return false;
     if (!('srcInfo' in value) || value['srcInfo'] === undefined) return false;
     if (!('status' in value) || value['status'] === undefined) return false;
     if (!('timestamp' in value) || value['timestamp'] === undefined) return false;
@@ -149,15 +156,15 @@ export function GatewayOrderInfoOneOf1OfframpFromJSONTyped(json: any, ignoreDisc
     }
     return {
         
-        'amount': json['amount'],
+        'amount': GatewayTokenAmountFromJSON(json['amount']),
         'bitcoinExplorerUrl': json['bitcoin_explorer_url'] == null ? undefined : json['bitcoin_explorer_url'],
         'bobExplorerUrl': json['bob_explorer_url'],
         'bumpFeeTx': json['bump_fee_tx'] == null ? undefined : TxInfoFromJSON(json['bump_fee_tx']),
+        'contractId': json['contract_id'],
         'dstInfo': ChainTxInfoFromJSON(json['dst_info']),
         'estimatedTimeInSecs': json['estimated_time_in_secs'] == null ? undefined : json['estimated_time_in_secs'],
-        'fees': json['fees'],
+        'fees': GatewayTokenAmountFromJSON(json['fees']),
         'offrampRegistryAddress': json['offramp_registry_address'],
-        'orderId': json['order_id'],
         'refundOrderTx': json['refund_order_tx'] == null ? undefined : TxInfoFromJSON(json['refund_order_tx']),
         'srcInfo': ChainTxInfoFromJSON(json['src_info']),
         'status': OrderStatusFromJSON(json['status']),
@@ -176,15 +183,15 @@ export function GatewayOrderInfoOneOf1OfframpToJSONTyped(value?: GatewayOrderInf
 
     return {
         
-        'amount': value['amount'],
+        'amount': GatewayTokenAmountToJSON(value['amount']),
         'bitcoin_explorer_url': value['bitcoinExplorerUrl'],
         'bob_explorer_url': value['bobExplorerUrl'],
         'bump_fee_tx': TxInfoToJSON(value['bumpFeeTx']),
+        'contract_id': value['contractId'],
         'dst_info': ChainTxInfoToJSON(value['dstInfo']),
         'estimated_time_in_secs': value['estimatedTimeInSecs'],
-        'fees': value['fees'],
+        'fees': GatewayTokenAmountToJSON(value['fees']),
         'offramp_registry_address': value['offrampRegistryAddress'],
-        'order_id': value['orderId'],
         'refund_order_tx': TxInfoToJSON(value['refundOrderTx']),
         'src_info': ChainTxInfoToJSON(value['srcInfo']),
         'status': OrderStatusToJSON(value['status']),

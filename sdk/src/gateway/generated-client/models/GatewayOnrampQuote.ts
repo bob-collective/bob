@@ -20,6 +20,13 @@ import {
     GatewayOnrampFeeBreakdownToJSON,
     GatewayOnrampFeeBreakdownToJSONTyped,
 } from './GatewayOnrampFeeBreakdown';
+import type { GatewayTokenAmount } from './GatewayTokenAmount';
+import {
+    GatewayTokenAmountFromJSON,
+    GatewayTokenAmountFromJSONTyped,
+    GatewayTokenAmountToJSON,
+    GatewayTokenAmountToJSONTyped,
+} from './GatewayTokenAmount';
 
 /**
  * 
@@ -41,10 +48,10 @@ export interface GatewayOnrampQuote {
     dstToken: string;
     /**
      * 
-     * @type {string}
+     * @type {GatewayTokenAmount}
      * @memberof GatewayOnrampQuote
      */
-    executionFees: string;
+    executionFees: GatewayTokenAmount;
     /**
      * 
      * @type {GatewayOnrampFeeBreakdown}
@@ -53,10 +60,10 @@ export interface GatewayOnrampQuote {
     feeBreakdown: GatewayOnrampFeeBreakdown;
     /**
      * 
-     * @type {string}
+     * @type {GatewayTokenAmount}
      * @memberof GatewayOnrampQuote
      */
-    fees: string;
+    fees: GatewayTokenAmount;
     /**
      * 
      * @type {string}
@@ -65,16 +72,16 @@ export interface GatewayOnrampQuote {
     gasRefill?: string | null;
     /**
      * 
-     * @type {string}
+     * @type {GatewayTokenAmount}
      * @memberof GatewayOnrampQuote
      */
-    inputAmount: string;
+    inputAmount: GatewayTokenAmount;
     /**
      * 
-     * @type {string}
+     * @type {GatewayTokenAmount}
      * @memberof GatewayOnrampQuote
      */
-    outputAmount: string;
+    outputAmount: GatewayTokenAmount;
     /**
      * 
      * @type {string}
@@ -143,12 +150,12 @@ export function GatewayOnrampQuoteFromJSONTyped(json: any, ignoreDiscriminator: 
         
         'dstChain': json['dstChain'],
         'dstToken': json['dstToken'],
-        'executionFees': json['executionFees'],
+        'executionFees': GatewayTokenAmountFromJSON(json['executionFees']),
         'feeBreakdown': GatewayOnrampFeeBreakdownFromJSON(json['feeBreakdown']),
-        'fees': json['fees'],
+        'fees': GatewayTokenAmountFromJSON(json['fees']),
         'gasRefill': json['gasRefill'] == null ? undefined : json['gasRefill'],
-        'inputAmount': json['inputAmount'],
-        'outputAmount': json['outputAmount'],
+        'inputAmount': GatewayTokenAmountFromJSON(json['inputAmount']),
+        'outputAmount': GatewayTokenAmountFromJSON(json['outputAmount']),
         'recipient': json['recipient'],
         'sender': json['sender'],
         'slippage': json['slippage'],
@@ -171,12 +178,12 @@ export function GatewayOnrampQuoteToJSONTyped(value?: GatewayOnrampQuote | null,
         
         'dstChain': value['dstChain'],
         'dstToken': value['dstToken'],
-        'executionFees': value['executionFees'],
+        'executionFees': GatewayTokenAmountToJSON(value['executionFees']),
         'feeBreakdown': GatewayOnrampFeeBreakdownToJSON(value['feeBreakdown']),
-        'fees': value['fees'],
+        'fees': GatewayTokenAmountToJSON(value['fees']),
         'gasRefill': value['gasRefill'],
-        'inputAmount': value['inputAmount'],
-        'outputAmount': value['outputAmount'],
+        'inputAmount': GatewayTokenAmountToJSON(value['inputAmount']),
+        'outputAmount': GatewayTokenAmountToJSON(value['outputAmount']),
         'recipient': value['recipient'],
         'sender': value['sender'],
         'slippage': value['slippage'],

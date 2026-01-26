@@ -6,12 +6,12 @@
 
 Name | Type
 ------------ | -------------
-`amount` | string
+`amount` | [GatewayTokenAmount](GatewayTokenAmount.md)
 `bitcoinExplorerUrl` | string
 `bobExplorerUrl` | string
 `dstInfo` | [ChainTxInfo](ChainTxInfo.md)
 `estimatedTimeInSecs` | number
-`fees` | string
+`fees` | [GatewayTokenAmount](GatewayTokenAmount.md)
 `layerzeroExplorerUrl` | string
 `orderId` | string
 `srcInfo` | [ChainTxInfo](ChainTxInfo.md)

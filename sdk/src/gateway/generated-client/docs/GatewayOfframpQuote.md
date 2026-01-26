@@ -7,9 +7,10 @@
 Name | Type
 ------------ | -------------
 `feeBreakdown` | [GatewayOfframpFeeBreakdown](GatewayOfframpFeeBreakdown.md)
-`fees` | string
-`inputAmount` | string
-`outputAmount` | string
+`fees` | [GatewayTokenAmount](GatewayTokenAmount.md)
+`inputAmount` | [GatewayTokenAmount](GatewayTokenAmount.md)
+`outputAmount` | [GatewayTokenAmount](GatewayTokenAmount.md)
+`srcChain` | string
 `tokenAddress` | string
 `tx` | [TxInfo](TxInfo.md)
 
@@ -24,6 +25,7 @@ const example = {
   "fees": null,
   "inputAmount": null,
   "outputAmount": null,
+  "srcChain": null,
   "tokenAddress": null,
   "tx": null,
 } satisfies GatewayOfframpQuote

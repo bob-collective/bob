@@ -1,28 +1,22 @@
 
-# GatewayLayerZeroQuote
+# RegisterTxSuccess
 
 
 ## Properties
 
 Name | Type
 ------------ | -------------
-`fees` | [GatewayTokenAmount](GatewayTokenAmount.md)
-`inputAmount` | [GatewayTokenAmount](GatewayTokenAmount.md)
-`outputAmount` | [GatewayTokenAmount](GatewayTokenAmount.md)
-`tx` | [TxInfo](TxInfo.md)
+`onramp` | [RegisterTxSuccessOneOfOnramp](RegisterTxSuccessOneOfOnramp.md)
 
 ## Example
 
 ```typescript
-import type { GatewayLayerZeroQuote } from ''
+import type { RegisterTxSuccess } from ''
 
 // TODO: Update the object below with actual values
 const example = {
-  "fees": null,
-  "inputAmount": null,
-  "outputAmount": null,
-  "tx": null,
-} satisfies GatewayLayerZeroQuote
+  "onramp": null,
+} satisfies RegisterTxSuccess
 
 console.log(example)
 
@@ -31,7 +25,7 @@ const exampleJSON: string = JSON.stringify(example)
 console.log(exampleJSON)
 
 // Parse the JSON string back to an object
-const exampleParsed = JSON.parse(exampleJSON) as GatewayLayerZeroQuote
+const exampleParsed = JSON.parse(exampleJSON) as RegisterTxSuccess
 console.log(exampleParsed)
 ```
 

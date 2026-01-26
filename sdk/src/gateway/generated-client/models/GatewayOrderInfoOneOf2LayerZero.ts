@@ -27,6 +27,13 @@ import {
     ChainTxInfoToJSON,
     ChainTxInfoToJSONTyped,
 } from './ChainTxInfo';
+import type { GatewayTokenAmount } from './GatewayTokenAmount';
+import {
+    GatewayTokenAmountFromJSON,
+    GatewayTokenAmountFromJSONTyped,
+    GatewayTokenAmountToJSON,
+    GatewayTokenAmountToJSONTyped,
+} from './GatewayTokenAmount';
 
 /**
  * 
@@ -36,10 +43,10 @@ import {
 export interface GatewayOrderInfoOneOf2LayerZero {
     /**
      * 
-     * @type {string}
+     * @type {GatewayTokenAmount}
      * @memberof GatewayOrderInfoOneOf2LayerZero
      */
-    amount: string;
+    amount: GatewayTokenAmount;
     /**
      * 
      * @type {ChainTxInfo}
@@ -48,10 +55,10 @@ export interface GatewayOrderInfoOneOf2LayerZero {
     dstInfo: ChainTxInfo;
     /**
      * 
-     * @type {string}
+     * @type {GatewayTokenAmount}
      * @memberof GatewayOrderInfoOneOf2LayerZero
      */
-    fees: string;
+    fees: GatewayTokenAmount;
     /**
      * 
      * @type {string}
@@ -104,9 +111,9 @@ export function GatewayOrderInfoOneOf2LayerZeroFromJSONTyped(json: any, ignoreDi
     }
     return {
         
-        'amount': json['amount'],
+        'amount': GatewayTokenAmountFromJSON(json['amount']),
         'dstInfo': ChainTxInfoFromJSON(json['dst_info']),
-        'fees': json['fees'],
+        'fees': GatewayTokenAmountFromJSON(json['fees']),
         'layerzeroExplorerUrl': json['layerzero_explorer_url'],
         'srcInfo': ChainTxInfoFromJSON(json['src_info']),
         'status': LayerZeroOrderStatusFromJSON(json['status']),
@@ -125,9 +132,9 @@ export function GatewayOrderInfoOneOf2LayerZeroToJSONTyped(value?: GatewayOrderI
 
     return {
         
-        'amount': value['amount'],
+        'amount': GatewayTokenAmountToJSON(value['amount']),
         'dst_info': ChainTxInfoToJSON(value['dstInfo']),
-        'fees': value['fees'],
+        'fees': GatewayTokenAmountToJSON(value['fees']),
         'layerzero_explorer_url': value['layerzeroExplorerUrl'],
         'src_info': ChainTxInfoToJSON(value['srcInfo']),
         'status': LayerZeroOrderStatusToJSON(value['status']),

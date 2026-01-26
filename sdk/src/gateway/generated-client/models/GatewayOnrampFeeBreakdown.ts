@@ -13,6 +13,14 @@
  */
 
 import { mapValues } from '../runtime';
+import type { GatewayTokenAmount } from './GatewayTokenAmount';
+import {
+    GatewayTokenAmountFromJSON,
+    GatewayTokenAmountFromJSONTyped,
+    GatewayTokenAmountToJSON,
+    GatewayTokenAmountToJSONTyped,
+} from './GatewayTokenAmount';
+
 /**
  * 
  * @export
@@ -21,34 +29,34 @@ import { mapValues } from '../runtime';
 export interface GatewayOnrampFeeBreakdown {
     /**
      * 
-     * @type {string}
+     * @type {GatewayTokenAmount}
      * @memberof GatewayOnrampFeeBreakdown
      */
-    affiliateFee: string;
+    affiliateFee: GatewayTokenAmount;
     /**
      * 
-     * @type {string}
+     * @type {GatewayTokenAmount}
      * @memberof GatewayOnrampFeeBreakdown
      */
-    executionFee: string;
+    executionFee: GatewayTokenAmount;
     /**
      * 
-     * @type {string}
+     * @type {GatewayTokenAmount}
      * @memberof GatewayOnrampFeeBreakdown
      */
-    layerzeroFee: string;
+    layerzeroFee: GatewayTokenAmount;
     /**
      * 
-     * @type {string}
+     * @type {GatewayTokenAmount}
      * @memberof GatewayOnrampFeeBreakdown
      */
-    protocolFee: string;
+    protocolFee: GatewayTokenAmount;
     /**
      * 
-     * @type {string}
+     * @type {GatewayTokenAmount}
      * @memberof GatewayOnrampFeeBreakdown
      */
-    solverFee: string;
+    solverFee: GatewayTokenAmount;
 }
 
 /**
@@ -73,11 +81,11 @@ export function GatewayOnrampFeeBreakdownFromJSONTyped(json: any, ignoreDiscrimi
     }
     return {
         
-        'affiliateFee': json['affiliateFee'],
-        'executionFee': json['executionFee'],
-        'layerzeroFee': json['layerzeroFee'],
-        'protocolFee': json['protocolFee'],
-        'solverFee': json['solverFee'],
+        'affiliateFee': GatewayTokenAmountFromJSON(json['affiliateFee']),
+        'executionFee': GatewayTokenAmountFromJSON(json['executionFee']),
+        'layerzeroFee': GatewayTokenAmountFromJSON(json['layerzeroFee']),
+        'protocolFee': GatewayTokenAmountFromJSON(json['protocolFee']),
+        'solverFee': GatewayTokenAmountFromJSON(json['solverFee']),
     };
 }
 
@@ -92,11 +100,11 @@ export function GatewayOnrampFeeBreakdownToJSONTyped(value?: GatewayOnrampFeeBre
 
     return {
         
-        'affiliateFee': value['affiliateFee'],
-        'executionFee': value['executionFee'],
-        'layerzeroFee': value['layerzeroFee'],
-        'protocolFee': value['protocolFee'],
-        'solverFee': value['solverFee'],
+        'affiliateFee': GatewayTokenAmountToJSON(value['affiliateFee']),
+        'executionFee': GatewayTokenAmountToJSON(value['executionFee']),
+        'layerzeroFee': GatewayTokenAmountToJSON(value['layerzeroFee']),
+        'protocolFee': GatewayTokenAmountToJSON(value['protocolFee']),
+        'solverFee': GatewayTokenAmountToJSON(value['solverFee']),
     };
 }
 

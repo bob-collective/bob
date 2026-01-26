@@ -21,9 +21,11 @@ import {
     DefaultApi,
     GatewayOrderInfo,
     GatewayQuote,
+    instanceOfGatewayCreateOrderOneOf,
     instanceOfGatewayQuoteOneOf,
     instanceOfGatewayQuoteOneOf1,
     instanceOfGatewayQuoteOneOf2,
+    instanceOfRegisterTxOneOf,
     RouteInfo,
 } from './generated-client';
 import { getTokenDetails } from './tokens';
@@ -192,7 +194,11 @@ export class GatewayApiClient extends BaseClient {
                 throw new Error(`btcSigner is required for onramp order`);
             }
 
-            const { id, psbt } = await this.api.startOnramp({ gatewayOnrampQuote: quote.onramp });
+            const order = await this.api.createOrder({ gatewayQuote: { onramp :quote.onramp }});
+
+            if (!instanceOfGatewayCreateOrderOneOf(order)) {
+                throw new Error('Invalid order type returned from API');
+            }
 
             let bitcoinTxHex: string;
             if (btcSigner.sendBitcoin) {
@@ -206,7 +212,7 @@ export class GatewayApiClient extends BaseClient {
                 // });
                 bitcoinTxHex = '';
             } else if (btcSigner.signAllInputs) {
-                bitcoinTxHex = await btcSigner.signAllInputs(psbt);
+                bitcoinTxHex = await btcSigner.signAllInputs(order.onramp.psbt);
             } else {
                 throw new Error('btcSigner must implement either sendBitcoin or signAllInputs method');
             }
@@ -214,12 +220,23 @@ export class GatewayApiClient extends BaseClient {
             // bitcoinTxOrId = stripHexPrefix(bitcoinTxOrId);
             if (!bitcoinTxHex) throw new Error('Failed to get signed transaction');
 
-            const txId = await this.api.registerBtcTx(
-                { registerBtcTx: { bitcoinTx: bitcoinTxHex, id } },
+            const tx = await this.api.registerTx(
+                { registerTx: { onramp: {
+                    orderId: order.onramp.orderId,
+                     bitcoinTx: bitcoinTxHex
+                }} },
                 initOverrides
             );
 
-            return txId;
+            if (typeof tx === 'string') {
+                return tx;
+            }
+
+            if (!instanceOfRegisterTxOneOf(tx)) {
+                throw new Error('Invalid registerTx response type');
+            }
+
+            return tx.onramp.txid;
         } else if (instanceOfGatewayQuoteOneOf1(quote)) {
             if (!walletClient.account) {
                 throw new Error(`walletClient is required for offramp order`);
@@ -295,7 +312,7 @@ export class GatewayApiClient extends BaseClient {
                 throw new Error('Tokens with less than 8 decimals are not supported');
             }
             const multiplier = 10n ** BigInt(decimals - 8);
-            const requiredAmount = BigInt(quote.offramp.inputAmount) * multiplier;
+            const requiredAmount = BigInt(quote.offramp.inputAmount.amount) * multiplier;
             const needsApproval = requiredAmount > allowance;
 
             if (needsApproval) {
