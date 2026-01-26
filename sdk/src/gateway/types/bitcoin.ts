@@ -1,5 +1,5 @@
 export interface BitcoinSigner {
-    signAllInputs?: (psbtBase64: string) => Promise<string>;
+    signAllInputs?: (psbtHex: string) => Promise<string>;
     sendBitcoin?: (params: {
         from: string;
         to: string;

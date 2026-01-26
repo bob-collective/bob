@@ -1,5 +1,5 @@
 import * as btc from '@scure/btc-signer';
-import { base64 } from '@scure/base';
+import { base64, hex } from '@scure/base';
 import { mnemonicToSeedSync } from 'bip39';
 import { HDKey } from '@scure/bip32';
 import { BitcoinSigner } from '../types';
@@ -38,12 +38,12 @@ export class ScureBitcoinSigner implements BitcoinSigner {
     /**
      * Sign all inputs in a PSBT
      *
-     * @param psbtBase64 Base64 encoded PSBT string
+     * @param psbtHex Hex encoded PSBT string
      * @returns Promise resolving to the signed transaction hex
      */
-    async signAllInputs(psbtBase64: string): Promise<string> {
+    async signAllInputs(psbtHex: string): Promise<string> {
         try {
-            const tx = btc.Transaction.fromPSBT(base64.decode(psbtBase64));
+            const tx = btc.Transaction.fromPSBT(hex.decode(psbtHex));
 
             // Sign all inputs
             for (let i = 0; i < tx.inputsLength; i++) {
