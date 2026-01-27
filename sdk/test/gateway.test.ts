@@ -1,5 +1,14 @@
 import nock from 'nock';
-import { Account, Address, maxUint256, PublicClient, Transport, Chain as ViemChain, WalletClient, zeroAddress } from 'viem';
+import {
+    Account,
+    Address,
+    maxUint256,
+    PublicClient,
+    Transport,
+    Chain as ViemChain,
+    WalletClient,
+    zeroAddress,
+} from 'viem';
 import { bob } from 'viem/chains';
 import { afterEach, assert, describe, expect, it } from 'vitest';
 import { GatewaySDK } from '../src/gateway';
@@ -422,14 +431,16 @@ describe('Gateway Tests', () => {
         const mockPsbt = 'cHNidP8BAH0CAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAzwAAAAA=';
         const signedTx = '02000000010000000000000000000000000000000000000000000000000000000000000000';
 
-        nock(`${MAINNET_GATEWAY_BASE_URL}`).post('/api/create-order').reply(200, {
-            onramp: {
-                order_id: mockOrderId,
-                psbt_hex: mockPsbt,
-                address: 'tb1qw508d6qejxtdg4y5r3zarvary0c5xw7kxpjzsx',
-                op_return_data: '',
-            },
-        });
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
+            .post('/api/create-order')
+            .reply(200, {
+                onramp: {
+                    order_id: mockOrderId,
+                    psbt_hex: mockPsbt,
+                    address: 'tb1qw508d6qejxtdg4y5r3zarvary0c5xw7kxpjzsx',
+                    op_return_data: '',
+                },
+            });
 
         nock(`${MAINNET_GATEWAY_BASE_URL}`).patch('/api/register-tx').reply(200, JSON.stringify('tx-hash-123'));
 
@@ -596,14 +607,16 @@ describe('Gateway Tests', () => {
         const mockOrderId = 'order-123';
         const mockPsbt = 'cHNidP8BAH0CAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAzwAAAAA=';
 
-        nock(`${MAINNET_GATEWAY_BASE_URL}`).post('/api/create-order').reply(200, {
-            onramp: {
-                order_id: mockOrderId,
-                psbt_hex: mockPsbt,
-                address: 'tb1qw508d6qejxtdg4y5r3zarvary0c5xw7kxpjzsx',
-                op_return_data: '',
-            },
-        });
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
+            .post('/api/create-order')
+            .reply(200, {
+                onramp: {
+                    order_id: mockOrderId,
+                    psbt_hex: mockPsbt,
+                    address: 'tb1qw508d6qejxtdg4y5r3zarvary0c5xw7kxpjzsx',
+                    op_return_data: '',
+                },
+            });
 
         const mockBtcSigner: BitcoinSigner = {
             signAllInputs: async () => '',
@@ -678,16 +691,18 @@ describe('Gateway Tests', () => {
             },
         };
 
-        nock(`${MAINNET_GATEWAY_BASE_URL}`).post('/api/create-order').reply(200, {
-            offramp: {
-                order_id: 'offramp-order-123',
-                tx: {
-                    to: '0x1234567890123456789012345678901234567890',
-                    data: '0xabcdef',
-                    value: '0',
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
+            .post('/api/create-order')
+            .reply(200, {
+                offramp: {
+                    order_id: 'offramp-order-123',
+                    tx: {
+                        to: '0x1234567890123456789012345678901234567890',
+                        data: '0xabcdef',
+                        value: '0',
+                    },
                 },
-            },
-        });
+            });
 
         nock(`${MAINNET_GATEWAY_BASE_URL}`).patch('/api/register-tx').reply(200, JSON.stringify('ok'));
 
@@ -765,16 +780,18 @@ describe('Gateway Tests', () => {
             },
         };
 
-        nock(`${MAINNET_GATEWAY_BASE_URL}`).post('/api/create-order').reply(200, {
-            offramp: {
-                order_id: 'offramp-order-456',
-                tx: {
-                    to: '0x1234567890123456789012345678901234567890',
-                    data: '0xabcdef',
-                    value: '0',
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
+            .post('/api/create-order')
+            .reply(200, {
+                offramp: {
+                    order_id: 'offramp-order-456',
+                    tx: {
+                        to: '0x1234567890123456789012345678901234567890',
+                        data: '0xabcdef',
+                        value: '0',
+                    },
                 },
-            },
-        });
+            });
 
         nock(`${MAINNET_GATEWAY_BASE_URL}`).patch('/api/register-tx').reply(200, JSON.stringify('ok'));
 
@@ -952,14 +969,16 @@ describe('Gateway Tests', () => {
         const mockOrderId = 'order-123';
         const mockPsbt = 'cHNidP8BAH0CAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAzwAAAAA=';
 
-        nock(`${MAINNET_GATEWAY_BASE_URL}`).post('/api/create-order').reply(200, {
-            onramp: {
-                order_id: mockOrderId,
-                psbt_hex: mockPsbt,
-                address: 'tb1qw508d6qejxtdg4y5r3zarvary0c5xw7kxpjzsx',
-                op_return_data: '',
-            },
-        });
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
+            .post('/api/create-order')
+            .reply(200, {
+                onramp: {
+                    order_id: mockOrderId,
+                    psbt_hex: mockPsbt,
+                    address: 'tb1qw508d6qejxtdg4y5r3zarvary0c5xw7kxpjzsx',
+                    op_return_data: '',
+                },
+            });
 
         const mockBtcSigner = {} as BitcoinSigner;
 
