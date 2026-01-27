@@ -25,7 +25,7 @@ vi.mock(import('@scure/btc-signer'), async (importOriginal) => {
 
 // TODO: Add more tests using https://github.com/paulmillr/scure-btc-signer/tree/5ead71ea9a873d8ba1882a9cd6aa561ad410d0d1/test/bitcoinjs-test/fixtures/bitcoinjs
 // TODO: Ensure that the paymentAddresses have sufficient funds to create the transaction
-describe.skip('UTXO Tests', () => {
+describe('UTXO Tests', () => {
     beforeEach(() => {
         vi.restoreAllMocks();
         global.fetch = vi.fn(global.fetch);
@@ -680,7 +680,8 @@ describe.skip('UTXO Tests', () => {
         const original = EsploraClient.prototype.getTransaction;
 
         vi.spyOn(EsploraClient.prototype, 'getTransaction').mockImplementation(async function (tx) {
-            const result = await original.call(this, tx);
+            // @ts-ignore
+            const result = await original.call(this as ThisParameterType<typeof original>, tx);
 
             // mark as unconfirmed -> continue building tree for `vin`s
             const utxo = utxos.find((utxo) => utxo.txid === tx);
