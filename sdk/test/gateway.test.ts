@@ -1,5 +1,14 @@
 import nock from 'nock';
-import { Account, Address, PublicClient, Transport, Chain as ViemChain, WalletClient, zeroAddress } from 'viem';
+import {
+    Account,
+    Address,
+    maxUint256,
+    PublicClient,
+    Transport,
+    Chain as ViemChain,
+    WalletClient,
+    zeroAddress,
+} from 'viem';
 import { bob } from 'viem/chains';
 import { afterEach, assert, describe, expect, it } from 'vitest';
 import { GatewaySDK } from '../src/gateway';
@@ -422,10 +431,18 @@ describe('Gateway Tests', () => {
         const mockPsbt = 'cHNidP8BAH0CAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAzwAAAAA=';
         const signedTx = '02000000010000000000000000000000000000000000000000000000000000000000000000';
 
-        // Mock API calls
-        nock(`${MAINNET_GATEWAY_BASE_URL}`).post('/api/start-onramp').reply(200, { id: mockOrderId, psbt: mockPsbt });
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
+            .post('/api/create-order')
+            .reply(200, {
+                onramp: {
+                    order_id: mockOrderId,
+                    psbt_hex: mockPsbt,
+                    address: 'tb1qw508d6qejxtdg4y5r3zarvary0c5xw7kxpjzsx',
+                    op_return_data: '',
+                },
+            });
 
-        nock(`${MAINNET_GATEWAY_BASE_URL}`).patch('/api/register-btc-tx').reply(200, 'tx-hash-123');
+        nock(`${MAINNET_GATEWAY_BASE_URL}`).patch('/api/register-tx').reply(200, JSON.stringify('tx-hash-123'));
 
         const mockBtcSigner: BitcoinSigner = {
             signAllInputs: async (psbt: string) => {
@@ -590,7 +607,16 @@ describe('Gateway Tests', () => {
         const mockOrderId = 'order-123';
         const mockPsbt = 'cHNidP8BAH0CAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAzwAAAAA=';
 
-        nock(`${MAINNET_GATEWAY_BASE_URL}`).post('/api/start-onramp').reply(200, { id: mockOrderId, psbt: mockPsbt });
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
+            .post('/api/create-order')
+            .reply(200, {
+                onramp: {
+                    order_id: mockOrderId,
+                    psbt_hex: mockPsbt,
+                    address: 'tb1qw508d6qejxtdg4y5r3zarvary0c5xw7kxpjzsx',
+                    op_return_data: '',
+                },
+            });
 
         const mockBtcSigner: BitcoinSigner = {
             signAllInputs: async () => '',
@@ -664,6 +690,21 @@ describe('Gateway Tests', () => {
                 },
             },
         };
+
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
+            .post('/api/create-order')
+            .reply(200, {
+                offramp: {
+                    order_id: 'offramp-order-123',
+                    tx: {
+                        to: '0x1234567890123456789012345678901234567890',
+                        data: '0xabcdef',
+                        value: '0',
+                    },
+                },
+            });
+
+        nock(`${MAINNET_GATEWAY_BASE_URL}`).patch('/api/register-tx').reply(200, JSON.stringify('ok'));
 
         const mockWalletClient = {
             account: { address: '0xabcd1234abcd1234abcd1234abcd1234abcd1234' as Address },
@@ -739,13 +780,28 @@ describe('Gateway Tests', () => {
             },
         };
 
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
+            .post('/api/create-order')
+            .reply(200, {
+                offramp: {
+                    order_id: 'offramp-order-456',
+                    tx: {
+                        to: '0x1234567890123456789012345678901234567890',
+                        data: '0xabcdef',
+                        value: '0',
+                    },
+                },
+            });
+
+        nock(`${MAINNET_GATEWAY_BASE_URL}`).patch('/api/register-tx').reply(200, JSON.stringify('ok'));
+
         const mockWalletClient = {
             account: { address: '0xabcd1234abcd1234abcd1234abcd1234abcd1234' as Address },
             sendTransaction: async () => '0xtxhash' as `0x${string}`,
         } as unknown as WalletClient<Transport, ViemChain, Account>;
 
         const mockPublicClient = {
-            multicall: async () => [BigInt('999999999999999999'), 8], // high allowance (BigInt), decimals: 8 (number)
+            multicall: async () => [maxUint256, 8],
             waitForTransactionReceipt: async () => ({}),
         } as unknown as PublicClient<Transport>;
 
@@ -913,17 +969,18 @@ describe('Gateway Tests', () => {
         const mockOrderId = 'order-123';
         const mockPsbt = 'cHNidP8BAH0CAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAzwAAAAA=';
 
-        const mockOrder: GatewayCreateOrderOneOf = {
-            onramp: {
-                address: zeroAddress,
-                orderId: mockOrderId,
-                psbt: mockPsbt,
-                opReturnData: '',
-            },
-        };
-        nock(`${MAINNET_GATEWAY_BASE_URL}`).post('/api/create-order').reply(200, mockOrder);
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
+            .post('/api/create-order')
+            .reply(200, {
+                onramp: {
+                    order_id: mockOrderId,
+                    psbt_hex: mockPsbt,
+                    address: 'tb1qw508d6qejxtdg4y5r3zarvary0c5xw7kxpjzsx',
+                    op_return_data: '',
+                },
+            });
 
-        const mockBtcSigner = {} as BitcoinSigner; // No methods
+        const mockBtcSigner = {} as BitcoinSigner;
 
         const mockWalletClient = {
             account: { address: '0x1234567890123456789012345678901234567890' as Address },

@@ -28,7 +28,11 @@ describe('Esplora Tests', () => {
         };
 
         for (const key in expectedBlock) {
-            assert.equal(block[key], expectedBlock[key]);
+            assert.equal(
+                block[key as keyof Block],
+                expectedBlock[key as keyof Block],
+                `Mismatch in block field: ${key}`
+            );
         }
     });
 
