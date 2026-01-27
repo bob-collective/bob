@@ -9,7 +9,7 @@ import {
     Chain as ViemChain,
     WalletClient,
 } from 'viem';
-import { bob, bobSepolia } from 'viem/chains';
+import { bob } from 'viem/chains';
 import { bigIntToFloatingNumber } from '../utils';
 import { strategyCaller } from './abi';
 import { BaseClient } from './base-client';
@@ -18,7 +18,7 @@ import { BitcoinSigner, EnrichedToken, GetQuoteParams, StrategyParams } from './
 
 import {
     Configuration,
-    DefaultApi,
+    V1Api,
     GatewayOrderInfo,
     GatewayQuote,
     instanceOfGatewayCreateOrderOneOf,
@@ -38,13 +38,7 @@ export const WBTC_OFT_ADDRESS = '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c';
  * Base url for the mainnet Gateway API.
  * @default "https://gateway-api-mainnet.gobob.xyz"
  */
-export const MAINNET_GATEWAY_BASE_URL = 'https://gateway-api-staging.gobob.xyz';
-
-/**
- * Base url for the Signet Gateway API.
- * @default "https://gateway-api-testnet.gobob.xyz"
- */
-export const SIGNET_GATEWAY_BASE_URL = 'https://gateway-api-signet.gobob.xyz';
+export const STAGING_GATEWAY_BASE_URL = 'https://gateway-api-staging.gobob.xyz';
 
 interface EvmWalletClientParams {
     /**
@@ -92,7 +86,7 @@ export class GatewayApiClient extends BaseClient {
     private strategy: StrategyClient;
     // private isSignet: boolean = false;
 
-    api: DefaultApi;
+    api: V1Api;
 
     /**
      * Creates a new Gateway API client instance.
@@ -123,21 +117,11 @@ export class GatewayApiClient extends BaseClient {
             case bob.id:
                 this.chain = bob;
                 this.strategy = new StrategyClient(bob, options?.rpcUrl);
-                this.api = new DefaultApi(
+                this.api = new V1Api(
                     new Configuration({
-                        basePath: MAINNET_GATEWAY_BASE_URL,
+                        basePath: STAGING_GATEWAY_BASE_URL,
                     })
-                ); // TODO: set URL
-                break;
-            case bobSepolia.id:
-                this.chain = bobSepolia;
-                this.strategy = new StrategyClient(bobSepolia, options?.rpcUrl);
-                // this.isSignet = true;
-                this.api = new DefaultApi(
-                    new Configuration({
-                        basePath: SIGNET_GATEWAY_BASE_URL,
-                    })
-                ); // TODO: set URL
+                );
                 break;
             default:
                 throw new Error('Invalid chain');
