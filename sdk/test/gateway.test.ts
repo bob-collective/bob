@@ -349,7 +349,7 @@ describe('Gateway Tests', () => {
     });
 
     it('should get routes', async () => {
-        nock(`${STAGING_GATEWAY_BASE_URL}/api`)
+        nock(`${STAGING_GATEWAY_BASE_URL}/v1`)
             .get('/get-routes')
             .reply(200, [
                 {

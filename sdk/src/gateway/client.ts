@@ -9,7 +9,7 @@ import {
     Chain as ViemChain,
     WalletClient,
 } from 'viem';
-import { bob, bobSepolia } from 'viem/chains';
+import { bob } from 'viem/chains';
 import { bigIntToFloatingNumber } from '../utils';
 import { strategyCaller } from './abi';
 import { BaseClient } from './base-client';
