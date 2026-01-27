@@ -1,0 +1,65 @@
+---
+id: get-routes
+title: "Get all supported routes."
+description: "Get all supported routes."
+sidebar_label: "Get all supported routes."
+hide_title: true
+hide_table_of_contents: true
+api: eJyVU8Fu2zAM/RWDpxVQnGRH35ptCHJasXWnwBhkmbXVOpIq0mk9w/8+0M6yJMWyzRfLtN4T33tUD6wrgmwL+yXkCnzAqNl6tykhgwr5e/QtI4GCiBS8IyTIeni/WMirRDLRBgFABmvkRDdNQm0IPjKWyRFsvGN0LBgdQmPNeMj8kQTYA5kad1pW3AWEDHSMugMFlnFHJ3VfPKLhsZvn1kYspXWK5kOtrQMFJfGvJUVz75/wUJ2WuYIQRSPbScdx/+8jiKN1laDOxH1EYuvGthMjkOQdplWaFL64geHkjP9iYoEkuiwjEgnNUctfab76Nho878Wy8dbdHIj+sZ8D0UUrgwK23Ajui6S4cQ8ehvG5JPhT7iko2CHX/jBLoCBoriGD+X45r5Bnx/kgjHuMMog9tLGBDGrmQNl8XmnGF93NdLAzYl1ZV6WVL3yRvnY/3mqZdsCgrvHstHUO+QrPXfRla8aPIVdgRbwYeXBk9XmVrCfC5PZu8wZ+8T958DFZTeEk9KKDSG6sQUcotE7vhFViExcmjmW6SBdSCp54p93JxmuGnzVyjJ7xleehkcEa1ORMfwhjvPoKTuLIFdSeWH71faEJv8VmGKT83GLsINvmCvY6Wl2IG9t8UFCjLjGO+T1hBxncGoNBIt/rph2v9OW9F2OP47H+dA/D8BMZAZCC
+sidebar_class_name: "get api-method"
+info_path: bob-gateway-api
+custom_edit_url: null
+show_extensions: true
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+import Translate from "@docusaurus/Translate";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Get all supported routes."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/v1/get-routes"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Get all supported routes.
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"Get all supported routes","content":{"application/json":{"schema":{"type":"array","items":{"type":"object","required":["srcChain","dstChain","srcToken","dstToken"],"properties":{"dstChain":{"type":"string","description":"Destination chain (e.g. bob)"},"dstToken":{"type":"string","description":"Destination token address"},"srcChain":{"type":"string","description":"Source chain (e.g. bitcoin)"},"srcToken":{"type":"string","description":"Source token address"}},"title":"RouteInfo"}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      
