@@ -12,7 +12,7 @@ import {
 import { bob } from 'viem/chains';
 import { afterEach, assert, describe, expect, it } from 'vitest';
 import { GatewaySDK } from '../src/gateway';
-import { MAINNET_GATEWAY_BASE_URL } from '../src/gateway/client';
+import { STAGING_GATEWAY_BASE_URL } from '../src/gateway/client';
 import {
     GatewayCreateOrderOneOf,
     GatewayOrderInfo,
@@ -176,18 +176,18 @@ describe('Gateway Tests', () => {
             },
         };
 
-        nock(`${MAINNET_GATEWAY_BASE_URL}`)
-            .get('/api/get-quote')
+        nock(`${STAGING_GATEWAY_BASE_URL}`)
+            .get('/v1/get-quote')
             .query((q) => q.srcChain === 'bitcoin')
             .reply(200, mockOnrampQuote);
 
-        nock(`${MAINNET_GATEWAY_BASE_URL}`)
-            .get('/api/get-quote')
+        nock(`${STAGING_GATEWAY_BASE_URL}`)
+            .get('/v1/get-quote')
             .query((q) => q.dstChain === 'bitcoin')
             .reply(200, mockOfframpQuote);
 
-        nock(`${MAINNET_GATEWAY_BASE_URL}`)
-            .get('/api/get-quote')
+        nock(`${STAGING_GATEWAY_BASE_URL}`)
+            .get('/v1/get-quote')
             .query((q) => q.srcChain === 'bsc')
             .reply(200, mockLayerZeroQuote);
 
@@ -340,7 +340,7 @@ describe('Gateway Tests', () => {
             },
         ];
 
-        nock(`${MAINNET_GATEWAY_BASE_URL}`).get(`/api/get-orders/${zeroAddress}`).reply(200, mockOrders);
+        nock(`${STAGING_GATEWAY_BASE_URL}`).get(`/v1/get-orders/${zeroAddress}`).reply(200, mockOrders);
 
         const gatewaySDK = new GatewaySDK(bob.id);
         const orders = await gatewaySDK.getOrders(zeroAddress);
@@ -349,7 +349,7 @@ describe('Gateway Tests', () => {
     });
 
     it('should get routes', async () => {
-        nock(`${MAINNET_GATEWAY_BASE_URL}/api`)
+        nock(`${STAGING_GATEWAY_BASE_URL}/api`)
             .get('/get-routes')
             .reply(200, [
                 {
@@ -431,8 +431,8 @@ describe('Gateway Tests', () => {
         const mockPsbt = 'cHNidP8BAH0CAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAzwAAAAA=';
         const signedTx = '02000000010000000000000000000000000000000000000000000000000000000000000000';
 
-        nock(`${MAINNET_GATEWAY_BASE_URL}`)
-            .post('/api/create-order')
+        nock(`${STAGING_GATEWAY_BASE_URL}`)
+            .post('/v1/create-order')
             .reply(200, {
                 onramp: {
                     order_id: mockOrderId,
@@ -442,7 +442,7 @@ describe('Gateway Tests', () => {
                 },
             });
 
-        nock(`${MAINNET_GATEWAY_BASE_URL}`).patch('/api/register-tx').reply(200, JSON.stringify('tx-hash-123'));
+        nock(`${STAGING_GATEWAY_BASE_URL}`).patch('/v1/register-tx').reply(200, JSON.stringify('tx-hash-123'));
 
         const mockBtcSigner: BitcoinSigner = {
             signAllInputs: async (psbt: string) => {
@@ -607,8 +607,8 @@ describe('Gateway Tests', () => {
         const mockOrderId = 'order-123';
         const mockPsbt = 'cHNidP8BAH0CAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAzwAAAAA=';
 
-        nock(`${MAINNET_GATEWAY_BASE_URL}`)
-            .post('/api/create-order')
+        nock(`${STAGING_GATEWAY_BASE_URL}`)
+            .post('/v1/create-order')
             .reply(200, {
                 onramp: {
                     order_id: mockOrderId,
@@ -691,8 +691,8 @@ describe('Gateway Tests', () => {
             },
         };
 
-        nock(`${MAINNET_GATEWAY_BASE_URL}`)
-            .post('/api/create-order')
+        nock(`${STAGING_GATEWAY_BASE_URL}`)
+            .post('/v1/create-order')
             .reply(200, {
                 offramp: {
                     order_id: 'offramp-order-123',
@@ -704,7 +704,7 @@ describe('Gateway Tests', () => {
                 },
             });
 
-        nock(`${MAINNET_GATEWAY_BASE_URL}`).patch('/api/register-tx').reply(200, JSON.stringify('ok'));
+        nock(`${STAGING_GATEWAY_BASE_URL}`).patch('/v1/register-tx').reply(200, JSON.stringify('ok'));
 
         const mockWalletClient = {
             account: { address: '0xabcd1234abcd1234abcd1234abcd1234abcd1234' as Address },
@@ -780,8 +780,8 @@ describe('Gateway Tests', () => {
             },
         };
 
-        nock(`${MAINNET_GATEWAY_BASE_URL}`)
-            .post('/api/create-order')
+        nock(`${STAGING_GATEWAY_BASE_URL}`)
+            .post('/v1/create-order')
             .reply(200, {
                 offramp: {
                     order_id: 'offramp-order-456',
@@ -793,7 +793,7 @@ describe('Gateway Tests', () => {
                 },
             });
 
-        nock(`${MAINNET_GATEWAY_BASE_URL}`).patch('/api/register-tx').reply(200, JSON.stringify('ok'));
+        nock(`${STAGING_GATEWAY_BASE_URL}`).patch('/v1/register-tx').reply(200, JSON.stringify('ok'));
 
         const mockWalletClient = {
             account: { address: '0xabcd1234abcd1234abcd1234abcd1234abcd1234' as Address },
@@ -969,8 +969,8 @@ describe('Gateway Tests', () => {
         const mockOrderId = 'order-123';
         const mockPsbt = 'cHNidP8BAH0CAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAzwAAAAA=';
 
-        nock(`${MAINNET_GATEWAY_BASE_URL}`)
-            .post('/api/create-order')
+        nock(`${STAGING_GATEWAY_BASE_URL}`)
+            .post('/v1/create-order')
             .reply(200, {
                 onramp: {
                     order_id: mockOrderId,
