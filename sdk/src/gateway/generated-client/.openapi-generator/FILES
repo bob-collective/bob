@@ -1,7 +1,6 @@
-apis/DefaultApi.ts
+apis/V1Api.ts
 apis/index.ts
 docs/ChainTxInfo.md
-docs/DefaultApi.md
 docs/GatewayCreateOrder.md
 docs/GatewayCreateOrderOneOf.md
 docs/GatewayCreateOrderOneOf1.md
@@ -39,6 +38,7 @@ docs/RegisterTxSuccessOneOf.md
 docs/RegisterTxSuccessOneOfOnramp.md
 docs/RouteInfo.md
 docs/TxInfo.md
+docs/V1Api.md
 index.ts
 models/ChainTxInfo.ts
 models/GatewayCreateOrder.ts
