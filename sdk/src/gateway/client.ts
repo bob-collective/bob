@@ -1,94 +1,39 @@
-import { Network } from 'bitcoin-address-validation';
-import * as bitcoin from 'bitcoinjs-lib';
 import {
     Account,
     Address,
     erc20Abi,
-    Hash,
     Hex,
-    isAddress,
-    isAddressEqual,
     maxUint256,
-    parseEther,
     PublicClient,
-    toHex,
     Transport,
     Chain as ViemChain,
     WalletClient,
-    zeroAddress,
 } from 'viem';
-import { bob, bobSepolia } from 'viem/chains';
-import { EsploraClient } from '../esplora';
-import { bigIntToFloatingNumber } from '../utils';
-import { createBitcoinPsbt } from '../wallet';
-import { claimDelayAbi, offrampCallerV2, strategyCaller } from './abi';
-import { BaseClient } from './base-client';
-import StrategyClient from './strategy';
-import { getTokenDetails, getTokenAddress, getTokenSlots } from './tokens';
+import { bob } from 'viem/chains';
+import { strategyCaller } from './abi';
+import { BitcoinSigner, GetQuoteParams, StrategyParams } from './types';
 import {
-    BitcoinSigner,
-    BumpFeeParams,
-    EnrichedToken,
-    ExecuteQuoteParams,
-    GatewayCreateOrderRequestPayload,
-    GatewayCreateOrderResponse,
-    GatewayOrder,
-    GatewayOrderType,
-    GatewayStartOrder,
-    GatewayStrategy,
-    GatewayStrategyContract,
-    GatewayTokensInfo,
-    GetQuoteParams,
-    OfframpCreateOrderParams,
-    OfframpLiquidity,
-    OfframpOrder,
-    OfframpOrderStatus,
-    OfframpQuote,
-    OfframpRawOrder,
-    OnrampFeeBreakdownRaw,
-    OnrampLiquidity,
-    OnrampOrder,
-    OnrampOrderResponse,
-    OnrampOrderStatus,
-    OnrampQuote,
-    OrderDetailsRaw,
-    StrategyParams,
-    Token,
-    UnlockOrderParams,
-} from './types';
-import {
-    computeAllowanceSlot,
-    computeBalanceSlot,
-    convertOnrampFeeBreakdown,
-    convertOrderDetailsRawToOrderDetails,
-    convertOrderDetailsToRaw,
-    formatBtc,
-    getChainConfig,
-    safeBigInt,
-    safeNumber,
-    slugify,
-    stripHexPrefix,
-    toHexScriptPubKey,
-    viemClient,
-} from './utils';
+    Configuration,
+    V1Api,
+    GatewayOrderInfo,
+    GatewayQuote,
+    instanceOfGatewayCreateOrderOneOf,
+    instanceOfGatewayCreateOrderOneOf1,
+    instanceOfGatewayQuoteOneOf,
+    instanceOfGatewayQuoteOneOf1,
+    instanceOfGatewayQuoteOneOf2,
+    instanceOfRegisterTxOneOf,
+    RouteInfo,
+} from './generated-client';
+import { formatBtc } from './utils';
+
+export const WBTC_OFT_ADDRESS = '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c';
 
 /**
- * Base url for the mainnet Gateway API.
- * @default "https://gateway-api-mainnet.gobob.xyz"
+ * Base url for the staging Gateway API.
+ * @default "https://gateway-api-staging.gobob.xyz"
  */
-export const MAINNET_GATEWAY_BASE_URL = 'https://gateway-api-mainnet.gobob.xyz';
-
-/**
- * Base url for the Signet Gateway API.
- * @default "https://gateway-api-testnet.gobob.xyz"
- */
-export const SIGNET_GATEWAY_BASE_URL = 'https://gateway-api-signet.gobob.xyz';
-
-/**
- * Duration (in seconds) an offramp order remains valid before it can be finalized on-chain.
- * This is calculated from the moment the quote is fetched.
- */
-export const ORDER_DEADLINE_IN_SECONDS = 30 * 60; // 30 minutes
+export const STAGING_GATEWAY_BASE_URL = 'https://gateway-api-staging.gobob.xyz';
 
 interface EvmWalletClientParams {
     /**
@@ -124,17 +69,16 @@ export interface AllWalletClientParams extends EvmWalletClientParams {
  * const client = new GatewayApiClient(bob.id);
  * const quote = await client.getQuote({
  *   fromChain: 'bitcoin',
- *   toChain: bob.id,
+ *   toChain: 'bob',
  *   toToken: 'WBTC',
  *   amount: 100000000, // 1 BTC in satoshis
  *   toUserAddress: '0x...'
  * });
  * ```
  */
-export class GatewayApiClient extends BaseClient {
-    private chain: ViemChain;
-    private strategy: StrategyClient;
-    private isSignet: boolean = false;
+export class GatewayApiClient {
+    api: V1Api;
+    // private isSignet: boolean = false;
 
     /**
      * Creates a new Gateway API client instance.
@@ -153,66 +97,22 @@ export class GatewayApiClient extends BaseClient {
      * const mainnetClient = new GatewayApiClient(60808);
      *
      * // Testnet client with custom RPC
-     * const testnetClient = new GatewayApiClient(808813, {
-     *   rpcUrl: 'https://my-custom-rpc.com'
-     * });
+     * const testnetClient = new GatewayApiClient(808813);
      * ```
      */
     // TODO: remove constructor, set the config from `getQuote`
-    constructor(chainId: number, options?: { rpcUrl?: string }) {
-        super();
+    constructor(chainId: number) {
         switch (chainId) {
             case bob.id:
-                this.chain = bob;
-                this.strategy = new StrategyClient(bob, options?.rpcUrl);
-                break;
-            case bobSepolia.id:
-                this.chain = bobSepolia;
-                this.strategy = new StrategyClient(bobSepolia, options?.rpcUrl);
-                this.isSignet = true;
+                this.api = new V1Api(
+                    new Configuration({
+                        basePath: STAGING_GATEWAY_BASE_URL,
+                    })
+                );
                 break;
             default:
                 throw new Error('Invalid chain');
         }
-    }
-
-    private get baseUrl(): string {
-        return this.chain.id === bob.id ? MAINNET_GATEWAY_BASE_URL : SIGNET_GATEWAY_BASE_URL;
-    }
-
-    private get chainId(): number {
-        return this.chain.id;
-    }
-
-    public async mapRawOrderToOfframpOrder(order: OfframpRawOrder): Promise<OfframpOrder> {
-        const status = order.status as OfframpOrderStatus;
-        const offrampRegistryAddress = order.offrampRegistryAddress as Address;
-
-        const canOrderBeUnlocked = await this.canOrderBeUnlocked(
-            status,
-            Number(order.orderTimestamp),
-            offrampRegistryAddress
-        );
-
-        return {
-            orderId: safeBigInt(order.orderId),
-            token: order.token as Address,
-            satAmountLocked: safeBigInt(order.satAmountLocked),
-            satSolverFeeMax: safeBigInt(order.satFeesMax),
-            status,
-            orderTimestamp: safeNumber(order.orderTimestamp),
-            submitOrderEvmTx: order.submitOrderEvmTx,
-            refundedEvmTx: order.refundedEvmTx,
-            btcTx: order.btcTx,
-            shouldFeesBeBumped: order.shouldFeesBeBumped,
-            canOrderBeUnlocked,
-            offrampRegistryAddress,
-            satAffiliateFee: safeBigInt(order.satAffiliateFee),
-            affiliateFeeRecipient: order.affiliateFeeRecipient as Address,
-            offrampRegistryVersion: safeNumber(order.offrampRegistryVersion),
-            bumpFeeAmountInSats: order.bumpFeeAmountInSats !== null ? safeBigInt(order.bumpFeeAmountInSats) : null,
-            userAddress: order.userAddress as Address,
-        };
     }
 
     /**
@@ -227,679 +127,24 @@ export class GatewayApiClient extends BaseClient {
      * @returns Promise resolving to quote details with either onrampQuote or offrampQuote populated
      * @throws {Error} If neither onramp nor offramp conditions are met
      */
-    async getQuote(params: GetQuoteParams): Promise<ExecuteQuoteParams> {
-        // NOTE: fromChain must be specified if you do onramp
-        if (params.fromChain?.toString().toLowerCase() === 'bitcoin') {
-            // NOTE: toChain validation is performed inside `getOnrampQuote` method
-            const data = await this.getOnrampQuote(params);
-            return {
-                type: GatewayOrderType.Onramp,
-                params,
-                finalOutputSats: data.outputSatoshis,
-                finalFeeSats: data.feeBreakdown.overallFeeSats + data.feeBreakdown.affiliateFeeSats, // onramp fee + affiliate fee
-                data,
-            };
-        } else if (params.toChain.toString().toLowerCase() === 'bitcoin') {
-            const data = await this.getOfframpQuote(params);
-            let createOrderGasCost = 0n;
-            // Even if we fail to estimate the create order gas cost, we still return a quote to the user.
-            try {
-                createOrderGasCost = await this.getOfframpCreateOrderGasCost(params, data);
-            } catch (err) {
-                console.warn('Failed to get create order gas cost, defaulting to 0', err);
-            }
-
-            return {
-                type: GatewayOrderType.Offramp,
-                params,
-                finalOutputSats: data.amountReceiveInSat,
-                finalFeeSats: data.feeBreakdown.overallFeeSats + data.feeBreakdown.affiliateFeeSats, // offramp fee + affiliate fee
-                data: {
-                    ...data,
-                    feeBreakdown: {
-                        ...data.feeBreakdown,
-                        gasFee: createOrderGasCost,
-                    },
-                },
-            };
-        }
-
-        throw new Error('Invalid quote arguments');
-    }
-
-    /**
-     * Estimates the gas cost for creating an offramp order on-chain.
-     *
-     * This uses a state override to simulate max token allowance and balance for the user,
-     * ensuring the gas estimate accounts for sufficient funds and approvals.
-     *
-     * @param params - Quote parameters containing user address and chain info
-     * @param offrampQuote - Offramp quote containing token and amount info
-     * @returns Promise resolving to the estimated gas cost in wei (as bigint)
-     */
-    async getOfframpCreateOrderGasCost(params: GetQuoteParams, offrampQuote: OfframpQuote): Promise<bigint> {
-        const chain = getChainConfig(
-            // FIXME: there should be a better way to access original toChain/fromChain param
-            (params as GetQuoteParams & { l0ChainId?: number | null }).l0ChainId ?? params.fromChain
-        );
-        const publicClient = viemClient(chain);
-
-        if (!params.toUserAddress) {
-            params.toUserAddress = this.isSignet
-                ? 'tb1q0c2qnya702wrna5hqjp83jqqhx8zh5p9au2rqt'
-                : '14EvE4gm1yiYSzN8dYBtgYDppsaa1VVfud';
-        }
-
-        if (
-            !params.fromUserAddress ||
-            (isAddress(params.fromUserAddress) && isAddressEqual(params.fromUserAddress, zeroAddress))
-        ) {
-            params.fromUserAddress = '0x1111111111111111111111111111111111111111';
-        }
-
-        const [offrampOrder, offrampRegistryAddress, feeValues, gasPrice] = await Promise.all([
-            this.createOfframpOrder(offrampQuote, params),
-            this.fetchOfframpRegistryAddress(),
-            publicClient.estimateFeesPerGas(),
-            publicClient.getGasPrice(),
-        ]);
-
-        const fee = feeValues.maxFeePerGas ?? gasPrice;
-
-        const slots = getTokenSlots(offrampOrder.quote.token as Address);
-        const user = params.fromUserAddress;
-
-        const allowanceSlot = computeAllowanceSlot(
-            user as Address,
-            offrampRegistryAddress as Address,
-            slots.allowanceSlot
-        );
-        const balanceSlot = computeBalanceSlot(user as Address, slots.balanceSlot);
-
-        // Ensure the owner inside offrampArgs is set
-        const args: readonly [(typeof offrampOrder.offrampArgs)[0]] = [
+    async getQuote(params: GetQuoteParams, initOverrides?: RequestInit): Promise<GatewayQuote> {
+        return this.api.getQuote(
             {
-                ...offrampOrder.offrampArgs[0],
-                owner: user as Address,
+                srcChain: params.fromChain.toString(), // TODO: don't use number
+                dstChain: params.toChain.toString(), // TODO: don't use number
+                sender: params.fromUserAddress?.toString() || '',
+                recipient: params.toUserAddress.toString(),
+                srcToken: params.fromToken.toString(),
+                dstToken: params.toToken.toString(),
+                amount: params.amount.toString(),
+                slippage: params.maxSlippage?.toString() || '0',
+                gasRefill: params.gasRefill?.toString(),
+                affiliateId: params.affiliateId,
+                strategyTarget: params.strategyAddress,
+                strategyMessage: params.strategyMessage,
             },
-        ];
-
-        const createOrderGasEstimate = await publicClient.estimateContractGas({
-            address: offrampRegistryAddress,
-            abi: offrampOrder.offrampABI,
-            functionName: offrampOrder.offrampFunctionName,
-            args,
-            account: user as Address,
-            stateOverride: [
-                // ERC20 token override
-                {
-                    address: offrampOrder.quote.token as Address,
-                    stateDiff: [
-                        {
-                            slot: allowanceSlot,
-                            value: toHex(maxUint256),
-                        },
-                        {
-                            slot: balanceSlot,
-                            value: toHex(maxUint256),
-                        },
-                    ],
-                },
-                // Ether balance override
-                {
-                    address: user as Address,
-                    balance: parseEther('1'), // set 1 ETH for the user
-                },
-            ],
-        });
-
-        return createOrderGasEstimate * fee;
-    }
-
-    /**
-     * Get an onramp quote for converting Bitcoin to wrapped BTC on BOB.
-     *
-     * @param params Quote parameters - see {@link GetQuoteParams}
-     * @returns Promise resolving to onramp quote with token info
-     * @throws {Error} If invalid output chain or parameters
-     */
-    async getOnrampQuote(params: GetQuoteParams): Promise<OnrampQuote & GatewayTokensInfo> {
-        const isMainnet =
-            params.toChain === bob.id ||
-            (typeof params.toChain === 'string' && params.toChain.toLowerCase() === bob.name.toLowerCase());
-        const isTestnet =
-            params.toChain === bobSepolia.id ||
-            (typeof params.toChain === 'string' && params.toChain.toLowerCase() === bobSepolia.name.toLowerCase());
-
-        if (
-            (!isMainnet && !isTestnet) ||
-            (isMainnet && this.chain.id !== bob.id) ||
-            (isTestnet && this.chain.id !== bobSepolia.id)
-        ) {
-            throw new Error('Invalid output chain');
-        }
-
-        const outputTokenAddress = getTokenAddress(this.chainId, params.toToken);
-        const strategyAddress = params.strategyAddress?.startsWith('0x') ? params.strategyAddress : undefined;
-
-        const url = new URL(`${this.baseUrl}/v4/quote/${outputTokenAddress}`);
-        url.searchParams.append('userAddress', `${params.toUserAddress}`);
-        if (strategyAddress) url.searchParams.append('strategy', strategyAddress);
-        if (params.amount) url.searchParams.append('satoshis', `${params.amount}`);
-        if (params.gasRefill) url.searchParams.append('ethAmountToReceive', `${params.gasRefill}`);
-        if (params.message) url.searchParams.append('strategyExtraData', `${params.message}`);
-
-        if (params.affiliateFeeRecipient && params.affiliateFeeSats) {
-            url.searchParams.append('affiliateFee', params.affiliateFeeSats.toString());
-            url.searchParams.append('affiliateRecipient', params.affiliateFeeRecipient.toString());
-        }
-
-        const response = await this.safeFetch(
-            url,
-            {
-                headers: {
-                    'Content-Type': 'application/json',
-                    Accept: 'application/json',
-                },
-            },
-            'Failed to get onramp liquidity'
+            initOverrides
         );
-
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => null);
-            const errorMessage = errorData?.message || 'Failed to get onramp liquidity';
-            throw new Error(errorMessage);
-        }
-
-        const jsonResponse: Omit<OnrampQuote, 'orderDetails' | 'feeBreakdown'> & {
-            orderDetails: OrderDetailsRaw;
-            feeBreakdown: OnrampFeeBreakdownRaw;
-            errorData?: { message: string };
-        } = await response.json();
-
-        if (!jsonResponse.orderDetails) {
-            const errorData = jsonResponse.errorData;
-            const apiMessage = errorData?.message;
-            const errorMessage = apiMessage || 'Failed to get onramp quote';
-            throw new Error(errorMessage);
-        }
-
-        const quote: OnrampQuote = {
-            ...jsonResponse,
-            orderDetails: convertOrderDetailsRawToOrderDetails(jsonResponse.orderDetails),
-            feeBreakdown: convertOnrampFeeBreakdown(jsonResponse.feeBreakdown),
-        };
-
-        return {
-            ...quote,
-            outputSatoshis: quote.satoshis - quote.feeBreakdown.overallFeeSats - quote.feeBreakdown.affiliateFeeSats,
-            baseToken: getTokenDetails(this.chainId, quote.baseTokenAddress),
-            outputToken: quote.strategyAddress ? getTokenDetails(this.chainId, outputTokenAddress) : undefined,
-        };
-    }
-
-    /**
-     * Get an offramp quote for converting wrapped BTC on BOB to Bitcoin.
-     *
-     * @param params Quote parameters - see {@link GetQuoteParams}
-     * @returns Promise resolving to offramp quote details
-     * @throws {Error} If fromToken is not specified
-     */
-    async getOfframpQuote(params: GetQuoteParams) {
-        if (!params.fromToken) {
-            throw new Error('`fromToken` must be specified for offramp');
-        }
-
-        const tokenAddress = getTokenAddress(this.chainId, params.fromToken);
-        const quote = await this.fetchOfframpQuote(
-            tokenAddress,
-            BigInt(params.amount || 0),
-            params.fromUserAddress as Address,
-            params.toUserAddress,
-            params.affiliateFeeRecipient,
-            params.affiliateFeeSats
-        );
-
-        return quote;
-    }
-
-    /**
-     * Fetches the offramp registry contract address.
-     *
-     * @returns Promise resolving to the registry contract address
-     */
-    async fetchOfframpRegistryAddress(): Promise<Address> {
-        const response = await this.safeFetch(
-            `${this.baseUrl}/offramp-registry-address`,
-            undefined,
-            'Failed to fetch offramp registry contract address'
-        );
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => null);
-            const apiMessage = errorData?.message;
-            const errorMessage = apiMessage || 'Failed to fetch offramp registry contract';
-            throw new Error(errorMessage);
-        }
-        return response.text() as Promise<Address>;
-    }
-
-    /**
-     * Fetches available offramp liquidity.
-     *
-     * @param token Token symbol or address
-     * @param userAddress (Optional) User address to query liquidity for. Defaults to `zeroAddress` when not provided
-     * @returns Promise resolving to liquidity information
-     * @throws {Error} If API request fails
-     */
-    async fetchOfframpLiquidity(token: string, userAddress?: Address): Promise<OfframpLiquidity> {
-        const tokenAddress = getTokenAddress(this.chainId, token);
-        const finalUserAddress = userAddress ?? zeroAddress;
-        const queryParams = new URLSearchParams({
-            tokenAddress: tokenAddress,
-            userAddress: finalUserAddress,
-        });
-
-        const requestUrl = `${this.baseUrl}/v2/offramp-liquidity?${queryParams}`;
-        const response = await this.safeFetch(requestUrl, undefined, 'Failed to get offramp v2 liquidity');
-
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => null);
-            const errorMessage = errorData?.message || 'Failed to get offramp v2 liquidity';
-            throw new Error(errorMessage);
-        }
-
-        const rawLiquidity = await response.json();
-
-        return {
-            tokenAddress: rawLiquidity.tokenAddress as Address,
-            maxOrderAmountInSats: BigInt(rawLiquidity.maxOrderAmountInSats),
-            totalOfframpLiquidityInSats: BigInt(rawLiquidity.totalOfframpLiquidityInSats),
-            minimumOfframpQuote: {
-                minimumAmountInSats: BigInt(rawLiquidity.minimumOfframpQuote.minimumAmountInSats),
-                calculatedForFeeRate: BigInt(rawLiquidity.minimumOfframpQuote.calculatedForFeeRate),
-            },
-        };
-    }
-
-    /**
-     * Fetches available onramp liquidity.
-     *
-     * @param token Token symbol or address
-     * @param userAddress (Optional) User address to query liquidity for. Defaults to `zeroAddress` when not provided
-     * @param gasRefill The amount of gas refill user wants in wei
-     * @returns Promise resolving to liquidity information
-     * @throws {Error} If API request fails
-     */
-    async fetchOnrampLiquidity(token: string, userAddress?: Address, gasRefill?: bigint): Promise<OnrampLiquidity> {
-        const tokenAddress = getTokenAddress(this.chainId, token.toLowerCase());
-        const finalUserAddress = userAddress ?? zeroAddress;
-        const queryParams = new URLSearchParams({
-            tokenAddress: tokenAddress,
-            userAddress: finalUserAddress,
-        });
-
-        if (gasRefill) {
-            queryParams.append('gasRefill', gasRefill.toString());
-        }
-
-        const requestUrl = `${this.baseUrl}/onramp-liquidity?${queryParams.toString()}`;
-        const response = await this.safeFetch(requestUrl, undefined, 'Failed to get onramp liquidity');
-
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => null);
-            const errorMessage = errorData?.message || 'Failed to get onramp liquidity';
-            throw new Error(errorMessage);
-        }
-
-        const rawLiquidity = await response.json();
-
-        return {
-            tokenAddress: rawLiquidity.tokenAddress as Address,
-            maxOrderAmountInSats: BigInt(rawLiquidity.maxOrderAmountInSats),
-            totalOnrampLiquidityInSats: BigInt(rawLiquidity.totalOnrampLiquidityInSats),
-            minSatsAmount: BigInt(rawLiquidity.minSatsAmount),
-        };
-    }
-
-    /**
-     * Fetches an offramp quote for converting tokens to Bitcoin.
-     *
-     * @param token ERC20 token address
-     * @param amountInToken Amount in token's smallest unit
-     * @param userAddress User EVM Address
-     * @param toUserAddress User BTC Address
-     * @param affiliateFeeRecipient Optional EVM address that will receive the affiliate fee
-     * @param affiliateFeeSats Optional affiliate fee amount in satoshis
-     * @returns Promise resolving to offramp quote with fee breakdown
-     * @throws {Error} If API request fails
-     */
-    async fetchOfframpQuote(
-        token: Address,
-        amountInToken: bigint,
-        userAddress: Address,
-        toUserAddress?: string,
-        affiliateFeeRecipient?: Address,
-        affiliateFeeSats?: bigint
-    ): Promise<OfframpQuote> {
-        const queryParams = new URLSearchParams({
-            amountInWrappedToken: amountInToken.toString(),
-            token,
-            userAddress: userAddress,
-        });
-
-        if (toUserAddress) {
-            queryParams.append('userBtcAddress', toUserAddress);
-        }
-
-        if (affiliateFeeRecipient && affiliateFeeSats) {
-            queryParams.append('affiliateFee', affiliateFeeSats.toString());
-            queryParams.append('affiliateRecipient', affiliateFeeRecipient.toString());
-        }
-
-        const response = await this.safeFetch(
-            `${this.baseUrl}/offramp-quote?${queryParams}`,
-            undefined,
-            'Failed to get offramp quote'
-        );
-
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => null);
-            const apiMessage = errorData?.message;
-            const errorMessage = apiMessage || `Failed to get offramp quote`;
-            throw new Error(`${errorMessage}`);
-        }
-
-        const rawQuote: OfframpQuote = await response.json();
-        const currentUnixTimeInSec = Math.floor(Date.now() / 1000);
-        const deadline = currentUnixTimeInSec + ORDER_DEADLINE_IN_SECONDS;
-        const normalizedAffiliateFeeRecipient = affiliateFeeRecipient ?? zeroAddress;
-
-        return {
-            amountLockInSat: rawQuote.amountLockInSat,
-            deadline: deadline,
-            token: token as Address,
-            feeBreakdown: {
-                overallFeeSats: rawQuote.feeBreakdown.overallFeeSats,
-                inclusionFeeSats: rawQuote.feeBreakdown.inclusionFeeSats,
-                protocolFeeSats: rawQuote.feeBreakdown.protocolFeeSats,
-                affiliateFeeSats: rawQuote.feeBreakdown.affiliateFeeSats,
-                fastestFeeRate: rawQuote.feeBreakdown.fastestFeeRate,
-            },
-            amountReceiveInSat:
-                rawQuote.amountLockInSat -
-                rawQuote.feeBreakdown.overallFeeSats -
-                rawQuote.feeBreakdown.affiliateFeeSats,
-            affiliateFeeRecipient: normalizedAffiliateFeeRecipient as Address,
-        };
-    }
-
-    /**
-     * Prepares parameters for creating an offramp order on-chain.
-     *
-     * @param quote Offramp quote from {@link fetchOfframpQuote}
-     * @param params Quote parameters - see {@link GetQuoteParams}
-     * @returns Contract call parameters for creating the order
-     * @throws {Error} If Bitcoin address type is unsupported
-     */
-    async createOfframpOrder(quote: OfframpQuote, params: GetQuoteParams): Promise<OfframpCreateOrderParams> {
-        // get btc script pub key
-        let bitcoinNetwork = bitcoin.networks.regtest;
-        if (this.chain.id == bob.id) {
-            bitcoinNetwork = bitcoin.networks.bitcoin;
-        } else if (this.chain.id == bobSepolia.id) {
-            bitcoinNetwork = bitcoin.networks.testnet;
-        }
-
-        const receiverAddress = toHexScriptPubKey(params.toUserAddress, bitcoinNetwork);
-
-        return {
-            quote,
-            offrampABI: offrampCallerV2,
-            feeBreakdown: quote.feeBreakdown,
-            offrampFunctionName: 'createOrderV2' as const,
-            offrampArgs: [
-                {
-                    satAmountToLock: BigInt(quote.amountLockInSat),
-                    satSolverFeeMax: BigInt(quote.feeBreakdown.overallFeeSats),
-                    satAffiliateFee: BigInt(quote.feeBreakdown.affiliateFeeSats),
-                    affiliateFeeRecipient: quote.affiliateFeeRecipient,
-                    creationDeadline: BigInt(quote.deadline),
-                    outputScript: receiverAddress as Hex,
-                    token: quote.token,
-                    owner: params.fromUserAddress as Address,
-                },
-            ],
-        };
-    }
-
-    /**
-     * Bumps fees for an active offramp order that requires higher fees.
-     *
-     * @param params Parameters including orderId and wallet clients - see {@link BumpFeeParams} & {@link EvmWalletClientParams}
-     * @returns Promise resolving to transaction hash
-     * @throws {Error} If order is not active or fees don't need bumping
-     */
-    async bumpFeeForOfframpOrder({
-        orderId,
-        offrampRegistryAddress,
-        walletClient,
-        publicClient,
-    }: BumpFeeParams & EvmWalletClientParams): Promise<Hash> {
-        // check order status via viem should be Active/Accepted
-        const orderDetails = await this.fetchOfframpOrder(orderId, offrampRegistryAddress);
-
-        if (orderDetails.status !== 'Active') {
-            throw new Error(`Offramp order needs to be Active for bumping fees`);
-        }
-
-        // Ensure bump fee is required
-        if (orderDetails.bumpFeeAmountInSats === null) {
-            throw new Error(`No need to bump fees, the current fees are sufficient`);
-        }
-
-        const { request } = await publicClient.simulateContract({
-            address: offrampRegistryAddress,
-            abi: offrampCallerV2,
-            functionName: 'bumpFeeOfExistingOrder',
-            args: [orderId, BigInt(orderDetails.bumpFeeAmountInSats)],
-            account: walletClient.account,
-        });
-
-        const transactionHash = await walletClient.writeContract(request);
-        await publicClient.waitForTransactionReceipt({ hash: transactionHash });
-
-        return transactionHash;
-    }
-
-    /**
-     * Unlocks funds from an unprocessed offramp order after the claim delay.
-     *
-     * @param params Parameters including orderId, receiver, and wallet clients - see {@link UnlockOrderParams} & {@link EvmWalletClientParams}
-     * @returns Promise resolving to transaction hash
-     * @throws {Error} If order cannot be unlocked yet or is already processed
-     */
-    async unlockOfframpOrder({
-        orderId,
-        receiver,
-        offrampRegistryAddress,
-        walletClient,
-        publicClient,
-    }: UnlockOrderParams & EvmWalletClientParams): Promise<Hash> {
-        // check order status via viem should be Active/Accepted
-        const orderDetails: OfframpOrder = await this.fetchOfframpOrder(orderId, offrampRegistryAddress); // Use API to get status
-
-        // Processed and refunded order can't be unlocked
-        if (orderDetails.status == 'Processed' || orderDetails.status == 'Refunded') {
-            throw new Error(`Offramp order already processed / refunded`);
-        }
-
-        // Active order can be unlocked and Accepted order can be unlocked after delay
-        if (
-            !(await this.canOrderBeUnlocked(orderDetails.status, orderDetails.orderTimestamp, offrampRegistryAddress))
-        ) {
-            throw new Error(`Offramp order is still within the 7-day claim delay and cannot be unlocked yet.`);
-        }
-
-        const { request } = await publicClient.simulateContract({
-            address: offrampRegistryAddress,
-            abi: offrampCallerV2,
-            functionName: 'refundOrder',
-            args: [orderId, receiver],
-            account: walletClient.account,
-        });
-
-        const transactionHash = await walletClient.writeContract(request);
-        await publicClient.waitForTransactionReceipt({ hash: transactionHash });
-
-        return transactionHash;
-    }
-
-    /**
-     * Retrieves all offramp orders for a specific user address.
-     *
-     * @param userAddress The user's EVM address
-     * @returns Promise resolving to array of offramp orders with status info
-     */
-    async getOfframpOrders(userAddress: Address): Promise<OfframpOrder[]> {
-        const response = await this.safeFetch(
-            `${this.baseUrl}/offramp-orders/${userAddress}`,
-            undefined,
-            'Failed to fetch offramp orders'
-        );
-        const rawOrders: OfframpRawOrder[] = await response.json();
-
-        return Promise.all(rawOrders.map((order) => this.mapRawOrderToOfframpOrder(order)));
-    }
-
-    async canOrderBeUnlocked(
-        status: OfframpOrderStatus,
-        orderTimestamp: number,
-        offrampRegistryAddress: Address
-    ): Promise<boolean> {
-        if (status === 'Active' && Math.floor(Date.now() / 1000) - orderTimestamp >= 60) {
-            return true;
-        }
-        if (status !== 'Accepted') {
-            return false;
-        }
-        // check if Accepted order has passed claim delay
-        const nowInSec = Math.floor(Date.now() / 1000);
-        const publicClient = viemClient(this.chain);
-        const claimDelay = await publicClient.readContract({
-            address: offrampRegistryAddress,
-            abi: claimDelayAbi,
-            functionName: 'CLAIM_DELAY',
-        });
-        return orderTimestamp + Number(claimDelay) <= nowInSec;
-    }
-
-    /**
-     * Fetches on-chain details for a specific offramp order.
-     *
-     * @param orderId The order ID
-     * @param registryAddress The registry Address the order ID belongs to
-     * @returns Promise resolving to on-chain order details
-     */
-    private async fetchOfframpOrder(orderId: bigint, registryAddress: Address): Promise<OfframpOrder> {
-        const queryParams = new URLSearchParams({
-            registryAddress: registryAddress.toString(),
-            orderId: orderId.toString(),
-        });
-
-        const response = await this.safeFetch(
-            `${this.baseUrl}/offramp-order?${queryParams}`,
-            undefined,
-            'Failed to fetch offramp order'
-        );
-
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => null);
-            const apiMessage = errorData?.message;
-            const errorMessage =
-                apiMessage || `Failed to get offramp order (status: ${response.status} ${response.statusText})`;
-            throw new Error(`${errorMessage}`);
-        }
-
-        const offrampRawOrder: OfframpRawOrder = await response.json();
-        return await this.mapRawOrderToOfframpOrder(offrampRawOrder);
-    }
-
-    /**
-     * Starts an onramp order to reserve liquidity (step 1 of 2).
-     *
-     * Creates a Bitcoin PSBT for the user to sign and broadcast.
-     * Must be followed by {@link finalizeOnrampOrder} to complete the process.
-     *
-     * @param gatewayQuote Quote from {@link getOnrampQuote}
-     * @param params Quote parameters - see {@link GetQuoteParams}
-     * @returns Promise resolving to order details with PSBT
-     * @throws {Error} If user address is invalid or PSBT creation fails
-     */
-    async startOnrampOrder(gatewayQuote: OnrampQuote, params: GetQuoteParams): Promise<GatewayStartOrder> {
-        if (!params.toUserAddress || !isAddress(params.toUserAddress)) {
-            throw new Error('Invalid user address');
-        }
-
-        const request: GatewayCreateOrderRequestPayload = {
-            gatewayAddress: gatewayQuote.gatewayAddress,
-            strategyAddress: gatewayQuote.strategyAddress,
-            userAddress: params.toUserAddress,
-            gatewayExtraData: undefined,
-            strategyExtraData: params.message,
-            satoshis: gatewayQuote.satoshis,
-            campaignId: params.campaignId,
-            orderDetails: convertOrderDetailsToRaw(gatewayQuote.orderDetails),
-        };
-
-        const response = await this.safeFetch(
-            `${this.baseUrl}/v4/order`,
-            {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Accept: 'application/json',
-                },
-                body: JSON.stringify(request),
-            },
-            'Failed to create order'
-        );
-
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => null);
-            const apiMessage = errorData?.message;
-            const errorMessage = apiMessage || 'Failed to create order';
-            throw new Error(errorMessage);
-        }
-
-        const data: GatewayCreateOrderResponse = await response.json();
-
-        let psbtBase64: string = '';
-        if (
-            params.fromUserAddress &&
-            typeof params.fromChain === 'string' &&
-            params.fromChain.toLowerCase() === 'bitcoin'
-        ) {
-            psbtBase64 = await createBitcoinPsbt(
-                params.fromUserAddress,
-                gatewayQuote.bitcoinAddress,
-                gatewayQuote.satoshis,
-                params.fromUserPublicKey,
-                data.opReturnHash,
-                params.feeRate,
-                gatewayQuote.txProofDifficultyFactor,
-                this.isSignet
-            );
-
-            return {
-                uuid: data.uuid,
-                opReturnHash: data.opReturnHash,
-                bitcoinAddress: gatewayQuote.bitcoinAddress,
-                satoshis: gatewayQuote.satoshis,
-                psbtBase64,
-            };
-        }
-
-        throw new Error('Failed to create bitcoin psbt due to an unexpected error.');
     }
 
     /**
@@ -908,102 +153,146 @@ export class GatewayApiClient extends BaseClient {
      * For onramp: creates order, signs Bitcoin transaction, and finalizes
      * For offramp: approves tokens if needed and creates on-chain order
      *
-     * @param params Parameters including quote and wallet clients - see {@link ExecuteQuoteParams} & {@link AllWalletClientParams}
+     * @param params Parameters including quote and wallet clients - see {@link GatewayQuote} & {@link AllWalletClientParams}
      * @returns Promise resolving to transaction hash
      * @throws {Error} If required signers are missing or transaction fails
      */
-    async executeQuote({
-        quote,
-        walletClient,
-        publicClient,
-        btcSigner,
-    }: { quote: ExecuteQuoteParams } & AllWalletClientParams): Promise<string> {
-        if (quote.type === 'onramp') {
-            const { params, data } = quote;
-
-            const esploraClient = new EsploraClient(this.chain.id === bob.id ? Network.mainnet : Network.signet);
-
-            // TODO: refactor to construct the PSBT instead since it may fund from other inputs
-            const availableBtcBalance = await esploraClient.getBalance(params.fromUserAddress!);
-            if (availableBtcBalance.total < BigInt(data.satoshis)) {
-                throw new Error(
-                    `Insufficient BTC balance in address ${data.bitcoinAddress}. Required: ${formatBtc(BigInt(data.satoshis))}, Got: ${formatBtc(BigInt(availableBtcBalance.total))}`
-                );
-            }
-
-            const { uuid, psbtBase64, bitcoinAddress, satoshis, opReturnHash } = await this.startOnrampOrder(
-                data,
-                params
-            );
-
+    async executeQuote(
+        { quote, walletClient, publicClient, btcSigner }: { quote: GatewayQuote } & AllWalletClientParams,
+        initOverrides?: RequestInit
+    ): Promise<string> {
+        if (instanceOfGatewayQuoteOneOf(quote)) {
             if (!btcSigner) {
                 throw new Error(`btcSigner is required for onramp order`);
             }
 
-            let bitcoinTxHex: string;
+            const order = await this.api.createOrder({ gatewayQuote: { onramp: quote.onramp } });
 
+            if (!instanceOfGatewayCreateOrderOneOf(order)) {
+                throw new Error('Invalid order type returned from API');
+            }
+
+            let bitcoinTxHex: string;
             if (btcSigner.sendBitcoin) {
                 bitcoinTxHex = await btcSigner.sendBitcoin({
-                    from: params.fromUserAddress!,
-                    to: bitcoinAddress,
-                    value: formatBtc(BigInt(satoshis)),
-                    opReturn: opReturnHash,
-                    isSignet: this.isSignet,
+                    from: quote.onramp.sender,
+                    to: order.onramp.address,
+                    value: formatBtc(BigInt(quote.onramp.inputAmount.amount)),
+                    opReturn: order.onramp.opReturnData || undefined,
+                    // isSignet: this.isSignet,
                 });
             } else if (btcSigner.signAllInputs) {
-                bitcoinTxHex = await btcSigner.signAllInputs(psbtBase64!);
+                bitcoinTxHex = await btcSigner.signAllInputs(order.onramp.psbtHex);
             } else {
                 throw new Error('btcSigner must implement either sendBitcoin or signAllInputs method');
             }
 
+            // bitcoinTxOrId = stripHexPrefix(bitcoinTxOrId);
             if (!bitcoinTxHex) throw new Error('Failed to get signed transaction');
 
-            const txId = await this.finalizeOnrampOrder(uuid, bitcoinTxHex);
+            const tx = await this.api.registerTx(
+                {
+                    registerTx: {
+                        onramp: {
+                            orderId: order.onramp.orderId,
+                            bitcoinTxHex: bitcoinTxHex,
+                        },
+                    },
+                },
+                initOverrides
+            );
 
-            return txId;
-        } else if (quote.type === 'offramp') {
-            const { params, data } = quote;
+            if (typeof tx === 'string') {
+                return tx;
+            }
 
-            const tokenAddress = getTokenAddress(this.chainId, params.fromToken);
-            const [offrampOrder, offrampRegistryAddress] = await Promise.all([
-                this.createOfframpOrder(data, params),
-                this.fetchOfframpRegistryAddress(),
-            ]);
+            if (!instanceOfRegisterTxOneOf(tx)) {
+                throw new Error('Invalid registerTx response type');
+            }
 
-            const accountAddress = walletClient.account?.address ?? (params.fromUserAddress as Address);
+            return tx.onramp.txid;
+        } else if (instanceOfGatewayQuoteOneOf1(quote)) {
+            if (!walletClient.account) {
+                throw new Error(`walletClient is required for offramp order`);
+            }
+            // const accountAddress = walletClient.account?.address ?? (params.fromUserAddress as Address);
+            const accountAddress = walletClient.account.address;
+            const tokenAddress = WBTC_OFT_ADDRESS; // TODO: get from API
+
+            const order = await this.api.createOrder({ gatewayQuote: { offramp: quote.offramp } });
+
+            if (!instanceOfGatewayCreateOrderOneOf1(order)) {
+                throw new Error('Invalid order type returned from API');
+            }
+
+            const spenderAddress = order.offramp.tx.to as Address;
+
+            // if (
+            //     getAddress(quote.data.amountInMax.address) ===
+            //     getAddress('0xdAC17F958D2ee523a2206206994597C13D831ec7')
+            // ) {
+            //     // USDT has a non-standard approve function that doesn't return bool
+            //     // First reset allowance to 0, then set to desired amount
+            //     const usdtAbi = [
+            //         {
+            //             constant: false,
+            //             inputs: [
+            //                 { name: '_spender', type: 'address' },
+            //                 { name: '_value', type: 'uint256' },
+            //             ],
+            //             name: 'approve',
+            //             outputs: [],
+            //             type: 'function',
+            //         },
+            //     ] as const;
+
+            //     // Reset to 0 first
+            //     const { request: resetRequest } = await publicClient.simulateContract({
+            //         account: walletClient.account,
+            //         address: quote.data.amountInMax.address,
+            //         abi: usdtAbi,
+            //         functionName: 'approve',
+            //         args: [quote.data.tx.to, 0n],
+            //     });
+            //     const resetTxHash = await walletClient.writeContract(resetRequest);
+            //     await publicClient.waitForTransactionReceipt({ hash: resetTxHash });
+
+            //     // Set to max
+            //     const { request } = await publicClient.simulateContract({
+            //         account: walletClient.account,
+            //         address: quote.data.amountInMax.address,
+            //         abi: usdtAbi,
+            //         functionName: 'approve',
+            //         args: [quote.data.tx.to, maxUint256],
+            //     });
+
+            //     const txHash = await walletClient.writeContract(request);
+            //     await publicClient.waitForTransactionReceipt({ hash: txHash });
+            // }
 
             // Check ETH balance and estimate gas for both potential transactions
-            const [ethBalance, feeValues, gasPrice, [allowance, decimals]] = await Promise.all([
-                publicClient.getBalance({
-                    address: accountAddress,
-                }),
-                publicClient.estimateFeesPerGas(),
-                publicClient.getGasPrice(),
-                publicClient.multicall({
-                    allowFailure: false,
-                    contracts: [
-                        {
-                            address: tokenAddress,
-                            abi: erc20Abi,
-                            functionName: 'allowance',
-                            args: [params.fromUserAddress as Address, offrampRegistryAddress],
-                        },
-                        {
-                            address: tokenAddress,
-                            abi: erc20Abi,
-                            functionName: 'decimals',
-                        },
-                    ],
-                }),
-            ]);
-
-            const fee = feeValues.maxFeePerGas ?? gasPrice;
+            const [allowance, decimals] = await publicClient.multicall({
+                allowFailure: false,
+                contracts: [
+                    {
+                        address: tokenAddress,
+                        abi: erc20Abi,
+                        functionName: 'allowance',
+                        args: [accountAddress, spenderAddress],
+                    },
+                    {
+                        address: tokenAddress,
+                        abi: erc20Abi,
+                        functionName: 'decimals',
+                    },
+                ],
+            });
 
             if (decimals < 8) {
                 throw new Error('Tokens with less than 8 decimals are not supported');
             }
             const multiplier = 10n ** BigInt(decimals - 8);
-            const requiredAmount = BigInt(data.amountLockInSat) * multiplier;
+            const requiredAmount = BigInt(quote.offramp.inputAmount.amount) * multiplier;
             const needsApproval = requiredAmount > allowance;
 
             if (needsApproval) {
@@ -1012,7 +301,7 @@ export class GatewayApiClient extends BaseClient {
                     address: tokenAddress,
                     abi: erc20Abi,
                     functionName: 'approve',
-                    args: [offrampRegistryAddress, maxUint256],
+                    args: [spenderAddress, maxUint256],
                 });
 
                 const approveTxHash = await walletClient.writeContract(request);
@@ -1020,39 +309,30 @@ export class GatewayApiClient extends BaseClient {
                 await publicClient.waitForTransactionReceipt({ hash: approveTxHash });
             }
 
-            const balanceForCreate = needsApproval
-                ? await publicClient.getBalance({ address: accountAddress })
-                : ethBalance;
-
-            const createOrderGasEstimate = await publicClient.estimateContractGas({
-                address: offrampRegistryAddress,
-                abi: offrampOrder.offrampABI,
-                functionName: offrampOrder.offrampFunctionName,
-                args: offrampOrder.offrampArgs,
+            const transactionHash = await walletClient.sendTransaction({
                 account: walletClient.account,
+                data: order.offramp.tx.data as Hex,
+                to: spenderAddress,
+                value: BigInt(order.offramp.tx.value || 0),
             });
-
-            const createOrderGasCost = createOrderGasEstimate * fee;
-
-            if (balanceForCreate < createOrderGasCost) {
-                throw new Error(
-                    `Insufficient ETH balance for gas fees. Required: ${createOrderGasCost} wei, Available: ${ethBalance} wei`
-                );
-            }
-
-            const { request } = await publicClient.simulateContract({
-                account: walletClient.account,
-                address: offrampRegistryAddress,
-                abi: offrampOrder.offrampABI,
-                functionName: offrampOrder.offrampFunctionName,
-                args: offrampOrder.offrampArgs,
-            });
-
-            const transactionHash = await walletClient.writeContract(request);
 
             await publicClient?.waitForTransactionReceipt({ hash: transactionHash });
 
+            await this.api.registerTx(
+                {
+                    registerTx: {
+                        offramp: {
+                            orderId: order.offramp.orderId,
+                            evmTxhash: transactionHash,
+                        },
+                    },
+                },
+                initOverrides
+            );
+
             return transactionHash;
+        } else if (instanceOfGatewayQuoteOneOf2(quote)) {
+            // TODO: implement
         }
 
         throw new Error('Invalid quote type');
@@ -1103,347 +383,21 @@ export class GatewayApiClient extends BaseClient {
     }
 
     /**
-     * Finalizes an onramp order by submitting the Bitcoin transaction (step 2 of 2).
-     *
-     * The transaction is validated and broadcast to the Bitcoin network automatically.
-     * This completes the onramp process started with {@link startOnrampOrder}.
-     *
-     * @param uuid Order UUID from {@link startOnrampOrder}
-     * @param bitcoinTxOrId Signed Bitcoin transaction hex or transaction ID
-     * @returns Promise resolving to Bitcoin transaction ID
-     * @throws {Error} If order update fails
-     */
-    async finalizeOnrampOrder(uuid: string, bitcoinTxOrId: string): Promise<string> {
-        bitcoinTxOrId = stripHexPrefix(bitcoinTxOrId);
-
-        let bitcoinTxHex: string;
-        if (bitcoinTxOrId.length === 64) {
-            const esploraClient = new EsploraClient(this.chain.id === bob.id ? Network.mainnet : Network.signet);
-            bitcoinTxHex = await esploraClient.getTransactionHex(bitcoinTxOrId);
-        } else {
-            bitcoinTxHex = bitcoinTxOrId;
-        }
-
-        const response = await this.safeFetch(
-            `${this.baseUrl}/order/${uuid}`,
-            {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Accept: 'application/json',
-                },
-                body: JSON.stringify({ bitcoinTx: bitcoinTxHex }),
-            },
-            'Failed to update order'
-        );
-
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => null);
-            const apiMessage = errorData?.message;
-            const errorMessage = apiMessage || `Failed to update order`;
-            throw new Error(errorMessage);
-        }
-
-        return response.json();
-    }
-
-    /**
-     * Retrieves all onramp orders for a specific user address.
-     *
-     * @param userAddress The user's EVM address
-     * @returns Promise resolving to array of onramp orders with helper methods
-     */
-    async getOnrampOrders(userAddress: Address): Promise<OnrampOrder[]> {
-        const chainId = this.chainId;
-        const response = await this.safeFetch(
-            `${this.baseUrl}/orders/${userAddress}`,
-            undefined,
-            'Failed to fetch onramp orders'
-        );
-        const orders: OnrampOrderResponse[] = await response.json();
-        return orders.map((order) => {
-            const outputTokenAddress = order.outputTokenAddress ?? order.tokensReceived?.[0]?.tokenAddress ?? null;
-            const outputTokenAmount = order.outputTokenAmount ?? order.tokensReceived?.[0]?.amount ?? null;
-
-            function getFinal<L, R>(base?: L, output?: R): NonNullable<L | R> {
-                return order.status
-                    ? order.strategyAddress
-                        ? output
-                            ? output // success
-                            : (base as NonNullable<typeof base>) // failed
-                        : (base as NonNullable<typeof base>) // success
-                    : order.strategyAddress // pending
-                      ? (output as NonNullable<typeof output>)
-                      : (base as NonNullable<typeof base>);
-            }
-            const getTokenAddress = (): string => {
-                return getFinal(order.baseTokenAddress, outputTokenAddress);
-            };
-            const getTokenAmount = () => {
-                let amount = order.satoshis - order.fee;
-                const token = getToken();
-
-                if (token && !outputTokenAmount) {
-                    amount *= Math.pow(10, token.decimals - 8);
-                }
-
-                return getFinal(amount, outputTokenAmount);
-            };
-            const getToken = (): Token | undefined => {
-                return getTokenDetails(chainId, getTokenAddress());
-            };
-            const getConfirmations = async (esploraClient: EsploraClient, latestHeight?: number) => {
-                const txStatus = await esploraClient.getTransactionStatus(order.txid);
-                if (!latestHeight) {
-                    latestHeight = await esploraClient.getLatestHeight();
-                }
-                return txStatus.confirmed ? latestHeight - txStatus.block_height! + 1 : 0;
-            };
-
-            const orderDetails = order.orderDetails
-                ? convertOrderDetailsRawToOrderDetails(order.orderDetails)
-                : undefined;
-
-            const getOutputTokens = () => {
-                const tokens = order.tokensReceived
-                    ? order.tokensReceived
-                    : outputTokenAmount && outputTokenAddress
-                      ? [{ amount: outputTokenAmount, tokenAddress: outputTokenAddress }]
-                      : [];
-
-                return tokens
-                    .map(({ amount, tokenAddress }) => ({
-                        amount: amount,
-                        token: getTokenDetails(chainId, tokenAddress),
-                    }))
-                    .filter((x) => x.token);
-            };
-
-            const getTokens = () => {
-                const tokens = order.tokensReceived
-                    ? order.tokensReceived
-                    : [{ amount: getTokenAmount(), tokenAddress: getTokenAddress() }];
-
-                return tokens.map(({ amount, tokenAddress }) => ({
-                    amount: amount,
-                    token: getTokenDetails(chainId, tokenAddress),
-                }));
-            };
-
-            return {
-                ...order,
-                orderDetails,
-                gasRefill: order.satsToConvertToEth,
-                baseToken: getTokenDetails(chainId, order.baseTokenAddress),
-                outputToken: order.outputTokenAddress ? getTokenDetails(chainId, order.outputTokenAddress) : undefined,
-                getTokenAddress,
-                getToken,
-                getTokenAmount,
-                getTokens,
-                getOutputTokens,
-                getConfirmations,
-                async getStatus(esploraClient: EsploraClient, latestHeight?: number): Promise<OnrampOrderStatus> {
-                    const confirmations = await getConfirmations(esploraClient, latestHeight);
-                    const hasEnoughConfirmations = confirmations >= order.txProofDifficultyFactor;
-                    const data = { confirmations };
-                    if (!hasEnoughConfirmations) {
-                        return { confirmed: false, data };
-                    }
-                    return {
-                        success: !(order.strategyAddress && order.strategyFailed === true),
-                        data,
-                    };
-                },
-            };
-        });
-    }
-
-    /**
-     * Retrieves all available strategies from the Gateway API.
-     *
-     * @deprecated Moving away from hardcoded strategies
-     * @returns Promise resolving to array of strategy contracts
-     */
-    async getStrategies(): Promise<GatewayStrategyContract[]> {
-        const response = await this.safeFetch(
-            `${this.baseUrl}/strategies`,
-            undefined,
-            'Failed to fetch gateway strategies'
-        );
-
-        const chainName = this.chain.name;
-        const chainId = this.chainId;
-
-        const strategies: GatewayStrategy[] = await response.json();
-        return strategies.map((strategy) => {
-            const strategySlug = slugify(strategy.strategyName);
-            const inputToken = getTokenDetails(chainId, strategy.inputTokenAddress);
-            if (!inputToken) {
-                throw new Error(`Token not found: ${strategy.inputTokenAddress} on chain ${chainId}`);
-            }
-
-            const outputToken = strategy.outputTokenAddress
-                ? getTokenDetails(chainId, strategy.outputTokenAddress)
-                : undefined;
-            return {
-                id: strategySlug,
-                type: 'deposit',
-                address: strategy.strategyAddress as Address,
-                method: '',
-                chain: {
-                    id: '', // TODO
-                    chainId: chainId,
-                    slug: chainName,
-                    name: chainName,
-                    logo: '', // TODO
-                    type: 'evm',
-                    singleChainSwap: true,
-                    singleChainStaking: true,
-                },
-                integration: {
-                    type: strategy.strategyType,
-                    slug: strategySlug,
-                    name: strategy.strategyName,
-                    logo: strategy.projectLogo || outputToken?.logoURI || '',
-                    monetization: false,
-                },
-                inputToken: {
-                    symbol: inputToken.symbol,
-                    address: inputToken.address,
-                    logo: inputToken.logoURI,
-                    decimals: inputToken.decimals,
-                    chain: chainName,
-                },
-                outputToken: outputToken
-                    ? {
-                          symbol: outputToken.symbol,
-                          address: outputToken.address,
-                          logo: outputToken.logoURI,
-                          decimals: outputToken.decimals,
-                          chain: chainName,
-                      }
-                    : null,
-            };
-        });
-    }
-
-    /**
-     * Retrieves all supported token addresses from the Gateway API.
-     *
-     * @param includeStrategies Whether to include strategy output tokens
-     * @returns Promise resolving to array of token addresses
-     */
-    async getTokenAddresses(includeStrategies: boolean = true): Promise<Address[]> {
-        const response = await this.safeFetch(
-            `${this.baseUrl}/tokens?includeStrategies=${includeStrategies}`,
-            undefined,
-            'Failed to fetch supported token addresses'
-        );
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => null);
-            const apiMessage = errorData?.message;
-            const errorMessage = apiMessage || 'Failed to fetch supported token addresses';
-            throw new Error(errorMessage);
-        }
-        return response.json();
-    }
-
-    /**
-     * Retrieves all supported tokens with detailed information.
-     *
-     * @param includeStrategies Whether to include strategy output tokens
-     * @returns Promise resolving to array of token details
-     */
-    async getTokens(includeStrategies: boolean = true): Promise<Token[]> {
-        // https://github.com/ethereum-optimism/ecosystem/blob/c6faa01455f9e846f31c0343a0be4c03cbeb2a6d/packages/op-app/src/hooks/useOPTokens.ts#L10
-        const tokens = await this.getTokenAddresses(includeStrategies);
-        return tokens.map((token) => getTokenDetails(this.chainId, token)).filter((token) => token !== undefined);
-    }
-
-    // TODO: should get price from the gateway API
-    private async getPrices(): Promise<Map<string, number>> {
-        const response = await this.safeFetch(
-            'https://fusion-api.gobob.xyz/pricefeed',
-            undefined,
-            'Failed to fetch prices from Fusion API'
-        );
-
-        if (!response.ok) {
-            console.error('Failed to fetch prices from Fusion API');
-            return new Map();
-        }
-
-        const list = await response.json();
-
-        return new Map(list.map((x) => [x.token_address.toLowerCase(), Number(x.price)]));
-    }
-
-    /**
-     * Retrieves all supported tokens with enriched data including TVL and incentives.
-     *
-     * @param includeStrategies Whether to include strategy output tokens
-     * @returns Promise resolving to array of enriched token data
-     */
-    async getEnrichedTokens(includeStrategies: boolean = true): Promise<EnrichedToken[]> {
-        const [tokens, prices] = await Promise.all([this.getTokenAddresses(includeStrategies), this.getPrices()]);
-
-        const tokensIncentives = await this.strategy.getTokensIncentives(tokens);
-
-        return Promise.all(
-            tokens.map(async (address, i) => {
-                const token = getTokenDetails(this.chainId, address);
-                if (!token) {
-                    throw new Error(`Token not found: ${address} on chain ${this.chainId}`);
-                }
-                const tokenIncentives = tokensIncentives[i];
-
-                const { address: underlyingAddress, totalUnderlying } =
-                    await this.strategy.getStrategyAssetState(token);
-
-                if (underlyingAddress === 'usd') {
-                    return {
-                        ...token,
-                        ...tokenIncentives,
-                        tvl: Number(totalUnderlying),
-                    };
-                }
-
-                const underlyingToken = getTokenDetails(this.chainId, underlyingAddress);
-
-                if (!underlyingToken) {
-                    return {
-                        ...token,
-                        ...tokenIncentives,
-                        tvl: 0,
-                    };
-                }
-
-                return {
-                    ...token,
-                    ...tokenIncentives,
-                    tvl:
-                        bigIntToFloatingNumber(totalUnderlying, underlyingToken.decimals) *
-                        (prices.get(underlyingAddress.toLowerCase()) ?? 0),
-                };
-            })
-        );
-    }
-
-    /**
      * Retrieves all orders (onramp and offramp) for a specific user address.
      *
      * @param userAddress The user's EVM address
      * @returns Promise resolving to array of typed orders
      */
-    async getOrders(userAddress: Address): Promise<Array<GatewayOrder>> {
-        const [onrampOrders, offrampOrders] = await Promise.all([
-            this.getOnrampOrders(userAddress),
-            this.getOfframpOrders(userAddress),
-        ]);
+    async getOrders(userAddress: Address, initOverrides?: RequestInit): Promise<Array<GatewayOrderInfo>> {
+        return this.api.getOrders({ userAddress: userAddress.toString() }, initOverrides);
+    }
 
-        return [
-            ...onrampOrders.map((order) => ({ type: GatewayOrderType.Onramp as const, order })),
-            ...offrampOrders.map((order) => ({ type: GatewayOrderType.Offramp as const, order })),
-        ];
+    /**
+     * Retrieves all supported routes.
+     *
+     * @returns Promise resolving to array of supported routes
+     */
+    async getRoutes(initOverrides?: RequestInit): Promise<Array<RouteInfo>> {
+        return this.api.getRoutes(initOverrides);
     }
 }

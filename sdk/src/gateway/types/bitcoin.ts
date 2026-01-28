@@ -1,10 +1,10 @@
 export interface BitcoinSigner {
-    signAllInputs?: (psbtBase64: string) => Promise<string>;
+    signAllInputs?: (psbtHex: string) => Promise<string>;
     sendBitcoin?: (params: {
         from: string;
         to: string;
         value: string;
-        opReturn: string;
-        isSignet: boolean;
+        opReturn?: string;
+        isSignet?: boolean;
     }) => Promise<string>;
 }

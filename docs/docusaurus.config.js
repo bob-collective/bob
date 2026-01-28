@@ -47,6 +47,26 @@ const config = {
   plugins: [
     ['docusaurus-plugin-llms', { pathTransformation: { ignorePaths: ['docs'] } }],
     [
+      'docusaurus-plugin-openapi-docs',
+      {
+        id: 'gateway-api',
+        docsPluginId: 'classic',
+        config: {
+          gateway: {
+            specPath: 'https://gateway-api-staging.gobob.xyz/api-doc.json',
+            outputDir: 'docs/docs/gateway/api',
+            version: '1.0.0',
+            hideSendButton: false,
+            sidebarOptions: {
+              groupPathsBy: 'tag',
+            },
+            showExtensions: true,
+            downloadUrl: 'https://gateway-api-staging.gobob.xyz/api-doc.json',
+          },
+        },
+      },
+    ],
+    [
       "@docusaurus/plugin-client-redirects",
       {
         redirects: [
@@ -121,6 +141,7 @@ const config = {
           routeBasePath: "/",
           sidebarPath: require.resolve("./sidebars.js"),
           editUrl: `${GITHUB_LINK}/tree/master/docs/`,
+          docItemComponent: "@theme/ApiItem",
           remarkPlugins: [
             [require("@docusaurus/remark-plugin-npm2yarn"), { sync: true }],
           ],
@@ -135,6 +156,21 @@ const config = {
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
+      api: {
+        authPersistance: 'localStorage',
+        proxy: undefined,
+      },
+      languageTabs: [
+        {
+          language: "curl",
+        },
+        {
+          language: "nodejs",
+        },
+        {
+          language: "rust",
+        },
+      ],
       docs: {
         sidebar: {
           hideable: true,
@@ -246,7 +282,12 @@ const config = {
       prism: {
         theme: lightCodeTheme,
         darkTheme: darkCodeTheme,
-        additionalLanguages: ["solidity"],
+        additionalLanguages: [
+          "rust",
+          "json",
+          "bash",
+          "solidity",
+        ],
       },
       colorMode: {
         defaultMode: "dark",
@@ -271,7 +312,11 @@ const config = {
   markdown: {
     mermaid: true,
   },
-  themes: ["@docusaurus/theme-mermaid", "docusaurus-theme-github-codeblock"],
+  themes: [
+    "@docusaurus/theme-mermaid",
+    "docusaurus-theme-github-codeblock",
+    "docusaurus-theme-openapi-docs",
+  ],
   scripts: [
     {
       src: "https://cdn.usefathom.com/script.js",

@@ -4,7 +4,7 @@ sidebar_position: 1
 
 # BOB Gateway
 
-BOB Gateway is a Bitcoin intent/RFQ-based swap protocol that allows users to swap BTC on Bitcoin for ERC20 assets on BOB and other connected chains including Base, BNB, Unichain, AVAX, and more. Users can also swap ERC20 assets back to BTC from any chain. The swap mechanism is trust-minimized: BOB Gateway uses smart contracts and cross-chain BTC proofs to ensure that swaps are always executed correctly.
+BOB Gateway is a Bitcoin intent/RFQ-based swap protocol that allows users to swap BTC on Bitcoin for ERC20 assets on BOB and other connected chains including Base, BNB, Unichain, and more. Users can also swap ERC20 assets back to BTC from any chain. The swap mechanism is trust-minimized: BOB Gateway uses smart contracts and cross-chain BTC proofs to ensure that swaps are always executed correctly.
 
 :::info Gateway Overview
 For a detailed explanation of Gateway's architecture and user flow, see the [technical overview](./overview.md).
@@ -55,7 +55,7 @@ Seamlessly swap between native Bitcoin and wrapped BTC tokens across major chain
 
 *Ideal for exchanges, wallets, and DeFi protocols needing unified BTC liquidity access.*
 
-### Cross-Chain BTC Swaps (Coming Soon)
+### Cross-Chain BTC Swaps
 Enable direct swaps between native Bitcoin and tokens on Ethereum, Arbitrum, Base, and other major chains. All transactions route through BOB for security and efficiency, with competitive rates powered by the solver network.
 
 *Perfect for DEXes, aggregators, and wallets wanting to offer true cross-chain Bitcoin trading.*
@@ -94,9 +94,18 @@ BOB Gateway uses intents to coordinate peer-to-peer swaps between users and liqu
 5. Relayer submits Bitcoin transaction proof
 6. Smart Contract releases ERC20 to Solver
 
-## What is the Gateway SDK?
+## What is the Gateway API?
 
-BOB Gateway SDK enables developers to seamlessly integrate native Bitcoin functionality into their applications. The SDK abstracts UTXO logic and provides React hooks for simplified development, giving your users direct access to Bitcoin's liquidity and security without needing to wrap BTC or rely on third-party bridges.
+The BOB Gateway API is a RESTful service that provides programmatic access to Bitcoin cross-chain swap functionality. With simple HTTP requests, you can create quotes, execute swaps, and track orders - all without managing complex Bitcoin transaction logic or maintaining blockchain infrastructure.
+
+**Key Features:**
+- **Quote Generation** - Get real-time swap rates across supported chains and tokens
+- **Order Management** - Create, track, and manage swap orders programmatically
+- **Multi-Chain Support** - Access liquidity on BOB, Base, Ethereum, BNB Chain, and more
+- **Bitcoin TX Registration** - Submit Bitcoin transaction proofs for swap completion
+- **No Infrastructure Required** - No need to run Bitcoin nodes or maintain RPC endpoints
+
+The API is perfect for exchanges, wallets, DeFi protocols, and any application that needs to integrate Bitcoin swaps without the complexity of direct blockchain interaction. Check out the [API Reference](./api/bob-gateway-api) for detailed endpoint documentation and examples.
 
 ## Next Steps
 

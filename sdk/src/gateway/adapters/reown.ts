@@ -1,6 +1,6 @@
 import { Transaction } from '@scure/btc-signer';
 import { BitcoinSigner } from '../types';
-import { base64 } from '@scure/base';
+import { base64, hex } from '@scure/base';
 
 interface ReownWalletProvider {
     signPSBT: (params: {
@@ -19,8 +19,8 @@ export class ReownWalletAdapter implements BitcoinSigner {
         this.userAddress = userAddress;
     }
 
-    async signAllInputs(psbtBase64: string): Promise<string> {
-        const unsignedTx = Transaction.fromPSBT(base64.decode(psbtBase64));
+    async signAllInputs(psbtHex: string): Promise<string> {
+        const unsignedTx = Transaction.fromPSBT(hex.decode(psbtHex));
 
         // Determine how many inputs to sign
         const inputLength = unsignedTx.inputsLength;
@@ -28,7 +28,7 @@ export class ReownWalletAdapter implements BitcoinSigner {
 
         // Use Reown's signPSBT method
         const result = await this.walletProvider.signPSBT({
-            psbt: psbtBase64,
+            psbt: base64.encode(unsignedTx.toPSBT()),
             broadcast: false,
             signInputs: inputsToSign.map((input) => ({ index: input, address: this.userAddress, sighashTypes: [0] })),
         });

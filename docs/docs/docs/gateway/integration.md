@@ -6,7 +6,7 @@ sidebar_position: 2
 
 [BOB Gateway](/docs/gateway) is a Bitcoin intent bridge that unlocks Bitcoin liquidity by reducing the number of steps to onboard users to your app, saving time and money. For example, users can go from **BTC** on Bitcoin to **staked BTC LSTs** with a single Bitcoin transaction.
 
-Our SDK makes it possible for you to bring this UX directly into your app.
+Our API makes it possible for you to bring this UX directly into your app.
 
 :::info Gateway Overview
 For a detailed explanation of Gateway's architecture and user flow, see the [technical overview](./overview.md).
@@ -14,7 +14,7 @@ For a detailed explanation of Gateway's architecture and user flow, see the [tec
 
 ## Step-by-Step
 
-This is an example implementation of our SDK. You will need to decide how you handle asking your user to sign a partially-signed Bitcoin transaction (PSBT).
+This is an example implementation of our SDK (which wraps our API). You will need to decide how you handle asking your user to sign a partially-signed Bitcoin transaction (PSBT).
 
 ### Install the BOB SDK
 
@@ -35,12 +35,12 @@ import { bob } from 'viem/chains';
 const gatewaySDK = new GatewaySDK(bob.id); // or bobSepolia.id
 ```
 
-### Get Available Tokens
+### Get Routes
 
-Returns an array of available output tokens for you to offer the user. Typically rendered as a drop-down menu. See [our SDK's source code](https://github.com/bob-collective/bob/blob/9c52341033af1ccbe388e64ef97a23bf6c07ccc7/sdk/src/gateway/tokens.ts#L8) for type information.
+Returns an array of available routes supported by BOB Gateway.
 
 ```ts
-const outputTokens = await gatewaySDK.getTokens();
+const routes = await gatewaySDK.getRoutes();
 ```
 
 ### Get a Quote
@@ -69,15 +69,13 @@ const quote = await gatewaySDK.getQuote({
 ```
 
 ### Monetization
+
 Gateway supports optional affiliate fees, allowing integrators to earn revenue every time users execute Bitcoin onramp or offramp flows through their app.
 You may pass the following two optional fields in your `getQuote` call:
 
 ```ts
-/** @description Affiliate-related fee */
-affiliateFeeSats?: bigint;
-
-/** @description The EVM address of the affiliate who will receive the affiliate fee */
-affiliateFeeRecipient?: Address;
+/** @description Affiliate ID */
+affiliateId?: string;
 ```
 
 Example With Affiliate Fee: 
@@ -97,8 +95,8 @@ const quote = await gatewaySDK.getQuote({
   // The amount of ETH to receive (this is subtracted from the amount)
   gasRefill: parseEther("0.00001"), // ETH
   // Monetization (optional)
-  affiliateFeeSats: 500n,                  // 500 sats affiliate fee
-  affiliateFeeRecipient: '0xDeaDDEaDDeAdDeAdDEAdDEaddeAddEAdDEAd0001',    // Affiliate / partner EVM address
+  affiliateFeeSats: 500n, // 500 sats affiliate fee
+  affiliateFeeRecipient: '0xDeaDDEaDDeAdDeAdDEAdDEaddeAddEAdDEAd0001', // Affiliate / partner EVM address
 });
 ```
 
