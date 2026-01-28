@@ -1,5 +1,5 @@
 import * as btc from '@scure/btc-signer';
-import { base64, hex } from '@scure/base';
+import { hex } from '@scure/base';
 import { mnemonicToSeedSync } from 'bip39';
 import { HDKey } from '@scure/bip32';
 import { BitcoinSigner } from '../types';

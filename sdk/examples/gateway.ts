@@ -133,7 +133,7 @@ export async function onrampAndDeposit(evmAddress: Address) {
         toToken: 'wBTC',
         amount: parseBtc('0.1'), // BTC
         gasRefill: parseEther('0.00001'), // ETH
-        message: generateMessageForMulticallHandler(
+        strategyMessage: generateMessageForMulticallHandler(
             evmAddress,
             '0x35B3F1BFe7cbE1e95A3DC2Ad054eB6f0D4c879b6', // Avalon pool
             10000000n,

@@ -15,9 +15,3 @@ export type StrategyParams = {
     /** @description Minimum acceptable output amount after slippage */
     amountOutMin: bigint;
 };
-
-/** @dev Internal */
-export interface StrategyAssetState {
-    address: Address | 'usd';
-    totalUnderlying: bigint;
-}

@@ -2,15 +2,11 @@ import * as bitcoin from 'bitcoinjs-lib';
 import {
     Address,
     createPublicClient,
-    encodeAbiParameters,
     formatUnits,
     Hex,
     http,
-    keccak256,
-    parseAbiParameters,
     parseUnits,
     Chain as ViemChain,
-    zeroAddress,
 } from 'viem';
 import {
     avalanche,
@@ -50,10 +46,6 @@ export function slugify(str: string): string {
 
 export function viemClient(chain: ViemChain) {
     return createPublicClient({ chain, transport: http() });
-}
-
-function parseU256(value: string): bigint {
-    return BigInt(value);
 }
 
 export function parseBtc(btc: string) {
@@ -130,46 +122,6 @@ export function resolveChainName(chain: number | string): string {
         return resolveChainId(chain);
     }
     return chain.toLowerCase();
-}
-
-// Compute the final ERC20 allowance storage slot
-export function computeAllowanceSlot(owner: Address, spender: Address, tokenAllowanceSlot: bigint): Hex {
-    const innerSlot = keccak256(
-        encodeAbiParameters(
-            [
-                { name: 'owner', type: 'address' },
-                { name: 'slot', type: 'uint256' },
-            ],
-            [owner, tokenAllowanceSlot]
-        )
-    );
-
-    const allowanceSlot = keccak256(
-        encodeAbiParameters(
-            [
-                { name: 'spender', type: 'address' },
-                { name: 'innerSlot', type: 'bytes32' },
-            ],
-            [spender, innerSlot]
-        )
-    );
-    return allowanceSlot;
-}
-
-// Compute the final ERC20 balance storage slot for a user
-export function computeBalanceSlot(user: Address, balancesMappingSlot: bigint): Hex {
-    // Compute the storage slot for the user's balance
-    const balanceSlot = keccak256(
-        encodeAbiParameters(
-            [
-                { name: 'owner', type: 'address' },
-                { name: 'slot', type: 'uint256' },
-            ],
-            [user, balancesMappingSlot]
-        )
-    );
-
-    return balanceSlot;
 }
 
 export function safeBigInt(value: string): bigint {

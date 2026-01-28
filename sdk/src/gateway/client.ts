@@ -10,12 +10,8 @@ import {
     WalletClient,
 } from 'viem';
 import { bob } from 'viem/chains';
-import { bigIntToFloatingNumber } from '../utils';
 import { strategyCaller } from './abi';
-import { BaseClient } from './base-client';
-import StrategyClient from './strategy';
-import { BitcoinSigner, EnrichedToken, GetQuoteParams, StrategyParams } from './types';
-
+import { BitcoinSigner, GetQuoteParams, StrategyParams } from './types';
 import {
     Configuration,
     V1Api,
@@ -29,14 +25,13 @@ import {
     instanceOfRegisterTxOneOf,
     RouteInfo,
 } from './generated-client';
-import { getTokenDetails } from './tokens';
 import { formatBtc } from './utils';
 
 export const WBTC_OFT_ADDRESS = '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c';
 
 /**
- * Base url for the mainnet Gateway API.
- * @default "https://gateway-api-mainnet.gobob.xyz"
+ * Base url for the staging Gateway API.
+ * @default "https://gateway-api-staging.gobob.xyz"
  */
 export const STAGING_GATEWAY_BASE_URL = 'https://gateway-api-staging.gobob.xyz';
 
@@ -81,12 +76,9 @@ export interface AllWalletClientParams extends EvmWalletClientParams {
  * });
  * ```
  */
-export class GatewayApiClient extends BaseClient {
-    private chain: ViemChain;
-    private strategy: StrategyClient;
-    // private isSignet: boolean = false;
-
+export class GatewayApiClient {
     api: V1Api;
+    // private isSignet: boolean = false;
 
     /**
      * Creates a new Gateway API client instance.
@@ -105,18 +97,13 @@ export class GatewayApiClient extends BaseClient {
      * const mainnetClient = new GatewayApiClient(60808);
      *
      * // Testnet client with custom RPC
-     * const testnetClient = new GatewayApiClient(808813, {
-     *   rpcUrl: 'https://my-custom-rpc.com'
-     * });
+     * const testnetClient = new GatewayApiClient(808813);
      * ```
      */
     // TODO: remove constructor, set the config from `getQuote`
-    constructor(chainId: number, options?: { rpcUrl?: string }) {
-        super();
+    constructor(chainId: number) {
         switch (chainId) {
             case bob.id:
-                this.chain = bob;
-                this.strategy = new StrategyClient(bob, options?.rpcUrl);
                 this.api = new V1Api(
                     new Configuration({
                         basePath: STAGING_GATEWAY_BASE_URL,
@@ -126,10 +113,6 @@ export class GatewayApiClient extends BaseClient {
             default:
                 throw new Error('Invalid chain');
         }
-    }
-
-    private get chainId(): number {
-        return this.chain.id;
     }
 
     /**
@@ -154,8 +137,11 @@ export class GatewayApiClient extends BaseClient {
                 srcToken: params.fromToken.toString(),
                 dstToken: params.toToken.toString(),
                 amount: params.amount.toString(),
-                slippage: params.maxSlippage?.toString() || '0', // TODO
+                slippage: params.maxSlippage?.toString() || '0',
                 gasRefill: params.gasRefill?.toString(),
+                affiliateId: params.affiliateId,
+                strategyTarget: params.strategyAddress,
+                strategyMessage: params.strategyMessage,
             },
             initOverrides
         );
@@ -394,81 +380,6 @@ export class GatewayApiClient extends BaseClient {
         await publicClient?.waitForTransactionReceipt({ hash: transactionHash });
 
         return transactionHash;
-    }
-
-    // TODO: should get price from the gateway API
-    private async getPrices(initOverrides?: RequestInit): Promise<Map<string, number>> {
-        const response = await this.safeFetch(
-            'https://fusion-api.gobob.xyz/pricefeed',
-            initOverrides,
-            'Failed to fetch prices from Fusion API'
-        );
-
-        if (!response.ok) {
-            console.error('Failed to fetch prices from Fusion API');
-            return new Map();
-        }
-
-        const list = await response.json();
-
-        return new Map(list.map((x) => [x.token_address.toLowerCase(), Number(x.price)]));
-    }
-
-    /**
-     * Retrieves all supported tokens with enriched data including TVL and incentives.
-     *
-     * @returns Promise resolving to array of enriched token data
-     */
-    async getEnrichedTokens(initOverrides?: RequestInit): Promise<EnrichedToken[]> {
-        const [routes, prices] = await Promise.all([this.getRoutes(initOverrides), this.getPrices(initOverrides)]);
-
-        const tokensSet = routes.reduce((acc, route) => {
-            if (route.srcChain === 'bob') acc.add(route.srcToken as Address);
-            if (route.dstChain === 'bob') acc.add(route.dstToken as Address);
-            return acc;
-        }, new Set<Address>());
-        const tokens = Array.from(tokensSet);
-
-        const tokensIncentives = await this.strategy.getTokensIncentives(tokens);
-
-        return Promise.all(
-            tokens.map(async (address, i) => {
-                const token = getTokenDetails(this.chainId, address);
-                if (!token) {
-                    throw new Error(`Token not found: ${address} on chain ${this.chainId}`);
-                }
-                const tokenIncentives = tokensIncentives[i];
-
-                const { address: underlyingAddress, totalUnderlying } =
-                    await this.strategy.getStrategyAssetState(token);
-
-                if (underlyingAddress === 'usd') {
-                    return {
-                        ...token,
-                        ...tokenIncentives,
-                        tvl: Number(totalUnderlying),
-                    };
-                }
-
-                const underlyingToken = getTokenDetails(this.chainId, underlyingAddress);
-
-                if (!underlyingToken) {
-                    return {
-                        ...token,
-                        ...tokenIncentives,
-                        tvl: 0,
-                    };
-                }
-
-                return {
-                    ...token,
-                    ...tokenIncentives,
-                    tvl:
-                        bigIntToFloatingNumber(totalUnderlying, underlyingToken.decimals) *
-                        (prices.get(underlyingAddress.toLowerCase()) ?? 0),
-                };
-            })
-        );
     }
 
     /**

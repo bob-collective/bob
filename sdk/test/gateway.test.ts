@@ -14,7 +14,6 @@ import { afterEach, assert, describe, expect, it } from 'vitest';
 import { GatewaySDK } from '../src/gateway';
 import { STAGING_GATEWAY_BASE_URL } from '../src/gateway/client';
 import {
-    GatewayCreateOrderOneOf,
     GatewayOrderInfo,
     GatewayQuoteOneOf,
     GatewayQuoteOneOf1,
@@ -23,11 +22,9 @@ import {
     instanceOfGatewayQuoteOneOf1,
     instanceOfGatewayQuoteOneOf2,
 } from '../src/gateway/generated-client';
-import { SYMBOL_LOOKUP } from '../src/gateway/tokens';
 import { BitcoinSigner } from '../src/gateway/types';
 
-const TBTC = SYMBOL_LOOKUP[bob.id]['tbtc'];
-const TBTC_ADDRESS = TBTC.address;
+export const WBTC_OFT_ADDRESS = '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c';
 
 afterEach(() => {
     nock.cleanAll();
@@ -46,7 +43,7 @@ describe('Gateway Tests', () => {
         const mockOnrampQuote: GatewayQuoteOneOf = {
             onramp: {
                 dstChain: 'bob',
-                dstToken: TBTC_ADDRESS,
+                dstToken: WBTC_OFT_ADDRESS,
                 executionFees: {
                     address: zeroAddress,
                     amount: '10',
@@ -142,7 +139,7 @@ describe('Gateway Tests', () => {
                     amount: '990',
                     chain: 'bob',
                 },
-                tokenAddress: TBTC_ADDRESS,
+                tokenAddress: WBTC_OFT_ADDRESS,
                 tx: {
                     to: '0x1234567890123456789012345678901234567890',
                     data: '0xabcdef',
@@ -227,20 +224,6 @@ describe('Gateway Tests', () => {
         assert(instanceOfGatewayQuoteOneOf2(result3));
     });
 
-    it('should get enriched tokens', async () => {
-        const gatewaySDK = new GatewaySDK(bob.id);
-
-        const enrichedTokens = await gatewaySDK.getEnrichedTokens();
-
-        enrichedTokens.forEach((enrichedToken) => {
-            assert.isDefined(enrichedToken.address);
-            assert.isDefined(enrichedToken.name);
-            assert.isDefined(enrichedToken.symbol);
-            assert.isDefined(enrichedToken.decimals);
-            assert.isDefined(enrichedToken.tvl);
-        });
-    });
-
     it('should get orders', async () => {
         const mockOrders: GatewayOrderInfo[] = [
             {
@@ -259,7 +242,7 @@ describe('Gateway Tests', () => {
                     orderId: 'order123',
                     dstInfo: {
                         chain: 'bob',
-                        token: TBTC_ADDRESS,
+                        token: WBTC_OFT_ADDRESS,
                         txHash: '0xabc123',
                     },
                     srcInfo: {
@@ -293,7 +276,7 @@ describe('Gateway Tests', () => {
                     },
                     srcInfo: {
                         chain: 'bob',
-                        token: TBTC_ADDRESS,
+                        token: WBTC_OFT_ADDRESS,
                         txHash: '0xjkl012',
                     },
                     timestamp: 1625247600,
@@ -325,7 +308,7 @@ describe('Gateway Tests', () => {
                     },
                     dstInfo: {
                         chain: 'bsc',
-                        token: TBTC_ADDRESS,
+                        token: WBTC_OFT_ADDRESS,
                         txHash: '0xlzabc123',
                     },
                     srcInfo: {
@@ -372,7 +355,7 @@ describe('Gateway Tests', () => {
         const mockQuote: GatewayQuoteOneOf = {
             onramp: {
                 dstChain: 'bob',
-                dstToken: TBTC_ADDRESS,
+                dstToken: WBTC_OFT_ADDRESS,
                 executionFees: {
                     address: zeroAddress,
                     amount: '10',
@@ -473,7 +456,7 @@ describe('Gateway Tests', () => {
         const mockQuote: GatewayQuoteOneOf = {
             onramp: {
                 dstChain: 'bob',
-                dstToken: TBTC_ADDRESS,
+                dstToken: WBTC_OFT_ADDRESS,
                 executionFees: {
                     address: zeroAddress,
                     amount: '10',
@@ -549,7 +532,7 @@ describe('Gateway Tests', () => {
         const mockQuote: GatewayQuoteOneOf = {
             onramp: {
                 dstChain: 'bob',
-                dstToken: TBTC_ADDRESS,
+                dstToken: WBTC_OFT_ADDRESS,
                 executionFees: {
                     address: zeroAddress,
                     amount: '10',
@@ -682,7 +665,7 @@ describe('Gateway Tests', () => {
                     amount: '990',
                     chain: 'bob',
                 },
-                tokenAddress: TBTC_ADDRESS,
+                tokenAddress: WBTC_OFT_ADDRESS,
                 tx: {
                     to: '0x1234567890123456789012345678901234567890',
                     data: '0xabcdef',
@@ -771,7 +754,7 @@ describe('Gateway Tests', () => {
                     amount: '990',
                     chain: 'bob',
                 },
-                tokenAddress: TBTC_ADDRESS,
+                tokenAddress: WBTC_OFT_ADDRESS,
                 tx: {
                     to: '0x1234567890123456789012345678901234567890',
                     data: '0xabcdef',
@@ -858,7 +841,7 @@ describe('Gateway Tests', () => {
                     amount: '990',
                     chain: 'bob',
                 },
-                tokenAddress: TBTC_ADDRESS,
+                tokenAddress: WBTC_OFT_ADDRESS,
                 tx: {
                     to: '0x1234567890123456789012345678901234567890',
                     data: '0xabcdef',
@@ -911,7 +894,7 @@ describe('Gateway Tests', () => {
         const mockQuote: GatewayQuoteOneOf = {
             onramp: {
                 dstChain: 'bob',
-                dstToken: TBTC_ADDRESS,
+                dstToken: WBTC_OFT_ADDRESS,
                 executionFees: {
                     address: zeroAddress,
                     amount: '10',
