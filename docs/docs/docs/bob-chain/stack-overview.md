@@ -15,7 +15,7 @@ Users interact with BOB through familiar EVM wallets like MetaMask and Rabby, as
 
 ## BOB SDK
 
-The [BOB SDK](/docs/gateway/integration) abstracts Bitcoin cross-chain complexity for developers, enabling single-transaction BTC deposits and withdrawals from and into any DeFi protocol on any chain. Developers can build and extend their existing applications to accept native BTC deposits that are converted to wBTC or other BTC-wrappers. They can also offer their users to receive native BTC. The SDK provides familiar web3 APIs and comprehensive tooling for seamless Bitcoin DeFi integration powered by [BOB Gateway](/docs/gateway).
+The [BOB SDK](https://docs.gobob.xyz/gateway) abstracts Bitcoin cross-chain complexity for developers, enabling single-transaction BTC deposits and withdrawals from and into any DeFi protocol on any chain. Developers can build and extend their existing applications to accept native BTC deposits that are converted to wBTC or other BTC-wrappers. They can also offer their users to receive native BTC. The SDK provides familiar web3 APIs and comprehensive tooling for seamless Bitcoin DeFi integration powered by [BOB Gateway](https://docs.gobob.xyz/gateway).
 
 ## DeFi Ecosystem
 
@@ -23,7 +23,7 @@ BOB hosts a [growing ecosystem](https://app.gobob.xyz/en/apps) of leading DeFi a
 
 ## Interoperability
 
-BOB's interoperability layer consists of [BOB Gateway](/docs/gateway), an intent-based Bitcoin bridge optimized for speed and programmability. BOB is specialized in optimizign the Bitcoin to BOB route. For multichain connection to Base, Arbitrum, Solana, Binance Smart Chain, and many more, BOB relies on multiple third-party bridges including [Chainlink CCIP](https://chain.link/cross-chain), [LayerZero](https://layerzero.network/), [Hyperlane](https://hyperlane.xyz/), [deBridge](https://debridge.finance/), and many more.
+BOB's interoperability layer consists of [BOB Gateway](https://docs.gobob.xyz/gateway), an intent-based Bitcoin bridge optimized for speed and programmability. BOB is specialized in optimizign the Bitcoin to BOB route. For multichain connection to Base, Arbitrum, Solana, Binance Smart Chain, and many more, BOB relies on multiple third-party bridges including [Chainlink CCIP](https://chain.link/cross-chain), [LayerZero](https://layerzero.network/), [Hyperlane](https://hyperlane.xyz/), [deBridge](https://debridge.finance/), and many more.
 
 ## BOB Hybrid Chain
 

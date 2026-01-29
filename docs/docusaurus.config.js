@@ -206,6 +206,11 @@ const config = {
             label: "Docs",
           },
           {
+            href: "https://docs.gobob.xyz/gateway",
+            label: "Gateway",
+            position: "left",
+          },
+          {
             href: DISCORD,
             label: "Discord",
             position: "right",
