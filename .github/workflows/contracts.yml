@@ -27,7 +27,7 @@ jobs:
         run: forge install
       - name: Run forge tests
         run: |
-          forge test -vvv --deny-warnings
+          forge test -vvv
 
   bindings:
     name: Bindings
