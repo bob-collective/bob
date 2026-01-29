@@ -5,7 +5,7 @@ sidebar_label: Bridge from Bitcoin to BOB
 
 # Bridge from Bitcoin to BOB
 
-[BOB Gateway](/docs/gateway) lets you stake, swap, or lend your bitcoin from a single, unified interface so you can put your bitcoin to work earning yield faster than ever before.
+[BOB Gateway](https://docs.gobob.xyz/gateway) lets you stake, swap, or lend your bitcoin from a single, unified interface so you can put your bitcoin to work earning yield faster than ever before.
 
 It's built on a trustless, RFQ-based cross-chain swap protocol that connects professional LPs with users through a seamless swapping experience. Essentially, LPs handle the complexities of bridging and staking on behalf of users in exchange for a fee.
 
@@ -17,7 +17,7 @@ All you need is a Bitcoin wallet with some BTC to send and an EVM-compatible wal
 
 :::tip Want to add BOB Gateway to your dapp?
 
-Check out our guide to see how you can [integrate BOB Gateway into your dapp](/docs/gateway/).
+Check out our guide to see how you can [integrate BOB Gateway into your dapp](https://docs.gobob.xyz/gateway).
 
 :::
 

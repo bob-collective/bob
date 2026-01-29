@@ -64,6 +64,6 @@ Explore the BOB ecosystem by using a DeFi application.
 Now that you've made your first transaction, explore more:
 
 - **[User Hub](../user-hub/)** - Learn about bridging, staking, and DeFi apps
-- **[Gateway SDK](../gateway/)** - For developers wanting to integrate BTC
+- **[Gateway SDK](https://docs.gobob.xyz/gateway)** - For developers wanting to integrate BTC
 - **[BitVM Network](../bitvm/)** - For institutional partners and node operators
 - **[BOB Chain](../bob-chain/)** - For running full nodes and deploying smart contracts

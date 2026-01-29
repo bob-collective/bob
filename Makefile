@@ -53,8 +53,6 @@ setup:
 	@forge install --root $(CONTRACTS_PATH)
 
 openapi:
-	cd docs && pnpm run clean-api-docs
-	cd docs && pnpm run gen-api-docs
 	cd sdk && pnpm run codegen
 
 # Declare phony targets

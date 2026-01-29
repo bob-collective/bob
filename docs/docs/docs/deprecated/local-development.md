@@ -156,7 +156,7 @@ Get started: https://docs.unisat.io/dev/unisat-developer-service
 
 ### BOB SDK
 
-- [Wallets](/docs/gateway/wallets): Learn how to connect your app with Bitcoin wallets like UniSat, Leather, Xverse, and MetaMask.
+- [Wallets](https://docs.gobob.xyz/gateway): Learn how to connect your app with Bitcoin wallets like UniSat, Leather, Xverse, and MetaMask.
 - [Bitcoin Light Client](/docs/bob-chain/relay): Learn how to interact with Bitcoin by proving transaction inclusion on BOB.
 - [Use tBTC, wBTC, or other ERC20 Tokens as Fee Tokens on BOB](/docs/deprecated/bridged-btc-gas-fee/): Learn how to use tBTC and wBTC as fee tokens on BOB.
 

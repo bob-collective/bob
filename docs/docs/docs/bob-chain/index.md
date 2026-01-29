@@ -21,7 +21,7 @@ Learn more about BOB's architecture:
 - **Fast Bitcoin Finality**: All transactions are finalized by Bitcoin. This is achieved through Bitcoin checkpointing and BTC staking via Babylon's [BSN](https://docs.babylonlabs.io/guides/overview/bitcoin_secured_networks/) architecture.
 - **EVM Compatibility**: Deploy and interact with EVM smart contracts. BOB uses the OP Stack with [minimal modifications](https://op-geth.optimism.io/) to the EVM - 100% compatibale with Base, Optimism and all other [Superchains](https://docs.optimism.io/superchain/superchain-explainer).
 - **Low Fees**: Significantly lower transaction costs than Bitcoin or Ethereum.
-- **Native BTC Support**: Use BTC directly in DeFi - with a single transaction through the power of [Gateway](/docs/gateway) and with full Bitcoin-security by [BitVM](/docs/bitvm).
+- **Native BTC Support**: Use BTC directly in DeFi - with a single transaction through the power of [Gateway](https://docs.gobob.xyz/gateway) and with full Bitcoin-security by [BitVM](/docs/bitvm).
 
 ## Use Cases
 
