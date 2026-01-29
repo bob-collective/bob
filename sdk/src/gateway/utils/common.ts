@@ -1,13 +1,5 @@
 import * as bitcoin from 'bitcoinjs-lib';
-import {
-    Address,
-    createPublicClient,
-    formatUnits,
-    Hex,
-    http,
-    parseUnits,
-    Chain as ViemChain,
-} from 'viem';
+import { Address, createPublicClient, formatUnits, Hex, http, parseUnits, Chain as ViemChain } from 'viem';
 import {
     avalanche,
     base,
