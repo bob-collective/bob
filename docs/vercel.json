@@ -1,0 +1,46 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "ignoreCommand": "npx turbo-ignore --fallback=HEAD^1",
+  "rewrites": [
+    {
+      "source": "/_mintlify/:path*",
+      "destination": "https://distributedcrafts.mintlify.app/_mintlify/:path*"
+    },
+    {
+      "source": "/api/request",
+      "destination": "https://distributedcrafts.mintlify.app/_mintlify/api/request"
+    },
+    {
+      "source": "/gateway",
+      "destination": "https://distributedcrafts.mintlify.app/gateway"
+    },
+    {
+      "source": "/gateway/llms.txt",
+      "destination": "https://distributedcrafts.mintlify.app/llms.txt"
+    },
+    {
+      "source": "/gateway/llms-full.txt",
+      "destination": "https://distributedcrafts.mintlify.app/llms-full.txt"
+    },
+    {
+      "source": "/gateway/sitemap.xml",
+      "destination": "https://distributedcrafts.mintlify.app/sitemap.xml"
+    },
+    {
+      "source": "/gateway/robots.txt",
+      "destination": "https://distributedcrafts.mintlify.app/robots.txt"
+    },
+    {
+      "source": "/gateway/mcp",
+      "destination": "https://distributedcrafts.mintlify.app/mcp"
+    },
+    {
+      "source": "/gateway/:path*",
+      "destination": "https://distributedcrafts.mintlify.app/gateway/:path*"
+    },
+    {
+      "source": "/mintlify-assets/:path+",
+      "destination": "https://distributedcrafts.mintlify.app/mintlify-assets/:path+"
+    }
+  ]
+}
