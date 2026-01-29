@@ -11,6 +11,14 @@
       "destination": "https://distributedcrafts.mintlify.app/_mintlify/api/request"
     },
     {
+      "source": "/api-reference",
+      "destination": "https://distributedcrafts.mintlify.app/api-reference"
+    },
+    {
+      "source": "/api-reference/:path*",
+      "destination": "https://distributedcrafts.mintlify.app/api-reference/:path*"
+    },
+    {
       "source": "/gateway",
       "destination": "https://distributedcrafts.mintlify.app/gateway"
     },
