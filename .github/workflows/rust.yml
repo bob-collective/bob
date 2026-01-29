@@ -36,7 +36,15 @@ jobs:
         with:
           cache-on-failure: true
 
+      - name: Cache cargo install binaries
+        uses: actions/cache@v4
+        id: cargo-bin-cache
+        with:
+          path: ~/.cargo/bin/electrs
+          key: ${{ runner.os }}-cargo-bin-electrs-6d182d8d0801a40c44a26000ae731a38c1d96218
+
       - name: Install Electrs
+        if: steps.cargo-bin-cache.outputs.cache-hit != 'true'
         run: cargo install --git https://github.com/blockstream/electrs --rev 6d182d8d0801a40c44a26000ae731a38c1d96218 --bin electrs
 
       - name: Format check
