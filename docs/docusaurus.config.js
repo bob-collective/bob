@@ -47,26 +47,6 @@ const config = {
   plugins: [
     ['docusaurus-plugin-llms', { pathTransformation: { ignorePaths: ['docs'] } }],
     [
-      'docusaurus-plugin-openapi-docs',
-      {
-        id: 'gateway-api',
-        docsPluginId: 'classic',
-        config: {
-          gateway: {
-            specPath: 'https://gateway-api-staging.gobob.xyz/api-doc.json',
-            outputDir: 'docs/docs/gateway/api',
-            version: '1.0.0',
-            hideSendButton: false,
-            sidebarOptions: {
-              groupPathsBy: 'tag',
-            },
-            showExtensions: true,
-            downloadUrl: 'https://gateway-api-staging.gobob.xyz/api-doc.json',
-          },
-        },
-      },
-    ],
-    [
       "@docusaurus/plugin-client-redirects",
       {
         redirects: [
@@ -82,14 +62,6 @@ const config = {
           {
             from: "/learn/builder-guides/full-node",
             to: "/docs/bob-chain/full-node",
-          },
-          {
-            from: "/learn/builder-guides/gateway",
-            to: "/docs/gateway",
-          },
-          {
-            from: "/learn/builder-guides/create-strategy",
-            to: "/docs/gateway",
           },
           {
             from: "/learn/builder-guides/bob-chain",
