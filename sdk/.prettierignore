@@ -1,3 +1,4 @@
 dist
 node_modules
 src/assets/
+src/gateway/generated-client

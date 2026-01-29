@@ -8,6 +8,7 @@ The BOB SDK helps you interact with BOB and Bitcoin, including Ordinals, BRC20, 
 - [Docs](https://docs.gobob.xyz/)
 
 ## Using the sdk in your project
+
 Install `@gobob/bob-sdk` with your package manager of choice.
 
 ```shell
@@ -15,11 +16,13 @@ pnpm i @gobob/bob-sdk
 ```
 
 or
+
 ```shell
 yarn add @gobob/bob-sdk
 ```
 
 or
+
 ```shell
 npm i @gobob/bob-sdk
 ```
@@ -41,9 +44,15 @@ We use `pnpm` in the examples below. But the steps below should also work when u
 
 ```shell
 pnpm i
+
+openapi-generator-cli generate --skip-validate-spec \
+    -i https://gateway-api-staging.gobob.xyz/api-doc.json \
+    -g typescript-fetch \
+    -o ./src/gateway/generated-client
 ```
 
 ### Build
+
 ```shell
 pnpm build
 ```
@@ -60,7 +69,7 @@ BOB is an open-source project. We welcome contributions of all sorts. There are 
 Contributions are what make the open source community such an amazing place to be learn, inspire, and create. Any contributions you make are greatly appreciated.
 
 1. Set up git so you can [sign your commits](https://git-scm.com/book/en/v2/Git-Tools-Signing-Your-Work) (Alternative link: [GitHub: Signing commits](https://docs.github.com/en/authentication/managing-commit-signature-verification/signing-commits))  
-Unsigned PRs cannot be merged, so do not skip this step.
+   Unsigned PRs cannot be merged, so do not skip this step.
 2. Fork the Project
 3. Create your Feature Branch (git checkout -b yourname/AmazingFeature)
 4. Commit your Changes (git commit -m 'Add some AmazingFeature')
@@ -70,4 +79,3 @@ Unsigned PRs cannot be merged, so do not skip this step.
 If you are searching for a place to start or would like to discuss features, reach out to us:
 
 - [Discord](https://discord.com/invite/gobob)
-

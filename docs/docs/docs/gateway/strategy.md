@@ -20,7 +20,7 @@ Which approach should I choose?
 
 - **Custom Strategy**: Choose this if you need complex logic, gas optimization, custom events, or want full control over the execution flow
 - **Multicall Strategy**: Choose this if you want to integrate with existing contracts on BOB without deploying new ones, or for simple approve + deposit patterns
-- **LayerZero Destination Strategy**: Choose this for cross-chain swaps where you want to execute calls on the destination chain (e.g., deposit into a lending protocol on Base after bridging from Bitcoin). See the [LayerZero documentation](./layerzero.md#destination-actions-cross-chain-calls) for details.
+- **LayerZero Destination Strategy**: Choose this for cross-chain swaps where you want to execute calls on the destination chain (e.g., deposit into a lending protocol on Base after bridging from Bitcoin).
 
 ## Option 1: Custom Strategy Contract
 

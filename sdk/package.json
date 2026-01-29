@@ -1,17 +1,17 @@
 {
     "name": "@gobob/bob-sdk",
-    "version": "4.4.10-rc14",
+    "version": "4.4.11-rc8",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
     "scripts": {
         "test": "vitest run test/*.ts --exclude test/layerzero.test.ts",
         "deploy-relay": "ts-node src/scripts/relay-genesis.ts",
         "update-relay": "ts-node src/scripts/relay-retarget.ts",
-        "prepare": "tsx scripts/prepare.ts",
         "build": "tsc -p tsconfig.json",
         "lint": "eslint .",
         "format": "prettier --write examples src test",
-        "format:check": "prettier --check examples src test"
+        "format:check": "prettier --check examples src test",
+        "codegen": "npx @openapitools/openapi-generator-cli generate --skip-validate-spec -g typescript-fetch -i https://gateway-api-staging.gobob.xyz/api-doc.json -o ./src/gateway/generated-client --global-property=apiDocs=false,modelDocs=false"
     },
     "files": [
         "dist/**/*",
