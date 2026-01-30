@@ -217,7 +217,7 @@ export class GatewayApiClient {
             }
             // const accountAddress = walletClient.account?.address ?? (params.fromUserAddress as Address);
             const accountAddress = walletClient.account.address;
-            const tokenAddress = WBTC_OFT_ADDRESS; // TODO: get from API
+            const tokenAddress = quote.offramp.tokenAddress as Address;
 
             const order = await this.api.createOrder({ gatewayQuote: { offramp: quote.offramp } });
 
