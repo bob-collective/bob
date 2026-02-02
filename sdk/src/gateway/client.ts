@@ -3,11 +3,13 @@ import {
     Address,
     erc20Abi,
     Hex,
+    isAddressEqual,
     maxUint256,
     PublicClient,
     Transport,
     Chain as ViemChain,
     WalletClient,
+    zeroAddress,
 } from 'viem';
 import { bob } from 'viem/chains';
 import { strategyCaller } from './abi';
@@ -271,31 +273,33 @@ export class GatewayApiClient {
             // }
 
             // Check ETH balance and estimate gas for both potential transactions
-            const [allowance, decimals] = await publicClient.multicall({
-                allowFailure: false,
-                contracts: [
-                    {
-                        address: tokenAddress,
-                        abi: erc20Abi,
-                        functionName: 'allowance',
-                        args: [accountAddress, spenderAddress],
-                    },
-                    {
-                        address: tokenAddress,
-                        abi: erc20Abi,
-                        functionName: 'decimals',
-                    },
-                ],
-            });
+            const [allowance, decimals] = !isAddressEqual(tokenAddress, zeroAddress)
+                ? await publicClient.multicall({
+                      allowFailure: false,
+                      contracts: [
+                          {
+                              address: tokenAddress,
+                              abi: erc20Abi,
+                              functionName: 'allowance',
+                              args: [accountAddress, spenderAddress],
+                          },
+                          {
+                              address: tokenAddress,
+                              abi: erc20Abi,
+                              functionName: 'decimals',
+                          },
+                      ],
+                  })
+                : [maxUint256, 18];
 
             if (decimals < 8) {
                 throw new Error('Tokens with less than 8 decimals are not supported');
             }
             const multiplier = 10n ** BigInt(decimals - 8);
             const requiredAmount = BigInt(quote.offramp.inputAmount.amount) * multiplier;
-            const needsApproval = requiredAmount > allowance && tokenAddress !== WBTC_OFT_ADDRESS;
+            const needsApproval = requiredAmount > allowance && !isAddressEqual(tokenAddress, WBTC_OFT_ADDRESS);
 
-            if (needsApproval) {
+            if (needsApproval && !isAddressEqual(tokenAddress, zeroAddress)) {
                 const { request } = await publicClient.simulateContract({
                     account: walletClient.account,
                     address: tokenAddress,
