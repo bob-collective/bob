@@ -273,22 +273,24 @@ export class GatewayApiClient {
             // }
 
             // Check ETH balance and estimate gas for both potential transactions
-            const [allowance, decimals] = !isAddressEqual(tokenAddress, zeroAddress) ? await publicClient.multicall({
-                allowFailure: false,
-                contracts: [
-                    {
-                        address: tokenAddress,
-                        abi: erc20Abi,
-                        functionName: 'allowance',
-                        args: [accountAddress, spenderAddress],
-                    },
-                    {
-                        address: tokenAddress,
-                        abi: erc20Abi,
-                        functionName: 'decimals',
-                    },
-                ],
-            }) : [maxUint256, 18];
+            const [allowance, decimals] = !isAddressEqual(tokenAddress, zeroAddress)
+                ? await publicClient.multicall({
+                      allowFailure: false,
+                      contracts: [
+                          {
+                              address: tokenAddress,
+                              abi: erc20Abi,
+                              functionName: 'allowance',
+                              args: [accountAddress, spenderAddress],
+                          },
+                          {
+                              address: tokenAddress,
+                              abi: erc20Abi,
+                              functionName: 'decimals',
+                          },
+                      ],
+                  })
+                : [maxUint256, 18];
 
             if (decimals < 8) {
                 throw new Error('Tokens with less than 8 decimals are not supported');
