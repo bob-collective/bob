@@ -273,7 +273,7 @@ export class GatewayApiClient {
             // }
 
             // Check ETH balance and estimate gas for both potential transactions
-            const [allowance, decimals] = isAddressEqual(tokenAddress, zeroAddress) ? await publicClient.multicall({
+            const [allowance, decimals] = !isAddressEqual(tokenAddress, zeroAddress) ? await publicClient.multicall({
                 allowFailure: false,
                 contracts: [
                     {
