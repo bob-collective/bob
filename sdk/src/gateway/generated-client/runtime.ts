@@ -137,7 +137,7 @@ export class BaseAPI {
         if (response && (response.status >= 200 && response.status < 300)) {
             return response;
         }
-        throw new ResponseError(response, 'Response returned an error code');
+        throw await ResponseError.fromResponse(response);
     }
 
     private async createFetchParams(context: RequestOpts, initOverrides?: RequestInit | InitOverrideFunction) {
@@ -258,9 +258,34 @@ function isFormData(value: any): value is FormData {
 }
 
 export class ResponseError extends Error {
-    override name: "ResponseError" = "ResponseError";
-    constructor(public response: Response, msg?: string) {
-        super(msg);
+    readonly name = "ResponseError";
+    readonly body: unknown;
+
+    constructor(response: Response, body: unknown = undefined) {
+        const message =
+            (body as any)?.message ??
+            `${response.status} ${response.statusText}`;
+
+        super(message);
+
+        this.body = body;
+        this.name = "ResponseError";
+        Object.setPrototypeOf(this, ResponseError.prototype);
+    }
+
+    static async fromResponse(response: Response): Promise<ResponseError> {
+        let body: unknown;
+
+        try {
+            const contentType = response.headers.get("content-type") ?? "";
+            if (contentType.includes("application/json")) {
+                body = await response.json();
+            }
+        } catch {
+            // ignore parse errors
+        }
+
+        return new ResponseError(response, body);
     }
 }
 

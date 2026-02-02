@@ -980,4 +980,29 @@ describe('Gateway Tests', () => {
             })
         ).rejects.toThrow('btcSigner must implement either sendBitcoin or signAllInputs method');
     });
+
+    it('should get error', async () => {
+        // Mock the GET request to /v1/get-quote
+        nock(STAGING_GATEWAY_BASE_URL).get('/v1/get-quote').query(true).reply(400, {
+            message:
+                'Rejection(GatewayError { message: "No route found from bitcoin (0x0000000000000000000000000000000000000001) to bob (0x0555E30da8f98308EdB960aa94C0Db47230d2B9c)" })',
+        });
+
+        const gatewaySDK = new GatewaySDK(bob.id);
+
+        await expect(
+            gatewaySDK.getQuote({
+                fromChain: 'bitcoin',
+                toChain: 'bob',
+                fromToken: '0x0000000000000000000000000000000000000001',
+                toToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
+                amount: 100000,
+                fromUserAddress: 'bc1qyhc4uslh46axl553pq3mjclrt7dcgmlzxv0ktx',
+                toUserAddress: '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
+                maxSlippage: 300,
+            })
+        ).rejects.toThrow(
+            'Rejection(GatewayError { message: "No route found from bitcoin (0x0000000000000000000000000000000000000001) to bob (0x0555E30da8f98308EdB960aa94C0Db47230d2B9c)" })'
+        );
+    });
 });
