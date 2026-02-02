@@ -217,7 +217,7 @@ export class GatewayApiClient {
             }
             // const accountAddress = walletClient.account?.address ?? (params.fromUserAddress as Address);
             const accountAddress = walletClient.account.address;
-            const tokenAddress = WBTC_OFT_ADDRESS; // TODO: get from API
+            const tokenAddress = quote.offramp.tokenAddress as Address;
 
             const order = await this.api.createOrder({ gatewayQuote: { offramp: quote.offramp } });
 
@@ -293,7 +293,7 @@ export class GatewayApiClient {
             }
             const multiplier = 10n ** BigInt(decimals - 8);
             const requiredAmount = BigInt(quote.offramp.inputAmount.amount) * multiplier;
-            const needsApproval = requiredAmount > allowance;
+            const needsApproval = requiredAmount > allowance && tokenAddress !== WBTC_OFT_ADDRESS;
 
             if (needsApproval) {
                 const { request } = await publicClient.simulateContract({
