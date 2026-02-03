@@ -44,3 +44,16 @@ export const compoundV2CTokenAbi = parseAbi([
 ]);
 
 export const aaveV2AtokenAbi = parseAbi(['function UNDERLYING_ASSET_ADDRESS() external view returns (address)']);
+
+export const USDTApproveAbi = [
+    {
+        type: 'function',
+        name: 'approve',
+        stateMutability: 'nonpayable',
+        inputs: [
+            { name: 'spender', type: 'address' },
+            { name: 'amount', type: 'uint256' },
+        ],
+        outputs: [],
+    },
+] as const;

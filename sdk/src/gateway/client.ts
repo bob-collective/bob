@@ -12,7 +12,7 @@ import {
     zeroAddress,
 } from 'viem';
 import { bob } from 'viem/chains';
-import { strategyCaller } from './abi';
+import { strategyCaller, USDTApproveAbi } from './abi';
 import { BitcoinSigner, GetQuoteParams, StrategyParams } from './types';
 import {
     Configuration,
@@ -30,6 +30,7 @@ import {
 import { formatBtc } from './utils';
 
 export const WBTC_OFT_ADDRESS = '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c';
+export const ETHEREUM_USDT_ADDRESS = '0xdAC17F958D2ee523a2206206994597C13D831ec7';
 
 /**
  * Base url for the staging Gateway API.
@@ -80,8 +81,6 @@ export interface AllWalletClientParams extends EvmWalletClientParams {
  */
 export class GatewayApiClient {
     api: V1Api;
-    // private isSignet: boolean = false;
-
     /**
      * Creates a new Gateway API client instance.
      *
@@ -229,87 +228,51 @@ export class GatewayApiClient {
 
             const spenderAddress = order.offramp.tx.to as Address;
 
-            // if (
-            //     getAddress(quote.data.amountInMax.address) ===
-            //     getAddress('0xdAC17F958D2ee523a2206206994597C13D831ec7')
-            // ) {
-            //     // USDT has a non-standard approve function that doesn't return bool
-            //     // First reset allowance to 0, then set to desired amount
-            //     const usdtAbi = [
-            //         {
-            //             constant: false,
-            //             inputs: [
-            //                 { name: '_spender', type: 'address' },
-            //                 { name: '_value', type: 'uint256' },
-            //             ],
-            //             name: 'approve',
-            //             outputs: [],
-            //             type: 'function',
-            //         },
-            //     ] as const;
-
-            //     // Reset to 0 first
-            //     const { request: resetRequest } = await publicClient.simulateContract({
-            //         account: walletClient.account,
-            //         address: quote.data.amountInMax.address,
-            //         abi: usdtAbi,
-            //         functionName: 'approve',
-            //         args: [quote.data.tx.to, 0n],
-            //     });
-            //     const resetTxHash = await walletClient.writeContract(resetRequest);
-            //     await publicClient.waitForTransactionReceipt({ hash: resetTxHash });
-
-            //     // Set to max
-            //     const { request } = await publicClient.simulateContract({
-            //         account: walletClient.account,
-            //         address: quote.data.amountInMax.address,
-            //         abi: usdtAbi,
-            //         functionName: 'approve',
-            //         args: [quote.data.tx.to, maxUint256],
-            //     });
-
-            //     const txHash = await walletClient.writeContract(request);
-            //     await publicClient.waitForTransactionReceipt({ hash: txHash });
-            // }
-
             // Check ETH balance and estimate gas for both potential transactions
-            const [allowance, decimals] = !isAddressEqual(tokenAddress, zeroAddress)
-                ? await publicClient.multicall({
-                      allowFailure: false,
-                      contracts: [
-                          {
-                              address: tokenAddress,
-                              abi: erc20Abi,
-                              functionName: 'allowance',
-                              args: [accountAddress, spenderAddress],
-                          },
-                          {
-                              address: tokenAddress,
-                              abi: erc20Abi,
-                              functionName: 'decimals',
-                          },
-                      ],
-                  })
-                : [maxUint256, 18];
+            const allowance = !isAddressEqual(tokenAddress, zeroAddress)
+                ? (
+                      await publicClient.multicall({
+                          allowFailure: false,
+                          contracts: [
+                              {
+                                  address: tokenAddress,
+                                  abi: erc20Abi,
+                                  functionName: 'allowance',
+                                  args: [accountAddress, spenderAddress],
+                              },
+                          ],
+                      })
+                  )[0]
+                : maxUint256;
 
-            if (decimals < 8) {
-                throw new Error('Tokens with less than 8 decimals are not supported');
-            }
-            const multiplier = 10n ** BigInt(decimals - 8);
-            const requiredAmount = BigInt(quote.offramp.inputAmount.amount) * multiplier;
+            const requiredAmount = BigInt(quote.offramp.inputAmount.amount);
             const needsApproval = requiredAmount > allowance && !isAddressEqual(tokenAddress, WBTC_OFT_ADDRESS);
 
             if (needsApproval && !isAddressEqual(tokenAddress, zeroAddress)) {
+                // To change the USDT approval, first set the allowance to 0 (approve(_spender, 0))
+                // to avoid the ERC20 race condition:
+                // https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
+                if (isAddressEqual(tokenAddress, ETHEREUM_USDT_ADDRESS) && allowance !== 0n) {
+                    const { request: resetRequest } = await publicClient.simulateContract({
+                        account: walletClient.account,
+                        address: tokenAddress,
+                        abi: USDTApproveAbi,
+                        functionName: 'approve',
+                        args: [spenderAddress, 0n],
+                    });
+                    const resetTxHash = await walletClient.writeContract(resetRequest);
+                    await publicClient.waitForTransactionReceipt({ hash: resetTxHash });
+                }
+
                 const { request } = await publicClient.simulateContract({
                     account: walletClient.account,
                     address: tokenAddress,
-                    abi: erc20Abi,
+                    abi: isAddressEqual(tokenAddress, ETHEREUM_USDT_ADDRESS) ? USDTApproveAbi : erc20Abi,
                     functionName: 'approve',
                     args: [spenderAddress, maxUint256],
                 });
 
                 const approveTxHash = await walletClient.writeContract(request);
-
                 await publicClient.waitForTransactionReceipt({ hash: approveTxHash });
             }
 
