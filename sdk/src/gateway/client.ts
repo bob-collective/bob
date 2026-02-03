@@ -28,7 +28,6 @@ import {
     RouteInfo,
 } from './generated-client';
 import { formatBtc } from './utils';
-import type { Hash } from 'viem/types/misc';
 
 export const WBTC_OFT_ADDRESS = '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c';
 export const ETHEREUM_USDT_ADDRESS = '0xdAC17F958D2ee523a2206206994597C13D831ec7';
