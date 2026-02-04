@@ -33,6 +33,12 @@ export const WBTC_OFT_ADDRESS = '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c';
 export const ETHEREUM_USDT_ADDRESS = '0xdAC17F958D2ee523a2206206994597C13D831ec7';
 
 /**
+ * Base url for the mainnet Gateway API.
+ * @default "https://gateway-api-mainnet.gobob.xyz"
+ */
+export const MAINNET_GATEWAY_BASE_URL = 'https://gateway-api-mainnet.gobob.xyz';
+
+/**
  * Base url for the staging Gateway API.
  * @default "https://gateway-api-staging.gobob.xyz"
  */
@@ -69,7 +75,7 @@ export interface AllWalletClientParams extends EvmWalletClientParams {
  *
  * @example
  * ```typescript
- * const client = new GatewayApiClient(bob.id);
+ * const client = new GatewayApiClient();
  * const quote = await client.getQuote({
  *   fromChain: 'bitcoin',
  *   toChain: 'bob',
@@ -81,39 +87,22 @@ export interface AllWalletClientParams extends EvmWalletClientParams {
  */
 export class GatewayApiClient {
     api: V1Api;
+
     /**
      * Creates a new Gateway API client instance.
-     *
-     * @param chainId The chain ID to connect to. Supported values:
-     *   - `60808` for BOB mainnet
-     *   - `808813` for BOB Sepolia testnet
-     * @param options Optional configuration
-     * @param options.rpcUrl Custom RPC URL for the chain (optional)
-     *
-     * @throws {Error} If an unsupported chainId is provided
      *
      * @example
      * ```typescript
      * // Mainnet client
-     * const mainnetClient = new GatewayApiClient(60808);
-     *
-     * // Testnet client with custom RPC
-     * const testnetClient = new GatewayApiClient(808813);
+     * const mainnetClient = new GatewayApiClient();
      * ```
      */
-    // TODO: remove constructor, set the config from `getQuote`
-    constructor(chainId: number) {
-        switch (chainId) {
-            case bob.id:
-                this.api = new V1Api(
-                    new Configuration({
-                        basePath: STAGING_GATEWAY_BASE_URL,
-                    })
-                );
-                break;
-            default:
-                throw new Error('Invalid chain');
-        }
+    constructor(basePath?: string) {
+        this.api = new V1Api(
+            new Configuration({
+                basePath: basePath || MAINNET_GATEWAY_BASE_URL,
+            })
+        );
     }
 
     /**
