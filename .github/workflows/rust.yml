@@ -37,7 +37,7 @@ jobs:
           cache-on-failure: true
 
       - name: Cache cargo install binaries
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         id: cargo-bin-cache
         with:
           path: ~/.cargo/bin/electrs
