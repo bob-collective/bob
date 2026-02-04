@@ -262,12 +262,15 @@ export class ResponseError extends Error {
     readonly body: unknown;
 
     constructor(response: Response, body: unknown = undefined) {
-        const message =
-            (body as any)?.message ??
-            `${response.status} ${response.statusText}`;
+        // Prioritize the actual error message from body, fallback to status
+        const message = (() => {
+            const errorBody = body as any;
+            if (errorBody?.error) return errorBody.error;
+            if (errorBody?.message) return errorBody.message;
+            return `${response.status} ${response.statusText}`;
+        })();
 
         super(message);
-
         this.body = body;
         this.name = "ResponseError";
         Object.setPrototypeOf(this, ResponseError.prototype);
