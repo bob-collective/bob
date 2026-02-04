@@ -9,10 +9,9 @@ import {
     WalletClient,
     zeroAddress,
 } from 'viem';
-import { bob } from 'viem/chains';
 import { afterEach, assert, describe, expect, it } from 'vitest';
 import { GatewaySDK } from '../src/gateway';
-import { STAGING_GATEWAY_BASE_URL } from '../src/gateway/client';
+import { MAINNET_GATEWAY_BASE_URL } from '../src/gateway/client';
 import {
     GatewayOrderInfo,
     GatewayQuoteOneOf,
@@ -31,14 +30,8 @@ afterEach(() => {
 });
 
 describe('Gateway Tests', () => {
-    it('should reject invalid chain', async () => {
-        expect(() => {
-            new GatewaySDK(109209);
-        }).toThrowError('Invalid chain');
-    });
-
     it('should get quote', async () => {
-        const gatewaySDK = new GatewaySDK(bob.id);
+        const gatewaySDK = new GatewaySDK();
 
         const mockOnrampQuote: GatewayQuoteOneOf = {
             onramp: {
@@ -173,17 +166,17 @@ describe('Gateway Tests', () => {
             },
         };
 
-        nock(`${STAGING_GATEWAY_BASE_URL}`)
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
             .get('/v1/get-quote')
             .query((q) => q.srcChain === 'bitcoin')
             .reply(200, mockOnrampQuote);
 
-        nock(`${STAGING_GATEWAY_BASE_URL}`)
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
             .get('/v1/get-quote')
             .query((q) => q.dstChain === 'bitcoin')
             .reply(200, mockOfframpQuote);
 
-        nock(`${STAGING_GATEWAY_BASE_URL}`)
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
             .get('/v1/get-quote')
             .query((q) => q.srcChain === 'bsc')
             .reply(200, mockLayerZeroQuote);
@@ -323,16 +316,16 @@ describe('Gateway Tests', () => {
             },
         ];
 
-        nock(`${STAGING_GATEWAY_BASE_URL}`).get(`/v1/get-orders/${zeroAddress}`).reply(200, mockOrders);
+        nock(`${MAINNET_GATEWAY_BASE_URL}`).get(`/v1/get-orders/${zeroAddress}`).reply(200, mockOrders);
 
-        const gatewaySDK = new GatewaySDK(bob.id);
+        const gatewaySDK = new GatewaySDK();
         const orders = await gatewaySDK.getOrders(zeroAddress);
         expect(orders).toBeDefined();
         assert(Array.isArray(orders));
     });
 
     it('should get routes', async () => {
-        nock(`${STAGING_GATEWAY_BASE_URL}/v1`)
+        nock(`${MAINNET_GATEWAY_BASE_URL}/v1`)
             .get('/get-routes')
             .reply(200, [
                 {
@@ -343,14 +336,14 @@ describe('Gateway Tests', () => {
                 },
             ]);
 
-        const gatewaySDK = new GatewaySDK(bob.id);
+        const gatewaySDK = new GatewaySDK();
         const routes = await gatewaySDK.getRoutes();
         expect(routes).toBeDefined();
         expect(Array.isArray(routes)).toBe(true);
     });
 
     it('should execute onramp quote with btcSigner.signAllInputs', async () => {
-        const gatewaySDK = new GatewaySDK(bob.id);
+        const gatewaySDK = new GatewaySDK();
 
         const mockQuote: GatewayQuoteOneOf = {
             onramp: {
@@ -414,7 +407,7 @@ describe('Gateway Tests', () => {
         const mockPsbt = 'cHNidP8BAH0CAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAzwAAAAA=';
         const signedTx = '02000000010000000000000000000000000000000000000000000000000000000000000000';
 
-        nock(`${STAGING_GATEWAY_BASE_URL}`)
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
             .post('/v1/create-order')
             .reply(200, {
                 onramp: {
@@ -425,7 +418,7 @@ describe('Gateway Tests', () => {
                 },
             });
 
-        nock(`${STAGING_GATEWAY_BASE_URL}`).patch('/v1/register-tx').reply(200, JSON.stringify('tx-hash-123'));
+        nock(`${MAINNET_GATEWAY_BASE_URL}`).patch('/v1/register-tx').reply(200, JSON.stringify('tx-hash-123'));
 
         const mockBtcSigner: BitcoinSigner = {
             signAllInputs: async (psbt: string) => {
@@ -451,7 +444,7 @@ describe('Gateway Tests', () => {
     });
 
     it('should throw error for onramp without btcSigner', async () => {
-        const gatewaySDK = new GatewaySDK(bob.id);
+        const gatewaySDK = new GatewaySDK();
 
         const mockQuote: GatewayQuoteOneOf = {
             onramp: {
@@ -527,7 +520,7 @@ describe('Gateway Tests', () => {
     });
 
     it('should throw error when btcSigner returns empty transaction', async () => {
-        const gatewaySDK = new GatewaySDK(bob.id);
+        const gatewaySDK = new GatewaySDK();
 
         const mockQuote: GatewayQuoteOneOf = {
             onramp: {
@@ -590,7 +583,7 @@ describe('Gateway Tests', () => {
         const mockOrderId = 'order-123';
         const mockPsbt = 'cHNidP8BAH0CAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAzwAAAAA=';
 
-        nock(`${STAGING_GATEWAY_BASE_URL}`)
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
             .post('/v1/create-order')
             .reply(200, {
                 onramp: {
@@ -622,7 +615,7 @@ describe('Gateway Tests', () => {
     });
 
     it('should execute offramp quote with token approval', async () => {
-        const gatewaySDK = new GatewaySDK(bob.id);
+        const gatewaySDK = new GatewaySDK();
 
         const mockQuote: GatewayQuoteOneOf1 = {
             offramp: {
@@ -674,7 +667,7 @@ describe('Gateway Tests', () => {
             },
         };
 
-        nock(`${STAGING_GATEWAY_BASE_URL}`)
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
             .post('/v1/create-order')
             .reply(200, {
                 offramp: {
@@ -687,7 +680,7 @@ describe('Gateway Tests', () => {
                 },
             });
 
-        nock(`${STAGING_GATEWAY_BASE_URL}`).patch('/v1/register-tx').reply(200, JSON.stringify('ok'));
+        nock(`${MAINNET_GATEWAY_BASE_URL}`).patch('/v1/register-tx').reply(200, JSON.stringify('ok'));
 
         const mockWalletClient = {
             account: { address: '0xabcd1234abcd1234abcd1234abcd1234abcd1234' as Address },
@@ -711,7 +704,7 @@ describe('Gateway Tests', () => {
     });
 
     it('should execute offramp quote without approval when allowance is sufficient', async () => {
-        const gatewaySDK = new GatewaySDK(bob.id);
+        const gatewaySDK = new GatewaySDK();
 
         const mockQuote: GatewayQuoteOneOf1 = {
             offramp: {
@@ -763,7 +756,7 @@ describe('Gateway Tests', () => {
             },
         };
 
-        nock(`${STAGING_GATEWAY_BASE_URL}`)
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
             .post('/v1/create-order')
             .reply(200, {
                 offramp: {
@@ -776,7 +769,7 @@ describe('Gateway Tests', () => {
                 },
             });
 
-        nock(`${STAGING_GATEWAY_BASE_URL}`).patch('/v1/register-tx').reply(200, JSON.stringify('ok'));
+        nock(`${MAINNET_GATEWAY_BASE_URL}`).patch('/v1/register-tx').reply(200, JSON.stringify('ok'));
 
         const mockWalletClient = {
             account: { address: '0xabcd1234abcd1234abcd1234abcd1234abcd1234' as Address },
@@ -798,7 +791,7 @@ describe('Gateway Tests', () => {
     });
 
     it('should throw error when invalid quote type is provided', async () => {
-        const gatewaySDK = new GatewaySDK(bob.id);
+        const gatewaySDK = new GatewaySDK();
 
         const invalidQuote = {
             someInvalidField: 'invalid',
@@ -820,7 +813,7 @@ describe('Gateway Tests', () => {
     });
 
     it('should throw error when btcSigner has neither method', async () => {
-        const gatewaySDK = new GatewaySDK(bob.id);
+        const gatewaySDK = new GatewaySDK();
 
         const mockQuote: GatewayQuoteOneOf = {
             onramp: {
@@ -883,7 +876,7 @@ describe('Gateway Tests', () => {
         const mockOrderId = 'order-123';
         const mockPsbt = 'cHNidP8BAH0CAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAzwAAAAA=';
 
-        nock(`${STAGING_GATEWAY_BASE_URL}`)
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
             .post('/v1/create-order')
             .reply(200, {
                 onramp: {
@@ -914,12 +907,12 @@ describe('Gateway Tests', () => {
 
     it('should get error', async () => {
         // Mock the GET request to /v1/get-quote
-        nock(STAGING_GATEWAY_BASE_URL).get('/v1/get-quote').query(true).reply(400, {
+        nock(MAINNET_GATEWAY_BASE_URL).get('/v1/get-quote').query(true).reply(400, {
             message:
                 'Rejection(GatewayError { message: "No route found from bitcoin (0x0000000000000000000000000000000000000001) to bob (0x0555E30da8f98308EdB960aa94C0Db47230d2B9c)" })',
         });
 
-        const gatewaySDK = new GatewaySDK(bob.id);
+        const gatewaySDK = new GatewaySDK();
 
         await expect(
             gatewaySDK.getQuote({

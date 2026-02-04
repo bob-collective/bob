@@ -30,7 +30,7 @@ export async function swapBtcForToken(evmAddress: Address) {
     });
     const btcSigner = new XverseConnector(Network.mainnet);
 
-    const gatewaySDK = new GatewaySDK(bob.id);
+    const gatewaySDK = new GatewaySDK();
 
     const quote = await gatewaySDK.getQuote({
         fromChain: 'bitcoin',
@@ -122,7 +122,7 @@ export async function onrampAndDeposit(evmAddress: Address) {
 
     const btcSigner = new XverseConnector(Network.mainnet);
 
-    const gatewaySDK = new GatewaySDK(bob.id);
+    const gatewaySDK = new GatewaySDK();
 
     const quote = await gatewaySDK.getQuote({
         fromChain: 'bitcoin',
