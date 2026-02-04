@@ -29,7 +29,7 @@
         "@typescript-eslint/parser": "^8.49.0",
         "ecpair": "^2.1.0",
         "eslint-config-prettier": "^10.1.8",
-        "eslint-plugin-prettier": "^5.5.1",
+        "eslint-plugin-prettier": "^5.5.5",
         "eslint": "^9.39.2",
         "mocha": "^11.7.5",
         "nock": "^14.0.5",
