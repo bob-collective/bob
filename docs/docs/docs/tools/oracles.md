@@ -34,22 +34,13 @@ Check out these guides on how to:
 
 ## DIA
 
-[DIA](https://www.diadata.org/) provides [price feeds](https://www.diadata.org/app/price/) for 20,000+ assets on BOB.
+[DIA](https://www.diadata.org/) is a cross-chain, trustless oracle network delivering verifiable price feeds for BOB. DIA sources raw trade data directly from primary markets and computes it onchain, ensuring complete transparency and data integrity.
 
-See [this guide](https://docs.diadata.org/introduction/intro-to-dia-oracles/access-the-oracle) to learn how to use DIA price feeds. Learn more about DIA’s [data sourcing](https://docs.diadata.org/introduction/dia-technical-structure/data-sourcing) and [data computation](https://docs.diadata.org/introduction/dia-technical-structure/data-computation) architecture.
+To Query DIA Price Feeds:
 
-Here is an example of how to access a price value on DIA oracles:
+Call the `getValue()` function on the oracle contract with the Query Symbol (e.g., "WBTC/USD"). The function returns the asset price with 8 decimal precision and the timestamp of the last update. You can view the full BOB oracle integration guide [here](https://www.diadata.org/docs/guides/chain-specific-guide/bob-build-on-bitcoin).
 
-1. Access your custom oracle smart contract on BOB.
-2. Call `getValue(pair_name)` with `pair_name` being the full pair name such as `BTC/USD`. You can use the "Read" section on the explorer to execute this call.
-3. The response of the call contains two values:
-
-- The current asset price in USD with a fix-comma notation of 8 decimals.
-- The UNIX timestamp of the last oracle update.
-
-DIA has [oracle integration samples](https://docs.diadata.org/products/token-price-feeds/access-the-oracle) in Solidity and Vyper. For assistance, connect with the DIA team directly on [Discord](https://discord.gg/ZvGjVY5uvs) or [Telegram](https://t.me/diadata_org).
-
-**Assets (BOB Mainnet)**
+**Price Feeds on BOB Mainnet**
 
 - WBTC/USD: [0x6Ae049df8FC215aC1A5f5226B220E51301FE7e3D](https://explorer.gobob.xyz/address/0x6Ae049df8FC215aC1A5f5226B220E51301FE7e3D)
 - tBTC/USD: [0x7F1AD8fBb80A262cE5987439d2F4B52f1a426f55](https://explorer.gobob.xyz/address/0x7F1AD8fBb80A262cE5987439d2F4B52f1a426f55)
@@ -58,6 +49,10 @@ DIA has [oracle integration samples](https://docs.diadata.org/products/token-pri
 - ETH/USD: [0x27abC874f709fbc7b2af4153e875cf52C701725E](https://explorer.gobob.xyz/address/0x27abC874f709fbc7b2af4153e875cf52C701725E)
 - wstETH/USD: [0xa6aEdd027Bc91569617c26EEB6146A2b9148788a](https://explorer.gobob.xyz/address/0xa6aEdd027Bc91569617c26EEB6146A2b9148788a)
 - eSOV/USD: [0x3844E091e4058c7B8D96b3eCb676d0B40d1941d2](https://explorer.gobob.xyz/address/0x3844E091e4058c7B8D96b3eCb676d0B40d1941d2)
+
+For assets not currently available or dApps requiring specific configurations, you can request for a custom oracle tailored to your requirements.
+
+→ [Request a Custom Oracle](https://www.diadata.org/docs/guides/how-to-guides/request-a-custom-oracle)
 
 **Supported Networks**
 
