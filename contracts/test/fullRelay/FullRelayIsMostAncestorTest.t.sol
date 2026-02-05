@@ -24,7 +24,9 @@ contract FullRelayIsMostAncestorTest is FullRelayTestUtils {
     uint256 constant postLength = 8;
 
     constructor()
-        FullRelayTestUtils("headersReorgAndRetarget.json", ".genesis.hex", ".genesis.height", ".oldPeriodStart.digest_le")
+        FullRelayTestUtils(
+            "headersReorgAndRetarget.json", ".genesis.hex", ".genesis.height", ".oldPeriodStart.digest_le"
+        )
     {
         preHeaderHexes = getHeaderHexes("preRetargetChain", 0, preLength);
         postDigestLes = getDigestLes("postRetargetChain", 0, postLength);

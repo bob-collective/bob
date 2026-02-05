@@ -27,14 +27,14 @@ contract WitnessTxTest is Test {
         });
 
         bytes32 wTxHash = abi.encodePacked(
-            txInfo.info.version,
-            WitnessTx.SEGWIT_MARKER,
-            WitnessTx.SEGWIT_FLAG,
-            txInfo.info.inputVector,
-            txInfo.info.outputVector,
-            txInfo.witnessVector,
-            txInfo.info.locktime
-        ).hash256View();
+                txInfo.info.version,
+                WitnessTx.SEGWIT_MARKER,
+                WitnessTx.SEGWIT_FLAG,
+                txInfo.info.inputVector,
+                txInfo.info.outputVector,
+                txInfo.witnessVector,
+                txInfo.info.locktime
+            ).hash256View();
 
         assertEq(wTxId, wTxHash);
     }
