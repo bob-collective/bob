@@ -23,11 +23,9 @@ jobs:
         uses: foundry-rs/foundry-toolchain@v1
         with:
           version: v1.3.6
-      - name: Install deps (with retries)
+      - name: Install deps
         run: |
-          for i in {1..5}; do
-            forge soldeer install && break || sleep 10
-          done
+            forge soldeer install
       - name: Run forge tests
         run: |
           forge test -vvv --deny-warnings
