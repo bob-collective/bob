@@ -101,6 +101,24 @@ export class GatewayApiClient {
         this.api = new V1Api(
             new Configuration({
                 basePath: basePath || MAINNET_GATEWAY_BASE_URL,
+                middleware: [
+                    {
+                        async post(context) {
+                            if (context.response && (context.response.status < 200 || context.response.status >= 300)) {
+                                let body: Record<string, string>;
+                                try {
+                                    body = await context.response.json();
+                                } catch {
+                                    throw new Error(context.response.statusText);
+                                }
+
+                                throw new Error(body.error || body.message || JSON.stringify(body));
+                            }
+
+                            return context.response;
+                        },
+                    },
+                ],
             })
         );
     }

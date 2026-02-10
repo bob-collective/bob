@@ -382,11 +382,7 @@ library BitcoinTx {
         require(outputPresent, "No output found for scriptPubKey");
     }
 
-    function extractEvmAddressFromOutput(bytes memory _output, uint256 _at)
-        internal
-        pure
-        returns (address evmAddress)
-    {
+    function extractEvmAddressFromOutput(bytes memory _output, uint256 _at) internal pure returns (address evmAddress) {
         // OP_RETURN
         if (_output[_at + 9] != hex"6a") {
             return address(0);

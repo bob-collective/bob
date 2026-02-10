@@ -342,7 +342,10 @@ contract FullRelay is IFullRelay {
         bytes memory _current, // Header
         bytes memory _new, // Header
         uint256 _limit
-    ) internal returns (bool) {
+    )
+        internal
+        returns (bool)
+    {
         require(_limit <= 2016, "Requested limit is greater than 1 difficulty period");
 
         bytes32 _newBestDigest = _new.hash256();

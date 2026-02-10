@@ -65,11 +65,11 @@ library WitnessTx {
         );
 
         bytes32 coinbaseTxHash = abi.encodePacked(
-            proof.coinbaseTx.version,
-            proof.coinbaseTx.inputVector,
-            proof.coinbaseTx.outputVector,
-            proof.coinbaseTx.locktime
-        ).hash256View();
+                proof.coinbaseTx.version,
+                proof.coinbaseTx.inputVector,
+                proof.coinbaseTx.outputVector,
+                proof.coinbaseTx.locktime
+            ).hash256View();
 
         bytes32 root = proof.paymentProof.bitcoinHeaders.extractMerkleRootLE();
 
@@ -80,14 +80,14 @@ library WitnessTx {
         );
 
         bytes32 paymentWTxId = abi.encodePacked(
-            txInfo.info.version,
-            SEGWIT_MARKER,
-            SEGWIT_FLAG,
-            txInfo.info.inputVector,
-            txInfo.info.outputVector,
-            txInfo.witnessVector,
-            txInfo.info.locktime
-        ).hash256View();
+                txInfo.info.version,
+                SEGWIT_MARKER,
+                SEGWIT_FLAG,
+                txInfo.info.inputVector,
+                txInfo.info.outputVector,
+                txInfo.witnessVector,
+                txInfo.info.locktime
+            ).hash256View();
 
         require(
             paymentWTxId.prove(

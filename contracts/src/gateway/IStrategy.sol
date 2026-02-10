@@ -6,8 +6,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 interface IStrategy {
     event TokenOutput(address tokenReceived, uint256 amountOut);
 
-    function handleGatewayMessage(IERC20 tokenSent, uint256 amountIn, address recipient, bytes memory message)
-        external;
+    function handleGatewayMessage(IERC20 tokenSent, uint256 amountIn, address recipient, bytes memory message) external;
 }
 
 abstract contract IStrategyWithSlippageArgs is IStrategy {
