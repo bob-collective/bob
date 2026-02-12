@@ -1,6 +1,7 @@
 import {
     Account,
     Address,
+    ContractFunctionExecutionError,
     erc20Abi,
     Hex,
     isAddressEqual,
@@ -223,7 +224,6 @@ export class GatewayApiClient {
             if (!walletClient.account) {
                 throw new Error(`walletClient is required for offramp order`);
             }
-            // const accountAddress = walletClient.account?.address ?? (params.fromUserAddress as Address);
             const accountAddress = walletClient.account.address;
             const tokenAddress = quote.offramp.tokenAddress as Address;
 
@@ -306,7 +306,59 @@ export class GatewayApiClient {
 
             return transactionHash;
         } else if (instanceOfGatewayQuoteOneOf2(quote)) {
-            // TODO: implement
+            const tokenAddress = quote.layerZero.inputAmount.address as Address;
+            const requiredAmount = BigInt(quote.layerZero.inputAmount.amount);
+            const accountAddress = walletClient.account.address;
+            const receiver = quote.layerZero.tx.to as Address;
+
+            if (!isAddressEqual(tokenAddress, WBTC_OFT_ADDRESS)) {
+                // ERC20 token
+                try {
+                    const allowance = await publicClient.readContract({
+                        account: walletClient.account,
+                        address: tokenAddress,
+                        abi: erc20Abi,
+                        functionName: 'allowance',
+                        args: [accountAddress, receiver],
+                    });
+
+                    if (allowance < requiredAmount) {
+                        const { request } = await publicClient.simulateContract({
+                            account: walletClient.account,
+                            address: tokenAddress,
+                            abi: erc20Abi,
+                            functionName: 'approve',
+                            args: [receiver, maxUint256],
+                        });
+
+                        const txHash = await walletClient.writeContract(request);
+
+                        await publicClient.waitForTransactionReceipt({ hash: txHash });
+                    }
+                } catch (error) {
+                    if (error instanceof ContractFunctionExecutionError) {
+                        // https://github.com/wevm/viem/blob/3aa882692d2c4af3f5e9cc152099e07cde28e551/src/actions/public/simulateContract.test.ts#L711
+                        // throw new error
+                        throw new Error(
+                            'Insufficient native funds for source and destination gas fees, please add more native funds to your account'
+                        );
+                    }
+
+                    throw error;
+                }
+            }
+
+            // execute send call
+            const transactionHash = await walletClient.sendTransaction({
+                account: walletClient.account,
+                data: quote.layerZero.tx.data as Hex,
+                to: receiver,
+                value: BigInt(quote.layerZero.tx.value || 0),
+            });
+
+            await publicClient.waitForTransactionReceipt({ hash: transactionHash });
+
+            return transactionHash;
         }
 
         throw new Error('Invalid quote type');
