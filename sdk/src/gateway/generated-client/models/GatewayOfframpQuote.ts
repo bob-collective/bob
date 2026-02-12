@@ -13,13 +13,6 @@
  */
 
 import { mapValues } from '../runtime';
-import type { TxInfo } from './TxInfo';
-import {
-    TxInfoFromJSON,
-    TxInfoFromJSONTyped,
-    TxInfoToJSON,
-    TxInfoToJSONTyped,
-} from './TxInfo';
 import type { GatewayOfframpFeeBreakdown } from './GatewayOfframpFeeBreakdown';
 import {
     GatewayOfframpFeeBreakdownFromJSON,
@@ -41,6 +34,12 @@ import {
  * @interface GatewayOfframpQuote
  */
 export interface GatewayOfframpQuote {
+    /**
+     * 
+     * @type {string}
+     * @memberof GatewayOfframpQuote
+     */
+    affiliateAddress?: string | null;
     /**
      * 
      * @type {GatewayOfframpFeeBreakdown}
@@ -70,6 +69,24 @@ export interface GatewayOfframpQuote {
      * @type {string}
      * @memberof GatewayOfframpQuote
      */
+    recipient: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof GatewayOfframpQuote
+     */
+    sender?: string | null;
+    /**
+     * 
+     * @type {number}
+     * @memberof GatewayOfframpQuote
+     */
+    slippage: number;
+    /**
+     * 
+     * @type {string}
+     * @memberof GatewayOfframpQuote
+     */
     srcChain: string;
     /**
      * 
@@ -77,12 +94,6 @@ export interface GatewayOfframpQuote {
      * @memberof GatewayOfframpQuote
      */
     tokenAddress: string;
-    /**
-     * 
-     * @type {TxInfo}
-     * @memberof GatewayOfframpQuote
-     */
-    tx: TxInfo;
 }
 
 /**
@@ -93,9 +104,10 @@ export function instanceOfGatewayOfframpQuote(value: object): value is GatewayOf
     if (!('fees' in value) || value['fees'] === undefined) return false;
     if (!('inputAmount' in value) || value['inputAmount'] === undefined) return false;
     if (!('outputAmount' in value) || value['outputAmount'] === undefined) return false;
+    if (!('recipient' in value) || value['recipient'] === undefined) return false;
+    if (!('slippage' in value) || value['slippage'] === undefined) return false;
     if (!('srcChain' in value) || value['srcChain'] === undefined) return false;
     if (!('tokenAddress' in value) || value['tokenAddress'] === undefined) return false;
-    if (!('tx' in value) || value['tx'] === undefined) return false;
     return true;
 }
 
@@ -109,13 +121,16 @@ export function GatewayOfframpQuoteFromJSONTyped(json: any, ignoreDiscriminator:
     }
     return {
         
+        'affiliateAddress': json['affiliateAddress'] == null ? undefined : json['affiliateAddress'],
         'feeBreakdown': GatewayOfframpFeeBreakdownFromJSON(json['feeBreakdown']),
         'fees': GatewayTokenAmountFromJSON(json['fees']),
         'inputAmount': GatewayTokenAmountFromJSON(json['inputAmount']),
         'outputAmount': GatewayTokenAmountFromJSON(json['outputAmount']),
+        'recipient': json['recipient'],
+        'sender': json['sender'] == null ? undefined : json['sender'],
+        'slippage': json['slippage'],
         'srcChain': json['srcChain'],
         'tokenAddress': json['tokenAddress'],
-        'tx': TxInfoFromJSON(json['tx']),
     };
 }
 
@@ -130,13 +145,16 @@ export function GatewayOfframpQuoteToJSONTyped(value?: GatewayOfframpQuote | nul
 
     return {
         
+        'affiliateAddress': value['affiliateAddress'],
         'feeBreakdown': GatewayOfframpFeeBreakdownToJSON(value['feeBreakdown']),
         'fees': GatewayTokenAmountToJSON(value['fees']),
         'inputAmount': GatewayTokenAmountToJSON(value['inputAmount']),
         'outputAmount': GatewayTokenAmountToJSON(value['outputAmount']),
+        'recipient': value['recipient'],
+        'sender': value['sender'],
+        'slippage': value['slippage'],
         'srcChain': value['srcChain'],
         'tokenAddress': value['tokenAddress'],
-        'tx': TxInfoToJSON(value['tx']),
     };
 }
 
