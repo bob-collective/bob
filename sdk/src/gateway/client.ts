@@ -356,7 +356,6 @@ export class GatewayApiClient {
                 value: BigInt(quote.layerZero.tx.value || 0),
             });
 
-
             await publicClient.waitForTransactionReceipt({ hash: transactionHash });
 
             return transactionHash;
