@@ -94,6 +94,7 @@ describe('Gateway Tests', () => {
 
         const mockOfframpQuote: GatewayQuoteOneOf1 = {
             offramp: {
+                txTo: '0x1234567890123456789012345678901234567890',
                 recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
                 slippage: 300,
                 srcChain: 'bob',
@@ -574,6 +575,7 @@ describe('Gateway Tests', () => {
 
         const mockQuote: GatewayQuoteOneOf1 = {
             offramp: {
+                txTo: '0x1234567890123456789012345678901234567890',
                 recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
                 slippage: 300,
                 srcChain: 'bob',
@@ -660,6 +662,7 @@ describe('Gateway Tests', () => {
 
         const mockQuote: GatewayQuoteOneOf1 = {
             offramp: {
+                txTo: '0x1234567890123456789012345678901234567890',
                 recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
                 slippage: 300,
                 srcChain: 'bob',
