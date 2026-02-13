@@ -2,6 +2,7 @@ import nock from 'nock';
 import {
     Account,
     Address,
+    ContractFunctionExecutionError,
     maxUint256,
     PublicClient,
     Transport,
@@ -9,7 +10,7 @@ import {
     WalletClient,
     zeroAddress,
 } from 'viem';
-import { afterEach, assert, describe, expect, it } from 'vitest';
+import { afterEach, assert, describe, expect, it, vi } from 'vitest';
 import { GatewaySDK } from '../src/gateway';
 import { MAINNET_GATEWAY_BASE_URL } from '../src/gateway/client';
 import {
@@ -93,6 +94,8 @@ describe('Gateway Tests', () => {
 
         const mockOfframpQuote: GatewayQuoteOneOf1 = {
             offramp: {
+                recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+                slippage: 300,
                 srcChain: 'bob',
                 feeBreakdown: {
                     protocolFee: {
@@ -133,11 +136,6 @@ describe('Gateway Tests', () => {
                     chain: 'bob',
                 },
                 tokenAddress: WBTC_OFT_ADDRESS,
-                tx: {
-                    to: '0x1234567890123456789012345678901234567890',
-                    data: '0xabcdef',
-                    value: '0',
-                },
             },
         };
 
@@ -162,6 +160,7 @@ describe('Gateway Tests', () => {
                     to: '0x1234567890123456789012345678901234567890',
                     data: '0xabcdef',
                     value: '0',
+                    chain: 'bob',
                 },
             },
         };
@@ -220,99 +219,55 @@ describe('Gateway Tests', () => {
     it('should get orders', async () => {
         const mockOrders: GatewayOrderInfo[] = [
             {
-                onramp: {
-                    status: 'btc-confirmation',
-                    amount: {
-                        address: zeroAddress,
-                        chain: 'bob',
-                        amount: '1000',
-                    },
-                    fees: {
-                        address: zeroAddress,
-                        amount: '100',
-                        chain: 'bob',
-                    },
-                    orderId: 'order123',
-                    dstInfo: {
-                        chain: 'bob',
-                        token: WBTC_OFT_ADDRESS,
-                        txHash: '0xabc123',
-                    },
-                    srcInfo: {
-                        chain: 'bitcoin',
-                        txHash: '0xdef456',
-                        token: '0x0000000000000000000000000000000000000000',
-                    },
-                    timestamp: 1625247600,
-                    bitcoinExplorerUrl: 'https://blockstream.info/tx/0xdef456',
-                    bobExplorerUrl: 'https://exporer.gobob.xyz/tx/0xabc123',
-                    estimatedTimeInSecs: 3600,
-                    layerzeroExplorerUrl: 'https://layerzero.xyz/tx/0xlayerzero123',
+                status: 'btc-confirmation',
+                dstInfo: {
+                    chain: 'bob',
+                    token: WBTC_OFT_ADDRESS,
+                    txHash: '0xabc123',
+                    amount: '1000',
                 },
-                offramp: {
-                    status: 'Accepted',
-                    amount: {
-                        chain: 'bob',
-                        address: zeroAddress,
-                        amount: '900',
-                    },
-                    fees: {
-                        address: zeroAddress,
-                        amount: '100',
-                        chain: 'bob',
-                    },
-                    contractId: 'contractId123',
-                    dstInfo: {
-                        chain: 'bitcoin',
-                        txHash: '0xghi789',
-                        token: '0x0000000000000000000000000000000000000000',
-                    },
-                    srcInfo: {
-                        chain: 'bob',
-                        token: WBTC_OFT_ADDRESS,
-                        txHash: '0xjkl012',
-                    },
-                    timestamp: 1625247600,
-                    bitcoinExplorerUrl: 'https://blockstream.info/tx/0xghi789',
-                    bobExplorerUrl: 'https://exporer.gobob.xyz/tx/0xjkl012',
-                    estimatedTimeInSecs: 3600,
-                    offrampRegistryAddress: '0xofframpRegistry123',
-                    bumpFeeTx: {
-                        data: '0xbumpfee123',
-                        to: '0xbumpfeeToAddress',
-                        value: '0',
-                    },
-                    refundOrderTx: {
-                        data: '0xrefund123',
-                        to: '0xrefundToAddress',
-                        value: '0',
-                    },
+                srcInfo: {
+                    chain: 'bitcoin',
+                    txHash: '0xdef456',
+                    token: '0x0000000000000000000000000000000000000000',
+                    amount: '1000',
                 },
-                layerZero: {
-                    amount: {
-                        address: zeroAddress,
-                        amount: '50',
-                        chain: 'bob',
-                    },
-                    fees: {
-                        address: zeroAddress,
-                        amount: '50',
-                        chain: 'bob',
-                    },
-                    dstInfo: {
-                        chain: 'bsc',
-                        token: WBTC_OFT_ADDRESS,
-                        txHash: '0xlzabc123',
-                    },
-                    srcInfo: {
-                        chain: 'bitcoin',
-                        txHash: '0xlzdef456',
-                        token: '0x0000000000000000000000000000000000000000',
-                    },
-                    timestamp: 1625247600,
-                    layerzeroExplorerUrl: 'https://layerzero.xyz/tx/0xlzdef456',
-                    status: 'destinationConfirmed',
+                timestamp: 1625247600,
+                estimatedTimeInSecs: 3600,
+            },
+            {
+                status: 'Accepted',
+                timestamp: 1625247600,
+                estimatedTimeInSecs: 3600,
+                dstInfo: {
+                    chain: 'bob',
+                    token: WBTC_OFT_ADDRESS,
+                    txHash: '0xabc123',
+                    amount: '1000',
                 },
+                srcInfo: {
+                    chain: 'bitcoin',
+                    txHash: '0xdef456',
+                    token: '0x0000000000000000000000000000000000000000',
+                    amount: '1000',
+                },
+            },
+            {
+                estimatedTimeInSecs: 600,
+                dstInfo: {
+                    chain: 'bsc',
+                    token: WBTC_OFT_ADDRESS,
+                    txHash: '0xlzabc123',
+                    amount: '50',
+                },
+                srcInfo: {
+                    chain: 'bitcoin',
+                    txHash: '0xlzdef456',
+                    token: '0x0000000000000000000000000000000000000000',
+                    amount: '50',
+                },
+                timestamp: 1625247600,
+                status: 'destinationConfirmed',
             },
         ];
 
@@ -619,6 +574,8 @@ describe('Gateway Tests', () => {
 
         const mockQuote: GatewayQuoteOneOf1 = {
             offramp: {
+                recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+                slippage: 300,
                 srcChain: 'bob',
                 feeBreakdown: {
                     protocolFee: {
@@ -659,11 +616,6 @@ describe('Gateway Tests', () => {
                     chain: 'bob',
                 },
                 tokenAddress: WBTC_OFT_ADDRESS,
-                tx: {
-                    to: '0x1234567890123456789012345678901234567890',
-                    data: '0xabcdef',
-                    value: '0',
-                },
             },
         };
 
@@ -708,6 +660,8 @@ describe('Gateway Tests', () => {
 
         const mockQuote: GatewayQuoteOneOf1 = {
             offramp: {
+                recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+                slippage: 300,
                 srcChain: 'bob',
                 feeBreakdown: {
                     protocolFee: {
@@ -748,11 +702,6 @@ describe('Gateway Tests', () => {
                     chain: 'bob',
                 },
                 tokenAddress: WBTC_OFT_ADDRESS,
-                tx: {
-                    to: '0x1234567890123456789012345678901234567890',
-                    data: '0xabcdef',
-                    value: '0',
-                },
             },
         };
 
@@ -927,5 +876,182 @@ describe('Gateway Tests', () => {
                 maxSlippage: 300,
             })
         ).rejects.toThrow(errorMessage);
+    });
+
+    it('should approve and send transaction for layerzero swap when allowance is low', async () => {
+        const mockedQuote: GatewayQuoteOneOf2 = {
+            layerZero: {
+                tx: {
+                    to: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
+                    data: '0xc7c7f5b3000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000016967ac72e86a000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000007596000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000186a000000000000000000000000000000000000000000000000000000000000186a000000000000000000000000000000000000000000000000000000000000000e000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000120000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000',
+                    value: '397368972470378',
+                    chain: 'ethereum',
+                },
+                fees: {
+                    amount: '0',
+                    address: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
+                    chain: 'bob',
+                },
+                inputAmount: {
+                    amount: '100000',
+                    address: '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599',
+                    chain: 'ethereum',
+                },
+                outputAmount: {
+                    amount: '100000',
+                    address: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
+                    chain: 'bob',
+                },
+            },
+        };
+
+        const gatewaySDK = new GatewaySDK();
+
+        const readContract = vi.fn().mockResolvedValue(0n);
+        const simulateContract = vi.fn().mockResolvedValue({ request: {} });
+        const waitForTransactionReceipt = vi.fn().mockResolvedValue({});
+        const sendTransaction = vi.fn().mockResolvedValue('0xsendhash');
+        const writeContract = vi.fn().mockResolvedValue('0xapprovehash');
+
+        const mockWalletClient = {
+            account: { address: '0x1234567890123456789012345678901234567890' as Address },
+            sendTransaction,
+            writeContract,
+        } as unknown as WalletClient<Transport, ViemChain, Account>;
+
+        const mockPublicClient = {
+            readContract,
+            simulateContract,
+            waitForTransactionReceipt,
+        } as unknown as PublicClient<Transport>;
+
+        const txHash = await gatewaySDK.executeQuote({
+            quote: mockedQuote,
+            walletClient: mockWalletClient,
+            publicClient: mockPublicClient,
+        });
+
+        expect(txHash).toBe('0xsendhash');
+        expect(readContract).toHaveBeenCalledTimes(1);
+        expect(simulateContract).toHaveBeenCalledTimes(1);
+        expect(writeContract).toHaveBeenCalledTimes(1);
+        expect(sendTransaction).toHaveBeenCalledTimes(1);
+        expect(waitForTransactionReceipt).toHaveBeenCalledTimes(2);
+    });
+
+    it('should skip approval when allowance is sufficient for layerzero swap', async () => {
+        const mockedQuote: GatewayQuoteOneOf2 = {
+            layerZero: {
+                tx: {
+                    to: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
+                    data: '0xc7c7f5b3000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000016967ac72e86a000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000007596000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000186a000000000000000000000000000000000000000000000000000000000000186a000000000000000000000000000000000000000000000000000000000000000e000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000120000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000',
+                    value: '397368972470378',
+                    chain: 'ethereum',
+                },
+                fees: {
+                    amount: '0',
+                    address: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
+                    chain: 'bob',
+                },
+                inputAmount: {
+                    amount: '100000',
+                    address: '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599',
+                    chain: 'ethereum',
+                },
+                outputAmount: {
+                    amount: '100000',
+                    address: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
+                    chain: 'bob',
+                },
+            },
+        };
+
+        const gatewaySDK = new GatewaySDK();
+
+        const readContract = vi.fn().mockResolvedValue(100000n);
+        const simulateContract = vi.fn().mockResolvedValue({ request: {} });
+        const waitForTransactionReceipt = vi.fn().mockResolvedValue({});
+        const sendTransaction = vi.fn().mockResolvedValue('0xsendhash');
+        const writeContract = vi.fn().mockResolvedValue('0xapprovehash');
+
+        const mockWalletClient = {
+            account: { address: '0x1234567890123456789012345678901234567890' as Address },
+            sendTransaction,
+            writeContract,
+        } as unknown as WalletClient<Transport, ViemChain, Account>;
+
+        const mockPublicClient = {
+            readContract,
+            simulateContract,
+            waitForTransactionReceipt,
+        } as unknown as PublicClient<Transport>;
+
+        const txHash = await gatewaySDK.executeQuote({
+            quote: mockedQuote,
+            walletClient: mockWalletClient,
+            publicClient: mockPublicClient,
+        });
+
+        expect(txHash).toBe('0xsendhash');
+        expect(readContract).toHaveBeenCalledTimes(1);
+        expect(simulateContract).not.toHaveBeenCalled();
+        expect(writeContract).not.toHaveBeenCalled();
+        expect(sendTransaction).toHaveBeenCalledTimes(1);
+        expect(waitForTransactionReceipt).toHaveBeenCalledTimes(1);
+    });
+
+    it('should skip allowance check for WBTC OFT token in layerzero swap', async () => {
+        const mockedQuote: GatewayQuoteOneOf2 = {
+            layerZero: {
+                tx: {
+                    to: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
+                    data: '0xc7c7f5b3000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000016967ac72e86a000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000007596000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000186a000000000000000000000000000000000000000000000000000000000000186a000000000000000000000000000000000000000000000000000000000000000e000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000120000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000',
+                    value: '397368972470378',
+                    chain: 'bob',
+                },
+                fees: {
+                    amount: '0',
+                    address: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
+                    chain: 'bob',
+                },
+                inputAmount: {
+                    amount: '100000',
+                    address: WBTC_OFT_ADDRESS,
+                    chain: 'bob',
+                },
+                outputAmount: {
+                    amount: '100000',
+                    address: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
+                    chain: 'ethereum',
+                },
+            },
+        };
+
+        const gatewaySDK = new GatewaySDK();
+
+        const readContract = vi.fn().mockResolvedValue(0n);
+        const waitForTransactionReceipt = vi.fn().mockResolvedValue({});
+        const sendTransaction = vi.fn().mockResolvedValue('0xsendhash');
+
+        const mockWalletClient = {
+            account: { address: '0x1234567890123456789012345678901234567890' as Address },
+            sendTransaction,
+        } as unknown as WalletClient<Transport, ViemChain, Account>;
+
+        const mockPublicClient = {
+            readContract,
+            waitForTransactionReceipt,
+        } as unknown as PublicClient<Transport>;
+
+        const txHash = await gatewaySDK.executeQuote({
+            quote: mockedQuote,
+            walletClient: mockWalletClient,
+            publicClient: mockPublicClient,
+        });
+
+        expect(txHash).toBe('0xsendhash');
+        expect(readContract).not.toHaveBeenCalled();
+        expect(sendTransaction).toHaveBeenCalledTimes(1);
+        expect(waitForTransactionReceipt).toHaveBeenCalledTimes(1);
     });
 });
