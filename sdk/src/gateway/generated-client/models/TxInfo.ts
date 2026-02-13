@@ -24,6 +24,12 @@ export interface TxInfo {
      * @type {string}
      * @memberof TxInfo
      */
+    chain: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof TxInfo
+     */
     data: string;
     /**
      * 
@@ -43,6 +49,7 @@ export interface TxInfo {
  * Check if a given object implements the TxInfo interface.
  */
 export function instanceOfTxInfo(value: object): value is TxInfo {
+    if (!('chain' in value) || value['chain'] === undefined) return false;
     if (!('data' in value) || value['data'] === undefined) return false;
     if (!('to' in value) || value['to'] === undefined) return false;
     if (!('value' in value) || value['value'] === undefined) return false;
@@ -59,6 +66,7 @@ export function TxInfoFromJSONTyped(json: any, ignoreDiscriminator: boolean): Tx
     }
     return {
         
+        'chain': json['chain'],
         'data': json['data'],
         'to': json['to'],
         'value': json['value'],
@@ -76,6 +84,7 @@ export function TxInfoToJSONTyped(value?: TxInfo | null, ignoreDiscriminator: bo
 
     return {
         
+        'chain': value['chain'],
         'data': value['data'],
         'to': value['to'],
         'value': value['value'],

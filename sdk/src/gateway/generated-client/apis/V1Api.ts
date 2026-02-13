@@ -52,12 +52,12 @@ export interface GetOrdersRequest {
 export interface GetQuoteRequest {
     srcChain: string;
     dstChain: string;
-    sender: string;
     recipient: string;
     srcToken: string;
     dstToken: string;
     amount: string;
     slippage: string;
+    sender?: string;
     gasRefill?: string;
     strategyTarget?: string;
     strategyMessage?: string;
@@ -204,13 +204,6 @@ export class V1Api extends runtime.BaseAPI {
             throw new runtime.RequiredError(
                 'dstChain',
                 'Required parameter "dstChain" was null or undefined when calling getQuote().'
-            );
-        }
-
-        if (requestParameters['sender'] == null) {
-            throw new runtime.RequiredError(
-                'sender',
-                'Required parameter "sender" was null or undefined when calling getQuote().'
             );
         }
 

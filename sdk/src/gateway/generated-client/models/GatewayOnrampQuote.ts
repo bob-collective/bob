@@ -35,6 +35,12 @@ import {
  */
 export interface GatewayOnrampQuote {
     /**
+     * Affiliate address
+     * @type {string}
+     * @memberof GatewayOnrampQuote
+     */
+    affiliateAddress?: string | null;
+    /**
      * Destination chain
      * @type {string}
      * @memberof GatewayOnrampQuote
@@ -93,7 +99,7 @@ export interface GatewayOnrampQuote {
      * @type {string}
      * @memberof GatewayOnrampQuote
      */
-    sender: string;
+    sender?: string | null;
     /**
      * Slippage tolerance
      * @type {string}
@@ -132,7 +138,6 @@ export function instanceOfGatewayOnrampQuote(value: object): value is GatewayOnr
     if (!('inputAmount' in value) || value['inputAmount'] === undefined) return false;
     if (!('outputAmount' in value) || value['outputAmount'] === undefined) return false;
     if (!('recipient' in value) || value['recipient'] === undefined) return false;
-    if (!('sender' in value) || value['sender'] === undefined) return false;
     if (!('slippage' in value) || value['slippage'] === undefined) return false;
     if (!('token' in value) || value['token'] === undefined) return false;
     return true;
@@ -148,6 +153,7 @@ export function GatewayOnrampQuoteFromJSONTyped(json: any, ignoreDiscriminator: 
     }
     return {
         
+        'affiliateAddress': json['affiliateAddress'] == null ? undefined : json['affiliateAddress'],
         'dstChain': json['dstChain'],
         'dstToken': json['dstToken'],
         'executionFees': GatewayTokenAmountFromJSON(json['executionFees']),
@@ -157,7 +163,7 @@ export function GatewayOnrampQuoteFromJSONTyped(json: any, ignoreDiscriminator: 
         'inputAmount': GatewayTokenAmountFromJSON(json['inputAmount']),
         'outputAmount': GatewayTokenAmountFromJSON(json['outputAmount']),
         'recipient': json['recipient'],
-        'sender': json['sender'],
+        'sender': json['sender'] == null ? undefined : json['sender'],
         'slippage': json['slippage'],
         'strategyAddress': json['strategyAddress'] == null ? undefined : json['strategyAddress'],
         'strategyMessage': json['strategyMessage'] == null ? undefined : json['strategyMessage'],
@@ -176,6 +182,7 @@ export function GatewayOnrampQuoteToJSONTyped(value?: GatewayOnrampQuote | null,
 
     return {
         
+        'affiliateAddress': value['affiliateAddress'],
         'dstChain': value['dstChain'],
         'dstToken': value['dstToken'],
         'executionFees': GatewayTokenAmountToJSON(value['executionFees']),

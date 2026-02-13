@@ -12,34 +12,70 @@
  * Do not edit the class manually.
  */
 
-import type { GatewayOrderInfoOneOf } from './GatewayOrderInfoOneOf';
+import { mapValues } from '../runtime';
+import type { GatewayOrderStatus } from './GatewayOrderStatus';
 import {
-    instanceOfGatewayOrderInfoOneOf,
-    GatewayOrderInfoOneOfFromJSON,
-    GatewayOrderInfoOneOfFromJSONTyped,
-    GatewayOrderInfoOneOfToJSON,
-} from './GatewayOrderInfoOneOf';
-import type { GatewayOrderInfoOneOf1 } from './GatewayOrderInfoOneOf1';
+    GatewayOrderStatusFromJSON,
+    GatewayOrderStatusFromJSONTyped,
+    GatewayOrderStatusToJSON,
+    GatewayOrderStatusToJSONTyped,
+} from './GatewayOrderStatus';
+import type { ChainTxInfo } from './ChainTxInfo';
 import {
-    instanceOfGatewayOrderInfoOneOf1,
-    GatewayOrderInfoOneOf1FromJSON,
-    GatewayOrderInfoOneOf1FromJSONTyped,
-    GatewayOrderInfoOneOf1ToJSON,
-} from './GatewayOrderInfoOneOf1';
-import type { GatewayOrderInfoOneOf2 } from './GatewayOrderInfoOneOf2';
-import {
-    instanceOfGatewayOrderInfoOneOf2,
-    GatewayOrderInfoOneOf2FromJSON,
-    GatewayOrderInfoOneOf2FromJSONTyped,
-    GatewayOrderInfoOneOf2ToJSON,
-} from './GatewayOrderInfoOneOf2';
+    ChainTxInfoFromJSON,
+    ChainTxInfoFromJSONTyped,
+    ChainTxInfoToJSON,
+    ChainTxInfoToJSONTyped,
+} from './ChainTxInfo';
 
 /**
- * @type GatewayOrderInfo
  * Gateway order info
  * @export
+ * @interface GatewayOrderInfo
  */
-export type GatewayOrderInfo = GatewayOrderInfoOneOf | GatewayOrderInfoOneOf1 | GatewayOrderInfoOneOf2;
+export interface GatewayOrderInfo {
+    /**
+     * 
+     * @type {ChainTxInfo}
+     * @memberof GatewayOrderInfo
+     */
+    dstInfo: ChainTxInfo;
+    /**
+     * 
+     * @type {number}
+     * @memberof GatewayOrderInfo
+     */
+    estimatedTimeInSecs?: number | null;
+    /**
+     * 
+     * @type {ChainTxInfo}
+     * @memberof GatewayOrderInfo
+     */
+    srcInfo: ChainTxInfo;
+    /**
+     * 
+     * @type {GatewayOrderStatus}
+     * @memberof GatewayOrderInfo
+     */
+    status: GatewayOrderStatus;
+    /**
+     * 
+     * @type {number}
+     * @memberof GatewayOrderInfo
+     */
+    timestamp: number;
+}
+
+/**
+ * Check if a given object implements the GatewayOrderInfo interface.
+ */
+export function instanceOfGatewayOrderInfo(value: object): value is GatewayOrderInfo {
+    if (!('dstInfo' in value) || value['dstInfo'] === undefined) return false;
+    if (!('srcInfo' in value) || value['srcInfo'] === undefined) return false;
+    if (!('status' in value) || value['status'] === undefined) return false;
+    if (!('timestamp' in value) || value['timestamp'] === undefined) return false;
+    return true;
+}
 
 export function GatewayOrderInfoFromJSON(json: any): GatewayOrderInfo {
     return GatewayOrderInfoFromJSONTyped(json, false);
@@ -49,22 +85,17 @@ export function GatewayOrderInfoFromJSONTyped(json: any, ignoreDiscriminator: bo
     if (json == null) {
         return json;
     }
-    if (typeof json !== 'object') {
-        return json;
-    }
-    if (instanceOfGatewayOrderInfoOneOf(json)) {
-        return GatewayOrderInfoOneOfFromJSONTyped(json, true);
-    }
-    if (instanceOfGatewayOrderInfoOneOf1(json)) {
-        return GatewayOrderInfoOneOf1FromJSONTyped(json, true);
-    }
-    if (instanceOfGatewayOrderInfoOneOf2(json)) {
-        return GatewayOrderInfoOneOf2FromJSONTyped(json, true);
-    }
-    return {} as any;
+    return {
+        
+        'dstInfo': ChainTxInfoFromJSON(json['dstInfo']),
+        'estimatedTimeInSecs': json['estimatedTimeInSecs'] == null ? undefined : json['estimatedTimeInSecs'],
+        'srcInfo': ChainTxInfoFromJSON(json['srcInfo']),
+        'status': GatewayOrderStatusFromJSON(json['status']),
+        'timestamp': json['timestamp'],
+    };
 }
 
-export function GatewayOrderInfoToJSON(json: any): any {
+export function GatewayOrderInfoToJSON(json: any): GatewayOrderInfo {
     return GatewayOrderInfoToJSONTyped(json, false);
 }
 
@@ -72,18 +103,14 @@ export function GatewayOrderInfoToJSONTyped(value?: GatewayOrderInfo | null, ign
     if (value == null) {
         return value;
     }
-    if (typeof value !== 'object') {
-        return value;
-    }
-    if (instanceOfGatewayOrderInfoOneOf(value)) {
-        return GatewayOrderInfoOneOfToJSON(value as GatewayOrderInfoOneOf);
-    }
-    if (instanceOfGatewayOrderInfoOneOf1(value)) {
-        return GatewayOrderInfoOneOf1ToJSON(value as GatewayOrderInfoOneOf1);
-    }
-    if (instanceOfGatewayOrderInfoOneOf2(value)) {
-        return GatewayOrderInfoOneOf2ToJSON(value as GatewayOrderInfoOneOf2);
-    }
-    return {};
+
+    return {
+        
+        'dstInfo': ChainTxInfoToJSON(value['dstInfo']),
+        'estimatedTimeInSecs': value['estimatedTimeInSecs'],
+        'srcInfo': ChainTxInfoToJSON(value['srcInfo']),
+        'status': GatewayOrderStatusToJSON(value['status']),
+        'timestamp': value['timestamp'],
+    };
 }
 
