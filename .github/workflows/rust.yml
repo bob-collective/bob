@@ -8,6 +8,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - name: Checkout sources
@@ -24,7 +25,7 @@ jobs:
 
       - name: Set variables
         run: |
-          echo "TOOLCHAIN=$(rustup show active-toolchain | cut -d " " -f1)" >> $GITHUB_ENV
+          echo "TOOLCHAIN=$(rustup show active-toolchain | cut -d ' ' -f1)" >> $GITHUB_ENV
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@nightly
