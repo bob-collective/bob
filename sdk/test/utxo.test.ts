@@ -5,7 +5,6 @@ import { hex, base64 } from '@scure/base';
 import {
     createBitcoinPsbt,
     getInputFromUtxoAndTx,
-    estimateTxFee,
     Input,
     getBalance,
     findSafeUtxos,
