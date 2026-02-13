@@ -253,7 +253,7 @@ export class GatewayApiClient {
                 : maxUint256;
 
             const requiredAmount = BigInt(quote.offramp.inputAmount.amount);
-            const needsApproval = requiredAmount > allowance && !isAddressEqual(tokenAddress, WBTC_OFT_ADDRESS);
+            const needsApproval = requiredAmount > allowance;
 
             if (needsApproval && !isAddressEqual(tokenAddress, zeroAddress)) {
                 // To change the USDT approval, first set the allowance to 0 (approve(_spender, 0))
