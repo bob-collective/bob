@@ -38,7 +38,7 @@
         "ts-node": "^10.0.0",
         "tsx": "^4.20.6",
         "typescript": "^5.7.3",
-        "vitest": "^3.2.4",
+        "vitest": "^4.0.18",
         "yargs": "^18.0.0"
     },
     "dependencies": {
