@@ -16,6 +16,7 @@ Name | Type
 `slippage` | number
 `srcChain` | string
 `tokenAddress` | string
+`txTo` | string
 
 ## Example
 
@@ -34,6 +35,7 @@ const example = {
   "slippage": null,
   "srcChain": null,
   "tokenAddress": null,
+  "txTo": null,
 } satisfies GatewayOfframpQuote
 
 console.log(example)

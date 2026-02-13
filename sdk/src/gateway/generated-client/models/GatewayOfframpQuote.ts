@@ -94,6 +94,12 @@ export interface GatewayOfframpQuote {
      * @memberof GatewayOfframpQuote
      */
     tokenAddress: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof GatewayOfframpQuote
+     */
+    txTo: string;
 }
 
 /**
@@ -108,6 +114,7 @@ export function instanceOfGatewayOfframpQuote(value: object): value is GatewayOf
     if (!('slippage' in value) || value['slippage'] === undefined) return false;
     if (!('srcChain' in value) || value['srcChain'] === undefined) return false;
     if (!('tokenAddress' in value) || value['tokenAddress'] === undefined) return false;
+    if (!('txTo' in value) || value['txTo'] === undefined) return false;
     return true;
 }
 
@@ -131,6 +138,7 @@ export function GatewayOfframpQuoteFromJSONTyped(json: any, ignoreDiscriminator:
         'slippage': json['slippage'],
         'srcChain': json['srcChain'],
         'tokenAddress': json['tokenAddress'],
+        'txTo': json['txTo'],
     };
 }
 
@@ -155,6 +163,7 @@ export function GatewayOfframpQuoteToJSONTyped(value?: GatewayOfframpQuote | nul
         'slippage': value['slippage'],
         'srcChain': value['srcChain'],
         'tokenAddress': value['tokenAddress'],
+        'txTo': value['txTo'],
     };
 }
 
