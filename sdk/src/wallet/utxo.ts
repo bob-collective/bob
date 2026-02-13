@@ -322,42 +322,9 @@ export function getInputFromUtxoAndTx(
 }
 
 /**
- * Estimate the tx inclusion fee for a given address or public key with an optional OP_RETURN output.
+ * @deprecated This method is deprecated and will be removed in a future release.
  *
- * @param fromAddress The Bitcoin address which is sending to the `toAddress`.
- * @param amount The amount of BTC (as satoshis) to send. If no amount is specified, the fee is estimated for all UTXOs, i.e., the max amount.
- * @param publicKey Optional public key needed if using P2SH-P2WPKH.
- * @param opReturnData Optional OP_RETURN data to include in an output.
- * @param feeRate Optional fee rate in satoshis per byte.
- * @param confirmationTarget The number of blocks to include this tx (for fee estimation).
- * @param isSignet True if using Bitcoin Signet
- * @returns {Promise<bigint>} The fee amount for estimated transaction inclusion in satoshis.
- *
- * @example
- * ```typescript
- * // Using a target amount (call might fail if amount is larger than balance plus fees)
- * const fromAddress = 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq';
- * const amount = 100000;
- * const publicKey = '02d4...`; // only for P2SH
- * const opReturnData = 'Hello, World!'; // optional
- * const feeRate = 1; // optional
- * const confirmationTarget = 3; // optional
- *
- * const fee = await estimateTxFee(fromAddress, amount, publicKey, opReturnData, feeRate, confirmationTarget);
- * console.log(fee);
- *
- * // Using all UTXOs without a target amount (max fee for spending all UTXOs)
- * const fromAddress = 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq';
- * const publicKey = '02d4...`; // only for P2SH
- * const opReturnData = 'Hello, World!'; // optional
- * const feeRate = 1; // optional
- *
- * const fee = await estimateTxFee(fromAddress, undefined, publicKey, opReturnData, feeRate);
- * console.log(fee);
- * ```
- *
- * @dev Wtih no amount set, we estimate the fee for all UTXOs by trying to spend all inputs using strategy 'all'. If an amount is set, we use the 'default
- * strategy to select the UTXOs. If the amount is more than available, an error will be thrown.
+ * For full balance sweeping, first call `getBalance(address)` to get the confirmed balance, then pass that as the `amount` to `getQuote`.
  */
 export async function estimateTxFee(
     fromAddress: string,
