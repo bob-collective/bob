@@ -9,6 +9,7 @@ jobs:
   tests:
     name: Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: ./sdk
@@ -17,9 +18,9 @@ jobs:
       - name: Setup node
         uses: actions/setup-node@v6
         with:
-          node-version: "20"
-          registry-url: "https://registry.npmjs.org"
-          always-auth: true
+          node-version: "24"
+          cache: "npm"
+          cache-dependency-path: sdk/package-lock.json
       - run: npm ci
       - run: npx prettier --check {examples,src,test}
       - run: npm run lint

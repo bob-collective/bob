@@ -8,23 +8,32 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - name: Checkout sources
         uses: actions/checkout@v6
 
-      - name: Install Bitcoin
+      - name: Cache Bitcoin Core
+        id: cache-bitcoin
+        uses: actions/cache@v5
+        with:
+          path: /usr/local/bin/bitcoind
+          key: bitcoin-core-0.29.3
+
+      - name: Download and Install Bitcoin Core
+        if: steps.cache-bitcoin.outputs.cache-hit != 'true'
         run: |
-          sudo add-apt-repository ppa:luke-jr/bitcoincore
-          sudo apt-get update
-          sudo apt-get install -y bitcoind
+          wget --quiet https://bitcoincore.org/bin/bitcoin-core-29.3/bitcoin-29.3-x86_64-linux-gnu.tar.gz
+          tar -xvf bitcoin-29.3-x86_64-linux-gnu.tar.gz
+          sudo mv bitcoin-29.3/bin/bitcoind /usr/local/bin/
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
 
       - name: Set variables
         run: |
-          echo "TOOLCHAIN=$(rustup show active-toolchain | cut -d " " -f1)" >> $GITHUB_ENV
+          echo "TOOLCHAIN=$(rustup show active-toolchain | cut -d ' ' -f1)" >> $GITHUB_ENV
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@nightly
