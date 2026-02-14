@@ -12,7 +12,6 @@ import {
     WalletClient,
     zeroAddress,
 } from 'viem';
-import { bob } from 'viem/chains';
 import { strategyCaller, USDTApproveAbi } from './abi';
 import { BitcoinSigner, GetQuoteParams, StrategyParams } from './types';
 import {
