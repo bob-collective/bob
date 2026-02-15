@@ -11,7 +11,7 @@
         "lint": "eslint .",
         "format": "prettier --write examples src test",
         "format:check": "prettier --check examples src test",
-        "codegen": "npx @openapitools/openapi-generator-cli generate --skip-validate-spec -g typescript-fetch -i https://gateway-api-mainnet.gobob.xyz/api-doc.json -o ./src/gateway/generated-client --global-property=apiDocs=false,modelDocs=false"
+        "codegen": "rm -rf ./src/gateway/generated-client && npx @openapitools/openapi-generator-cli generate --skip-validate-spec -g typescript-fetch -i https://gateway-api-mainnet.gobob.xyz/api-doc.json -o ./src/gateway/generated-client --global-property=apiDocs=false,modelDocs=false"
     },
     "files": [
         "dist/**/*",
