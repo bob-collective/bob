@@ -140,7 +140,7 @@ export class GatewayApiClient {
             {
                 srcChain: params.fromChain.toString(), // TODO: don't use number
                 dstChain: params.toChain.toString(), // TODO: don't use number
-                sender: params.fromUserAddress?.toString() || '',
+                sender: params.fromUserAddress ? params.fromUserAddress?.toString() : (null as any),
                 recipient: params.toUserAddress.toString(),
                 srcToken: params.fromToken.toString(),
                 dstToken: params.toToken.toString(),
