@@ -12,7 +12,6 @@ import {
     WalletClient,
     zeroAddress,
 } from 'viem';
-import { bob } from 'viem/chains';
 import { strategyCaller, USDTApproveAbi } from './abi';
 import { BitcoinSigner, GetQuoteParams, StrategyParams } from './types';
 import {
@@ -256,31 +255,46 @@ export class GatewayApiClient {
             const needsApproval = requiredAmount > allowance;
 
             if (needsApproval && !isAddressEqual(tokenAddress, zeroAddress)) {
-                // To change the USDT approval, first set the allowance to 0 (approve(_spender, 0))
-                // to avoid the ERC20 race condition:
-                // https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
-                if (isAddressEqual(tokenAddress, ETHEREUM_USDT_ADDRESS) && allowance !== 0n) {
-                    const { request: resetRequest } = await publicClient.simulateContract({
+                if (isAddressEqual(tokenAddress, WBTC_OFT_ADDRESS)) {
+                    if (quote.offramp.srcChain === 'bob') {
+                        const { request } = await publicClient.simulateContract({
+                            account: walletClient.account,
+                            address: tokenAddress,
+                            abi: erc20Abi,
+                            functionName: 'approve',
+                            args: [spenderAddress, maxUint256],
+                        });
+
+                        const approveTxHash = await walletClient.writeContract(request);
+                        await publicClient.waitForTransactionReceipt({ hash: approveTxHash });
+                    }
+                } else {
+                    // To change the USDT approval, first set the allowance to 0 (approve(_spender, 0))
+                    // to avoid the ERC20 race condition:
+                    // https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
+                    if (isAddressEqual(tokenAddress, ETHEREUM_USDT_ADDRESS) && allowance !== 0n) {
+                        const { request: resetRequest } = await publicClient.simulateContract({
+                            account: walletClient.account,
+                            address: tokenAddress,
+                            abi: USDTApproveAbi,
+                            functionName: 'approve',
+                            args: [spenderAddress, 0n],
+                        });
+                        const resetTxHash = await walletClient.writeContract(resetRequest);
+                        await publicClient.waitForTransactionReceipt({ hash: resetTxHash });
+                    }
+
+                    const { request } = await publicClient.simulateContract({
                         account: walletClient.account,
                         address: tokenAddress,
-                        abi: USDTApproveAbi,
+                        abi: isAddressEqual(tokenAddress, ETHEREUM_USDT_ADDRESS) ? USDTApproveAbi : erc20Abi,
                         functionName: 'approve',
-                        args: [spenderAddress, 0n],
+                        args: [spenderAddress, maxUint256],
                     });
-                    const resetTxHash = await walletClient.writeContract(resetRequest);
-                    await publicClient.waitForTransactionReceipt({ hash: resetTxHash });
+
+                    const approveTxHash = await walletClient.writeContract(request);
+                    await publicClient.waitForTransactionReceipt({ hash: approveTxHash });
                 }
-
-                const { request } = await publicClient.simulateContract({
-                    account: walletClient.account,
-                    address: tokenAddress,
-                    abi: isAddressEqual(tokenAddress, ETHEREUM_USDT_ADDRESS) ? USDTApproveAbi : erc20Abi,
-                    functionName: 'approve',
-                    args: [spenderAddress, maxUint256],
-                });
-
-                const approveTxHash = await walletClient.writeContract(request);
-                await publicClient.waitForTransactionReceipt({ hash: approveTxHash });
             }
 
             const transactionHash = await walletClient.sendTransaction({
