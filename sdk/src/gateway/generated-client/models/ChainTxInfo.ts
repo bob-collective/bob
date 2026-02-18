@@ -24,6 +24,12 @@ export interface ChainTxInfo {
      * @type {string}
      * @memberof ChainTxInfo
      */
+    amount: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ChainTxInfo
+     */
     chain: string;
     /**
      * 
@@ -43,6 +49,7 @@ export interface ChainTxInfo {
  * Check if a given object implements the ChainTxInfo interface.
  */
 export function instanceOfChainTxInfo(value: object): value is ChainTxInfo {
+    if (!('amount' in value) || value['amount'] === undefined) return false;
     if (!('chain' in value) || value['chain'] === undefined) return false;
     if (!('token' in value) || value['token'] === undefined) return false;
     return true;
@@ -58,6 +65,7 @@ export function ChainTxInfoFromJSONTyped(json: any, ignoreDiscriminator: boolean
     }
     return {
         
+        'amount': json['amount'],
         'chain': json['chain'],
         'token': json['token'],
         'txHash': json['txHash'] == null ? undefined : json['txHash'],
@@ -75,6 +83,7 @@ export function ChainTxInfoToJSONTyped(value?: ChainTxInfo | null, ignoreDiscrim
 
     return {
         
+        'amount': value['amount'],
         'chain': value['chain'],
         'token': value['token'],
         'txHash': value['txHash'],

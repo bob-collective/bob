@@ -13,7 +13,7 @@
  */
 
 
-export const BASE_PATH = "https://gateway-api-staging.gobob.xyz".replace(/\/+$/, "");
+export const BASE_PATH = "https://gateway-api-mainnet.gobob.xyz".replace(/\/+$/, "");
 
 export interface ConfigurationParameters {
     basePath?: string; // override base path
