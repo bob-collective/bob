@@ -83,6 +83,12 @@ export interface GatewayOnrampQuote {
      */
     inputAmount: GatewayTokenAmount;
     /**
+     * Whether to use zero-confirmation bitcoin swap
+     * @type {boolean}
+     * @memberof GatewayOnrampQuote
+     */
+    instantSwap: boolean;
+    /**
      * Final amount after fees
      * @type {GatewayTokenAmount}
      * @memberof GatewayOnrampQuote
@@ -136,6 +142,7 @@ export function instanceOfGatewayOnrampQuote(value: object): value is GatewayOnr
     if (!('feeBreakdown' in value) || value['feeBreakdown'] === undefined) return false;
     if (!('fees' in value) || value['fees'] === undefined) return false;
     if (!('inputAmount' in value) || value['inputAmount'] === undefined) return false;
+    if (!('instantSwap' in value) || value['instantSwap'] === undefined) return false;
     if (!('outputAmount' in value) || value['outputAmount'] === undefined) return false;
     if (!('recipient' in value) || value['recipient'] === undefined) return false;
     if (!('slippage' in value) || value['slippage'] === undefined) return false;
@@ -161,6 +168,7 @@ export function GatewayOnrampQuoteFromJSONTyped(json: any, ignoreDiscriminator: 
         'fees': GatewayTokenAmountFromJSON(json['fees']),
         'gasRefill': json['gasRefill'] == null ? undefined : json['gasRefill'],
         'inputAmount': GatewayTokenAmountFromJSON(json['inputAmount']),
+        'instantSwap': json['instantSwap'],
         'outputAmount': GatewayTokenAmountFromJSON(json['outputAmount']),
         'recipient': json['recipient'],
         'sender': json['sender'] == null ? undefined : json['sender'],
@@ -190,6 +198,7 @@ export function GatewayOnrampQuoteToJSONTyped(value?: GatewayOnrampQuote | null,
         'fees': GatewayTokenAmountToJSON(value['fees']),
         'gasRefill': value['gasRefill'],
         'inputAmount': GatewayTokenAmountToJSON(value['inputAmount']),
+        'instantSwap': value['instantSwap'],
         'outputAmount': GatewayTokenAmountToJSON(value['outputAmount']),
         'recipient': value['recipient'],
         'sender': value['sender'],
