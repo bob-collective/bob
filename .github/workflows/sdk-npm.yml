@@ -4,9 +4,15 @@ on:
   push:
     tags:
       - '*'
+
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   publish:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: ./sdk
@@ -15,14 +21,13 @@ jobs:
       - name: setup node
         uses: actions/setup-node@v6
         with:
-          node-version: '20'
+          node-version: '24'
           registry-url: 'https://registry.npmjs.org'
-          always-auth: true
+          cache: 'npm'
+          cache-dependency-path: sdk/package-lock.json
       - name: install tokenlist dependencies
         working-directory: ./tokenlist
         run: npm ci
       - run: npm ci
       - run: npm run build
       - run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
