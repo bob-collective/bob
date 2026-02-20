@@ -1,0 +1,110 @@
+---
+title: "Gateway Overview"
+description: "Introduction to BOB Gateway - Bitcoin intent bridge for seamless cross-chain interactions"
+icon: "bridge"
+---
+
+## Why Gateway?
+
+Unlock native Bitcoin liquidity for the entire crypto ecosystem.
+
+Bitcoin holders face significant friction when accessing DeFi opportunities - requiring multiple transactions, bridging steps, and complex wallet interactions. Gateway eliminates these barriers by enabling direct settlement from native BTC into any DeFi position across chains.
+
+Whether you're building a DeFi protocol, wallet, or aggregator - Gateway provides the infrastructure to tap into Bitcoin's $1T+ in liquidity with minimal integration effort.
+
+## What is BOB Gateway?
+
+BOB Gateway is a permissionless intent - and RFQ - based protocol that enables frictionless movement of Bitcoin into DeFi.
+It connects Bitcoin holders and DeFi opportunities across chains, enabling settlement of native BTC into any assets or DeFi positions - from Bitcoin to DeFi in a single transaction.
+
+<CardGroup cols={2}>
+  <Card title="Integration Guide" icon="code" href="/gateway/integration">
+    Get started with the SDK and integrate Gateway into your app
+  </Card>
+  <Card title="DeFi Strategies" icon="layer-group" href="/gateway/strategies">
+    Build 1-click DeFi actions for your users
+  </Card>
+  <Card title="API Reference" icon="book" href="/api-reference/overview">
+    Explore the complete API documentation
+  </Card>
+  <Card title="Bitcoin Wallets" icon="wallet" href="/gateway/wallets">
+    Learn how to integrate Bitcoin wallet support
+  </Card>
+</CardGroup>
+
+## Key Features
+
+<AccordionGroup>
+  <Accordion icon="bolt" title="1-Click BTC ⇒ DeFi">
+    Bridge, swap, or stake BTC in a single transaction.
+  </Accordion>
+
+  <Accordion icon="download" title="Simple Integration">
+    SDK/API with white-label options.
+  </Accordion>
+
+  <Accordion icon="hand-holding-dollar" title="Revenue Opportunities">
+    Configurable monetization for partners.
+  </Accordion>
+
+  <Accordion icon="code" title="Programmable">
+    Open architecture to build custom integrations and products.
+  </Accordion>
+
+  <Accordion icon="cubes" title="Modular">
+    Plug-and-play components for any stack.
+  </Accordion>
+</AccordionGroup>
+
+## How It Works
+
+<Steps>
+  <Step title="User Initiates">
+    User requests a quote through your app for their desired DeFi action (stake, swap, bridge, etc.)
+  </Step>
+  
+  <Step title="Quote Generation">
+    Gateway API provides a quote with routing, fees, and estimated output
+  </Step>
+  
+  <Step title="Transaction Signing">
+    User signs a single Bitcoin or EVM transaction
+  </Step>
+  
+  <Step title="Verification & Execution">
+    Bitcoin Light Client verifies the transaction on-chain, and the protocol executes the DeFi action
+  </Step>
+  
+  <Step title="Token Delivery">
+    User receives their tokens or staking position directly in their wallet
+  </Step>
+</Steps>
+
+## Use Cases
+
+<CardGroup cols={3}>
+  <Card title="Staking" icon="coins">
+    One-click BTC to staked BTC LSTs
+  </Card>
+  <Card title="Swapping" icon="arrow-right-arrow-left">
+    Direct BTC to any token on BOB or destination chains
+  </Card>
+  <Card title="Lending" icon="hand-holding-dollar">
+    Deposit BTC into lending protocols instantly
+  </Card>
+  <Card title="Cross-Chain" icon="arrows-split-up-and-left">
+    Bridge BTC to Ethereum, Base, and more
+  </Card>
+  <Card title="LP Positions" icon="water">
+    Add BTC liquidity to DEX pools
+  </Card>
+  <Card title="Custom Actions" icon="wand-magic-sparkles">
+    Build any DeFi workflow you can imagine
+  </Card>
+</CardGroup>
+
+## Ready to Build?
+
+<Card title="Start Integration" icon="rocket" href="/gateway/integration" horizontal>
+  Follow our step-by-step integration guide to add Gateway to your app
+</Card>

@@ -1,0 +1,122 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "BOB Gateway API",
+  "colors": {
+    "primary": "#f25d00",
+    "light": "#ff9500",
+    "dark": "#d95300"
+  },
+  "favicon": "/logo/favicon.ico",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Gateway",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "gateway/overview",
+              "gateway/technical"
+            ]
+          },
+          {
+            "group": "Integration",
+            "pages": [
+              "gateway/integration",
+              "gateway/strategies",
+              "gateway/wallets",
+              "gateway/faq"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "api-reference/overview"
+            ]
+          },
+          {
+            "group": "API reference",
+            "openapi": "api-reference/openapi.json",
+            "pages": [
+              "GET /v1/get-routes",
+              "GET /v1/get-quote",
+              "POST /v1/create-order",
+              "PATCH /v1/register-tx",
+              "GET /v1/get-orders/{user_address}"
+            ]
+          }
+        ]
+      }
+    ],
+    "global": {
+      "anchors": [
+        {
+          "anchor": "Discord",
+          "href": "https://discord.gg/gobob",
+          "icon": "discord"
+        },
+        {
+          "anchor": "GitHub",
+          "href": "https://github.com/bob-collective",
+          "icon": "github"
+        },
+        {
+          "anchor": "Website",
+          "href": "https://gobob.xyz",
+          "icon": "globe"
+        },
+        {
+          "anchor": "Analytics",
+          "href": "https://dune.com/bob_collective/gateway",
+          "icon": "chart-line"
+        }
+      ]
+    }
+  },
+  "logo": {
+    "light": "/logo/dark.svg",
+    "dark": "/logo/light.svg"
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "Homepage",
+        "href": "https://gobob.xyz"
+      },
+      {
+        "label": "BOB Docs",
+        "href": "https://docs.gobob.xyz"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Launch App",
+      "href": "https://app.gobob.xyz/swap"
+    }
+  },
+  "contextual": {
+    "options": [
+      "copy",
+      "view",
+      "chatgpt",
+      "claude",
+      "perplexity",
+      "mcp",
+      "cursor",
+      "vscode"
+    ]
+  },
+  "footer": {
+    "socials": {
+      "x": "https://x.com/build_on_bob",
+      "github": "https://github.com/bob-collective",
+      "discord": "https://discord.gg/gobob"
+    }
+  }
+}
