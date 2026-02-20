@@ -1,0 +1,103 @@
+---
+title: "FAQ"
+description: "Questions about BOB Gateway"
+icon: "circle-question"
+---
+
+## Frequently Asked Questions
+
+<AccordionGroup>
+
+<Accordion icon="gas-pump" title="Who pays the gas fees?">
+The Relayer estimates gas costs upfront and deducts them from the transaction. Users don't need ETH on BOB to use Gateway.
+</Accordion>
+
+<Accordion icon="triangle-exclamation" title="What happens if my DeFi action fails?">
+Gateway automatically falls back to sending the wrapped BTC directly to the user's EVM address. Always test thoroughly to avoid fallbacks.
+</Accordion>
+
+<Accordion icon="wallet" title="Do I need Bitcoin wallet support?">
+Yes, your frontend needs Bitcoin wallet integration. See the [wallet guide](/gateway/wallets) for implementation details.
+</Accordion>
+
+<Accordion icon="link-simple" title="Can I chain multiple protocols?">
+Yes! Custom strategies can interact with multiple protocols in sequence. For example: stake WBTC → get staked BTC → deposit in lending → send receipt tokens to user.
+</Accordion>
+
+<Accordion icon="shield-check" title="Security considerations?">
+- Use SafeERC20 for token transfers
+- Consider reentrancy protection
+- Ensure proper access controls
+- Test thoroughly on testnet
+</Accordion>
+
+<Accordion icon="money-bill" title="How does affiliate fee monetization work?">
+You can earn fees on every transaction which is linked to your affiliate ID. The fee is deducted from the user's input amount and sent directly to you.
+</Accordion>
+
+<Accordion icon="clock" title="How long do transactions take?">
+Transaction time varies based on:
+- Bitcoin network confirmation time (typically 10-60 minutes)
+- Destination chain (cross-chain transactions take longer)
+- Current network congestion
+
+The quote response includes an `estimatedTxTime` field with the expected duration.
+</Accordion>
+
+<Accordion icon="arrows-rotate" title="What happens if Bitcoin fees spike after I submit?">
+For offramp transactions, you can bump the transaction fee to speed up confirmation if Bitcoin network fees increase.
+</Accordion>
+
+<Accordion icon="xmark" title="Can I cancel a transaction?">
+For offramp transactions, you can unlock an order if it gets stuck. This is irreversible - once unlocked, the order cannot be resumed.
+</Accordion>
+
+<Accordion icon="code-branch" title="What chains are supported?">
+Gateway supports:
+- **Bitcoin** → BOB (mainnet)
+- **Bitcoin** → Ethereum, Base, Arbitrum, Optimism (via LayerZero)
+- **BOB** → Bitcoin (offramp)
+
+Check `getRoutes()` for the complete list of available routes.
+</Accordion>
+
+<Accordion icon="shield-halved" title="Is Gateway audited?">
+Yes, BOB Gateway has been audited by Pashov and Common Prefix. The protocol uses atomic cross-chain swaps verified by an on-chain Bitcoin Light Client, making it trustless between users and market makers.
+
+View audit reports: [docs.gobob.xyz/docs/reference/audits](https://docs.gobob.xyz/docs/reference/audits#bob-gateway)
+</Accordion>
+
+<Accordion icon="money-check-dollar" title="What are the fees?">
+Fees include:
+- **Protocol fee**: Charged by Gateway (included in quote)
+- **Gas fees**: Estimated and deducted upfront (no ETH required from users)
+- **Affiliate fees**: Optional fees you set (if monetizing your integration)
+- **Bridge fees**: For cross-chain transactions
+
+All fees are shown transparently in the quote response.
+</Accordion>
+
+<Accordion icon="life-ring" title="Where can I get help?">
+- **Discord**: Join our community at [discord.gg/gobob](https://discord.gg/gobob)
+- **GitHub**: Report issues at [github.com/bob-collective/bob](https://github.com/bob-collective/bob)
+- **Documentation**: Browse guides at [docs.gobob.xyz](https://docs.gobob.xyz)
+</Accordion>
+
+</AccordionGroup>
+
+## Still Have Questions?
+
+<CardGroup cols={2}>
+  <Card title="Discord Community" icon="discord" href="https://discord.gg/gobob">
+    Get help from the BOB team and community
+  </Card>
+  <Card title="GitHub Issues" icon="github" href="https://github.com/bob-collective/bob/issues">
+    Report bugs or request features
+  </Card>
+  <Card title="Integration Guide" icon="code" href="/gateway/integration">
+    Step-by-step integration instructions
+  </Card>
+  <Card title="API Reference" icon="book" href="/api-reference/overview">
+    Complete API documentation
+  </Card>
+</CardGroup>

@@ -1,0 +1,417 @@
+---
+title: "Bitcoin Wallets"
+description: "Integrate Bitcoin wallet support for Gateway transactions"
+icon: "wallet"
+---
+
+## Overview
+
+To use BOB Gateway, your application needs to integrate Bitcoin wallet support so users can sign Bitcoin transactions. This guide covers the most popular integration methods.
+
+## Recommended: Reown AppKit
+
+[Reown AppKit](https://reown.com/appkit) (formerly WalletConnect AppKit) provides a unified interface with broad wallet support including Unisat, Leather, Xverse, OKX, and more.
+
+### Installation
+
+<CodeGroup>
+
+```bash npm
+npm install @reown/appkit @reown/appkit-adapter-bitcoin
+```
+
+```bash yarn
+yarn add @reown/appkit @reown/appkit-adapter-bitcoin
+```
+
+```bash pnpm
+pnpm add @reown/appkit @reown/appkit-adapter-bitcoin
+```
+
+</CodeGroup>
+
+### Setup
+
+```typescript
+import { createAppKit } from '@reown/appkit/react';
+import { BitcoinAdapter } from '@reown/appkit-adapter-bitcoin';
+import { bob } from 'viem/chains';
+
+// 1. Get projectId from https://cloud.reown.com
+const projectId = 'YOUR_PROJECT_ID';
+
+// 2. Configure Bitcoin networks
+const bitcoinAdapter = new BitcoinAdapter({
+  networks: [
+    {
+      chainId: 'bip122:000000000019d6689c085ae165831e93', // Bitcoin mainnet
+      name: 'Bitcoin',
+      currency: 'BTC',
+      explorerUrl: 'https://blockstream.info',
+      rpcUrl: 'https://blockstream.info/api',
+    },
+  ],
+});
+
+// 3. Create AppKit instance
+const metadata = {
+  name: 'Your App Name',
+  description: 'Your App Description',
+  url: 'https://yourapp.com',
+  icons: ['https://yourapp.com/icon.png'],
+};
+
+createAppKit({
+  adapters: [bitcoinAdapter],
+  networks: [bob],
+  metadata,
+  projectId,
+  features: {
+    analytics: true,
+  },
+});
+```
+
+### Usage with Gateway SDK
+
+```typescript
+import { useAppKitProvider, useAppKitAccount } from '@reown/appkit/react';
+import { ReownWalletAdapter, GatewaySDK } from '@gobob/bob-sdk';
+import type { BitcoinConnector } from '@reown/appkit-adapter-bitcoin';
+
+function GatewayComponent() {
+  const { walletProvider } = useAppKitProvider<BitcoinConnector>('bip122');
+  const { address: btcAddress } = useAppKitAccount();
+  
+  const gatewaySDK = new GatewaySDK(bob.id);
+
+  const handleSwap = async () => {
+    // Get quote
+    const quote = await gatewaySDK.getQuote({
+      fromChain: 'bitcoin',
+      fromToken: 'BTC',
+      fromUserAddress: btcAddress,
+      toChain: 'bob',
+      toToken: 'wBTC',
+      toUserAddress: evmAddress,
+      amount: parseBtc("0.1"),
+    });
+
+    // Execute with Reown adapter
+    const txId = await gatewaySDK.executeQuote({
+      quote,
+      walletClient,
+      publicClient,
+      btcSigner: new ReownWalletAdapter(walletProvider, btcAddress),
+    });
+    
+    console.log('Transaction:', txId);
+  };
+
+  return (
+    <div>
+      <appkit-button />
+      <button onClick={handleSwap}>Swap BTC</button>
+    </div>
+  );
+}
+```
+
+---
+
+## Alternative: sats-wagmi
+
+[sats-wagmi](https://github.com/Sats-Connect/sats-wagmi) provides React hooks for Bitcoin wallets with support for Unisat, Leather, Xverse, and more.
+
+### Installation
+
+```bash
+npm install sats-wagmi
+```
+
+### Setup
+
+```typescript
+import { SatsWagmiConfig, SatsConnectProvider } from 'sats-wagmi';
+
+function App() {
+  return (
+    <SatsConnectProvider network="mainnet">
+      <SatsWagmiConfig>
+        <YourApp />
+      </SatsWagmiConfig>
+    </SatsConnectProvider>
+  );
+}
+```
+
+### Usage
+
+```typescript
+import { useConnect, useAccount, useSendBitcoin } from 'sats-wagmi';
+import { GatewaySDK } from '@gobob/bob-sdk';
+
+function GatewayComponent() {
+  const { connect, connectors } = useConnect();
+  const { address, isConnected } = useAccount();
+  const { sendBitcoin } = useSendBitcoin();
+
+  const handleSwap = async () => {
+    if (!isConnected) {
+      await connect({ connector: connectors[0] }); // Connect first
+    }
+
+    const gatewaySDK = new GatewaySDK(bob.id);
+    
+    const quote = await gatewaySDK.getQuote({
+      fromChain: 'bitcoin',
+      fromToken: 'BTC',
+      fromUserAddress: address,
+      toChain: 'bob',
+      toToken: 'wBTC',
+      toUserAddress: evmAddress,
+      amount: parseBtc("0.1"),
+    });
+
+    // Create custom adapter
+    const btcSigner = {
+      sendBitcoin: async (params: any) => {
+        return sendBitcoin(params);
+      },
+    };
+
+    const txId = await gatewaySDK.executeQuote({
+      quote,
+      walletClient,
+      publicClient,
+      btcSigner,
+    });
+  };
+
+  return <button onClick={handleSwap}>Connect & Swap</button>;
+}
+```
+
+---
+
+## OKX Wallet
+
+Direct integration with OKX Wallet for users who prefer this wallet.
+
+### Installation
+
+```bash
+npm install @okxweb3/bitcoin-wallet
+```
+
+### Usage
+
+```typescript
+import { OkxWalletAdapter, GatewaySDK } from '@gobob/bob-sdk';
+
+function GatewayComponent() {
+  const handleSwap = async () => {
+    // Check if OKX wallet is installed
+    if (!window.okxwallet) {
+      alert('Please install OKX Wallet');
+      return;
+    }
+
+    const gatewaySDK = new GatewaySDK(bob.id);
+
+    const quote = await gatewaySDK.getQuote({
+      fromChain: 'bitcoin',
+      fromToken: 'BTC',
+      fromUserAddress: btcAddress,
+      toChain: 'bob',
+      toToken: 'wBTC',
+      toUserAddress: evmAddress,
+      amount: parseBtc("0.1"),
+    });
+
+    const txId = await gatewaySDK.executeQuote({
+      quote,
+      walletClient,
+      publicClient,
+      btcSigner: new OkxWalletAdapter(window.okxwallet),
+    });
+  };
+
+  return <button onClick={handleSwap}>Swap with OKX</button>;
+}
+```
+
+---
+
+## Custom Bitcoin Signer
+
+Implement the `BitcoinSigner` interface for any Bitcoin wallet:
+
+```typescript
+import { BitcoinSigner } from '@gobob/bob-sdk';
+
+class CustomWalletAdapter implements BitcoinSigner {
+  constructor(private wallet: any) {}
+
+  // Option 1: Implement sendBitcoin for wallets that handle transaction creation
+  async sendBitcoin(params: {
+    from: string;
+    to: string;
+    value: string; // BTC amount as string
+    opReturn?: string; // OP_RETURN data
+  }): Promise<string> {
+    // Use your wallet's API to create and broadcast transaction
+    const txHex = await this.wallet.sendBitcoin({
+      to: params.to,
+      amount: params.value,
+      data: params.opReturn,
+    });
+    
+    return txHex; // Return signed transaction hex
+  }
+
+  // Option 2: Implement signAllInputs for PSBT-based wallets
+  async signAllInputs(psbtHex: string): Promise<string> {
+    // Sign the PSBT using your wallet
+    const signedPsbt = await this.wallet.signPsbt(psbtHex);
+    
+    // Finalize and extract transaction
+    const finalTx = await this.wallet.finalizePsbt(signedPsbt);
+    
+    return finalTx; // Return signed transaction hex
+  }
+}
+
+// Usage
+const btcSigner = new CustomWalletAdapter(yourWalletInstance);
+
+const txId = await gatewaySDK.executeQuote({
+  quote,
+  walletClient,
+  publicClient,
+  btcSigner,
+});
+```
+
+---
+
+## Dynamic.xyz Integration
+
+[Dynamic](https://dynamic.xyz) provides embedded wallet support including Bitcoin.
+
+```typescript
+import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
+import { GatewaySDK } from '@gobob/bob-sdk';
+
+function GatewayComponent() {
+  const { primaryWallet } = useDynamicContext();
+
+  const handleSwap = async () => {
+    if (!primaryWallet) return;
+
+    // Get Bitcoin address
+    const btcAddress = await primaryWallet.getAddress('bitcoin');
+
+    const gatewaySDK = new GatewaySDK(bob.id);
+    
+    const quote = await gatewaySDK.getQuote({
+      fromChain: 'bitcoin',
+      fromToken: 'BTC',
+      fromUserAddress: btcAddress,
+      toChain: 'bob',
+      toToken: 'wBTC',
+      toUserAddress: evmAddress,
+      amount: parseBtc("0.1"),
+    });
+
+    // Create adapter for Dynamic wallet
+    const btcSigner = {
+      sendBitcoin: async (params: any) => {
+        return primaryWallet.connector.signTransaction({
+          chain: 'bitcoin',
+          ...params,
+        });
+      },
+    };
+
+    const txId = await gatewaySDK.executeQuote({
+      quote,
+      walletClient,
+      publicClient,
+      btcSigner,
+    });
+  };
+
+  return <button onClick={handleSwap}>Swap</button>;
+}
+```
+
+---
+
+## Best Practices
+
+<Steps>
+  <Step title="Wallet Detection">
+    Detect which wallets are installed and show appropriate connection options
+  </Step>
+  
+  <Step title="Network Validation">
+    Verify user is on Bitcoin mainnet (or testnet for testing)
+  </Step>
+  
+  <Step title="Address Validation">
+    Validate Bitcoin addresses before submitting quotes
+  </Step>
+  
+  <Step title="Error Handling">
+    Handle wallet rejection, insufficient funds, and network errors gracefully
+  </Step>
+  
+  <Step title="User Feedback">
+    Show clear transaction status and confirmation states
+  </Step>
+</Steps>
+
+## Wallet Comparison
+
+| Wallet | Type | Mobile | Desktop | Integration Method |
+|--------|------|---------|---------|-------------------|
+| **Reown AppKit** | Multi-wallet | ✅ | ✅ | Recommended |
+| **OKX Wallet** | Browser Extension | ✅ | ✅ | Direct |
+| **Unisat** | Browser Extension | ❌ | ✅ | sats-wagmi |
+| **Leather** | Browser Extension | ❌ | ✅ | sats-wagmi |
+| **Xverse** | Mobile + Extension | ✅ | ✅ | sats-wagmi |
+| **Dynamic.xyz** | Embedded | ✅ | ✅ | SDK |
+
+## Testing
+
+Test your Bitcoin wallet integration on BOB Sepolia testnet:
+
+```typescript
+import { bobSepolia } from 'viem/chains';
+
+const gatewaySDK = new GatewaySDK(bobSepolia.id);
+
+// Use Bitcoin testnet addresses (starting with tb1...)
+const quote = await gatewaySDK.getQuote({
+  fromChain: 'bitcoin-testnet',
+  fromToken: 'BTC',
+  fromUserAddress: 'tb1q...', // Testnet address
+  // ... rest of params
+});
+```
+
+<Warning>
+Always test on testnet before deploying to mainnet. Use testnet BTC which has no real value.
+</Warning>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Integration Guide" icon="code" href="/gateway/integration">
+    Complete the full Gateway integration
+  </Card>
+  <Card title="DeFi Strategies" icon="layer-group" href="/gateway/strategies">
+    Build custom DeFi actions
+  </Card>
+</CardGroup>
