@@ -1,6 +1,6 @@
 import { Address } from 'viem';
 import { SUPPORTED_CHAIN_MAP, SUPPORTED_CHAINS } from './config';
-import { TokenId } from './token-ids';
+import type { TokenId } from './token-ids';
 
 export type KebabCase<T extends string> = T extends `${infer S} ${infer E}`
   ? `${Lowercase<S>}-${KebabCase<E>}`

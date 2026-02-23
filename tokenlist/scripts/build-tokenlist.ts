@@ -15,7 +15,7 @@ import { Entries, Token, TokenData } from '../types';
 import { version } from '../package.json';
 import { Address, getAddress } from 'viem';
 import { bob } from 'viem/chains';
-import { TokenId } from '../token-ids';
+import type { TokenId } from '../token-ids';
 
 const [major, minor, patch] = version.split('.');
 

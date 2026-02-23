@@ -48,7 +48,7 @@ const tokenList = require('@gobob/tokenlist/tokenlist.json');
 The package exports TypeScript types for type-safe development:
 
 ```typescript
-import { TokenId } from '@gobob/tokenlist/token-ids';
+import type { TokenId } from '@gobob/tokenlist/token-ids';
 import type { Token, TokenData, SupportedChain } from '@gobob/tokenlist/types';
 ```
 
