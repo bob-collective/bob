@@ -3,6 +3,10 @@
     "version": "5.0.9-rc0",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/bob-collective/bob.git"
+    },
     "scripts": {
         "test": "vitest run test/*.ts",
         "deploy-relay": "ts-node src/scripts/relay-genesis.ts",
