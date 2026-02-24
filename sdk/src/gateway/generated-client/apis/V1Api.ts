@@ -62,7 +62,6 @@ export interface GetQuoteRequest {
     strategyTarget?: string;
     strategyMessage?: string;
     affiliateId?: string;
-    instantSwap?: boolean;
 }
 
 export interface RegisterTxRequest {
@@ -291,10 +290,6 @@ export class V1Api extends runtime.BaseAPI {
 
         if (requestParameters['affiliateId'] != null) {
             queryParameters['affiliateId'] = requestParameters['affiliateId'];
-        }
-
-        if (requestParameters['instantSwap'] != null) {
-            queryParameters['instantSwap'] = requestParameters['instantSwap'];
         }
 
         const headerParameters: runtime.HTTPHeaders = {};
