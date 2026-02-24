@@ -53,6 +53,12 @@ export interface GatewayOnrampQuote {
      */
     dstToken: string;
     /**
+     * Estimated time in secs to complete the Order
+     * @type {number}
+     * @memberof GatewayOnrampQuote
+     */
+    estimatedTimeInSecs?: number | null;
+    /**
      * Cost to execute the onramp on-chain
      * @type {GatewayTokenAmount}
      * @memberof GatewayOnrampQuote
@@ -156,6 +162,7 @@ export function GatewayOnrampQuoteFromJSONTyped(json: any, ignoreDiscriminator: 
         'affiliateAddress': json['affiliateAddress'] == null ? undefined : json['affiliateAddress'],
         'dstChain': json['dstChain'],
         'dstToken': json['dstToken'],
+        'estimatedTimeInSecs': json['estimatedTimeInSecs'] == null ? undefined : json['estimatedTimeInSecs'],
         'executionFees': GatewayTokenAmountFromJSON(json['executionFees']),
         'feeBreakdown': GatewayOnrampFeeBreakdownFromJSON(json['feeBreakdown']),
         'fees': GatewayTokenAmountFromJSON(json['fees']),
@@ -185,6 +192,7 @@ export function GatewayOnrampQuoteToJSONTyped(value?: GatewayOnrampQuote | null,
         'affiliateAddress': value['affiliateAddress'],
         'dstChain': value['dstChain'],
         'dstToken': value['dstToken'],
+        'estimatedTimeInSecs': value['estimatedTimeInSecs'],
         'executionFees': GatewayTokenAmountToJSON(value['executionFees']),
         'feeBreakdown': GatewayOnrampFeeBreakdownToJSON(value['feeBreakdown']),
         'fees': GatewayTokenAmountToJSON(value['fees']),

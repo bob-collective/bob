@@ -459,6 +459,15 @@
           "outputAmount"
         ],
         "properties": {
+          "estimatedTimeInSecs": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Estimated time in secs to complete the Order",
+            "minimum": 0
+          },
           "fees": {
             "$ref": "#/components/schemas/GatewayTokenAmount"
           },
@@ -519,6 +528,15 @@
               "string",
               "null"
             ]
+          },
+          "estimatedTimeInSecs": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Estimated time in secs to complete the Order",
+            "minimum": 0
           },
           "feeBreakdown": {
             "$ref": "#/components/schemas/GatewayOfframpFeeBreakdown"
@@ -613,6 +631,15 @@
           "dstToken": {
             "type": "string",
             "description": "Destination token address"
+          },
+          "estimatedTimeInSecs": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Estimated time in secs to complete the Order",
+            "minimum": 0
           },
           "executionFees": {
             "$ref": "#/components/schemas/GatewayTokenAmount",
