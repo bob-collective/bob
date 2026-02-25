@@ -30,4 +30,13 @@ jobs:
         run: npm ci
       - run: npm ci
       - run: npm run build
-      - run: npm publish --access public
+      - name: get sdk version
+        id: version
+        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+      - name: publish to npm
+        run: |
+          if [[ "${{ steps.version.outputs.version }}" == *rc* ]]; then
+            npm publish --access public --tag rc
+          else
+            npm publish --access public
+          fi
