@@ -1,0 +1,295 @@
+---
+title: "DeFi Strategies"
+description: "Build 1-click DeFi actions with custom strategies, multicall, and cross-chain execution"
+icon: "layer-group"
+---
+
+## Overview
+
+BOB Gateway enables users to interact with DeFi protocols using a single Bitcoin transaction. There are three integration approaches:
+
+<CardGroup cols={3}>
+  <Card title="Custom Strategy" icon="code">
+    Full control with smart contracts
+  </Card>
+  <Card title="Multicall" icon="list-check">
+    No deployment needed
+  </Card>
+  <Card title="Cross-Chain" icon="arrows-split-up-and-left">
+    Execute on destination chains
+  </Card>
+</CardGroup>
+
+## Which Approach Should I Choose?
+
+<AccordionGroup>
+  <Accordion icon="code" title="Custom Strategy - For Complex Logic">
+    Choose this when you need:
+    - Complex multi-step operations
+    - Gas optimization
+    - Custom events and logging
+    - Full control over execution flow
+    - State management in your contract
+  </Accordion>
+
+  <Accordion icon="list-check" title="Multicall - For Quick Integration">
+    Choose this when you want to:
+    - Integrate with existing contracts on BOB
+    - Avoid deploying new contracts
+    - Implement simple approve + deposit patterns
+    - Get started quickly
+  </Accordion>
+
+  <Accordion icon="arrows-split-up-and-left" title="Cross-Chain - For LayerZero Bridges">
+    Choose this for:
+    - Bridging to Ethereum, Base, or other LayerZero chains
+    - Executing actions on destination chain after bridge
+    - Depositing into lending protocols on destination
+    - Multi-step operations post-bridge
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Option 1: Custom Strategy Contract
+
+Deploy a smart contract that implements the Gateway strategy interface for full control.
+
+### Strategy Interface
+
+```solidity
+interface IStrategy {
+    function handleGatewayMessage(
+        IERC20 tokenSent,    // Wrapped BTC token (WBTC, tBTC, etc.)
+        uint256 amountIn,    // Amount received
+        address recipient,   // User's EVM address
+        bytes memory message // Optional parameters
+    ) external;
+}
+```
+
+### Complete Example: Convert to SolvBTC
+
+```solidity
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+
+interface ISolvBTCRouter {
+    function deposit(
+        address targetToken_,
+        address currency_,
+        uint256 currencyAmount_,
+        uint256 minimumTargetTokenAmount_,
+        uint64 expireTime_
+    ) external returns (uint256);
+}
+
+contract SolvBTCStrategy {
+    using SafeERC20 for IERC20;
+
+    ISolvBTCRouter public immutable solvBTCRouter;
+    IERC20 public immutable solvBTC;
+
+    constructor(address _solvBTCRouter, address _solvBTC) {
+        solvBTCRouter = ISolvBTCRouter(_solvBTCRouter);
+        solvBTC = IERC20(_solvBTC);
+    }
+
+    function handleGatewayMessage(
+        IERC20 tokenSent,
+        uint256 amountIn,
+        address recipient,
+        bytes memory message
+    ) external {
+        // Transfer wrapped BTC from Gateway
+        tokenSent.safeTransferFrom(msg.sender, address(this), amountIn);
+
+        // Decode minimum output from message (optional)
+        uint256 minOutput = message.length > 0 
+            ? abi.decode(message, (uint256)) 
+            : 0;
+
+        // Approve SolvBTC router
+        tokenSent.safeIncreaseAllowance(address(solvBTCRouter), amountIn);
+
+        // Convert to SolvBTC
+        uint256 solvBTCAmount = solvBTCRouter.deposit(
+            address(solvBTC), 
+            address(tokenSent), 
+            amountIn, 
+            minOutput,
+            uint64(block.timestamp + 1)
+        );
+
+        // Send SolvBTC to user
+        solvBTC.safeTransfer(recipient, solvBTCAmount);
+    }
+}
+```
+
+### Using Your Custom Strategy
+
+```typescript
+import { GatewaySDK, parseBtc } from '@gobob/bob-sdk';
+
+const gatewaySDK = new GatewaySDK(bob.id);
+
+// Encode minimum output parameter
+const minOutput = parseUnits("0.099", 8); // Minimum 0.099 BTC worth
+const message = encodeAbiParameters(
+  [{ type: 'uint256' }],
+  [minOutput]
+);
+
+const quote = await gatewaySDK.getQuote({
+  fromChain: 'bitcoin',
+  fromToken: 'BTC',
+  toChain: 'bob',
+  toToken: '0xYourStrategyAddress', // Your deployed strategy
+  fromUserAddress: 'bc1q...',
+  toUserAddress: '0x...', // Receives the SolvBTC
+  amount: parseBtc("0.1"),
+  strategyMessage: message, // Optional parameters
+});
+```
+
+---
+
+## Option 2: Multicall Strategy
+
+Execute multiple contract calls without deploying custom contracts.
+
+### Basic Approve + Deposit Pattern
+
+```typescript
+import { 
+  encodeFunctionData, 
+  parseAbi, 
+  encodeAbiParameters, 
+  parseAbiParameters,
+  Address 
+} from 'viem';
+import { GatewaySDK, parseBtc } from '@gobob/bob-sdk';
+
+const WBTC_ADDRESS = '0x03C7054BCB39f7b2e5B2c7AcB37583e32D70Cfa3'; // BOB mainnet
+const PROTOCOL_ADDRESS = '0xYourProtocolAddress';
+
+function generateMulticallMessage(
+  userAddress: Address, 
+  depositAmount: bigint
+) {
+  // Step 1: Approve protocol to spend WBTC
+  const approveCall = encodeFunctionData({
+    abi: parseAbi(['function approve(address spender, uint256 value)']),
+    functionName: 'approve',
+    args: [PROTOCOL_ADDRESS, depositAmount],
+  });
+
+  // Step 2: Deposit into protocol
+  const depositCall = encodeFunctionData({
+    abi: parseAbi(['function deposit(address asset, uint256 amount, address onBehalfOf)']),
+    functionName: 'deposit',
+    args: [WBTC_ADDRESS, depositAmount, userAddress],
+  });
+
+  // Encode as multicall message
+  return encodeAbiParameters(
+    parseAbiParameters('((address target, bytes callData, uint256 value)[], address fallbackRecipient)'),
+    [
+      [
+        [
+          { target: WBTC_ADDRESS, callData: approveCall, value: 0n },
+          { target: PROTOCOL_ADDRESS, callData: depositCall, value: 0n },
+        ],
+        userAddress, // Fallback recipient if execution fails
+      ],
+    ]
+  );
+}
+
+// Get quote with multicall
+const depositAmount = parseBtc("0.1");
+const multicallMessage = generateMulticallMessage(userAddress, depositAmount);
+
+const quote = await gatewaySDK.getQuote({
+  fromChain: 'bitcoin',
+  fromToken: 'BTC',
+  toChain: 'bob',
+  toToken: 'wBTC',
+  fromUserAddress: 'bc1q...',
+  toUserAddress: userAddress,
+  amount: depositAmount,
+  strategyMessage: multicallMessage,
+});
+```
+
+### Advanced: Multi-Protocol Interaction
+
+```typescript
+function generateComplexMulticall(user: Address, amount: bigint) {
+  const calls = [
+    // 1. Approve DEX router
+    {
+      target: WBTC_ADDRESS,
+      callData: encodeFunctionData({
+        abi: erc20Abi,
+        functionName: 'approve',
+        args: [DEX_ROUTER, amount / 2n],
+      }),
+      value: 0n,
+    },
+    // 2. Swap half to another token
+    {
+      target: DEX_ROUTER,
+      callData: encodeFunctionData({
+        abi: parseAbi(['function swapExactTokensForTokens(...)']),
+        functionName: 'swapExactTokensForTokens',
+        args: [/* swap params */],
+      }),
+      value: 0n,
+    },
+    // 3. Add liquidity
+    {
+      target: DEX_ROUTER,
+      callData: encodeFunctionData({
+        abi: parseAbi(['function addLiquidity(...)']),
+        functionName: 'addLiquidity',
+        args: [/* liquidity params */],
+      }),
+      value: 0n,
+    },
+  ];
+
+  return encodeAbiParameters(
+    parseAbiParameters('((address target, bytes callData, uint256 value)[], address fallbackRecipient)'),
+    [[calls, user]]
+  );
+}
+```
+
+---
+
+## Option 3: Cross-Chain Destination Calls
+
+<Note>
+**Coming Soon** - This feature is currently under development and will be available soon.
+</Note>
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Integration Guide" icon="code" href="/gateway/integration">
+    Complete SDK integration walkthrough
+  </Card>
+  <Card title="Bitcoin Wallets" icon="wallet" href="/gateway/wallets">
+    Implement Bitcoin wallet support
+  </Card>
+  <Card title="API Reference" icon="book" href="/api-reference/overview">
+    Complete API documentation
+  </Card>
+  <Card title="GitHub Examples" icon="github" href="https://github.com/bob-collective/bob/tree/master/sdk/examples">
+    View example implementations
+  </Card>
+</CardGroup>

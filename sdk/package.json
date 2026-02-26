@@ -1,6 +1,6 @@
 {
     "name": "@gobob/bob-sdk",
-    "version": "5.0.8",
+    "version": "5.0.9",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
     "repository": {
@@ -15,7 +15,7 @@
         "lint": "eslint .",
         "format": "prettier --write examples src test",
         "format:check": "prettier --check examples src test",
-        "codegen": "rm -rf ./src/gateway/generated-client && npx @openapitools/openapi-generator-cli generate --skip-validate-spec -g typescript-fetch -i https://gateway-api-mainnet.gobob.xyz/api-doc.json -o ./src/gateway/generated-client --global-property=apiDocs=false,modelDocs=false"
+        "codegen": "rm -rf ./src/gateway/generated-client && npx @openapitools/openapi-generator-cli generate --skip-validate-spec -g typescript-fetch -i $OPEN_API_SPEC_URL -o ./src/gateway/generated-client --global-property=apiDocs=false,modelDocs=false"
     },
     "files": [
         "dist/**/*",
@@ -34,10 +34,10 @@
         "ecpair": "^2.1.0",
         "eslint-config-prettier": "^10.1.8",
         "eslint-plugin-prettier": "^5.5.5",
-        "eslint": "^9.39.2",
+        "eslint": "^10.0.0",
         "mocha": "^11.7.5",
         "nock": "^14.0.10",
-        "prettier": "^3.6.2",
+        "prettier": "^3.8.1",
         "tiny-secp256k1": "^2.2.4",
         "ts-node": "^10.0.0",
         "tsx": "^4.20.6",
@@ -47,7 +47,7 @@
     },
     "dependencies": {
         "@bitcoinerlab/secp256k1": "^1.2.0",
-        "@eslint/eslintrc": "^3.3.1",
+        "@eslint/eslintrc": "^3.3.3",
         "@eslint/js": "^9.39.2",
         "@gobob/sats-wagmi": "^0.3.23",
         "@magiceden-oss/runestone-lib": "^1.0.2",

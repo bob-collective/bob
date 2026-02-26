@@ -1,0 +1,1045 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "BOB Gateway API",
+    "description": "BOB Gateway API for Bitcoin swaps",
+    "license": {
+      "name": ""
+    },
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://gateway-api-mainnet.gobob.xyz",
+      "description": "Production"
+    },
+    {
+      "url": "https://gateway-api-staging.gobob.xyz",
+      "description": "Staging"
+    }
+  ],
+  "paths": {
+    "/v1/create-order": {
+      "post": {
+        "tags": [
+          "v1"
+        ],
+        "summary": "Create a new gateway order.",
+        "description": "Creates a new request, reserves the required liquidity.",
+        "operationId": "create_order",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GatewayQuote"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created order",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayCreateOrder"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/get-order/{order_id}": {
+      "get": {
+        "tags": [
+          "v1"
+        ],
+        "summary": "Get all orders for a specific ID.",
+        "operationId": "get_order",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "description": "Order id as returned by create-order",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Get order by id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayOrderInfo"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Order not found"
+          }
+        }
+      }
+    },
+    "/v1/get-orders/{user_address}": {
+      "get": {
+        "tags": [
+          "v1"
+        ],
+        "summary": "Get all user orders.",
+        "operationId": "get_orders",
+        "parameters": [
+          {
+            "name": "user_address",
+            "in": "path",
+            "description": "User address",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Get all orders",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GatewayOrderInfo"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/get-quote": {
+      "get": {
+        "tags": [
+          "v1"
+        ],
+        "summary": "Get a gateway quote.",
+        "description": "Checks the available liquidity and provides a quote.",
+        "operationId": "get_quote",
+        "parameters": [
+          {
+            "name": "srcChain",
+            "in": "query",
+            "description": "Source chain",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "style": "form",
+            "example": "bitcoin"
+          },
+          {
+            "name": "dstChain",
+            "in": "query",
+            "description": "Destination chain",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "style": "form",
+            "example": "bob"
+          },
+          {
+            "name": "sender",
+            "in": "query",
+            "description": "Address sending the funds",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "style": "form",
+            "example": "bc1qyhc4uslh46axl553pq3mjclrt7dcgmlzxv0ktx"
+          },
+          {
+            "name": "recipient",
+            "in": "query",
+            "description": "Address receiving the funds",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "style": "form",
+            "example": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+          },
+          {
+            "name": "srcToken",
+            "in": "query",
+            "description": "Source token address",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "style": "form",
+            "example": "0x0000000000000000000000000000000000000000"
+          },
+          {
+            "name": "dstToken",
+            "in": "query",
+            "description": "Destination token address",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "style": "form",
+            "example": "0x0555E30da8f98308EdB960aa94C0Db47230d2B9c"
+          },
+          {
+            "name": "amount",
+            "in": "query",
+            "description": "Amount to swap (in smallest unit, e.g., sats or wei)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "style": "form",
+            "example": "100000"
+          },
+          {
+            "name": "gasRefill",
+            "in": "query",
+            "description": "Optional gas refill amount (in smallest unit, e.g., wei)",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
+            "name": "slippage",
+            "in": "query",
+            "description": "Slippage tolerance (in basis points, e.g., 300 = 3%)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "style": "form",
+            "example": "300"
+          },
+          {
+            "name": "strategyTarget",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
+            "name": "strategyMessage",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
+            "name": "affiliateId",
+            "in": "query",
+            "description": "Optional affiliate ID",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "style": "form"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Get a quote",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayQuote"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/get-routes": {
+      "get": {
+        "tags": [
+          "v1"
+        ],
+        "summary": "Get all supported routes.",
+        "operationId": "get_routes",
+        "responses": {
+          "200": {
+            "description": "Get all supported routes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RouteInfo"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/register-tx": {
+      "patch": {
+        "tags": [
+          "v1"
+        ],
+        "summary": "Register a tx for a request.",
+        "description": "Required for the Solver to track and execute some requests.",
+        "operationId": "register_tx",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterTx"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Register successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegisterTxSuccess"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ChainTxInfo": {
+        "type": "object",
+        "required": [
+          "chain",
+          "token",
+          "amount"
+        ],
+        "properties": {
+          "amount": {
+            "type": "string"
+          },
+          "chain": {
+            "type": "string"
+          },
+          "token": {
+            "type": "string"
+          },
+          "txHash": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "GatewayCreateOrder": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "onramp"
+            ],
+            "properties": {
+              "onramp": {
+                "type": "object",
+                "required": [
+                  "order_id",
+                  "psbt_hex",
+                  "address"
+                ],
+                "properties": {
+                  "address": {
+                    "type": "string",
+                    "description": "Bitcoin address to pay to"
+                  },
+                  "op_return_data": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "Optional OP_RETURN data"
+                  },
+                  "order_id": {
+                    "type": "string",
+                    "description": "Unique order id",
+                    "example": "f81d4fae-7dec-11d0-a765-00a0c91e6bf6"
+                  },
+                  "psbt_hex": {
+                    "type": "string",
+                    "description": "Hex-encoded Bitcoin PSBT"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "offramp"
+            ],
+            "properties": {
+              "offramp": {
+                "type": "object",
+                "required": [
+                  "order_id",
+                  "tx"
+                ],
+                "properties": {
+                  "order_id": {
+                    "type": "string",
+                    "description": "Unique order id",
+                    "example": "f81d4fae-7dec-11d0-a765-00a0c91e6bf6"
+                  },
+                  "tx": {
+                    "$ref": "#/components/schemas/TxInfo",
+                    "description": "Tx info to execute the swap"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "layerZero"
+            ],
+            "properties": {
+              "layerZero": {
+                "type": "object",
+                "required": [
+                  "order_id",
+                  "tx"
+                ],
+                "properties": {
+                  "order_id": {
+                    "type": "string",
+                    "description": "Unique order id",
+                    "example": "f81d4fae-7dec-11d0-a765-00a0c91e6bf6"
+                  },
+                  "tx": {
+                    "$ref": "#/components/schemas/TxInfo",
+                    "description": "Tx info to execute the swap"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "description": "Created new Gateway order"
+      },
+      "GatewayLayerZeroQuote": {
+        "type": "object",
+        "required": [
+          "tx",
+          "fees",
+          "inputAmount",
+          "outputAmount"
+        ],
+        "properties": {
+          "estimatedTimeInSecs": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Estimated time in secs to complete the Order",
+            "minimum": 0
+          },
+          "fees": {
+            "$ref": "#/components/schemas/GatewayTokenAmount"
+          },
+          "inputAmount": {
+            "$ref": "#/components/schemas/GatewayTokenAmount"
+          },
+          "outputAmount": {
+            "$ref": "#/components/schemas/GatewayTokenAmount"
+          },
+          "tx": {
+            "$ref": "#/components/schemas/TxInfo"
+          }
+        }
+      },
+      "GatewayOfframpFeeBreakdown": {
+        "type": "object",
+        "required": [
+          "solverFee",
+          "inclusionFee",
+          "protocolFee",
+          "affiliateFee",
+          "fastestFeeRate"
+        ],
+        "properties": {
+          "affiliateFee": {
+            "$ref": "#/components/schemas/GatewayTokenAmount"
+          },
+          "fastestFeeRate": {
+            "type": "string"
+          },
+          "inclusionFee": {
+            "$ref": "#/components/schemas/GatewayTokenAmount"
+          },
+          "protocolFee": {
+            "$ref": "#/components/schemas/GatewayTokenAmount"
+          },
+          "solverFee": {
+            "$ref": "#/components/schemas/GatewayTokenAmount"
+          }
+        }
+      },
+      "GatewayOfframpQuote": {
+        "type": "object",
+        "required": [
+          "srcChain",
+          "tokenAddress",
+          "inputAmount",
+          "outputAmount",
+          "fees",
+          "feeBreakdown",
+          "recipient",
+          "slippage",
+          "txTo"
+        ],
+        "properties": {
+          "affiliateAddress": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "estimatedTimeInSecs": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Estimated time in secs to complete the Order",
+            "minimum": 0
+          },
+          "feeBreakdown": {
+            "$ref": "#/components/schemas/GatewayOfframpFeeBreakdown"
+          },
+          "fees": {
+            "$ref": "#/components/schemas/GatewayTokenAmount"
+          },
+          "inputAmount": {
+            "$ref": "#/components/schemas/GatewayTokenAmount"
+          },
+          "outputAmount": {
+            "$ref": "#/components/schemas/GatewayTokenAmount"
+          },
+          "recipient": {
+            "type": "string"
+          },
+          "sender": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "slippage": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "srcChain": {
+            "type": "string"
+          },
+          "tokenAddress": {
+            "type": "string"
+          },
+          "txTo": {
+            "type": "string"
+          }
+        }
+      },
+      "GatewayOnrampFeeBreakdown": {
+        "type": "object",
+        "required": [
+          "solverFee",
+          "protocolFee",
+          "affiliateFee",
+          "executionFee",
+          "layerzeroFee"
+        ],
+        "properties": {
+          "affiliateFee": {
+            "$ref": "#/components/schemas/GatewayTokenAmount"
+          },
+          "executionFee": {
+            "$ref": "#/components/schemas/GatewayTokenAmount"
+          },
+          "layerzeroFee": {
+            "$ref": "#/components/schemas/GatewayTokenAmount"
+          },
+          "protocolFee": {
+            "$ref": "#/components/schemas/GatewayTokenAmount"
+          },
+          "solverFee": {
+            "$ref": "#/components/schemas/GatewayTokenAmount"
+          }
+        }
+      },
+      "GatewayOnrampQuote": {
+        "type": "object",
+        "required": [
+          "inputAmount",
+          "outputAmount",
+          "fees",
+          "executionFees",
+          "recipient",
+          "token",
+          "slippage",
+          "feeBreakdown",
+          "dstChain",
+          "dstToken"
+        ],
+        "properties": {
+          "affiliateAddress": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Affiliate address"
+          },
+          "dstChain": {
+            "type": "string",
+            "description": "Destination chain"
+          },
+          "dstToken": {
+            "type": "string",
+            "description": "Destination token address"
+          },
+          "estimatedTimeInSecs": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Estimated time in secs to complete the Order",
+            "minimum": 0
+          },
+          "executionFees": {
+            "$ref": "#/components/schemas/GatewayTokenAmount",
+            "description": "Cost to execute the onramp on-chain"
+          },
+          "feeBreakdown": {
+            "$ref": "#/components/schemas/GatewayOnrampFeeBreakdown",
+            "description": "Detailed fee breakdown"
+          },
+          "fees": {
+            "$ref": "#/components/schemas/GatewayTokenAmount",
+            "description": "Total fees for this swap"
+          },
+          "gasRefill": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Optional gas refill amount"
+          },
+          "inputAmount": {
+            "$ref": "#/components/schemas/GatewayTokenAmount",
+            "description": "Amount requested by the user"
+          },
+          "outputAmount": {
+            "$ref": "#/components/schemas/GatewayTokenAmount",
+            "description": "Final amount after fees"
+          },
+          "recipient": {
+            "type": "string",
+            "description": "Recipient address"
+          },
+          "sender": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Sender address"
+          },
+          "slippage": {
+            "type": "string",
+            "description": "Slippage tolerance"
+          },
+          "strategyAddress": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "strategyMessage": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "token": {
+            "type": "string",
+            "description": "Token address"
+          }
+        }
+      },
+      "GatewayOrderInfo": {
+        "type": "object",
+        "description": "Gateway order info",
+        "required": [
+          "timestamp",
+          "srcInfo",
+          "dstInfo",
+          "status"
+        ],
+        "properties": {
+          "dstInfo": {
+            "$ref": "#/components/schemas/ChainTxInfo"
+          },
+          "estimatedTimeInSecs": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "minimum": 0
+          },
+          "srcInfo": {
+            "$ref": "#/components/schemas/ChainTxInfo"
+          },
+          "status": {
+            "$ref": "#/components/schemas/GatewayOrderStatus"
+          },
+          "timestamp": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "GatewayOrderStatus": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "inProgress"
+            ],
+            "properties": {
+              "inProgress": {
+                "type": "object",
+                "properties": {
+                  "bump_fee_tx": {
+                    "oneOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "$ref": "#/components/schemas/TxInfo"
+                      }
+                    ]
+                  },
+                  "refund_tx": {
+                    "oneOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "$ref": "#/components/schemas/TxInfo"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "failed"
+            ],
+            "properties": {
+              "failed": {
+                "type": "object",
+                "properties": {
+                  "refund_tx": {
+                    "oneOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "$ref": "#/components/schemas/TxInfo"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "string",
+            "enum": [
+              "success"
+            ]
+          },
+          {
+            "type": "string",
+            "enum": [
+              "refunded"
+            ]
+          }
+        ]
+      },
+      "GatewayQuote": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "onramp"
+            ],
+            "properties": {
+              "onramp": {
+                "$ref": "#/components/schemas/GatewayOnrampQuote"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "offramp"
+            ],
+            "properties": {
+              "offramp": {
+                "$ref": "#/components/schemas/GatewayOfframpQuote"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "layerZero"
+            ],
+            "properties": {
+              "layerZero": {
+                "$ref": "#/components/schemas/GatewayLayerZeroQuote"
+              }
+            }
+          }
+        ],
+        "description": "Gateway quote."
+      },
+      "GatewayTokenAmount": {
+        "type": "object",
+        "required": [
+          "amount",
+          "address",
+          "chain"
+        ],
+        "properties": {
+          "address": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "string"
+          },
+          "chain": {
+            "type": "string"
+          }
+        }
+      },
+      "RegisterTx": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "onramp"
+            ],
+            "properties": {
+              "onramp": {
+                "type": "object",
+                "required": [
+                  "order_id"
+                ],
+                "properties": {
+                  "bitcoin_tx_hex": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "Hex-encoded full Bitcoin transaction"
+                  },
+                  "bitcoin_txid": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "Bitcoin transaction ID (txid)"
+                  },
+                  "order_id": {
+                    "type": "string",
+                    "description": "Unique order id",
+                    "example": "f81d4fae-7dec-11d0-a765-00a0c91e6bf6"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "offramp"
+            ],
+            "properties": {
+              "offramp": {
+                "type": "object",
+                "required": [
+                  "order_id",
+                  "evm_txhash"
+                ],
+                "properties": {
+                  "evm_txhash": {
+                    "type": "string",
+                    "description": "EVM txhash"
+                  },
+                  "order_id": {
+                    "type": "string",
+                    "description": "Unique order id",
+                    "example": "f81d4fae-7dec-11d0-a765-00a0c91e6bf6"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "layerZero"
+            ],
+            "properties": {
+              "layerZero": {
+                "type": "object",
+                "required": [
+                  "order_id",
+                  "evm_txhash"
+                ],
+                "properties": {
+                  "evm_txhash": {
+                    "type": "string",
+                    "description": "EVM txhash"
+                  },
+                  "order_id": {
+                    "type": "string",
+                    "description": "Unique order id",
+                    "example": "f81d4fae-7dec-11d0-a765-00a0c91e6bf6"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "description": "Gateway order to execute"
+      },
+      "RegisterTxSuccess": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "onramp"
+            ],
+            "properties": {
+              "onramp": {
+                "type": "object",
+                "required": [
+                  "txid"
+                ],
+                "properties": {
+                  "txid": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "string",
+            "enum": [
+              "ok"
+            ]
+          }
+        ]
+      },
+      "RouteInfo": {
+        "type": "object",
+        "required": [
+          "srcChain",
+          "dstChain",
+          "srcToken",
+          "dstToken"
+        ],
+        "properties": {
+          "dstChain": {
+            "type": "string",
+            "description": "Destination chain (e.g. bob)"
+          },
+          "dstToken": {
+            "type": "string",
+            "description": "Destination token address"
+          },
+          "srcChain": {
+            "type": "string",
+            "description": "Source chain (e.g. bitcoin)"
+          },
+          "srcToken": {
+            "type": "string",
+            "description": "Source token address"
+          }
+        }
+      },
+      "TxInfo": {
+        "type": "object",
+        "required": [
+          "to",
+          "data",
+          "value",
+          "chain"
+        ],
+        "properties": {
+          "chain": {
+            "type": "string"
+          },
+          "data": {
+            "type": "string"
+          },
+          "to": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "v1",
+      "description": "BOB Gateway Core API (v1)"
+    }
+  ]
+}

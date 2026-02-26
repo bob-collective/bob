@@ -140,7 +140,9 @@ export class GatewayApiClient {
             {
                 srcChain: params.fromChain.toString(), // TODO: don't use number
                 dstChain: params.toChain.toString(), // TODO: don't use number
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 sender: params.fromUserAddress ? params.fromUserAddress?.toString() : (null as any),
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 recipient: params.toUserAddress ? params.toUserAddress.toString() : (null as any),
                 srcToken: params.fromToken.toString(),
                 dstToken: params.toToken.toString(),

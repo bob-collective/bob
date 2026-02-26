@@ -11,6 +11,9 @@ BINDINGS_FOLDER=bindings
 BINDINGS_CRATES_FOLDER=$(CRATES_FOLDER)/$(BINDINGS_FOLDER)
 BINDINGS_OUT_PATH=$(CONTRACTS_PATH)/out/$(BINDINGS_FOLDER)
 
+export OPEN_API_SPEC_URL="https://gateway-api-mainnet.gobob.xyz/api-doc.json"
+OPEN_API_DOCS_PATH=docs/gateway/api-reference/openapi.json
+
 # Target for generating bindings
 bindings:
 	rm -rf $(BINDINGS_CRATES_FOLDER)
@@ -53,6 +56,8 @@ setup:
 	@forge install --root $(CONTRACTS_PATH)
 
 openapi:
+	curl $(OPEN_API_SPEC_URL) -o $(OPEN_API_DOCS_PATH)
+	jq . $(OPEN_API_DOCS_PATH) > $(OPEN_API_DOCS_PATH).tmp && mv $(OPEN_API_DOCS_PATH).tmp $(OPEN_API_DOCS_PATH)
 	cd sdk && pnpm run codegen
 
 # Declare phony targets

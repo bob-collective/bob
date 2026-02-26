@@ -3,23 +3,23 @@ import path from 'node:path';
 import url from 'node:url';
 import { glob } from 'glob';
 import {
-  baseUrl,
-  datadir,
-  outfile,
-  outfileBob,
-  outfileOverrides,
-  schema,
-  supportedChainMapping,
+  DATA_DIR,
+  OUTFILE_BOB,
+  OUTFILE_OVERRIDES,
+  OUTFILE_TOKENLIST,
+  SUPPORTED_CHAIN_MAP,
+  TOKENLIST_BASE_URL,
+  TOKENLIST_SCHEMA_URL,
 } from '../config';
 import { Entries, Token, TokenData } from '../types';
 import { version } from '../package.json';
 import { Address, getAddress } from 'viem';
 import { bob } from 'viem/chains';
-import { TokenId } from '../generated-types';
+import type { TokenId } from '../token-ids';
 
 const [major, minor, patch] = version.split('.');
 
-function addTokens(tokens: Token[][]) {
+function buildTokenlist(tokens: Token[][]) {
   return tokens.reduce(
     (list, tokens) => {
       list.tokens.push(...tokens);
@@ -27,7 +27,7 @@ function addTokens(tokens: Token[][]) {
       return list;
     },
     {
-      $schema: schema,
+      $schema: TOKENLIST_SCHEMA_URL,
       name: 'BOB Tokens',
       timestamp: new Date().toISOString(),
       version: {
@@ -50,13 +50,13 @@ function mapToTokenlist(data: [TokenId, TokenData, string][]) {
           NonNullable<typeof token.bridge>
         >
       ).reduce((acc, [chain, bridgeAddress]) => {
-        acc[supportedChainMapping[chain].id] = bridgeAddress;
+        acc[SUPPORTED_CHAIN_MAP[chain].id] = bridgeAddress;
 
         return acc;
       }, {} as Record<number, Address>);
 
-      const out: Token = {
-        chainId: supportedChainMapping[chain].id,
+      return {
+        chainId: SUPPORTED_CHAIN_MAP[chain].id,
         address: getAddress(token.address),
         name: token.name ?? tokenData.name,
         symbol: token.symbol ?? tokenData.symbol,
@@ -66,8 +66,7 @@ function mapToTokenlist(data: [TokenId, TokenData, string][]) {
           tokenId,
           bridge,
         },
-      };
-      return out;
+      } as Token;
     });
   });
 }
@@ -82,13 +81,13 @@ function mapToOverridesTokenlist(data: [TokenId, TokenData, string][]) {
           NonNullable<typeof token.bridge>
         >
       ).reduce((acc, [chain, bridgeAddress]) => {
-        acc[supportedChainMapping[chain].id] = bridgeAddress;
+        acc[SUPPORTED_CHAIN_MAP[chain].id] = bridgeAddress;
 
         return acc;
       }, {} as Record<number, Address>);
 
-      const out: Token = {
-        chainId: supportedChainMapping[chain].id,
+      return {
+        chainId: SUPPORTED_CHAIN_MAP[chain].id,
         address: getAddress(token.address),
         name: token.overrides?.name ?? token.name ?? tokenData.name,
         symbol: token.overrides?.symbol ?? token.symbol ?? tokenData.symbol,
@@ -99,46 +98,45 @@ function mapToOverridesTokenlist(data: [TokenId, TokenData, string][]) {
           tokenId,
           bridge,
         },
-      };
-      return out;
+      } as Token;
     });
   });
 }
 
 const tokenlistData = fs
-  .readdirSync(datadir)
+  .readdirSync(DATA_DIR)
   .sort((a, b) => {
     return a.toLowerCase().localeCompare(b.toLowerCase());
   })
   .map<[TokenId, TokenData, string]>((folder) => {
     const data: TokenData = JSON.parse(
-      fs.readFileSync(path.join(datadir, folder, 'data.json'), 'utf8'),
+      fs.readFileSync(path.join(DATA_DIR, folder, 'data.json'), 'utf8'),
     );
-    const logofiles = glob.sync(path.join(datadir, folder, 'logo.{webp,svg}'));
+    const logofiles = glob.sync(path.join(DATA_DIR, folder, 'logo.{webp,svg}'));
     const logoext = logofiles[0].endsWith('webp') ? 'webp' : 'svg';
 
     return [
       folder as TokenId,
       data,
-      url.resolve(baseUrl, path.join(datadir, folder, `logo.${logoext}`)),
+      url.resolve(TOKENLIST_BASE_URL, path.join(DATA_DIR, folder, `logo.${logoext}`)),
     ];
   });
 
-// ---- create tokenlist ----
-const tokenlist = addTokens(mapToTokenlist(tokenlistData));
+// Build tokenlist
+const tokenlist = buildTokenlist(mapToTokenlist(tokenlistData));
 
-fs.writeFileSync(outfile, JSON.stringify(tokenlist, null, 2));
+fs.writeFileSync(OUTFILE_TOKENLIST, JSON.stringify(tokenlist, null, 2));
 
-// ---- create BOB tokenlist ----
+// Build BOB tokenlist
 const bobTokenlist = structuredClone(tokenlist);
 
 bobTokenlist.tokens = tokenlist.tokens.filter(
   (token) => token.chainId === bob.id,
 );
 
-fs.writeFileSync(outfileBob, JSON.stringify(bobTokenlist, null, 2));
+fs.writeFileSync(OUTFILE_BOB, JSON.stringify(bobTokenlist, null, 2));
 
-// ---- create tokenlist with overrides ----
-const uiTokenlist = addTokens(mapToOverridesTokenlist(tokenlistData));
+// Build tokenlist with overrides
+const uiTokenlist = buildTokenlist(mapToOverridesTokenlist(tokenlistData));
 
-fs.writeFileSync(outfileOverrides, JSON.stringify(uiTokenlist, null, 2));
+fs.writeFileSync(OUTFILE_OVERRIDES, JSON.stringify(uiTokenlist, null, 2));
