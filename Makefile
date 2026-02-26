@@ -11,7 +11,7 @@ BINDINGS_FOLDER=bindings
 BINDINGS_CRATES_FOLDER=$(CRATES_FOLDER)/$(BINDINGS_FOLDER)
 BINDINGS_OUT_PATH=$(CONTRACTS_PATH)/out/$(BINDINGS_FOLDER)
 
-export OPEN_API_SPEC_URL="https://gateway-api-mainnet.gobob.xyz/api-doc.json"
+export OPEN_API_SPEC_URL="https://gateway-api-zeroconf.gobob.xyz/api-doc.json"
 OPEN_API_DOCS_PATH=docs/gateway/api-reference/openapi.json
 
 # Target for generating bindings

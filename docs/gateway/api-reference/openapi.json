@@ -255,6 +255,16 @@
               "type": "string"
             },
             "style": "form"
+          },
+          {
+            "name": "instantSwap",
+            "in": "query",
+            "description": "Whether to use zero confirmation bitcoin onramp (default: false)",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            },
+            "style": "form"
           }
         ],
         "responses": {
@@ -459,15 +469,6 @@
           "outputAmount"
         ],
         "properties": {
-          "estimatedTimeInSecs": {
-            "type": [
-              "integer",
-              "null"
-            ],
-            "format": "int64",
-            "description": "Estimated time in secs to complete the Order",
-            "minimum": 0
-          },
           "fees": {
             "$ref": "#/components/schemas/GatewayTokenAmount"
           },
@@ -529,15 +530,6 @@
               "null"
             ]
           },
-          "estimatedTimeInSecs": {
-            "type": [
-              "integer",
-              "null"
-            ],
-            "format": "int64",
-            "description": "Estimated time in secs to complete the Order",
-            "minimum": 0
-          },
           "feeBreakdown": {
             "$ref": "#/components/schemas/GatewayOfframpFeeBreakdown"
           },
@@ -582,13 +574,17 @@
           "protocolFee",
           "affiliateFee",
           "executionFee",
-          "layerzeroFee"
+          "layerzeroFee",
+          "instantSwapFee"
         ],
         "properties": {
           "affiliateFee": {
             "$ref": "#/components/schemas/GatewayTokenAmount"
           },
           "executionFee": {
+            "$ref": "#/components/schemas/GatewayTokenAmount"
+          },
+          "instantSwapFee": {
             "$ref": "#/components/schemas/GatewayTokenAmount"
           },
           "layerzeroFee": {
@@ -614,7 +610,8 @@
           "slippage",
           "feeBreakdown",
           "dstChain",
-          "dstToken"
+          "dstToken",
+          "instantSwap"
         ],
         "properties": {
           "affiliateAddress": {
@@ -631,15 +628,6 @@
           "dstToken": {
             "type": "string",
             "description": "Destination token address"
-          },
-          "estimatedTimeInSecs": {
-            "type": [
-              "integer",
-              "null"
-            ],
-            "format": "int64",
-            "description": "Estimated time in secs to complete the Order",
-            "minimum": 0
           },
           "executionFees": {
             "$ref": "#/components/schemas/GatewayTokenAmount",
@@ -663,6 +651,10 @@
           "inputAmount": {
             "$ref": "#/components/schemas/GatewayTokenAmount",
             "description": "Amount requested by the user"
+          },
+          "instantSwap": {
+            "type": "boolean",
+            "description": "Whether to use zero-confirmation bitcoin swap"
           },
           "outputAmount": {
             "$ref": "#/components/schemas/GatewayTokenAmount",
@@ -708,7 +700,8 @@
           "timestamp",
           "srcInfo",
           "dstInfo",
-          "status"
+          "status",
+          "instantSwap"
         ],
         "properties": {
           "dstInfo": {
@@ -721,6 +714,9 @@
             ],
             "format": "int64",
             "minimum": 0
+          },
+          "instantSwap": {
+            "type": "boolean"
           },
           "srcInfo": {
             "$ref": "#/components/schemas/ChainTxInfo"
@@ -791,6 +787,12 @@
                 }
               }
             }
+          },
+          {
+            "type": "string",
+            "enum": [
+              "preminted"
+            ]
           },
           {
             "type": "string",
@@ -990,7 +992,8 @@
           "srcChain",
           "dstChain",
           "srcToken",
-          "dstToken"
+          "dstToken",
+          "instantSwap"
         ],
         "properties": {
           "dstChain": {
@@ -1000,6 +1003,10 @@
           "dstToken": {
             "type": "string",
             "description": "Destination token address"
+          },
+          "instantSwap": {
+            "type": "boolean",
+            "description": "Whether the route supports instant swap (zeroconf)"
           },
           "srcChain": {
             "type": "string",

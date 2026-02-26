@@ -35,12 +35,6 @@ import {
  */
 export interface GatewayLayerZeroQuote {
     /**
-     * Estimated time in secs to complete the Order
-     * @type {number}
-     * @memberof GatewayLayerZeroQuote
-     */
-    estimatedTimeInSecs?: number | null;
-    /**
      * 
      * @type {GatewayTokenAmount}
      * @memberof GatewayLayerZeroQuote
@@ -87,7 +81,6 @@ export function GatewayLayerZeroQuoteFromJSONTyped(json: any, ignoreDiscriminato
     }
     return {
         
-        'estimatedTimeInSecs': json['estimatedTimeInSecs'] == null ? undefined : json['estimatedTimeInSecs'],
         'fees': GatewayTokenAmountFromJSON(json['fees']),
         'inputAmount': GatewayTokenAmountFromJSON(json['inputAmount']),
         'outputAmount': GatewayTokenAmountFromJSON(json['outputAmount']),
@@ -106,7 +99,6 @@ export function GatewayLayerZeroQuoteToJSONTyped(value?: GatewayLayerZeroQuote |
 
     return {
         
-        'estimatedTimeInSecs': value['estimatedTimeInSecs'],
         'fees': GatewayTokenAmountToJSON(value['fees']),
         'inputAmount': GatewayTokenAmountToJSON(value['inputAmount']),
         'outputAmount': GatewayTokenAmountToJSON(value['outputAmount']),
