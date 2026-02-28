@@ -5,33 +5,47 @@ sidebar_label: Run a Full Node
 
 # Run a Full Node
 
-:::warning Fusaka Activation on Ethereum Mainnet
+:::warning Jovian Hard Fork (Upgrade 17)
 **What's Included in the Upgrade**
-This is a **readiness upgrade** to make BOB protocol compatible with Ethereum's Fusaka hardfork on L1. This is NOT Fusaka adoption on L2—that will happen in a future upgrade.
+
+The Jovian Hard Fork brings improvements to how rollup fees are calculated and performs a maintenance update to the fault proof virtual machine.
 
 **Important Dates**
 
-- Ethereum Sepolia Fusaka hard fork: Tuesday, October 14th, 2025 07:36:00 UTC (BOB testnet already upgraded)
-- Ethereum Mainnet Fusaka hard fork: December 3rd, 2025 21:49:11 UTC
+- **BOB Testnet**: Wednesday, January 21st, 2026 07:00:00 UTC
+- **BOB Mainnet**: Thursday, January 22nd, 2026 07:00:00 UTC
 
 **Required Actions for Node Operators**
 
-If you operate a BOB mainnet node, you must upgrade op-node and op-geth to the versions specified in the official notice:
+If you operate a BOB node, you must upgrade op-node and op-geth and add the override parameters:
 
-- **op-node**: Update to version [v1.16.3](https://github.com/ethereum-optimism/optimism/releases/tag/op-node%2Fv1.16.3)
-- **op-geth**: Update to version [v1.101603.5](https://github.com/ethereum-optimism/op-geth/releases/tag/v1.101603.5)
+1. Update to the latest versions:
+   - **op-node**: [v1.16.5](https://github.com/ethereum-optimism/optimism/releases/tag/op-node%2Fv1.16.5)
+   - **op-geth**: [v1.101605.0](https://github.com/ethereum-optimism/op-geth/releases/tag/v1.101605.0)
 
-Official notice: [https://docs.optimism.io/notices/fusaka-notice#for-node-operators](https://docs.optimism.io/notices/fusaka-notice#for-node-operators)
+2. Add the following override parameters:
+
+   **Testnet:**
+   ```
+   op-node: --override.jovian=1768978801
+   op-geth: --override.jovian=1768978801
+   ```
+
+   **Mainnet:**
+   ```
+   op-node: --override.jovian=1769065201
+   op-geth: --override.jovian=1769065201
+   ```
 
 Nodes that are not upgraded correctly will stop syncing after activation.
 
 **NO action required if you:**
 
-- Use existing external RPC nodes directly
+- Use existing external RPC nodes directly (e.g., via [Node Providers](/docs/tools/node-providers))
 
 **More Info**
-For full details, please refer to the [Fusaka Upgrade Notice](https://docs.optimism.io/notices/fusaka-notice#for-node-operators)
-Feel free to reach out with any questions or concerns.
+
+For full details, please refer to the [Upgrade 17 Notice](https://docs.optimism.io/notices/archive/upgrade-17).
 :::
 
 :::info
@@ -42,7 +56,7 @@ To stay updated on node upgrades and announcements, join our [Telegram channel](
 
 ## Requirements
 
-As of December 2025 we recommend you have at least the following hardware configuration to run a node:
+As of January 2026 we recommend you have at least the following hardware configuration to run a node:
 
 - at least 8 GB RAM
 - an SSD, preferably NVME drive with at least 100 GB free
@@ -102,17 +116,20 @@ OP_NODE_METRICS_ENABLED=true
 ```yml title="docker-compose.yml"
 services:
   opgeth:
-    image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-geth:v1.101603.5
+    image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-geth:v1.101605.0
     env_file: op-geth.env
+    command:
+      - --override.jovian=1769065201
     volumes:
       - ./op-geth-data:/opt/op-geth/
     network_mode: host
 
   opnode:
-    image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node:v1.16.3
+    image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node:v1.16.5
     env_file: op-node.env
     command:
       - op-node
+      - --override.jovian=1769065201
     volumes:
       - ./op-node-data:/opt/op-node/
       - ./op-geth-data/geth:/opt/op-geth/geth:ro
