@@ -3,26 +3,26 @@ import { EsploraClient, Transaction, Block } from '../src/esplora';
 
 describe('Esplora Tests', () => {
     it('should get block height', async () => {
-        const client = new EsploraClient('testnet');
+        const client = new EsploraClient('testnet4');
         const height = await client.getLatestHeight();
         assert(height > 0);
     });
 
     it('should get block', async () => {
-        const client = new EsploraClient('testnet');
-        const block = await client.getBlock('000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943');
+        const client = new EsploraClient('testnet4');
+        const block = await client.getBlock('00000000da84f2bafbbc53dee25a72ae507ff4914b867c565be350b0da8bf043');
         const expectedBlock: Block = {
-            id: '000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943',
+            id: '00000000da84f2bafbbc53dee25a72ae507ff4914b867c565be350b0da8bf043',
             height: 0,
             version: 1,
-            timestamp: 1296688602,
+            timestamp: 1714777860,
             tx_count: 1,
-            size: 285,
-            weight: 1140,
-            merkle_root: '4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b',
+            size: 261,
+            weight: 1044,
+            merkle_root: '7aa0a7ae1e223414cb807e40cd57e667b718e42aaf9306db9102fe28912b7b4e',
             previousblockhash: null,
-            mediantime: 1296688602,
-            nonce: 414098458,
+            mediantime: 1714777860,
+            nonce: 393743547,
             bits: 486604799,
             difficulty: 1,
         };
@@ -37,82 +37,96 @@ describe('Esplora Tests', () => {
     });
 
     it('should get block hash', async () => {
-        const client = new EsploraClient('testnet');
+        const client = new EsploraClient('testnet4');
         const blockHash = await client.getBlockHash(0);
-        assert.equal(blockHash, '000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943');
+        assert.equal(blockHash, '00000000da84f2bafbbc53dee25a72ae507ff4914b867c565be350b0da8bf043');
     });
 
     it('should get block header', async () => {
-        const client = new EsploraClient('testnet');
+        const client = new EsploraClient('testnet4');
         const blockHeader = await client.getBlockHeader(
-            '000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943'
+            '00000000da84f2bafbbc53dee25a72ae507ff4914b867c565be350b0da8bf043'
         );
         assert.equal(
             blockHeader,
-            '0100000000000000000000000000000000000000000000000000000000000000000000003ba3edfd7a7b12b27ac72c3e67768f617fc81bc3888a51323a9fb8aa4b1e5e4adae5494dffff001d1aa4ae18'
+            '0100000000000000000000000000000000000000000000000000000000000000000000004e7b2b9128fe0291db0693af2ae418b767e657cd407e80cb1434221eaea7a07a046f3566ffff001dbb0c7817'
         );
     });
 
     it('should get block header at certain height', async () => {
-        const client = new EsploraClient('testnet');
+        const client = new EsploraClient('testnet4');
         const blockHeader = await client.getBlockHeaderAt(10);
         assert.equal(
             blockHeader,
-            '010000001e93aa99c8ff9749037d74a2207f299502fa81d56a4ea2ad5330ff50000000002ec2266c3249ce2e079059e0aec01a2d8d8306a468ad3f18f06051f2c3b1645435e9494dffff001d008918cf'
+            '00000020596cf1fc7312d155129d921d792a69d933c7101cd043dd5a5f8bcfb200000000265cfcc10ce1f8ba85fbe9ceb1ecc897ed81b2e4aa5ffe628ec20627abcbfbd49ed73866ffff001da3e98ead'
         );
     });
 
     it('should get transaction', async () => {
-        const client = new EsploraClient('testnet');
-        const tx = await client.getTransaction('4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b');
+        const client = new EsploraClient('testnet4');
+        const tx = await client.getTransaction('e7e45a66c587d8c653e0c6b824bdc768f9633f54f2723d96858daebde3938351');
         const expectedTransaction: Transaction = {
-            txid: '4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b',
-            version: 1,
-            locktime: 0,
-            vin: [
+            "txid": "e7e45a66c587d8c653e0c6b824bdc768f9633f54f2723d96858daebde3938351",
+            "version": 1,
+            "locktime": 0,
+            "vin": [
                 {
-                    txid: '0000000000000000000000000000000000000000000000000000000000000000',
-                    vout: 4294967295,
-                    prevout: null,
-                    scriptsig:
-                        '04ffff001d0104455468652054696d65732030332f4a616e2f32303039204368616e63656c6c6f72206f6e206272696e6b206f66207365636f6e64206261696c6f757420666f722062616e6b73',
-                    scriptsig_asm:
-                        'OP_PUSHBYTES_4 ffff001d OP_PUSHBYTES_1 04 OP_PUSHBYTES_69 5468652054696d65732030332f4a616e2f32303039204368616e63656c6c6f72206f6e206272696e6b206f66207365636f6e64206261696c6f757420666f722062616e6b73',
-                    is_coinbase: true,
-                    sequence: 4294967295,
-                },
+                    "txid": "bcd6d38fdfc02e018463913fbe12ba6a8eee3bb7869ffa3735ef63e433786f95",
+                    "vout": 21,
+                    "prevout": {
+                        "scriptpubkey": "001403a11ef572d484a988edf0b2976d7bc6306af37f",
+                        "scriptpubkey_asm": "OP_0 OP_PUSHBYTES_20 03a11ef572d484a988edf0b2976d7bc6306af37f",
+                        "scriptpubkey_type": "v0_p2wpkh",
+                        "scriptpubkey_address": "tb1qqws3aatj6jz2nz8d7zefwmtmcccx4umlc5ygr7",
+                        "value": 10000000
+                    },
+                    "scriptsig": "",
+                    "scriptsig_asm": "",
+                    "witness": [
+                        "3044022003fb4f0637dd445100a4ba725315539f86a2ea7732406eb72ab6da6ede1d44cd022043f43f637c68b0856e35f5bd6318f6fcdbff5a564d92606adc0a9548b249fbd901",
+                        "020b3f09dd02d7321a19bfa739954264dd27b2209c54d28144698aa97fccc44d31"
+                    ],
+                    "is_coinbase": false,
+                    "sequence": 4294967293
+                }
             ],
-            vout: [
+            "vout": [
                 {
-                    scriptpubkey:
-                        '4104678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5fac',
-                    scriptpubkey_asm:
-                        'OP_PUSHBYTES_65 04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5f OP_CHECKSIG',
-                    scriptpubkey_type: 'p2pk',
-                    value: 5000000000,
+                    "scriptpubkey": "001403a11ef572d484a988edf0b2976d7bc6306af37f",
+                    "scriptpubkey_asm": "OP_0 OP_PUSHBYTES_20 03a11ef572d484a988edf0b2976d7bc6306af37f",
+                    "scriptpubkey_type": "v0_p2wpkh",
+                    "scriptpubkey_address": "tb1qqws3aatj6jz2nz8d7zefwmtmcccx4umlc5ygr7",
+                    "value": 9918608
                 },
+                {
+                    "scriptpubkey": "0014be7aff68a9f804d040d12c07a7fa2aa923e51b91",
+                    "scriptpubkey_asm": "OP_0 OP_PUSHBYTES_20 be7aff68a9f804d040d12c07a7fa2aa923e51b91",
+                    "scriptpubkey_type": "v0_p2wpkh",
+                    "scriptpubkey_address": "tb1qhea0769flqzdqsx39sr607324y372xu35c733j",
+                    "value": 1093
+                }
             ],
-            size: 204,
-            weight: 816,
-            fee: 0,
-            status: {
-                confirmed: true,
-                block_height: 0,
-                block_hash: '000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943',
-                block_time: 1296688602,
-            },
+            "size": 222,
+            "weight": 561,
+            "fee": 80299,
+            "status": {
+                "confirmed": true,
+                "block_height": 124786,
+                "block_hash": "0000000000000002f4f2cf38e076d29aa0b5378024dd96834b66eefc1df7ca0f",
+                "block_time": 1772630858
+            }
         };
         assert.deepEqual(tx, expectedTransaction);
     });
 
     it('should get tx hex', async () => {
-        const client = new EsploraClient('testnet');
+        const client = new EsploraClient('testnet4');
         const txHex = await client.getTransactionHex(
-            '4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b'
+            'e7e45a66c587d8c653e0c6b824bdc768f9633f54f2723d96858daebde3938351'
         );
         assert.equal(
             txHex,
-            '01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff4d04ffff001d0104455468652054696d65732030332f4a616e2f32303039204368616e63656c6c6f72206f6e206272696e6b206f66207365636f6e64206261696c6f757420666f722062616e6b73ffffffff0100f2052a01000000434104678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5fac00000000'
+            '01000000000101956f7833e463ef3537fa9f86b73bee8e6aba12be3f916384012ec0df8fd3d6bc1500000000fdffffff02905897000000000016001403a11ef572d484a988edf0b2976d7bc6306af37f4504000000000000160014be7aff68a9f804d040d12c07a7fa2aa923e51b9102473044022003fb4f0637dd445100a4ba725315539f86a2ea7732406eb72ab6da6ede1d44cd022043f43f637c68b0856e35f5bd6318f6fcdbff5a564d92606adc0a9548b249fbd90121020b3f09dd02d7321a19bfa739954264dd27b2209c54d28144698aa97fccc44d3100000000'
         );
     });
 
@@ -123,13 +137,13 @@ describe('Esplora Tests', () => {
         assert.equal(
             proof.merkle,
             'ace8423f874c95f5f9042d7cda6b9f0727251f3059ef827f373a56831cc621a371db6dfce8daed1d809275' +
-                'e0862441b3cdfd314eceea5a79ee7aeec69cc70f614082c8b474ccf00906a1e61694fdf0b717790ac3bdf850b36afb8df107ac' +
-                'a93b96e7dea43442a944a6ab4f8bed0d25d3d372a836a6042375bc57fee5c5425f67a3920a489b23f9133fc84d7987d990acc7' +
-                'c2569a81b547a5f65385856d90100e54ec14dd40c23c3cf1e61a2a16a03aea0e85d236942ad538262528d6748d20dc6ca7c40d' +
-                '75ba7b782bc3d1302633c6def1531573c6420b99840ecffc0125f8e0f12ec4aa1d74fd5ec8d9a57c154267cb6ff0276835592c' +
-                'b8500d8c3c5650e84b83e73e9094de0c2bdaa4d661a3b1adacfae0f3c0f8007ab1b2be8dbf32f073068979a263152d6c234ad0' +
-                'f4b70f697168502d62ead0c0194bcf77321a85a1e127afc4477dcc3c3636a7818601d9ff43f837b15ef74d387c688fc0a45b79' +
-                'aec0b6'
+            'e0862441b3cdfd314eceea5a79ee7aeec69cc70f614082c8b474ccf00906a1e61694fdf0b717790ac3bdf850b36afb8df107ac' +
+            'a93b96e7dea43442a944a6ab4f8bed0d25d3d372a836a6042375bc57fee5c5425f67a3920a489b23f9133fc84d7987d990acc7' +
+            'c2569a81b547a5f65385856d90100e54ec14dd40c23c3cf1e61a2a16a03aea0e85d236942ad538262528d6748d20dc6ca7c40d' +
+            '75ba7b782bc3d1302633c6def1531573c6420b99840ecffc0125f8e0f12ec4aa1d74fd5ec8d9a57c154267cb6ff0276835592c' +
+            'b8500d8c3c5650e84b83e73e9094de0c2bdaa4d661a3b1adacfae0f3c0f8007ab1b2be8dbf32f073068979a263152d6c234ad0' +
+            'f4b70f697168502d62ead0c0194bcf77321a85a1e127afc4477dcc3c3636a7818601d9ff43f837b15ef74d387c688fc0a45b79' +
+            'aec0b6'
         );
     });
 
@@ -140,12 +154,12 @@ describe('Esplora Tests', () => {
     });
 
     it('should get balance', async () => {
-        const client = new EsploraClient('testnet');
-        const balance = await client.getBalance('tb1qjhekcm565spvr0epqu5nvd9mhgwaafg6d0n2yw');
+        const client = new EsploraClient('testnet4');
+        const balance = await client.getBalance('tb1qmmxta87spaeulfzkd9x2sz99km6r6q2qft2mzd');
         assert.deepEqual(balance, {
-            confirmed: 727499862,
+            confirmed: 1093,
             unconfirmed: 0,
-            total: 727499862,
+            total: 1093,
         });
     });
 });
