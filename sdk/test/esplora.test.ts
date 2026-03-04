@@ -3,13 +3,13 @@ import { EsploraClient, Transaction, Block } from '../src/esplora';
 
 describe('Esplora Tests', () => {
     it('should get block height', async () => {
-        const client = new EsploraClient('testnet4');
+        const client = new EsploraClient('testnet');
         const height = await client.getLatestHeight();
         assert(height > 0);
     });
 
     it('should get block', async () => {
-        const client = new EsploraClient('testnet4');
+        const client = new EsploraClient('testnet');
         const block = await client.getBlock('00000000da84f2bafbbc53dee25a72ae507ff4914b867c565be350b0da8bf043');
         const expectedBlock: Block = {
             id: '00000000da84f2bafbbc53dee25a72ae507ff4914b867c565be350b0da8bf043',
@@ -37,13 +37,13 @@ describe('Esplora Tests', () => {
     });
 
     it('should get block hash', async () => {
-        const client = new EsploraClient('testnet4');
+        const client = new EsploraClient('testnet');
         const blockHash = await client.getBlockHash(0);
         assert.equal(blockHash, '00000000da84f2bafbbc53dee25a72ae507ff4914b867c565be350b0da8bf043');
     });
 
     it('should get block header', async () => {
-        const client = new EsploraClient('testnet4');
+        const client = new EsploraClient('testnet');
         const blockHeader = await client.getBlockHeader(
             '00000000da84f2bafbbc53dee25a72ae507ff4914b867c565be350b0da8bf043'
         );
@@ -54,7 +54,7 @@ describe('Esplora Tests', () => {
     });
 
     it('should get block header at certain height', async () => {
-        const client = new EsploraClient('testnet4');
+        const client = new EsploraClient('testnet');
         const blockHeader = await client.getBlockHeaderAt(10);
         assert.equal(
             blockHeader,
@@ -63,7 +63,7 @@ describe('Esplora Tests', () => {
     });
 
     it('should get transaction', async () => {
-        const client = new EsploraClient('testnet4');
+        const client = new EsploraClient('testnet');
         const tx = await client.getTransaction('e7e45a66c587d8c653e0c6b824bdc768f9633f54f2723d96858daebde3938351');
         const expectedTransaction: Transaction = {
             txid: 'e7e45a66c587d8c653e0c6b824bdc768f9633f54f2723d96858daebde3938351',
@@ -120,7 +120,7 @@ describe('Esplora Tests', () => {
     });
 
     it('should get tx hex', async () => {
-        const client = new EsploraClient('testnet4');
+        const client = new EsploraClient('testnet');
         const txHex = await client.getTransactionHex(
             'e7e45a66c587d8c653e0c6b824bdc768f9633f54f2723d96858daebde3938351'
         );
@@ -154,7 +154,7 @@ describe('Esplora Tests', () => {
     });
 
     it('should get balance', async () => {
-        const client = new EsploraClient('testnet4');
+        const client = new EsploraClient('testnet');
         const balance = await client.getBalance('tb1qmmxta87spaeulfzkd9x2sz99km6r6q2qft2mzd');
         assert.deepEqual(balance, {
             confirmed: 1093,

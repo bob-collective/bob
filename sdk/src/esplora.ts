@@ -170,7 +170,7 @@ export class EsploraClient {
      * // Create a client for the mainnet using the default URL.
      * const esploraClientMainnet = new EsploraClient();
      */
-    constructor(chainName: 'mainnet' | 'signet' | 'testnet4' | 'regtest' = 'mainnet') {
+    constructor(chainName: 'mainnet' | 'signet' | 'testnet' | 'regtest' = 'mainnet') {
         switch (chainName) {
             case 'mainnet':
                 this.basePath = MAINNET_ESPLORA_BASE_PATH;
@@ -178,7 +178,7 @@ export class EsploraClient {
             case 'signet':
                 this.basePath = SIGNET_ESPLORA_BASE_PATH;
                 break;
-            case 'testnet4':
+            case 'testnet':
                 this.basePath = TESTNET4_ESPLORA_BASE_PATH;
                 break;
             case 'regtest':
