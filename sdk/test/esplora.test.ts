@@ -66,55 +66,55 @@ describe('Esplora Tests', () => {
         const client = new EsploraClient('testnet4');
         const tx = await client.getTransaction('e7e45a66c587d8c653e0c6b824bdc768f9633f54f2723d96858daebde3938351');
         const expectedTransaction: Transaction = {
-            "txid": "e7e45a66c587d8c653e0c6b824bdc768f9633f54f2723d96858daebde3938351",
-            "version": 1,
-            "locktime": 0,
-            "vin": [
+            txid: 'e7e45a66c587d8c653e0c6b824bdc768f9633f54f2723d96858daebde3938351',
+            version: 1,
+            locktime: 0,
+            vin: [
                 {
-                    "txid": "bcd6d38fdfc02e018463913fbe12ba6a8eee3bb7869ffa3735ef63e433786f95",
-                    "vout": 21,
-                    "prevout": {
-                        "scriptpubkey": "001403a11ef572d484a988edf0b2976d7bc6306af37f",
-                        "scriptpubkey_asm": "OP_0 OP_PUSHBYTES_20 03a11ef572d484a988edf0b2976d7bc6306af37f",
-                        "scriptpubkey_type": "v0_p2wpkh",
-                        "scriptpubkey_address": "tb1qqws3aatj6jz2nz8d7zefwmtmcccx4umlc5ygr7",
-                        "value": 10000000
+                    txid: 'bcd6d38fdfc02e018463913fbe12ba6a8eee3bb7869ffa3735ef63e433786f95',
+                    vout: 21,
+                    prevout: {
+                        scriptpubkey: '001403a11ef572d484a988edf0b2976d7bc6306af37f',
+                        scriptpubkey_asm: 'OP_0 OP_PUSHBYTES_20 03a11ef572d484a988edf0b2976d7bc6306af37f',
+                        scriptpubkey_type: 'v0_p2wpkh',
+                        scriptpubkey_address: 'tb1qqws3aatj6jz2nz8d7zefwmtmcccx4umlc5ygr7',
+                        value: 10000000,
                     },
-                    "scriptsig": "",
-                    "scriptsig_asm": "",
-                    "witness": [
-                        "3044022003fb4f0637dd445100a4ba725315539f86a2ea7732406eb72ab6da6ede1d44cd022043f43f637c68b0856e35f5bd6318f6fcdbff5a564d92606adc0a9548b249fbd901",
-                        "020b3f09dd02d7321a19bfa739954264dd27b2209c54d28144698aa97fccc44d31"
+                    scriptsig: '',
+                    scriptsig_asm: '',
+                    witness: [
+                        '3044022003fb4f0637dd445100a4ba725315539f86a2ea7732406eb72ab6da6ede1d44cd022043f43f637c68b0856e35f5bd6318f6fcdbff5a564d92606adc0a9548b249fbd901',
+                        '020b3f09dd02d7321a19bfa739954264dd27b2209c54d28144698aa97fccc44d31',
                     ],
-                    "is_coinbase": false,
-                    "sequence": 4294967293
-                }
+                    is_coinbase: false,
+                    sequence: 4294967293,
+                },
             ],
-            "vout": [
+            vout: [
                 {
-                    "scriptpubkey": "001403a11ef572d484a988edf0b2976d7bc6306af37f",
-                    "scriptpubkey_asm": "OP_0 OP_PUSHBYTES_20 03a11ef572d484a988edf0b2976d7bc6306af37f",
-                    "scriptpubkey_type": "v0_p2wpkh",
-                    "scriptpubkey_address": "tb1qqws3aatj6jz2nz8d7zefwmtmcccx4umlc5ygr7",
-                    "value": 9918608
+                    scriptpubkey: '001403a11ef572d484a988edf0b2976d7bc6306af37f',
+                    scriptpubkey_asm: 'OP_0 OP_PUSHBYTES_20 03a11ef572d484a988edf0b2976d7bc6306af37f',
+                    scriptpubkey_type: 'v0_p2wpkh',
+                    scriptpubkey_address: 'tb1qqws3aatj6jz2nz8d7zefwmtmcccx4umlc5ygr7',
+                    value: 9918608,
                 },
                 {
-                    "scriptpubkey": "0014be7aff68a9f804d040d12c07a7fa2aa923e51b91",
-                    "scriptpubkey_asm": "OP_0 OP_PUSHBYTES_20 be7aff68a9f804d040d12c07a7fa2aa923e51b91",
-                    "scriptpubkey_type": "v0_p2wpkh",
-                    "scriptpubkey_address": "tb1qhea0769flqzdqsx39sr607324y372xu35c733j",
-                    "value": 1093
-                }
+                    scriptpubkey: '0014be7aff68a9f804d040d12c07a7fa2aa923e51b91',
+                    scriptpubkey_asm: 'OP_0 OP_PUSHBYTES_20 be7aff68a9f804d040d12c07a7fa2aa923e51b91',
+                    scriptpubkey_type: 'v0_p2wpkh',
+                    scriptpubkey_address: 'tb1qhea0769flqzdqsx39sr607324y372xu35c733j',
+                    value: 1093,
+                },
             ],
-            "size": 222,
-            "weight": 561,
-            "fee": 80299,
-            "status": {
-                "confirmed": true,
-                "block_height": 124786,
-                "block_hash": "0000000000000002f4f2cf38e076d29aa0b5378024dd96834b66eefc1df7ca0f",
-                "block_time": 1772630858
-            }
+            size: 222,
+            weight: 561,
+            fee: 80299,
+            status: {
+                confirmed: true,
+                block_height: 124786,
+                block_hash: '0000000000000002f4f2cf38e076d29aa0b5378024dd96834b66eefc1df7ca0f',
+                block_time: 1772630858,
+            },
         };
         assert.deepEqual(tx, expectedTransaction);
     });
@@ -137,13 +137,13 @@ describe('Esplora Tests', () => {
         assert.equal(
             proof.merkle,
             'ace8423f874c95f5f9042d7cda6b9f0727251f3059ef827f373a56831cc621a371db6dfce8daed1d809275' +
-            'e0862441b3cdfd314eceea5a79ee7aeec69cc70f614082c8b474ccf00906a1e61694fdf0b717790ac3bdf850b36afb8df107ac' +
-            'a93b96e7dea43442a944a6ab4f8bed0d25d3d372a836a6042375bc57fee5c5425f67a3920a489b23f9133fc84d7987d990acc7' +
-            'c2569a81b547a5f65385856d90100e54ec14dd40c23c3cf1e61a2a16a03aea0e85d236942ad538262528d6748d20dc6ca7c40d' +
-            '75ba7b782bc3d1302633c6def1531573c6420b99840ecffc0125f8e0f12ec4aa1d74fd5ec8d9a57c154267cb6ff0276835592c' +
-            'b8500d8c3c5650e84b83e73e9094de0c2bdaa4d661a3b1adacfae0f3c0f8007ab1b2be8dbf32f073068979a263152d6c234ad0' +
-            'f4b70f697168502d62ead0c0194bcf77321a85a1e127afc4477dcc3c3636a7818601d9ff43f837b15ef74d387c688fc0a45b79' +
-            'aec0b6'
+                'e0862441b3cdfd314eceea5a79ee7aeec69cc70f614082c8b474ccf00906a1e61694fdf0b717790ac3bdf850b36afb8df107ac' +
+                'a93b96e7dea43442a944a6ab4f8bed0d25d3d372a836a6042375bc57fee5c5425f67a3920a489b23f9133fc84d7987d990acc7' +
+                'c2569a81b547a5f65385856d90100e54ec14dd40c23c3cf1e61a2a16a03aea0e85d236942ad538262528d6748d20dc6ca7c40d' +
+                '75ba7b782bc3d1302633c6def1531573c6420b99840ecffc0125f8e0f12ec4aa1d74fd5ec8d9a57c154267cb6ff0276835592c' +
+                'b8500d8c3c5650e84b83e73e9094de0c2bdaa4d661a3b1adacfae0f3c0f8007ab1b2be8dbf32f073068979a263152d6c234ad0' +
+                'f4b70f697168502d62ead0c0194bcf77321a85a1e127afc4477dcc3c3636a7818601d9ff43f837b15ef74d387c688fc0a45b79' +
+                'aec0b6'
         );
     });
 
