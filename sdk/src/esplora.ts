@@ -4,10 +4,10 @@
  */
 export const MAINNET_ESPLORA_BASE_PATH = 'https://btc-mainnet.gobob.xyz';
 /**
- * Base path for the testnet Esplora API.
- * @default "https://btc-testnet.gobob.xyz"
+ * Base path for the testnet4 Esplora API.
+ * @default "https://btc-testnet4.gobob.xyz"
  */
-export const TESTNET_ESPLORA_BASE_PATH = 'https://btc-testnet.gobob.xyz';
+export const TESTNET4_ESPLORA_BASE_PATH = 'https://btc-testnet4.gobob.xyz';
 /**
  * Base path for the regtest Esplora API.
  * @default "http://localhost:3003"
@@ -179,7 +179,7 @@ export class EsploraClient {
                 this.basePath = SIGNET_ESPLORA_BASE_PATH;
                 break;
             case 'testnet':
-                this.basePath = TESTNET_ESPLORA_BASE_PATH;
+                this.basePath = TESTNET4_ESPLORA_BASE_PATH;
                 break;
             case 'regtest':
                 this.basePath = REGTEST_ESPLORA_BASE_PATH;

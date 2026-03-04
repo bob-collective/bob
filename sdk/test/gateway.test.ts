@@ -163,6 +163,7 @@ describe('Gateway Tests', () => {
                     value: '0',
                     chain: 'bob',
                 },
+                recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
             },
         };
 
@@ -702,11 +703,9 @@ describe('Gateway Tests', () => {
                     chain: 'bob',
                 },
                 tokenAddress: WBTC_OFT_ADDRESS,
-                tx: {
-                    to: '0x1234567890123456789012345678901234567890',
-                    data: '0xabcdef',
-                    value: '0',
-                },
+                recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+                slippage: 0,
+                txTo: zeroAddress,
             },
         };
 
@@ -797,11 +796,9 @@ describe('Gateway Tests', () => {
                     chain: 'ethereum',
                 },
                 tokenAddress: WBTC_OFT_ADDRESS,
-                tx: {
-                    to: '0x1234567890123456789012345678901234567890',
-                    data: '0xabcdef',
-                    value: '0',
-                },
+                recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+                slippage: 0,
+                txTo: zeroAddress,
             },
         };
 
@@ -849,6 +846,7 @@ describe('Gateway Tests', () => {
 
         const mockQuote: GatewayQuoteOneOf1 = {
             offramp: {
+                recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
                 srcChain: 'ethereum',
                 feeBreakdown: {
                     protocolFee: {
@@ -889,11 +887,8 @@ describe('Gateway Tests', () => {
                     chain: 'ethereum',
                 },
                 tokenAddress: ETHEREUM_USDT_ADDRESS,
-                tx: {
-                    to: '0x1234567890123456789012345678901234567890',
-                    data: '0xabcdef',
-                    value: '0',
-                },
+                slippage: 0,
+                txTo: zeroAddress,
             },
         };
 
@@ -1167,6 +1162,7 @@ describe('Gateway Tests', () => {
     it('should approve and send transaction for layerzero swap when allowance is low', async () => {
         const mockedQuote: GatewayQuoteOneOf2 = {
             layerZero: {
+                recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
                 tx: {
                     to: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
                     data: '0xc7c7f5b3000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000016967ac72e86a000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000007596000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000186a000000000000000000000000000000000000000000000000000000000000186a000000000000000000000000000000000000000000000000000000000000000e000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000120000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000',
@@ -1199,6 +1195,16 @@ describe('Gateway Tests', () => {
         const sendTransaction = vi.fn().mockResolvedValue('0xsendhash');
         const writeContract = vi.fn().mockResolvedValue('0xapprovehash');
 
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
+            .post('/v1/create-order')
+            .reply(200, {
+                layerZero: {
+                    orderId: 'layerzero-order-123',
+                },
+            });
+
+        nock(`${MAINNET_GATEWAY_BASE_URL}`).patch('/v1/register-tx').reply(200, JSON.stringify('tx-hash-123'));
+
         const mockWalletClient = {
             account: { address: '0x1234567890123456789012345678901234567890' as Address },
             sendTransaction,
@@ -1228,6 +1234,7 @@ describe('Gateway Tests', () => {
     it('should skip approval when allowance is sufficient for layerzero swap', async () => {
         const mockedQuote: GatewayQuoteOneOf2 = {
             layerZero: {
+                recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
                 tx: {
                     to: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
                     data: '0xc7c7f5b3000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000016967ac72e86a000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000007596000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000186a000000000000000000000000000000000000000000000000000000000000186a000000000000000000000000000000000000000000000000000000000000000e000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000120000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000',
@@ -1260,6 +1267,16 @@ describe('Gateway Tests', () => {
         const sendTransaction = vi.fn().mockResolvedValue('0xsendhash');
         const writeContract = vi.fn().mockResolvedValue('0xapprovehash');
 
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
+            .post('/v1/create-order')
+            .reply(200, {
+                layerZero: {
+                    orderId: 'layerzero-order-123',
+                },
+            });
+
+        nock(`${MAINNET_GATEWAY_BASE_URL}`).patch('/v1/register-tx').reply(200, JSON.stringify('tx-hash-123'));
+
         const mockWalletClient = {
             account: { address: '0x1234567890123456789012345678901234567890' as Address },
             sendTransaction,
@@ -1289,6 +1306,7 @@ describe('Gateway Tests', () => {
     it('should skip allowance check for WBTC OFT token in layerzero swap', async () => {
         const mockedQuote: GatewayQuoteOneOf2 = {
             layerZero: {
+                recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
                 tx: {
                     to: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
                     data: '0xc7c7f5b3000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000016967ac72e86a000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000007596000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000186a000000000000000000000000000000000000000000000000000000000000186a000000000000000000000000000000000000000000000000000000000000000e000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000120000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000',
@@ -1318,6 +1336,16 @@ describe('Gateway Tests', () => {
         const readContract = vi.fn().mockResolvedValue(0n);
         const waitForTransactionReceipt = vi.fn().mockResolvedValue({});
         const sendTransaction = vi.fn().mockResolvedValue('0xsendhash');
+
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
+            .post('/v1/create-order')
+            .reply(200, {
+                layerZero: {
+                    orderId: 'layerzero-order-123',
+                },
+            });
+
+        nock(`${MAINNET_GATEWAY_BASE_URL}`).patch('/v1/register-tx').reply(200, JSON.stringify('tx-hash-123'));
 
         const mockWalletClient = {
             account: { address: '0x1234567890123456789012345678901234567890' as Address },

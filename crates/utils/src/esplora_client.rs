@@ -8,8 +8,8 @@ use serde::Deserialize;
 use std::str::FromStr;
 use tracing::*;
 
-const ESPLORA_TESTNET_URL: &str = "https://btc-testnet.interlay.io";
-const ESPLORA_MAINNET_URL: &str = "https://btc-mainnet.interlay.io";
+const ESPLORA_TESTNET4_URL: &str = "https://btc-testnet4.gobob.xyz";
+const ESPLORA_MAINNET_URL: &str = "https://btc-mainnet.gobob.xyz";
 const ESPLORA_LOCALHOST_URL: &str = "http://localhost:3002";
 const ESPLORA_SIGNET_URL: &str = "https://btc-signet.gobob.xyz";
 
@@ -122,7 +122,7 @@ impl EsploraClient {
         Self::new_with_url(
             match network {
                 Network::Bitcoin => ESPLORA_MAINNET_URL,
-                Network::Testnet => ESPLORA_TESTNET_URL,
+                Network::Testnet4 => ESPLORA_TESTNET4_URL,
                 Network::Signet => ESPLORA_SIGNET_URL,
                 _ => ESPLORA_LOCALHOST_URL,
             }
@@ -350,8 +350,8 @@ mod tests {
         let esplora_client = EsploraClient::new(Network::Bitcoin)?;
         assert_eq!(esplora_client.get_bitcoin_network().await?, Network::Bitcoin);
 
-        let esplora_client = EsploraClient::new(Network::Testnet)?;
-        assert_eq!(esplora_client.get_bitcoin_network().await?, Network::Testnet);
+        let esplora_client = EsploraClient::new(Network::Testnet4)?;
+        assert_eq!(esplora_client.get_bitcoin_network().await?, Network::Testnet4);
 
         let esplora_client = EsploraClient::new(Network::Signet)?;
         assert_eq!(esplora_client.get_bitcoin_network().await?, Network::Signet);
