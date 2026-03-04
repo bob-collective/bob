@@ -26,6 +26,7 @@ import {
     instanceOfGatewayQuoteOneOf2,
     instanceOfRegisterTxOneOf,
     RouteInfo,
+    instanceOfGatewayCreateOrderOneOf2,
 } from './generated-client';
 import { formatBtc } from './utils';
 
@@ -327,6 +328,12 @@ export class GatewayApiClient {
             const accountAddress = walletClient.account.address;
             const receiver = quote.layerZero.tx.to as Address;
 
+            const order = await this.api.createOrder({ gatewayQuote: { layerZero: quote.layerZero } });
+
+            if (!instanceOfGatewayCreateOrderOneOf2(order)) {
+                throw new Error('Invalid order type returned from API');
+            }
+
             if (!isAddressEqual(tokenAddress, WBTC_OFT_ADDRESS)) {
                 // ERC20 token
                 try {
@@ -373,6 +380,18 @@ export class GatewayApiClient {
             });
 
             await publicClient.waitForTransactionReceipt({ hash: transactionHash });
+
+            await this.api.registerTx(
+                {
+                    registerTx: {
+                        layerZero: {
+                            evmTxhash: transactionHash,
+                            orderId: order.layerZero.orderId,
+                        },
+                    },
+                },
+                initOverrides
+            );
 
             return transactionHash;
         }
