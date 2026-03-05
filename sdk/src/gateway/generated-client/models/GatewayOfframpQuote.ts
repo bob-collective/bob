@@ -41,12 +41,6 @@ export interface GatewayOfframpQuote {
      */
     affiliateAddress?: string | null;
     /**
-     * Estimated time in secs to complete the Order
-     * @type {number}
-     * @memberof GatewayOfframpQuote
-     */
-    estimatedTimeInSecs?: number | null;
-    /**
      * 
      * @type {GatewayOfframpFeeBreakdown}
      * @memberof GatewayOfframpQuote
@@ -135,7 +129,6 @@ export function GatewayOfframpQuoteFromJSONTyped(json: any, ignoreDiscriminator:
     return {
         
         'affiliateAddress': json['affiliateAddress'] == null ? undefined : json['affiliateAddress'],
-        'estimatedTimeInSecs': json['estimatedTimeInSecs'] == null ? undefined : json['estimatedTimeInSecs'],
         'feeBreakdown': GatewayOfframpFeeBreakdownFromJSON(json['feeBreakdown']),
         'fees': GatewayTokenAmountFromJSON(json['fees']),
         'inputAmount': GatewayTokenAmountFromJSON(json['inputAmount']),
@@ -161,7 +154,6 @@ export function GatewayOfframpQuoteToJSONTyped(value?: GatewayOfframpQuote | nul
     return {
         
         'affiliateAddress': value['affiliateAddress'],
-        'estimatedTimeInSecs': value['estimatedTimeInSecs'],
         'feeBreakdown': GatewayOfframpFeeBreakdownToJSON(value['feeBreakdown']),
         'fees': GatewayTokenAmountToJSON(value['fees']),
         'inputAmount': GatewayTokenAmountToJSON(value['inputAmount']),

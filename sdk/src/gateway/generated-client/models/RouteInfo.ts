@@ -32,6 +32,12 @@ export interface RouteInfo {
      */
     dstToken: string;
     /**
+     * Whether the route supports instant swap (zeroconf)
+     * @type {boolean}
+     * @memberof RouteInfo
+     */
+    instantSwap: boolean;
+    /**
      * Source chain (e.g. bitcoin)
      * @type {string}
      * @memberof RouteInfo
@@ -51,6 +57,7 @@ export interface RouteInfo {
 export function instanceOfRouteInfo(value: object): value is RouteInfo {
     if (!('dstChain' in value) || value['dstChain'] === undefined) return false;
     if (!('dstToken' in value) || value['dstToken'] === undefined) return false;
+    if (!('instantSwap' in value) || value['instantSwap'] === undefined) return false;
     if (!('srcChain' in value) || value['srcChain'] === undefined) return false;
     if (!('srcToken' in value) || value['srcToken'] === undefined) return false;
     return true;
@@ -68,6 +75,7 @@ export function RouteInfoFromJSONTyped(json: any, ignoreDiscriminator: boolean):
         
         'dstChain': json['dstChain'],
         'dstToken': json['dstToken'],
+        'instantSwap': json['instantSwap'],
         'srcChain': json['srcChain'],
         'srcToken': json['srcToken'],
     };
@@ -86,6 +94,7 @@ export function RouteInfoToJSONTyped(value?: RouteInfo | null, ignoreDiscriminat
         
         'dstChain': value['dstChain'],
         'dstToken': value['dstToken'],
+        'instantSwap': value['instantSwap'],
         'srcChain': value['srcChain'],
         'srcToken': value['srcToken'],
     };

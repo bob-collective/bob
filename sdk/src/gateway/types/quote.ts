@@ -28,8 +28,6 @@ export interface GatewayQuoteParams {
     // NOTE: the following are new fields added by us
     /** @description Amount of ETH to get to pay for fees */
     gasRefill?: bigint;
-    /** @description Wallet public key on source chain */
-    fromUserPublicKey?: string;
     /** @description Strategy address target */
     strategyAddress?: string;
     /** @description Cross chain message - strategy data */

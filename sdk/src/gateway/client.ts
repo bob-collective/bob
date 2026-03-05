@@ -401,6 +401,230 @@ export class GatewayApiClient {
     }
 
     /**
+     * Executes a complete quote (onramp or offramp) in a single transaction.
+     *
+     * For onramp: creates order, signs Bitcoin transaction, and finalizes
+     * For offramp: approves tokens if needed and creates on-chain order
+     *
+     * @param params Parameters including quote and wallet clients - see {@link GatewayQuote} & {@link AllWalletClientParams}
+     * @returns Promise resolving to transaction hash
+     * @throws {Error} If required signers are missing or transaction fails
+     */
+    async _executeQuote(
+        { quote, walletClient, publicClient, btcSigner }: { quote: GatewayQuote } & AllWalletClientParams,
+        initOverrides?: RequestInit
+    ): Promise<{ tx: string; orderId?: string }> {
+        if (instanceOfGatewayQuoteOneOf(quote)) {
+            if (!btcSigner) {
+                throw new Error(`btcSigner is required for onramp order`);
+            }
+
+            const order = await this.api.createOrder({ gatewayQuote: { onramp: quote.onramp } });
+
+            if (!instanceOfGatewayCreateOrderOneOf(order)) {
+                throw new Error('Invalid order type returned from API');
+            }
+
+            let bitcoinTxHex: string;
+            if (btcSigner.sendBitcoin) {
+                bitcoinTxHex = await btcSigner.sendBitcoin({
+                    from: quote.onramp.sender,
+                    to: order.onramp.address,
+                    value: formatBtc(BigInt(quote.onramp.inputAmount.amount)),
+                    opReturn: order.onramp.opReturnData || undefined,
+                    // isSignet: this.isSignet,
+                });
+            } else if (btcSigner.signAllInputs) {
+                bitcoinTxHex = await btcSigner.signAllInputs(order.onramp.psbtHex);
+            } else {
+                throw new Error('btcSigner must implement either sendBitcoin or signAllInputs method');
+            }
+
+            // bitcoinTxOrId = stripHexPrefix(bitcoinTxOrId);
+            if (!bitcoinTxHex) throw new Error('Failed to get signed transaction');
+
+            const tx = await this.api.registerTx(
+                {
+                    registerTx: {
+                        onramp: {
+                            orderId: order.onramp.orderId,
+                            bitcoinTxHex: bitcoinTxHex,
+                        },
+                    },
+                },
+                initOverrides
+            );
+
+            if (typeof tx === 'string') {
+                return { tx: tx, orderId: order.onramp.orderId };
+            }
+
+            if (!instanceOfRegisterTxOneOf(tx)) {
+                throw new Error('Invalid registerTx response type');
+            }
+
+            return { tx: tx.onramp.txid, orderId: order.onramp.orderId };
+        } else if (instanceOfGatewayQuoteOneOf1(quote)) {
+            if (!walletClient.account) {
+                throw new Error(`walletClient is required for offramp order`);
+            }
+            const accountAddress = walletClient.account.address;
+            const tokenAddress = quote.offramp.tokenAddress as Address;
+
+            const order = await this.api.createOrder({ gatewayQuote: { offramp: quote.offramp } });
+
+            if (!instanceOfGatewayCreateOrderOneOf1(order)) {
+                throw new Error('Invalid order type returned from API');
+            }
+
+            const spenderAddress = order.offramp.tx.to as Address;
+
+            // Check ETH balance and estimate gas for both potential transactions
+            const allowance = !isAddressEqual(tokenAddress, zeroAddress)
+                ? (
+                      await publicClient.multicall({
+                          allowFailure: false,
+                          contracts: [
+                              {
+                                  address: tokenAddress,
+                                  abi: erc20Abi,
+                                  functionName: 'allowance',
+                                  args: [accountAddress, spenderAddress],
+                              },
+                          ],
+                      })
+                  )[0]
+                : maxUint256;
+
+            const requiredAmount = BigInt(quote.offramp.inputAmount.amount);
+            const needsApproval = requiredAmount > allowance;
+
+            if (needsApproval && !isAddressEqual(tokenAddress, zeroAddress)) {
+                if (isAddressEqual(tokenAddress, WBTC_OFT_ADDRESS)) {
+                    if (quote.offramp.srcChain === 'bob') {
+                        const { request } = await publicClient.simulateContract({
+                            account: walletClient.account,
+                            address: tokenAddress,
+                            abi: erc20Abi,
+                            functionName: 'approve',
+                            args: [spenderAddress, maxUint256],
+                        });
+
+                        const approveTxHash = await walletClient.writeContract(request);
+                        await publicClient.waitForTransactionReceipt({ hash: approveTxHash });
+                    }
+                } else {
+                    // To change the USDT approval, first set the allowance to 0 (approve(_spender, 0))
+                    // to avoid the ERC20 race condition:
+                    // https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
+                    if (isAddressEqual(tokenAddress, ETHEREUM_USDT_ADDRESS) && allowance !== 0n) {
+                        const { request: resetRequest } = await publicClient.simulateContract({
+                            account: walletClient.account,
+                            address: tokenAddress,
+                            abi: USDTApproveAbi,
+                            functionName: 'approve',
+                            args: [spenderAddress, 0n],
+                        });
+                        const resetTxHash = await walletClient.writeContract(resetRequest);
+                        await publicClient.waitForTransactionReceipt({ hash: resetTxHash });
+                    }
+
+                    const { request } = await publicClient.simulateContract({
+                        account: walletClient.account,
+                        address: tokenAddress,
+                        abi: isAddressEqual(tokenAddress, ETHEREUM_USDT_ADDRESS) ? USDTApproveAbi : erc20Abi,
+                        functionName: 'approve',
+                        args: [spenderAddress, maxUint256],
+                    });
+
+                    const approveTxHash = await walletClient.writeContract(request);
+                    await publicClient.waitForTransactionReceipt({ hash: approveTxHash });
+                }
+            }
+
+            const transactionHash = await walletClient.sendTransaction({
+                account: walletClient.account,
+                data: order.offramp.tx.data as Hex,
+                to: spenderAddress,
+                value: BigInt(order.offramp.tx.value || 0),
+            });
+
+            await publicClient?.waitForTransactionReceipt({ hash: transactionHash });
+
+            await this.api.registerTx(
+                {
+                    registerTx: {
+                        offramp: {
+                            orderId: order.offramp.orderId,
+                            evmTxhash: transactionHash,
+                        },
+                    },
+                },
+                initOverrides
+            );
+
+            return { tx: transactionHash, orderId: order.offramp.orderId };
+        } else if (instanceOfGatewayQuoteOneOf2(quote)) {
+            const tokenAddress = quote.layerZero.inputAmount.address as Address;
+            const requiredAmount = BigInt(quote.layerZero.inputAmount.amount);
+            const accountAddress = walletClient.account.address;
+            const receiver = quote.layerZero.tx.to as Address;
+
+            if (!isAddressEqual(tokenAddress, WBTC_OFT_ADDRESS)) {
+                // ERC20 token
+                try {
+                    const allowance = await publicClient.readContract({
+                        account: walletClient.account,
+                        address: tokenAddress,
+                        abi: erc20Abi,
+                        functionName: 'allowance',
+                        args: [accountAddress, receiver],
+                    });
+
+                    if (allowance < requiredAmount) {
+                        const { request } = await publicClient.simulateContract({
+                            account: walletClient.account,
+                            address: tokenAddress,
+                            abi: erc20Abi,
+                            functionName: 'approve',
+                            args: [receiver, maxUint256],
+                        });
+
+                        const txHash = await walletClient.writeContract(request);
+
+                        await publicClient.waitForTransactionReceipt({ hash: txHash });
+                    }
+                } catch (error) {
+                    if (error instanceof ContractFunctionExecutionError) {
+                        // https://github.com/wevm/viem/blob/3aa882692d2c4af3f5e9cc152099e07cde28e551/src/actions/public/simulateContract.test.ts#L711
+                        // throw new error
+                        throw new Error(
+                            'Insufficient native funds for source and destination gas fees, please add more native funds to your account',
+                            { cause: error }
+                        );
+                    }
+
+                    throw error;
+                }
+            }
+
+            // execute send call
+            const transactionHash = await walletClient.sendTransaction({
+                account: walletClient.account,
+                data: quote.layerZero.tx.data as Hex,
+                to: receiver,
+                value: BigInt(quote.layerZero.tx.value || 0),
+            });
+
+            await publicClient.waitForTransactionReceipt({ hash: transactionHash });
+
+            return { tx: transactionHash };
+        }
+
+        throw new Error('Invalid quote type');
+    }
+
+    /**
      * Executes a strategy directly for token swaps (e.g. WBTC → xSolvBTC).
      *
      * @deprecated Will be replaced by Multicall strategies in the future
