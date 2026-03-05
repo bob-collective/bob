@@ -209,7 +209,7 @@ export async function createBitcoinPsbt(
 
     // TODO: allow submitting the UTXOs, fee estimate and confirmed transactions
     // to avoid fetching them again.
-    let possibleInputs: Input[] = [];
+    let possibleInputs: Input[];
     const esploraClient = new EsploraClient(addressInfo.network);
     [possibleInputs, feeRate] = await Promise.all([
         collectPossibleInputs(fromAddress, publicKey, isSignet),
@@ -357,7 +357,7 @@ export async function estimateTxFee(
 
     // TODO: allow submitting the UTXOs, fee estimate and confirmed transactions
     // to avoid fetching them again.
-    let possibleInputs: Input[] = [];
+    let possibleInputs: Input[];
     const esploraClient = new EsploraClient(addressInfo.network);
     [possibleInputs, feeRate] = await Promise.all([
         collectPossibleInputs(fromAddress, publicKey, isSignet),

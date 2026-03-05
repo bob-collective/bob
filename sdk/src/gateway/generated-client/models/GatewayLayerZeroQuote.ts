@@ -54,6 +54,18 @@ export interface GatewayLayerZeroQuote {
     outputAmount: GatewayTokenAmount;
     /**
      * 
+     * @type {string}
+     * @memberof GatewayLayerZeroQuote
+     */
+    recipient: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof GatewayLayerZeroQuote
+     */
+    sender?: string | null;
+    /**
+     * 
      * @type {TxInfo}
      * @memberof GatewayLayerZeroQuote
      */
@@ -67,6 +79,7 @@ export function instanceOfGatewayLayerZeroQuote(value: object): value is Gateway
     if (!('fees' in value) || value['fees'] === undefined) return false;
     if (!('inputAmount' in value) || value['inputAmount'] === undefined) return false;
     if (!('outputAmount' in value) || value['outputAmount'] === undefined) return false;
+    if (!('recipient' in value) || value['recipient'] === undefined) return false;
     if (!('tx' in value) || value['tx'] === undefined) return false;
     return true;
 }
@@ -84,6 +97,8 @@ export function GatewayLayerZeroQuoteFromJSONTyped(json: any, ignoreDiscriminato
         'fees': GatewayTokenAmountFromJSON(json['fees']),
         'inputAmount': GatewayTokenAmountFromJSON(json['inputAmount']),
         'outputAmount': GatewayTokenAmountFromJSON(json['outputAmount']),
+        'recipient': json['recipient'],
+        'sender': json['sender'] == null ? undefined : json['sender'],
         'tx': TxInfoFromJSON(json['tx']),
     };
 }
@@ -102,6 +117,8 @@ export function GatewayLayerZeroQuoteToJSONTyped(value?: GatewayLayerZeroQuote |
         'fees': GatewayTokenAmountToJSON(value['fees']),
         'inputAmount': GatewayTokenAmountToJSON(value['inputAmount']),
         'outputAmount': GatewayTokenAmountToJSON(value['outputAmount']),
+        'recipient': value['recipient'],
+        'sender': value['sender'],
         'tx': TxInfoToJSON(value['tx']),
     };
 }

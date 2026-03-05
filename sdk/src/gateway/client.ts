@@ -26,6 +26,7 @@ import {
     instanceOfGatewayQuoteOneOf2,
     instanceOfRegisterTxOneOf,
     RouteInfo,
+    instanceOfGatewayCreateOrderOneOf2,
 } from './generated-client';
 import { formatBtc } from './utils';
 
@@ -327,6 +328,12 @@ export class GatewayApiClient {
             const accountAddress = walletClient.account.address;
             const receiver = quote.layerZero.tx.to as Address;
 
+            const order = await this.api.createOrder({ gatewayQuote: { layerZero: quote.layerZero } });
+
+            if (!instanceOfGatewayCreateOrderOneOf2(order)) {
+                throw new Error('Invalid order type returned from API');
+            }
+
             if (!isAddressEqual(tokenAddress, WBTC_OFT_ADDRESS)) {
                 // ERC20 token
                 try {
@@ -356,7 +363,8 @@ export class GatewayApiClient {
                         // https://github.com/wevm/viem/blob/3aa882692d2c4af3f5e9cc152099e07cde28e551/src/actions/public/simulateContract.test.ts#L711
                         // throw new error
                         throw new Error(
-                            'Insufficient native funds for source and destination gas fees, please add more native funds to your account'
+                            'Insufficient native funds for source and destination gas fees, please add more native funds to your account',
+                            { cause: error }
                         );
                     }
 
@@ -373,6 +381,18 @@ export class GatewayApiClient {
             });
 
             await publicClient.waitForTransactionReceipt({ hash: transactionHash });
+
+            await this.api.registerTx(
+                {
+                    registerTx: {
+                        layerZero: {
+                            evmTxhash: transactionHash,
+                            orderId: order.layerZero.orderId,
+                        },
+                    },
+                },
+                initOverrides
+            );
 
             return transactionHash;
         }

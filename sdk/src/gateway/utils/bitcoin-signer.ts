@@ -31,7 +31,7 @@ export class ScureBitcoinSigner implements BitcoinSigner {
             }
             return new ScureBitcoinSigner(Buffer.from(childKey.privateKey).toString('hex'));
         } catch (error) {
-            throw new Error(`Failed to create signer from seed phrase: ${error}`);
+            throw new Error(`Failed to create signer from seed phrase: ${error}`, { cause: error });
         }
     }
 
@@ -54,7 +54,7 @@ export class ScureBitcoinSigner implements BitcoinSigner {
 
             return tx.hex;
         } catch (error) {
-            throw new Error(`Failed to sign PSBT with scure-btc-signer: ${error}`);
+            throw new Error(`Failed to sign PSBT with scure-btc-signer: ${error}`, { cause: error });
         }
     }
 

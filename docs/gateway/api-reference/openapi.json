@@ -466,7 +466,8 @@
           "tx",
           "fees",
           "inputAmount",
-          "outputAmount"
+          "outputAmount",
+          "recipient"
         ],
         "properties": {
           "fees": {
@@ -477,6 +478,15 @@
           },
           "outputAmount": {
             "$ref": "#/components/schemas/GatewayTokenAmount"
+          },
+          "recipient": {
+            "type": "string"
+          },
+          "sender": {
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "tx": {
             "$ref": "#/components/schemas/TxInfo"
