@@ -413,7 +413,7 @@ export class GatewayApiClient {
     async _executeQuote(
         { quote, walletClient, publicClient, btcSigner }: { quote: GatewayQuote } & AllWalletClientParams,
         initOverrides?: RequestInit
-    ): Promise<{tx: string; orderId?: string}> {
+    ): Promise<{ tx: string; orderId?: string }> {
         if (instanceOfGatewayQuoteOneOf(quote)) {
             if (!btcSigner) {
                 throw new Error(`btcSigner is required for onramp order`);
