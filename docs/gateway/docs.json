@@ -48,6 +48,7 @@
               "GET /v1/get-quote",
               "POST /v1/create-order",
               "PATCH /v1/register-tx",
+              "GET /v1/get-order/{id}",
               "GET /v1/get-orders/{user_address}"
             ]
           }

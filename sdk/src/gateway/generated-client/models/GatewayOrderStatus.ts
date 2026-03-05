@@ -51,9 +51,6 @@ export function GatewayOrderStatusFromJSONTyped(json: any, ignoreDiscriminator: 
     if (instanceOfGatewayOrderStatusOneOf1(json)) {
         return GatewayOrderStatusOneOf1FromJSONTyped(json, true);
     }
-    if (typeof json === 'string' && (json === 'preminted')) {
-        return json;
-    }
     if (typeof json === 'string' && (json === 'refunded')) {
         return json;
     }
@@ -79,9 +76,6 @@ export function GatewayOrderStatusToJSONTyped(value?: GatewayOrderStatus | null,
     }
     if (instanceOfGatewayOrderStatusOneOf1(value)) {
         return GatewayOrderStatusOneOf1ToJSON(value as GatewayOrderStatusOneOf1);
-    }
-    if (typeof value === 'string' && (value === 'preminted')) {
-        return value;
     }
     if (typeof value === 'string' && (value === 'refunded')) {
         return value;

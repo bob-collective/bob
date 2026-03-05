@@ -51,7 +51,7 @@
         }
       }
     },
-    "/v1/get-order/{order_id}": {
+    "/v1/get-order/{id}": {
       "get": {
         "tags": [
           "v1"
@@ -60,9 +60,9 @@
         "operationId": "get_order",
         "parameters": [
           {
-            "name": "order_id",
+            "name": "id",
             "in": "path",
-            "description": "Order id as returned by create-order",
+            "description": "Order identifier: either the order_id returned by create-order, the source Bitcoin transaction ID , or the source EVM transaction hash",
             "required": true,
             "schema": {
               "type": "string"
@@ -71,7 +71,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Get order by id",
+            "description": "Get order by either the order_id returned by create-order, the source Bitcoin transaction ID , or the source EVM transaction hash",
             "content": {
               "application/json": {
                 "schema": {
@@ -253,16 +253,6 @@
             "required": false,
             "schema": {
               "type": "string"
-            },
-            "style": "form"
-          },
-          {
-            "name": "instantSwap",
-            "in": "query",
-            "description": "Whether to use zero confirmation bitcoin onramp (default: false)",
-            "required": false,
-            "schema": {
-              "type": "boolean"
             },
             "style": "form"
           }
@@ -470,6 +460,15 @@
           "recipient"
         ],
         "properties": {
+          "estimatedTimeInSecs": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Estimated time in secs to complete the Order",
+            "minimum": 0
+          },
           "fees": {
             "$ref": "#/components/schemas/GatewayTokenAmount"
           },
@@ -540,6 +539,15 @@
               "null"
             ]
           },
+          "estimatedTimeInSecs": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Estimated time in secs to complete the Order",
+            "minimum": 0
+          },
           "feeBreakdown": {
             "$ref": "#/components/schemas/GatewayOfframpFeeBreakdown"
           },
@@ -584,17 +592,13 @@
           "protocolFee",
           "affiliateFee",
           "executionFee",
-          "layerzeroFee",
-          "instantSwapFee"
+          "layerzeroFee"
         ],
         "properties": {
           "affiliateFee": {
             "$ref": "#/components/schemas/GatewayTokenAmount"
           },
           "executionFee": {
-            "$ref": "#/components/schemas/GatewayTokenAmount"
-          },
-          "instantSwapFee": {
             "$ref": "#/components/schemas/GatewayTokenAmount"
           },
           "layerzeroFee": {
@@ -620,8 +624,7 @@
           "slippage",
           "feeBreakdown",
           "dstChain",
-          "dstToken",
-          "instantSwap"
+          "dstToken"
         ],
         "properties": {
           "affiliateAddress": {
@@ -638,6 +641,15 @@
           "dstToken": {
             "type": "string",
             "description": "Destination token address"
+          },
+          "estimatedTimeInSecs": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Estimated time in secs to complete the Order",
+            "minimum": 0
           },
           "executionFees": {
             "$ref": "#/components/schemas/GatewayTokenAmount",
@@ -661,10 +673,6 @@
           "inputAmount": {
             "$ref": "#/components/schemas/GatewayTokenAmount",
             "description": "Amount requested by the user"
-          },
-          "instantSwap": {
-            "type": "boolean",
-            "description": "Whether to use zero-confirmation bitcoin swap"
           },
           "outputAmount": {
             "$ref": "#/components/schemas/GatewayTokenAmount",
@@ -710,8 +718,7 @@
           "timestamp",
           "srcInfo",
           "dstInfo",
-          "status",
-          "instantSwap"
+          "status"
         ],
         "properties": {
           "dstInfo": {
@@ -724,9 +731,6 @@
             ],
             "format": "int64",
             "minimum": 0
-          },
-          "instantSwap": {
-            "type": "boolean"
           },
           "srcInfo": {
             "$ref": "#/components/schemas/ChainTxInfo"
@@ -797,12 +801,6 @@
                 }
               }
             }
-          },
-          {
-            "type": "string",
-            "enum": [
-              "preminted"
-            ]
           },
           {
             "type": "string",
@@ -1002,8 +1000,7 @@
           "srcChain",
           "dstChain",
           "srcToken",
-          "dstToken",
-          "instantSwap"
+          "dstToken"
         ],
         "properties": {
           "dstChain": {
@@ -1013,10 +1010,6 @@
           "dstToken": {
             "type": "string",
             "description": "Destination token address"
-          },
-          "instantSwap": {
-            "type": "boolean",
-            "description": "Whether the route supports instant swap (zeroconf)"
           },
           "srcChain": {
             "type": "string",
