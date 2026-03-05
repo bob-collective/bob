@@ -42,7 +42,7 @@ export interface CreateOrderRequest {
 }
 
 export interface GetOrderRequest {
-    orderId: string;
+    id: string;
 }
 
 export interface GetOrdersRequest {
@@ -62,7 +62,6 @@ export interface GetQuoteRequest {
     strategyTarget?: string;
     strategyMessage?: string;
     affiliateId?: string;
-    instantSwap?: boolean;
 }
 
 export interface RegisterTxRequest {
@@ -119,10 +118,10 @@ export class V1Api extends runtime.BaseAPI {
      * Get all orders for a specific ID.
      */
     async getOrderRaw(requestParameters: GetOrderRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<GatewayOrderInfo>> {
-        if (requestParameters['orderId'] == null) {
+        if (requestParameters['id'] == null) {
             throw new runtime.RequiredError(
-                'orderId',
-                'Required parameter "orderId" was null or undefined when calling getOrder().'
+                'id',
+                'Required parameter "id" was null or undefined when calling getOrder().'
             );
         }
 
@@ -131,8 +130,8 @@ export class V1Api extends runtime.BaseAPI {
         const headerParameters: runtime.HTTPHeaders = {};
 
 
-        let urlPath = `/v1/get-order/{order_id}`;
-        urlPath = urlPath.replace(`{${"order_id"}}`, encodeURIComponent(String(requestParameters['orderId'])));
+        let urlPath = `/v1/get-order/{id}`;
+        urlPath = urlPath.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters['id'])));
 
         const response = await this.request({
             path: urlPath,
@@ -291,10 +290,6 @@ export class V1Api extends runtime.BaseAPI {
 
         if (requestParameters['affiliateId'] != null) {
             queryParameters['affiliateId'] = requestParameters['affiliateId'];
-        }
-
-        if (requestParameters['instantSwap'] != null) {
-            queryParameters['instantSwap'] = requestParameters['instantSwap'];
         }
 
         const headerParameters: runtime.HTTPHeaders = {};

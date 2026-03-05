@@ -44,12 +44,6 @@ export interface GatewayOnrampFeeBreakdown {
      * @type {GatewayTokenAmount}
      * @memberof GatewayOnrampFeeBreakdown
      */
-    instantSwapFee: GatewayTokenAmount;
-    /**
-     * 
-     * @type {GatewayTokenAmount}
-     * @memberof GatewayOnrampFeeBreakdown
-     */
     layerzeroFee: GatewayTokenAmount;
     /**
      * 
@@ -71,7 +65,6 @@ export interface GatewayOnrampFeeBreakdown {
 export function instanceOfGatewayOnrampFeeBreakdown(value: object): value is GatewayOnrampFeeBreakdown {
     if (!('affiliateFee' in value) || value['affiliateFee'] === undefined) return false;
     if (!('executionFee' in value) || value['executionFee'] === undefined) return false;
-    if (!('instantSwapFee' in value) || value['instantSwapFee'] === undefined) return false;
     if (!('layerzeroFee' in value) || value['layerzeroFee'] === undefined) return false;
     if (!('protocolFee' in value) || value['protocolFee'] === undefined) return false;
     if (!('solverFee' in value) || value['solverFee'] === undefined) return false;
@@ -90,7 +83,6 @@ export function GatewayOnrampFeeBreakdownFromJSONTyped(json: any, ignoreDiscrimi
         
         'affiliateFee': GatewayTokenAmountFromJSON(json['affiliateFee']),
         'executionFee': GatewayTokenAmountFromJSON(json['executionFee']),
-        'instantSwapFee': GatewayTokenAmountFromJSON(json['instantSwapFee']),
         'layerzeroFee': GatewayTokenAmountFromJSON(json['layerzeroFee']),
         'protocolFee': GatewayTokenAmountFromJSON(json['protocolFee']),
         'solverFee': GatewayTokenAmountFromJSON(json['solverFee']),
@@ -110,7 +102,6 @@ export function GatewayOnrampFeeBreakdownToJSONTyped(value?: GatewayOnrampFeeBre
         
         'affiliateFee': GatewayTokenAmountToJSON(value['affiliateFee']),
         'executionFee': GatewayTokenAmountToJSON(value['executionFee']),
-        'instantSwapFee': GatewayTokenAmountToJSON(value['instantSwapFee']),
         'layerzeroFee': GatewayTokenAmountToJSON(value['layerzeroFee']),
         'protocolFee': GatewayTokenAmountToJSON(value['protocolFee']),
         'solverFee': GatewayTokenAmountToJSON(value['solverFee']),

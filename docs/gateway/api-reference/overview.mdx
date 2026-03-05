@@ -65,14 +65,24 @@ Gateway transactions follow a 6-step flow to execute Bitcoin-to-chain or chain-t
     ```
   </Step>
 
-  <Step title="Monitor Order Status">
-    Track your order's progress using [`GET /v1/get-orders/{user_address}`](/api-reference/v1/get-all-user-orders). This endpoint returns all orders (pending and completed) for a given user address.
+  <Step title="Monitor Single Order">
+    Track the status of a specific order using [`GET /v1/get-order/{id}`](/api-reference/v1/get-all-orders-for-a-specific-id). This endpoint returns the status and details for a single order by its transaction hash.
+
+    ```bash
+    GET /v1/get-order/0x1234abcd...
+    ```
+
+    Use this endpoint to monitor the progress of an individual order, including its current state and any updates.
+  </Step>
+
+  <Step title="Monitor All User Orders">
+    Track the progress of all orders for a user using [`GET /v1/get-orders/{user_address}`](/api-reference/v1/get-all-user-orders). This endpoint returns every order (pending and completed) associated with the specified user address.
 
     ```bash
     GET /v1/get-orders/0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb
     ```
 
-    Poll this endpoint to update your UI as the order progresses through states: pending → confirmed → completed.
+    Poll this endpoint to update your UI as orders progress through states: pending → confirmed → completed.
   </Step>
 </Steps>
 

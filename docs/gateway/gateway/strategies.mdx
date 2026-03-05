@@ -271,9 +271,87 @@ function generateComplexMulticall(user: Address, amount: bigint) {
 
 ## Option 3: Cross-Chain Destination Calls
 
-<Note>
-**Coming Soon** - This feature is currently under development and will be available soon.
-</Note>
+
+Cross-Chain Destination Calls allow you to execute arbitrary smart contract calls on the destination chain as part of a cross-chain swap or bridge transaction. This is ideal for advanced integrations, multi-step DeFi actions, or custom workflows triggered by a cross-chain transfer.
+
+### How It Works
+
+When you request a quote (via `get-quote`), you can specify a message containing an ABI-encoded vector of calls. Each call uses the following Solidity struct:
+
+```solidity
+struct Call {
+  address target;
+  bytes callData;
+  uint256 value;
+}
+```
+
+- `target`: Contract address to call on the destination chain
+- `callData`: ABI-encoded function call data
+- `value`: Amount of native token (e.g., ETH) to send with the call
+
+Encode a vector of these `Call` structs using standard Solidity ABI encoding and include it in the `message` field of your quote request.
+
+On the destination chain, the solver decodes the vector and executes each call using a LayerZero (L0) composer contract. This ensures atomic execution and proper sequencing of all calls.
+
+#### SDK Example: Sending Cross-Chain Calls
+
+```typescript
+import { encodeAbiParameters, parseAbiParameters, encodeFunctionData, Address } from 'viem';
+import { GatewaySDK, parseBtc } from '@gobob/bob-sdk';
+
+const gatewaySDK = new GatewaySDK(bob.id);
+
+// Example: Call two contracts on destination chain
+const TARGET1 = '0xTargetContract1';
+const TARGET2 = '0xTargetContract2';
+const userAddress = '0xUserAddress';
+
+// Prepare call data for each target
+const call1 = {
+  target: TARGET1,
+  callData: encodeFunctionData({
+    abi: [{ type: 'function', name: 'doSomething', inputs: [{ name: 'amount', type: 'uint256' }] }],
+    functionName: 'doSomething',
+    args: [12345n],
+  }),
+  value: 0n,
+};
+
+const call2 = {
+  target: TARGET2,
+  callData: encodeFunctionData({
+    abi: [{ type: 'function', name: 'notify', inputs: [{ name: 'user', type: 'address' }] }],
+    functionName: 'notify',
+    args: [userAddress],
+  }),
+  value: 0n,
+};
+
+// ABI encode the vector of calls
+const crossChainMessage = encodeAbiParameters(
+  parseAbiParameters('(address target, bytes callData, uint256 value)[]'),
+  [[call1, call2]]
+);
+
+// Request a quote with the cross-chain message
+const quote = await gatewaySDK.getQuote({
+  fromChain: 'bitcoin',
+  fromToken: 'BTC',
+  toChain: 'ethereum', // or other destination chain
+  toToken: 'wBTC',
+  fromUserAddress: 'bc1q...',
+  toUserAddress: userAddress,
+  amount: parseBtc('0.1'),
+  strategyMessage: crossChainMessage,
+});
+```
+
+#### Benefits
+- Enables complex workflows and contract interactions as part of a cross-chain swap
+- Ensures atomic execution via the L0 composer
+
+> **Note:** Make sure all target contracts and call data are valid for the destination chain. The composer contract handles sequencing and error management; failed calls may revert the entire batch depending on configuration.
 
 ---
 
