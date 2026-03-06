@@ -8,6 +8,7 @@ export * from './GatewayCreateOrderOneOf1Offramp';
 export * from './GatewayCreateOrderOneOf2';
 export * from './GatewayCreateOrderOneOfOnramp';
 export * from './GatewayLayerZeroQuote';
+export * from './GatewayMaxSpendable';
 export * from './GatewayOfframpFeeBreakdown';
 export * from './GatewayOfframpQuote';
 export * from './GatewayOnrampFeeBreakdown';
