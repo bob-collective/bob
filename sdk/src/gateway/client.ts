@@ -671,7 +671,7 @@ export class GatewayApiClient {
 
     /**
      * Retrieves the maximum spendable amount for a given Bitcoin address
-     * 
+     *
      * @param address The user's Bitcoin address
      * @returns Promise resolving to the maximum spendable amount
      */
