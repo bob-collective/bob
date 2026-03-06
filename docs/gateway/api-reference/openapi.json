@@ -51,6 +51,37 @@
         }
       }
     },
+    "/v1/get-max-spendable/{address}": {
+      "get": {
+        "tags": [
+          "v1"
+        ],
+        "operationId": "get_max_spendable",
+        "parameters": [
+          {
+            "name": "address",
+            "in": "path",
+            "description": "Bitcoin address to calculate the maximum spendable amount for",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Get the maximum spendable Bitcoin amount for the given address after accounting for estimated transaction fees",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayMaxSpendable"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/get-order/{id}": {
       "get": {
         "tags": [
@@ -489,6 +520,21 @@
           },
           "tx": {
             "$ref": "#/components/schemas/TxInfo"
+          }
+        }
+      },
+      "GatewayMaxSpendable": {
+        "type": "object",
+        "required": [
+          "userAddress",
+          "amount"
+        ],
+        "properties": {
+          "amount": {
+            "$ref": "#/components/schemas/GatewayTokenAmount"
+          },
+          "userAddress": {
+            "type": "string"
           }
         }
       },

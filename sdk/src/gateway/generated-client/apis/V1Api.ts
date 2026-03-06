@@ -16,6 +16,7 @@
 import * as runtime from '../runtime';
 import type {
   GatewayCreateOrder,
+  GatewayMaxSpendable,
   GatewayOrderInfo,
   GatewayQuote,
   RegisterTx,
@@ -25,6 +26,8 @@ import type {
 import {
     GatewayCreateOrderFromJSON,
     GatewayCreateOrderToJSON,
+    GatewayMaxSpendableFromJSON,
+    GatewayMaxSpendableToJSON,
     GatewayOrderInfoFromJSON,
     GatewayOrderInfoToJSON,
     GatewayQuoteFromJSON,
@@ -39,6 +42,10 @@ import {
 
 export interface CreateOrderRequest {
     gatewayQuote: GatewayQuote;
+}
+
+export interface GetMaxSpendableRequest {
+    address: string;
 }
 
 export interface GetOrderRequest {
@@ -111,6 +118,41 @@ export class V1Api extends runtime.BaseAPI {
      */
     async createOrder(requestParameters: CreateOrderRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<GatewayCreateOrder> {
         const response = await this.createOrderRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     */
+    async getMaxSpendableRaw(requestParameters: GetMaxSpendableRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<GatewayMaxSpendable>> {
+        if (requestParameters['address'] == null) {
+            throw new runtime.RequiredError(
+                'address',
+                'Required parameter "address" was null or undefined when calling getMaxSpendable().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+
+        let urlPath = `/v1/get-max-spendable/{address}`;
+        urlPath = urlPath.replace(`{${"address"}}`, encodeURIComponent(String(requestParameters['address'])));
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => GatewayMaxSpendableFromJSON(jsonValue));
+    }
+
+    /**
+     */
+    async getMaxSpendable(requestParameters: GetMaxSpendableRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<GatewayMaxSpendable> {
+        const response = await this.getMaxSpendableRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

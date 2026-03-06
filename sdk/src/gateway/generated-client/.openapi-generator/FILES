@@ -10,6 +10,7 @@ models/GatewayCreateOrderOneOf1Offramp.ts
 models/GatewayCreateOrderOneOf2.ts
 models/GatewayCreateOrderOneOfOnramp.ts
 models/GatewayLayerZeroQuote.ts
+models/GatewayMaxSpendable.ts
 models/GatewayOfframpFeeBreakdown.ts
 models/GatewayOfframpQuote.ts
 models/GatewayOnrampFeeBreakdown.ts
