@@ -17,7 +17,8 @@
             "group": "Overview",
             "pages": [
               "gateway/overview",
-              "gateway/technical"
+              "gateway/technical",
+              "gateway/supported-routes"
             ]
           },
           {
