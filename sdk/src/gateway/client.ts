@@ -149,7 +149,7 @@ export class GatewayApiClient {
                 srcToken: params.fromToken.toString(),
                 dstToken: params.toToken.toString(),
                 amount: params.amount.toString(),
-                slippage: params.maxSlippage?.toString() || '0',
+                slippage: params.maxSlippage?.toString() || '300',
                 gasRefill: params.gasRefill?.toString(),
                 affiliateId: params.affiliateId,
                 strategyTarget: params.strategyAddress,
