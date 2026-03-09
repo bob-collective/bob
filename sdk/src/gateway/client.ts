@@ -138,15 +138,13 @@ export class GatewayApiClient {
      * @throws {Error} If neither onramp nor offramp conditions are met
      */
     async getQuote(params: GetQuoteParams, initOverrides?: RequestInit): Promise<GatewayQuote> {
-        if (!params.fromToken.startsWith('0x')) {
-            throw new Error(
-                `Invalid fromToken: '${params.fromToken}'. Expected a token address (e.g. '0x0000000000000000000000000000000000000000'), not a symbol. Use getRoutes() to find supported token addresses.`
-            );
-        }
-        if (!params.toToken.startsWith('0x')) {
-            throw new Error(
-                `Invalid toToken: '${params.toToken}'. Expected a token address (e.g. '0x0000000000000000000000000000000000000000'), not a symbol. Use getRoutes() to find supported token addresses.`
-            );
+        const ETH_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
+        for (const [name, value] of Object.entries({ fromToken: params.fromToken, toToken: params.toToken })) {
+            if (!ETH_ADDRESS_REGEX.test(value)) {
+                throw new Error(
+                    `Invalid ${name}: '${value}'. Expected a token address (e.g. '0x0000000000000000000000000000000000000000'), not a symbol. Use getRoutes() to find supported token addresses.`
+                );
+            }
         }
 
         return this.api.getQuote(
@@ -160,7 +158,7 @@ export class GatewayApiClient {
                 srcToken: params.fromToken.toString(),
                 dstToken: params.toToken.toString(),
                 amount: params.amount.toString(),
-                slippage: params.maxSlippage?.toString() || '0',
+                slippage: params.maxSlippage?.toString() || '300',
                 gasRefill: params.gasRefill?.toString(),
                 affiliateId: params.affiliateId,
                 strategyTarget: params.strategyAddress,

@@ -1369,39 +1369,24 @@ describe('Gateway Tests', () => {
         expect(waitForTransactionReceipt).toHaveBeenCalledTimes(1);
     });
 
-    it('should throw error when fromToken is not an address', async () => {
+    it.each([
+        { field: 'fromToken', value: 'BTC', validToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c' },
+        { field: 'toToken', value: 'WBTC', validToken: '0x0000000000000000000000000000000000000000' },
+    ])('should throw error when $field is not an address', async ({ field, value, validToken }) => {
         const gatewaySDK = new GatewaySDK();
 
-        await expect(
-            gatewaySDK.getQuote({
-                fromChain: 'bitcoin',
-                fromToken: 'BTC',
-                toChain: 'bob',
-                toToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
-                fromUserAddress: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
-                toUserAddress: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
-                amount: 1000,
-            })
-        ).rejects.toThrow(
-            "Invalid fromToken: 'BTC'. Expected a token address (e.g. '0x0000000000000000000000000000000000000000'), not a symbol. Use getRoutes() to find supported token addresses."
-        );
-    });
+        const quoteParams = {
+            fromChain: 'bitcoin',
+            fromToken: field === 'fromToken' ? value : validToken,
+            toChain: 'bob',
+            toToken: field === 'toToken' ? value : validToken,
+            fromUserAddress: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+            toUserAddress: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+            amount: 1000,
+        };
 
-    it('should throw error when toToken is not an address', async () => {
-        const gatewaySDK = new GatewaySDK();
-
-        await expect(
-            gatewaySDK.getQuote({
-                fromChain: 'bitcoin',
-                fromToken: '0x0000000000000000000000000000000000000000',
-                toChain: 'bob',
-                toToken: 'WBTC',
-                fromUserAddress: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
-                toUserAddress: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
-                amount: 1000,
-            })
-        ).rejects.toThrow(
-            "Invalid toToken: 'WBTC'. Expected a token address (e.g. '0x0000000000000000000000000000000000000000'), not a symbol. Use getRoutes() to find supported token addresses."
+        await expect(gatewaySDK.getQuote(quoteParams)).rejects.toThrow(
+            `Invalid ${field}: '${value}'. Expected a token address (e.g. '0x0000000000000000000000000000000000000000'), not a symbol. Use getRoutes() to find supported token addresses.`
         );
     });
 });
