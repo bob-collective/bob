@@ -138,6 +138,17 @@ export class GatewayApiClient {
      * @throws {Error} If neither onramp nor offramp conditions are met
      */
     async getQuote(params: GetQuoteParams, initOverrides?: RequestInit): Promise<GatewayQuote> {
+        if (!params.fromToken.startsWith('0x')) {
+            throw new Error(
+                `Invalid fromToken: '${params.fromToken}'. Expected a token address (e.g. '0x0000000000000000000000000000000000000000'), not a symbol. Use getRoutes() to find supported token addresses.`
+            );
+        }
+        if (!params.toToken.startsWith('0x')) {
+            throw new Error(
+                `Invalid toToken: '${params.toToken}'. Expected a token address (e.g. '0x0000000000000000000000000000000000000000'), not a symbol. Use getRoutes() to find supported token addresses.`
+            );
+        }
+
         return this.api.getQuote(
             {
                 srcChain: params.fromChain.toString(), // TODO: don't use number

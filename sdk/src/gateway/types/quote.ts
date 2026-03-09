@@ -10,9 +10,9 @@ export interface GatewayQuoteParams {
     fromChain: string;
     /** @description Destination chain slug or ID */
     toChain: string;
-    /** @description Token symbol or address on source chain */
+    /** @description Token address on source chain (e.g. '0x0000000000000000000000000000000000000000'). Use getRoutes() to find supported token addresses. */
     fromToken: string;
-    /** @description Token symbol or address on destination chain */
+    /** @description Token address on destination chain (e.g. '0x0000000000000000000000000000000000000000'). Use getRoutes() to find supported token addresses. */
     toToken: string;
     /** @description Wallet address on source chain */
     fromUserAddress: string;
