@@ -7,12 +7,14 @@ const ROUTES_API_URL =
 const CHAIN_NAME_TO_ID: Record<string, number> = {
   ethereum: 1,
   optimism: 10,
+  telos: 40,
   bsc: 56,
   unichain: 130,
   polygon: 137,
   sonic: 146,
   sei: 1329,
   soneium: 1868,
+  swell: 1923,
   base: 8453,
   arbitrum: 42161,
   avalanche: 43114,
@@ -49,6 +51,12 @@ interface ResolvedRoute {
   dstTokenAddress: string;
 }
 
+// Non-EVM chains where token addresses can't be resolved via the tokenlist
+const NON_EVM_CHAINS: Record<string, string> = {
+  bitcoin: "BTC",
+  aptos: "WBTC",
+};
+
 function capitalizeChain(chain: string): string {
   if (chain === "bsc") return "BSC";
   return chain.charAt(0).toUpperCase() + chain.slice(1);
@@ -82,11 +90,16 @@ async function main() {
   );
   console.log(`Loaded ${tokenlist.tokens.length} tokens.`);
 
-  // Build a lookup map: "chainId:lowercaseAddress" -> Token
+  // Build lookup maps: "chainId:lowercaseAddress" -> Token, and "lowercaseAddress" -> Token (fallback)
   const tokenMap = new Map<string, Token>();
+  const addressFallback = new Map<string, Token>();
   for (const token of tokenlist.tokens) {
     const key = `${token.chainId}:${token.address.toLowerCase()}`;
     tokenMap.set(key, token);
+    // Fallback: resolve by address alone (for cross-chain tokens with same address)
+    if (!addressFallback.has(token.address.toLowerCase())) {
+      addressFallback.set(token.address.toLowerCase(), token);
+    }
   }
 
   // Resolve routes
@@ -95,13 +108,13 @@ async function main() {
     let dstTokenSymbol = "Unknown";
 
     // Resolve source token
-    if (route.srcChain === "bitcoin") {
-      srcTokenSymbol = "BTC";
+    if (route.srcChain in NON_EVM_CHAINS) {
+      srcTokenSymbol = NON_EVM_CHAINS[route.srcChain];
     } else {
       const srcChainId = CHAIN_NAME_TO_ID[route.srcChain];
       if (srcChainId !== undefined) {
         const srcKey = `${srcChainId}:${route.srcToken.toLowerCase()}`;
-        const srcToken = tokenMap.get(srcKey);
+        const srcToken = tokenMap.get(srcKey) ?? addressFallback.get(route.srcToken.toLowerCase());
         if (srcToken) {
           srcTokenSymbol = srcToken.symbol;
         }
@@ -109,13 +122,13 @@ async function main() {
     }
 
     // Resolve destination token
-    if (route.dstChain === "bitcoin") {
-      dstTokenSymbol = "BTC";
+    if (route.dstChain in NON_EVM_CHAINS) {
+      dstTokenSymbol = NON_EVM_CHAINS[route.dstChain];
     } else {
       const dstChainId = CHAIN_NAME_TO_ID[route.dstChain];
       if (dstChainId !== undefined) {
         const dstKey = `${dstChainId}:${route.dstToken.toLowerCase()}`;
-        const dstToken = tokenMap.get(dstKey);
+        const dstToken = tokenMap.get(dstKey) ?? addressFallback.get(route.dstToken.toLowerCase());
         if (dstToken) {
           dstTokenSymbol = dstToken.symbol;
         }
