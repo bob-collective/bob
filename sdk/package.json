@@ -8,6 +8,7 @@
         "url": "git+https://github.com/bob-collective/bob.git"
     },
     "scripts": {
+        "submit-cow-order": "tsx src/scripts/submit-cow-order.ts.ts",
         "test": "vitest run test/*.ts",
         "deploy-relay": "ts-node src/scripts/relay-genesis.ts",
         "update-relay": "ts-node src/scripts/relay-retarget.ts",
