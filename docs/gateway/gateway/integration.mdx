@@ -113,7 +113,7 @@ Token parameters (`fromToken`, `toToken`) must be `0x`-prefixed hex addresses, n
 </Warning>
 
 <Tip>
-Display `quote.fee`, `quote.estimatedTimeInSecs`, and other quote fields to give users transparency about the transaction.
+Display quote fields like fees and estimated time to give users transparency about the transaction. See the section below for how to access these fields.
 </Tip>
 
 ### Understanding Quote Types
@@ -136,7 +136,7 @@ if ('onramp' in quote) {
 } else if ('layerZero' in quote) {
   // Cross-chain via LayerZero
   console.log('Input:', quote.layerZero.inputAmount);
-  console.log('Fees:', quote.layerZero.feeBreakdown);
+  console.log('Fees:', quote.layerZero.fees);
   console.log('ETA:', quote.layerZero.estimatedTimeInSecs, 'seconds');
 }
 ```

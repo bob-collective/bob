@@ -294,7 +294,7 @@ struct Call {
 - `callData`: ABI-encoded function call data
 - `value`: Amount of native token (e.g., ETH) to send with the call
 
-Encode a vector of these `Call` structs using standard Solidity ABI encoding and include it in the `message` field of your quote request.
+Encode a vector of these `Call` structs using standard Solidity ABI encoding and include it in the `strategyMessage` field of your quote request.
 
 On the destination chain, the solver decodes the vector and executes each call using a LayerZero (L0) composer contract. This ensures atomic execution and proper sequencing of all calls.
 
