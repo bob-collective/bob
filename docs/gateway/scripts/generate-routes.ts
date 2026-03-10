@@ -4,114 +4,45 @@ import { resolve, dirname } from "path";
 const ROUTES_API_URL =
   "https://gateway-api-mainnet.gobob.xyz/v1/get-routes";
 
-interface Route {
-  srcChain: string;
-  srcToken: string;
-  dstChain: string;
-  dstToken: string;
-}
-
-interface Token {
-  chainId: number;
-  address: string;
-  name: string;
-  symbol: string;
-  decimals: number;
-  logoURI?: string;
-}
-
-interface TokenList {
-  tokens: Token[];
-}
-
-interface ResolvedRoute {
-  srcChain: string;
-  srcTokenSymbol: string;
-  srcTokenAddress: string;
-  dstChain: string;
-  dstTokenSymbol: string;
-  dstTokenAddress: string;
-}
-
-// Non-EVM chains where token addresses can't be resolved via the tokenlist
 const NON_EVM_CHAINS: Record<string, string> = {
   bitcoin: "BTC",
   aptos: "WBTC",
 };
 
-function capitalizeChain(chain: string): string {
-  if (chain === "bsc") return "BSC";
-  return chain.charAt(0).toUpperCase() + chain.slice(1);
-}
+const capitalize = (s: string) =>
+  s === "bsc" ? "BSC" : s.charAt(0).toUpperCase() + s.slice(1);
 
-function truncateAddress(address: string): string {
-  if (address.length <= 12) return address;
-  return `${address.slice(0, 6)}...${address.slice(-4)}`;
-}
+const truncate = (addr: string) =>
+  addr.length <= 12 ? addr : `${addr.slice(0, 6)}...${addr.slice(-4)}`;
 
 async function main() {
-  // Fetch routes from the API
-  console.log("Fetching routes from gateway API...");
   const response = await fetch(ROUTES_API_URL);
-  if (!response.ok) {
-    throw new Error(
-      `Failed to fetch routes: ${response.status} ${response.statusText}`
-    );
-  }
-  const routes: Route[] = await response.json();
-  console.log(`Fetched ${routes.length} routes.`);
+  if (!response.ok) throw new Error(`Failed to fetch routes: ${response.status}`);
+  const routes: { srcChain: string; srcToken: string; dstChain: string; dstToken: string }[] =
+    await response.json();
 
-  // Load tokenlist
-  const tokenlistPath = resolve(
-    dirname(new URL(import.meta.url).pathname),
-    "../../../tokenlist/tokenlist.json"
-  );
-  console.log(`Loading tokenlist from ${tokenlistPath}...`);
-  const tokenlist: TokenList = JSON.parse(
-    readFileSync(tokenlistPath, "utf-8")
-  );
-  console.log(`Loaded ${tokenlist.tokens.length} tokens.`);
+  const tokenlistPath = resolve(dirname(new URL(import.meta.url).pathname), "../../../tokenlist/tokenlist.json");
+  const { tokens } = JSON.parse(readFileSync(tokenlistPath, "utf-8"));
 
-  // Build token lookup by address (case-insensitive).
-  // Since each token has a unique contract address, we don't need chain IDs to resolve symbols.
-  const tokenByAddress = new Map<string, Token>();
-  for (const token of tokenlist.tokens) {
-    const addr = token.address.toLowerCase();
-    if (!tokenByAddress.has(addr)) {
-      tokenByAddress.set(addr, token);
-    }
+  // Address-based lookup — no chain ID mapping needed
+  const symbolOf = new Map<string, string>();
+  for (const t of tokens) {
+    const addr = t.address.toLowerCase();
+    if (!symbolOf.has(addr)) symbolOf.set(addr, t.symbol);
   }
 
-  function resolveSymbol(chain: string, address: string): string {
-    if (chain in NON_EVM_CHAINS) return NON_EVM_CHAINS[chain];
-    const token = tokenByAddress.get(address.toLowerCase());
-    if (token) return token.symbol;
-    console.warn(`  Warning: unknown token ${address} on ${chain}`);
-    return "Unknown";
+  const resolve_ = (chain: string, addr: string) =>
+    NON_EVM_CHAINS[chain] ?? symbolOf.get(addr.toLowerCase()) ?? (() => {
+      console.warn(`  Warning: unknown token ${addr} on ${chain}`);
+      return "Unknown";
+    })();
+
+  // Group by source chain
+  const groups = new Map<string, typeof routes>();
+  for (const r of routes) {
+    (groups.get(r.srcChain) ?? (() => { const a: typeof routes = []; groups.set(r.srcChain, a); return a; })()).push(r);
   }
 
-  // Resolve routes
-  const resolvedRoutes: ResolvedRoute[] = routes.map((route) => ({
-    srcChain: route.srcChain,
-    srcTokenSymbol: resolveSymbol(route.srcChain, route.srcToken),
-    srcTokenAddress: route.srcToken,
-    dstChain: route.dstChain,
-    dstTokenSymbol: resolveSymbol(route.dstChain, route.dstToken),
-    dstTokenAddress: route.dstToken,
-  }));
-
-  // Group routes by source chain
-  const groupedRoutes = new Map<string, ResolvedRoute[]>();
-  for (const route of resolvedRoutes) {
-    const group = groupedRoutes.get(route.srcChain) || [];
-    group.push(route);
-    groupedRoutes.set(route.srcChain, group);
-  }
-
-  // Sort source chains alphabetically
-  const sortedChains = Array.from(groupedRoutes.keys()).sort();
-
-  // Generate MDX content
   let mdx = `---
 title: "Supported Routes & Assets"
 description: "A comprehensive list of all supported chains and token routes available through the BOB Gateway."
@@ -129,51 +60,28 @@ to ensure it stays up to date.
 
 `;
 
-  for (const chain of sortedChains) {
-    const chainRoutes = groupedRoutes.get(chain)!;
-    const displayChain = capitalizeChain(chain);
+  for (const chain of [...groups.keys()].sort()) {
+    const chainRoutes = groups.get(chain)!;
+    chainRoutes.sort((a, b) => a.dstChain.localeCompare(b.dstChain) || a.srcToken.localeCompare(b.srcToken));
 
-    mdx += `## From ${displayChain}\n\n`;
+    mdx += `## From ${capitalize(chain)}\n\n`;
     mdx += `| Source Token | Destination Chain | Destination Token | Source Token Address | Destination Token Address |\n`;
     mdx += `|---|---|---|---|---|\n`;
 
-    // Sort routes within each group by destination chain, then source token
-    chainRoutes.sort((a, b) => {
-      const chainCmp = a.dstChain.localeCompare(b.dstChain);
-      if (chainCmp !== 0) return chainCmp;
-      return a.srcTokenSymbol.localeCompare(b.srcTokenSymbol);
-    });
-
-    for (const route of chainRoutes) {
-      const srcSymbol =
-        route.srcTokenSymbol === "Unknown"
-          ? `Unknown (${truncateAddress(route.srcTokenAddress)})`
-          : route.srcTokenSymbol;
-      const dstSymbol =
-        route.dstTokenSymbol === "Unknown"
-          ? `Unknown (${truncateAddress(route.dstTokenAddress)})`
-          : route.dstTokenSymbol;
-      const dstChainDisplay = capitalizeChain(route.dstChain);
-      const srcAddr = `\`${truncateAddress(route.srcTokenAddress)}\``;
-      const dstAddr = `\`${truncateAddress(route.dstTokenAddress)}\``;
-
-      mdx += `| ${srcSymbol} | ${dstChainDisplay} | ${dstSymbol} | ${srcAddr} | ${dstAddr} |\n`;
+    for (const r of chainRoutes) {
+      const src = resolve_(r.srcChain, r.srcToken);
+      const dst = resolve_(r.dstChain, r.dstToken);
+      const srcDisplay = src === "Unknown" ? `Unknown (${truncate(r.srcToken)})` : src;
+      const dstDisplay = dst === "Unknown" ? `Unknown (${truncate(r.dstToken)})` : dst;
+      mdx += `| ${srcDisplay} | ${capitalize(r.dstChain)} | ${dstDisplay} | \`${truncate(r.srcToken)}\` | \`${truncate(r.dstToken)}\` |\n`;
     }
-
     mdx += `\n`;
   }
 
-  // Write the MDX file
-  const outputPath = resolve(
-    dirname(new URL(import.meta.url).pathname),
-    "../gateway/supported-routes.mdx"
-  );
+  const outputPath = resolve(dirname(new URL(import.meta.url).pathname), "../gateway/supported-routes.mdx");
   mkdirSync(dirname(outputPath), { recursive: true });
   writeFileSync(outputPath, mdx, "utf-8");
-  console.log(`Generated ${outputPath}`);
+  console.log(`Generated ${outputPath} (${routes.length} routes, ${tokens.length} tokens)`);
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+main().catch((err) => { console.error(err); process.exit(1); });
