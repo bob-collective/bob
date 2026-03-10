@@ -4,24 +4,6 @@ import { resolve, dirname } from "path";
 const ROUTES_API_URL =
   "https://gateway-api-mainnet.gobob.xyz/v1/get-routes";
 
-const CHAIN_NAME_TO_ID: Record<string, number> = {
-  ethereum: 1,
-  optimism: 10,
-  telos: 40,
-  bsc: 56,
-  unichain: 130,
-  polygon: 137,
-  sonic: 146,
-  sei: 1329,
-  soneium: 1868,
-  swell: 1923,
-  base: 8453,
-  arbitrum: 42161,
-  avalanche: 43114,
-  bob: 60808,
-  bera: 80094,
-};
-
 interface Route {
   srcChain: string;
   srcToken: string;
@@ -90,60 +72,33 @@ async function main() {
   );
   console.log(`Loaded ${tokenlist.tokens.length} tokens.`);
 
-  // Build lookup maps: "chainId:lowercaseAddress" -> Token, and "lowercaseAddress" -> Token (fallback)
-  const tokenMap = new Map<string, Token>();
-  const addressFallback = new Map<string, Token>();
+  // Build token lookup by address (case-insensitive).
+  // Since each token has a unique contract address, we don't need chain IDs to resolve symbols.
+  const tokenByAddress = new Map<string, Token>();
   for (const token of tokenlist.tokens) {
-    const key = `${token.chainId}:${token.address.toLowerCase()}`;
-    tokenMap.set(key, token);
-    // Fallback: resolve by address alone (for cross-chain tokens with same address)
-    if (!addressFallback.has(token.address.toLowerCase())) {
-      addressFallback.set(token.address.toLowerCase(), token);
+    const addr = token.address.toLowerCase();
+    if (!tokenByAddress.has(addr)) {
+      tokenByAddress.set(addr, token);
     }
   }
 
+  function resolveSymbol(chain: string, address: string): string {
+    if (chain in NON_EVM_CHAINS) return NON_EVM_CHAINS[chain];
+    const token = tokenByAddress.get(address.toLowerCase());
+    if (token) return token.symbol;
+    console.warn(`  Warning: unknown token ${address} on ${chain}`);
+    return "Unknown";
+  }
+
   // Resolve routes
-  const resolvedRoutes: ResolvedRoute[] = routes.map((route) => {
-    let srcTokenSymbol = "Unknown";
-    let dstTokenSymbol = "Unknown";
-
-    // Resolve source token
-    if (route.srcChain in NON_EVM_CHAINS) {
-      srcTokenSymbol = NON_EVM_CHAINS[route.srcChain];
-    } else {
-      const srcChainId = CHAIN_NAME_TO_ID[route.srcChain];
-      if (srcChainId !== undefined) {
-        const srcKey = `${srcChainId}:${route.srcToken.toLowerCase()}`;
-        const srcToken = tokenMap.get(srcKey) ?? addressFallback.get(route.srcToken.toLowerCase());
-        if (srcToken) {
-          srcTokenSymbol = srcToken.symbol;
-        }
-      }
-    }
-
-    // Resolve destination token
-    if (route.dstChain in NON_EVM_CHAINS) {
-      dstTokenSymbol = NON_EVM_CHAINS[route.dstChain];
-    } else {
-      const dstChainId = CHAIN_NAME_TO_ID[route.dstChain];
-      if (dstChainId !== undefined) {
-        const dstKey = `${dstChainId}:${route.dstToken.toLowerCase()}`;
-        const dstToken = tokenMap.get(dstKey) ?? addressFallback.get(route.dstToken.toLowerCase());
-        if (dstToken) {
-          dstTokenSymbol = dstToken.symbol;
-        }
-      }
-    }
-
-    return {
-      srcChain: route.srcChain,
-      srcTokenSymbol,
-      srcTokenAddress: route.srcToken,
-      dstChain: route.dstChain,
-      dstTokenSymbol,
-      dstTokenAddress: route.dstToken,
-    };
-  });
+  const resolvedRoutes: ResolvedRoute[] = routes.map((route) => ({
+    srcChain: route.srcChain,
+    srcTokenSymbol: resolveSymbol(route.srcChain, route.srcToken),
+    srcTokenAddress: route.srcToken,
+    dstChain: route.dstChain,
+    dstTokenSymbol: resolveSymbol(route.dstChain, route.dstToken),
+    dstTokenAddress: route.dstToken,
+  }));
 
   // Group routes by source chain
   const groupedRoutes = new Map<string, ResolvedRoute[]>();
