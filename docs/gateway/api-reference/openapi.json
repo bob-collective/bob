@@ -398,7 +398,6 @@
                 "type": "object",
                 "required": [
                   "order_id",
-                  "psbt_hex",
                   "address"
                 ],
                 "properties": {
@@ -419,8 +418,11 @@
                     "example": "f81d4fae-7dec-11d0-a765-00a0c91e6bf6"
                   },
                   "psbt_hex": {
-                    "type": "string",
-                    "description": "Hex-encoded Bitcoin PSBT"
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "Hex-encoded Bitcoin PSBT (only present when sender address was provided)"
                   }
                 }
               }
