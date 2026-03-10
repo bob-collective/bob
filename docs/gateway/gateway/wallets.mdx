@@ -89,10 +89,10 @@ function GatewayComponent() {
     // Get quote
     const quote = await gatewaySDK.getQuote({
       fromChain: 'bitcoin',
-      fromToken: 'BTC',
+      fromToken: '0x0000000000000000000000000000000000000000',
       fromUserAddress: btcAddress,
       toChain: 'bob',
-      toToken: 'wBTC',
+      toToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
       toUserAddress: evmAddress,
       amount: parseBtc("0.1"),
     });
@@ -165,10 +165,10 @@ function GatewayComponent() {
     
     const quote = await gatewaySDK.getQuote({
       fromChain: 'bitcoin',
-      fromToken: 'BTC',
+      fromToken: '0x0000000000000000000000000000000000000000',
       fromUserAddress: address,
       toChain: 'bob',
-      toToken: 'wBTC',
+      toToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
       toUserAddress: evmAddress,
       amount: parseBtc("0.1"),
     });
@@ -221,10 +221,10 @@ function GatewayComponent() {
 
     const quote = await gatewaySDK.getQuote({
       fromChain: 'bitcoin',
-      fromToken: 'BTC',
+      fromToken: '0x0000000000000000000000000000000000000000',
       fromUserAddress: btcAddress,
       toChain: 'bob',
-      toToken: 'wBTC',
+      toToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
       toUserAddress: evmAddress,
       amount: parseBtc("0.1"),
     });
@@ -316,10 +316,10 @@ function GatewayComponent() {
     
     const quote = await gatewaySDK.getQuote({
       fromChain: 'bitcoin',
-      fromToken: 'BTC',
+      fromToken: '0x0000000000000000000000000000000000000000',
       fromUserAddress: btcAddress,
       toChain: 'bob',
-      toToken: 'wBTC',
+      toToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
       toUserAddress: evmAddress,
       amount: parseBtc("0.1"),
     });
@@ -395,7 +395,7 @@ const gatewaySDK = new GatewaySDK(bobSepolia.id);
 // Use Bitcoin testnet addresses (starting with tb1...)
 const quote = await gatewaySDK.getQuote({
   fromChain: 'bitcoin-testnet',
-  fromToken: 'BTC',
+  fromToken: '0x0000000000000000000000000000000000000000', // BTC (zero address)
   fromUserAddress: 'tb1q...', // Testnet address
   // ... rest of params
 });
