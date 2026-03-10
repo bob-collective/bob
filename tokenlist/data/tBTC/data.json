@@ -32,6 +32,9 @@
     "arbitrum-one": {
       "name": "Arbitrum tBTC v2",
       "address": "0x6c84a8f1c29108F47a79964b5Fe888D4f4D0dE40"
+    },
+    "base": {
+      "address": "0x236aa50979D5f3De3Bd1Eeb40E81137F22ab794b"
     }
   }
 }

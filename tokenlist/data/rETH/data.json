@@ -16,6 +16,12 @@
       "bridge": {
         "ethereum": "0x4200000000000000000000000000000000000010"
       }
+    },
+    "op-mainnet": {
+      "address": "0x9bcef72be871e61ed4fbbc7630889bee758eb81d"
+    },
+    "base": {
+      "address": "0xB6fe221Fe9EeF5aBa221c348bA20A1Bf5e73624c"
     }
   }
 }
