@@ -257,6 +257,7 @@ export class GatewayApiClient {
 
             const requiredAmount = BigInt(quote.offramp.inputAmount.amount);
             const needsApproval = requiredAmount > allowance;
+            let nonce: number | undefined;
 
             if (needsApproval && !isAddressEqual(tokenAddress, zeroAddress)) {
                 if (isAddressEqual(tokenAddress, WBTC_OFT_ADDRESS)) {
@@ -271,6 +272,10 @@ export class GatewayApiClient {
 
                         const approveTxHash = await walletClient.writeContract(request);
                         await publicClient.waitForTransactionReceipt({ hash: approveTxHash });
+                        nonce = await publicClient.getTransactionCount({
+                            address: accountAddress,
+                            blockTag: 'pending',
+                        });
                     }
                 } else {
                     // To change the USDT approval, first set the allowance to 0 (approve(_spender, 0))
@@ -298,6 +303,10 @@ export class GatewayApiClient {
 
                     const approveTxHash = await walletClient.writeContract(request);
                     await publicClient.waitForTransactionReceipt({ hash: approveTxHash });
+                    nonce = await publicClient.getTransactionCount({
+                        address: accountAddress,
+                        blockTag: 'pending',
+                    });
                 }
             }
 
@@ -306,6 +315,7 @@ export class GatewayApiClient {
                 data: order.offramp.tx.data as Hex,
                 to: spenderAddress,
                 value: BigInt(order.offramp.tx.value || 0),
+                ...(nonce !== undefined && { nonce }),
             });
 
             await publicClient?.waitForTransactionReceipt({ hash: transactionHash });
@@ -328,6 +338,7 @@ export class GatewayApiClient {
             const requiredAmount = BigInt(quote.layerZero.inputAmount.amount);
             const accountAddress = walletClient.account.address;
             const receiver = quote.layerZero.tx.to as Address;
+            let nonce: number | undefined;
 
             const order = await this.api.createOrder({ gatewayQuote: { layerZero: quote.layerZero } });
 
@@ -358,6 +369,10 @@ export class GatewayApiClient {
                         const txHash = await walletClient.writeContract(request);
 
                         await publicClient.waitForTransactionReceipt({ hash: txHash });
+                        nonce = await publicClient.getTransactionCount({
+                            address: accountAddress,
+                            blockTag: 'pending',
+                        });
                     }
                 } catch (error) {
                     if (error instanceof ContractFunctionExecutionError) {
@@ -379,6 +394,7 @@ export class GatewayApiClient {
                 data: quote.layerZero.tx.data as Hex,
                 to: receiver,
                 value: BigInt(quote.layerZero.tx.value || 0),
+                ...(nonce !== undefined && { nonce }),
             });
 
             await publicClient.waitForTransactionReceipt({ hash: transactionHash });
@@ -499,6 +515,7 @@ export class GatewayApiClient {
 
             const requiredAmount = BigInt(quote.offramp.inputAmount.amount);
             const needsApproval = requiredAmount > allowance;
+            let nonce: number | undefined;
 
             if (needsApproval && !isAddressEqual(tokenAddress, zeroAddress)) {
                 if (isAddressEqual(tokenAddress, WBTC_OFT_ADDRESS)) {
@@ -513,6 +530,10 @@ export class GatewayApiClient {
 
                         const approveTxHash = await walletClient.writeContract(request);
                         await publicClient.waitForTransactionReceipt({ hash: approveTxHash });
+                        nonce = await publicClient.getTransactionCount({
+                            address: accountAddress,
+                            blockTag: 'pending',
+                        });
                     }
                 } else {
                     // To change the USDT approval, first set the allowance to 0 (approve(_spender, 0))
@@ -540,6 +561,10 @@ export class GatewayApiClient {
 
                     const approveTxHash = await walletClient.writeContract(request);
                     await publicClient.waitForTransactionReceipt({ hash: approveTxHash });
+                    nonce = await publicClient.getTransactionCount({
+                        address: accountAddress,
+                        blockTag: 'pending',
+                    });
                 }
             }
 
@@ -548,6 +573,7 @@ export class GatewayApiClient {
                 data: order.offramp.tx.data as Hex,
                 to: spenderAddress,
                 value: BigInt(order.offramp.tx.value || 0),
+                ...(nonce !== undefined && { nonce }),
             });
 
             await publicClient?.waitForTransactionReceipt({ hash: transactionHash });
@@ -570,6 +596,7 @@ export class GatewayApiClient {
             const requiredAmount = BigInt(quote.layerZero.inputAmount.amount);
             const accountAddress = walletClient.account.address;
             const receiver = quote.layerZero.tx.to as Address;
+            let nonce: number | undefined;
 
             if (!isAddressEqual(tokenAddress, WBTC_OFT_ADDRESS)) {
                 // ERC20 token
@@ -594,6 +621,10 @@ export class GatewayApiClient {
                         const txHash = await walletClient.writeContract(request);
 
                         await publicClient.waitForTransactionReceipt({ hash: txHash });
+                        nonce = await publicClient.getTransactionCount({
+                            address: accountAddress,
+                            blockTag: 'pending',
+                        });
                     }
                 } catch (error) {
                     if (error instanceof ContractFunctionExecutionError) {
@@ -615,6 +646,7 @@ export class GatewayApiClient {
                 data: quote.layerZero.tx.data as Hex,
                 to: receiver,
                 value: BigInt(quote.layerZero.tx.value || 0),
+                ...(nonce !== undefined && { nonce }),
             });
 
             await publicClient.waitForTransactionReceipt({ hash: transactionHash });
