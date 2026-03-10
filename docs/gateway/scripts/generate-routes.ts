@@ -3,7 +3,8 @@ import { resolve, dirname } from "path";
 
 const ROUTES_API = "https://gateway-api-mainnet.gobob.xyz/v1/get-routes";
 const NON_EVM: Record<string, string> = { bitcoin: "BTC", aptos: "WBTC" };
-const cap = (s: string) => (s === "bsc" ? "BSC" : s[0].toUpperCase() + s.slice(1));
+const CHAIN_LABELS: Record<string, string> = { bsc: "BSC", bob: "BOB" };
+const cap = (s: string) => CHAIN_LABELS[s] ?? s[0].toUpperCase() + s.slice(1);
 
 async function main() {
   const routes: { srcChain: string; srcToken: string; dstChain: string; dstToken: string }[] =
