@@ -69,10 +69,10 @@ import { parseEther } from 'viem';
 
 const quote = await gatewaySDK.getQuote({
   fromChain: 'bitcoin',
-  fromToken: 'BTC',
+  fromToken: '0x0000000000000000000000000000000000000000',
   fromUserAddress: 'bc1qafk4yhqvj4wep57m62dgrmutldusqde8adh20d',
   toChain: 'bob',
-  toToken: 'wBTC',
+  toToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
   toUserAddress: '0x2D2E86236a5bC1c8a5e5499C517E17Fb88Dbc18c',
   amount: parseBtc("0.1"), // 0.1 BTC
   gasRefill: parseEther("0.00001"), // Optional ETH gas refill
@@ -82,10 +82,10 @@ const quote = await gatewaySDK.getQuote({
 ```typescript With Affiliate Fees
 const quote = await gatewaySDK.getQuote({
   fromChain: 'bitcoin',
-  fromToken: 'BTC',
+  fromToken: '0x0000000000000000000000000000000000000000',
   fromUserAddress: 'bc1qafk4yhqvj4wep57m62dgrmutldusqde8adh20d',
   toChain: 'bob',
-  toToken: 'wBTC',
+  toToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
   toUserAddress: '0x2D2E86236a5bC1c8a5e5499C517E17Fb88Dbc18c',
   amount: parseBtc("0.1"),
   gasRefill: parseEther("0.00001"),
@@ -97,7 +97,7 @@ const quote = await gatewaySDK.getQuote({
 ```typescript Cross-Chain (LayerZero)
 const quote = await gatewaySDK.getQuote({
   fromChain: 'bitcoin',
-  fromToken: 'BTC',
+  fromToken: '0x0000000000000000000000000000000000000000',
   toChain: 'base', // Bridge to Base
   toToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c', // wBTC on Base
   fromUserAddress: 'bc1q...',
@@ -108,8 +108,41 @@ const quote = await gatewaySDK.getQuote({
 
 </CodeGroup>
 
+<Warning>
+Token parameters (`fromToken`, `toToken`) must be `0x`-prefixed hex addresses, not symbols. Use `getRoutes()` to find supported token addresses. For BTC, use the zero address `0x0000000000000000000000000000000000000000`.
+</Warning>
+
 <Tip>
-Display `quote.fee`, `quote.estimatedTime`, and other quote fields to give users transparency about the transaction.
+Display quote fields like fees and estimated time to give users transparency about the transaction. See the section below for how to access these fields.
+</Tip>
+
+### Understanding Quote Types
+
+The `getQuote` response is a discriminated union — access fields through the appropriate key:
+
+```typescript
+const quote = await gatewaySDK.getQuote({ /* ... */ });
+
+if ('onramp' in quote) {
+  // Bitcoin → BOB onramp
+  console.log('Input:', quote.onramp.inputAmount);
+  console.log('Fees:', quote.onramp.feeBreakdown);
+  console.log('ETA:', quote.onramp.estimatedTimeInSecs, 'seconds');
+} else if ('offramp' in quote) {
+  // BOB → Bitcoin offramp
+  console.log('Input:', quote.offramp.inputAmount);
+  console.log('Fees:', quote.offramp.feeBreakdown);
+  console.log('ETA:', quote.offramp.estimatedTimeInSecs, 'seconds');
+} else if ('layerZero' in quote) {
+  // Cross-chain via LayerZero
+  console.log('Input:', quote.layerZero.inputAmount);
+  console.log('Fees:', quote.layerZero.fees);
+  console.log('ETA:', quote.layerZero.estimatedTimeInSecs, 'seconds');
+}
+```
+
+<Tip>
+You don't need to handle all quote types — the response type matches your `fromChain`/`toChain` parameters. For example, `fromChain: 'bitcoin'` with `toChain: 'bob'` always returns an `onramp` quote.
 </Tip>
 
 ## Execute the Quote
@@ -208,15 +241,26 @@ const orders = await gatewaySDK.getOrders(userEvmAddress);
 
 // Display orders in a table or list
 orders.forEach(order => {
-  console.log(`Order ${order.orderId}: ${order.status}`);
-  console.log(`Amount: ${order.amount}, Token: ${order.token}`);
-  
-  // Check for pending offramp actions
-  if (order.refundTx) {
-    console.log('Refund transaction available');
-  }
-  if (order.bumpFeeTx) {
-    console.log('Fee bump transaction available');
+  console.log(`Source: ${order.srcInfo.amount} ${order.srcInfo.token} (${order.srcInfo.chain})`);
+  console.log(`Destination: ${order.dstInfo.amount} ${order.dstInfo.token} (${order.dstInfo.chain})`);
+
+  // Check order status (discriminated union)
+  if (typeof order.status === 'string') {
+    // Simple status: 'success' or 'refunded'
+    console.log(`Status: ${order.status}`);
+  } else if ('inProgress' in order.status) {
+    console.log('Status: in progress');
+    if (order.status.inProgress.bumpFeeTx) {
+      console.log('Fee bump transaction available');
+    }
+    if (order.status.inProgress.refundTx) {
+      console.log('Refund transaction available');
+    }
+  } else if ('failed' in order.status) {
+    console.log('Status: failed');
+    if (order.status.failed.refundTx) {
+      console.log('Refund transaction available');
+    }
   }
 });
 ```
@@ -235,16 +279,21 @@ If Bitcoin network fees increase after order placement, the order will include a
 const orders = await gatewaySDK.getOrders(userEvmAddress);
 
 // Find order with bump fee transaction
-const orderNeedingBump = orders.find(order => order.bumpFeeTx);
+const orderNeedingBump = orders.find(order =>
+  typeof order.status === 'object'
+  && 'inProgress' in order.status
+  && order.status.inProgress.bumpFeeTx
+);
 
-if (orderNeedingBump) {
+if (orderNeedingBump && typeof orderNeedingBump.status === 'object' && 'inProgress' in orderNeedingBump.status) {
+  const bumpFeeTx = orderNeedingBump.status.inProgress.bumpFeeTx!;
   // Submit the bump fee transaction
   const hash = await walletClient.sendTransaction({
-    to: orderNeedingBump.bumpFeeTx.to,
-    data: orderNeedingBump.bumpFeeTx.data,
-    value: orderNeedingBump.bumpFeeTx.value,
+    to: bumpFeeTx.to,
+    data: bumpFeeTx.data,
+    value: bumpFeeTx.value,
   });
-  
+
   await publicClient.waitForTransactionReceipt({ hash });
 }
 ```
@@ -263,16 +312,23 @@ If an order gets stuck or needs to be cancelled, the order will include a `refun
 const orders = await gatewaySDK.getOrders(userEvmAddress);
 
 // Find order with refund transaction available
-const orderNeedingRefund = orders.find(order => order.refundTx);
+const orderNeedingRefund = orders.find(order =>
+  typeof order.status === 'object'
+  && (('inProgress' in order.status && order.status.inProgress.refundTx)
+    || ('failed' in order.status && order.status.failed.refundTx))
+);
 
-if (orderNeedingRefund) {
+if (orderNeedingRefund && typeof orderNeedingRefund.status === 'object') {
+  const refundTx = 'failed' in orderNeedingRefund.status
+    ? orderNeedingRefund.status.failed.refundTx!
+    : orderNeedingRefund.status.inProgress.refundTx!;
   // Submit the refund transaction
   const hash = await walletClient.sendTransaction({
-    to: orderNeedingRefund.refundTx.to,
-    data: orderNeedingRefund.refundTx.data,
-    value: orderNeedingRefund.refundTx.value,
+    to: refundTx.to,
+    data: refundTx.data,
+    value: refundTx.value,
   });
-  
+
   await publicClient.waitForTransactionReceipt({ hash });
 }
 ```

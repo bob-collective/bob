@@ -45,7 +45,10 @@ const config = {
   },
 
   plugins: [
-    ['docusaurus-plugin-llms', { pathTransformation: { ignorePaths: ['docs'] } }],
+    ['docusaurus-plugin-llms', {
+      pathTransformation: { ignorePaths: ['docs'] },
+      rootContent: `# BOB Documentation\n\nFor Gateway developer documentation (API reference, SDK integration):\n- Gateway docs: https://docs.gobob.xyz/gateway/\n- Gateway llms.txt: https://docs.gobob.xyz/gateway/llms.txt\n`,
+    }],
     [
       "@docusaurus/plugin-client-redirects",
       {
