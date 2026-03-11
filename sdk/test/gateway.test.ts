@@ -647,6 +647,7 @@ describe('Gateway Tests', () => {
             multicall: async () => [0n, 8], // allowance: 0 (BigInt), decimals: 8 (number)
             simulateContract: async () => ({ request: {} }),
             waitForTransactionReceipt: async () => ({}),
+            getTransactionCount: async () => 1,
         } as unknown as PublicClient<Transport>;
 
         const txHash = await gatewaySDK.executeQuote({
@@ -737,6 +738,7 @@ describe('Gateway Tests', () => {
             multicall: async () => [0n],
             simulateContract: simulateContractMock,
             waitForTransactionReceipt: vi.fn().mockResolvedValue({}),
+            getTransactionCount: vi.fn().mockResolvedValue(1),
         } as unknown as PublicClient<Transport>;
 
         const txHash = await gatewaySDK.executeQuote({
@@ -749,6 +751,8 @@ describe('Gateway Tests', () => {
         expect(simulateContractMock).toHaveBeenCalledTimes(1);
         expect(simulateContractMock.mock.calls[0][0].args).toEqual([spenderAddress, maxUint256]);
         expect(mockWalletClient.writeContract).toHaveBeenCalledTimes(1);
+        expect(mockPublicClient.getTransactionCount).toHaveBeenCalledTimes(1);
+        expect(mockWalletClient.sendTransaction).toHaveBeenCalledWith(expect.objectContaining({ nonce: 1 }));
     });
 
     it('should skip approval for WBTC when srcChain is not bob', async () => {
@@ -828,6 +832,7 @@ describe('Gateway Tests', () => {
             multicall: async () => [0n],
             simulateContract: simulateContractMock,
             waitForTransactionReceipt: vi.fn().mockResolvedValue({}),
+            getTransactionCount: vi.fn().mockResolvedValue(1),
         } as unknown as PublicClient<Transport>;
 
         const txHash = await gatewaySDK.executeQuote({
@@ -920,6 +925,7 @@ describe('Gateway Tests', () => {
             multicall: async () => [1n],
             simulateContract: simulateContractMock,
             waitForTransactionReceipt: vi.fn().mockResolvedValue({}),
+            getTransactionCount: vi.fn().mockResolvedValue(1),
         } as unknown as PublicClient<Transport>;
 
         const txHash = await gatewaySDK.executeQuote({
@@ -1211,10 +1217,12 @@ describe('Gateway Tests', () => {
             writeContract,
         } as unknown as WalletClient<Transport, ViemChain, Account>;
 
+        const getTransactionCount = vi.fn().mockResolvedValue(1);
         const mockPublicClient = {
             readContract,
             simulateContract,
             waitForTransactionReceipt,
+            getTransactionCount,
         } as unknown as PublicClient<Transport>;
 
         const txHash = await gatewaySDK.executeQuote({
@@ -1228,6 +1236,8 @@ describe('Gateway Tests', () => {
         expect(simulateContract).toHaveBeenCalledTimes(1);
         expect(writeContract).toHaveBeenCalledTimes(1);
         expect(sendTransaction).toHaveBeenCalledTimes(1);
+        expect(sendTransaction).toHaveBeenCalledWith(expect.objectContaining({ nonce: 1 }));
+        expect(getTransactionCount).toHaveBeenCalledTimes(1);
         expect(waitForTransactionReceipt).toHaveBeenCalledTimes(2);
     });
 
