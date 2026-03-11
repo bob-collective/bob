@@ -143,7 +143,7 @@ const message = encodeAbiParameters(
 
 const quote = await gatewaySDK.getQuote({
   fromChain: 'bitcoin',
-  fromToken: 'BTC',
+  fromToken: '0x0000000000000000000000000000000000000000',
   toChain: 'bob',
   toToken: '0xYourStrategyAddress', // Your deployed strategy
   fromUserAddress: 'bc1q...',
@@ -152,6 +152,10 @@ const quote = await gatewaySDK.getQuote({
   strategyMessage: message, // Optional parameters
 });
 ```
+
+<Note>
+The `toToken` parameter should be set to your deployed strategy contract address. Optionally, use `strategyAddress` for advanced cases where the strategy target differs from the token destination. The `strategyMessage` parameter passes ABI-encoded parameters to your strategy's `handleGatewayMessage` function.
+</Note>
 
 ---
 
@@ -213,9 +217,9 @@ const multicallMessage = generateMulticallMessage(userAddress, depositAmount);
 
 const quote = await gatewaySDK.getQuote({
   fromChain: 'bitcoin',
-  fromToken: 'BTC',
+  fromToken: '0x0000000000000000000000000000000000000000',
   toChain: 'bob',
-  toToken: 'wBTC',
+  toToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
   fromUserAddress: 'bc1q...',
   toUserAddress: userAddress,
   amount: depositAmount,
@@ -290,7 +294,7 @@ struct Call {
 - `callData`: ABI-encoded function call data
 - `value`: Amount of native token (e.g., ETH) to send with the call
 
-Encode a vector of these `Call` structs using standard Solidity ABI encoding and include it in the `message` field of your quote request.
+Encode a vector of these `Call` structs using standard Solidity ABI encoding and include it in the `strategyMessage` field of your quote request.
 
 On the destination chain, the solver decodes the vector and executes each call using a LayerZero (L0) composer contract. This ensures atomic execution and proper sequencing of all calls.
 
@@ -337,9 +341,9 @@ const crossChainMessage = encodeAbiParameters(
 // Request a quote with the cross-chain message
 const quote = await gatewaySDK.getQuote({
   fromChain: 'bitcoin',
-  fromToken: 'BTC',
+  fromToken: '0x0000000000000000000000000000000000000000',
   toChain: 'ethereum', // or other destination chain
-  toToken: 'wBTC',
+  toToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
   fromUserAddress: 'bc1q...',
   toUserAddress: userAddress,
   amount: parseBtc('0.1'),

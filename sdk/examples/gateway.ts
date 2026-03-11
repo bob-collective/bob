@@ -34,11 +34,11 @@ export async function swapBtcForToken(evmAddress: Address) {
 
     const quote = await gatewaySDK.getQuote({
         fromChain: 'bitcoin',
-        fromToken: 'BTC',
+        fromToken: '0x0000000000000000000000000000000000000000',
         fromUserAddress: 'bc1qafk4yhqvj4wep57m62dgrmutldusqde8adh20d',
         toChain: 'bob',
         toUserAddress: evmAddress,
-        toToken: 'wBTC',
+        toToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
         amount: parseBtc('0.1'), // BTC
         gasRefill: parseEther('0.00001'), // ETH
     });
@@ -54,10 +54,10 @@ export async function swapBtcForToken(evmAddress: Address) {
 
     const offrampQuote = await gatewaySDK.getQuote({
         fromChain: 'bob',
-        fromToken: 'wBTC',
+        fromToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
         toChain: 'bitcoin',
         toUserAddress: 'bc1qafk4yhqvj4wep57m62dgrmutldusqde8adh20d',
-        toToken: 'BTC',
+        toToken: '0x0000000000000000000000000000000000000000',
         amount: parseBtc('0.1'), // BTC
     });
 
@@ -126,11 +126,11 @@ export async function onrampAndDeposit(evmAddress: Address) {
 
     const quote = await gatewaySDK.getQuote({
         fromChain: 'bitcoin',
-        fromToken: 'BTC',
+        fromToken: '0x0000000000000000000000000000000000000000',
         fromUserAddress: 'bc1qafk4yhqvj4wep57m62dgrmutldusqde8adh20d',
         toChain: 'bob',
         toUserAddress: evmAddress,
-        toToken: 'wBTC',
+        toToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
         amount: parseBtc('0.1'), // BTC
         gasRefill: parseEther('0.00001'), // ETH
         strategyMessage: generateMessageForMulticallHandler(
