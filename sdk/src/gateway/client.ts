@@ -4,6 +4,7 @@ import {
     ContractFunctionExecutionError,
     erc20Abi,
     Hex,
+    isAddress,
     isAddressEqual,
     maxUint256,
     PublicClient,
@@ -138,9 +139,8 @@ export class GatewayApiClient {
      * @throws {Error} If neither onramp nor offramp conditions are met
      */
     async getQuote(params: GetQuoteParams, initOverrides?: RequestInit): Promise<GatewayQuote> {
-        const ETH_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
         for (const [name, value] of Object.entries({ fromToken: params.fromToken, toToken: params.toToken })) {
-            if (!ETH_ADDRESS_REGEX.test(value)) {
+            if (!isAddress(value)) {
                 throw new Error(
                     `Invalid ${name}: '${value}'. Expected a token address (e.g. '0x0000000000000000000000000000000000000000'), not a symbol. Use getRoutes() to find supported token addresses.`
                 );
