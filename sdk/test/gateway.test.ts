@@ -400,7 +400,7 @@ describe('Gateway Tests', () => {
         expect(txHash).toBe('tx-hash-123');
     });
 
-    it('should throw error for onramp without btcSigner', async () => {
+    it('should execute walletless onramp without btcSigner', async () => {
         const gatewaySDK = new GatewaySDK();
 
         const mockQuote: GatewayQuoteOneOf = {
@@ -461,19 +461,31 @@ describe('Gateway Tests', () => {
             },
         };
 
+        const mockOrderId = 'walletless-order-123';
+
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
+            .post('/v1/create-order')
+            .reply(200, {
+                onramp: {
+                    order_id: mockOrderId,
+                    address: 'tb1qw508d6qejxtdg4y5r3zarvary0c5xw7kxpjzsx',
+                    op_return_data: '',
+                },
+            });
+
         const mockWalletClient: WalletClient<Transport, ViemChain, Account> = {
             account: { address: '0x1234567890123456789012345678901234567890' as Address },
         } as WalletClient<Transport, ViemChain, Account>;
 
         const mockPublicClient = {} as PublicClient<Transport>;
 
-        await expect(
-            gatewaySDK.executeQuote({
-                quote: mockQuote,
-                walletClient: mockWalletClient,
-                publicClient: mockPublicClient,
-            })
-        ).rejects.toThrow('btcSigner is required for onramp order');
+        const result = await gatewaySDK.executeQuote({
+            quote: mockQuote,
+            walletClient: mockWalletClient,
+            publicClient: mockPublicClient,
+        });
+
+        expect(result).toBe(mockOrderId);
     });
 
     it('should throw error when btcSigner returns empty transaction', async () => {

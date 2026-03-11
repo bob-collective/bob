@@ -38,11 +38,11 @@ export interface GatewayCreateOrderOneOfOnramp {
      */
     orderId: string;
     /**
-     * Hex-encoded Bitcoin PSBT
+     * Hex-encoded Bitcoin PSBT (only present when sender address was provided)
      * @type {string}
      * @memberof GatewayCreateOrderOneOfOnramp
      */
-    psbtHex: string;
+    psbtHex?: string | null;
 }
 
 /**
@@ -51,7 +51,6 @@ export interface GatewayCreateOrderOneOfOnramp {
 export function instanceOfGatewayCreateOrderOneOfOnramp(value: object): value is GatewayCreateOrderOneOfOnramp {
     if (!('address' in value) || value['address'] === undefined) return false;
     if (!('orderId' in value) || value['orderId'] === undefined) return false;
-    if (!('psbtHex' in value) || value['psbtHex'] === undefined) return false;
     return true;
 }
 
@@ -68,7 +67,7 @@ export function GatewayCreateOrderOneOfOnrampFromJSONTyped(json: any, ignoreDisc
         'address': json['address'],
         'opReturnData': json['op_return_data'] == null ? undefined : json['op_return_data'],
         'orderId': json['order_id'],
-        'psbtHex': json['psbt_hex'],
+        'psbtHex': json['psbt_hex'] == null ? undefined : json['psbt_hex'],
     };
 }
 
