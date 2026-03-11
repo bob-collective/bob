@@ -177,14 +177,15 @@ export class GatewayApiClient {
         initOverrides?: RequestInit
     ): Promise<string> {
         if (instanceOfGatewayQuoteOneOf(quote)) {
-            if (!btcSigner) {
-                throw new Error(`btcSigner is required for onramp order`);
-            }
-
             const order = await this.api.createOrder({ gatewayQuote: { onramp: quote.onramp } });
 
             if (!instanceOfGatewayCreateOrderOneOf(order)) {
                 throw new Error('Invalid order type returned from API');
+            }
+
+            if (!btcSigner) {
+                // Walletless flow: return the order ID for the user to complete payment externally
+                return order.onramp.orderId;
             }
 
             let bitcoinTxHex: string;
@@ -197,6 +198,9 @@ export class GatewayApiClient {
                     // isSignet: this.isSignet,
                 });
             } else if (btcSigner.signAllInputs) {
+                if (!order.onramp.psbtHex) {
+                    throw new Error('PSBT not available: sender address is required when using signAllInputs');
+                }
                 bitcoinTxHex = await btcSigner.signAllInputs(order.onramp.psbtHex);
             } else {
                 throw new Error('btcSigner must implement either sendBitcoin or signAllInputs method');
@@ -417,16 +421,21 @@ export class GatewayApiClient {
     async _executeQuote(
         { quote, walletClient, publicClient, btcSigner }: { quote: GatewayQuote } & AllWalletClientParams,
         initOverrides?: RequestInit
-    ): Promise<{ tx: string; orderId?: string }> {
+    ): Promise<{ tx: string; orderId?: string; address?: string }> {
         if (instanceOfGatewayQuoteOneOf(quote)) {
-            if (!btcSigner) {
-                throw new Error(`btcSigner is required for onramp order`);
-            }
-
             const order = await this.api.createOrder({ gatewayQuote: { onramp: quote.onramp } });
 
             if (!instanceOfGatewayCreateOrderOneOf(order)) {
                 throw new Error('Invalid order type returned from API');
+            }
+
+            if (!btcSigner) {
+                // Walletless flow: return order details for the user to complete payment externally
+                return {
+                    tx: '',
+                    orderId: order.onramp.orderId,
+                    address: order.onramp.address,
+                };
             }
 
             let bitcoinTxHex: string;
@@ -439,6 +448,9 @@ export class GatewayApiClient {
                     // isSignet: this.isSignet,
                 });
             } else if (btcSigner.signAllInputs) {
+                if (!order.onramp.psbtHex) {
+                    throw new Error('PSBT not available: sender address is required when using signAllInputs');
+                }
                 bitcoinTxHex = await btcSigner.signAllInputs(order.onramp.psbtHex);
             } else {
                 throw new Error('btcSigner must implement either sendBitcoin or signAllInputs method');
