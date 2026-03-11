@@ -475,6 +475,8 @@ describe('Gateway Tests', () => {
                 },
             });
 
+        const registerTxScope = nock(`${MAINNET_GATEWAY_BASE_URL}`).patch('/v1/register-tx').reply(200, 'ok');
+
         const mockWalletClient: WalletClient<Transport, ViemChain, Account> = {
             account: { address: '0x1234567890123456789012345678901234567890' as Address },
         } as WalletClient<Transport, ViemChain, Account>;
@@ -496,6 +498,7 @@ describe('Gateway Tests', () => {
             }),
         });
         expect(result.tx).toBeUndefined();
+        expect(registerTxScope.isDone()).toBe(false);
     });
 
     it('should throw error when btcSigner returns empty transaction', async () => {
@@ -678,7 +681,9 @@ describe('Gateway Tests', () => {
         });
 
         expect(result.tx).toBe('0xtxhash');
-        expect(result.order).toHaveProperty('offramp');
+        expect(result.order).toEqual(
+            expect.objectContaining({ offramp: expect.objectContaining({ orderId: 'offramp-order-123' }) })
+        );
     });
 
     it('should approve WBTC on bob offramp', async () => {
@@ -1041,6 +1046,9 @@ describe('Gateway Tests', () => {
         });
 
         expect(result.tx).toBe('0xtxhash');
+        expect(result.order).toEqual(
+            expect.objectContaining({ offramp: expect.objectContaining({ orderId: 'offramp-order-456' }) })
+        );
     });
 
     it('should throw error when invalid quote type is provided', async () => {
@@ -1222,7 +1230,7 @@ describe('Gateway Tests', () => {
             .post('/v1/create-order')
             .reply(200, {
                 layerZero: {
-                    orderId: 'layerzero-order-123',
+                    order_id: 'layerzero-order-123',
                 },
             });
 
@@ -1247,6 +1255,9 @@ describe('Gateway Tests', () => {
         });
 
         expect(result.tx).toBe('0xsendhash');
+        expect(result.order).toEqual(
+            expect.objectContaining({ layerZero: expect.objectContaining({ orderId: 'layerzero-order-123' }) })
+        );
         expect(readContract).toHaveBeenCalledTimes(1);
         expect(simulateContract).toHaveBeenCalledTimes(1);
         expect(writeContract).toHaveBeenCalledTimes(1);
@@ -1294,7 +1305,7 @@ describe('Gateway Tests', () => {
             .post('/v1/create-order')
             .reply(200, {
                 layerZero: {
-                    orderId: 'layerzero-order-123',
+                    order_id: 'layerzero-order-123',
                 },
             });
 
@@ -1364,7 +1375,7 @@ describe('Gateway Tests', () => {
             .post('/v1/create-order')
             .reply(200, {
                 layerZero: {
-                    orderId: 'layerzero-order-123',
+                    order_id: 'layerzero-order-123',
                 },
             });
 

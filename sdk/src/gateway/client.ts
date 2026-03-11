@@ -16,6 +16,7 @@ import { strategyCaller, USDTApproveAbi } from './abi';
 import {
     Configuration,
     type GatewayCreateOrder,
+    type GatewayCreateOrderOneOf,
     type GatewayMaxSpendable,
     type GatewayOrderInfo,
     type GatewayQuote,
@@ -68,10 +69,17 @@ export interface AllWalletClientParams extends EvmWalletClientParams {
     btcSigner?: BitcoinSigner;
 }
 
-export interface ExecuteQuoteResult {
-    order: GatewayCreateOrder;
-    tx?: string;
-}
+/**
+ * Result of executing a gateway quote.
+ *
+ * `tx` is the transaction hash/id (Bitcoin txid for onramp, EVM hash for offramp/LayerZero).
+ * It is absent only in the walletless onramp flow, where no `btcSigner` was provided.
+ * In that case, use `order.onramp.address` and `order.onramp.orderId` to complete
+ * the BTC payment externally.
+ */
+export type ExecuteQuoteResult =
+    | { order: GatewayCreateOrder; tx: string }
+    | { order: GatewayCreateOrderOneOf; tx?: undefined };
 
 /**
  * Gateway REST HTTP API client.
@@ -329,17 +337,22 @@ export class GatewayApiClient {
 
             await publicClient?.waitForTransactionReceipt({ hash: transactionHash });
 
-            await this.api.registerTx(
-                {
-                    registerTx: {
-                        offramp: {
-                            orderId: order.offramp.orderId,
-                            evmTxhash: transactionHash,
+            try {
+                await this.api.registerTx(
+                    {
+                        registerTx: {
+                            offramp: {
+                                orderId: order.offramp.orderId,
+                                evmTxhash: transactionHash,
+                            },
                         },
                     },
-                },
-                initOverrides
-            );
+                    initOverrides
+                );
+            } catch {
+                // Best-effort: the on-chain tx already succeeded, so return the result
+                // even if registration fails. The order can be reconciled later.
+            }
 
             return { order, tx: transactionHash };
         } else if (instanceOfGatewayQuoteOneOf2(quote)) {
@@ -404,17 +417,22 @@ export class GatewayApiClient {
 
             await publicClient.waitForTransactionReceipt({ hash: transactionHash });
 
-            await this.api.registerTx(
-                {
-                    registerTx: {
-                        layerZero: {
-                            evmTxhash: transactionHash,
-                            orderId: order.layerZero.orderId,
+            try {
+                await this.api.registerTx(
+                    {
+                        registerTx: {
+                            layerZero: {
+                                evmTxhash: transactionHash,
+                                orderId: order.layerZero.orderId,
+                            },
                         },
                     },
-                },
-                initOverrides
-            );
+                    initOverrides
+                );
+            } catch {
+                // Best-effort: the on-chain tx already succeeded, so return the result
+                // even if registration fails. The order can be reconciled later.
+            }
 
             return { order, tx: transactionHash };
         }
