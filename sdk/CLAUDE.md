@@ -29,7 +29,9 @@ sdk/src/
 
 ### Generated vs hand-written code
 
-Everything under `src/gateway/generated-client/` is auto-generated from an OpenAPI spec. The entire directory is deleted and recreated on each codegen run. Never edit files there — put hand-written code in `client.ts`, `types/`, `utils/`, or `adapters/`.
+Everything under `src/gateway/generated-client/` is auto-generated from the OpenAPI spec of the [bob-gateway](https://github.com/bob-collective/bob-gateway) backend. The entire directory is deleted and recreated on each codegen run. Never edit files there — put hand-written code in `client.ts`, `types/`, `utils/`, or `adapters/`.
+
+When debugging API issues or verifying request/response shapes, refer to the gateway repo for the source of truth.
 
 ESLint ignores `src/gateway/generated-client/**`.
 
