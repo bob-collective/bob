@@ -28,7 +28,7 @@ import {
     instanceOfGatewayQuoteOneOf2,
     instanceOfRegisterTxOneOf,
     type RouteInfo,
-    V1Api,
+    V1Api
 } from './generated-client';
 import type { BitcoinSigner, GetQuoteParams, StrategyParams } from './types';
 import { formatBtc } from './utils';
@@ -488,6 +488,7 @@ export class GatewayApiClient {
      * Retrieves the maximum spendable amount for a given Bitcoin address
      *
      * @param address The user's Bitcoin address
+     * @param initOverrides Optional request initialization overrides
      * @returns Promise resolving to the maximum spendable amount
      */
     async getMaxSpendable(address: string, initOverrides?: RequestInit): Promise<GatewayMaxSpendable> {
@@ -498,10 +499,22 @@ export class GatewayApiClient {
      * Retrieves all orders (onramp and offramp) for a specific user address.
      *
      * @param userAddress The user's EVM address
+     * @param initOverrides Optional request initialization overrides
      * @returns Promise resolving to array of typed orders
      */
     async getOrders(userAddress: Address, initOverrides?: RequestInit): Promise<Array<GatewayOrderInfo>> {
         return this.api.getOrders({ userAddress }, initOverrides);
+    }
+
+    /**
+     * Retrieves a specific order by its ID (txId/txHash).
+     * 
+     * @param id The order ID (txId/txHash)
+     * @param initOverrides Optional request initialization overrides
+     * @returns Promise resolving to the order information
+     */
+    async getOrder(id: string, initOverrides?: RequestInit): Promise<GatewayOrderInfo> {
+        return this.api.getOrder({ id }, initOverrides);
     }
 
     /**
