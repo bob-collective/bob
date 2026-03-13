@@ -64,9 +64,10 @@ If no `btcSigner` is provided to `executeQuote`, it returns the order for extern
 
 ### Other exports
 
-- `EsploraClient` — Bitcoin block explorer (`getFeeEstimates()`)
-- `MempoolClient` — fee rate recommendations (`getRecommendedFees()`)
-- `getBalance`, `estimateTxFee`, `isValidBtcAddress` — Bitcoin utilities
+- `EsploraClient` — Bitcoin block explorer (`getFeeEstimates()`, `getBalance()`)
+- `MempoolClient` — fee rate recommendations (`getRecommendedFees()`, `estimateTxTime()`)
+- `getBalance`, `estimateTxFee` — standalone Bitcoin wallet utilities (`wallet/utxo.ts`)
+- `isValidBtcAddress` — Bitcoin address validation
 - `formatBtc`, `parseBtc` — satoshi ↔ BTC formatting
 
 ## Key patterns
