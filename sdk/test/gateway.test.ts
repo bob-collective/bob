@@ -2,7 +2,6 @@ import nock from 'nock';
 import {
     Account,
     Address,
-    ContractFunctionExecutionError,
     maxUint256,
     PublicClient,
     Transport,
@@ -24,7 +23,7 @@ import {
 } from '../src/gateway/generated-client';
 import { BitcoinSigner } from '../src/gateway/types';
 
-export const WBTC_OFT_ADDRESS = '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c';
+const WBTC_OFT_ADDRESS = '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c';
 
 afterEach(() => {
     nock.cleanAll();
@@ -390,14 +389,17 @@ describe('Gateway Tests', () => {
 
         const mockPublicClient = {} as PublicClient<Transport>;
 
-        const txHash = await gatewaySDK.executeQuote({
+        const result = await gatewaySDK.executeQuote({
             quote: mockQuote,
             walletClient: mockWalletClient,
             publicClient: mockPublicClient,
             btcSigner: mockBtcSigner,
         });
 
-        expect(txHash).toBe('tx-hash-123');
+        expect(result).toEqual({
+            order: expect.objectContaining({ onramp: expect.objectContaining({ orderId: 'order-123' }) }),
+            tx: 'tx-hash-123',
+        });
     });
 
     it('should execute walletless onramp without btcSigner', async () => {
@@ -473,6 +475,8 @@ describe('Gateway Tests', () => {
                 },
             });
 
+        const registerTxScope = nock(`${MAINNET_GATEWAY_BASE_URL}`).patch('/v1/register-tx').reply(200, 'ok');
+
         const mockWalletClient: WalletClient<Transport, ViemChain, Account> = {
             account: { address: '0x1234567890123456789012345678901234567890' as Address },
         } as WalletClient<Transport, ViemChain, Account>;
@@ -485,7 +489,16 @@ describe('Gateway Tests', () => {
             publicClient: mockPublicClient,
         });
 
-        expect(result).toBe(mockOrderId);
+        expect(result).toEqual({
+            order: expect.objectContaining({
+                onramp: expect.objectContaining({
+                    orderId: mockOrderId,
+                    address: 'tb1qw508d6qejxtdg4y5r3zarvary0c5xw7kxpjzsx',
+                }),
+            }),
+        });
+        expect(result.tx).toBeUndefined();
+        expect(registerTxScope.isDone()).toBe(false);
     });
 
     it('should throw error when btcSigner returns empty transaction', async () => {
@@ -661,13 +674,16 @@ describe('Gateway Tests', () => {
             waitForTransactionReceipt: async () => ({}),
         } as unknown as PublicClient<Transport>;
 
-        const txHash = await gatewaySDK.executeQuote({
+        const result = await gatewaySDK.executeQuote({
             quote: mockQuote,
             walletClient: mockWalletClient,
             publicClient: mockPublicClient,
         });
 
-        expect(txHash).toBe('0xtxhash');
+        expect(result.tx).toBe('0xtxhash');
+        expect(result.order).toEqual(
+            expect.objectContaining({ offramp: expect.objectContaining({ orderId: 'offramp-order-123' }) })
+        );
     });
 
     it('should approve WBTC on bob offramp', async () => {
@@ -751,13 +767,13 @@ describe('Gateway Tests', () => {
             waitForTransactionReceipt: vi.fn().mockResolvedValue({}),
         } as unknown as PublicClient<Transport>;
 
-        const txHash = await gatewaySDK.executeQuote({
+        const result = await gatewaySDK.executeQuote({
             quote: mockQuote,
             walletClient: mockWalletClient,
             publicClient: mockPublicClient,
         });
 
-        expect(txHash).toBe('0xtxhash');
+        expect(result.tx).toBe('0xtxhash');
         expect(simulateContractMock).toHaveBeenCalledTimes(1);
         expect(simulateContractMock.mock.calls[0][0].args).toEqual([spenderAddress, maxUint256]);
         expect(mockWalletClient.writeContract).toHaveBeenCalledTimes(1);
@@ -842,13 +858,13 @@ describe('Gateway Tests', () => {
             waitForTransactionReceipt: vi.fn().mockResolvedValue({}),
         } as unknown as PublicClient<Transport>;
 
-        const txHash = await gatewaySDK.executeQuote({
+        const result = await gatewaySDK.executeQuote({
             quote: mockQuote,
             walletClient: mockWalletClient,
             publicClient: mockPublicClient,
         });
 
-        expect(txHash).toBe('0xtxhash');
+        expect(result.tx).toBe('0xtxhash');
         expect(simulateContractMock).not.toHaveBeenCalled();
         expect(mockWalletClient.writeContract).not.toHaveBeenCalled();
     });
@@ -934,13 +950,13 @@ describe('Gateway Tests', () => {
             waitForTransactionReceipt: vi.fn().mockResolvedValue({}),
         } as unknown as PublicClient<Transport>;
 
-        const txHash = await gatewaySDK.executeQuote({
+        const result = await gatewaySDK.executeQuote({
             quote: mockQuote,
             walletClient: mockWalletClient,
             publicClient: mockPublicClient,
         });
 
-        expect(txHash).toBe('0xtxhash');
+        expect(result.tx).toBe('0xtxhash');
         expect(simulateContractMock).toHaveBeenCalledTimes(2);
         expect(simulateContractMock.mock.calls[0][0].args).toEqual([spenderAddress, 0n]);
         expect(simulateContractMock.mock.calls[1][0].args).toEqual([spenderAddress, maxUint256]);
@@ -1023,13 +1039,16 @@ describe('Gateway Tests', () => {
             waitForTransactionReceipt: async () => ({}),
         } as unknown as PublicClient<Transport>;
 
-        const txHash = await gatewaySDK.executeQuote({
+        const result = await gatewaySDK.executeQuote({
             quote: mockQuote,
             walletClient: mockWalletClient,
             publicClient: mockPublicClient,
         });
 
-        expect(txHash).toBe('0xtxhash');
+        expect(result.tx).toBe('0xtxhash');
+        expect(result.order).toEqual(
+            expect.objectContaining({ offramp: expect.objectContaining({ orderId: 'offramp-order-456' }) })
+        );
     });
 
     it('should throw error when invalid quote type is provided', async () => {
@@ -1211,7 +1230,7 @@ describe('Gateway Tests', () => {
             .post('/v1/create-order')
             .reply(200, {
                 layerZero: {
-                    orderId: 'layerzero-order-123',
+                    order_id: 'layerzero-order-123',
                 },
             });
 
@@ -1229,13 +1248,16 @@ describe('Gateway Tests', () => {
             waitForTransactionReceipt,
         } as unknown as PublicClient<Transport>;
 
-        const txHash = await gatewaySDK.executeQuote({
+        const result = await gatewaySDK.executeQuote({
             quote: mockedQuote,
             walletClient: mockWalletClient,
             publicClient: mockPublicClient,
         });
 
-        expect(txHash).toBe('0xsendhash');
+        expect(result.tx).toBe('0xsendhash');
+        expect(result.order).toEqual(
+            expect.objectContaining({ layerZero: expect.objectContaining({ orderId: 'layerzero-order-123' }) })
+        );
         expect(readContract).toHaveBeenCalledTimes(1);
         expect(simulateContract).toHaveBeenCalledTimes(1);
         expect(writeContract).toHaveBeenCalledTimes(1);
@@ -1283,7 +1305,7 @@ describe('Gateway Tests', () => {
             .post('/v1/create-order')
             .reply(200, {
                 layerZero: {
-                    orderId: 'layerzero-order-123',
+                    order_id: 'layerzero-order-123',
                 },
             });
 
@@ -1301,13 +1323,13 @@ describe('Gateway Tests', () => {
             waitForTransactionReceipt,
         } as unknown as PublicClient<Transport>;
 
-        const txHash = await gatewaySDK.executeQuote({
+        const result = await gatewaySDK.executeQuote({
             quote: mockedQuote,
             walletClient: mockWalletClient,
             publicClient: mockPublicClient,
         });
 
-        expect(txHash).toBe('0xsendhash');
+        expect(result.tx).toBe('0xsendhash');
         expect(readContract).toHaveBeenCalledTimes(1);
         expect(simulateContract).not.toHaveBeenCalled();
         expect(writeContract).not.toHaveBeenCalled();
@@ -1353,7 +1375,7 @@ describe('Gateway Tests', () => {
             .post('/v1/create-order')
             .reply(200, {
                 layerZero: {
-                    orderId: 'layerzero-order-123',
+                    order_id: 'layerzero-order-123',
                 },
             });
 
@@ -1369,13 +1391,13 @@ describe('Gateway Tests', () => {
             waitForTransactionReceipt,
         } as unknown as PublicClient<Transport>;
 
-        const txHash = await gatewaySDK.executeQuote({
+        const result = await gatewaySDK.executeQuote({
             quote: mockedQuote,
             walletClient: mockWalletClient,
             publicClient: mockPublicClient,
         });
 
-        expect(txHash).toBe('0xsendhash');
+        expect(result.tx).toBe('0xsendhash');
         expect(readContract).not.toHaveBeenCalled();
         expect(sendTransaction).toHaveBeenCalledTimes(1);
         expect(waitForTransactionReceipt).toHaveBeenCalledTimes(1);

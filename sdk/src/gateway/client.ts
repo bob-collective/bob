@@ -1,35 +1,36 @@
 import {
-    Account,
-    Address,
+    type Account,
+    type Address,
     ContractFunctionExecutionError,
     erc20Abi,
-    Hex,
+    type Hex,
     isAddressEqual,
     maxUint256,
-    PublicClient,
-    Transport,
-    Chain as ViemChain,
-    WalletClient,
+    type PublicClient,
+    type Transport,
+    type Chain as ViemChain,
+    type WalletClient,
     zeroAddress,
 } from 'viem';
 import { strategyCaller, USDTApproveAbi } from './abi';
-import { BitcoinSigner, GetQuoteParams, StrategyParams } from './types';
 import {
     Configuration,
-    V1Api,
-    GatewayOrderInfo,
-    GatewayQuote,
+    type GatewayCreateOrder,
+    type GatewayCreateOrderOneOf,
+    type GatewayMaxSpendable,
+    type GatewayOrderInfo,
+    type GatewayQuote,
     instanceOfGatewayCreateOrderOneOf,
     instanceOfGatewayCreateOrderOneOf1,
+    instanceOfGatewayCreateOrderOneOf2,
     instanceOfGatewayQuoteOneOf,
     instanceOfGatewayQuoteOneOf1,
     instanceOfGatewayQuoteOneOf2,
     instanceOfRegisterTxOneOf,
-    RouteInfo,
-    instanceOfGatewayCreateOrderOneOf2,
-    GatewayMaxSpendable,
-    GetOrderRequest,
+    type RouteInfo,
+    V1Api,
 } from './generated-client';
+import type { BitcoinSigner, GetQuoteParams, StrategyParams } from './types';
 import { formatBtc } from './utils';
 
 export const WBTC_OFT_ADDRESS = '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c';
@@ -67,6 +68,18 @@ export interface AllWalletClientParams extends EvmWalletClientParams {
      */
     btcSigner?: BitcoinSigner;
 }
+
+/**
+ * Result of executing a gateway quote.
+ *
+ * `tx` is the transaction hash/id (Bitcoin txid for onramp, EVM hash for offramp/LayerZero).
+ * It is absent only in the walletless onramp flow, where no `btcSigner` was provided.
+ * In that case, use `order.onramp.address` and `order.onramp.orderId` to complete
+ * the BTC payment externally.
+ */
+export type ExecuteQuoteResult =
+    | { order: GatewayCreateOrder; tx: string }
+    | { order: GatewayCreateOrderOneOf; tx?: undefined };
 
 /**
  * Gateway REST HTTP API client.
@@ -170,23 +183,25 @@ export class GatewayApiClient {
      * For offramp: approves tokens if needed and creates on-chain order
      *
      * @param params Parameters including quote and wallet clients - see {@link GatewayQuote} & {@link AllWalletClientParams}
-     * @returns Promise resolving to transaction hash
+     * @returns Promise resolving to the full order and optional transaction hash
      * @throws {Error} If required signers are missing or transaction fails
      */
     async executeQuote(
         { quote, walletClient, publicClient, btcSigner }: { quote: GatewayQuote } & AllWalletClientParams,
         initOverrides?: RequestInit
-    ): Promise<string> {
+    ): Promise<ExecuteQuoteResult> {
         if (instanceOfGatewayQuoteOneOf(quote)) {
-            const order = await this.api.createOrder({ gatewayQuote: { onramp: quote.onramp } });
+            const order = await this.api.createOrder({
+                gatewayQuote: { onramp: quote.onramp },
+            });
 
             if (!instanceOfGatewayCreateOrderOneOf(order)) {
                 throw new Error('Invalid order type returned from API');
             }
 
             if (!btcSigner) {
-                // Walletless flow: return the order ID for the user to complete payment externally
-                return order.onramp.orderId;
+                // Walletless flow: return the order for the user to complete payment externally
+                return { order };
             }
 
             let bitcoinTxHex: string;
@@ -223,14 +238,14 @@ export class GatewayApiClient {
             );
 
             if (typeof tx === 'string') {
-                return tx;
+                return { order, tx };
             }
 
             if (!instanceOfRegisterTxOneOf(tx)) {
                 throw new Error('Invalid registerTx response type');
             }
 
-            return tx.onramp.txid;
+            return { order, tx: tx.onramp.txid };
         } else if (instanceOfGatewayQuoteOneOf1(quote)) {
             if (!walletClient.account) {
                 throw new Error(`walletClient is required for offramp order`);
@@ -238,7 +253,9 @@ export class GatewayApiClient {
             const accountAddress = walletClient.account.address;
             const tokenAddress = quote.offramp.tokenAddress as Address;
 
-            const order = await this.api.createOrder({ gatewayQuote: { offramp: quote.offramp } });
+            const order = await this.api.createOrder({
+                gatewayQuote: { offramp: quote.offramp },
+            });
 
             if (!instanceOfGatewayCreateOrderOneOf1(order)) {
                 throw new Error('Invalid order type returned from API');
@@ -278,7 +295,9 @@ export class GatewayApiClient {
                         });
 
                         const approveTxHash = await walletClient.writeContract(request);
-                        await publicClient.waitForTransactionReceipt({ hash: approveTxHash });
+                        await publicClient.waitForTransactionReceipt({
+                            hash: approveTxHash,
+                        });
                     }
                 } else {
                     // To change the USDT approval, first set the allowance to 0 (approve(_spender, 0))
@@ -318,26 +337,33 @@ export class GatewayApiClient {
 
             await publicClient?.waitForTransactionReceipt({ hash: transactionHash });
 
-            await this.api.registerTx(
-                {
-                    registerTx: {
-                        offramp: {
-                            orderId: order.offramp.orderId,
-                            evmTxhash: transactionHash,
+            try {
+                await this.api.registerTx(
+                    {
+                        registerTx: {
+                            offramp: {
+                                orderId: order.offramp.orderId,
+                                evmTxhash: transactionHash,
+                            },
                         },
                     },
-                },
-                initOverrides
-            );
+                    initOverrides
+                );
+            } catch {
+                // Best-effort: the on-chain tx already succeeded, so return the result
+                // even if registration fails. The order can be reconciled later.
+            }
 
-            return transactionHash;
+            return { order, tx: transactionHash };
         } else if (instanceOfGatewayQuoteOneOf2(quote)) {
             const tokenAddress = quote.layerZero.inputAmount.address as Address;
             const requiredAmount = BigInt(quote.layerZero.inputAmount.amount);
             const accountAddress = walletClient.account.address;
             const receiver = quote.layerZero.tx.to as Address;
 
-            const order = await this.api.createOrder({ gatewayQuote: { layerZero: quote.layerZero } });
+            const order = await this.api.createOrder({
+                gatewayQuote: { layerZero: quote.layerZero },
+            });
 
             if (!instanceOfGatewayCreateOrderOneOf2(order)) {
                 throw new Error('Invalid order type returned from API');
@@ -391,19 +417,24 @@ export class GatewayApiClient {
 
             await publicClient.waitForTransactionReceipt({ hash: transactionHash });
 
-            await this.api.registerTx(
-                {
-                    registerTx: {
-                        layerZero: {
-                            evmTxhash: transactionHash,
-                            orderId: order.layerZero.orderId,
+            try {
+                await this.api.registerTx(
+                    {
+                        registerTx: {
+                            layerZero: {
+                                evmTxhash: transactionHash,
+                                orderId: order.layerZero.orderId,
+                            },
                         },
                     },
-                },
-                initOverrides
-            );
+                    initOverrides
+                );
+            } catch {
+                // Best-effort: the on-chain tx already succeeded, so return the result
+                // even if registration fails. The order can be reconciled later.
+            }
 
-            return transactionHash;
+            return { order, tx: transactionHash };
         }
 
         throw new Error('Invalid quote type');
@@ -477,7 +508,7 @@ export class GatewayApiClient {
 
     /**
      * Retrieves a specific order by its ID (txId/txHash).
-     * 
+     *
      * @param id The order ID (txId/txHash)
      * @param initOverrides Optional request initialization overrides
      * @returns Promise resolving to the order information
