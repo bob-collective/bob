@@ -28,7 +28,7 @@ import {
     instanceOfGatewayQuoteOneOf2,
     instanceOfRegisterTxOneOf,
     type RouteInfo,
-    V1Api
+    V1Api,
 } from './generated-client';
 import type { BitcoinSigner, GetQuoteParams, StrategyParams } from './types';
 import { formatBtc } from './utils';
@@ -508,7 +508,7 @@ export class GatewayApiClient {
 
     /**
      * Retrieves a specific order by its ID (txId/txHash).
-     * 
+     *
      * @param id The order ID (txId/txHash)
      * @param initOverrides Optional request initialization overrides
      * @returns Promise resolving to the order information
