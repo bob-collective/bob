@@ -107,6 +107,12 @@ export interface GatewayOnrampQuote {
      */
     sender?: string | null;
     /**
+     * The signed quote data to be used in create-order
+     * @type {string}
+     * @memberof GatewayOnrampQuote
+     */
+    signedQuoteData: string;
+    /**
      * Slippage tolerance
      * @type {string}
      * @memberof GatewayOnrampQuote
@@ -144,6 +150,7 @@ export function instanceOfGatewayOnrampQuote(value: object): value is GatewayOnr
     if (!('inputAmount' in value) || value['inputAmount'] === undefined) return false;
     if (!('outputAmount' in value) || value['outputAmount'] === undefined) return false;
     if (!('recipient' in value) || value['recipient'] === undefined) return false;
+    if (!('signedQuoteData' in value) || value['signedQuoteData'] === undefined) return false;
     if (!('slippage' in value) || value['slippage'] === undefined) return false;
     if (!('token' in value) || value['token'] === undefined) return false;
     return true;
@@ -171,6 +178,7 @@ export function GatewayOnrampQuoteFromJSONTyped(json: any, ignoreDiscriminator: 
         'outputAmount': GatewayTokenAmountFromJSON(json['outputAmount']),
         'recipient': json['recipient'],
         'sender': json['sender'] == null ? undefined : json['sender'],
+        'signedQuoteData': json['signedQuoteData'],
         'slippage': json['slippage'],
         'strategyAddress': json['strategyAddress'] == null ? undefined : json['strategyAddress'],
         'strategyMessage': json['strategyMessage'] == null ? undefined : json['strategyMessage'],
@@ -201,6 +209,7 @@ export function GatewayOnrampQuoteToJSONTyped(value?: GatewayOnrampQuote | null,
         'outputAmount': GatewayTokenAmountToJSON(value['outputAmount']),
         'recipient': value['recipient'],
         'sender': value['sender'],
+        'signedQuoteData': value['signedQuoteData'],
         'slippage': value['slippage'],
         'strategyAddress': value['strategyAddress'],
         'strategyMessage': value['strategyMessage'],

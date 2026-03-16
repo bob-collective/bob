@@ -672,7 +672,8 @@
           "slippage",
           "feeBreakdown",
           "dstChain",
-          "dstToken"
+          "dstToken",
+          "signedQuoteData"
         ],
         "properties": {
           "affiliateAddress": {
@@ -737,6 +738,10 @@
             ],
             "description": "Sender address"
           },
+          "signedQuoteData": {
+            "type": "string",
+            "description": "The signed quote data to be used in create-order"
+          },
           "slippage": {
             "type": "string",
             "description": "Slippage tolerance"
@@ -763,6 +768,7 @@
         "type": "object",
         "description": "Gateway order info",
         "required": [
+          "id",
           "timestamp",
           "srcInfo",
           "dstInfo",
@@ -779,6 +785,9 @@
             ],
             "format": "int64",
             "minimum": 0
+          },
+          "id": {
+            "type": "string"
           },
           "srcInfo": {
             "$ref": "#/components/schemas/ChainTxInfo"

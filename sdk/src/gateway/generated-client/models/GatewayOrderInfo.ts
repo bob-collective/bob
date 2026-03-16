@@ -48,6 +48,12 @@ export interface GatewayOrderInfo {
     estimatedTimeInSecs?: number | null;
     /**
      * 
+     * @type {string}
+     * @memberof GatewayOrderInfo
+     */
+    id: string;
+    /**
+     * 
      * @type {ChainTxInfo}
      * @memberof GatewayOrderInfo
      */
@@ -71,6 +77,7 @@ export interface GatewayOrderInfo {
  */
 export function instanceOfGatewayOrderInfo(value: object): value is GatewayOrderInfo {
     if (!('dstInfo' in value) || value['dstInfo'] === undefined) return false;
+    if (!('id' in value) || value['id'] === undefined) return false;
     if (!('srcInfo' in value) || value['srcInfo'] === undefined) return false;
     if (!('status' in value) || value['status'] === undefined) return false;
     if (!('timestamp' in value) || value['timestamp'] === undefined) return false;
@@ -89,6 +96,7 @@ export function GatewayOrderInfoFromJSONTyped(json: any, ignoreDiscriminator: bo
         
         'dstInfo': ChainTxInfoFromJSON(json['dstInfo']),
         'estimatedTimeInSecs': json['estimatedTimeInSecs'] == null ? undefined : json['estimatedTimeInSecs'],
+        'id': json['id'],
         'srcInfo': ChainTxInfoFromJSON(json['srcInfo']),
         'status': GatewayOrderStatusFromJSON(json['status']),
         'timestamp': json['timestamp'],
@@ -108,6 +116,7 @@ export function GatewayOrderInfoToJSONTyped(value?: GatewayOrderInfo | null, ign
         
         'dstInfo': ChainTxInfoToJSON(value['dstInfo']),
         'estimatedTimeInSecs': value['estimatedTimeInSecs'],
+        'id': value['id'],
         'srcInfo': ChainTxInfoToJSON(value['srcInfo']),
         'status': GatewayOrderStatusToJSON(value['status']),
         'timestamp': value['timestamp'],
