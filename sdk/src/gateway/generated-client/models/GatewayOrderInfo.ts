@@ -36,6 +36,12 @@ import {
 export interface GatewayOrderInfo {
     /**
      * 
+     * @type {string}
+     * @memberof GatewayOrderInfo
+     */
+    depositAddress?: string | null;
+    /**
+     * 
      * @type {ChainTxInfo}
      * @memberof GatewayOrderInfo
      */
@@ -94,6 +100,7 @@ export function GatewayOrderInfoFromJSONTyped(json: any, ignoreDiscriminator: bo
     }
     return {
         
+        'depositAddress': json['depositAddress'] == null ? undefined : json['depositAddress'],
         'dstInfo': ChainTxInfoFromJSON(json['dstInfo']),
         'estimatedTimeInSecs': json['estimatedTimeInSecs'] == null ? undefined : json['estimatedTimeInSecs'],
         'id': json['id'],
@@ -114,6 +121,7 @@ export function GatewayOrderInfoToJSONTyped(value?: GatewayOrderInfo | null, ign
 
     return {
         
+        'depositAddress': value['depositAddress'],
         'dstInfo': ChainTxInfoToJSON(value['dstInfo']),
         'estimatedTimeInSecs': value['estimatedTimeInSecs'],
         'id': value['id'],
