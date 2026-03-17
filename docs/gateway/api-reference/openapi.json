@@ -775,6 +775,12 @@
           "status"
         ],
         "properties": {
+          "depositAddress": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "dstInfo": {
             "$ref": "#/components/schemas/ChainTxInfo"
           },
