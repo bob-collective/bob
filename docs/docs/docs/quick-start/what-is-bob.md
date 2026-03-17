@@ -57,3 +57,8 @@ BOB is building the banking stack for Bitcoin. The hybrid chain is a ZK rollup o
 - Tier 1 DeFi choosing BOB: Uniswap, Euler, Aave, LiFi, Chainlink, Babylon, Solv
 - Institutions choosing BOB: Fireblocks, Anchorage Digital, Cobo, ForDeFi, and more
 - Strong stablecoin infrastructure with USDC, USDT, Chainlink CCIP, LayerZero
+
+## Next Steps
+
+- [Connect Wallet & Bridge Assets](./connect-wallet)
+- [Make Your First Transaction](./first-transaction.md)
