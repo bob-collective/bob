@@ -48,3 +48,10 @@ node_modules/*
 out/
 cache/
 Cargo.lock
+
+# Worktrees
+.worktrees/
+
+# Superpowers / plans
+docs/plans/
+docs/superpowers/
