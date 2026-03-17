@@ -23,6 +23,17 @@ const chainById = new Map<number, Chain>(
   SUPPORTED_CHAINS.map((chain) => [chain.id, chain]),
 );
 
+// Tokens to skip validation for — keyed by "chainId:address" (address lowercase).
+// Add entries here when on-chain data is known to differ from tokenlist for intentional reasons.
+const SKIP_VALIDATION = new Set<string>([
+  // WBTCOFT Adapter on Ethereum — not a standard ERC20, it's a LayerZero bridge adapter
+  `1:0x0555e30da8f98308edb960aa94c0db47230d2b9c`,
+  // WBTCOFT on OP Mainnet — contract not fetchable
+  `10:0xc3f854b2970f8727d28527ece33176fac67fef48`,
+  // BABY on BOB Sepolia — testnet address points to wrong contract ("ubbn")
+  `808813:0x5e159518b8303a1f4ec9f9b10f077c89795db178`,
+]);
+
 // Cache for token info to avoid refetching
 const tokenCache = new Map<string, { name: string; symbol: string; decimals: number }>();
 
@@ -46,6 +57,7 @@ interface ValidationResult {
   symbol: string;
   chainId: number;
   issues: string[];
+  skipped?: boolean;
 }
 
 function validateAddress(address: string): boolean {
@@ -65,8 +77,13 @@ async function validateChainTokens(
   // Split out invalid addresses early — no point including them in the RPC call
   const toFetch: Token[] = [];
   const earlyFails: ValidationResult[] = [];
+  const skippedResults: ValidationResult[] = [];
 
   for (const token of chainTokens) {
+    if (SKIP_VALIDATION.has(`${chainId}:${token.address.toLowerCase()}`)) {
+      skippedResults.push({ address: token.address, symbol: token.symbol, chainId, issues: [], skipped: true });
+      continue;
+    }
     if (token.address !== zeroAddress && !validateAddress(token.address)) {
       earlyFails.push({
         address: token.address,
@@ -145,7 +162,7 @@ async function validateChainTokens(
     return { address: token.address, symbol: token.symbol, chainId, issues };
   });
 
-  return [...earlyFails, ...contractResults, ...nativeResults];
+  return [...skippedResults, ...earlyFails, ...contractResults, ...nativeResults];
 }
 
 async function validateSchema() {
@@ -224,7 +241,9 @@ async function main() {
     const results = outcome.value;
     for (const result of results) {
       allResults.push(result);
-      if (result.issues.length > 0) {
+      if (result.skipped) {
+        console.log(`  ⏭️  ${result.symbol} (${result.address}) — skipped`);
+      } else if (result.issues.length > 0) {
         console.log(`  ❌ ${result.symbol} (${result.address})`);
         result.issues.forEach((issue) => console.log(`     • ${issue}`));
         totalIssues += result.issues.length;
@@ -242,11 +261,13 @@ async function main() {
   }
 
   // Summary
-  const tokensWithIssues = allResults.filter((r) => r.issues.length > 0).length;
+  const skippedCount = allResults.filter((r) => r.skipped).length;
+  const tokensWithIssues = allResults.filter((r) => !r.skipped && r.issues.length > 0).length;
   console.log('\n📊 Summary:');
   console.log(`   Chains checked:      ${chainEntries.length}`);
   console.log(`   Total tokens:        ${tokens.length}`);
-  console.log(`   Valid tokens:        ${allResults.length - tokensWithIssues}`);
+  console.log(`   Valid tokens:        ${allResults.length - tokensWithIssues - skippedCount}`);
+  console.log(`   Skipped tokens:      ${skippedCount}`);
   console.log(`   Tokens with issues:  ${tokensWithIssues}`);
   console.log(`   Total issues:        ${totalIssues}`);
 
