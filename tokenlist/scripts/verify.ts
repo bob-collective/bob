@@ -5,25 +5,32 @@ import {
   http,
   isAddress,
   getAddress,
-  parseAbi,
+  erc20Abi,
   Chain,
+  zeroAddress,
+  PublicClient,
 } from 'viem';
 import * as fs from 'fs';
 import * as path from 'path';
-import { bob, mainnet } from 'viem/chains';
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
+import { SUPPORTED_CHAINS, TOKENLIST_SCHEMA_URL } from '../config';
 
-const SCHEMA_URL =
-  'https://raw.githubusercontent.com/Uniswap/token-lists/refs/heads/main/src/tokenlist.schema.json';
-const tokenlistPath = path.join(__dirname, '../tokenlist-bob.json');
+const tokenlistPath = path.join(__dirname, '../tokenlist.json');
 
-// ERC20 ABI for name, symbol, decimals
-const erc20Abi = parseAbi([
-  'function name() view returns (string)',
-  'function symbol() view returns (string)',
-  'function decimals() view returns (uint8)',
-]);
+// Build chainId → Chain lookup from config
+const chainById = new Map<number, Chain>(
+  SUPPORTED_CHAINS.map((chain) => [chain.id, chain]),
+);
+
+// Cache for token info to avoid refetching
+const tokenCache = new Map<string, { name: string; symbol: string; decimals: number }>();
+
+// One persistent client per chain — reused across all tokens on that chain
+// Using any type because viem client types are incompatible across different chains
+const clients = new Map<number, any>(
+  SUPPORTED_CHAINS.map((chain) => [chain.id, createPublicClient({ chain, transport: http(chain.rpcUrls.default.http[0]) })]),
+);
 
 interface Token {
   name: string;
@@ -32,216 +39,135 @@ interface Token {
   decimals: number;
   chainId: number;
   logoURI: string;
-  extensions?: {
-    // "bridgeInfo"
-    [key: string]: {
-      // "1"
-      [key: string]: {
-        // "tokenAddress"
-        [key: string]: any;
-      };
-    };
-  };
 }
 
 interface ValidationResult {
   address: string;
   symbol: string;
+  chainId: number;
   issues: string[];
-  onChainData?: {
-    name: string;
-    symbol: string;
-    decimals: number;
-  };
 }
 
-function validateTokenAddress(address: string): boolean {
+function validateAddress(address: string): boolean {
   try {
-    // Check if address is valid
-    if (!isAddress(address)) {
-      return false;
-    }
-
-    // Check if address is checksummed
-    const checksummed = getAddress(address);
-    return address === checksummed;
+    return isAddress(address) && address === getAddress(address);
   } catch {
     return false;
   }
 }
 
-async function getTokenInfo(
-  chain: Chain,
-  address: string,
-): Promise<{ name: string; symbol: string; decimals: number } | null> {
+// Validate all tokens on one chain in a single multicall round-trip
+async function validateChainTokens(
+  chainId: number,
+  chainTokens: Token[],
+  client: PublicClient,
+): Promise<ValidationResult[]> {
+  // Split out invalid addresses early — no point including them in the RPC call
+  const toFetch: Token[] = [];
+  const earlyFails: ValidationResult[] = [];
+
+  for (const token of chainTokens) {
+    if (token.address !== zeroAddress && !validateAddress(token.address)) {
+      earlyFails.push({
+        address: token.address,
+        symbol: token.symbol,
+        chainId,
+        issues: [`Invalid or non-checksummed address, should be ${getAddress(token.address)}`],
+      });
+    } else {
+      toFetch.push(token);
+    }
+  }
+
+  const contractTokens = toFetch.filter((t) => t.address !== zeroAddress);
+  const nativeTokens = toFetch.filter((t) => t.address === zeroAddress);
+
+  // Single multicall for all contract tokens on this chain — one RPC round-trip regardless of count
+  const calls = contractTokens.flatMap((t) => [
+    { address: t.address as `0x${string}`, abi: erc20Abi, functionName: 'name' as const },
+    { address: t.address as `0x${string}`, abi: erc20Abi, functionName: 'symbol' as const },
+    { address: t.address as `0x${string}`, abi: erc20Abi, functionName: 'decimals' as const },
+  ]);
+
+  let multicallResults: any[];
   try {
-    const client = createPublicClient({
-      chain,
-      transport: http(),
-    });
+    multicallResults = calls.length > 0
+      ? await client.multicall({ contracts: calls, allowFailure: true })
+      : [];
+  } catch (err) {
+    // RPC unreachable or multicall3 not deployed — mark all tokens as failed
+    return contractTokens.map((token) => ({
+      address: token.address,
+      symbol: token.symbol,
+      chainId,
+      issues: [`Multicall failed: ${err instanceof Error ? err.message : String(err)}`],
+    }));
+  }
 
-    // Skip ETH (zero address)
-    if (address === '0x0000000000000000000000000000000000000000') {
-      return { name: 'Ether', symbol: 'ETH', decimals: 18 };
+  const contractResults: ValidationResult[] = contractTokens.map((token, i) => {
+    const issues: string[] = [];
+
+    if (!token.logoURI.startsWith('http') && !token.logoURI.startsWith('ipfs://')) {
+      issues.push('Invalid logoURI: must start with http or ipfs://');
     }
 
-    const [name, symbol, decimals] = await Promise.all([
-      client.readContract({
-        address: address as `0x${string}`,
-        abi: erc20Abi,
-        functionName: 'name',
-      }),
-      client.readContract({
-        address: address as `0x${string}`,
-        abi: erc20Abi,
-        functionName: 'symbol',
-      }),
-      client.readContract({
-        address: address as `0x${string}`,
-        abi: erc20Abi,
-        functionName: 'decimals',
-      }),
-    ]);
+    const nameRes = multicallResults[i * 3];
+    const symbolRes = multicallResults[i * 3 + 1];
+    const decimalsRes = multicallResults[i * 3 + 2];
 
-    return {
-      name: name as string,
-      symbol: symbol as string,
-      decimals: Number(decimals),
-    };
-  } catch (error) {
-    console.error(`Error fetching token info for ${address}:`, error);
-    return null;
-  }
-}
-
-async function validateToken(token: Token): Promise<ValidationResult> {
-  const issues: string[] = [];
-  const result: ValidationResult = {
-    address: token.address,
-    symbol: token.symbol,
-    issues,
-  };
-
-  // Validate chain ID
-  if (token.chainId !== bob.id) {
-    issues.push(`Invalid chainId: expected ${bob.id}, got ${token.chainId}`);
-  }
-
-  // Validate address format and checksum
-  const isValidAddress = validateTokenAddress(token.address);
-  if (!isValidAddress) {
-    issues.push(
-      `Invalid or non-checksummed address, should be ${getAddress(
-        token.address,
-      )}`,
-    );
-    return result; // Can't continue validation without valid address
-  }
-
-  // Get on-chain data
-  const onChainData = await getTokenInfo(bob, token.address);
-  if (!onChainData) {
-    issues.push(
-      'Unable to fetch on-chain token data - contract may not exist or not be ERC20',
-    );
-    return result;
-  }
-
-  result.onChainData = onChainData;
-
-  // Compare with tokenlist data
-  if (token.name !== onChainData.name) {
-    issues.push(
-      `Name mismatch: tokenlist="${token.name}", onchain="${onChainData.name}"`,
-    );
-  }
-
-  if (token.symbol !== onChainData.symbol) {
-    issues.push(
-      `Symbol mismatch: tokenlist="${token.symbol}", onchain="${onChainData.symbol}"`,
-    );
-  }
-
-  if (token.decimals !== onChainData.decimals) {
-    issues.push(
-      `Decimals mismatch: tokenlist=${token.decimals}, onchain=${onChainData.decimals}`,
-    );
-  }
-
-  // Validate logoURI format
-  if (
-    !token.logoURI.startsWith('http') &&
-    !token.logoURI.startsWith('ipfs://')
-  ) {
-    issues.push('Invalid logoURI: must start with http or ipfs://');
-  }
-
-  if (token.extensions && token.extensions['bridge'][mainnet.id]) {
-    const bridge = token.extensions['bridge'][mainnet.id];
-    const l1TokenAddress = bridge['tokenAddress'];
-    if (l1TokenAddress) {
-      if (!validateTokenAddress(l1TokenAddress)) {
-        issues.push(
-          `Invalid L1 token address in bridgeInfo: ${l1TokenAddress}, should be ${getAddress(
-            l1TokenAddress,
-          )}`,
-        );
-      }
-      const onChainL1Data = await getTokenInfo(mainnet, l1TokenAddress);
-      if (!onChainL1Data) {
-        issues.push(
-          'Unable to fetch on-chain token data - contract may not exist or not be ERC20',
-        );
-        return result;
-      }
-
-      if (token.name !== onChainL1Data.name) {
-        issues.push(
-          `Name mismatch: tokenlist="${token.name}", onchain="${onChainL1Data.name}"`,
-        );
-      }
-
-      if (token.symbol !== onChainL1Data.symbol) {
-        issues.push(
-          `Symbol mismatch: tokenlist="${token.symbol}", onchain="${onChainL1Data.symbol}"`,
-        );
-      }
-
-      if (token.decimals !== onChainL1Data.decimals) {
-        issues.push(
-          `Decimals mismatch: tokenlist=${token.decimals}, onchain=${onChainL1Data.decimals}`,
-        );
-      }
+    if (nameRes?.status === 'failure' || symbolRes?.status === 'failure' || decimalsRes?.status === 'failure') {
+      issues.push('Unable to fetch on-chain data — contract may not exist or not be ERC20');
+      return { address: token.address, symbol: token.symbol, chainId, issues };
     }
-  }
 
-  return result;
+    const onChainName = nameRes?.result as string;
+    const onChainSymbol = symbolRes?.result as string;
+    const onChainDecimals = Number(decimalsRes?.result);
+
+    if (token.name !== onChainName) {
+      issues.push(`Name mismatch: tokenlist="${token.name}", onchain="${onChainName}"`);
+    }
+    if (token.symbol !== onChainSymbol) {
+      issues.push(`Symbol mismatch: tokenlist="${token.symbol}", onchain="${onChainSymbol}"`);
+    }
+    if (token.decimals !== onChainDecimals) {
+      issues.push(`Decimals mismatch: tokenlist=${token.decimals}, onchain=${onChainDecimals}`);
+    }
+
+    return { address: token.address, symbol: token.symbol, chainId, issues };
+  });
+
+  const nativeResults: ValidationResult[] = nativeTokens.map((token) => {
+    const issues: string[] = [];
+    if (!token.logoURI.startsWith('http') && !token.logoURI.startsWith('ipfs://')) {
+      issues.push('Invalid logoURI: must start with http or ipfs://');
+    }
+    return { address: token.address, symbol: token.symbol, chainId, issues };
+  });
+
+  return [...earlyFails, ...contractResults, ...nativeResults];
 }
 
 async function validateSchema() {
   const ajv = new Ajv({ allErrors: true, verbose: true });
   addFormats(ajv);
-  const schemaResponse = await fetch(SCHEMA_URL);
-  const schema = await schemaResponse.json();
+  const schemaResponse = await fetch(TOKENLIST_SCHEMA_URL);
+  const schema = await schemaResponse.json() as any;
   const validator = ajv.compile(schema);
   const data = JSON.parse(fs.readFileSync(tokenlistPath, 'utf8'));
   const valid = validator(data);
   if (valid) {
-    console.log('Valid List.');
-    return valid;
+    console.log('Schema: valid\n');
+    return;
   }
   if (validator.errors) {
-    throw validator.errors.map((error) => {
-      delete error.data;
-      return error;
-    });
+    throw validator.errors.map((e) => { delete e.data; return e; });
   }
 }
 
 async function main() {
-  console.log('🔍 Verifying BOB tokenlist...\n');
+  console.log('🔍 Verifying all tokens across all chains...\n');
 
-  // Read tokenlist
   if (!fs.existsSync(tokenlistPath)) {
     console.error('❌ tokenlist.json not found');
     process.exit(1);
@@ -252,76 +178,80 @@ async function main() {
   const { tokens }: { tokens: Token[] } = JSON.parse(
     fs.readFileSync(tokenlistPath, 'utf8'),
   );
-  console.log(`📋 Found ${tokens.length} tokens to validate\n`);
+  console.log(`📋 Found ${tokens.length} tokens across all chains\n`);
 
+  // Group by chainId
+  const byChain = new Map<number, Token[]>();
+  for (const token of tokens) {
+    const list = byChain.get(token.chainId) ?? [];
+    list.push(token);
+    byChain.set(token.chainId, list);
+  }
+
+  // Warn about unknown chains
+  for (const chainId of byChain.keys()) {
+    if (!chainById.has(chainId)) {
+      console.warn(`⚠️  Unknown chainId ${chainId} — tokens on this chain will be skipped`);
+    }
+  }
+
+  // Validate all chains in parallel — each chain is one multicall round-trip
+  const chainEntries = [...byChain.entries()].filter(([chainId]) => chainById.has(chainId));
+
+  const settled = await Promise.allSettled(
+    chainEntries.map(([chainId, chainTokens]) =>
+      validateChainTokens(chainId, chainTokens, clients.get(chainId)!),
+    ),
+  );
+
+  // Print results per chain and accumulate totals
+  const allResults: ValidationResult[] = [];
   let totalIssues = 0;
-  const results: ValidationResult[] = [];
 
-  // Validate each token
-  for (let i = 0; i < tokens.length; i++) {
-    const token = tokens[i];
-    console.log(
-      `[${i + 1}/${tokens.length}] Validating ${token.symbol} (${
-        token.address
-      })...`,
-    );
+  for (let i = 0; i < chainEntries.length; i++) {
+    const [chainId, chainTokens] = chainEntries[i];
+    const chain = chainById.get(chainId)!;
+    const outcome = settled[i];
 
-    const result = await validateToken(token);
-    results.push(result);
+    console.log(`\n🔗 Chain: ${chain.name} (${chainId}) — ${chainTokens.length} tokens`);
 
-    if (result.issues.length > 0) {
-      console.log(`  ❌ ${result.issues.length} issue(s):`);
-      result.issues.forEach((issue) => console.log(`     • ${issue}`));
-      totalIssues += result.issues.length;
-    } else {
-      console.log(`  ✅ Valid`);
+    if (outcome.status === 'rejected') {
+      console.log(`  ❌ Chain validation failed: ${outcome.reason instanceof Error ? outcome.reason.message : String(outcome.reason)}`);
+      totalIssues += chainTokens.length;
+      continue;
     }
 
-    // Small delay to avoid rate limiting
-    if (i < tokens.length - 1) {
-      await new Promise((resolve) => setTimeout(resolve, 100));
+    const results = outcome.value;
+    for (const result of results) {
+      allResults.push(result);
+      if (result.issues.length > 0) {
+        console.log(`  ❌ ${result.symbol} (${result.address})`);
+        result.issues.forEach((issue) => console.log(`     • ${issue}`));
+        totalIssues += result.issues.length;
+      } else {
+        console.log(`  ✅ ${result.symbol} (${result.address})`);
+      }
+    }
+
+    // Duplicate address check within the chain
+    const addrs = chainTokens.map((t) => t.address.toLowerCase());
+    const dupes = addrs.filter((a, idx) => addrs.indexOf(a) !== idx);
+    if (dupes.length > 0) {
+      console.log(`  ⚠️  Duplicate addresses: ${[...new Set(dupes)].join(', ')}`);
     }
   }
 
   // Summary
-  console.log('\n📊 Validation Summary:');
-  console.log(`   Total tokens: ${tokens.length}`);
-  console.log(
-    `   Valid tokens: ${results.filter((r) => r.issues.length === 0).length}`,
-  );
-  console.log(
-    `   Tokens with issues: ${
-      results.filter((r) => r.issues.length > 0).length
-    }`,
-  );
-  console.log(`   Total issues: ${totalIssues}`);
+  const tokensWithIssues = allResults.filter((r) => r.issues.length > 0).length;
+  console.log('\n📊 Summary:');
+  console.log(`   Chains checked:      ${chainEntries.length}`);
+  console.log(`   Total tokens:        ${tokens.length}`);
+  console.log(`   Valid tokens:        ${allResults.length - tokensWithIssues}`);
+  console.log(`   Tokens with issues:  ${tokensWithIssues}`);
+  console.log(`   Total issues:        ${totalIssues}`);
 
-  // Check for duplicate addresses
-  const addresses = tokens.map((t) => t.address.toLowerCase());
-  const duplicates = addresses.filter(
-    (addr, index) => addresses.indexOf(addr) !== index,
-  );
-  if (duplicates.length > 0) {
-    console.log(
-      `\n⚠️  Duplicate addresses found: ${[...new Set(duplicates)].join(', ')}`,
-    );
-  }
-
-  // Check for duplicate symbols
-  const symbols = tokens.map((t) => t.symbol);
-  const duplicateSymbols = symbols.filter(
-    (symbol, index) => symbols.indexOf(symbol) !== index,
-  );
-  if (duplicateSymbols.length > 0) {
-    console.log(
-      `\n⚠️  Duplicate symbols found: ${[...new Set(duplicateSymbols)].join(
-        ', ',
-      )}`,
-    );
-  }
-
-  if (totalIssues === 0 && duplicates.length === 0) {
-    console.log('\n🎉 All tokens are valid!');
+  if (totalIssues === 0) {
+    console.log('\n🎉 All tokens valid!');
     process.exit(0);
   } else {
     console.log('\n❌ Validation failed with issues');
