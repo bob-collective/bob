@@ -116,7 +116,6 @@ const config = {
           routeBasePath: "/",
           sidebarPath: require.resolve("./sidebars.js"),
           editUrl: `${GITHUB_LINK}/tree/master/docs/`,
-          docItemComponent: "@theme/ApiItem",
           remarkPlugins: [
             [require("@docusaurus/remark-plugin-npm2yarn"), { sync: true }],
           ],
@@ -131,21 +130,6 @@ const config = {
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
-      api: {
-        authPersistance: 'localStorage',
-        proxy: undefined,
-      },
-      languageTabs: [
-        {
-          language: "curl",
-        },
-        {
-          language: "nodejs",
-        },
-        {
-          language: "rust",
-        },
-      ],
       docs: {
         sidebar: {
           hideable: true,
@@ -295,7 +279,6 @@ const config = {
   themes: [
     "@docusaurus/theme-mermaid",
     "docusaurus-theme-github-codeblock",
-    "docusaurus-theme-openapi-docs",
   ],
   scripts: [
     {
