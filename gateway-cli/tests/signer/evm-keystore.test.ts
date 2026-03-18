@@ -1,5 +1,5 @@
 import { describe, test, expect } from "vitest";
-import { decryptKeystore } from "../../src/signer/evm.js";
+import { decryptKeystore, resolveEvmSigner } from "../../src/signer/evm.js";
 
 describe("decryptKeystore", () => {
   test("throws on missing keystore file", async () => {
@@ -32,5 +32,17 @@ describe("decryptKeystore", () => {
       .rejects.toThrow("invalid keystore password");
 
     unlinkSync(path);
+  });
+});
+
+describe("resolveEvmSigner (keystore)", () => {
+  test("throws when rpcUrl is missing for keystore path", async () => {
+    await expect(
+      resolveEvmSigner({
+        keystorePath: "/some/keystore.json",
+        keystorePassword: "pass",
+        unsigned: false,
+      }),
+    ).rejects.toThrow("EVM_RPC_URL is required");
   });
 });

@@ -20,13 +20,35 @@ vi.mock("../../src/api/client.js", () => ({
   }),
 }));
 
-const mockSign = vi.fn();
+const mockSendTransaction = vi.fn();
 vi.mock("../../src/signer/evm.js", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../src/signer/evm.js")>();
   return {
     ...actual,
-    signEvmWithSpec: vi.fn().mockImplementation(async (_spec: unknown, txPayload: unknown) => {
-      return mockSign(JSON.stringify(txPayload));
+    resolveEvmSigner: vi.fn().mockImplementation(async (opts: {
+      unsigned: boolean;
+      privateKey?: string;
+      envPrivateKey?: string;
+      keystorePath?: string;
+      externalSignerCmd?: string;
+    }) => {
+      if (opts.unsigned) return { unsigned: true };
+      // Check if any signer source is configured
+      if (!opts.privateKey && !opts.envPrivateKey && !opts.keystorePath && !opts.externalSignerCmd) {
+        throw new Error(
+          "no signer configured for EVM.\n" +
+          "  Set EVM_PRIVATE_KEY, EVM_SIGNER, or pass --private-key / --keystore.\n" +
+          "  Use --unsigned to output the unsigned transaction.",
+        );
+      }
+      return {
+        walletClient: {
+          sendTransaction: mockSendTransaction,
+        },
+        publicClient: {
+          getTransactionCount: vi.fn().mockResolvedValue(0),
+        },
+      };
     }),
   };
 });
@@ -99,7 +121,7 @@ describe("handleOfframp (thin alias → handleSwap, offramp: EVM -> BTC)", () =>
     mockGetRoutes.mockResolvedValueOnce(offrampRoutes);
     mockGetQuote.mockResolvedValueOnce(offrampQuote);
     mockCreateOrder.mockResolvedValueOnce(offrampOrder);
-    mockSign.mockResolvedValueOnce("0xsigned");
+    mockSendTransaction.mockResolvedValueOnce("0xsigned");
     mockRegisterTx.mockResolvedValueOnce({ success: true });
     mockGetOrder.mockResolvedValueOnce({
       orderId: "order-offramp",
@@ -113,11 +135,10 @@ describe("handleOfframp (thin alias → handleSwap, offramp: EVM -> BTC)", () =>
 
     const result = await handleOfframp(baseOpts);
 
-    expect(mockSign).toHaveBeenCalledWith(
-      JSON.stringify({
+    expect(mockSendTransaction).toHaveBeenCalledWith(
+      expect.objectContaining({
         to: "0xGateway",
         data: "0xabcdef",
-        value: "0",
         chainId: 8453,
       }),
     );
@@ -148,14 +169,14 @@ describe("handleOfframp (thin alias → handleSwap, offramp: EVM -> BTC)", () =>
     const parsed = JSON.parse(result);
     expect(parsed.orderId).toBe("order-offramp");
     expect(parsed.txInfo).toBeDefined();
-    expect(mockSign).not.toHaveBeenCalled();
+    expect(mockSendTransaction).not.toHaveBeenCalled();
   });
 
   it("returns submitted info with --no-wait", async () => {
     mockGetRoutes.mockResolvedValueOnce(offrampRoutes);
     mockGetQuote.mockResolvedValueOnce(offrampQuote);
     mockCreateOrder.mockResolvedValueOnce(offrampOrder);
-    mockSign.mockResolvedValueOnce("0xsigned");
+    mockSendTransaction.mockResolvedValueOnce("0xsigned");
     mockRegisterTx.mockResolvedValueOnce({ success: true });
 
     const result = await handleOfframp({ ...baseOpts, noWait: true });

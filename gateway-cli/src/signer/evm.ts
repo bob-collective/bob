@@ -2,28 +2,23 @@ import {
   createWalletClient,
   createPublicClient,
   http,
+  type WalletClient,
+  type PublicClient,
   type Hex,
+  type LocalAccount,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { readFileSync, existsSync } from "node:fs";
 import { Wallet } from "ethers";
-import { SignerError, ExternalSigner } from "./btc.js";
+import { ExternalSigner } from "./btc.js";
 
 const errorMessage = (err: unknown): string => err instanceof Error ? err.message : String(err);
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export interface EvmTxRequest {
-  to: string;
-  data: string;
-  value: string;
-  chainId: number;
-}
-
-export type EvmSignerSpec =
-  | { type: "private-key"; key: string }
-  | { type: "external"; command: string }
-  | { type: "unsigned" };
+export type EvmSignerResult =
+  | { walletClient: WalletClient; publicClient: PublicClient }
+  | { unsigned: true };
 
 export interface EvmSignerOptions {
   privateKey?: string;
@@ -32,6 +27,7 @@ export interface EvmSignerOptions {
   keystorePassword?: string;
   externalSignerCmd?: string;
   unsigned: boolean;
+  rpcUrl?: string;
 }
 
 export interface NonceClearOptions {
@@ -61,47 +57,53 @@ export async function decryptKeystore(
   }
 }
 
-// ─── Private key signing + broadcast ─────────────────────────────────────────
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
-export async function signAndBroadcastEvm(
-  tx: EvmTxRequest,
-  privateKey: string,
-  rpcUrl: string,
-): Promise<string> {
-  const keyHex = (privateKey.startsWith("0x") ? privateKey : `0x${privateKey}`) as Hex;
-  const account = privateKeyToAccount(keyHex); // throws if invalid
+function normaliseHexKey(key: string): Hex {
+  return (key.startsWith("0x") ? key : `0x${key}`) as Hex;
+}
+
+function createClients(account: LocalAccount, rpcUrl: string): { walletClient: WalletClient; publicClient: PublicClient } {
   const transport = http(rpcUrl);
+  return {
+    walletClient: createWalletClient({ account, transport }),
+    publicClient: createPublicClient({ transport }),
+  };
+}
 
-  const publicClient = createPublicClient({ transport });
-  const walletClient = createWalletClient({ account, transport });
+/**
+ * Create a custom viem LocalAccount backed by an external signer command.
+ *
+ * The external command receives a JSON payload on stdin containing the
+ * serialized transaction and must return the signed transaction hex on stdout.
+ * This preserves the existing external signer protocol.
+ */
+function createExternalAccount(command: string): LocalAccount {
+  const ext = new ExternalSigner(command);
 
-  const [nonce, gasEstimate, { maxFeePerGas, maxPriorityFeePerGas }] = await Promise.all([
-    publicClient.getTransactionCount({ address: account.address }),
-    publicClient.estimateGas({
-      account: account.address,
-      to: tx.to as Hex,
-      data: tx.data as Hex,
-      value: BigInt(tx.value || "0"),
-    }),
-    publicClient.estimateFeesPerGas(),
-  ]);
+  // We create a minimal custom account. The signTransaction method delegates
+  // to the external command. signMessage and signTypedData are not supported.
+  return {
+    address: "0x0000000000000000000000000000000000000000" as `0x${string}`,
+    type: "local",
+    source: "custom",
+    publicKey: "0x" as Hex,
 
-  // Apply 1.3x gas buffer (required for LayerZero/gateway cross-chain calls)
-  const gasLimit = (gasEstimate * 130n) / 100n;
+    async signMessage() {
+      throw new Error("external signer does not support signMessage");
+    },
 
-  const hash = await walletClient.sendTransaction({
-    chain: null,
-    to: tx.to as Hex,
-    data: tx.data as Hex,
-    value: BigInt(tx.value || "0"),
-    chainId: tx.chainId,
-    nonce,
-    gas: gasLimit,
-    maxFeePerGas,
-    maxPriorityFeePerGas,
-  });
+    async signTransaction(tx) {
+      const result = await ext.sign(JSON.stringify(tx));
+      return result as Hex;
+    },
 
-  return hash;
+    async signTypedData() {
+      throw new Error("external signer does not support signTypedData");
+    },
+
+    // nonceManager is not needed — nonce management is handled externally
+  } satisfies LocalAccount;
 }
 
 // ─── Nonce wait ───────────────────────────────────────────────────────────────
@@ -122,40 +124,48 @@ export async function waitForNonceClear(
 
 // ─── Signer resolver ─────────────────────────────────────────────────────────
 
-export async function resolveEvmSigner(opts: EvmSignerOptions): Promise<EvmSignerSpec> {
-  if (opts.unsigned) return { type: "unsigned" };
+/**
+ * Resolve EVM signer options into a viem WalletClient + PublicClient pair,
+ * or `{ unsigned: true }` when no signing is needed.
+ *
+ * Resolution order:
+ * 1. `--private-key` flag (hex, 0x-prefixed)
+ * 2. `EVM_PRIVATE_KEY` env var
+ * 3. `--keystore <path>` + `--password`
+ * 4. `EVM_SIGNER` external command
+ * 5. `--unsigned`
+ */
+export async function resolveEvmSigner(opts: EvmSignerOptions): Promise<EvmSignerResult> {
+  if (opts.unsigned) return { unsigned: true };
 
   const directKey = opts.privateKey ?? opts.envPrivateKey;
-  if (directKey) return { type: "private-key", key: directKey };
-
-  if (opts.keystorePath) {
-    const password = opts.keystorePassword ?? "";
-    const key = await decryptKeystore(opts.keystorePath, password);
-    return { type: "private-key", key };
+  if (directKey) {
+    if (!opts.rpcUrl) {
+      throw new Error("EVM_RPC_URL is required when using a private key for EVM signing.");
+    }
+    const account = privateKeyToAccount(normaliseHexKey(directKey));
+    return createClients(account, opts.rpcUrl);
   }
 
-  if (opts.externalSignerCmd) return { type: "external", command: opts.externalSignerCmd };
+  if (opts.keystorePath) {
+    if (!opts.rpcUrl) {
+      throw new Error("EVM_RPC_URL is required when using a keystore for EVM signing.");
+    }
+    const password = opts.keystorePassword ?? "";
+    const key = await decryptKeystore(opts.keystorePath, password);
+    const account = privateKeyToAccount(normaliseHexKey(key));
+    return createClients(account, opts.rpcUrl);
+  }
+
+  if (opts.externalSignerCmd) {
+    const rpcUrl = opts.rpcUrl ?? "";
+    const account = createExternalAccount(opts.externalSignerCmd);
+    return createClients(account, rpcUrl);
+  }
 
   throw new Error(
     "no signer configured for EVM.\n" +
     "  Set EVM_PRIVATE_KEY, EVM_SIGNER, or pass --private-key / --keystore.\n" +
     "  Use --unsigned to output the unsigned transaction.",
   );
-}
-
-// ─── Sign via resolved spec ───────────────────────────────────────────────────
-
-export async function signEvmWithSpec(
-  spec: EvmSignerSpec,
-  txPayload: EvmTxRequest,
-  rpcUrl: string,
-): Promise<string> {
-  if (spec.type === "private-key") {
-    return signAndBroadcastEvm(txPayload, spec.key, rpcUrl);
-  }
-  if (spec.type === "external") {
-    const ext = new ExternalSigner(spec.command);
-    return ext.sign(JSON.stringify(txPayload));
-  }
-  throw new Error("signEvmWithSpec called with unsigned spec");
 }

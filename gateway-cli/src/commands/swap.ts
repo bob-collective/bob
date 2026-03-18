@@ -1,6 +1,6 @@
 import { GatewayApiClient } from "../api/client.js";
 import { resolveBtcSigner, signBtcWithResult } from "../signer/btc.js";
-import { resolveEvmSigner, waitForNonceClear, signEvmWithSpec } from "../signer/evm.js";
+import { resolveEvmSigner, waitForNonceClear, type EvmSignerResult } from "../signer/evm.js";
 import { pollOrder, type PollCallbacks } from "../polling/poll-order.js";
 import { formatOutput, formatConfirmation } from "../output/formatter.js";
 import { parseAssetChain } from "../util/asset-chain-parser.js";
@@ -17,7 +17,6 @@ import type {
   QuoteJson,
   ErrorJson,
 } from "../output/json-shapes.js";
-import { createPublicClient, http } from "viem";
 import * as viemChains from "viem/chains";
 import { createInterface } from "node:readline";
 
@@ -103,6 +102,7 @@ export async function handleSwap(opts: SwapOptions): Promise<string> {
         keystorePassword: opts.keystorePassword,
         externalSignerCmd: opts.evmSignerCmd,
         unsigned: opts.unsigned,
+        rpcUrl: opts.evmRpcUrl,
       });
 
   let feeRate = opts.btcFeeRate;
@@ -175,7 +175,7 @@ export async function handleSwap(opts: SwapOptions): Promise<string> {
 
   const order = await client.createOrder(quote);
 
-  const isUnsigned = "unsigned" in signer || ("type" in signer && signer.type === "unsigned");
+  const isUnsigned = "unsigned" in signer;
   if (isUnsigned) {
     const payload = isBtcOnramp
       ? { orderId: order.orderId, psbtBase64: order.psbtBase64 }
@@ -190,12 +190,14 @@ export async function handleSwap(opts: SwapOptions): Promise<string> {
     if (!order.psbtBase64) throw new Error("Gateway did not return a PSBT for this onramp order.");
     txId = await signBtcWithResult(signer as import("../signer/btc.js").BtcSignerResult, order.psbtBase64);
   } else {
-    if (opts.sender && opts.evmRpcUrl) {
-      const rpc = createPublicClient({ transport: http(opts.evmRpcUrl) });
+    const evmSigner = signer as Exclude<EvmSignerResult, { unsigned: true }>;
+    const { walletClient, publicClient } = evmSigner;
+
+    if (opts.sender) {
       const addr = opts.sender as `0x${string}`;
       const cleared = await waitForNonceClear(
-        () => rpc.getTransactionCount({ address: addr, blockTag: "latest" }).then(BigInt),
-        () => rpc.getTransactionCount({ address: addr, blockTag: "pending" }).then(BigInt),
+        () => publicClient.getTransactionCount({ address: addr, blockTag: "latest" }).then(BigInt),
+        () => publicClient.getTransactionCount({ address: addr, blockTag: "pending" }).then(BigInt),
         { maxWaitMs: 120_000, intervalMs: 5000 },
       );
       if (!cleared) warn(`pending transactions on ${opts.sender} did not clear within 2 min — proceeding anyway`);
@@ -205,15 +207,14 @@ export async function handleSwap(opts: SwapOptions): Promise<string> {
     const chainId = getViemChainId(order.txInfo.chain);
     if (chainId === null) throw new Error(`Cannot get chain ID for "${order.txInfo.chain}"`);
 
-    const evmSigner = signer as import("../signer/evm.js").EvmSignerSpec;
-    if (evmSigner.type === "private-key" && !opts.evmRpcUrl) {
-      throw new Error("EVM_RPC_URL is required when using --private-key for EVM signing.");
-    }
-    txId = await signEvmWithSpec(
-      evmSigner,
-      { to: order.txInfo.to, data: order.txInfo.data, value: order.txInfo.value, chainId },
-      opts.evmRpcUrl ?? "",
-    );
+    txId = await walletClient.sendTransaction({
+      account: walletClient.account!,
+      chain: null,
+      to: order.txInfo.to as `0x${string}`,
+      data: order.txInfo.data as `0x${string}`,
+      value: BigInt(order.txInfo.value || "0"),
+      chainId,
+    });
   }
 
   const outcome = await retryWithBackoff(

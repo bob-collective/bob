@@ -79,3 +79,39 @@ describe("resolveBtcSigner", () => {
     ).rejects.toThrow("no signer configured for Bitcoin");
   });
 });
+
+describe("resolveEvmSigner", () => {
+  const validKey = "0x" + "ab".repeat(32);
+  const rpcUrl = "https://rpc.example.com";
+
+  test("returns walletClient + publicClient for private key", async () => {
+    const result = await resolveEvmSigner({
+      privateKey: validKey,
+      unsigned: false,
+      rpcUrl,
+    });
+    expect("walletClient" in result).toBe(true);
+    expect("publicClient" in result).toBe(true);
+  });
+
+  test("returns walletClient + publicClient for external signer", async () => {
+    const result = await resolveEvmSigner({
+      externalSignerCmd: "echo signed",
+      unsigned: false,
+      rpcUrl,
+    });
+    expect("walletClient" in result).toBe(true);
+    expect("publicClient" in result).toBe(true);
+  });
+
+  test("returns unsigned when --unsigned set", async () => {
+    const result = await resolveEvmSigner({ unsigned: true });
+    expect("unsigned" in result).toBe(true);
+  });
+
+  test("throws with helpful message when nothing configured", async () => {
+    await expect(
+      resolveEvmSigner({ unsigned: false })
+    ).rejects.toThrow("no signer configured for EVM");
+  });
+});
