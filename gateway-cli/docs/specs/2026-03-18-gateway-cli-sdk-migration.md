@@ -56,29 +56,41 @@ bob/
 
 The CLI currently uses `@scure/btc-signer@^2.x` while the SDK uses `@^1.x`. The CLI will use the SDK's `ScureBitcoinSigner` for PSBT signing, which uses v1 internally. The CLI's own v2-specific code (WIF decoding in the signer resolution layer) needs to be adapted to use `@scure/base` hex decoding (v1-compatible) or the SDK's signer constructor (`new ScureBitcoinSigner(privateKeyHex)`). The CLI drops its direct `@scure/btc-signer` dependency entirely.
 
+### Execution path: `executeQuote()` vs manual steps
+
+The swap command delegates to `sdk.executeQuote()` for the standard flow — this handles order creation, PSBT signing (hex format, handled internally by SDK), EVM tx submission, and tx registration in one call. The CLI does not need to handle PSBT encoding formats directly.
+
+For the `--unsigned` flow, the CLI calls `sdk.createOrder()` separately and outputs the raw PSBT (base64) or EVM tx info for external signing, then the user calls `gateway-cli register` to complete. This path does not go through `executeQuote()`.
+
 ### SDK `RouteInfo` lacks token metadata
 
 The SDK's generated `RouteInfo` type has flat `srcToken`/`dstToken` as bare address strings — no `symbol` or `decimals`. The CLI needs this metadata for the `tokens` command, `balance` command, and amount parsing.
 
 Solution: The CLI maintains a thin `enrichRoute()` adapter that takes SDK `RouteInfo` and resolves token metadata from the `@gobob/tokenlist` package (already in the monorepo at `bob/tokenlist/`). This is a lookup by chain + address → symbol + decimals. The tokenlist is a local dependency (`"@gobob/tokenlist": "file:../tokenlist"`).
 
+Note: The tokenlist uses `chainId: number` while SDK `RouteInfo` uses chain name strings. The CLI maintains a chain name → chainId mapping (e.g., `"bob" → 60808`, `"ethereum" → 1`) for the tokenlist lookup. Also, the tokenlist package exports raw `.ts` files (`"main": "index.ts"`), so the CLI imports it directly and the build step compiles it together.
+
 ### SDK quote type adaptation
 
 The SDK returns union types (`GatewayQuote = GatewayQuoteOneOf | GatewayQuoteOneOf1 | GatewayQuoteOneOf2`) wrapping `onramp`, `offramp`, and `layerZero` variants. The CLI's existing JSON output uses flat shapes (`QuoteJson`, `SwapSuccessJson`).
 
-The CLI command handlers include a `flattenQuote()` adapter that extracts the relevant variant and maps it to the existing flat output shape. The public JSON contract does not change — this is an internal mapping layer. Field mapping:
+The CLI command handlers include a `flattenQuote()` adapter that detects the variant and maps it to the existing flat output shape. The public JSON contract does not change — this is an internal mapping layer.
 
-| CLI output field | SDK source (onramp example) |
-|---|---|
-| `inputAmount` | `quote.onramp.inputAmount.amount` |
-| `outputAmount` | `quote.onramp.outputAmount.amount` |
-| `fees` | `quote.onramp.fees.amount` |
-| `slippage` | `quote.onramp.slippage` |
-| `estimatedTime` | `quote.onramp.estimatedTimeInSecs` |
+**Variant detection:** Check which key is present (`onramp`, `offramp`, or `layerZero`) on the union type.
+
+**Field mapping by variant:**
+
+| CLI output field | Onramp | Offramp | LayerZero |
+|---|---|---|---|
+| `inputAmount` | `.onramp.inputAmount.amount` | `.offramp.inputAmount.amount` | `.layerZero.inputAmount.amount` |
+| `outputAmount` | `.onramp.outputAmount.amount` | `.offramp.outputAmount.amount` | `.layerZero.outputAmount.amount` |
+| `fees` | `.onramp.fees.amount` | `.offramp.fees.amount` | `.layerZero.fees.amount` |
+| `slippage` | `.onramp.slippage` (string) | `.offramp.slippage` (number, convert to string) | N/A (omit from output) |
+| `estimatedTime` | `.onramp.estimatedTimeInSecs` | `.offramp.estimatedTimeInSecs` | `.layerZero.estimatedTimeInSecs` |
 
 ### SDK `getQuote()` parameter naming
 
-The SDK uses `fromChain`/`toChain`/`fromToken`/`toToken` while the CLI's current params use `srcChain`/`dstChain`/`srcToken`/`dstToken`. The CLI's `asset-chain-parser.ts` maps its `--src`/`--dst` flags to SDK parameter names.
+The SDK's `GatewayApiClient.getQuote()` accepts `GetQuoteParams` with `fromChain`/`toChain`/`fromToken`/`toToken`. Internally the SDK maps these to `srcChain`/`dstChain` for the REST call. The CLI's `asset-chain-parser.ts` must produce `fromChain`/`toChain` names (not `srcChain`/`dstChain`) when calling the SDK.
 
 ## What Changes in the CLI
 
@@ -90,9 +102,16 @@ The SDK uses `fromChain`/`toChain`/`fromToken`/`toToken` while the CLI's current
 | `src/api/types.ts` — hand-written types | SDK's generated OpenAPI types + `enrichRoute()` adapter |
 | `src/signer/btc.ts` — PSBT signing logic | SDK's `ScureBitcoinSigner` |
 | `src/signer/evm.ts` — tx build/broadcast | SDK's viem `WalletClient` integration |
-| `src/util/mempool.ts` — fee estimation | SDK's Esplora fee estimation |
-| `src/polling/poll-order.ts` — order polling | `sdk.getOrder()` in a loop |
+| `src/util/mempool.ts` — fee estimation portion | SDK's Esplora fee estimation |
+| `src/polling/poll-order.ts` — order polling | Polling utility using `sdk.getOrder()` (see below) |
 | Direct `@scure/btc-signer` dependency | Used transitively via SDK |
+| `src/util/mempool.ts` — fee estimation portion | SDK's Esplora fee estimation |
+
+Note on polling: The existing `poll-order.ts` (64 lines) has structured timeout handling and terminal status detection. This logic is preserved but rewritten to call `sdk.getOrder()` instead of the custom API client. It remains a utility in `src/util/poll-order.ts`, not inlined.
+
+Note on mempool: `mempool.ts` serves two purposes: fee estimation (replaced by SDK) and `findPendingMempoolTx()` for poll-timeout fallback (kept — used when BTC delivery is unconfirmed at poll timeout). The fallback portion is retained in the swap command.
+
+Note on nonce management: `waitForNonceClear()` from the current EVM signer is kept in the swap command flow. The SDK's `executeQuote()` does not handle nonce management, and back-to-back swaps need this.
 
 ### Kept (CLI's unique value)
 
@@ -125,14 +144,22 @@ gateway-cli balance <address> [--chain <chain>] [--json]
 
 Tokens are determined from `sdk.getRoutes()` (enriched via tokenlist for metadata). Only non-zero balances are returned — zero-balance tokens and empty chains are omitted.
 
-**EVM balance fetching:** For each chain, the CLI creates a viem `publicClient` using the configured RPC URL. It uses `publicClient.getBalance()` for the native gas token and `publicClient.multicall()` with `erc20Abi.balanceOf` for gateway tokens (batched in a single RPC call per chain). RPC URLs come from `EVM_RPC_URL` env var (single default) or per-chain overrides in config.toml:
+**BTC balance fetching:** Uses the SDK's Esplora client (`getAddressUtxos()`) to compute confirmed/unconfirmed balances, and `sdk.getMaxSpendable()` for max spendable. The SDK's UTXO response includes confirmation status, so confirmed = sum of confirmed UTXOs, unconfirmed = sum of unconfirmed UTXOs.
 
-```toml
-[rpc]
-bob = "https://rpc.gobob.xyz"
-ethereum = "https://eth.llamarpc.com"
-base = "https://mainnet.base.org"
-```
+**EVM balance fetching:** For each chain, the CLI creates a viem `publicClient` using the configured RPC URL. It uses `publicClient.getBalance()` for the native gas token and `publicClient.multicall()` with `erc20Abi.balanceOf` for gateway tokens (batched in a single RPC call per chain).
+
+**RPC URL resolution:** The CLI supports per-chain RPC URLs via env vars and config.toml. Resolution order (first match wins):
+
+1. Per-chain env var: `EVM_RPC_URL_BOB`, `EVM_RPC_URL_ETHEREUM`, `EVM_RPC_URL_BASE`, etc. (chain name uppercased)
+2. Per-chain config.toml:
+   ```toml
+   [rpc]
+   bob = "https://rpc.gobob.xyz"
+   ethereum = "https://eth.llamarpc.com"
+   base = "https://mainnet.base.org"
+   ```
+3. Fallback: `EVM_RPC_URL` env var (single default for all chains)
+4. Built-in public RPCs as last resort
 
 **Route caching:**
 - `getRoutes()` response cached to `~/.gateway-cli/cache/routes.json` with ISO 8601 timestamp
@@ -233,8 +260,8 @@ Note: This changes existing retry behavior. The current CLI uses flat 10s backof
 
 Mirrors `sdk-npm.yml` with CLI-specific tag filtering:
 - Triggered on tag push matching `cli-v*` (e.g., `cli-v0.2.0`, `cli-v0.3.0-rc0`)
-- SDK workflow already triggers on all tags — it should be updated to filter on `sdk-v*` or similar, or the CLI workflow must ensure it only builds the CLI package
-- Before publish: replaces `file:../sdk` with `"@gobob/bob-sdk": "^5.x"` and `file:../tokenlist` with `"@gobob/tokenlist": "^1.x"` in package.json
+- **Prerequisite:** Update `sdk-npm.yml` to filter on `sdk-v*` tags (currently triggers on `*`, which would cause a spurious SDK publish on CLI tags)
+- Before publish: replaces `file:../sdk` with `"@gobob/bob-sdk": "^5.0.0"` and `file:../tokenlist` with `"@gobob/tokenlist": "^1.0.0"` in package.json
 - Builds TypeScript
 - Publishes with `--access public`
 - Tags containing "rc" publish to `rc` dist-tag
