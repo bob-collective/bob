@@ -33,7 +33,7 @@ vi.mock("../../src/signer/btc.js", async (importOriginal) => {
     ExternalSigner: vi.fn().mockImplementation(function () {
       return { sign: mockSign };
     }),
-    signBtcWithSpec: vi.fn().mockImplementation(async (_spec: unknown, psbtBase64: string) => {
+    signBtcWithResult: vi.fn().mockImplementation(async (_result: unknown, psbtBase64: string) => {
       return mockSign(psbtBase64);
     }),
   };

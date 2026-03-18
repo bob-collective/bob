@@ -1,49 +1,76 @@
-// src/signer/layered.test.ts
+// tests/signer/layered.test.ts
 import { describe, test, expect, vi } from "vitest";
 import { resolveBtcSigner } from "../../src/signer/btc.js";
 import { resolveEvmSigner } from "../../src/signer/evm.js";
 
+// Mock the SDK's ScureBitcoinSigner
+vi.mock("@gobob/bob-sdk", () => {
+  class MockScureBitcoinSigner {
+    private keyHex: string;
+    constructor(privateKeyHex: string) {
+      this.keyHex = privateKeyHex;
+    }
+    async signAllInputs(psbtHex: string): Promise<string> {
+      return `signed:${psbtHex}`;
+    }
+    async getP2WPKHAddress(): Promise<string> {
+      return `bc1q_mock_${this.keyHex.slice(0, 8)}`;
+    }
+  }
+  return { ScureBitcoinSigner: MockScureBitcoinSigner };
+});
+
 describe("resolveBtcSigner", () => {
+  const hexKey = "a".repeat(64);
+
   test("--private-key flag takes priority over env var", async () => {
-    const signer = await resolveBtcSigner({
-      privateKey: "wif-from-flag",
-      envPrivateKey: "wif-from-env",
+    const result = await resolveBtcSigner({
+      privateKey: hexKey,
+      envPrivateKey: "b".repeat(64),
       externalSignerCmd: undefined,
       unsigned: false,
     });
-    expect(signer.type).toBe("private-key");
-    expect((signer as any).key).toBe("wif-from-flag");
+    expect("signer" in result).toBe(true);
+    if ("signer" in result) {
+      expect(result.address).toContain("bc1q_mock_aaaaaaaa");
+    }
   });
 
   test("env var used when flag not set", async () => {
-    const signer = await resolveBtcSigner({
+    const result = await resolveBtcSigner({
       privateKey: undefined,
-      envPrivateKey: "wif-from-env",
+      envPrivateKey: "b".repeat(64),
       externalSignerCmd: undefined,
       unsigned: false,
     });
-    expect(signer.type).toBe("private-key");
-    expect((signer as any).key).toBe("wif-from-env");
+    expect("signer" in result).toBe(true);
+    if ("signer" in result) {
+      expect(result.address).toContain("bc1q_mock_bbbbbbbb");
+    }
   });
 
   test("external signer used when no key configured", async () => {
-    const signer = await resolveBtcSigner({
+    const result = await resolveBtcSigner({
       privateKey: undefined,
       envPrivateKey: undefined,
       externalSignerCmd: "/path/to/signer",
       unsigned: false,
     });
-    expect(signer.type).toBe("external");
+    expect("signer" in result).toBe(true);
+    if ("signer" in result) {
+      expect(result.signer.signAllInputs).toBeDefined();
+      expect(result.address).toBeUndefined();
+    }
   });
 
   test("unsigned mode returned when --unsigned set", async () => {
-    const signer = await resolveBtcSigner({
+    const result = await resolveBtcSigner({
       privateKey: undefined,
       envPrivateKey: undefined,
       externalSignerCmd: undefined,
       unsigned: true,
     });
-    expect(signer.type).toBe("unsigned");
+    expect("unsigned" in result).toBe(true);
   });
 
   test("throws with helpful message when nothing configured", async () => {

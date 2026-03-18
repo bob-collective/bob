@@ -1,5 +1,5 @@
 import { GatewayApiClient } from "../api/client.js";
-import { resolveBtcSigner, signBtcWithSpec } from "../signer/btc.js";
+import { resolveBtcSigner, signBtcWithResult } from "../signer/btc.js";
 import { resolveEvmSigner, waitForNonceClear, signEvmWithSpec } from "../signer/evm.js";
 import { pollOrder, type PollCallbacks } from "../polling/poll-order.js";
 import { formatOutput, formatConfirmation } from "../output/formatter.js";
@@ -175,7 +175,8 @@ export async function handleSwap(opts: SwapOptions): Promise<string> {
 
   const order = await client.createOrder(quote);
 
-  if (signer.type === "unsigned") {
+  const isUnsigned = "unsigned" in signer || ("type" in signer && signer.type === "unsigned");
+  if (isUnsigned) {
     const payload = isBtcOnramp
       ? { orderId: order.orderId, psbtBase64: order.psbtBase64 }
       : { orderId: order.orderId, txInfo: order.txInfo };
@@ -187,7 +188,7 @@ export async function handleSwap(opts: SwapOptions): Promise<string> {
 
   if (isBtcOnramp) {
     if (!order.psbtBase64) throw new Error("Gateway did not return a PSBT for this onramp order.");
-    txId = await signBtcWithSpec(signer, order.psbtBase64);
+    txId = await signBtcWithResult(signer as import("../signer/btc.js").BtcSignerResult, order.psbtBase64);
   } else {
     if (opts.sender && opts.evmRpcUrl) {
       const rpc = createPublicClient({ transport: http(opts.evmRpcUrl) });
@@ -204,11 +205,12 @@ export async function handleSwap(opts: SwapOptions): Promise<string> {
     const chainId = getViemChainId(order.txInfo.chain);
     if (chainId === null) throw new Error(`Cannot get chain ID for "${order.txInfo.chain}"`);
 
-    if (signer.type === "private-key" && !opts.evmRpcUrl) {
+    const evmSigner = signer as import("../signer/evm.js").EvmSignerSpec;
+    if (evmSigner.type === "private-key" && !opts.evmRpcUrl) {
       throw new Error("EVM_RPC_URL is required when using --private-key for EVM signing.");
     }
     txId = await signEvmWithSpec(
-      signer,
+      evmSigner,
       { to: order.txInfo.to, data: order.txInfo.data, value: order.txInfo.value, chainId },
       opts.evmRpcUrl ?? "",
     );

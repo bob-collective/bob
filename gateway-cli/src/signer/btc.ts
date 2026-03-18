@@ -1,5 +1,7 @@
-import * as btc from "@scure/btc-signer";
+import { ScureBitcoinSigner } from "@gobob/bob-sdk";
+import type { BitcoinSigner } from "@gobob/bob-sdk";
 import { spawn } from "node:child_process";
+import { createHash } from "node:crypto";
 
 // ─── Error types ─────────────────────────────────────────────────────────────
 
@@ -16,10 +18,11 @@ export class SignerError extends Error {
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export type BtcSignerSpec =
-  | { type: "private-key"; key: string }
-  | { type: "external"; command: string }
-  | { type: "unsigned" };
+export type { BitcoinSigner };
+
+export type BtcSignerResult =
+  | { signer: BitcoinSigner; address?: string }
+  | { unsigned: true };
 
 export interface BtcSignerOptions {
   privateKey?: string;
@@ -28,40 +31,87 @@ export interface BtcSignerOptions {
   unsigned: boolean;
 }
 
-// ─── Private key signing ─────────────────────────────────────────────────────
+// ─── WIF decoding ────────────────────────────────────────────────────────────
 
-export async function signPsbtWithPrivateKey(
-  privateKey: string,
-  psbtBase64: string,
-): Promise<string> {
-  let keyBytes: Uint8Array;
-  try {
-    // Try WIF first; fall back to hex
-    try {
-      keyBytes = btc.WIF().decode(privateKey);
-    } catch {
-      const hex = privateKey.startsWith("0x") ? privateKey.slice(2) : privateKey;
-      const buf = Buffer.from(hex, "hex");
-      if (buf.length !== 32) {
-        throw new Error(`hex private key must be 32 bytes (64 hex chars), got ${buf.length}`);
-      }
-      keyBytes = buf;
-    }
-  } catch (err) {
-    throw new Error(`invalid private key: ${err instanceof Error ? err.message : err}`);
+const BASE58_ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+
+function base58Decode(str: string): Buffer {
+  let num = 0n;
+  for (const c of str) {
+    const idx = BASE58_ALPHABET.indexOf(c);
+    if (idx < 0) throw new Error(`invalid base58 character: '${c}'`);
+    num = num * 58n + BigInt(idx);
+  }
+  // Convert bigint to bytes
+  const hex = num.toString(16).padStart(2, "0");
+  const rawBytes = Buffer.from(hex.length % 2 ? "0" + hex : hex, "hex");
+
+  // Count leading '1's → leading zero bytes
+  let leadingZeros = 0;
+  for (const c of str) {
+    if (c === "1") leadingZeros++;
+    else break;
   }
 
-  let psbtBytes: Uint8Array;
-  try {
-    psbtBytes = Buffer.from(psbtBase64, "base64");
-  } catch (err) {
-    throw new Error(`invalid PSBT base64: ${err instanceof Error ? err.message : err}`);
+  return Buffer.concat([Buffer.alloc(leadingZeros), rawBytes]);
+}
+
+function base58CheckDecode(str: string): { version: number; payload: Buffer } {
+  const raw = base58Decode(str);
+  if (raw.length < 5) throw new Error("base58check: too short");
+
+  const payload = raw.slice(0, raw.length - 4);
+  const checksum = raw.slice(raw.length - 4);
+
+  const hash = createHash("sha256").update(payload).digest();
+  const hash2 = createHash("sha256").update(hash).digest();
+
+  if (!hash2.subarray(0, 4).equals(checksum)) {
+    throw new Error("base58check: invalid checksum");
   }
 
-  const tx = btc.Transaction.fromPSBT(psbtBytes);
-  tx.sign(keyBytes);
-  tx.finalize();
-  return Buffer.from(tx.extract()).toString("hex");
+  return { version: payload[0], payload: payload.slice(1) };
+}
+
+/**
+ * Decode a WIF-encoded private key to a hex string.
+ * WIF format: 1 byte version + 32 bytes key [+ 1 byte compression flag] + 4 bytes checksum
+ */
+export function decodeWif(wif: string): string {
+  const { payload } = base58CheckDecode(wif);
+  // payload is 32 bytes (uncompressed) or 33 bytes (compressed, last byte = 0x01)
+  if (payload.length === 33 && payload[32] === 0x01) {
+    return payload.subarray(0, 32).toString("hex");
+  }
+  if (payload.length === 32) {
+    return payload.toString("hex");
+  }
+  throw new Error(`invalid WIF key length: expected 32 or 33 bytes, got ${payload.length}`);
+}
+
+// ─── Private key helper ──────────────────────────────────────────────────────
+
+/**
+ * Normalise a user-supplied private key (hex or WIF) into a hex string
+ * suitable for `ScureBitcoinSigner`.
+ */
+function normalisePrivateKey(key: string): string {
+  // Try hex first (with or without 0x prefix)
+  const stripped = key.startsWith("0x") ? key.slice(2) : key;
+  if (/^[0-9a-fA-F]{64}$/.test(stripped)) {
+    return stripped;
+  }
+
+  // Try WIF
+  try {
+    return decodeWif(key);
+  } catch {
+    // fall through
+  }
+
+  throw new Error(
+    "invalid private key: must be 32-byte hex (64 chars) or WIF-encoded",
+  );
 }
 
 // ─── External signer ─────────────────────────────────────────────────────────
@@ -99,13 +149,34 @@ export class ExternalSigner {
   }
 }
 
+/**
+ * Wrap an external command as a `BitcoinSigner`.
+ * The command receives PSBT hex on stdin and must return signed tx hex on stdout.
+ */
+function externalBitcoinSigner(command: string): BitcoinSigner {
+  const ext = new ExternalSigner(command);
+  return {
+    signAllInputs: (psbtHex: string) => ext.sign(psbtHex),
+  };
+}
+
 // ─── Signer resolver ─────────────────────────────────────────────────────────
 
-export async function resolveBtcSigner(opts: BtcSignerOptions): Promise<BtcSignerSpec> {
-  if (opts.unsigned) return { type: "unsigned" };
+export async function resolveBtcSigner(opts: BtcSignerOptions): Promise<BtcSignerResult> {
+  if (opts.unsigned) return { unsigned: true };
+
   const key = opts.privateKey ?? opts.envPrivateKey;
-  if (key) return { type: "private-key", key };
-  if (opts.externalSignerCmd) return { type: "external", command: opts.externalSignerCmd };
+  if (key) {
+    const hexKey = normalisePrivateKey(key);
+    const signer = new ScureBitcoinSigner(hexKey);
+    const address = await signer.getP2WPKHAddress();
+    return { signer, address };
+  }
+
+  if (opts.externalSignerCmd) {
+    return { signer: externalBitcoinSigner(opts.externalSignerCmd) };
+  }
+
   throw new Error(
     "no signer configured for Bitcoin.\n" +
     "  Set BITCOIN_PRIVATE_KEY, BITCOIN_SIGNER, or pass --private-key.\n" +
@@ -113,18 +184,25 @@ export async function resolveBtcSigner(opts: BtcSignerOptions): Promise<BtcSigne
   );
 }
 
-// ─── Sign via resolved spec ───────────────────────────────────────────────────
+// ─── Sign via resolved result ────────────────────────────────────────────────
 
-export async function signBtcWithSpec(
-  spec: BtcSignerSpec,
+/**
+ * Sign a PSBT using the resolved signer result.
+ * Accepts PSBT as base64 (legacy) or hex. Internally converts to hex for the SDK.
+ */
+export async function signBtcWithResult(
+  result: BtcSignerResult,
   psbtBase64: string,
 ): Promise<string> {
-  if (spec.type === "private-key") {
-    return signPsbtWithPrivateKey(spec.key, psbtBase64);
+  if ("unsigned" in result) {
+    throw new Error("signBtcWithResult called with unsigned result");
   }
-  if (spec.type === "external") {
-    const ext = new ExternalSigner(spec.command);
-    return ext.sign(psbtBase64);
+
+  if (!result.signer.signAllInputs) {
+    throw new Error("signer does not implement signAllInputs");
   }
-  throw new Error("signBtcWithSpec called with unsigned spec");
+
+  // Convert base64 PSBT to hex for the SDK's signAllInputs interface
+  const psbtHex = Buffer.from(psbtBase64, "base64").toString("hex");
+  return result.signer.signAllInputs(psbtHex);
 }
