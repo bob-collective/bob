@@ -1,9 +1,9 @@
 // src/util/asset-chain-parser.test.ts
 import { describe, test, expect } from "vitest";
 import { parseAssetChain } from "../../src/util/asset-chain-parser.js";
-import type { RouteInfo } from "../../src/api/types.js";
+import type { EnrichedRoute } from "../../src/adapter/route-enricher.js";
 
-const mockRoutes: RouteInfo[] = [
+const mockRoutes: EnrichedRoute[] = [
   {
     srcChain: "bitcoin", dstChain: "ethereum",
     srcToken: { address: "0x0000000000000000000000000000000000000000", symbol: "BTC", decimals: 8, chain: "bitcoin" },

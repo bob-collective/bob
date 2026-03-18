@@ -1,7 +1,8 @@
 import { isAddress } from "viem";
 import { resolveChain } from "./chain-ids.js";
-import { BTC_ZERO_ADDRESS } from "../api/types.js";
-import type { RouteInfo, TokenInfo } from "../api/types.js";
+import type { EnrichedRoute, EnrichedToken } from "../adapter/route-enricher.js";
+
+const BTC_ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
 export interface ResolvedAsset {
   chain: string;
@@ -10,7 +11,7 @@ export interface ResolvedAsset {
   decimals: number;
 }
 
-export function parseAssetChain(raw: string, routes: RouteInfo[]): ResolvedAsset {
+export function parseAssetChain(raw: string, routes: EnrichedRoute[]): ResolvedAsset {
   const [assetPart, chainPart] = splitAssetChain(raw);
 
   // BTC is always Bitcoin — the only bare-symbol shortcut
@@ -57,9 +58,9 @@ function splitAssetChain(raw: string): [string, string | undefined] {
   return [raw.slice(0, colonIdx), raw.slice(colonIdx + 1)];
 }
 
-function allTokens(routes: RouteInfo[]): TokenInfo[] {
+function allTokens(routes: EnrichedRoute[]): EnrichedToken[] {
   const seen = new Set<string>();
-  const result: TokenInfo[] = [];
+  const result: EnrichedToken[] = [];
   for (const r of routes) {
     for (const t of [r.srcToken, r.dstToken]) {
       const key = `${t.chain}:${t.address}`;
@@ -69,23 +70,23 @@ function allTokens(routes: RouteInfo[]): TokenInfo[] {
   return result;
 }
 
-function getTokensOnChain(chain: string, routes: RouteInfo[]): TokenInfo[] {
+function getTokensOnChain(chain: string, routes: EnrichedRoute[]): EnrichedToken[] {
   return allTokens(routes).filter((t) => t.chain === chain);
 }
 
-function findBySymbol(symbol: string, chain: string, routes: RouteInfo[]): TokenInfo | undefined {
+function findBySymbol(symbol: string, chain: string, routes: EnrichedRoute[]): EnrichedToken | undefined {
   return getTokensOnChain(chain, routes).find(
     (t) => t.symbol.toUpperCase() === symbol.toUpperCase(),
   );
 }
 
-function findByAddress(address: string, chain: string, routes: RouteInfo[]): TokenInfo | undefined {
+function findByAddress(address: string, chain: string, routes: EnrichedRoute[]): EnrichedToken | undefined {
   return getTokensOnChain(chain, routes).find(
     (t) => t.address.toLowerCase() === address.toLowerCase(),
   );
 }
 
-function findChainsForSymbol(symbol: string, routes: RouteInfo[]): string[] {
+function findChainsForSymbol(symbol: string, routes: EnrichedRoute[]): string[] {
   return [...new Set(
     allTokens(routes)
       .filter((t) => t.symbol.toUpperCase() === symbol.toUpperCase())

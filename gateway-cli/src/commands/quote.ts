@@ -1,13 +1,16 @@
-import { GatewayApiClient } from "../api/client.js";
+import { createSdkClient } from "../adapter/sdk-client.js";
+import { flattenQuote } from "../adapter/quote-flattener.js";
+import { enrichRoutes } from "../adapter/route-enricher.js";
+import { getOrFetchRoutes } from "../util/route-cache.js";
 import { parseAssetChain } from "../util/asset-chain-parser.js";
 import { parseAmount } from "../util/amount-parser.js";
 import { fetchFeeRate } from "../util/mempool.js";
-import { usdToWei } from "../util/price-oracle.js";
-import { formatOutput, formatConfirmation } from "../output/formatter.js";
+import { formatConfirmation } from "../output/formatter.js";
+import { loadConfig } from "../config/index.js";
 import type { QuoteJson } from "../output/json-shapes.js";
+import type { GetQuoteParams } from "@gobob/bob-sdk";
 
 export interface QuoteOptions {
-  apiUrl: string;
   src: string;
   dst: string;
   amount: string;
@@ -20,11 +23,15 @@ export interface QuoteOptions {
 }
 
 export async function handleQuote(opts: QuoteOptions): Promise<string> {
-  const client = new GatewayApiClient(opts.apiUrl);
-  const routes = await client.getRoutes();
+  const config = loadConfig();
+  const sdk = createSdkClient(config.apiUrl);
 
-  const srcAsset = parseAssetChain(opts.src, routes);
-  const dstAsset = parseAssetChain(opts.dst, routes);
+  // Get enriched routes for token resolution
+  const routes = await getOrFetchRoutes(() => sdk.getRoutes(), config.cache.ttl);
+  const enriched = enrichRoutes(routes);
+
+  const srcAsset = parseAssetChain(opts.src, enriched);
+  const dstAsset = parseAssetChain(opts.dst, enriched);
   const isBtcSrc = srcAsset.chain === "bitcoin";
 
   const parsed = await parseAmount(opts.amount, srcAsset.symbol, srcAsset.decimals);
@@ -32,29 +39,29 @@ export async function handleQuote(opts: QuoteOptions): Promise<string> {
   let feeRate = opts.btcFeeRate;
   if (isBtcSrc && !feeRate) feeRate = await fetchFeeRate();
 
-  const gasRefillWei = opts.gasRefillUsd ? await usdToWei(opts.gasRefillUsd) : undefined;
-
-  const quote = await client.getQuote({
-    srcChain: srcAsset.chain,
-    dstChain: dstAsset.chain,
-    srcToken: srcAsset.address,
-    dstToken: dstAsset.address,
+  // Build SDK params
+  const quoteParams: GetQuoteParams = {
+    fromChain: srcAsset.chain,
+    toChain: dstAsset.chain,
+    fromToken: srcAsset.address,
+    toToken: dstAsset.address,
+    toUserAddress: opts.recipient,
+    fromUserAddress: opts.sender,
     amount: parsed.atomicUnits,
-    recipient: opts.recipient,
-    sender: opts.sender,
-    slippage: opts.slippageBps,
-    gasRefill: gasRefillWei,
-  });
+    maxSlippage: opts.slippageBps,
+  };
+
+  const quote = await sdk.getQuote(quoteParams);
+  const flat = flattenQuote(quote);
 
   const shape: QuoteJson = {
     srcAmount: parsed.atomicUnits,
     srcAsset: srcAsset.symbol,
-    dstAmount: quote.outputAmount,
+    dstAmount: flat.outputAmount,
     dstAsset: dstAsset.symbol,
     dstChain: dstAsset.chain,
     slippageBps: opts.slippageBps,
     feeRateSatPerVbyte: feeRate,
-    gasRefillEth: gasRefillWei,
   };
 
   if (opts.json) return JSON.stringify(shape, null, 2);
@@ -63,7 +70,7 @@ export async function handleQuote(opts: QuoteOptions): Promise<string> {
     srcAmount: parsed.atomicUnits,
     srcAsset: srcAsset.symbol,
     srcDisplay: parsed.display,
-    dstAmount: quote.outputAmount,
+    dstAmount: flat.outputAmount,
     dstAsset: dstAsset.symbol,
     dstChain: dstAsset.chain,
     feeRateSatPerVbyte: feeRate,
