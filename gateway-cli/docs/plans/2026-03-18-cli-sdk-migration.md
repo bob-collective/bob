@@ -306,7 +306,6 @@ pnpm test -- tests/adapter/route-enricher.test.ts
 ```typescript
 // src/adapter/route-enricher.ts
 import type { RouteInfo } from '@gobob/bob-sdk';
-import { SUPPORTED_CHAIN_MAP } from '@gobob/tokenlist';
 import tokenlistJson from '@gobob/tokenlist/tokenlist.json';
 
 export interface EnrichedToken {
@@ -323,24 +322,26 @@ export interface EnrichedRoute {
   dstToken: EnrichedToken;
 }
 
-// SDK uses short chain slugs ("bsc", "bob") but tokenlist uses kebab-cased
-// viem chain names ("bnb-smart-chain", "bob"). Map SDK names → tokenlist keys.
-const SDK_TO_TOKENLIST_CHAIN: Record<string, string> = {
-  bob: 'bob',
-  ethereum: 'ethereum',
-  base: 'base',
-  arbitrum: 'arbitrum',
-  optimism: 'optimism',
-  bsc: 'bnb-smart-chain',
-  polygon: 'polygon',
-  avalanche: 'avalanche',
+// Hardcoded SDK chain name → chainId mapping.
+// Avoids importing SUPPORTED_CHAIN_MAP from tokenlist (which pulls in lodash
+// as a transitive devDependency that wouldn't be installed).
+const SDK_CHAIN_TO_ID: Record<string, number> = {
+  bob: 60808,
+  ethereum: 1,
+  base: 8453,
+  arbitrum: 42161,
+  optimism: 10,
+  bsc: 56,
+  polygon: 137,
+  avalanche: 43114,
+  sei: 1329,
+  soneium: 1868,
+  berachain: 80094,
+  sonic: 146,
+  swellchain: 1923,
+  unichain: 130,
+  telos: 40,
 };
-
-// Build chainName → chainId lookup from tokenlist's SUPPORTED_CHAIN_MAP
-const chainNameToId: Record<string, number> = {};
-for (const [name, chain] of Object.entries(SUPPORTED_CHAIN_MAP)) {
-  chainNameToId[name] = (chain as { id: number }).id;
-}
 
 // tokenlist.json is Uniswap-format: { tokens: [...] }
 const tokens = tokenlistJson.tokens as Array<{
@@ -354,8 +355,7 @@ const BTC_TOKEN: EnrichedToken = {
 function resolveToken(address: string, sdkChainName: string): EnrichedToken {
   if (sdkChainName === 'bitcoin' || address === 'BTC') return BTC_TOKEN;
 
-  const tokenlistChainName = SDK_TO_TOKENLIST_CHAIN[sdkChainName] ?? sdkChainName;
-  const chainId = chainNameToId[tokenlistChainName];
+  const chainId = SDK_CHAIN_TO_ID[sdkChainName];
   if (chainId) {
     const token = tokens.find(
       t => t.chainId === chainId && t.address.toLowerCase() === address.toLowerCase()
@@ -1020,44 +1020,56 @@ Remove the fee rate function (SDK handles this). Keep `findPendingMempoolTx()`.
 ```typescript
 // src/commands/swap.ts — core flow (simplified)
 import { createSdkClient } from '../adapter/sdk-client';
-import { flattenQuote } from '../adapter/quote-flattener';
+import { flattenQuote, detectVariant } from '../adapter/quote-flattener';
 import type { BitcoinSigner } from '@gobob/bob-sdk';
+import { V1Api, Configuration } from '@gobob/bob-sdk';
 
 export async function handleSwap(opts: SwapOptions) {
   const sdk = createSdkClient(config.apiUrl);
 
-  // 1. Resolve signers
-  const btcSigner = isBtcSource ? await resolveBtcSigner(opts) : undefined;
-  const { walletClient, publicClient } = isEvmSource ? await resolveEvmSigner(opts) : {};
-
-  // 2. Nonce clearing (EVM offramps)
-  if (publicClient && walletClient) {
-    await waitForNonceClear(publicClient, walletClient.account.address);
-  }
-
-  // 3. Get quote (same params as Task 10)
+  // 1. Get quote (same params as Task 10)
   const quote = await sdk.getQuote(quoteParams);
   const flat = flattenQuote(quote);
+  const variant = detectVariant(quote);
 
-  // 4. Show confirmation
+  // 2. Show confirmation
   if (!opts.json) await showConfirmation(flat);
 
-  // 5. Execute — SDK handles order creation + signing + registration
-  const result = await sdk.executeQuote({
-    quote,
-    walletClient,
-    publicClient,
-    btcSigner: btcSigner?.signer as BitcoinSigner,
-  });
+  // 3. Execute — branched by variant because SDK's executeQuote()
+  //    requires walletClient+publicClient (not optional in type signature),
+  //    but onramps only need a BTC signer.
+  let orderId: string;
+  let txId: string;
 
-  // 6. Poll for completion
-  const orderId = result.order.orderId ?? extractOrderId(result.order);
+  if (variant === 'onramp') {
+    // BTC onramp: use lower-level API calls
+    const btcSigner = await resolveBtcSigner(opts);
+    const apiConfig = new Configuration({ basePath: config.apiUrl });
+    const api = new V1Api(apiConfig);
+    const order = await api.createOrder({ gatewayQuote: quote });
+    const psbtHex = (order as any).onramp?.psbtHex;
+    const signedTxHex = await btcSigner.signer.signAllInputs!(psbtHex);
+    orderId = (order as any).onramp?.orderId;
+    await api.registerTx({ registerTx: { onramp: { orderId, bitcoinTxHex: signedTxHex } } });
+    txId = signedTxHex;
+  } else {
+    // Offramp / LayerZero: use executeQuote (needs walletClient + publicClient)
+    const { walletClient, publicClient } = await resolveEvmSigner(opts);
+    await waitForNonceClear(publicClient, walletClient.account.address);
+    const result = await sdk.executeQuote({ quote, walletClient, publicClient });
+    orderId = extractOrderId(result.order);
+    txId = result.tx;
+  }
+
+  // 4. Poll for completion
   const finalOrder = await pollOrder(sdk, orderId, opts.timeout);
 
-  // 7. Format output
-  return formatSwapResult(finalOrder, flat, result.tx);
+  // 5. Format output
+  return formatSwapResult(finalOrder, flat, txId);
 }
 ```
+
+Note: The onramp path manually calls `createOrder` → `signAllInputs` → `registerTx` because `executeQuote()` has `walletClient`/`publicClient` as required params in its TypeScript signature, even though they're unused for onramps. This mirrors what `executeQuote` does internally.
 
 - [ ] **Step 5: Rewrite swap.ts — unsigned flow**
 
@@ -1377,12 +1389,14 @@ jobs:
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
       - name: Publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           cd gateway-cli
           if echo "$VERSION" | grep -q "rc"; then
-            npm publish --access public --tag rc
+            npm publish --access public --provenance --tag rc
           else
-            npm publish --access public
+            npm publish --access public --provenance
           fi
 ```
 
