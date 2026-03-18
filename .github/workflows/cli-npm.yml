@@ -1,0 +1,53 @@
+name: Publish CLI to npm
+
+on:
+  push:
+    tags:
+      - 'cli-v*'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install tokenlist
+        run: cd tokenlist && npm ci
+
+      - name: Install SDK
+        run: cd sdk && npm ci && npm run build
+
+      - name: Install CLI
+        run: cd gateway-cli && npm ci
+
+      - name: Build CLI
+        run: cd gateway-cli && npm run build
+
+      - name: Prepare for publish
+        run: |
+          cd gateway-cli
+          VERSION=$(node -p "require('./package.json').version")
+          node -e "
+            const pkg = require('./package.json');
+            pkg.dependencies['@gobob/bob-sdk'] = '^5.0.0';
+            pkg.dependencies['@gobob/tokenlist'] = '^1.0.0';
+            require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));
+          "
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          cd gateway-cli
+          if echo "$VERSION" | grep -q "rc"; then
+            npm publish --access public --provenance --tag rc
+          else
+            npm publish --access public --provenance
+          fi
