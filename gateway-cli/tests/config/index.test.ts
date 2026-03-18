@@ -86,4 +86,40 @@ describe("loadConfig", () => {
     expect(config.bitcoinSigner).toBeUndefined();
     expect(config.evmSigner).toBeUndefined();
   });
+
+  it("defaults rpc to empty object when no TOML", () => {
+    const config = loadConfig();
+    expect(config.rpc).toEqual({});
+  });
+
+  it("reads rpc section from TOML", () => {
+    mockedExistsSync.mockReturnValue(true);
+    mockedReadFileSync.mockReturnValue(
+      '[rpc]\nbob = "https://toml-bob-rpc.com"\nethereum = "https://toml-eth-rpc.com"\n'
+    );
+    const config = loadConfig();
+    expect(config.rpc).toEqual({
+      bob: "https://toml-bob-rpc.com",
+      ethereum: "https://toml-eth-rpc.com",
+    });
+  });
+
+  it("defaults cache.ttl to 24h when no TOML", () => {
+    const config = loadConfig();
+    expect(config.cache).toEqual({ ttl: "24h" });
+  });
+
+  it("reads cache section from TOML", () => {
+    mockedExistsSync.mockReturnValue(true);
+    mockedReadFileSync.mockReturnValue('[cache]\nttl = "7d"\n');
+    const config = loadConfig();
+    expect(config.cache).toEqual({ ttl: "7d" });
+  });
+
+  it("uses default cache.ttl when TOML cache has no ttl", () => {
+    mockedExistsSync.mockReturnValue(true);
+    mockedReadFileSync.mockReturnValue("[cache]\n");
+    const config = loadConfig();
+    expect(config.cache).toEqual({ ttl: "24h" });
+  });
 });

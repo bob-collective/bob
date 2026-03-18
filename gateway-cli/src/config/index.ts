@@ -19,10 +19,14 @@ export interface Config {
   btcFeeRate?: number;
   recipient?: string;
   sender?: string;
+  rpc: Record<string, string>;
+  cache: { ttl: string };
 }
 
 interface TomlConfig {
   signers?: { bitcoin?: string; evm?: string };
+  rpc?: Record<string, string>;
+  cache?: { ttl?: string };
 }
 
 const DEFAULT_API_URL = "https://gateway-api-mainnet.gobob.xyz";
@@ -58,5 +62,7 @@ export function loadConfig(): Config {
     timeoutMs: isNaN(timeout) || timeout <= 0 ? 1800000 : timeout * 1000,
     slippageBps: isNaN(slippage) || slippage < 0 || slippage > 10000 ? 300 : slippage,
     btcFeeRate: btcFeeRateRaw !== undefined && isNaN(btcFeeRateRaw) ? undefined : btcFeeRateRaw,
+    rpc: toml.rpc ?? {},
+    cache: { ttl: toml.cache?.ttl ?? '24h' },
   };
 }
