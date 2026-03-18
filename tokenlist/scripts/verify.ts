@@ -34,9 +34,6 @@ const SKIP_VALIDATION = new Set<string>([
   `808813:0x5e159518b8303a1f4ec9f9b10f077c89795db178`,
 ]);
 
-// Cache for token info to avoid refetching
-const tokenCache = new Map<string, { name: string; symbol: string; decimals: number }>();
-
 // One persistent client per chain — reused across all tokens on that chain
 // Using any type because viem client types are incompatible across different chains
 const clients = new Map<number, any>(
@@ -85,11 +82,17 @@ async function validateChainTokens(
       continue;
     }
     if (token.address !== zeroAddress && !validateAddress(token.address)) {
+      let suggestion: string;
+      try {
+        suggestion = getAddress(token.address);
+      } catch {
+        suggestion = '(unable to compute checksum — address is malformed)';
+      }
       earlyFails.push({
         address: token.address,
         symbol: token.symbol,
         chainId,
-        issues: [`Invalid or non-checksummed address, should be ${getAddress(token.address)}`],
+        issues: [`Invalid or non-checksummed address, should be ${suggestion}`],
       });
     } else {
       toFetch.push(token);
@@ -132,14 +135,19 @@ async function validateChainTokens(
     const symbolRes = multicallResults[i * 3 + 1];
     const decimalsRes = multicallResults[i * 3 + 2];
 
-    if (nameRes?.status === 'failure' || symbolRes?.status === 'failure' || decimalsRes?.status === 'failure') {
+    if (!nameRes || !symbolRes || !decimalsRes) {
+      issues.push('Incomplete multicall response — expected 3 results per token');
+      return { address: token.address, symbol: token.symbol, chainId, issues };
+    }
+
+    if (nameRes.status === 'failure' || symbolRes.status === 'failure' || decimalsRes.status === 'failure') {
       issues.push('Unable to fetch on-chain data — contract may not exist or not be ERC20');
       return { address: token.address, symbol: token.symbol, chainId, issues };
     }
 
-    const onChainName = nameRes?.result as string;
-    const onChainSymbol = symbolRes?.result as string;
-    const onChainDecimals = Number(decimalsRes?.result);
+    const onChainName = nameRes.result as string;
+    const onChainSymbol = symbolRes.result as string;
+    const onChainDecimals = Number(decimalsRes.result);
 
     if (token.name !== onChainName) {
       issues.push(`Name mismatch: tokenlist="${token.name}", onchain="${onChainName}"`);
@@ -169,6 +177,9 @@ async function validateSchema() {
   const ajv = new Ajv({ allErrors: true, verbose: true });
   addFormats(ajv);
   const schemaResponse = await fetch(TOKENLIST_SCHEMA_URL);
+  if (!schemaResponse.ok) {
+    throw new Error(`Failed to fetch schema: ${schemaResponse.status} ${schemaResponse.statusText}`);
+  }
   const schema = await schemaResponse.json() as any;
   const validator = ajv.compile(schema);
   const data = JSON.parse(fs.readFileSync(tokenlistPath, 'utf8'));
@@ -177,9 +188,9 @@ async function validateSchema() {
     console.log('Schema: valid\n');
     return;
   }
-  if (validator.errors) {
-    throw validator.errors.map((e) => { delete e.data; return e; });
-  }
+  throw validator.errors
+    ? validator.errors.map((e) => { delete e.data; return e; })
+    : new Error('Schema validation failed with no error details');
 }
 
 async function main() {
@@ -205,10 +216,19 @@ async function main() {
     byChain.set(token.chainId, list);
   }
 
-  // Warn about unknown chains
+  // Print results per chain and accumulate totals
+  const allResults: ValidationResult[] = [];
+  let totalIssues = 0;
+
+  // Treat unknown chains as errors — tokens cannot be verified without a configured client
   for (const chainId of byChain.keys()) {
     if (!chainById.has(chainId)) {
-      console.warn(`⚠️  Unknown chainId ${chainId} — tokens on this chain will be skipped`);
+      const unknownTokens = byChain.get(chainId)!;
+      console.error(`\n❌ Unknown chainId ${chainId} — ${unknownTokens.length} token(s) cannot be verified`);
+      for (const token of unknownTokens) {
+        allResults.push({ address: token.address, symbol: token.symbol, chainId, issues: [`Unknown chainId ${chainId} — not in SUPPORTED_CHAINS`] });
+        totalIssues++;
+      }
     }
   }
 
@@ -221,10 +241,6 @@ async function main() {
     ),
   );
 
-  // Print results per chain and accumulate totals
-  const allResults: ValidationResult[] = [];
-  let totalIssues = 0;
-
   for (let i = 0; i < chainEntries.length; i++) {
     const [chainId, chainTokens] = chainEntries[i];
     const chain = chainById.get(chainId)!;
@@ -234,6 +250,9 @@ async function main() {
 
     if (outcome.status === 'rejected') {
       console.log(`  ❌ Chain validation failed: ${outcome.reason instanceof Error ? outcome.reason.message : String(outcome.reason)}`);
+      for (const token of chainTokens) {
+        allResults.push({ address: token.address, symbol: token.symbol, chainId, issues: ['Chain validation failed'] });
+      }
       totalIssues += chainTokens.length;
       continue;
     }
@@ -258,6 +277,13 @@ async function main() {
     if (dupes.length > 0) {
       console.log(`  ⚠️  Duplicate addresses: ${[...new Set(dupes)].join(', ')}`);
     }
+
+    // Duplicate symbol check within the chain
+    const symbols = chainTokens.map((t) => t.symbol);
+    const dupeSymbols = symbols.filter((s, idx) => symbols.indexOf(s) !== idx);
+    if (dupeSymbols.length > 0) {
+      console.log(`  ⚠️  Duplicate symbols: ${[...new Set(dupeSymbols)].join(', ')}`);
+    }
   }
 
   // Summary
@@ -280,4 +306,7 @@ async function main() {
   }
 }
 
-main().catch(console.error);
+main().catch((err) => {
+  console.error('Fatal verification error:', err);
+  process.exit(1);
+});
