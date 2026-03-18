@@ -1,9 +1,12 @@
-import { GatewayApiClient } from "../api/client.js";
+import { createSdkClient } from "../adapter/sdk-client.js";
+import { enrichRoutes } from "../adapter/route-enricher.js";
+import { getOrFetchRoutes } from "../util/route-cache.js";
+import { loadConfig } from "../config/index.js";
 import { formatTable } from "../output/formatter.js";
 import type { ChainJson } from "../output/json-shapes.js";
-import type { RouteInfo } from "../api/types.js";
+import type { EnrichedRoute } from "../adapter/route-enricher.js";
 
-function deriveChains(routes: RouteInfo[]): ChainJson[] {
+function deriveChains(routes: EnrichedRoute[]): ChainJson[] {
   const seen = new Set<string>();
   const result: ChainJson[] = [];
   for (const route of routes) {
@@ -17,15 +20,17 @@ function deriveChains(routes: RouteInfo[]): ChainJson[] {
   return result.sort((a, b) => a.canonical.localeCompare(b.canonical));
 }
 
-export async function handleChains(opts: { apiUrl: string; json: boolean }): Promise<string> {
-  const client = new GatewayApiClient(opts.apiUrl);
-  const routes = await client.getRoutes();
-  const data = deriveChains(routes);
+export async function handleChains(opts: { json: boolean }): Promise<string> {
+  const config = loadConfig();
+  const sdk = createSdkClient(config.apiUrl);
+  const routes = await getOrFetchRoutes(() => sdk.getRoutes(), config.cache.ttl);
+  const enriched = enrichRoutes(routes);
+  const data = deriveChains(enriched);
 
   if (opts.json) return JSON.stringify(data, null, 2);
 
   return formatTable(
     [{ label: "Chain", width: 20 }, { label: "Chain ID", width: 0 }],
-    data.map((c) => [c.canonical, String(c.chainId ?? "—")]),
+    data.map((c) => [c.canonical, String(c.chainId ?? "\u2014")]),
   );
 }

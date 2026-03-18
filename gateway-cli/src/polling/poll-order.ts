@@ -1,4 +1,4 @@
-import type { GatewayOrderInfo, OrderStatus } from "../api/types.js";
+import type { GatewayOrderInfo, GatewayOrderStatus } from "@gobob/bob-sdk";
 
 export class PollTimeoutError extends Error {
   constructor(public readonly orderId: string, public readonly timeoutMs: number) {
@@ -22,7 +22,7 @@ interface OrderClient {
   getOrder(id: string): Promise<GatewayOrderInfo>;
 }
 
-function isTerminalSuccess(status: OrderStatus): boolean {
+function isTerminalSuccess(status: GatewayOrderStatus): boolean {
   return (
     status === "success" ||
     status === "strategy_skipped" ||
@@ -30,7 +30,7 @@ function isTerminalSuccess(status: OrderStatus): boolean {
   );
 }
 
-function isTerminalFailure(status: OrderStatus): boolean {
+function isTerminalFailure(status: GatewayOrderStatus): boolean {
   if (status === "refunded") return true;
   if (typeof status === "object" && status !== null && "failed" in status) return true;
   return false;

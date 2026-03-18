@@ -1,8 +1,9 @@
-import { GatewayApiClient } from "../api/client.js";
+import { createSdkClient } from "../adapter/sdk-client.js";
+import { loadConfig } from "../config/index.js";
 import { formatOutput } from "../output/formatter.js";
+import type { RegisterTx } from "@gobob/bob-sdk";
 
 interface RegisterOptions {
-  apiUrl: string;
   orderId: string;
   txid: string;
   json: boolean;
@@ -11,15 +12,14 @@ interface RegisterOptions {
 export async function handleRegister(
   opts: RegisterOptions,
 ): Promise<string> {
-  const client = new GatewayApiClient(opts.apiUrl);
+  const config = loadConfig();
+  const sdk = createSdkClient(config.apiUrl);
   const isEvm = opts.txid.startsWith("0x");
 
-  const result = await client.registerTx({
-    orderId: opts.orderId,
-    ...(isEvm
-      ? { evmTxhash: opts.txid }
-      : { bitcoinTxid: opts.txid }),
-  });
+  const registerTx: RegisterTx = isEvm
+    ? { offramp: { orderId: opts.orderId, evmTxhash: opts.txid } }
+    : { onramp: { orderId: opts.orderId, bitcoinTxid: opts.txid } };
 
+  const result = await sdk.api.registerTx({ registerTx });
   return formatOutput(result, opts.json ? "json" : "human");
 }

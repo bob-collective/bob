@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import type { RouteInfo } from '../api/types.js';
+import type { RouteInfo } from '@gobob/bob-sdk';
 
 const CACHE_DIR = path.join(os.homedir(), '.gateway-cli', 'cache');
 const CACHE_FILE = path.join(CACHE_DIR, 'routes.json');

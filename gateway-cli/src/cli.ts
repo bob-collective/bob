@@ -8,6 +8,7 @@ import { handleOrders } from "./commands/orders.js";
 import { handleMaxSpendable } from "./commands/max-spendable.js";
 import { handleSwap, RegistrationError } from "./commands/swap.js";
 import { handleRegister } from "./commands/register.js";
+import { handleBalance } from "./commands/balance.js";
 import { PollTimeoutError } from "./polling/poll-order.js";
 import { PriceOracleError } from "./util/price-oracle.js";
 import { TransientError } from "./util/retry.js";
@@ -123,7 +124,6 @@ program
     if (opts.json) setJsonMode(true);
     const slippage = opts.slippage ? parseInt(opts.slippage, 10) : config.slippageBps;
     console.log(await handleQuote({
-      apiUrl: config.apiUrl,
       src: opts.src,
       dst: opts.dst,
       amount: opts.amount,
@@ -237,6 +237,22 @@ program
       address,
       btcFeeRate: opts.btcFeeRate ? parseInt(opts.btcFeeRate, 10) : config.btcFeeRate,
       json: opts.json,
+    }));
+  }));
+
+program
+  .command("balance")
+  .description("Show token balances across gateway-supported chains")
+  .argument("<address>", "Wallet address (BTC or EVM)")
+  .option("--chain <chain>", "Specific chain to check")
+  .option("--json", "Output as JSON", false)
+  .option("--no-cache", "Skip route cache")
+  .action(withErrorHandling(async (address, opts) => {
+    if (opts.json) setJsonMode(true);
+    console.log(await handleBalance(address, {
+      chain: opts.chain,
+      json: opts.json,
+      noCache: opts.cache === false,
     }));
   }));
 

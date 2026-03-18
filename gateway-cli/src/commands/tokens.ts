@@ -1,20 +1,24 @@
-import { GatewayApiClient } from "../api/client.js";
+import { createSdkClient } from "../adapter/sdk-client.js";
+import { enrichRoutes } from "../adapter/route-enricher.js";
+import { getOrFetchRoutes } from "../util/route-cache.js";
+import { loadConfig } from "../config/index.js";
 import { resolveChain } from "../util/chain-ids.js";
 import { formatTable } from "../output/formatter.js";
 import type { TokenJson } from "../output/json-shapes.js";
 
 export async function handleTokens(opts: {
-  apiUrl: string;
   chain: string;
   json: boolean;
 }): Promise<string> {
   const canonical = resolveChain(opts.chain);
-  const client = new GatewayApiClient(opts.apiUrl);
-  const routes = await client.getRoutes();
+  const config = loadConfig();
+  const sdk = createSdkClient(config.apiUrl);
+  const routes = await getOrFetchRoutes(() => sdk.getRoutes(), config.cache.ttl);
+  const enriched = enrichRoutes(routes);
 
   const seen = new Set<string>();
   const tokens: TokenJson[] = [];
-  for (const route of routes) {
+  for (const route of enriched) {
     for (const token of [route.srcToken, route.dstToken]) {
       if (token.chain === canonical && !seen.has(token.address)) {
         seen.add(token.address);

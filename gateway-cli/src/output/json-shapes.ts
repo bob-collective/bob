@@ -79,3 +79,14 @@ export interface MaxSpendableJson {
   estimatedFeeSat: string;
   feeRateSatPerVbyte: number;
 }
+
+export interface BalanceJson {
+  [chain: string]: {
+    address: string;
+    confirmed?: string;      // BTC only
+    unconfirmed?: string;    // BTC only, omitted when zero
+    maxSpendable?: string;   // BTC only
+    native?: { symbol: string; balance: string };  // EVM only
+    tokens?: Array<{ symbol: string; address: string; balance: string }>;  // EVM only
+  };
+}

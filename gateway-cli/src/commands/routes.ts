@@ -1,9 +1,11 @@
-import { GatewayApiClient } from "../api/client.js";
+import { createSdkClient } from "../adapter/sdk-client.js";
+import { enrichRoutes } from "../adapter/route-enricher.js";
+import { getOrFetchRoutes } from "../util/route-cache.js";
+import { loadConfig } from "../config/index.js";
 import { formatOutput } from "../output/formatter.js";
-import type { RouteInfo } from "../api/types.js";
+import type { EnrichedRoute } from "../adapter/route-enricher.js";
 
 interface RoutesOptions {
-  apiUrl: string;
   json: boolean;
   from?: string;
   to?: string;
@@ -12,21 +14,23 @@ interface RoutesOptions {
 export async function handleRoutes(
   opts: RoutesOptions
 ): Promise<string> {
-  const client = new GatewayApiClient(opts.apiUrl);
-  let routes: RouteInfo[] = await client.getRoutes();
+  const config = loadConfig();
+  const sdk = createSdkClient(config.apiUrl);
+  const routes = await getOrFetchRoutes(() => sdk.getRoutes(), config.cache.ttl);
+  let enriched: EnrichedRoute[] = enrichRoutes(routes);
 
   if (opts.from) {
     const from = opts.from.toLowerCase();
-    routes = routes.filter(
+    enriched = enriched.filter(
       (r) => r.srcChain.toLowerCase() === from
     );
   }
   if (opts.to) {
     const to = opts.to.toLowerCase();
-    routes = routes.filter(
+    enriched = enriched.filter(
       (r) => r.dstChain.toLowerCase() === to
     );
   }
 
-  return formatOutput(routes, opts.json ? "json" : "human");
+  return formatOutput(enriched, opts.json ? "json" : "human");
 }

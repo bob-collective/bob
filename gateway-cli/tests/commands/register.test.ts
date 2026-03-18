@@ -2,47 +2,51 @@ import { describe, it, expect, vi } from "vitest";
 import { handleRegister } from "../../src/commands/register.js";
 
 const mockRegisterTx = vi.fn();
-vi.mock("../../src/api/client.js", () => ({
-  GatewayApiClient: vi.fn().mockImplementation(function () {
-    return { registerTx: mockRegisterTx };
+vi.mock("../../src/config/index.js", () => ({
+  loadConfig: vi.fn().mockReturnValue({
+    apiUrl: "https://example.com",
+  }),
+}));
+
+vi.mock("../../src/adapter/sdk-client.js", () => ({
+  createSdkClient: vi.fn().mockReturnValue({
+    api: { registerTx: (...args: unknown[]) => mockRegisterTx(...args) },
   }),
 }));
 
 describe("handleRegister", () => {
   it("registers a bitcoin txid", async () => {
-    mockRegisterTx.mockResolvedValueOnce({ success: true });
+    mockRegisterTx.mockResolvedValueOnce({ onramp: { txid: "abc123" } });
     const result = await handleRegister({
-      apiUrl: "https://example.com",
       orderId: "order-456",
       txid: "abc123",
       json: true,
     });
-    expect(JSON.parse(result).success).toBe(true);
+    const parsed = JSON.parse(result);
+    expect(parsed).toHaveProperty("onramp");
   });
 
   it("detects EVM tx hash by 0x prefix", async () => {
-    mockRegisterTx.mockResolvedValueOnce({ success: true });
+    mockRegisterTx.mockResolvedValueOnce("ok");
     await handleRegister({
-      apiUrl: "https://example.com",
       orderId: "order-456",
       txid: "0xabc123",
       json: true,
     });
-    expect(mockRegisterTx).toHaveBeenCalledWith(
-      expect.objectContaining({ evmTxhash: "0xabc123" }),
-    );
+    expect(mockRegisterTx).toHaveBeenCalledWith({
+      registerTx: { offramp: { orderId: "order-456", evmTxhash: "0xabc123" } },
+    });
   });
 
   it("sends bitcoinTxid for non-0x txids", async () => {
-    mockRegisterTx.mockResolvedValueOnce({ success: true });
+    mockRegisterTx.mockResolvedValueOnce({ onramp: { txid: "deadbeef1234" } });
     await handleRegister({
-      apiUrl: "https://example.com",
       orderId: "order-456",
       txid: "deadbeef1234",
       json: true,
     });
-    expect(mockRegisterTx).toHaveBeenCalledWith(
-      expect.objectContaining({ bitcoinTxid: "deadbeef1234" }),
-    );
+    expect(mockRegisterTx).toHaveBeenCalledWith({
+      registerTx: { onramp: { orderId: "order-456", bitcoinTxid: "deadbeef1234" } },
+    });
   });
 });

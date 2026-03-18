@@ -1,11 +1,16 @@
 import { describe, it, expect, vi } from "vitest";
 import { handleMaxSpendable } from "../../src/commands/max-spendable.js";
-import { mockMaxSpendable } from "../fixtures/api-responses.js";
 
 const mockGetMaxSpendable = vi.fn();
-vi.mock("../../src/api/client.js", () => ({
-  GatewayApiClient: vi.fn().mockImplementation(function () {
-    return { getMaxSpendable: mockGetMaxSpendable };
+vi.mock("../../src/config/index.js", () => ({
+  loadConfig: vi.fn().mockReturnValue({
+    apiUrl: "https://example.com",
+  }),
+}));
+
+vi.mock("../../src/adapter/sdk-client.js", () => ({
+  createSdkClient: vi.fn().mockReturnValue({
+    getMaxSpendable: (...args: unknown[]) => mockGetMaxSpendable(...args),
   }),
 }));
 
@@ -13,11 +18,16 @@ vi.mock("../../src/util/mempool.js", () => ({
   fetchFeeRate: vi.fn().mockResolvedValue(10),
 }));
 
+// SDK-shaped response: amount is a GatewayTokenAmount object
+const sdkMaxSpendable = {
+  userAddress: "bc1qexample",
+  amount: { address: "BTC", amount: "10000000", chain: "bitcoin" },
+};
+
 describe("handleMaxSpendable", () => {
   it("returns max spendable as JSON", async () => {
-    mockGetMaxSpendable.mockResolvedValueOnce(mockMaxSpendable);
+    mockGetMaxSpendable.mockResolvedValueOnce(sdkMaxSpendable);
     const result = await handleMaxSpendable({
-      apiUrl: "https://example.com",
       address: "bc1qexample",
       json: true,
     });
@@ -29,9 +39,8 @@ describe("handleMaxSpendable", () => {
   });
 
   it("returns max spendable as human readable text", async () => {
-    mockGetMaxSpendable.mockResolvedValueOnce(mockMaxSpendable);
+    mockGetMaxSpendable.mockResolvedValueOnce(sdkMaxSpendable);
     const result = await handleMaxSpendable({
-      apiUrl: "https://example.com",
       address: "bc1qexample",
       json: false,
     });
@@ -42,9 +51,8 @@ describe("handleMaxSpendable", () => {
   });
 
   it("uses provided btcFeeRate instead of fetching", async () => {
-    mockGetMaxSpendable.mockResolvedValueOnce(mockMaxSpendable);
+    mockGetMaxSpendable.mockResolvedValueOnce(sdkMaxSpendable);
     const result = await handleMaxSpendable({
-      apiUrl: "https://example.com",
       address: "bc1qexample",
       btcFeeRate: 25,
       json: true,

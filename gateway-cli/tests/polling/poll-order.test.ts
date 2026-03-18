@@ -1,16 +1,14 @@
 import { describe, it, expect, vi } from "vitest";
 import { pollOrder, PollTimeoutError } from "../../src/polling/poll-order.js";
-import type { GatewayOrderInfo, OrderStatus } from "../../src/api/types.js";
+import type { GatewayOrderInfo, GatewayOrderStatus } from "@gobob/bob-sdk";
 
-function makeOrder(status: OrderStatus): GatewayOrderInfo {
+function makeOrder(status: GatewayOrderStatus): GatewayOrderInfo {
   return {
-    orderId: "order-1",
+    id: "order-1",
     status,
-    inputAmount: "100000",
-    outputAmount: "95000",
-    srcChain: "bitcoin",
-    dstChain: "bob",
-    createdAt: "2026-03-12T10:00:00Z",
+    srcInfo: { amount: "100000", chain: "bitcoin", token: "BTC" },
+    dstInfo: { amount: "95000", chain: "bob", token: "WBTC" },
+    timestamp: 1710230400,
   };
 }
 
@@ -64,7 +62,7 @@ describe("pollOrder", () => {
   });
 
   it("throws when order reaches terminal failed state", async () => {
-    const failedStatus: OrderStatus = { failed: { refundTx: undefined } };
+    const failedStatus: GatewayOrderStatus = { failed: {} } as any;
     const client = mockClient([makeOrder(failedStatus)]);
     await expect(
       pollOrder(client, "order-1", { intervalMs: 10, timeoutMs: 1000 }),
@@ -72,9 +70,9 @@ describe("pollOrder", () => {
   });
 
   it("polls multiple times until terminal state", async () => {
-    const inProgressStatus: OrderStatus = {
-      inProgress: { bumpFeeTx: undefined, refundTx: undefined },
-    };
+    const inProgressStatus: GatewayOrderStatus = {
+      inProgress: {},
+    } as any;
     const client = mockClient([
       makeOrder(inProgressStatus),
       makeOrder(inProgressStatus),
@@ -89,9 +87,9 @@ describe("pollOrder", () => {
   });
 
   it("calls onWaiting callback while polling", async () => {
-    const inProgressStatus: OrderStatus = {
-      inProgress: { bumpFeeTx: undefined, refundTx: undefined },
-    };
+    const inProgressStatus: GatewayOrderStatus = {
+      inProgress: {},
+    } as any;
     const onWaiting = vi.fn();
     const client = mockClient([
       makeOrder(inProgressStatus),
@@ -106,9 +104,9 @@ describe("pollOrder", () => {
   });
 
   it("throws PollTimeoutError when deadline is exceeded", async () => {
-    const inProgressStatus: OrderStatus = {
-      inProgress: { bumpFeeTx: undefined, refundTx: undefined },
-    };
+    const inProgressStatus: GatewayOrderStatus = {
+      inProgress: {},
+    } as any;
     const client = mockClient([makeOrder(inProgressStatus)]);
 
     await expect(
@@ -120,9 +118,9 @@ describe("pollOrder", () => {
   });
 
   it("PollTimeoutError contains orderId and timeout", async () => {
-    const inProgressStatus: OrderStatus = {
-      inProgress: { bumpFeeTx: undefined, refundTx: undefined },
-    };
+    const inProgressStatus: GatewayOrderStatus = {
+      inProgress: {},
+    } as any;
     const client = mockClient([makeOrder(inProgressStatus)]);
 
     try {
