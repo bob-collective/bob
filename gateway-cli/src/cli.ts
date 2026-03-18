@@ -10,6 +10,7 @@ import { handleSwap, RegistrationError } from "./commands/swap.js";
 import { handleRegister } from "./commands/register.js";
 import { PollTimeoutError } from "./polling/poll-order.js";
 import { PriceOracleError } from "./util/price-oracle.js";
+import { TransientError } from "./util/retry.js";
 import { setJsonMode, isJsonMode, setVerboseMode } from "./util/progress.js";
 
 const errorMessage = (err: unknown): string => err instanceof Error ? err.message : String(err);
@@ -36,6 +37,16 @@ function withTxErrorHandling(fn: (...args: any[]) => Promise<void>) {
       await fn(...args);
     } catch (err) {
       const msg = errorMessage(err);
+
+      if (err instanceof TransientError) {
+        if (isJsonMode()) {
+          console.log(JSON.stringify({ error: { code: 6, message: msg, retryable: true } }, null, 2));
+        } else {
+          console.error(msg);
+        }
+        process.exit(6);
+      }
+
       let code = 1;
       if (err instanceof RegistrationError) code = 3;
       else if (err instanceof PollTimeoutError) code = 2;
@@ -70,8 +81,7 @@ program
   .option("--json", "Output as JSON", false)
   .action(withErrorHandling(async (opts) => {
     if (opts.json) setJsonMode(true);
-    const config = loadConfig();
-    console.log(await handleChains({ apiUrl: config.apiUrl, json: opts.json }));
+    console.log(await handleChains({ json: opts.json }));
   }));
 
 program
@@ -81,8 +91,7 @@ program
   .option("--json", "Output as JSON", false)
   .action(withErrorHandling(async (opts) => {
     if (opts.json) setJsonMode(true);
-    const config = loadConfig();
-    console.log(await handleTokens({ apiUrl: config.apiUrl, chain: opts.chain, json: opts.json }));
+    console.log(await handleTokens({ chain: opts.chain, json: opts.json }));
   }));
 
 program
@@ -94,8 +103,7 @@ program
   .action(withErrorHandling(async (opts) => {
     if (opts.json) setJsonMode(true);
     const { handleRoutes } = await import("./commands/routes.js");
-    const config = loadConfig();
-    console.log(await handleRoutes({ apiUrl: config.apiUrl, json: opts.json, from: opts.srcChain, to: opts.dstChain }));
+    console.log(await handleRoutes({ json: opts.json, from: opts.srcChain, to: opts.dstChain }));
   }));
 
 program
@@ -146,6 +154,7 @@ function addSwapOptions(cmd: Command): Command {
     .option("--no-wait", "Exit after submitting without polling")
     .option("--unsigned", "Output unsigned PSBT/tx data without signing", false)
     .option("--timeout <seconds>", "Polling timeout (env: GATEWAY_TIMEOUT)", "1800")
+    .option("--no-retry", "Fail immediately on transient errors (exit code 6)")
     .option("--json", "Output as JSON", false);
 }
 
@@ -174,6 +183,7 @@ function buildSwapArgs(opts: any, config: ReturnType<typeof loadConfig>) {
     unsigned: opts.unsigned,
     dryRun: opts.dryRun,
     noWait: opts.wait === false || config.noWait,
+    noRetry: opts.retry === false,
     timeoutMs: timeout,
     json: opts.json,
   };
@@ -202,9 +212,8 @@ program
   .description("Check order status")
   .option("--json", "Output as JSON", false)
   .action(withErrorHandling(async (orderId, opts) => {
-    const config = loadConfig();
     if (opts.json) setJsonMode(true);
-    console.log(await handleStatus({ apiUrl: config.apiUrl, orderId, json: opts.json }));
+    console.log(await handleStatus({ orderId, json: opts.json }));
   }));
 
 program
@@ -213,8 +222,7 @@ program
   .option("--json", "Output as JSON", false)
   .action(withErrorHandling(async (address, opts) => {
     if (opts.json) setJsonMode(true);
-    const config = loadConfig();
-    console.log(await handleOrders({ apiUrl: config.apiUrl, address, json: opts.json }));
+    console.log(await handleOrders({ address, json: opts.json }));
   }));
 
 program
@@ -226,7 +234,6 @@ program
     if (opts.json) setJsonMode(true);
     const config = loadConfig();
     console.log(await handleMaxSpendable({
-      apiUrl: config.apiUrl,
       address,
       btcFeeRate: opts.btcFeeRate ? parseInt(opts.btcFeeRate, 10) : config.btcFeeRate,
       json: opts.json,
@@ -239,6 +246,5 @@ program
   .option("--json", "Output as JSON", false)
   .action(withErrorHandling(async (orderId, txid, opts) => {
     if (opts.json) setJsonMode(true);
-    const config = loadConfig();
-    console.log(await handleRegister({ apiUrl: config.apiUrl, orderId, txid, json: opts.json }));
+    console.log(await handleRegister({ orderId, txid, json: opts.json }));
   }));

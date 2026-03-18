@@ -1,24 +1,71 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { handleOfframp } from "../../src/commands/offramp.js";
-import { mockRoutes } from "../fixtures/api-responses.js";
+
+// ─── SDK mock ────────────────────────────────────────────────────────────────
 
 const mockGetQuote = vi.fn();
+const mockGetRoutes = vi.fn();
+const mockGetOrder = vi.fn();
 const mockCreateOrder = vi.fn();
 const mockRegisterTx = vi.fn();
-const mockGetOrder = vi.fn();
-const mockGetRoutes = vi.fn();
 
-vi.mock("../../src/api/client.js", () => ({
-  GatewayApiClient: vi.fn().mockImplementation(function () {
-    return {
-      getQuote: mockGetQuote,
+vi.mock("../../src/adapter/sdk-client.js", () => ({
+  createSdkClient: vi.fn(() => ({
+    getQuote: mockGetQuote,
+    getRoutes: mockGetRoutes,
+    getOrder: mockGetOrder,
+    api: {
       createOrder: mockCreateOrder,
       registerTx: mockRegisterTx,
-      getOrder: mockGetOrder,
-      getRoutes: mockGetRoutes,
-    };
+    },
+  })),
+}));
+
+// ─── Route cache mock ────────────────────────────────────────────────────────
+
+vi.mock("../../src/util/route-cache.js", () => ({
+  getOrFetchRoutes: vi.fn(async (fetcher: () => Promise<any>) => fetcher()),
+}));
+
+// ─── Route enricher mock (pass-through) ──────────────────────────────────────
+
+vi.mock("../../src/adapter/route-enricher.js", () => ({
+  enrichRoutes: vi.fn((routes: any) => routes),
+}));
+
+// ─── Quote flattener mock ────────────────────────────────────────────────────
+
+vi.mock("../../src/adapter/quote-flattener.js", () => ({
+  flattenQuote: vi.fn((quote: any) => ({
+    variant: quote.offramp ? "offramp" : "onramp",
+    inputAmount: quote.offramp?.inputAmount?.amount ?? "0",
+    outputAmount: quote.offramp?.outputAmount?.amount ?? "0",
+    fees: "0",
+    raw: quote,
+  })),
+  detectVariant: vi.fn((quote: any) => {
+    if (quote.onramp) return "onramp";
+    if (quote.offramp) return "offramp";
+    if (quote.layerZero) return "layerZero";
+    throw new Error("Unknown quote variant");
   }),
 }));
+
+// ─── Config mock ─────────────────────────────────────────────────────────────
+
+vi.mock("../../src/config/index.js", () => ({
+  loadConfig: vi.fn(() => ({
+    apiUrl: "https://example.com",
+    cache: { ttl: "24h" },
+    slippageBps: 300,
+    timeoutMs: 1800000,
+    autoConfirm: false,
+    noWait: false,
+    rpc: {},
+  })),
+}));
+
+// ─── EVM signer mock ─────────────────────────────────────────────────────────
 
 const mockSendTransaction = vi.fn();
 vi.mock("../../src/signer/evm.js", async (importOriginal) => {
@@ -33,7 +80,6 @@ vi.mock("../../src/signer/evm.js", async (importOriginal) => {
       externalSignerCmd?: string;
     }) => {
       if (opts.unsigned) return { unsigned: true };
-      // Check if any signer source is configured
       if (!opts.privateKey && !opts.envPrivateKey && !opts.keystorePath && !opts.externalSignerCmd) {
         throw new Error(
           "no signer configured for EVM.\n" +
@@ -44,6 +90,7 @@ vi.mock("../../src/signer/evm.js", async (importOriginal) => {
       return {
         walletClient: {
           sendTransaction: mockSendTransaction,
+          account: { address: "0xSender" },
         },
         publicClient: {
           getTransactionCount: vi.fn().mockResolvedValue(0),
@@ -53,12 +100,15 @@ vi.mock("../../src/signer/evm.js", async (importOriginal) => {
   };
 });
 
+// ─── Mempool mock ────────────────────────────────────────────────────────────
+
 vi.mock("../../src/util/mempool.js", () => ({
   fetchFeeRate: vi.fn().mockResolvedValue(10),
   findPendingMempoolTx: vi.fn().mockResolvedValue(null),
 }));
 
-// A minimal EVM-side routes fixture for the offramp direction
+// ─── Fixtures ────────────────────────────────────────────────────────────────
+
 const offrampRoutes = [
   {
     srcChain: "base",
@@ -78,28 +128,47 @@ const offrampRoutes = [
   },
 ];
 
+// SDK-style offramp quote
 const offrampQuote = {
-  quoteId: "quote-offramp",
-  inputAmount: "5000000000",
-  outputAmount: "4900000",
-  feeBreakdown: {
-    solverFee: { amount: "50000", address: "0x0", chain: "base" },
-    protocolFee: { amount: "10000", address: "0x0", chain: "base" },
+  offramp: {
+    inputAmount: { amount: "5000000000", address: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", chain: "base" },
+    outputAmount: { amount: "4900000", address: "BTC", chain: "bitcoin" },
+    fees: { amount: "50000", address: "0x0", chain: "base" },
+    feeBreakdown: {
+      solverFee: { amount: "50000", address: "0x0", chain: "base" },
+      protocolFee: { amount: "10000", address: "0x0", chain: "base" },
+    },
+    slippage: 300,
+    srcChain: "base",
+    tokenAddress: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+    txTo: "0xGateway",
+    recipient: "bc1qexample",
   },
-  estimatedTimeInSecs: 600,
 };
 
+// SDK-style offramp order
 const offrampOrder = {
-  orderId: "order-offramp",
-  txInfo: {
-    to: "0xGateway",
-    data: "0xabcdef",
-    value: "0",
-    chain: "base",
+  offramp: {
+    orderId: "order-offramp",
+    tx: {
+      to: "0xGateway",
+      data: "0xabcdef",
+      value: "0",
+      chain: "base",
+    },
   },
 };
 
-describe("handleOfframp (thin alias → handleSwap, offramp: EVM -> BTC)", () => {
+// SDK-style order info (from getOrder)
+const offrampOrderInfo = {
+  id: "order-offramp",
+  status: "success",
+  srcInfo: { amount: "5000000000", chain: "base", token: "USDC" },
+  dstInfo: { amount: "4900000", chain: "bitcoin", token: "BTC" },
+  timestamp: 1710230400,
+};
+
+describe("handleOfframp (thin alias -> handleSwap, offramp: EVM -> BTC)", () => {
   beforeEach(() => vi.clearAllMocks());
 
   const baseOpts = {
@@ -113,25 +182,18 @@ describe("handleOfframp (thin alias → handleSwap, offramp: EVM -> BTC)", () =>
     autoConfirm: true,
     unsigned: false,
     noWait: false,
+    dryRun: false,
     timeoutMs: 5000,
     json: true,
   };
 
   it("executes full offramp flow", async () => {
     mockGetRoutes.mockResolvedValueOnce(offrampRoutes);
-    mockGetQuote.mockResolvedValueOnce(offrampQuote);
+    mockGetQuote.mockResolvedValue(offrampQuote);
     mockCreateOrder.mockResolvedValueOnce(offrampOrder);
     mockSendTransaction.mockResolvedValueOnce("0xsigned");
-    mockRegisterTx.mockResolvedValueOnce({ success: true });
-    mockGetOrder.mockResolvedValueOnce({
-      orderId: "order-offramp",
-      status: "success",
-      inputAmount: "5000000000",
-      outputAmount: "4900000",
-      srcChain: "base",
-      dstChain: "bitcoin",
-      createdAt: "2026-03-12T10:00:00Z",
-    });
+    mockRegisterTx.mockResolvedValueOnce("ok");
+    mockGetOrder.mockResolvedValueOnce(offrampOrderInfo);
 
     const result = await handleOfframp(baseOpts);
 
@@ -139,7 +201,6 @@ describe("handleOfframp (thin alias → handleSwap, offramp: EVM -> BTC)", () =>
       expect.objectContaining({
         to: "0xGateway",
         data: "0xabcdef",
-        chainId: 8453,
       }),
     );
     const parsed = JSON.parse(result);
@@ -148,7 +209,6 @@ describe("handleOfframp (thin alias → handleSwap, offramp: EVM -> BTC)", () =>
   });
 
   it("throws when no EVM signer is configured", async () => {
-    // getRoutes needed to parse src/dst before signer resolution
     mockGetRoutes.mockResolvedValueOnce(offrampRoutes);
     await expect(
       handleOfframp({ ...baseOpts, evmSignerCmd: undefined }),
@@ -157,7 +217,7 @@ describe("handleOfframp (thin alias → handleSwap, offramp: EVM -> BTC)", () =>
 
   it("outputs unsigned tx info with --unsigned", async () => {
     mockGetRoutes.mockResolvedValueOnce(offrampRoutes);
-    mockGetQuote.mockResolvedValueOnce(offrampQuote);
+    mockGetQuote.mockResolvedValue(offrampQuote);
     mockCreateOrder.mockResolvedValueOnce(offrampOrder);
 
     const result = await handleOfframp({
@@ -174,10 +234,10 @@ describe("handleOfframp (thin alias → handleSwap, offramp: EVM -> BTC)", () =>
 
   it("returns submitted info with --no-wait", async () => {
     mockGetRoutes.mockResolvedValueOnce(offrampRoutes);
-    mockGetQuote.mockResolvedValueOnce(offrampQuote);
+    mockGetQuote.mockResolvedValue(offrampQuote);
     mockCreateOrder.mockResolvedValueOnce(offrampOrder);
     mockSendTransaction.mockResolvedValueOnce("0xsigned");
-    mockRegisterTx.mockResolvedValueOnce({ success: true });
+    mockRegisterTx.mockResolvedValueOnce("ok");
 
     const result = await handleOfframp({ ...baseOpts, noWait: true });
 

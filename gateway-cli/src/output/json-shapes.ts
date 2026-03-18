@@ -54,6 +54,7 @@ export interface ErrorJson {
     message: string;
     orderId?: string;
     txId?: string;
+    retryable?: boolean;
   };
 }
 
