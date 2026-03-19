@@ -95,39 +95,73 @@ export function parseAssetChain(raw: string, routes: EnrichedRoute[], index?: To
   return { chain, address: token.address, symbol: token.symbol, decimals: token.decimals };
 }
 
-// ─── Amount resolution ───────────────────────────────────────────────────────
+// ─── Amount parsing ─────────────────────────────────────────────────────────
 
-export interface ParsedAmount {
-  atomicUnits: string;
-  display: string;
+export type ParsedAmount =
+  | { type: "atomic"; atomicUnits: string; display: string }
+  | { type: "all" };
+
+/** Convert human-readable decimal string to atomic units using string math (no floating-point). */
+export function humanToAtomic(human: string, decimals: number): string {
+  const [intPart, fracPart = ""] = human.split(".");
+  const padded = fracPart.padEnd(decimals, "0").slice(0, decimals);
+  const raw = intPart + padded;
+  return BigInt(raw).toString(); // strips leading zeros
 }
 
-function toAtomicUnits(human: number, decimals: number): string {
-  const factor = 10n ** BigInt(decimals);
-  return (BigInt(Math.round(human * Number(factor)))).toString();
-}
+const AMOUNT_HELP = `Expected one of:
+  0.05BTC       human-readable (converted to atomic)
+  100USD        USD value (converted via price oracle)
+  5000000       atomic units (satoshis, wei, etc.)
+  ALL           max spendable balance`;
 
-export async function parseAmountUsd(value: string, srcSymbol: string, srcDecimals: number): Promise<ParsedAmount> {
-  const usdValue = parseFloat(value);
-  const { priceUsd, source } = await fetchPrice(srcSymbol);
-  const humanAmount = usdValue / priceUsd;
-  return {
-    atomicUnits: toAtomicUnits(humanAmount, srcDecimals),
-    display: `${humanAmount.toFixed(8).replace(/\.?0+$/, "")} ${srcSymbol} ($${usdValue} via ${source})`,
-  };
-}
+export async function parseAmount(
+  raw: string,
+  srcSymbol: string,
+  srcDecimals: number,
+): Promise<ParsedAmount> {
+  const trimmed = raw.trim();
+  if (!trimmed || trimmed.includes(" ")) {
+    throw new Error(`Invalid amount "${raw}". ${AMOUNT_HELP}`);
+  }
 
-export interface AmountInput {
-  amount?: string;
-  amountAtomic?: string;
-  amountUsd?: string;
-}
+  const upper = trimmed.toUpperCase();
 
-export async function resolveAmount(input: AmountInput, srcSymbol: string, srcDecimals: number): Promise<ParsedAmount> {
-  if (input.amountAtomic) return { atomicUnits: input.amountAtomic, display: `${input.amountAtomic} (atomic)` };
-  if (input.amountUsd) return parseAmountUsd(input.amountUsd, srcSymbol, srcDecimals);
-  const human = parseFloat(input.amount!);
-  return { atomicUnits: toAtomicUnits(human, srcDecimals), display: `${input.amount} ${srcSymbol}` };
+  // ALL → sentinel
+  if (upper === "ALL") return { type: "all" };
+
+  // Ends with USD → price oracle
+  if (upper.endsWith("USD")) {
+    const numStr = trimmed.slice(0, -3);
+    const usdValue = parseFloat(numStr);
+    if (isNaN(usdValue) || usdValue <= 0) throw new Error(`Invalid amount "${raw}". ${AMOUNT_HELP}`);
+    const { priceUsd, source } = await fetchPrice(srcSymbol);
+    const humanAmount = usdValue / priceUsd;
+    const atomicUnits = humanToAtomic(humanAmount.toFixed(srcDecimals), srcDecimals);
+    return {
+      type: "atomic",
+      atomicUnits,
+      display: `${humanAmount.toFixed(8).replace(/\.?0+$/, "")} ${srcSymbol} ($${usdValue} via ${source})`,
+    };
+  }
+
+  // Ends with source token symbol → human-readable
+  if (upper.endsWith(srcSymbol.toUpperCase())) {
+    const numStr = trimmed.slice(0, -srcSymbol.length);
+    const num = parseFloat(numStr);
+    if (isNaN(num) || num <= 0) throw new Error(`Invalid amount "${raw}". ${AMOUNT_HELP}`);
+    const atomicUnits = humanToAtomic(numStr, srcDecimals);
+    return { type: "atomic", atomicUnits, display: `${numStr} ${srcSymbol}` };
+  }
+
+  // Bare integer → atomic units
+  if (/^\d+$/.test(trimmed)) {
+    const val = BigInt(trimmed);
+    if (val <= 0n) throw new Error(`Invalid amount "${raw}". Amount must be positive.`);
+    return { type: "atomic", atomicUnits: val.toString(), display: `${trimmed} (atomic)` };
+  }
+
+  throw new Error(`Invalid amount "${raw}". ${AMOUNT_HELP}`);
 }
 
 // ─── Combined asset + amount resolution ──────────────────────────────────────
@@ -135,12 +169,12 @@ export async function resolveAmount(input: AmountInput, srcSymbol: string, srcDe
 export async function resolveSwapInputs(
   src: string,
   dst: string,
-  amount: AmountInput,
+  amount: string,
   enriched: EnrichedRoute[],
 ) {
   const tokenIndex = buildTokenIndex(enriched);
   const srcAsset = parseAssetChain(src, enriched, tokenIndex);
   const dstAsset = parseAssetChain(dst, enriched, tokenIndex);
-  const parsed = await resolveAmount(amount, srcAsset.symbol, srcAsset.decimals);
+  const parsed = await parseAmount(amount, srcAsset.symbol, srcAsset.decimals);
   return { srcAsset, dstAsset, parsed };
 }

@@ -1,10 +1,11 @@
 import { getInnerQuote, getQuoteVariant } from "@gobob/bob-sdk";
 import { getEnrichedRoutes } from "../util/route-provider.js";
 import { ScureBitcoinSigner, type BitcoinSigner } from "@gobob/bob-sdk";
-import { createWalletClient, createPublicClient, http, type WalletClient, type PublicClient, type Hex } from "viem";
+import { createWalletClient, createPublicClient, http, erc20Abi, formatUnits, type WalletClient, type PublicClient, type Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { resolveSwapInputs, parseAmountUsd } from "../util/input-resolver.js";
-import { getNativeToken } from "../util/route-provider.js";
+import { resolveSwapInputs, humanToAtomic } from "../util/input-resolver.js";
+import { fetchPrice } from "../util/price-oracle.js";
+import { getNativeToken, type EnrichedRoute } from "../util/route-provider.js";
 import { MempoolClient } from "@gobob/bob-sdk";
 import { resolveRpcUrl, getViemChain } from "../util/rpc-resolver.js";
 import pRetry, { AbortError } from "p-retry";
@@ -77,9 +78,7 @@ class RegistrationError extends Error {
 export interface SwapOptions {
   src: string;
   dst: string;
-  amount?: string;
-  amountAtomic?: string;
-  amountUsd?: string;
+  amount: string;
   recipient: string;
   sender?: string;
   slippage?: number;
@@ -107,8 +106,20 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
 
   const enriched = await getEnrichedRoutes();
   const { srcAsset, dstAsset, parsed } = await resolveSwapInputs(
-    opts.src, opts.dst, { amount: opts.amount, amountAtomic: opts.amountAtomic, amountUsd: opts.amountUsd }, enriched,
+    opts.src, opts.dst, opts.amount, enriched,
   );
+
+  let atomicUnits: string;
+  let display: string;
+  if (parsed.type === "all") {
+    const resolved = await resolveAllAmount(srcAsset, opts, config, enriched);
+    atomicUnits = resolved.atomicUnits;
+    display = resolved.display;
+  } else {
+    atomicUnits = parsed.atomicUnits;
+    display = parsed.display;
+  }
+
   const isBtcOnramp = srcAsset.chain === "bitcoin";
   const slippageBps = opts.slippage ?? config.slippageBps;
   const timeoutMs = opts.timeout ? opts.timeout * 1000 : config.timeoutMs;
@@ -119,7 +130,11 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
     : resolveEvmSigner(opts.privateKey ?? config.evmPrivateKey, opts.unsigned, evmChain);
 
   const gasRefillWei = opts.gasRefillUsd
-    ? (await parseAmountUsd(String(opts.gasRefillUsd), "ETH", getNativeToken("ethereum").decimals)).atomicUnits
+    ? await (async () => {
+        const { priceUsd } = await fetchPrice("ETH");
+        const ethAmount = opts.gasRefillUsd! / priceUsd;
+        return humanToAtomic(ethAmount.toFixed(18), 18);
+      })()
     : undefined;
 
   const quoteParams: GetQuoteParams = {
@@ -129,7 +144,7 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
     toToken: dstAsset.address,
     toUserAddress: opts.recipient,
     fromUserAddress: opts.sender,
-    amount: parsed.atomicUnits,
+    amount: atomicUnits,
     maxSlippage: slippageBps,
     gasRefill: gasRefillWei ? BigInt(gasRefillWei) : undefined,
   };
@@ -226,7 +241,7 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
   if (!opts.wait) {
     return {
       type: "submitted",
-      data: { orderId, status: "submitted", srcAmount: parsed.atomicUnits, srcAsset: srcAsset.symbol, dstAsset: dstAsset.symbol, dstChain: dstAsset.chain, txId },
+      data: { orderId, status: "submitted", srcAmount: atomicUnits, srcAsset: srcAsset.symbol, dstAsset: dstAsset.symbol, dstChain: dstAsset.chain, txId },
     };
   }
 
@@ -247,7 +262,7 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
     log.progress(`✓ Confirmed — ${outAmt} ${dstAsset.symbol} delivered to ${opts.recipient}`);
     return {
       type: "confirmed",
-      data: { orderId, status: "confirmed", srcAmount: parsed.atomicUnits, srcAsset: srcAsset.symbol, dstAmount: outAmt, dstAsset: dstAsset.symbol, dstChain: dstAsset.chain, quotedDstAmount: quotedAmt, actualSlippageBps: slippageBps, txId, elapsedMs },
+      data: { orderId, status: "confirmed", srcAmount: atomicUnits, srcAsset: srcAsset.symbol, dstAmount: outAmt, dstAsset: dstAsset.symbol, dstChain: dstAsset.chain, quotedDstAmount: quotedAmt, actualSlippageBps: slippageBps, txId, elapsedMs },
     };
   } catch (err) {
     if (!isBtcOnramp && err instanceof Error && err.message === "pending") {
@@ -258,7 +273,7 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
         log.progress(`~ BTC tx found in mempool (unconfirmed): ${mempoolTxId}`);
         return {
           type: "mempoolPending",
-          data: { orderId, status: "mempool_pending", srcAmount: parsed.atomicUnits, srcAsset: srcAsset.symbol, dstAsset: dstAsset.symbol, dstChain: dstAsset.chain, mempoolTxId },
+          data: { orderId, status: "mempool_pending", srcAmount: atomicUnits, srcAsset: srcAsset.symbol, dstAsset: dstAsset.symbol, dstChain: dstAsset.chain, mempoolTxId },
         };
       }
     }
@@ -321,4 +336,76 @@ async function pollOrder(
     },
     { retries: Math.ceil(opts.timeoutMs / opts.intervalMs), minTimeout: opts.intervalMs, maxTimeout: opts.intervalMs, factor: 1 },
   );
+}
+
+// ─── ALL amount resolution ──────────────────────────────────────────────────
+
+const NATIVE_GAS_BUFFER = 900_000n;
+
+async function resolveAllAmount(
+  srcAsset: { chain: string; address: string; symbol: string; decimals: number },
+  opts: { privateKey?: string; sender?: string; unsigned: boolean },
+  config: { bitcoinPrivateKey?: string; evmPrivateKey?: string },
+  enriched: EnrichedRoute[],
+): Promise<{ atomicUnits: string; display: string }> {
+  const isBtc = srcAsset.chain === "bitcoin";
+
+  // Derive sender address
+  let senderAddress: string | undefined = opts.sender;
+  if (!senderAddress) {
+    const key = isBtc
+      ? (opts.privateKey ?? config.bitcoinPrivateKey)
+      : (opts.privateKey ?? config.evmPrivateKey);
+    if (!key) {
+      throw new Error("--amount ALL requires a sender address. Use --private-key, --sender, or set BITCOIN_PRIVATE_KEY / EVM_PRIVATE_KEY.");
+    }
+    if (isBtc) {
+      const signer = ScureBitcoinSigner.fromKey(key);
+      senderAddress = await signer.getP2WPKHAddress();
+    } else {
+      const account = privateKeyToAccount((key.startsWith("0x") ? key : `0x${key}`) as Hex);
+      senderAddress = account.address;
+    }
+  }
+
+  let resolvedAtomic: string;
+  if (isBtc) {
+    const sdk = getSdk();
+    const maxSpendable = await sdk.getMaxSpendable(senderAddress);
+    resolvedAtomic = maxSpendable.amount.amount;
+  } else if (isNativeToken(srcAsset)) {
+    // Native EVM token (ETH, etc.) — reserve gas
+    const rpcUrl = resolveRpcUrl(srcAsset.chain);
+    const client = createPublicClient({ chain: getViemChain(srcAsset.chain), transport: http(rpcUrl) });
+    const [balance, feeData] = await Promise.all([
+      client.getBalance({ address: senderAddress as `0x${string}` }),
+      client.estimateFeesPerGas(),
+    ]);
+    const gasCost = (feeData.maxFeePerGas ?? feeData.gasPrice ?? 0n) * NATIVE_GAS_BUFFER;
+    const available = balance > gasCost ? balance - gasCost : 0n;
+    resolvedAtomic = available.toString();
+  } else {
+    // ERC20 token
+    const rpcUrl = resolveRpcUrl(srcAsset.chain);
+    const client = createPublicClient({ chain: getViemChain(srcAsset.chain), transport: http(rpcUrl) });
+    const balance = await client.readContract({
+      address: srcAsset.address as `0x${string}`,
+      abi: erc20Abi,
+      functionName: "balanceOf",
+      args: [senderAddress as `0x${string}`],
+    });
+    resolvedAtomic = balance.toString();
+  }
+
+  if (BigInt(resolvedAtomic) === 0n) {
+    throw new Error(`No ${srcAsset.symbol} balance found for ${senderAddress}`);
+  }
+
+  const humanDisplay = formatUnits(BigInt(resolvedAtomic), srcAsset.decimals);
+  return { atomicUnits: resolvedAtomic, display: `${humanDisplay} ${srcAsset.symbol} (max spendable)` };
+}
+
+function isNativeToken(asset: { chain: string; symbol: string }): boolean {
+  const nt = getNativeToken(asset.chain);
+  return asset.symbol.toUpperCase() === nt.symbol.toUpperCase();
 }

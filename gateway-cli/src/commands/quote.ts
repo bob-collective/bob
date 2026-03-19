@@ -9,9 +9,7 @@ import type { GetQuoteParams } from "@gobob/bob-sdk";
 export interface QuoteOptions {
   src: string;
   dst: string;
-  amount?: string;
-  amountAtomic?: string;
-  amountUsd?: string;
+  amount: string;
   recipient: string;
   sender?: string;
   slippage?: number;
@@ -31,8 +29,11 @@ export async function handleQuote(opts: QuoteOptions): Promise<QuoteResult> {
 
   const enriched = await getEnrichedRoutes();
   const { srcAsset, dstAsset, parsed } = await resolveSwapInputs(
-    opts.src, opts.dst, { amount: opts.amount, amountAtomic: opts.amountAtomic, amountUsd: opts.amountUsd }, enriched,
+    opts.src, opts.dst, opts.amount, enriched,
   );
+  if (parsed.type === "all") {
+    throw new Error("--amount ALL is not supported for quote. Use a specific amount.");
+  }
   const isBtcSrc = srcAsset.chain === "bitcoin";
 
   let feeRate = opts.btcFeeRate ?? config.btcFeeRate;
