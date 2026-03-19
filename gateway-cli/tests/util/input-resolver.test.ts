@@ -13,7 +13,7 @@ vi.mock("../../src/util/price-oracle.js", () => ({
 import {
   resolveChain,
   parseAssetChain,
-  resolveAmount,
+  parseAmount,
   buildTokenIndex,
 } from "../../src/util/input-resolver.js";
 import { fetchPrice } from "../../src/util/price-oracle.js";
@@ -169,45 +169,94 @@ describe("parseAssetChain", () => {
   });
 });
 
-// ─── resolveAmount ────────────────────────────────────────────────────────────
+// ─── parseAmount ──────────────────────────────────────────────────────────────
 
-describe("resolveAmount", () => {
+describe("parseAmount", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("returns atomic units directly when amountAtomic is provided", async () => {
-    const result = await resolveAmount({ amountAtomic: "100000000" }, "BTC", 8);
-    expect(result.atomicUnits).toBe("100000000");
+  it("bare integer → atomic units", async () => {
+    const result = await parseAmount("5000000", "BTC", 8);
+    expect(result.type).toBe("atomic");
+    if (result.type !== "atomic") return;
+    expect(result.atomicUnits).toBe("5000000");
     expect(result.display).toContain("atomic");
   });
 
-  it("converts human-readable amount to atomic units", async () => {
-    const result = await resolveAmount({ amount: "1" }, "BTC", 8);
-    expect(result.atomicUnits).toBe("100000000");
-    expect(result.display).toContain("1");
+  it("token suffix '0.05BTC' → converts to atomic", async () => {
+    const result = await parseAmount("0.05BTC", "BTC", 8);
+    expect(result.type).toBe("atomic");
+    if (result.type !== "atomic") return;
+    expect(result.atomicUnits).toBe("5000000");
     expect(result.display).toContain("BTC");
   });
 
-  it("converts fractional human amount correctly", async () => {
-    const result = await resolveAmount({ amount: "0.001" }, "BTC", 8);
-    expect(result.atomicUnits).toBe("100000");
+  it("case-insensitive '0.05btc' → works", async () => {
+    const result = await parseAmount("0.05btc", "BTC", 8);
+    expect(result.type).toBe("atomic");
+    if (result.type !== "atomic") return;
+    expect(result.atomicUnits).toBe("5000000");
   });
 
-  it("converts USDC human amount (6 decimals)", async () => {
-    const result = await resolveAmount({ amount: "10" }, "USDC", 6);
-    expect(result.atomicUnits).toBe("10000000");
-    expect(result.display).toContain("USDC");
-  });
-
-  it("resolves USD amount using fetchPrice", async () => {
+  it("USD suffix '100USD' → calls fetchPrice, returns atomic", async () => {
     vi.mocked(fetchPrice).mockResolvedValueOnce({ priceUsd: 50000, source: "binance" });
-    const result = await resolveAmount({ amountUsd: "100" }, "BTC", 8);
+    const result = await parseAmount("100USD", "BTC", 8);
     expect(fetchPrice).toHaveBeenCalledWith("BTC");
+    expect(result.type).toBe("atomic");
+    if (result.type !== "atomic") return;
     // $100 / $50000 per BTC = 0.002 BTC = 200000 satoshis
     expect(result.atomicUnits).toBe("200000");
     expect(result.display).toContain("BTC");
     expect(result.display).toContain("100");
     expect(result.display).toContain("binance");
+  });
+
+  it("'ALL' → returns { type: 'all' }", async () => {
+    const result = await parseAmount("ALL", "BTC", 8);
+    expect(result).toEqual({ type: "all" });
+  });
+
+  it("'all' lowercase → returns { type: 'all' }", async () => {
+    const result = await parseAmount("all", "BTC", 8);
+    expect(result).toEqual({ type: "all" });
+  });
+
+  it("bare decimal '0.5' → error 'Invalid amount'", async () => {
+    await expect(parseAmount("0.5", "BTC", 8)).rejects.toThrow("Invalid amount");
+  });
+
+  it("negative '-100' → error", async () => {
+    await expect(parseAmount("-100", "BTC", 8)).rejects.toThrow("Invalid amount");
+  });
+
+  it("zero '0' → error 'must be positive'", async () => {
+    await expect(parseAmount("0", "BTC", 8)).rejects.toThrow("must be positive");
+  });
+
+  it("empty '' → error", async () => {
+    await expect(parseAmount("", "BTC", 8)).rejects.toThrow("Invalid amount");
+  });
+
+  it("internal space '100 USD' → error", async () => {
+    await expect(parseAmount("100 USD", "BTC", 8)).rejects.toThrow("Invalid amount");
+  });
+
+  it("wrong token suffix '100USDC' with srcSymbol 'BTC' → error", async () => {
+    await expect(parseAmount("100USDC", "BTC", 8)).rejects.toThrow("Invalid amount");
+  });
+
+  it("correct different token '100USDC' with srcSymbol 'USDC' and 6 decimals", async () => {
+    const result = await parseAmount("100USDC", "USDC", 6);
+    expect(result.type).toBe("atomic");
+    if (result.type !== "atomic") return;
+    expect(result.atomicUnits).toBe("100000000");
+  });
+
+  it("precision — '0.3ETH' with 18 decimals", async () => {
+    const result = await parseAmount("0.3ETH", "ETH", 18);
+    expect(result.type).toBe("atomic");
+    if (result.type !== "atomic") return;
+    expect(result.atomicUnits).toBe("300000000000000000");
   });
 });

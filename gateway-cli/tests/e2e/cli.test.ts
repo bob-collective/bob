@@ -27,6 +27,13 @@ describe("CLI smoke tests", () => {
     expect(output).not.toContain("--dry-run");
   });
 
+  it("swap --help shows unified amount flag", () => {
+    const output = run("swap", "--help");
+    expect(output).toContain("--amount");
+    expect(output).not.toContain("--amount-atomic");
+    expect(output).not.toContain("--amount-usd");
+  });
+
   it("quote --help shows flags", () => {
     const output = run("quote", "--help");
     expect(output).toContain("--src");

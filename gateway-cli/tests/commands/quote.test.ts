@@ -42,7 +42,7 @@ vi.mock("../../src/util/input-resolver.js", () => ({
   resolveSwapInputs: vi.fn().mockResolvedValue({
     srcAsset: { chain: "bitcoin", address: "BTC", symbol: "BTC", decimals: 8 },
     dstAsset: { chain: "base", address: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", symbol: "USDC", decimals: 6 },
-    parsed: { atomicUnits: "5000000", display: "0.05 BTC" },
+    parsed: { type: "atomic", atomicUnits: "5000000", display: "0.05 BTC" },
   }),
 }));
 
@@ -68,7 +68,7 @@ describe("handleQuote", () => {
     const result = await handleQuote({
       src: "BTC",
       dst: "USDC:base",
-      amount: "0.05",
+      amount: "5000000",
       recipient: "0xRecipient",
     });
 
@@ -95,7 +95,7 @@ describe("handleQuote", () => {
     const result = await handleQuote({
       src: "BTC",
       dst: "USDC:base",
-      amount: "0.05",
+      amount: "5000000",
       recipient: "0xRecipient",
       slippage: 100,
     });
@@ -118,7 +118,7 @@ describe("handleQuote", () => {
     await handleQuote({
       src: "BTC",
       dst: "USDC:base",
-      amount: "0.05",
+      amount: "5000000",
       recipient: "0xRecipient",
       slippage: 150,
     });
@@ -142,7 +142,7 @@ describe("handleQuote", () => {
     const result = await handleQuote({
       src: "BTC",
       dst: "USDC:base",
-      amount: "0.05",
+      amount: "5000000",
       recipient: "0xRecipient",
     });
 
@@ -164,7 +164,7 @@ describe("handleQuote", () => {
     const result = await handleQuote({
       src: "BTC",
       dst: "USDC:base",
-      amount: "0.05",
+      amount: "5000000",
       recipient: "0xRecipient",
       btcFeeRate: 15,
     });

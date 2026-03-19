@@ -123,7 +123,7 @@ const silentLogger: Logger = { progress: () => {}, warn: () => {} };
 const baseOpts = {
   src: "BTC",
   dst: "USDC:base",
-  amount: "0.05",
+  amount: "5000000",
   recipient: "0xABC",
   unsigned: false,
   wait: true,
