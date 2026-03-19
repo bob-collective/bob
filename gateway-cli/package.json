@@ -5,22 +5,25 @@
   "main": "dist/src/cli.js",
   "types": "dist/src/cli.d.ts",
   "bin": {
-    "gateway-cli": "./bin/gateway-cli.ts"
+    "gateway-cli": "./bin/gateway-cli.js"
   },
-  "files": ["dist", "bin"],
+  "files": [
+    "dist",
+    "bin"
+  ],
   "scripts": {
     "build": "tsc",
     "test": "vitest run",
     "test:watch": "vitest",
-    "cli": "tsx bin/gateway-cli.ts"
+    "cli": "node bin/gateway-cli.js",
+    "cli:dev": "tsx bin/gateway-cli.ts"
   },
   "dependencies": {
     "@gobob/bob-sdk": "file:../sdk",
     "@gobob/tokenlist": "file:../tokenlist",
     "commander": "^13.1.0",
-    "ethers": "^6.16.0",
-    "toml": "^3.0.0",
-    "viem": "^2.31.3"
+    "viem": "^2.31.3",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "tsx": "^4.19.4",

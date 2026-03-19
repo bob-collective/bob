@@ -1,28 +1,13 @@
-import { createSdkClient } from '../adapter/sdk-client.js';
-import { enrichRoutes, type EnrichedRoute, type EnrichedToken } from '../adapter/route-enricher.js';
-import { getOrFetchRoutes } from '../util/route-cache.js';
-import { resolveRpcUrl } from '../util/rpc-resolver.js';
-import { loadConfig, type Config } from '../config/index.js';
+import { getEnrichedRoutes, type EnrichedRoute, type EnrichedToken } from '../util/route-provider.js';
+import { resolveRpcUrl, getViemChain } from '../util/rpc-resolver.js';
+import { getSdk } from '../config.js';
 import { createPublicClient, http, erc20Abi, formatUnits } from 'viem';
-import { EsploraClient } from '@gobob/bob-sdk';
-import type { BalanceJson } from '../output/json-shapes.js';
+import { EsploraClient, formatBtc } from '@gobob/bob-sdk';
+import { getNativeToken } from '../util/route-provider.js';
+import type { BalanceJson } from '../output.js';
 
 export interface BalanceOptions {
   chain?: string;
-  json: boolean;
-  noCache?: boolean;
-}
-
-function getNativeSymbol(chain: string): string {
-  const symbols: Record<string, string> = {
-    bob: 'ETH', ethereum: 'ETH', base: 'ETH', arbitrum: 'ETH', optimism: 'ETH',
-    bsc: 'BNB', polygon: 'MATIC', avalanche: 'AVAX',
-  };
-  return symbols[chain] ?? 'ETH';
-}
-
-function formatBtc(sats: number): string {
-  return (sats / 1e8).toFixed(8);
 }
 
 function getUniqueTokensForChain(
@@ -42,7 +27,7 @@ function getUniqueTokensForChain(
   return tokens;
 }
 
-async function getBtcBalance(address: string, sdk: ReturnType<typeof createSdkClient>) {
+async function getBtcBalance(address: string, sdk: ReturnType<typeof getSdk>) {
   const esplora = new EsploraClient();
   const [balance, maxSpendable] = await Promise.all([
     esplora.getBalance(address),
@@ -59,10 +44,10 @@ async function getEvmBalances(
   address: string,
   chain: string,
   routes: EnrichedRoute[],
-  config: Config,
 ) {
-  const rpcUrl = resolveRpcUrl(chain, config.rpc);
-  const client = createPublicClient({ transport: http(rpcUrl) });
+  const rpcUrl = resolveRpcUrl(chain);
+  const viemChain = getViemChain(chain);
+  const client = createPublicClient({ chain: viemChain, transport: http(rpcUrl) });
 
   const nativeBalance = await client.getBalance({ address: address as `0x${string}` });
 
@@ -90,43 +75,15 @@ async function getEvmBalances(
 
   return {
     address,
-    ...(hasNative ? { native: { symbol: getNativeSymbol(chain), balance: formatUnits(nativeBalance, 18) } } : {}),
+    ...(hasNative ? (() => { const nt = getNativeToken(chain); return { native: { symbol: nt.symbol, balance: formatUnits(nativeBalance, nt.decimals) } }; })() : {}),
     ...(hasTokens ? { tokens: nonZeroTokens } : {}),
   };
 }
 
-function formatHumanBalance(result: BalanceJson): string {
-  const lines: string[] = [];
-  for (const [chain, data] of Object.entries(result)) {
-    lines.push(`${chain}  (${data.address})`);
-    if (data.confirmed !== undefined) {
-      lines.push(`  Confirmed:     ${data.confirmed} BTC`);
-    }
-    if (data.unconfirmed !== undefined) {
-      lines.push(`  Unconfirmed:   ${data.unconfirmed} BTC`);
-    }
-    if (data.maxSpendable !== undefined) {
-      lines.push(`  Max spendable: ${data.maxSpendable} BTC`);
-    }
-    if (data.native) {
-      lines.push(`  ${data.native.symbol}: ${data.native.balance}`);
-    }
-    if (data.tokens) {
-      for (const t of data.tokens) {
-        lines.push(`  ${t.symbol}: ${t.balance}`);
-      }
-    }
-  }
-  if (lines.length === 0) return 'No non-zero balances found.';
-  return lines.join('\n');
-}
+export async function handleBalance(address: string, opts: BalanceOptions): Promise<BalanceJson> {
+  const sdk = getSdk();
 
-export async function handleBalance(address: string, opts: BalanceOptions): Promise<string> {
-  const config = loadConfig();
-  const sdk = createSdkClient(config.apiUrl);
-
-  const routes = await getOrFetchRoutes(() => sdk.getRoutes(), config.cache.ttl, opts.noCache);
-  const enriched = enrichRoutes(routes);
+  const enriched = await getEnrichedRoutes();
 
   // Determine which chains to query
   const chains = opts.chain
@@ -135,25 +92,27 @@ export async function handleBalance(address: string, opts: BalanceOptions): Prom
 
   const result: BalanceJson = {};
 
-  for (const chain of chains) {
+  const entries = await Promise.all(chains.map(async (chain): Promise<[string, BalanceJson[string]] | null> => {
     if (chain === 'bitcoin') {
       const btcBalance = await getBtcBalance(address, sdk);
       if (btcBalance.confirmed > 0 || btcBalance.unconfirmed > 0) {
-        result.bitcoin = {
+        return ['bitcoin', {
           address,
-          confirmed: formatBtc(btcBalance.confirmed),
-          ...(btcBalance.unconfirmed > 0 ? { unconfirmed: formatBtc(btcBalance.unconfirmed) } : {}),
-          maxSpendable: formatBtc(btcBalance.maxSpendable),
-        };
+          confirmed: formatBtc(BigInt(btcBalance.confirmed)),
+          ...(btcBalance.unconfirmed > 0 ? { unconfirmed: formatBtc(BigInt(btcBalance.unconfirmed)) } : {}),
+          maxSpendable: formatBtc(BigInt(btcBalance.maxSpendable)),
+        }];
       }
     } else {
-      const evmBalance = await getEvmBalances(address, chain, enriched, config);
-      if (evmBalance) {
-        result[chain] = evmBalance;
-      }
+      const evmBalance = await getEvmBalances(address, chain, enriched);
+      if (evmBalance) return [chain, evmBalance];
     }
+    return null;
+  }));
+
+  for (const entry of entries) {
+    if (entry) result[entry[0]] = entry[1];
   }
 
-  if (opts.json) return JSON.stringify(result, null, 2);
-  return formatHumanBalance(result);
+  return result;
 }

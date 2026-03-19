@@ -1,32 +1,12 @@
-const PUBLIC_RPCS: Record<string, string> = {
-  bob: 'https://rpc.gobob.xyz',
-  ethereum: 'https://eth.llamarpc.com',
-  base: 'https://mainnet.base.org',
-  arbitrum: 'https://arb1.arbitrum.io/rpc',
-  optimism: 'https://mainnet.optimism.io',
-  bsc: 'https://bsc-dataseed.binance.org',
-};
+import { supportedChainsMapping } from '@gobob/bob-sdk';
+import type { Chain } from 'viem';
 
-export function resolveRpcUrl(
-  chainName: string,
-  tomlRpc: Record<string, string>,
-): string {
-  // 1. Per-chain env var
-  const envKey = `EVM_RPC_URL_${chainName.toUpperCase()}`;
-  const perChainEnv = process.env[envKey];
-  if (perChainEnv) return perChainEnv;
+/** Resolve RPC URL from env var EVM_RPC_URL_<CHAIN>, or undefined for viem defaults. */
+export function resolveRpcUrl(chainName: string): string | undefined {
+  return process.env[`EVM_RPC_URL_${chainName.toUpperCase()}`];
+}
 
-  // 2. TOML config
-  const tomlUrl = tomlRpc[chainName];
-  if (tomlUrl) return tomlUrl;
-
-  // 3. Fallback env var
-  const defaultEnv = process.env.EVM_RPC_URL;
-  if (defaultEnv) return defaultEnv;
-
-  // 4. Built-in public RPCs
-  const publicRpc = PUBLIC_RPCS[chainName];
-  if (publicRpc) return publicRpc;
-
-  throw new Error(`No RPC URL configured for chain "${chainName}". Set EVM_RPC_URL_${chainName.toUpperCase()} or add [rpc] ${chainName} = "..." to config.toml`);
+/** Get the viem Chain object for a gateway chain name, if supported. */
+export function getViemChain(chainName: string): Chain | undefined {
+  return (supportedChainsMapping as Record<string, Chain>)[chainName];
 }

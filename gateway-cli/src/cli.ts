@@ -1,18 +1,10 @@
 import { Command } from "commander";
-import { loadConfig } from "./config/index.js";
-import { handleChains } from "./commands/chains.js";
-import { handleTokens } from "./commands/tokens.js";
-import { handleQuote } from "./commands/quote.js";
-import { handleStatus } from "./commands/status.js";
-import { handleOrders } from "./commands/orders.js";
-import { handleMaxSpendable } from "./commands/max-spendable.js";
-import { handleSwap, RegistrationError } from "./commands/swap.js";
-import { handleRegister } from "./commands/register.js";
-import { handleBalance } from "./commands/balance.js";
-import { PollTimeoutError } from "./polling/poll-order.js";
-import { PriceOracleError } from "./util/price-oracle.js";
-import { TransientError } from "./util/retry.js";
-import { setJsonMode, isJsonMode, setVerboseMode } from "./util/progress.js";
+import { type OutputMode, createLogger, render, formatJson, formatConfirmation, formatChains, formatTokens, formatRoutes, formatBalance } from "./output.js";
+import { quoteSchema, swapSchema } from "./schemas.js";
+
+function modeOf(opts: { json?: boolean }): OutputMode {
+  return opts.json ? "json" : "human";
+}
 
 const errorMessage = (err: unknown): string => err instanceof Error ? err.message : String(err);
 
@@ -21,9 +13,16 @@ function withErrorHandling(fn: (...args: any[]) => Promise<void>) {
     try {
       await fn(...args);
     } catch (err) {
+      const mode = modeOf(args.find(a => a?.json !== undefined) ?? {});
       const msg = errorMessage(err);
-      if (isJsonMode()) {
-        console.log(JSON.stringify({ error: { code: 1, message: msg } }, null, 2));
+      if (mode === "json") {
+        const errJson: any = { error: { message: msg } };
+        if (err instanceof Error) {
+          if ("retryable" in err) errJson.error.retryable = true;
+          if ("orderId" in err) errJson.error.orderId = (err as any).orderId;
+          if ("txId" in err) errJson.error.txId = (err as any).txId;
+        }
+        console.log(JSON.stringify(errJson, null, 2));
       } else {
         console.error(msg);
       }
@@ -32,178 +31,102 @@ function withErrorHandling(fn: (...args: any[]) => Promise<void>) {
   };
 }
 
-function withTxErrorHandling(fn: (...args: any[]) => Promise<void>) {
-  return async (...args: any[]) => {
-    try {
-      await fn(...args);
-    } catch (err) {
-      const msg = errorMessage(err);
-
-      if (err instanceof TransientError) {
-        if (isJsonMode()) {
-          console.log(JSON.stringify({ error: { code: 6, message: msg, retryable: true } }, null, 2));
-        } else {
-          console.error(msg);
-        }
-        process.exit(6);
-      }
-
-      let code = 1;
-      if (err instanceof RegistrationError) code = 3;
-      else if (err instanceof PollTimeoutError) code = 2;
-      else if (err instanceof PriceOracleError) code = 4;
-      else if (err instanceof Error && /insufficient funds/i.test(err.message)) code = 5;
-
-      if (isJsonMode()) {
-        const errJson: any = { error: { code, message: msg } };
-        if (err instanceof RegistrationError) errJson.error.orderId = err.orderId;
-        console.log(JSON.stringify(errJson, null, 2));
-      } else {
-        console.error(msg);
-      }
-      process.exit(code);
-    }
-  };
-}
-
 export const program = new Command()
   .name("gateway-cli")
-  .description("Bridge Bitcoin to any chain via BOB Gateway")
-  .version("0.2.0")
-  .option("-v, --verbose", "Enable verbose logging to stderr", false)
-  .hook("preAction", (thisCommand) => {
-    const opts = thisCommand.opts();
-    if (opts.verbose) setVerboseMode(true);
-  });
-
-program
-  .command("chains")
-  .description("List all supported chains with aliases and chain IDs")
-  .option("--json", "Output as JSON", false)
-  .action(withErrorHandling(async (opts) => {
-    if (opts.json) setJsonMode(true);
-    console.log(await handleChains({ json: opts.json }));
-  }));
-
-program
-  .command("tokens")
-  .description("List available tokens on a chain")
-  .requiredOption("--chain <chain>", "Chain name or alias")
-  .option("--json", "Output as JSON", false)
-  .action(withErrorHandling(async (opts) => {
-    if (opts.json) setJsonMode(true);
-    console.log(await handleTokens({ chain: opts.chain, json: opts.json }));
-  }));
+  .description("Swap between BTC and tokens like USDC, ETH, wBTC via BOB Gateway")
+  .version("0.2.0");
 
 program
   .command("routes")
-  .description("List available bridge routes")
+  .description("List swap routes, supported chains, or tokens")
   .option("--src-chain <chain>", "Filter by source chain")
   .option("--dst-chain <chain>", "Filter by destination chain")
+  .option("--chains", "List supported chains only", false)
+  .option("--tokens <chain>", "List tokens available on a chain")
   .option("--json", "Output as JSON", false)
   .action(withErrorHandling(async (opts) => {
-    if (opts.json) setJsonMode(true);
+    const mode = modeOf(opts);
     const { handleRoutes } = await import("./commands/routes.js");
-    console.log(await handleRoutes({ json: opts.json, from: opts.srcChain, to: opts.dstChain }));
+    const result = await handleRoutes({ from: opts.srcChain, to: opts.dstChain, chains: opts.chains, tokens: opts.tokens });
+    if (result.type === "chains") render(result.data, mode, formatChains);
+    else if (result.type === "tokens") render(result.data, mode, formatTokens);
+    else render(result.data, mode, formatRoutes);
   }));
 
 program
   .command("quote")
-  .description("Get a bridge quote")
+  .description("Get a swap quote")
   .requiredOption("--src <asset[:chain]>", "Source asset (e.g. BTC, USDC:ethereum)")
   .requiredOption("--dst <asset[:chain]>", "Destination asset (e.g. USDC:ethereum, BTC)")
-  .requiredOption("--amount <amt>", "Amount with suffix (e.g. 0.1BTC, 100USDC, $50)")
-  .option("--recipient <address>", "Recipient address (env: GATEWAY_RECIPIENT)", process.env.GATEWAY_RECIPIENT)
-  .option("--sender <address>", "Sender address (env: GATEWAY_SENDER)", process.env.GATEWAY_SENDER)
+  .option("--amount <value>", "Amount in human-readable units (e.g. 0.1 for 0.1 BTC)")
+  .option("--amount-atomic <value>", "Amount in smallest units (e.g. satoshis, wei)")
+  .option("--amount-usd <value>", "Amount in USD (converted via price oracle)")
+  .option("--recipient <address>", "Recipient address")
+  .option("--sender <address>", "Sender address")
   .option("--slippage <bps>", "Slippage in basis points")
   .option("--gas-refill <usd>", "Request ETH gas refill on destination (USD amount)")
   .option("--btc-fee-rate <sat/vbyte>", "Bitcoin fee rate (default: mempool.space next-block)")
   .option("--json", "Output as JSON", false)
   .action(withErrorHandling(async (opts) => {
-    const config = loadConfig();
-    if (opts.json) setJsonMode(true);
-    const slippage = opts.slippage ? parseInt(opts.slippage, 10) : config.slippageBps;
-    console.log(await handleQuote({
-      src: opts.src,
-      dst: opts.dst,
-      amount: opts.amount,
-      recipient: opts.recipient ?? config.recipient,
-      sender: opts.sender ?? config.sender,
-      slippageBps: slippage,
-      gasRefillUsd: opts.gasRefill ? parseFloat(opts.gasRefill) : undefined,
-      btcFeeRate: opts.btcFeeRate ? parseInt(opts.btcFeeRate, 10) : config.btcFeeRate,
-      json: opts.json,
-    }));
+    const mode = modeOf(opts);
+    const parsed = quoteSchema.parse(opts);
+    if (!parsed.recipient) throw new Error("--recipient is required");
+    const { handleQuote } = await import("./commands/quote.js");
+    const result = await handleQuote({ ...parsed, recipient: parsed.recipient, sender: parsed.sender });
+    render(result.quote, mode, () => formatConfirmation(result.confirmation));
   }));
 
 function addSwapOptions(cmd: Command): Command {
   return cmd
     .requiredOption("--src <asset[:chain]>", "Source asset (e.g. BTC, USDC:ethereum)")
     .requiredOption("--dst <asset[:chain]>", "Destination asset (e.g. USDC:ethereum, BTC)")
-    .requiredOption("--amount <amt>", "Amount with suffix (e.g. 0.1BTC, 100USDC, $50)")
-    .option("--recipient <address>", "Recipient address (env: GATEWAY_RECIPIENT)", process.env.GATEWAY_RECIPIENT)
-    .option("--sender <address>", "Sender address (env: GATEWAY_SENDER)", process.env.GATEWAY_SENDER)
+    .option("--amount <value>", "Amount in human-readable units (e.g. 0.1 for 0.1 BTC)")
+    .option("--amount-atomic <value>", "Amount in smallest units (e.g. satoshis, wei)")
+    .option("--amount-usd <value>", "Amount in USD (converted via price oracle)")
+    .option("--recipient <address>", "Recipient address")
+    .option("--sender <address>", "Sender address")
     .option("--slippage <bps>", "Slippage in basis points")
     .option("--gas-refill <usd>", "Request ETH gas refill on destination (USD amount)")
     .option("--btc-fee-rate <sat/vbyte>", "Bitcoin fee rate (default: mempool.space)")
     .option("--private-key <key>", "Private key (WIF for BTC, hex for EVM)")
-    .option("--keystore <path>", "Path to EVM JSON keystore file (env: GATEWAY_KEYSTORE)", process.env.GATEWAY_KEYSTORE)
-    .option("--password <pass>", "Keystore password (or KEYSTORE_PASSWORD env)")
-    .option("--auto-confirm", "Skip confirmation prompt", false)
     .option("--dry-run", "Show quote and exit without creating an order", false)
     .option("--no-wait", "Exit after submitting without polling")
     .option("--unsigned", "Output unsigned PSBT/tx data without signing", false)
-    .option("--timeout <seconds>", "Polling timeout (env: GATEWAY_TIMEOUT)", "1800")
-    .option("--no-retry", "Fail immediately on transient errors (exit code 6)")
+    .option("--timeout <seconds>", "Polling timeout in seconds (default: 1800)", "1800")
+    .option("--no-retry", "Fail immediately on transient errors")
     .option("--json", "Output as JSON", false);
 }
 
-function buildSwapArgs(opts: any, config: ReturnType<typeof loadConfig>) {
-  const slippage = opts.slippage ? parseInt(opts.slippage, 10) : config.slippageBps;
-  const timeout = opts.timeout ? parseInt(opts.timeout, 10) * 1000 : config.timeoutMs;
-  return {
-    apiUrl: config.apiUrl,
-    src: opts.src,
-    dst: opts.dst,
-    amount: opts.amount,
-    recipient: opts.recipient ?? config.recipient,
-    sender: opts.sender ?? config.sender,
-    slippageBps: slippage,
-    gasRefillUsd: opts.gasRefill ? parseFloat(opts.gasRefill) : undefined,
-    btcFeeRate: opts.btcFeeRate ? parseInt(opts.btcFeeRate, 10) : config.btcFeeRate,
-    privateKey: opts.privateKey,
-    keystorePath: opts.keystore ?? config.keystorePath,
-    keystorePassword: opts.password ?? config.keystorePassword,
-    evmRpcUrl: config.evmRpcUrl,
-    bitcoinPrivateKey: config.bitcoinPrivateKey,
-    evmPrivateKey: config.evmPrivateKey,
-    bitcoinSignerCmd: config.bitcoinSigner,
-    evmSignerCmd: config.evmSigner,
-    autoConfirm: opts.autoConfirm || config.autoConfirm,
-    unsigned: opts.unsigned,
-    dryRun: opts.dryRun,
-    noWait: opts.wait === false || config.noWait,
-    noRetry: opts.retry === false,
-    timeoutMs: timeout,
-    json: opts.json,
-  };
+async function runSwap(opts: any) {
+  const mode = modeOf(opts);
+  const parsed = swapSchema.parse(opts);
+  if (!parsed.recipient) throw new Error("--recipient is required");
+
+  const log = createLogger(mode);
+  const { handleSwap } = await import("./commands/swap.js");
+  const result = await handleSwap({ ...parsed, recipient: parsed.recipient, sender: parsed.sender }, log);
+
+  switch (result.type) {
+    case "dryRun":
+      render(result.quote, mode, () => formatConfirmation(result.confirmation));
+      break;
+    case "unsigned":
+    case "cancelled":
+    case "submitted":
+    case "confirmed":
+    case "mempoolPending":
+      render("data" in result ? result.data : result, mode);
+      break;
+  }
 }
 
-addSwapOptions(program.command("swap").description("Bridge BTC to/from another chain"))
-  .action(withTxErrorHandling(async (opts) => {
-    const config = loadConfig();
-    if (opts.json) setJsonMode(true);
-    console.log(await handleSwap(buildSwapArgs(opts, config)));
-  }));
+addSwapOptions(program.command("swap").description("Execute a cross-chain swap (e.g. BTC to USDC, ETH to BTC)"))
+  .action(withErrorHandling(runSwap));
 
 // Hidden alias for backwards compatibility
 {
   const offrampCmd = addSwapOptions(new Command("offramp").description("(alias for swap)"))
-    .action(withTxErrorHandling(async (opts) => {
-      const config = loadConfig();
-      if (opts.json) setJsonMode(true);
-      console.log(await handleSwap(buildSwapArgs(opts, config)));
-    }));
+    .action(withErrorHandling(runSwap));
   program.addCommand(offrampCmd, { hidden: true });
 }
 
@@ -212,8 +135,8 @@ program
   .description("Check order status")
   .option("--json", "Output as JSON", false)
   .action(withErrorHandling(async (orderId, opts) => {
-    if (opts.json) setJsonMode(true);
-    console.log(await handleStatus({ orderId, json: opts.json }));
+    const { handleStatus } = await import("./commands/status.js");
+    render(await handleStatus({ orderId }), modeOf(opts));
   }));
 
 program
@@ -221,46 +144,26 @@ program
   .description("List all orders for an address")
   .option("--json", "Output as JSON", false)
   .action(withErrorHandling(async (address, opts) => {
-    if (opts.json) setJsonMode(true);
-    console.log(await handleOrders({ address, json: opts.json }));
-  }));
-
-program
-  .command("max-spendable <address>")
-  .description("Check maximum spendable BTC after fees")
-  .option("--btc-fee-rate <sat/vbyte>", "Bitcoin fee rate (default: mempool.space)")
-  .option("--json", "Output as JSON", false)
-  .action(withErrorHandling(async (address, opts) => {
-    if (opts.json) setJsonMode(true);
-    const config = loadConfig();
-    console.log(await handleMaxSpendable({
-      address,
-      btcFeeRate: opts.btcFeeRate ? parseInt(opts.btcFeeRate, 10) : config.btcFeeRate,
-      json: opts.json,
-    }));
+    const { handleOrders } = await import("./commands/orders.js");
+    render(await handleOrders({ address }), modeOf(opts));
   }));
 
 program
   .command("balance")
-  .description("Show token balances across gateway-supported chains")
+  .description("Show token balances on supported chains")
   .argument("<address>", "Wallet address (BTC or EVM)")
   .option("--chain <chain>", "Specific chain to check")
   .option("--json", "Output as JSON", false)
-  .option("--no-cache", "Skip route cache")
   .action(withErrorHandling(async (address, opts) => {
-    if (opts.json) setJsonMode(true);
-    console.log(await handleBalance(address, {
-      chain: opts.chain,
-      json: opts.json,
-      noCache: opts.cache === false,
-    }));
+    const { handleBalance } = await import("./commands/balance.js");
+    render(await handleBalance(address, { chain: opts.chain }), modeOf(opts), formatBalance);
   }));
 
 program
   .command("register <order-id> <txid>")
-  .description("Manually register a signed tx (recovery)")
+  .description("Register a tx for an existing order (recovery)")
   .option("--json", "Output as JSON", false)
   .action(withErrorHandling(async (orderId, txid, opts) => {
-    if (opts.json) setJsonMode(true);
-    console.log(await handleRegister({ orderId, txid, json: opts.json }));
+    const { handleRegister } = await import("./commands/register.js");
+    render(await handleRegister({ orderId, txid }), modeOf(opts));
   }));
