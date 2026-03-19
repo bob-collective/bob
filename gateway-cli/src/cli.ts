@@ -89,7 +89,6 @@ function addSwapOptions(cmd: Command): Command {
     .option("--gas-refill <usd>", "Request ETH gas refill on destination (USD amount)")
     .option("--btc-fee-rate <sat/vbyte>", "Bitcoin fee rate (default: mempool.space)")
     .option("--private-key <key>", "Private key (WIF for BTC, hex for EVM)")
-    .option("--dry-run", "Show quote and exit without creating an order", false)
     .option("--no-wait", "Exit after submitting without polling")
     .option("--unsigned", "Output unsigned PSBT/tx data without signing", false)
     .option("--timeout <seconds>", "Polling timeout in seconds (default: 1800)", "1800")
@@ -107,9 +106,6 @@ async function runSwap(opts: any) {
   const result = await handleSwap({ ...parsed, recipient: parsed.recipient, sender: parsed.sender }, log);
 
   switch (result.type) {
-    case "dryRun":
-      render(result.quote, mode, () => formatConfirmation(result.confirmation));
-      break;
     case "unsigned":
     case "cancelled":
     case "submitted":

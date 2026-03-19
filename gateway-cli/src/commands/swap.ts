@@ -10,7 +10,7 @@ import { resolveRpcUrl, getViemChain } from "../util/rpc-resolver.js";
 import { retryWithBackoff, executeWithTransientRetry } from "../util/retry.js";
 import { loadConfig, getSdk } from "../config.js";
 import type { GatewayOrderInfo, GatewayOrderStatus, GetQuoteParams } from "@gobob/bob-sdk";
-import type { Logger, ConfirmationData, SwapSuccessJson, SwapSubmittedJson, SwapMempoolPendingJson, QuoteJson } from "../output.js";
+import type { Logger, SwapSuccessJson, SwapSubmittedJson, SwapMempoolPendingJson } from "../output.js";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -34,14 +34,12 @@ export interface SwapOptions {
   btcFeeRate?: number;
   privateKey?: string;
   unsigned: boolean;
-  dryRun: boolean;
   wait: boolean;
   retry: boolean;
   timeout?: number;
 }
 
 export type SwapResult =
-  | { type: "dryRun"; quote: QuoteJson; confirmation: ConfirmationData }
   | { type: "unsigned"; orderId: string; psbtBase64?: string; txInfo?: any }
   | { type: "cancelled" }
   | { type: "submitted"; data: SwapSubmittedJson }
@@ -82,38 +80,6 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
     maxSlippage: slippageBps,
     gasRefill: gasRefillWei ? BigInt(gasRefillWei) : undefined,
   };
-
-  // ─── Dry-run ───────────────────────────────────────────────────────────────
-
-  const initialQuote = await sdk.getQuote(quoteParams);
-  const initialOutputAmount = getInnerQuote(initialQuote).outputAmount.amount;
-
-  if (opts.dryRun) {
-    return {
-      type: "dryRun",
-      quote: {
-        srcAmount: parsed.atomicUnits,
-        srcAsset: srcAsset.symbol,
-        dstAmount: initialOutputAmount,
-        dstAsset: dstAsset.symbol,
-        dstChain: dstAsset.chain,
-        slippageBps: slippageBps,
-        feeRateSatPerVbyte: opts.btcFeeRate,
-      },
-      confirmation: {
-        srcAmount: parsed.atomicUnits,
-        srcAsset: srcAsset.symbol,
-        srcDisplay: parsed.display,
-        dstAmount: initialOutputAmount,
-        dstAsset: dstAsset.symbol,
-        dstChain: dstAsset.chain,
-        feeRateSatPerVbyte: opts.btcFeeRate,
-        slippageBps: slippageBps,
-        recipient: opts.recipient,
-        gasRefillUsd: opts.gasRefill ? String(opts.gasRefill) : undefined,
-      },
-    };
-  }
 
   // ─── Unsigned mode ─────────────────────────────────────────────────────────
 
