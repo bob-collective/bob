@@ -48,7 +48,7 @@ export const quoteSchema = z.object({
   recipient: z.string().optional(),
   sender: z.string().optional(),
   slippage: positiveInt.optional(),
-  gasRefill: positiveNumber.optional(),
+  gasRefillUsd: positiveNumber.optional(),
   btcFeeRate: positiveInt.optional(),
   json: z.boolean().default(false),
 }).and(amountGroup);

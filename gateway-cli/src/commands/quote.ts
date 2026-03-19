@@ -1,46 +1,47 @@
-import { createSdkClient } from "../adapter/sdk-client.js";
-import { flattenQuote } from "../adapter/quote-flattener.js";
-import { enrichRoutes } from "../adapter/route-enricher.js";
-import { getOrFetchRoutes } from "../util/route-cache.js";
-import { parseAssetChain } from "../util/asset-chain-parser.js";
-import { parseAmount } from "../util/amount-parser.js";
-import { fetchFeeRate } from "../util/mempool.js";
-import { formatConfirmation } from "../output/formatter.js";
-import { loadConfig } from "../config/index.js";
-import type { QuoteJson } from "../output/json-shapes.js";
+import { getInnerQuote } from "@gobob/bob-sdk";
+import { getEnrichedRoutes } from "../util/route-provider.js";
+import { resolveSwapInputs } from "../util/input-resolver.js";
+import { MempoolClient } from "@gobob/bob-sdk";
+import { loadConfig, getSdk } from "../config.js";
+import type { QuoteJson, ConfirmationData } from "../output.js";
 import type { GetQuoteParams } from "@gobob/bob-sdk";
 
 export interface QuoteOptions {
   src: string;
   dst: string;
-  amount: string;
+  amount?: string;
+  amountAtomic?: string;
+  amountUsd?: string;
   recipient: string;
   sender?: string;
-  slippageBps: number;
+  slippage?: number;
   gasRefillUsd?: number;
   btcFeeRate?: number;
-  json: boolean;
 }
 
-export async function handleQuote(opts: QuoteOptions): Promise<string> {
+export interface QuoteResult {
+  quote: QuoteJson;
+  confirmation: ConfirmationData;
+}
+
+export async function handleQuote(opts: QuoteOptions): Promise<QuoteResult> {
   const config = loadConfig();
-  const sdk = createSdkClient(config.apiUrl);
+  const sdk = getSdk();
+  const slippageBps = opts.slippage ?? config.slippageBps;
 
-  // Get enriched routes for token resolution
-  const routes = await getOrFetchRoutes(() => sdk.getRoutes(), config.cache.ttl);
-  const enriched = enrichRoutes(routes);
-
-  const srcAsset = parseAssetChain(opts.src, enriched);
-  const dstAsset = parseAssetChain(opts.dst, enriched);
+  const enriched = await getEnrichedRoutes();
+  const { srcAsset, dstAsset, parsed } = await resolveSwapInputs(
+    opts.src, opts.dst, { amount: opts.amount, amountAtomic: opts.amountAtomic, amountUsd: opts.amountUsd }, enriched,
+  );
   const isBtcSrc = srcAsset.chain === "bitcoin";
 
-  const parsed = await parseAmount(opts.amount, srcAsset.symbol, srcAsset.decimals);
+  let feeRate = opts.btcFeeRate ?? config.btcFeeRate;
+  if (isBtcSrc && !feeRate) {
+    const fees = await new MempoolClient().getRecommendedFees();
+    feeRate = fees.fastestFee;
+  }
 
-  let feeRate = opts.btcFeeRate;
-  if (isBtcSrc && !feeRate) feeRate = await fetchFeeRate();
-
-  // Build SDK params
-  const quoteParams: GetQuoteParams = {
+  const quote = await sdk.getQuote({
     fromChain: srcAsset.chain,
     toChain: dstAsset.chain,
     fromToken: srcAsset.address,
@@ -48,33 +49,31 @@ export async function handleQuote(opts: QuoteOptions): Promise<string> {
     toUserAddress: opts.recipient,
     fromUserAddress: opts.sender,
     amount: parsed.atomicUnits,
-    maxSlippage: opts.slippageBps,
-  };
-
-  const quote = await sdk.getQuote(quoteParams);
-  const flat = flattenQuote(quote);
-
-  const shape: QuoteJson = {
-    srcAmount: parsed.atomicUnits,
-    srcAsset: srcAsset.symbol,
-    dstAmount: flat.outputAmount,
-    dstAsset: dstAsset.symbol,
-    dstChain: dstAsset.chain,
-    slippageBps: opts.slippageBps,
-    feeRateSatPerVbyte: feeRate,
-  };
-
-  if (opts.json) return JSON.stringify(shape, null, 2);
-
-  return formatConfirmation({
-    srcAmount: parsed.atomicUnits,
-    srcAsset: srcAsset.symbol,
-    srcDisplay: parsed.display,
-    dstAmount: flat.outputAmount,
-    dstAsset: dstAsset.symbol,
-    dstChain: dstAsset.chain,
-    feeRateSatPerVbyte: feeRate,
-    slippageBps: opts.slippageBps,
-    recipient: opts.recipient,
+    maxSlippage: slippageBps,
   });
+  const outputAmount = getInnerQuote(quote).outputAmount.amount;
+
+  return {
+    quote: {
+      srcAmount: parsed.atomicUnits,
+      srcAsset: srcAsset.symbol,
+      dstAmount: outputAmount,
+      dstAsset: dstAsset.symbol,
+      dstChain: dstAsset.chain,
+      slippageBps,
+      feeRateSatPerVbyte: feeRate,
+    },
+    confirmation: {
+      srcAmount: parsed.atomicUnits,
+      srcAsset: srcAsset.symbol,
+      srcDisplay: parsed.display,
+      dstAmount: outputAmount,
+      dstAsset: dstAsset.symbol,
+      dstChain: dstAsset.chain,
+      feeRateSatPerVbyte: feeRate,
+      slippageBps,
+      recipient: opts.recipient,
+      gasRefillUsd: opts.gasRefillUsd ? String(opts.gasRefillUsd) : undefined,
+    },
+  };
 }

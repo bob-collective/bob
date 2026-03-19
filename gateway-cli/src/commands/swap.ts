@@ -83,7 +83,7 @@ export interface SwapOptions {
   recipient: string;
   sender?: string;
   slippage?: number;
-  gasRefill?: number;
+  gasRefillUsd?: number;
   btcFeeRate?: number;
   privateKey?: string;
   unsigned: boolean;
@@ -118,8 +118,8 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
     ? await resolveBtcSigner(opts.privateKey ?? config.bitcoinPrivateKey, opts.unsigned)
     : resolveEvmSigner(opts.privateKey ?? config.evmPrivateKey, opts.unsigned, evmChain);
 
-  const gasRefillWei = opts.gasRefill
-    ? (await parseAmountUsd(String(opts.gasRefill), "ETH", getNativeToken("ethereum").decimals)).atomicUnits
+  const gasRefillWei = opts.gasRefillUsd
+    ? (await parseAmountUsd(String(opts.gasRefillUsd), "ETH", getNativeToken("ethereum").decimals)).atomicUnits
     : undefined;
 
   const quoteParams: GetQuoteParams = {

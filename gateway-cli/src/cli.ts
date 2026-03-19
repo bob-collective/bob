@@ -63,7 +63,7 @@ program
   .option("--recipient <address>", "Recipient address")
   .option("--sender <address>", "Sender address")
   .option("--slippage <bps>", "Slippage in basis points")
-  .option("--gas-refill <usd>", "Request ETH gas refill on destination (USD amount)")
+  .option("--gas-refill-usd <usd>", "Request ETH gas refill on destination (USD amount)")
   .option("--btc-fee-rate <sat/vbyte>", "Bitcoin fee rate (default: mempool.space next-block)")
   .option("--json", "Output as JSON", false)
   .action(withErrorHandling(async (opts) => {
@@ -85,7 +85,7 @@ function addSwapOptions(cmd: Command): Command {
     .option("--recipient <address>", "Recipient address")
     .option("--sender <address>", "Sender address")
     .option("--slippage <bps>", "Slippage in basis points")
-    .option("--gas-refill <usd>", "Request ETH gas refill on destination (USD amount)")
+    .option("--gas-refill-usd <usd>", "Request ETH gas refill on destination (USD amount)")
     .option("--btc-fee-rate <sat/vbyte>", "Bitcoin fee rate (default: mempool.space)")
     .option("--private-key <key>", "Private key (WIF for BTC, hex for EVM)")
     .option("--no-wait", "Exit after submitting without polling")
