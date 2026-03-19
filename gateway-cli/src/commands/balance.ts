@@ -31,24 +31,25 @@ function getUniqueTokensForChain(
   return tokens;
 }
 
-async function getChainBalance(
+async function getBtcBalance(
+  address: string,
+  sdk: ReturnType<typeof getSdk>,
+): Promise<BalanceJson[string]> {
+  const esplora = new EsploraClient();
+  const [bal, maxSpendable] = await Promise.all([
+    esplora.getBalance(address),
+    sdk.getMaxSpendable(address),
+  ]);
+  const total = bal.confirmed + bal.unconfirmed;
+  return { address, balance: formatBtc(BigInt(total)), maxSpendable: formatBtc(BigInt(Number(maxSpendable.amount.amount))) };
+}
+
+async function getEvmChainBalance(
   address: string,
   chain: string,
   routes: EnrichedRoute[],
-  sdk: ReturnType<typeof getSdk>,
 ): Promise<BalanceJson[string]> {
-  if (chain === 'bitcoin') {
-    const esplora = new EsploraClient();
-    const [bal, maxSpendable] = await Promise.all([
-      esplora.getBalance(address),
-      sdk.getMaxSpendable(address),
-    ]);
-    const total = bal.confirmed + bal.unconfirmed;
-    return { address, balance: formatBtc(BigInt(total)), maxSpendable: formatBtc(BigInt(Number(maxSpendable.amount.amount))) };
-  }
-
-  const rpcUrl = resolveRpcUrl(chain);
-  const client = createPublicClient({ chain: getViemChain(chain), transport: http(rpcUrl) });
+  const client = createPublicClient({ chain: getViemChain(chain), transport: http(resolveRpcUrl(chain)) });
   const chainTokens = getUniqueTokensForChain(chain, routes);
 
   const [nativeBalance, tokenBalances] = await Promise.all([
@@ -86,7 +87,10 @@ export async function handleBalance(address: string, opts: BalanceOptions): Prom
   const entries = await Promise.all(
     chains.map(async (chain): Promise<[string, BalanceJson[string]]> => {
       try {
-        return [chain, await getChainBalance(address, chain, enriched, sdk)];
+        const data = chain === 'bitcoin'
+          ? await getBtcBalance(address, sdk)
+          : await getEvmChainBalance(address, chain, enriched);
+        return [chain, data];
       } catch {
         return [chain, { address, error: true }];
       }
