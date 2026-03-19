@@ -1,25 +1,18 @@
-import { createSdkClient } from "../adapter/sdk-client.js";
-import { loadConfig } from "../config/index.js";
-import { formatOutput } from "../output/formatter.js";
+import { getSdk } from "../config.js";
 import type { RegisterTx } from "@gobob/bob-sdk";
 
-interface RegisterOptions {
-  orderId: string;
-  txid: string;
-  json: boolean;
-}
+export async function handleRegister(opts: { orderId: string; txid: string }) {
+  const sdk = getSdk();
+  const order = await sdk.api.getOrder({ id: opts.orderId });
 
-export async function handleRegister(
-  opts: RegisterOptions,
-): Promise<string> {
-  const config = loadConfig();
-  const sdk = createSdkClient(config.apiUrl);
-  const isEvm = opts.txid.startsWith("0x");
+  let registerTx: RegisterTx;
+  if (order.srcInfo.chain === "bitcoin") {
+    registerTx = { onramp: { orderId: opts.orderId, bitcoinTxHex: opts.txid } };
+  } else if (order.srcInfo.chain !== "bob" && order.dstInfo.chain !== "bob") {
+    registerTx = { layerZero: { orderId: opts.orderId, evmTxhash: opts.txid } };
+  } else {
+    registerTx = { offramp: { orderId: opts.orderId, evmTxhash: opts.txid } };
+  }
 
-  const registerTx: RegisterTx = isEvm
-    ? { offramp: { orderId: opts.orderId, evmTxhash: opts.txid } }
-    : { onramp: { orderId: opts.orderId, bitcoinTxid: opts.txid } };
-
-  const result = await sdk.api.registerTx({ registerTx });
-  return formatOutput(result, opts.json ? "json" : "human");
+  return sdk.api.registerTx({ registerTx });
 }

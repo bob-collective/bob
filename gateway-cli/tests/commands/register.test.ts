@@ -4,11 +4,13 @@ import { handleRegister } from "../../src/commands/register.js";
 // ─── Mocks ───────────────────────────────────────────────────────────────────
 
 const mockRegisterTx = vi.fn();
+const mockGetOrder = vi.fn();
 
 vi.mock("../../src/config.js", () => ({
   getSdk: vi.fn(() => ({
     api: {
       registerTx: mockRegisterTx,
+      getOrder: mockGetOrder,
     },
   })),
 }));
@@ -18,43 +20,56 @@ vi.mock("../../src/config.js", () => ({
 describe("handleRegister", () => {
   beforeEach(() => {
     mockRegisterTx.mockReset();
+    mockGetOrder.mockReset();
   });
 
-  it("registers an EVM transaction (0x-prefixed) as offramp", async () => {
-    const fakeResponse = { success: true };
-    mockRegisterTx.mockResolvedValueOnce(fakeResponse);
-
-    const evmTxid = "0xabc123def456789012345678901234567890123456789012345678901234567890";
-
-    const result = await handleRegister({ orderId: "order-42", txid: evmTxid });
-
-    expect(mockRegisterTx).toHaveBeenCalledOnce();
-    expect(mockRegisterTx).toHaveBeenCalledWith({
-      registerTx: {
-        offramp: { orderId: "order-42", evmTxhash: evmTxid },
-      },
+  it("registers onramp when order srcInfo.chain is bitcoin", async () => {
+    mockGetOrder.mockResolvedValueOnce({
+      srcInfo: { chain: "bitcoin" },
+      dstInfo: { chain: "bob" },
     });
-    expect(result).toEqual(fakeResponse);
+    mockRegisterTx.mockResolvedValueOnce({ success: true });
+
+    await handleRegister({ orderId: "order-1", txid: "abc123" });
+
+    expect(mockRegisterTx).toHaveBeenCalledWith({
+      registerTx: { onramp: { orderId: "order-1", bitcoinTxHex: "abc123" } },
+    });
   });
 
-  it("registers a Bitcoin transaction (non-0x) as onramp", async () => {
-    const fakeResponse = { success: true };
-    mockRegisterTx.mockResolvedValueOnce(fakeResponse);
-
-    const btcTxid = "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2";
-
-    const result = await handleRegister({ orderId: "order-99", txid: btcTxid });
-
-    expect(mockRegisterTx).toHaveBeenCalledOnce();
-    expect(mockRegisterTx).toHaveBeenCalledWith({
-      registerTx: {
-        onramp: { orderId: "order-99", bitcoinTxid: btcTxid },
-      },
+  it("registers offramp when one chain is bob", async () => {
+    mockGetOrder.mockResolvedValueOnce({
+      srcInfo: { chain: "bob" },
+      dstInfo: { chain: "bitcoin" },
     });
-    expect(result).toEqual(fakeResponse);
+    mockRegisterTx.mockResolvedValueOnce({ success: true });
+
+    await handleRegister({ orderId: "order-2", txid: "0xdef" });
+
+    expect(mockRegisterTx).toHaveBeenCalledWith({
+      registerTx: { offramp: { orderId: "order-2", evmTxhash: "0xdef" } },
+    });
+  });
+
+  it("registers layerZero when neither chain is bob or bitcoin", async () => {
+    mockGetOrder.mockResolvedValueOnce({
+      srcInfo: { chain: "ethereum" },
+      dstInfo: { chain: "base" },
+    });
+    mockRegisterTx.mockResolvedValueOnce({ success: true });
+
+    await handleRegister({ orderId: "order-3", txid: "0xabc" });
+
+    expect(mockRegisterTx).toHaveBeenCalledWith({
+      registerTx: { layerZero: { orderId: "order-3", evmTxhash: "0xabc" } },
+    });
   });
 
   it("propagates errors from registerTx", async () => {
+    mockGetOrder.mockResolvedValueOnce({
+      srcInfo: { chain: "bob" },
+      dstInfo: { chain: "bitcoin" },
+    });
     mockRegisterTx.mockRejectedValueOnce(new Error("Registration failed"));
 
     await expect(
