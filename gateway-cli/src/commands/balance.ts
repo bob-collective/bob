@@ -10,6 +10,10 @@ export interface BalanceOptions {
   chain?: string;
 }
 
+function getUniqueChains(routes: EnrichedRoute[]): string[] {
+  return [...new Set(routes.flatMap(r => [r.srcChain, r.dstChain]))];
+}
+
 function getUniqueTokensForChain(
   chain: string,
   routes: EnrichedRoute[],
@@ -77,7 +81,7 @@ export async function handleBalance(address: string, opts: BalanceOptions): Prom
   const enriched = await getEnrichedRoutes();
   const chains = opts.chain
     ? [opts.chain]
-    : [...new Set(enriched.flatMap(r => [r.srcChain, r.dstChain]))];
+    : getUniqueChains(enriched);
 
   const entries = await Promise.all(
     chains.map(async (chain): Promise<[string, BalanceJson[string]]> => {
