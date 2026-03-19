@@ -49,19 +49,20 @@ async function getEvmBalances(
   const viemChain = getViemChain(chain);
   const client = createPublicClient({ chain: viemChain, transport: http(rpcUrl) });
 
-  const nativeBalance = await client.getBalance({ address: address as `0x${string}` });
-
   const chainTokens = getUniqueTokensForChain(chain, routes);
-  const tokenBalances = chainTokens.length > 0
-    ? await client.multicall({
-        contracts: chainTokens.map(t => ({
-          address: t.address as `0x${string}`,
-          abi: erc20Abi,
-          functionName: 'balanceOf' as const,
-          args: [address as `0x${string}`],
-        })),
-      })
-    : [];
+  const [nativeBalance, tokenBalances] = await Promise.all([
+    client.getBalance({ address: address as `0x${string}` }),
+    chainTokens.length > 0
+      ? client.multicall({
+          contracts: chainTokens.map(t => ({
+            address: t.address as `0x${string}`,
+            abi: erc20Abi,
+            functionName: 'balanceOf' as const,
+            args: [address as `0x${string}`],
+          })),
+        })
+      : [],
+  ]);
 
   const nonZeroTokens = chainTokens
     .map((t, i) => ({ ...t, balance: (tokenBalances[i]?.result as bigint) ?? 0n }))
@@ -73,9 +74,10 @@ async function getEvmBalances(
 
   if (!hasNative && !hasTokens) return null;
 
+  const nt = getNativeToken(chain);
   return {
     address,
-    ...(hasNative ? (() => { const nt = getNativeToken(chain); return { native: { symbol: nt.symbol, balance: formatUnits(nativeBalance, nt.decimals) } }; })() : {}),
+    ...(hasNative ? { native: { symbol: nt.symbol, balance: formatUnits(nativeBalance, nt.decimals) } } : {}),
     ...(hasTokens ? { tokens: nonZeroTokens } : {}),
   };
 }
