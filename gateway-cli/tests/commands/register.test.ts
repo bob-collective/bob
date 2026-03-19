@@ -37,9 +37,9 @@ describe("handleRegister", () => {
     });
   });
 
-  it("registers offramp when one chain is bob", async () => {
+  it("registers offramp when dstInfo.chain is bitcoin", async () => {
     mockGetOrder.mockResolvedValueOnce({
-      srcInfo: { chain: "bob" },
+      srcInfo: { chain: "ethereum" },
       dstInfo: { chain: "bitcoin" },
     });
     mockRegisterTx.mockResolvedValueOnce({ success: true });
@@ -67,7 +67,7 @@ describe("handleRegister", () => {
 
   it("propagates errors from registerTx", async () => {
     mockGetOrder.mockResolvedValueOnce({
-      srcInfo: { chain: "bob" },
+      srcInfo: { chain: "ethereum" },
       dstInfo: { chain: "bitcoin" },
     });
     mockRegisterTx.mockRejectedValueOnce(new Error("Registration failed"));
