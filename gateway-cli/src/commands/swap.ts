@@ -7,10 +7,63 @@ import { resolveSwapInputs, parseAmountUsd } from "../util/input-resolver.js";
 import { getNativeToken } from "../util/route-provider.js";
 import { MempoolClient } from "@gobob/bob-sdk";
 import { resolveRpcUrl, getViemChain } from "../util/rpc-resolver.js";
-import { retryWithBackoff, executeWithTransientRetry } from "../util/retry.js";
+import pRetry, { AbortError } from "p-retry";
 import { loadConfig, getSdk } from "../config.js";
 import type { GatewayOrderInfo, GatewayOrderStatus, GetQuoteParams } from "@gobob/bob-sdk";
 import type { Logger, SwapSuccessJson, SwapSubmittedJson, SwapMempoolPendingJson } from "../output.js";
+
+// ─── Transient error detection + retry ──────────────────────────────────────
+
+const TRANSIENT_PATTERNS = [
+  /TRM screening/i,
+  /429/,
+  /Too Many Requests/i,
+  /rate limit/i,
+  /not yet propagated/i,
+  /BTC propagation/i,
+  /timeout/i,
+  /ECONNRESET/,
+  /ETIMEDOUT/,
+];
+
+function isTransientError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  return TRANSIENT_PATTERNS.some((p) => p.test(msg));
+}
+
+async function withTransientRetry<T>(
+  fn: () => Promise<T>,
+  opts: { noRetry?: boolean; log: Logger },
+): Promise<T> {
+  if (opts.noRetry) return fn();
+  return pRetry(
+    async (attemptNumber) => {
+      try {
+        return await fn();
+      } catch (err) {
+        if (isTransientError(err)) {
+          opts.log.progress(`Retrying (${attemptNumber}/6)...`);
+          throw err;
+        }
+        throw new AbortError(err instanceof Error ? err.message : String(err));
+      }
+    },
+    { retries: 5 },
+  );
+}
+
+async function withRegistrationRetry<T>(
+  fn: () => Promise<T>,
+  log: Logger,
+): Promise<T> {
+  return pRetry(
+    async (attemptNumber) => {
+      if (attemptNumber > 1) log.progress(`  Retrying registration (attempt ${attemptNumber})...`);
+      return fn();
+    },
+    { retries: 3 },
+  );
+}
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -115,9 +168,9 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
       txId = await (signer as { signer: BitcoinSigner }).signer.signAllInputs!(psbtHex);
 
       try {
-        await retryWithBackoff(
+        await withRegistrationRetry(
           () => sdk.api.registerTx({ registerTx: { onramp: { orderId, bitcoinTxHex: txId } } }),
-          { onRetry: (attempt) => log.progress(`  Retrying registration (attempt ${attempt})...`) },
+          log,
         );
       } catch (err) { throw registrationError(err, orderId, txId); }
     } else {
@@ -152,9 +205,9 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
         : { registerTx: { offramp: { orderId, evmTxhash: txId } } };
 
       try {
-        await retryWithBackoff(
+        await withRegistrationRetry(
           () => sdk.api.registerTx(registerPayload),
-          { onRetry: (attempt) => log.progress(`  Retrying registration (attempt ${attempt})...`) },
+          log,
         );
       } catch (err) { throw registrationError(err, orderId, txId); }
     }
@@ -164,7 +217,7 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
 
   // ─── Execute with retry + poll ─────────────────────────────────────────────
 
-  const result = await executeWithTransientRetry(executeCore, { noRetry: !opts.retry, log });
+  const result = await withTransientRetry(executeCore, { noRetry: !opts.retry, log });
   const { orderId, txId, outputAmount: quotedOutputAmount } = result;
   const startMs = Date.now();
 

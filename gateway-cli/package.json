@@ -22,6 +22,7 @@
     "@gobob/bob-sdk": "file:../sdk",
     "@gobob/tokenlist": "file:../tokenlist",
     "commander": "^13.1.0",
+    "p-retry": "^7.1.1",
     "viem": "^2.31.3",
     "zod": "^4.3.6"
   },

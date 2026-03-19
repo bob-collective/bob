@@ -18,7 +18,6 @@ function withErrorHandling(fn: (...args: any[]) => Promise<void>) {
       if (mode === "json") {
         const errJson: any = { error: { message: msg } };
         if (err instanceof Error) {
-          if ("retryable" in err) errJson.error.retryable = true;
           if ("orderId" in err) errJson.error.orderId = (err as any).orderId;
           if ("txId" in err) errJson.error.txId = (err as any).txId;
         }
