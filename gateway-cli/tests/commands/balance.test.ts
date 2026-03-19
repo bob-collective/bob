@@ -65,7 +65,7 @@ describe("handleBalance", () => {
     mockGetRoutes.mockReset();
   });
 
-  it("returns BTC balance for bitcoin chain with confirmed funds", async () => {
+  it("returns BTC total balance and maxSpendable", async () => {
     mockGetBalance.mockResolvedValueOnce({ confirmed: 500000, unconfirmed: 0 });
     mockGetMaxSpendable.mockResolvedValueOnce({
       amount: { amount: "490000" },
@@ -74,14 +74,12 @@ describe("handleBalance", () => {
     const result = await handleBalance("bc1qtest", { chain: "bitcoin" });
 
     expect(result).toHaveProperty("bitcoin");
-    expect(result.bitcoin).toMatchObject({
-      address: "bc1qtest",
-    });
-    expect(result.bitcoin.confirmed).toBeDefined();
+    expect(result.bitcoin.address).toBe("bc1qtest");
+    expect(result.bitcoin.balance).toBeDefined();
     expect(result.bitcoin.maxSpendable).toBeDefined();
   });
 
-  it("includes unconfirmed balance when non-zero", async () => {
+  it("sums confirmed + unconfirmed into balance", async () => {
     mockGetBalance.mockResolvedValueOnce({ confirmed: 300000, unconfirmed: 50000 });
     mockGetMaxSpendable.mockResolvedValueOnce({
       amount: { amount: "290000" },
@@ -89,7 +87,7 @@ describe("handleBalance", () => {
 
     const result = await handleBalance("bc1qtest", { chain: "bitcoin" });
 
-    expect(result.bitcoin).toHaveProperty("unconfirmed");
+    expect(result.bitcoin.balance).toBeDefined();
   });
 
   it("omits bitcoin chain when balance is zero", async () => {

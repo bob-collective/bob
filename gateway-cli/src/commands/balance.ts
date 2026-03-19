@@ -95,11 +95,11 @@ export async function handleBalance(address: string, opts: BalanceOptions): Prom
   const entries = await Promise.all(chains.map(async (chain): Promise<[string, BalanceJson[string]] | null> => {
     if (chain === 'bitcoin') {
       const btcBalance = await getBtcBalance(address, sdk);
-      if (btcBalance.confirmed > 0 || btcBalance.unconfirmed > 0) {
+      const total = btcBalance.confirmed + btcBalance.unconfirmed;
+      if (total > 0) {
         return ['bitcoin', {
           address,
-          confirmed: formatBtc(BigInt(btcBalance.confirmed)),
-          ...(btcBalance.unconfirmed > 0 ? { unconfirmed: formatBtc(BigInt(btcBalance.unconfirmed)) } : {}),
+          balance: formatBtc(BigInt(total)),
           maxSpendable: formatBtc(BigInt(btcBalance.maxSpendable)),
         }];
       }
