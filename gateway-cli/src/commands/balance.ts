@@ -27,29 +27,27 @@ function getUniqueTokensForChain(
   return tokens;
 }
 
-async function getBtcBalance(address: string, sdk: ReturnType<typeof getSdk>) {
-  const esplora = new EsploraClient();
-  const [balance, maxSpendable] = await Promise.all([
-    esplora.getBalance(address),
-    sdk.getMaxSpendable(address),
-  ]);
-  return {
-    confirmed: balance.confirmed,
-    unconfirmed: balance.unconfirmed,
-    maxSpendable: Number(maxSpendable.amount.amount),
-  };
-}
-
-async function getEvmBalances(
+async function getChainBalance(
   address: string,
   chain: string,
   routes: EnrichedRoute[],
-) {
-  const rpcUrl = resolveRpcUrl(chain);
-  const viemChain = getViemChain(chain);
-  const client = createPublicClient({ chain: viemChain, transport: http(rpcUrl) });
+  sdk: ReturnType<typeof getSdk>,
+): Promise<BalanceJson[string] | null> {
+  if (chain === 'bitcoin') {
+    const esplora = new EsploraClient();
+    const [bal, maxSpendable] = await Promise.all([
+      esplora.getBalance(address),
+      sdk.getMaxSpendable(address),
+    ]);
+    const total = bal.confirmed + bal.unconfirmed;
+    if (total === 0) return null;
+    return { address, balance: formatBtc(BigInt(total)), maxSpendable: formatBtc(BigInt(Number(maxSpendable.amount.amount))) };
+  }
 
+  const rpcUrl = resolveRpcUrl(chain);
+  const client = createPublicClient({ chain: getViemChain(chain), transport: http(rpcUrl) });
   const chainTokens = getUniqueTokensForChain(chain, routes);
+
   const [nativeBalance, tokenBalances] = await Promise.all([
     client.getBalance({ address: address as `0x${string}` }),
     chainTokens.length > 0
@@ -64,57 +62,34 @@ async function getEvmBalances(
       : [],
   ]);
 
-  const nonZeroTokens = chainTokens
+  const tokens = chainTokens
     .map((t, i) => ({ ...t, balance: (tokenBalances[i]?.result as bigint) ?? 0n }))
     .filter(t => t.balance > 0n)
     .map(t => ({ symbol: t.symbol, address: t.address, balance: formatUnits(t.balance, t.decimals) }));
 
-  const hasNative = nativeBalance > 0n;
-  const hasTokens = nonZeroTokens.length > 0;
-
-  if (!hasNative && !hasTokens) return null;
+  if (nativeBalance === 0n && tokens.length === 0) return null;
 
   const nt = getNativeToken(chain);
   return {
     address,
-    ...(hasNative ? { native: { symbol: nt.symbol, balance: formatUnits(nativeBalance, nt.decimals) } } : {}),
-    ...(hasTokens ? { tokens: nonZeroTokens } : {}),
+    ...(nativeBalance > 0n ? { native: { symbol: nt.symbol, balance: formatUnits(nativeBalance, nt.decimals) } } : {}),
+    ...(tokens.length > 0 ? { tokens } : {}),
   };
 }
 
 export async function handleBalance(address: string, opts: BalanceOptions): Promise<BalanceJson> {
   const sdk = getSdk();
-
   const enriched = await getEnrichedRoutes();
-
-  // Determine which chains to query
   const chains = opts.chain
     ? [opts.chain]
     : [...new Set(enriched.flatMap(r => [r.srcChain, r.dstChain]))];
 
-  const result: BalanceJson = {};
+  const entries = await Promise.all(
+    chains.map(async (chain) => {
+      const data = await getChainBalance(address, chain, enriched, sdk);
+      return data ? [chain, data] as const : null;
+    }),
+  );
 
-  const entries = await Promise.all(chains.map(async (chain): Promise<[string, BalanceJson[string]] | null> => {
-    if (chain === 'bitcoin') {
-      const btcBalance = await getBtcBalance(address, sdk);
-      const total = btcBalance.confirmed + btcBalance.unconfirmed;
-      if (total > 0) {
-        return ['bitcoin', {
-          address,
-          balance: formatBtc(BigInt(total)),
-          maxSpendable: formatBtc(BigInt(btcBalance.maxSpendable)),
-        }];
-      }
-    } else {
-      const evmBalance = await getEvmBalances(address, chain, enriched);
-      if (evmBalance) return [chain, evmBalance];
-    }
-    return null;
-  }));
-
-  for (const entry of entries) {
-    if (entry) result[entry[0]] = entry[1];
-  }
-
-  return result;
+  return Object.fromEntries(entries.filter(Boolean) as [string, BalanceJson[string]][]);
 }
