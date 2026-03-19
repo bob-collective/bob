@@ -32,7 +32,7 @@ async function getChainBalance(
   chain: string,
   routes: EnrichedRoute[],
   sdk: ReturnType<typeof getSdk>,
-): Promise<BalanceJson[string] | null> {
+): Promise<BalanceJson[string]> {
   if (chain === 'bitcoin') {
     const esplora = new EsploraClient();
     const [bal, maxSpendable] = await Promise.all([
@@ -40,7 +40,6 @@ async function getChainBalance(
       sdk.getMaxSpendable(address),
     ]);
     const total = bal.confirmed + bal.unconfirmed;
-    if (total === 0) return null;
     return { address, balance: formatBtc(BigInt(total)), maxSpendable: formatBtc(BigInt(Number(maxSpendable.amount.amount))) };
   }
 
@@ -62,18 +61,14 @@ async function getChainBalance(
       : [],
   ]);
 
-  const tokens = chainTokens
-    .map((t, i) => ({ ...t, balance: (tokenBalances[i]?.result as bigint) ?? 0n }))
-    .filter(t => t.balance > 0n)
-    .map(t => ({ symbol: t.symbol, address: t.address, balance: formatUnits(t.balance, t.decimals) }));
-
-  if (nativeBalance === 0n && tokens.length === 0) return null;
-
   const nt = getNativeToken(chain);
+  const tokens = chainTokens
+    .map((t, i) => ({ symbol: t.symbol, address: t.address, balance: formatUnits((tokenBalances[i]?.result as bigint) ?? 0n, t.decimals) }));
+
   return {
     address,
-    ...(nativeBalance > 0n ? { native: { symbol: nt.symbol, balance: formatUnits(nativeBalance, nt.decimals) } } : {}),
-    ...(tokens.length > 0 ? { tokens } : {}),
+    native: { symbol: nt.symbol, balance: formatUnits(nativeBalance, nt.decimals) },
+    tokens,
   };
 }
 
@@ -85,11 +80,14 @@ export async function handleBalance(address: string, opts: BalanceOptions): Prom
     : [...new Set(enriched.flatMap(r => [r.srcChain, r.dstChain]))];
 
   const entries = await Promise.all(
-    chains.map(async (chain) => {
-      const data = await getChainBalance(address, chain, enriched, sdk);
-      return data ? [chain, data] as const : null;
+    chains.map(async (chain): Promise<[string, BalanceJson[string]]> => {
+      try {
+        return [chain, await getChainBalance(address, chain, enriched, sdk)];
+      } catch {
+        return [chain, { address, error: true }];
+      }
     }),
   );
 
-  return Object.fromEntries(entries.filter(Boolean) as [string, BalanceJson[string]][]);
+  return Object.fromEntries(entries);
 }

@@ -90,7 +90,7 @@ describe("handleBalance", () => {
     expect(result.bitcoin.balance).toBeDefined();
   });
 
-  it("omits bitcoin chain when balance is zero", async () => {
+  it("returns zero balance when balance is zero", async () => {
     mockGetBalance.mockResolvedValueOnce({ confirmed: 0, unconfirmed: 0 });
     mockGetMaxSpendable.mockResolvedValueOnce({
       amount: { amount: "0" },
@@ -98,6 +98,16 @@ describe("handleBalance", () => {
 
     const result = await handleBalance("bc1qtest", { chain: "bitcoin" });
 
-    expect(result).not.toHaveProperty("bitcoin");
+    expect(result).toHaveProperty("bitcoin");
+    expect(result.bitcoin.balance).toBeDefined();
+  });
+
+  it("returns error entry when RPC fails", async () => {
+    mockGetBalance.mockRejectedValueOnce(new Error("connection refused"));
+    mockGetMaxSpendable.mockRejectedValueOnce(new Error("connection refused"));
+
+    const result = await handleBalance("bc1qtest", { chain: "bitcoin" });
+
+    expect(result.bitcoin.error).toBe(true);
   });
 });

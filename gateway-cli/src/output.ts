@@ -102,6 +102,7 @@ export interface BalanceJson {
     maxSpendable?: string;
     native?: { symbol: string; balance: string };
     tokens?: Array<{ symbol: string; address: string; balance: string }>;
+    error?: boolean;
   };
 }
 
@@ -161,12 +162,16 @@ export function formatBalance(result: BalanceJson): string {
   const lines: string[] = [];
   for (const [chain, data] of Object.entries(result)) {
     lines.push(`${chain}  (${data.address})`);
+    if (data.error) {
+      lines.push(`  N/A (RPC unreachable)`);
+      continue;
+    }
     if (data.balance !== undefined) lines.push(`  Balance:       ${data.balance} BTC`);
     if (data.maxSpendable !== undefined) lines.push(`  Max spendable: ${data.maxSpendable} BTC`);
     if (data.native) lines.push(`  ${data.native.symbol}: ${data.native.balance}`);
     if (data.tokens) for (const t of data.tokens) lines.push(`  ${t.symbol}: ${t.balance}`);
   }
-  return lines.length === 0 ? "No non-zero balances found." : lines.join("\n");
+  return lines.length === 0 ? "No chains found." : lines.join("\n");
 }
 
 /** Chains table. */
