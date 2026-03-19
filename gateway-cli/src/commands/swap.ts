@@ -234,7 +234,7 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
     const finalOrder = await pollOrder(sdk, orderId, {
       intervalMs: 15_000,
       timeoutMs: timeoutMs,
-      callbacks: { onWaiting: (elapsed) => log.progress(`  Waiting for confirmation...  [${formatElapsed(elapsed)}]`) },
+      onWaiting: () => log.progress(`  Waiting for confirmation...`),
     });
 
     const elapsedMs = Date.now() - startMs;
@@ -250,7 +250,7 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
       data: { orderId, status: "confirmed", srcAmount: parsed.atomicUnits, srcAsset: srcAsset.symbol, dstAmount: outAmt, dstAsset: dstAsset.symbol, dstChain: dstAsset.chain, quotedDstAmount: quotedAmt, actualSlippageBps: slippageBps, txId, elapsedMs },
     };
   } catch (err) {
-    if (!isBtcOnramp && err instanceof Error && err.name === "PollTimeoutError") {
+    if (!isBtcOnramp && err instanceof Error && err.message === "pending") {
       log.progress(`Poll timeout reached. Checking mempool for pending delivery...`);
       const pendingTxs = await new MempoolClient().getAddressMempoolTxs(opts.recipient).catch(() => []);
       const mempoolTxId = pendingTxs.find(tx => !tx.status.confirmed)?.txid;
@@ -300,47 +300,25 @@ function registrationError(err: unknown, orderId: string, txId: string): Registr
   );
 }
 
-function formatElapsed(ms: number): string {
-  const s = Math.floor(ms / 1000);
-  const m = Math.floor(s / 60);
-  const h = Math.floor(m / 60);
-  return `${String(h).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
-}
-
 // ─── Order polling ───────────────────────────────────────────────────────────
 
-class PollTimeoutError extends Error {
-  constructor(public readonly orderId: string, public readonly timeoutMs: number) {
-    super(`Polling timed out after ${timeoutMs}ms for order "${orderId}"`);
-    this.name = "PollTimeoutError";
-  }
-}
-
-interface PollCallbacks { onWaiting?: (elapsedMs: number) => void; }
-
-function isTerminalSuccess(status: GatewayOrderStatus): boolean {
-  return status === "success" || status === "strategy_skipped" || status === "strategy_failed";
-}
-
-function isTerminalFailure(status: GatewayOrderStatus): boolean {
-  if (status === "refunded") return true;
-  if (typeof status === "object" && status !== null && "failed" in status) return true;
-  return false;
-}
+const TERMINAL_SUCCESS: GatewayOrderStatus[] = ["success", "strategy_skipped", "strategy_failed"];
 
 async function pollOrder(
-  client: { getOrder(id: string): Promise<GatewayOrderInfo> },
+  sdk: { getOrder(id: string): Promise<GatewayOrderInfo> },
   orderId: string,
-  opts: { intervalMs: number; timeoutMs: number; callbacks?: PollCallbacks },
+  opts: { intervalMs: number; timeoutMs: number; onWaiting?: () => void },
 ): Promise<GatewayOrderInfo> {
-  const start = Date.now();
-  const deadline = start + opts.timeoutMs;
-  while (true) {
-    if (Date.now() >= deadline) throw new PollTimeoutError(orderId, opts.timeoutMs);
-    opts.callbacks?.onWaiting?.(Date.now() - start);
-    const order = await client.getOrder(orderId);
-    if (isTerminalSuccess(order.status)) return order;
-    if (isTerminalFailure(order.status)) throw new Error(`Order ${orderId} failed with status: ${JSON.stringify(order.status)}`);
-    await new Promise((r) => setTimeout(r, opts.intervalMs));
-  }
+  return pRetry(
+    async () => {
+      opts.onWaiting?.();
+      const order = await sdk.getOrder(orderId);
+      if (TERMINAL_SUCCESS.includes(order.status as any)) return order;
+      if (order.status === "refunded" || (typeof order.status === "object" && order.status !== null && "failed" in order.status)) {
+        throw new AbortError(`Order ${orderId} failed: ${JSON.stringify(order.status)}`);
+      }
+      throw new Error("pending");
+    },
+    { retries: Math.ceil(opts.timeoutMs / opts.intervalMs), minTimeout: opts.intervalMs, maxTimeout: opts.intervalMs, factor: 1 },
+  );
 }
