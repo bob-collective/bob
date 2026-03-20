@@ -7,7 +7,7 @@ import { fetchPrice } from "../util/price-oracle.js";
 import { MempoolClient } from "@gobob/bob-sdk";
 import pRetry, { AbortError } from "p-retry";
 import { loadConfig, getSdk } from "../config.js";
-import { deriveAddress, resolveSigner, getTokenBalance, buildRegisterPayload, getChainFamily, resolvePrivateKey } from "../chains/index.js";
+import { deriveAddress, resolveSigner, getTokenBalance, buildRegisterPayload, getChainFamily, resolvePrivateKey, type ChainFamily } from "../chains/index.js";
 import type { GatewayOrderInfo, GatewayOrderStatus, GetQuoteParams } from "@gobob/bob-sdk";
 import type { Logger, SwapSuccessJson, SwapSubmittedJson, SwapMempoolPendingJson } from "../output.js";
 
@@ -108,15 +108,14 @@ type UnsignedSigner = { unsigned: true };
 
 async function resolveSignerForSwap(
   chain: string,
+  family: ChainFamily,
   key: string | undefined,
   unsigned: boolean,
 ): Promise<Awaited<ReturnType<typeof resolveSigner>> | UnsignedSigner> {
   if (unsigned) return { unsigned: true };
   if (!key) {
-    const isBtc = getChainFamily(chain) === "bitcoin";
-    const chainType = isBtc ? "Bitcoin" : "EVM";
-    const envVar = isBtc ? "BITCOIN_PRIVATE_KEY" : "EVM_PRIVATE_KEY";
-    throw new Error(`no signer configured for ${chainType}.\n  Set ${envVar} or pass --private-key.\n  Use --unsigned to output the ${isBtc ? "PSBT" : "unsigned transaction"} without signing.`);
+    const isBtc = family === "bitcoin";
+    throw new Error(`no signer configured for ${isBtc ? "Bitcoin" : "EVM"}.\n  Set ${isBtc ? "BITCOIN_PRIVATE_KEY" : "EVM_PRIVATE_KEY"} or pass --private-key.\n  Use --unsigned to output the ${isBtc ? "PSBT" : "unsigned transaction"} without signing.`);
   }
   return resolveSigner(chain, key);
 }
@@ -151,6 +150,7 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
   const signerChain = srcFamily === "bitcoin" ? "bitcoin" : evmChain;
   const signer = await resolveSignerForSwap(
     signerChain,
+    srcFamily,
     resolvePrivateKey(srcAsset.chain, opts.privateKey, config),
     opts.unsigned,
   );
