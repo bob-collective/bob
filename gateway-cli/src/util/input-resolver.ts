@@ -6,10 +6,18 @@ import type { EnrichedRoute, EnrichedToken } from "./route-provider.js";
 // ─── Chain aliases ───────────────────────────────────────────────────────────
 
 const CHAIN_ALIASES: Record<string, string> = {
-  btc: "bitcoin", eth: "ethereum", mainnet: "ethereum",
-  arb: "arbitrum", arb1: "arbitrum", "arbitrum-one": "arbitrum",
-  bas: "base", opt: "optimism", oeth: "optimism",
-  pol: "polygon", bnb: "bsc", avax: "avalanche",
+  btc: "bitcoin",
+  eth: "ethereum",
+  mainnet: "ethereum",
+  arb: "arbitrum",
+  arb1: "arbitrum",
+  "arbitrum-one": "arbitrum",
+  bas: "base",
+  opt: "optimism",
+  oeth: "optimism",
+  pol: "polygon",
+  bnb: "bsc",
+  avax: "avalanche",
 };
 
 export function resolveChain(input: string): string {
