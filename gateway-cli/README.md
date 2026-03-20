@@ -173,7 +173,6 @@ git tag cli-v0.3.0-rc0
 git push origin cli-v0.3.0-rc0
 ```
 
-Requires `NPM_TOKEN` secret in the repo (same token as SDK publishing).
 
 ## Error handling
 
