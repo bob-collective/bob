@@ -113,6 +113,28 @@ export function getNativeToken(chain: string): { symbol: string; decimals: numbe
   return token;
 }
 
+// ─── Route helpers ──────────────────────────────────────────────────────────
+
+/** Unique chain names across all routes. */
+export function getUniqueChains(routes: EnrichedRoute[]): string[] {
+  return [...new Set(routes.flatMap(r => [r.srcChain, r.dstChain]))];
+}
+
+/** Unique tokens on a specific chain (deduped by address, excludes BTC placeholder). */
+export function getTokensForChain(chain: string, routes: EnrichedRoute[]): EnrichedToken[] {
+  const seen = new Set<string>();
+  const tokens: EnrichedToken[] = [];
+  for (const r of routes) {
+    for (const t of [r.srcToken, r.dstToken]) {
+      if (t.chain === chain && t.address !== 'BTC' && !seen.has(t.address.toLowerCase())) {
+        seen.add(t.address.toLowerCase());
+        tokens.push(t);
+      }
+    }
+  }
+  return tokens;
+}
+
 // ─── Public API ──────────────────────────────────────────────────────────────
 
 /** Fetch routes from SDK and enrich with tokenlist metadata. */

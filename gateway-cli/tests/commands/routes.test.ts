@@ -3,7 +3,10 @@ import { handleRoutes } from "../../src/commands/routes.js";
 
 // ─── Mocks ───────────────────────────────────────────────────────────────────
 
-vi.mock("../../src/util/route-provider.js", () => ({
+vi.mock("../../src/util/route-provider.js", async (importOriginal) => {
+  const actual = await importOriginal<any>();
+  return {
+  ...actual,
   getEnrichedRoutes: vi.fn().mockResolvedValue([
     {
       srcChain: "bitcoin",
@@ -24,7 +27,7 @@ vi.mock("../../src/util/route-provider.js", () => ({
       dstToken: { address: "BTC", symbol: "BTC", decimals: 8, chain: "bitcoin" },
     },
   ]),
-}));
+}; });
 
 vi.mock("../../src/util/input-resolver.js", () => ({
   resolveChain: vi.fn((input: string) => {

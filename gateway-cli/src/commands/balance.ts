@@ -1,4 +1,4 @@
-import { getEnrichedRoutes, type EnrichedRoute, type EnrichedToken, getNativeToken } from '../util/route-provider.js';
+import { getEnrichedRoutes, type EnrichedRoute, getNativeToken, getUniqueChains, getTokensForChain } from '../util/route-provider.js';
 import { formatUnits } from 'viem';
 import { formatBtc } from '@gobob/bob-sdk';
 import { getTokenBalance } from '../chains/index.js';
@@ -9,27 +9,6 @@ export interface BalanceOptions {
   chain?: string;
   feeToken?: string;
   feeReserve?: string;
-}
-
-function getUniqueChains(routes: EnrichedRoute[]): string[] {
-  return [...new Set(routes.flatMap(r => [r.srcChain, r.dstChain]))];
-}
-
-function getUniqueTokensForChain(
-  chain: string,
-  routes: EnrichedRoute[],
-): EnrichedToken[] {
-  const seen = new Set<string>();
-  const tokens: EnrichedToken[] = [];
-  for (const r of routes) {
-    for (const t of [r.srcToken, r.dstToken]) {
-      if (t.chain === chain && t.address !== 'BTC' && !seen.has(t.address.toLowerCase())) {
-        seen.add(t.address.toLowerCase());
-        tokens.push(t);
-      }
-    }
-  }
-  return tokens;
 }
 
 async function getBtcChainBalance(
@@ -50,7 +29,7 @@ async function getEvmChainBalance(
   routes: EnrichedRoute[],
   opts: BalanceOptions,
 ): Promise<BalanceJson[string]> {
-  const chainTokens = getUniqueTokensForChain(chain, routes);
+  const chainTokens = getTokensForChain(chain, routes);
   const nt = getNativeToken(chain);
 
   const nativeToken = { address: '0x0000000000000000000000000000000000000000', symbol: nt.symbol, decimals: nt.decimals };
