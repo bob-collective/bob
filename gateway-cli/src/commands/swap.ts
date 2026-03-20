@@ -110,10 +110,10 @@ async function resolveSignerForSwap(
   chain: string,
   key: string | undefined,
   unsigned: boolean,
-  isBtc: boolean,
 ): Promise<Awaited<ReturnType<typeof resolveSigner>> | UnsignedSigner> {
   if (unsigned) return { unsigned: true };
   if (!key) {
+    const isBtc = getChainFamily(chain) === "bitcoin";
     const chainType = isBtc ? "Bitcoin" : "EVM";
     const envVar = isBtc ? "BITCOIN_PRIVATE_KEY" : "EVM_PRIVATE_KEY";
     throw new Error(`no signer configured for ${chainType}.\n  Set ${envVar} or pass --private-key.\n  Use --unsigned to output the ${isBtc ? "PSBT" : "unsigned transaction"} without signing.`);
@@ -148,11 +148,11 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
   const timeoutMs = opts.timeout ? opts.timeout * 1000 : config.timeoutMs;
 
   const evmChain = srcFamily === "bitcoin" ? dstAsset.chain : srcAsset.chain;
+  const signerChain = srcFamily === "bitcoin" ? "bitcoin" : evmChain;
   const signer = await resolveSignerForSwap(
-    srcFamily === "bitcoin" ? "bitcoin" : evmChain,
+    signerChain,
     resolvePrivateKey(srcAsset.chain, opts.privateKey, config),
     opts.unsigned,
-    srcFamily === "bitcoin",
   );
 
   const gasRefillWei = opts.gasRefillUsd
