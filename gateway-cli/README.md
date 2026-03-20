@@ -149,6 +149,24 @@ gateway-cli quote --src BTC --dst USDC:base --amount 0.05BTC --recipient 0x...
 gateway-cli quote --src BTC --dst USDC:base --amount 0.05BTC --recipient 0x... --json
 ```
 
+## Publishing to npm
+
+Tag a release to trigger the GitHub Actions publish workflow:
+
+```bash
+git tag cli-v0.2.0
+git push origin cli-v0.2.0
+```
+
+Release candidates use the `rc` npm tag:
+
+```bash
+git tag cli-v0.3.0-rc0
+git push origin cli-v0.3.0-rc0
+```
+
+Requires `NPM_TOKEN` secret in the repo (same token as SDK publishing).
+
 ## Error handling
 
 - **Transient errors** (rate limits, timeouts): automatically retried on quote and registration steps. Use `--no-retry` to disable.
