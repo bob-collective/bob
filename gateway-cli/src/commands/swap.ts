@@ -11,7 +11,7 @@ import { deriveAddress, resolveSigner, getTokenBalance, buildRegisterPayload, ge
 import type { GatewayOrderInfo, GatewayOrderStatus, GetQuoteParams } from "@gobob/bob-sdk";
 import type { Logger, SwapSuccessJson, SwapSubmittedJson, SwapMempoolPendingJson } from "../output.js";
 
-// ─── Transient error detection + retry ──────────────────────────────────────
+// ─── Retry ───────────────────────────────────────────────────────────────────
 
 const TRANSIENT_PATTERNS = [
   /TRM screening/i,
@@ -30,48 +30,29 @@ function isTransientError(err: unknown): boolean {
   return TRANSIENT_PATTERNS.some((p) => p.test(msg));
 }
 
-async function withTransientRetry<T>(
+async function withRetry<T>(
   fn: () => Promise<T>,
-  opts: { noRetry?: boolean; log: Logger },
+  opts: { retries: number; log: Logger; label?: string; shouldRetry?: (err: unknown) => boolean },
 ): Promise<T> {
-  if (opts.noRetry) return fn();
   return pRetry(
     async (attemptNumber) => {
       try {
         return await fn();
       } catch (err) {
-        if (isTransientError(err)) {
-          opts.log.progress(`Retrying (${attemptNumber}/6)...`);
-          throw err;
+        if (opts.shouldRetry && !opts.shouldRetry(err)) {
+          throw new AbortError(err instanceof Error ? err.message : String(err));
         }
-        throw new AbortError(err instanceof Error ? err.message : String(err));
+        if (attemptNumber > 1 || opts.label) {
+          opts.log.progress(`${opts.label ?? 'Retrying'} (${attemptNumber}/${opts.retries + 1})...`);
+        }
+        throw err;
       }
     },
-    { retries: 5 },
-  );
-}
-
-async function withRegistrationRetry<T>(
-  fn: () => Promise<T>,
-  log: Logger,
-): Promise<T> {
-  return pRetry(
-    async (attemptNumber) => {
-      if (attemptNumber > 1) log.progress(`  Retrying registration (attempt ${attemptNumber})...`);
-      return fn();
-    },
-    { retries: 3 },
+    { retries: opts.retries },
   );
 }
 
 // ─── Types ───────────────────────────────────────────────────────────────────
-
-class RegistrationError extends Error {
-  constructor(message: string, public readonly orderId: string, public readonly txId?: string) {
-    super(message);
-    this.name = "RegistrationError";
-  }
-}
 
 export interface SwapOptions {
   src: string;
@@ -98,6 +79,57 @@ export type SwapResult =
   | { type: "confirmed"; data: SwapSuccessJson }
   | { type: "mempoolPending"; data: SwapMempoolPendingJson };
 
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function resolvePrivateKey(
+  chain: string,
+  opts: { privateKey?: string },
+  config: { bitcoinPrivateKey?: string; evmPrivateKey?: string },
+): string | undefined {
+  const family = getChainFamily(chain);
+  return opts.privateKey ?? (family === "bitcoin" ? config.bitcoinPrivateKey : config.evmPrivateKey);
+}
+
+function makeRegistrationError(err: unknown, orderId: string, txId: string): Error {
+  const msg = err instanceof Error ? err.message : String(err);
+  const error = new Error(
+    `CRITICAL: Transaction signed but registration failed. Last error: ${msg}\n` +
+    `Order ID: ${orderId}\nManually register with: gateway-cli register ${orderId} ${txId}`,
+  );
+  (error as any).orderId = orderId;
+  (error as any).txId = txId;
+  return error;
+}
+
+async function createSwapOrder(
+  sdk: ReturnType<typeof getSdk>,
+  quoteParams: GetQuoteParams,
+) {
+  const quote = await sdk.getQuote(quoteParams);
+  const variant = getQuoteVariant(quote);
+  const order = await sdk.api.createOrder({ gatewayQuote: quote });
+  const orderId = (order as any)[variant].orderId;
+  const outputAmount = getInnerQuote(quote).outputAmount.amount;
+  return { quote, variant, order, orderId, outputAmount };
+}
+
+type UnsignedSigner = { unsigned: true };
+
+async function resolveSignerForSwap(
+  chain: string,
+  key: string | undefined,
+  unsigned: boolean,
+  isBtc: boolean,
+): Promise<Awaited<ReturnType<typeof resolveSigner>> | UnsignedSigner> {
+  if (unsigned) return { unsigned: true };
+  if (!key) {
+    const chainType = isBtc ? "Bitcoin" : "EVM";
+    const envVar = isBtc ? "BITCOIN_PRIVATE_KEY" : "EVM_PRIVATE_KEY";
+    throw new Error(`no signer configured for ${chainType}.\n  Set ${envVar} or pass --private-key.\n  Use --unsigned to output the ${isBtc ? "PSBT" : "unsigned transaction"} without signing.`);
+  }
+  return resolveSigner(chain, key);
+}
+
 // ─── Handler ─────────────────────────────────────────────────────────────────
 
 export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapResult> {
@@ -120,16 +152,16 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
     display = parsed.display;
   }
 
-  const isBtcOnramp = srcAsset.chain === "bitcoin";
+  const srcFamily = getChainFamily(srcAsset.chain);
   const slippageBps = opts.slippage ?? config.slippageBps;
   const timeoutMs = opts.timeout ? opts.timeout * 1000 : config.timeoutMs;
 
-  const evmChain = isBtcOnramp ? dstAsset.chain : srcAsset.chain;
+  const evmChain = srcFamily === "bitcoin" ? dstAsset.chain : srcAsset.chain;
   const signer = await resolveSignerForSwap(
-    isBtcOnramp ? "bitcoin" : evmChain,
-    isBtcOnramp ? (opts.privateKey ?? config.bitcoinPrivateKey) : (opts.privateKey ?? config.evmPrivateKey),
+    srcFamily === "bitcoin" ? "bitcoin" : evmChain,
+    resolvePrivateKey(srcAsset.chain, opts, config),
     opts.unsigned,
-    isBtcOnramp,
+    srcFamily === "bitcoin",
   );
 
   const gasRefillWei = opts.gasRefillUsd
@@ -155,12 +187,9 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
   // ─── Unsigned mode ─────────────────────────────────────────────────────────
 
   if ("unsigned" in signer) {
-    const quote = await sdk.getQuote(quoteParams);
-    const variant = getQuoteVariant(quote);
-    const order = await sdk.api.createOrder({ gatewayQuote: quote });
-    const orderId = (order as any)[variant].orderId;
+    const { orderId, variant, order } = await createSwapOrder(sdk, quoteParams);
 
-    if (isBtcOnramp) {
+    if (srcFamily === "bitcoin") {
       const onrampData = (order as any).onramp;
       return { type: "unsigned", orderId, psbtBase64: onrampData?.psbtHex ? Buffer.from(onrampData.psbtHex, "hex").toString("base64") : undefined };
     } else {
@@ -171,15 +200,11 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
   // ─── Core flow: quote → order → sign → register ───────────────────────────
 
   const executeCore = async (): Promise<{ orderId: string; txId: string; outputAmount: string }> => {
-    const quote = await sdk.getQuote(quoteParams);
-    const outputAmount = getInnerQuote(quote).outputAmount.amount;
-    const variant = getQuoteVariant(quote);
-    const order = await sdk.api.createOrder({ gatewayQuote: quote });
-    const orderId = (order as any)[variant].orderId;
+    const { orderId, variant, order, outputAmount } = await createSwapOrder(sdk, quoteParams);
 
     let txId: string;
 
-    if (isBtcOnramp) {
+    if (srcFamily === "bitcoin") {
       const onrampData = (order as any).onramp;
       if (!onrampData?.psbtHex) throw new Error("Gateway did not return a PSBT for this onramp order.");
       const psbtHex = onrampData.psbtHex;
@@ -187,11 +212,11 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
 
       const registerTx = buildRegisterPayload(srcAsset.chain, dstAsset.chain, orderId, txId);
       try {
-        await withRegistrationRetry(
+        await withRetry(
           () => sdk.api.registerTx({ registerTx }),
-          log,
+          { retries: 5, log, label: '  Retrying registration' },
         );
-      } catch (err) { throw registrationError(err, orderId, txId); }
+      } catch (err) { throw makeRegistrationError(err, orderId, txId); }
     } else {
       const { walletClient, publicClient } = signer as { walletClient: WalletClient; publicClient: PublicClient; address: string };
 
@@ -221,11 +246,11 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
 
       const registerTx = buildRegisterPayload(srcAsset.chain, dstAsset.chain, orderId, txId);
       try {
-        await withRegistrationRetry(
+        await withRetry(
           () => sdk.api.registerTx({ registerTx }),
-          log,
+          { retries: 5, log, label: '  Retrying registration' },
         );
-      } catch (err) { throw registrationError(err, orderId, txId); }
+      } catch (err) { throw makeRegistrationError(err, orderId, txId); }
     }
 
     return { orderId, txId, outputAmount };
@@ -233,7 +258,9 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
 
   // ─── Execute with retry + poll ─────────────────────────────────────────────
 
-  const result = await withTransientRetry(executeCore, { noRetry: !opts.retry, log });
+  const result = opts.retry
+    ? await withRetry(executeCore, { retries: 5, log, shouldRetry: isTransientError })
+    : await executeCore();
   const { orderId, txId, outputAmount: quotedOutputAmount } = result;
   const startMs = Date.now();
 
@@ -256,17 +283,17 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
     const elapsedMs = Date.now() - startMs;
     const outAmt = finalOrder.dstInfo?.amount ?? "?";
     const quotedAmt = quotedOutputAmount;
-    const slippageBps = quotedAmt && finalOrder.dstInfo?.amount
+    const slipBps = quotedAmt && finalOrder.dstInfo?.amount
       ? Math.round((1 - Number(finalOrder.dstInfo.amount) / Number(quotedAmt)) * 10000)
       : 0;
 
     log.progress(`✓ Confirmed — ${outAmt} ${dstAsset.symbol} delivered to ${opts.recipient}`);
     return {
       type: "confirmed",
-      data: { orderId, status: "confirmed", srcAmount: atomicUnits, srcAsset: srcAsset.symbol, dstAmount: outAmt, dstAsset: dstAsset.symbol, dstChain: dstAsset.chain, quotedDstAmount: quotedAmt, actualSlippageBps: slippageBps, txId, elapsedMs },
+      data: { orderId, status: "confirmed", srcAmount: atomicUnits, srcAsset: srcAsset.symbol, dstAmount: outAmt, dstAsset: dstAsset.symbol, dstChain: dstAsset.chain, quotedDstAmount: quotedAmt, actualSlippageBps: slipBps, txId, elapsedMs },
     };
   } catch (err) {
-    if (!isBtcOnramp && err instanceof Error && err.message === "pending") {
+    if (srcFamily !== "bitcoin" && err instanceof Error && err.message === "pending") {
       log.progress(`Poll timeout reached. Checking mempool for pending delivery...`);
       const pendingTxs = await new MempoolClient().getAddressMempoolTxs(opts.recipient).catch(() => []);
       const mempoolTxId = pendingTxs.find(tx => !tx.status.confirmed)?.txid;
@@ -280,34 +307,6 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
     }
     throw err;
   }
-}
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-type UnsignedSigner = { unsigned: true };
-
-async function resolveSignerForSwap(
-  chain: string,
-  key: string | undefined,
-  unsigned: boolean,
-  isBtc: boolean,
-): Promise<Awaited<ReturnType<typeof resolveSigner>> | UnsignedSigner> {
-  if (unsigned) return { unsigned: true };
-  if (!key) {
-    const chainType = isBtc ? "Bitcoin" : "EVM";
-    const envVar = isBtc ? "BITCOIN_PRIVATE_KEY" : "EVM_PRIVATE_KEY";
-    throw new Error(`no signer configured for ${chainType}.\n  Set ${envVar} or pass --private-key.\n  Use --unsigned to output the ${isBtc ? "PSBT" : "unsigned transaction"} without signing.`);
-  }
-  return resolveSigner(chain, key);
-}
-
-function registrationError(err: unknown, orderId: string, txId: string): RegistrationError {
-  const msg = err instanceof Error ? err.message : String(err);
-  return new RegistrationError(
-    `CRITICAL: Transaction signed but registration failed after 3 retries. Last error: ${msg}\n` +
-    `Order ID: ${orderId}\nManually register with: gateway-cli register ${orderId} ${txId}`,
-    orderId, txId,
-  );
 }
 
 // ─── Order polling ───────────────────────────────────────────────────────────
@@ -340,14 +339,10 @@ async function resolveAllAmount(
   opts: { privateKey?: string; sender?: string; unsigned: boolean; feeToken?: string; feeReserve?: string },
   config: { bitcoinPrivateKey?: string; evmPrivateKey?: string },
 ): Promise<{ atomicUnits: string; display: string }> {
-  const isBtc = srcAsset.chain === "bitcoin";
-
   // Derive sender address
   let senderAddress: string | undefined = opts.sender;
   if (!senderAddress) {
-    const key = isBtc
-      ? (opts.privateKey ?? config.bitcoinPrivateKey)
-      : (opts.privateKey ?? config.evmPrivateKey);
+    const key = resolvePrivateKey(srcAsset.chain, opts, config);
     if (!key) {
       throw new Error("--amount ALL requires a sender address. Use --private-key, --sender, or set BITCOIN_PRIVATE_KEY / EVM_PRIVATE_KEY.");
     }
