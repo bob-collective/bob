@@ -32,12 +32,23 @@ vi.mock("viem/accounts", () => ({
   })),
 }));
 
-vi.mock("@gobob/bob-sdk", () => ({
-  supportedChainsMapping: {
-    base: { id: 8453, name: "base", nativeCurrency: { symbol: "ETH", decimals: 18, name: "Ether" } },
-    ethereum: { id: 1, name: "ethereum", nativeCurrency: { symbol: "ETH", decimals: 18, name: "Ether" } },
-  },
-}));
+vi.mock("@gobob/bob-sdk", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@gobob/bob-sdk")>();
+  return {
+    ...actual,
+    supportedChainsMapping: {
+      base: { id: 8453, name: "base", nativeCurrency: { symbol: "ETH", decimals: 18, name: "Ether" } },
+      ethereum: { id: 1, name: "ethereum", nativeCurrency: { symbol: "ETH", decimals: 18, name: "Ether" } },
+    },
+    getChainConfig: vi.fn((chain: string) => {
+      const chains: Record<string, any> = {
+        base: { id: 8453, name: "base", nativeCurrency: { symbol: "ETH", decimals: 18, name: "Ether" } },
+        ethereum: { id: 1, name: "ethereum", nativeCurrency: { symbol: "ETH", decimals: 18, name: "Ether" } },
+      };
+      return chains[chain];
+    }),
+  };
+});
 
 vi.mock("@gobob/tokenlist/tokenlist.json", () => ({
   default: { tokens: [] },
