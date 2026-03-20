@@ -1,5 +1,5 @@
 import { isAddress } from 'viem';
-import { getBtcAddressInfo, BtcAddressType } from '@gobob/bob-sdk';
+import { isValidBtcAddress } from '@gobob/bob-sdk';
 import { getAllBalances, deriveAddress } from '../chains/index.js';
 import { loadConfig } from '../config.js';
 import { formatAllBalances } from '../output.js';
@@ -13,11 +13,8 @@ export interface BalanceOptions {
 
 function classifyAddress(addr: string): "bitcoin" | "evm" {
   if (isAddress(addr, { strict: false })) return "evm";
-  try {
-    const info = getBtcAddressInfo(addr);
-    if (info.type === BtcAddressType.p2wpkh) return "bitcoin";
-  } catch {}
-  throw new Error(`Unsupported address format "${addr}". Expected an EVM address (0x...) or a P2WPKH Bitcoin address (bc1q...).`);
+  if (isValidBtcAddress(addr)) return "bitcoin";
+  throw new Error(`Unsupported address format "${addr}". Expected an EVM address (0x...) or a Bitcoin address.`);
 }
 
 export async function handleBalance(addresses: string[], opts: BalanceOptions): Promise<BalanceJson> {
