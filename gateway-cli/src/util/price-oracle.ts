@@ -1,5 +1,5 @@
-const BINANCE_URL = process.env.BINANCE_API_URL ?? "https://api.binance.com/api/v3/ticker/price";
-const COINBASE_URL = process.env.COINBASE_API_URL ?? "https://api.coinbase.com/v2/prices";
+const BINANCE_URL = "https://api.binance.com/api/v3/ticker/price";
+const COINBASE_URL = "https://api.coinbase.com/v2/prices";
 
 export interface PriceResult {
   priceUsd: number;
@@ -36,18 +36,13 @@ async function fromCoinbase(symbol: string): Promise<number> {
 }
 
 export async function fetchPrice(symbol: string): Promise<PriceResult> {
-  try {
-    return { priceUsd: await fromBinance(symbol), source: "binance" };
-  } catch { /* Binance failed — fall back to Coinbase */
-    try {
-      return { priceUsd: await fromCoinbase(symbol), source: "coinbase" };
-    } catch (err) {
-      throw new PriceOracleError(symbol, err);
-    }
-  }
-}
+  const [binance, coinbase] = await Promise.allSettled([
+    fromBinance(symbol),
+    fromCoinbase(symbol),
+  ]);
 
-export async function usdToWei(usdAmount: number): Promise<string> {
-  const { priceUsd } = await fetchPrice("ETH");
-  return String(BigInt(Math.round((usdAmount / priceUsd) * 1e18)));
+  if (binance.status === "fulfilled") return { priceUsd: binance.value, source: "binance" };
+  if (coinbase.status === "fulfilled") return { priceUsd: coinbase.value, source: "coinbase" };
+
+  throw new PriceOracleError(symbol, coinbase.reason);
 }

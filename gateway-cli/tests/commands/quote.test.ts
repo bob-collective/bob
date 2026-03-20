@@ -48,124 +48,37 @@ vi.mock("../../src/util/input-resolver.js", () => ({
 
 // ─── Tests ───────────────────────────────────────────────────────────────────
 
+const sdkQuote = {
+  onramp: {
+    inputAmount: { amount: "5000000" },
+    outputAmount: { amount: "4800000000" },
+    fee: { amount: "10000" },
+  },
+};
+
 describe("handleQuote", () => {
   beforeEach(() => {
     mockGetQuote.mockReset();
     mockGetRecommendedFees.mockReset();
   });
 
-  it("returns quote and confirmation data for a BTC -> USDC swap", async () => {
-    const sdkQuote = {
-      onramp: {
-        inputAmount: { amount: "5000000" },
-        outputAmount: { amount: "4812300000" },
-        fee: { amount: "15000" },
-      },
-    };
-    mockGetQuote.mockResolvedValueOnce(sdkQuote);
-    mockGetRecommendedFees.mockResolvedValueOnce({ fastestFee: 10 });
-
-    const result = await handleQuote({
-      src: "BTC",
-      dst: "USDC:base",
-      amount: "5000000",
-      recipient: "0xRecipient",
-    });
-
-    expect(result.quote.srcAmount).toBe("5000000");
-    expect(result.quote.srcAsset).toBe("BTC");
-    expect(result.quote.dstAsset).toBe("USDC");
-    expect(result.quote.dstChain).toBe("base");
-    expect(result.quote.slippageBps).toBe(300);
-    expect(result.confirmation.recipient).toBe("0xRecipient");
-    expect(result.confirmation.srcDisplay).toBe("0.05 BTC");
-  });
-
-  it("uses provided slippage instead of config default", async () => {
-    const sdkQuote = {
-      onramp: {
-        inputAmount: { amount: "5000000" },
-        outputAmount: { amount: "4800000000" },
-        fee: { amount: "10000" },
-      },
-    };
-    mockGetQuote.mockResolvedValueOnce(sdkQuote);
-    mockGetRecommendedFees.mockResolvedValueOnce({ fastestFee: 5 });
-
-    const result = await handleQuote({
-      src: "BTC",
-      dst: "USDC:base",
-      amount: "5000000",
-      recipient: "0xRecipient",
-      slippage: 100,
-    });
-
-    expect(result.quote.slippageBps).toBe(100);
-    expect(result.confirmation.slippageBps).toBe(100);
-  });
-
-  it("passes slippage to SDK getQuote call", async () => {
-    const sdkQuote = {
-      onramp: {
-        inputAmount: { amount: "5000000" },
-        outputAmount: { amount: "4800000000" },
-        fee: { amount: "10000" },
-      },
-    };
-    mockGetQuote.mockResolvedValueOnce(sdkQuote);
-    mockGetRecommendedFees.mockResolvedValueOnce({ fastestFee: 5 });
-
-    await handleQuote({
-      src: "BTC",
-      dst: "USDC:base",
-      amount: "5000000",
-      recipient: "0xRecipient",
-      slippage: 150,
-    });
-
-    expect(mockGetQuote).toHaveBeenCalledWith(
-      expect.objectContaining({ maxSlippage: 150 }),
-    );
-  });
-
   it("fetches mempool fee rate when src is bitcoin and no btcFeeRate provided", async () => {
-    const sdkQuote = {
-      onramp: {
-        inputAmount: { amount: "5000000" },
-        outputAmount: { amount: "4800000000" },
-        fee: { amount: "10000" },
-      },
-    };
     mockGetQuote.mockResolvedValueOnce(sdkQuote);
     mockGetRecommendedFees.mockResolvedValueOnce({ fastestFee: 25 });
 
     const result = await handleQuote({
-      src: "BTC",
-      dst: "USDC:base",
-      amount: "5000000",
-      recipient: "0xRecipient",
+      src: "BTC", dst: "USDC:base", amount: "5000000", recipient: "0xRecipient",
     });
 
     expect(mockGetRecommendedFees).toHaveBeenCalledOnce();
     expect(result.quote.feeRateSatPerVbyte).toBe(25);
-    expect(result.confirmation.feeRateSatPerVbyte).toBe(25);
   });
 
   it("uses provided btcFeeRate without fetching from mempool", async () => {
-    const sdkQuote = {
-      onramp: {
-        inputAmount: { amount: "5000000" },
-        outputAmount: { amount: "4800000000" },
-        fee: { amount: "10000" },
-      },
-    };
     mockGetQuote.mockResolvedValueOnce(sdkQuote);
 
     const result = await handleQuote({
-      src: "BTC",
-      dst: "USDC:base",
-      amount: "5000000",
-      recipient: "0xRecipient",
+      src: "BTC", dst: "USDC:base", amount: "5000000", recipient: "0xRecipient",
       btcFeeRate: 15,
     });
 

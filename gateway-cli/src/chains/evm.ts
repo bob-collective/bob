@@ -1,7 +1,17 @@
-import { createPublicClient, createWalletClient, http, erc20Abi, type WalletClient, type PublicClient, type Hex } from 'viem';
+import { createPublicClient, createWalletClient, http, erc20Abi, isAddressEqual, isHex, type WalletClient, type PublicClient, type Hex, type Chain } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
-import { resolveRpcUrl, getViemChain } from '../util/rpc-resolver.js';
+import { supportedChainsMapping } from '@gobob/bob-sdk';
 import { getNativeToken } from '../util/route-provider.js';
+
+/** Resolve RPC URL from env var EVM_RPC_URL_<CHAIN>, or undefined for viem defaults. */
+export function resolveRpcUrl(chainName: string): string | undefined {
+  return process.env[`EVM_RPC_URL_${chainName.toUpperCase()}`];
+}
+
+/** Get the viem Chain object for a gateway chain name, if supported. */
+export function getViemChain(chainName: string): Chain | undefined {
+  return (supportedChainsMapping as Record<string, Chain>)[chainName];
+}
 import type { TokenBalance } from './index.js';
 
 export const NATIVE_GAS_BUFFER = 900_000n;
@@ -42,7 +52,7 @@ export async function getEvmTokenBalance(
   });
   const total = balance.toString();
   let allSpendable = total;
-  if (feeToken && feeReserve && tokenAddress.toLowerCase() === feeToken.toLowerCase()) {
+  if (feeToken && feeReserve && isAddressEqual(tokenAddress as `0x${string}`, feeToken as `0x${string}`)) {
     const reserved = BigInt(feeReserve);
     const available = balance > reserved ? balance - reserved : 0n;
     allSpendable = available.toString();
@@ -51,7 +61,7 @@ export async function getEvmTokenBalance(
 }
 
 export function deriveEvmAddress(key: string): string {
-  const account = privateKeyToAccount((key.startsWith('0x') ? key : `0x${key}`) as Hex);
+  const account = privateKeyToAccount((isHex(key) ? key : `0x${key}`) as Hex);
   return account.address;
 }
 
@@ -61,7 +71,7 @@ export function resolveEvmSigner(
 ): { address: string; walletClient: WalletClient; publicClient: PublicClient } {
   const rpcUrl = resolveRpcUrl(chainName);
   const viemChain = getViemChain(chainName);
-  const account = privateKeyToAccount((key.startsWith('0x') ? key : `0x${key}`) as Hex);
+  const account = privateKeyToAccount((isHex(key) ? key : `0x${key}`) as Hex);
   const transport = http(rpcUrl);
   return {
     address: account.address,

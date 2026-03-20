@@ -38,7 +38,7 @@ describe("getBtcBalance", () => {
   });
 
   it("returns total and allSpendable with correct values", async () => {
-    mockGetBalance.mockResolvedValue({ confirmed: 500000, unconfirmed: 10000 });
+    mockGetBalance.mockResolvedValue({ confirmed: 500000, unconfirmed: 10000, total: 510000 });
     mockGetMaxSpendable.mockResolvedValue({ amount: { amount: "490000" } });
 
     const sdk = getSdk();
@@ -49,7 +49,7 @@ describe("getBtcBalance", () => {
   });
 
   it("returns zero values when balance is zero", async () => {
-    mockGetBalance.mockResolvedValue({ confirmed: 0, unconfirmed: 0 });
+    mockGetBalance.mockResolvedValue({ confirmed: 0, unconfirmed: 0, total: 0 });
     mockGetMaxSpendable.mockResolvedValue({ amount: { amount: "0" } });
 
     const sdk = getSdk();
@@ -60,7 +60,7 @@ describe("getBtcBalance", () => {
   });
 
   it("handles large balances correctly", async () => {
-    mockGetBalance.mockResolvedValue({ confirmed: 2100000000000000, unconfirmed: 0 });
+    mockGetBalance.mockResolvedValue({ confirmed: 2100000000000000, unconfirmed: 0, total: 2100000000000000 });
     mockGetMaxSpendable.mockResolvedValue({ amount: { amount: "2099999999000000" } });
 
     const sdk = getSdk();

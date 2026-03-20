@@ -70,10 +70,7 @@ vi.mock("../../src/util/route-provider.js", () => ({
   }),
 }));
 
-vi.mock("../../src/util/rpc-resolver.js", () => ({
-  resolveRpcUrl: vi.fn(() => undefined),
-  getViemChain: vi.fn(() => undefined),
-}));
+
 
 vi.mock("../../src/chains/index.js", () => ({
   getChainFamily: vi.fn((chain: string) => chain === "bitcoin" ? "bitcoin" : "evm"),

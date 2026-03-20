@@ -32,9 +32,8 @@ vi.mock("viem/accounts", () => ({
   })),
 }));
 
-vi.mock("../../src/util/rpc-resolver.js", () => ({
-  resolveRpcUrl: vi.fn(() => "https://rpc.example.com"),
-  getViemChain: vi.fn(() => ({ id: 8453, name: "base" })),
+vi.mock("@gobob/bob-sdk", () => ({
+  supportedChainsMapping: { base: { id: 8453, name: "base" }, ethereum: { id: 1, name: "ethereum" } },
 }));
 
 vi.mock("../../src/util/route-provider.js", () => ({
@@ -117,7 +116,7 @@ describe("getEvmTokenBalance", () => {
   it("returns total and allSpendable equal when no fee token", async () => {
     mockReadContract.mockResolvedValue(5000000n); // 5 USDC
 
-    const result = await getEvmTokenBalance("base", "0xTestAddress", "0xUSDC", 6);
+    const result = await getEvmTokenBalance("base", "0xTestAddress", "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", 6);
 
     expect(result.total).toBe("5000000");
     expect(result.allSpendable).toBe("5000000");
@@ -127,8 +126,8 @@ describe("getEvmTokenBalance", () => {
     mockReadContract.mockResolvedValue(5000000n);
 
     const result = await getEvmTokenBalance(
-      "base", "0xTestAddress", "0xUSDC", 6,
-      "0xusdc", // fee token (different case)
+      "base", "0xTestAddress", "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", 6,
+      "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913", // fee token (different case)
       "1000000", // fee reserve: 1 USDC
     );
 
@@ -140,8 +139,8 @@ describe("getEvmTokenBalance", () => {
     mockReadContract.mockResolvedValue(5000000n);
 
     const result = await getEvmTokenBalance(
-      "base", "0xTestAddress", "0xUSDC", 6,
-      "0xDAI", // different token
+      "base", "0xTestAddress", "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", 6,
+      "0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb", // different token (DAI)
       "1000000",
     );
 
@@ -153,8 +152,8 @@ describe("getEvmTokenBalance", () => {
     mockReadContract.mockResolvedValue(500000n);
 
     const result = await getEvmTokenBalance(
-      "base", "0xTestAddress", "0xUSDC", 6,
-      "0xUSDC",
+      "base", "0xTestAddress", "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", 6,
+      "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
       "1000000", // reserve > balance
     );
 
