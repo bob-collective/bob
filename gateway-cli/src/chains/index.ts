@@ -102,6 +102,15 @@ export async function resolveSigner(
   return resolveEvmSigner(key, chain);
 }
 
+/** Resolve private key from explicit flag or env var based on chain family. */
+export function resolvePrivateKey(
+  chain: string,
+  privateKey?: string,
+  config?: { bitcoinPrivateKey?: string; evmPrivateKey?: string },
+): string | undefined {
+  return privateKey ?? (getChainFamily(chain) === 'bitcoin' ? config?.bitcoinPrivateKey : config?.evmPrivateKey);
+}
+
 // ─── Registration payload ───────────────────────────────────────────────────
 
 export function buildRegisterPayload(

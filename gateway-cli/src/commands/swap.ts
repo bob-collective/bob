@@ -7,7 +7,7 @@ import { fetchPrice } from "../util/price-oracle.js";
 import { MempoolClient } from "@gobob/bob-sdk";
 import pRetry, { AbortError } from "p-retry";
 import { loadConfig, getSdk } from "../config.js";
-import { deriveAddress, resolveSigner, getTokenBalance, buildRegisterPayload, getChainFamily } from "../chains/index.js";
+import { deriveAddress, resolveSigner, getTokenBalance, buildRegisterPayload, getChainFamily, resolvePrivateKey } from "../chains/index.js";
 import type { GatewayOrderInfo, GatewayOrderStatus, GetQuoteParams } from "@gobob/bob-sdk";
 import type { Logger, SwapSuccessJson, SwapSubmittedJson, SwapMempoolPendingJson } from "../output.js";
 
@@ -81,15 +81,6 @@ export type SwapResult =
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function resolvePrivateKey(
-  chain: string,
-  opts: { privateKey?: string },
-  config: { bitcoinPrivateKey?: string; evmPrivateKey?: string },
-): string | undefined {
-  const family = getChainFamily(chain);
-  return opts.privateKey ?? (family === "bitcoin" ? config.bitcoinPrivateKey : config.evmPrivateKey);
-}
-
 function makeRegistrationError(err: unknown, orderId: string, txId: string): Error {
   const msg = err instanceof Error ? err.message : String(err);
   const error = new Error(
@@ -159,7 +150,7 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
   const evmChain = srcFamily === "bitcoin" ? dstAsset.chain : srcAsset.chain;
   const signer = await resolveSignerForSwap(
     srcFamily === "bitcoin" ? "bitcoin" : evmChain,
-    resolvePrivateKey(srcAsset.chain, opts, config),
+    resolvePrivateKey(srcAsset.chain, opts.privateKey, config),
     opts.unsigned,
     srcFamily === "bitcoin",
   );
@@ -342,7 +333,7 @@ async function resolveAllAmount(
   // Derive sender address
   let senderAddress: string | undefined = opts.sender;
   if (!senderAddress) {
-    const key = resolvePrivateKey(srcAsset.chain, opts, config);
+    const key = resolvePrivateKey(srcAsset.chain, opts.privateKey, config);
     if (!key) {
       throw new Error("--amount ALL requires a sender address. Use --private-key, --sender, or set BITCOIN_PRIVATE_KEY / EVM_PRIVATE_KEY.");
     }

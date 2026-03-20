@@ -80,6 +80,7 @@ vi.mock("../../src/chains/index.js", () => ({
   buildRegisterPayload: vi.fn((_src: string, _dst: string, orderId: string, txId: string) => ({
     onramp: { orderId, bitcoinTxHex: txId },
   })),
+  resolvePrivateKey: vi.fn((chain: string, privateKey?: string) => privateKey),
 }));
 
 vi.mock("@gobob/bob-sdk", () => ({
