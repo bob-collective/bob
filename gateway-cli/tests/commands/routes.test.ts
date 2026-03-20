@@ -3,31 +3,59 @@ import { handleRoutes } from "../../src/commands/routes.js";
 
 // ─── Mocks ───────────────────────────────────────────────────────────────────
 
-vi.mock("../../src/util/route-provider.js", async (importOriginal) => {
-  const actual = await importOriginal<any>();
+vi.mock("../../src/config.js", () => ({
+  BTC_DECIMALS: 8,
+  getSdk: vi.fn(),
+}));
+
+vi.mock("../../src/util/route-provider.js", () => {
+  const routes = [
+    { srcChain: "bitcoin", dstChain: "base", srcToken: "BTC", dstToken: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" },
+    { srcChain: "bitcoin", dstChain: "ethereum", srcToken: "BTC", dstToken: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48" },
+    { srcChain: "base", dstChain: "bitcoin", srcToken: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", dstToken: "BTC" },
+  ];
+
+  const getTokenMeta = (address: string, chain: string) => {
+    if (chain === "bitcoin" || address === "BTC") return { symbol: "BTC", decimals: 8 };
+    const TOKENS: Record<string, { symbol: string; decimals: number }> = {
+      "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913": { symbol: "USDC", decimals: 6 },
+      "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48": { symbol: "USDC", decimals: 6 },
+    };
+    return TOKENS[address.toLowerCase()] ?? { symbol: address.slice(0, 10), decimals: 18 };
+  };
+
   return {
-  ...actual,
-  getEnrichedRoutes: vi.fn().mockResolvedValue([
-    {
-      srcChain: "bitcoin",
-      dstChain: "base",
-      srcToken: { address: "BTC", symbol: "BTC", decimals: 8, chain: "bitcoin" },
-      dstToken: { address: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", symbol: "USDC", decimals: 6, chain: "base" },
-    },
-    {
-      srcChain: "bitcoin",
-      dstChain: "ethereum",
-      srcToken: { address: "BTC", symbol: "BTC", decimals: 8, chain: "bitcoin" },
-      dstToken: { address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", symbol: "USDC", decimals: 6, chain: "ethereum" },
-    },
-    {
-      srcChain: "base",
-      dstChain: "bitcoin",
-      srcToken: { address: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", symbol: "USDC", decimals: 6, chain: "base" },
-      dstToken: { address: "BTC", symbol: "BTC", decimals: 8, chain: "bitcoin" },
-    },
-  ]),
-}; });
+    getRoutes: vi.fn().mockResolvedValue(routes),
+    getUniqueChains: vi.fn((rs: any[]) => [...new Set(rs.flatMap((r: any) => [r.srcChain, r.dstChain]))]),
+    getTokenAddressesForChain: vi.fn((chain: string, rs: any[]) => {
+      const seen = new Set<string>();
+      const addrs: string[] = [];
+      for (const r of rs) {
+        for (const [c, addr] of [[r.srcChain, r.srcToken], [r.dstChain, r.dstToken]]) {
+          if (c === chain && addr !== "BTC" && !seen.has(addr.toLowerCase())) {
+            seen.add(addr.toLowerCase());
+            addrs.push(addr);
+          }
+        }
+      }
+      return addrs;
+    }),
+    getTokensForChain: vi.fn((chain: string, rs: any[]) => {
+      const seen = new Set<string>();
+      const tokens: any[] = [];
+      for (const r of rs) {
+        for (const [c, addr] of [[r.srcChain, r.srcToken], [r.dstChain, r.dstToken]]) {
+          if (c === chain && addr !== "BTC" && !seen.has(addr.toLowerCase())) {
+            seen.add(addr.toLowerCase());
+            const meta = getTokenMeta(addr, chain);
+            tokens.push({ address: addr, symbol: meta.symbol, decimals: meta.decimals });
+          }
+        }
+      }
+      return tokens;
+    }),
+  };
+});
 
 vi.mock("../../src/util/input-resolver.js", () => ({
   resolveChain: vi.fn((input: string) => {

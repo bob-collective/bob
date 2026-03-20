@@ -1,14 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { Logger } from "../../src/output.js";
-import type { EnrichedRoute } from "../../src/util/route-provider.js";
+import type { RouteInfo } from "@gobob/bob-sdk";
 
 // ─── Mock fixtures ────────────────────────────────────────────────────────────
 
-const btcToken = { address: "BTC", symbol: "BTC", decimals: 8, chain: "bitcoin" };
-const usdcToken = { address: "0xUSDC", symbol: "USDC", decimals: 6, chain: "base" };
-
-const enrichedRoutes: EnrichedRoute[] = [
-  { srcChain: "bitcoin", dstChain: "base", srcToken: btcToken, dstToken: usdcToken },
+const mockRoutes: RouteInfo[] = [
+  { srcChain: "bitcoin", dstChain: "base", srcToken: "BTC", dstToken: "0xUSDC" },
 ];
 
 const onrampQuote = {
@@ -63,14 +60,22 @@ vi.mock("../../src/config.js", () => ({
 }));
 
 vi.mock("../../src/util/route-provider.js", () => ({
-  getEnrichedRoutes: vi.fn(async () => enrichedRoutes),
-  getNativeToken: vi.fn((chain: string) => {
-    if (chain === "ethereum") return { symbol: "ETH", decimals: 18 };
-    throw new Error(`unknown chain "${chain}"`);
-  }),
+  getRoutes: vi.fn(async () => mockRoutes),
 }));
 
+vi.mock("../../src/util/input-resolver.js", () => ({
+  resolveSwapInputs: vi.fn().mockResolvedValue({
+    srcAsset: { chain: "bitcoin", address: "BTC", symbol: "BTC", decimals: 8 },
+    dstAsset: { chain: "base", address: "0xUSDC", symbol: "USDC", decimals: 6 },
+    atomicUnits: "5000000",
+    display: "0.05 BTC",
+  }),
+  humanToAtomic: vi.fn((human: string, decimals: number) => "0"),
+}));
 
+vi.mock("../../src/util/price-oracle.js", () => ({
+  fetchPrice: vi.fn().mockResolvedValue({ priceUsd: 100000, source: "mock" }),
+}));
 
 vi.mock("../../src/chains/index.js", () => ({
   getChainFamily: vi.fn((chain: string) => chain === "bitcoin" ? "bitcoin" : "evm"),
@@ -99,6 +104,14 @@ vi.mock("@gobob/bob-sdk", () => ({
   MempoolClient: vi.fn().mockImplementation(() => ({
     getAddressMempoolTxs: mockGetAddressMempoolTxs,
   })),
+  supportedChainsMapping: {
+    base: { id: 8453, name: "base", nativeCurrency: { symbol: "ETH", decimals: 18, name: "Ether" } },
+    ethereum: { id: 1, name: "ethereum", nativeCurrency: { symbol: "ETH", decimals: 18, name: "Ether" } },
+  },
+}));
+
+vi.mock("@gobob/tokenlist/tokenlist.json", () => ({
+  default: { tokens: [] },
 }));
 
 vi.mock("p-retry", () => ({

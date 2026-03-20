@@ -28,12 +28,12 @@ vi.mock("@gobob/bob-sdk", async (importOriginal) => {
 });
 
 vi.mock("../../src/util/route-provider.js", () => ({
-  getEnrichedRoutes: vi.fn().mockResolvedValue([
+  getRoutes: vi.fn().mockResolvedValue([
     {
       srcChain: "bitcoin",
       dstChain: "base",
-      srcToken: { address: "BTC", symbol: "BTC", decimals: 8, chain: "bitcoin" },
-      dstToken: { address: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", symbol: "USDC", decimals: 6, chain: "base" },
+      srcToken: "BTC",
+      dstToken: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
     },
   ]),
 }));
@@ -42,7 +42,8 @@ vi.mock("../../src/util/input-resolver.js", () => ({
   resolveSwapInputs: vi.fn().mockResolvedValue({
     srcAsset: { chain: "bitcoin", address: "BTC", symbol: "BTC", decimals: 8 },
     dstAsset: { chain: "base", address: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", symbol: "USDC", decimals: 6 },
-    parsed: { type: "atomic", atomicUnits: "5000000", display: "0.05 BTC" },
+    atomicUnits: "5000000",
+    display: "0.05 BTC",
   }),
 }));
 

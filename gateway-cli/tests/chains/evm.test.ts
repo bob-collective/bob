@@ -33,15 +33,14 @@ vi.mock("viem/accounts", () => ({
 }));
 
 vi.mock("@gobob/bob-sdk", () => ({
-  supportedChainsMapping: { base: { id: 8453, name: "base" }, ethereum: { id: 1, name: "ethereum" } },
+  supportedChainsMapping: {
+    base: { id: 8453, name: "base", nativeCurrency: { symbol: "ETH", decimals: 18, name: "Ether" } },
+    ethereum: { id: 1, name: "ethereum", nativeCurrency: { symbol: "ETH", decimals: 18, name: "Ether" } },
+  },
 }));
 
-vi.mock("../../src/util/route-provider.js", () => ({
-  getNativeToken: vi.fn((chain: string) => {
-    if (chain === "base") return { symbol: "ETH", decimals: 18 };
-    if (chain === "ethereum") return { symbol: "ETH", decimals: 18 };
-    return { symbol: "ETH", decimals: 18 };
-  }),
+vi.mock("@gobob/tokenlist/tokenlist.json", () => ({
+  default: { tokens: [] },
 }));
 
 // ─── Import after mocks ─────────────────────────────────────────────────────

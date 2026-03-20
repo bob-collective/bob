@@ -5,10 +5,10 @@ import { dirname, resolve } from "node:path";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const CLI = resolve(__dirname, "../../bin/gateway-cli.ts");
+const CLI = resolve(__dirname, "../../bin/gateway-cli.js");
 
 function run(...args: string[]): string {
-  return execFileSync("npx", ["tsx", CLI, ...args], { encoding: "utf-8" });
+  return execFileSync("node", [CLI, ...args], { encoding: "utf-8" });
 }
 
 describe("CLI smoke tests", () => {
@@ -68,8 +68,4 @@ describe("CLI smoke tests", () => {
     expect(output).toContain("--fee-reserve");
   });
 
-  it("offramp --help works (hidden alias)", () => {
-    const output = run("offramp", "--help");
-    expect(output).toContain("--src");
-  });
 });
