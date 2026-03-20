@@ -1,6 +1,6 @@
 # gateway-cli
 
-CLI for [BOB Gateway](https://docs.gobob.xyz/docs/learn/builder-guides/gateway) — swap between BTC and EVM tokens from the terminal.
+CLI for [BOB Gateway](https://docs.gobob.xyz/gateway/overview) — swap between BTC and EVM tokens from the terminal.
 
 ## Install
 
