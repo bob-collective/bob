@@ -14,31 +14,31 @@
 
 import { mapValues } from '../runtime';
 /**
- * 
+ * API response type for route information.
  * @export
  * @interface RouteInfo
  */
 export interface RouteInfo {
     /**
-     * Destination chain (e.g. bob)
+     * 
      * @type {string}
      * @memberof RouteInfo
      */
     dstChain: string;
     /**
-     * Destination token address
+     * 
      * @type {string}
      * @memberof RouteInfo
      */
     dstToken: string;
     /**
-     * Source chain (e.g. bitcoin)
+     * 
      * @type {string}
      * @memberof RouteInfo
      */
     srcChain: string;
     /**
-     * Source token address
+     * 
      * @type {string}
      * @memberof RouteInfo
      */
