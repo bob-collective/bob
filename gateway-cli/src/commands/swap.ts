@@ -2,7 +2,7 @@ import { getInnerQuote, getQuoteVariant, MempoolClient } from "@gobob/bob-sdk";
 import type { BitcoinSigner, GatewayOrderInfo, GatewayOrderStatus, GetQuoteParams } from "@gobob/bob-sdk";
 import { formatUnits, type WalletClient, type PublicClient } from "viem";
 import pRetry, { AbortError } from "p-retry";
-import { getEnrichedRoutes } from "../util/route-provider.js";
+import { getRoutes } from "../util/route-provider.js";
 import { resolveSwapInputs, humanToAtomic } from "../util/input-resolver.js";
 import { fetchPrice } from "../util/price-oracle.js";
 import { loadConfig, getSdk } from "../config.js";
@@ -48,9 +48,9 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
   const key = resolvePrivateKey(srcFamily === "bitcoin" ? "bitcoin" : "evm", opts.privateKey, config);
   const senderAddress = opts.sender ?? (key ? await deriveAddress(srcFamily === "bitcoin" ? "bitcoin" : "evm", key) : undefined);
 
-  const enriched = await getEnrichedRoutes();
+  const routes = await getRoutes();
   const { srcAsset, dstAsset, atomicUnits, display } = await resolveSwapInputs(
-    opts.src, opts.dst, opts.amount, enriched,
+    opts.src, opts.dst, opts.amount, routes,
     { senderAddress, feeToken: opts.feeToken, feeReserve: opts.feeReserve },
   );
 

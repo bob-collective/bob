@@ -1,8 +1,9 @@
 import { isAddress, formatUnits } from "viem";
+import type { RouteInfo } from "@gobob/bob-sdk";
 import { fetchPrice } from "./price-oracle.js";
 import { BTC_DECIMALS } from "../config.js";
 import { getTokenBalance } from "../chains/index.js";
-import type { EnrichedRoute, EnrichedToken } from "./route-provider.js";
+import { getTokenMetadata } from "../chains/evm.js";
 
 // ─── Chain aliases ───────────────────────────────────────────────────────────
 
@@ -31,42 +32,52 @@ export interface ResolvedAsset {
   decimals: number;
 }
 
-interface TokenIndex {
-  byChainAndSymbol: Map<string, EnrichedToken>;
-  byChainAndAddress: Map<string, EnrichedToken>;
-  chainsBySymbol: Map<string, string[]>;
-  tokensByChain: Map<string, EnrichedToken[]>;
+interface TokenMeta {
+  address: string;
+  symbol: string;
+  decimals: number;
+  chain: string;
 }
 
-export function buildTokenIndex(routes: EnrichedRoute[]): TokenIndex {
-  const byChainAndSymbol = new Map<string, EnrichedToken>();
-  const byChainAndAddress = new Map<string, EnrichedToken>();
+interface TokenIndex {
+  byChainAndSymbol: Map<string, TokenMeta>;
+  byChainAndAddress: Map<string, TokenMeta>;
+  chainsBySymbol: Map<string, string[]>;
+  tokensByChain: Map<string, TokenMeta[]>;
+}
+
+export function buildTokenIndex(routes: RouteInfo[]): TokenIndex {
+  const byChainAndSymbol = new Map<string, TokenMeta>();
+  const byChainAndAddress = new Map<string, TokenMeta>();
   const chainsBySymbol = new Map<string, string[]>();
-  const tokensByChain = new Map<string, EnrichedToken[]>();
+  const tokensByChain = new Map<string, TokenMeta[]>();
 
   const seen = new Set<string>();
   for (const r of routes) {
-    for (const t of [r.srcToken, r.dstToken]) {
-      const dedup = `${t.chain}:${t.address}`;
+    for (const [chain, addr] of [[r.srcChain, r.srcToken], [r.dstChain, r.dstToken]] as const) {
+      const dedup = `${chain}:${addr}`;
       if (seen.has(dedup)) continue;
       seen.add(dedup);
 
+      const meta = getTokenMetadata(addr, chain);
+      const t: TokenMeta = { address: addr, symbol: meta.symbol, decimals: meta.decimals, chain };
+
       const sym = t.symbol.toUpperCase();
-      byChainAndSymbol.set(`${t.chain}:${sym}`, t);
-      byChainAndAddress.set(`${t.chain}:${t.address.toLowerCase()}`, t);
+      byChainAndSymbol.set(`${chain}:${sym}`, t);
+      byChainAndAddress.set(`${chain}:${addr.toLowerCase()}`, t);
 
       const chains = chainsBySymbol.get(sym);
-      chains ? chains.push(t.chain) : chainsBySymbol.set(sym, [t.chain]);
+      chains ? chains.push(chain) : chainsBySymbol.set(sym, [chain]);
 
-      const list = tokensByChain.get(t.chain);
-      list ? list.push(t) : tokensByChain.set(t.chain, [t]);
+      const list = tokensByChain.get(chain);
+      list ? list.push(t) : tokensByChain.set(chain, [t]);
     }
   }
 
   return { byChainAndSymbol, byChainAndAddress, chainsBySymbol, tokensByChain };
 }
 
-export function parseAssetChain(raw: string, routes: EnrichedRoute[], index?: TokenIndex): ResolvedAsset {
+export function parseAssetChain(raw: string, routes: RouteInfo[], index?: TokenIndex): ResolvedAsset {
   const idx = index ?? buildTokenIndex(routes);
   const colonIdx = raw.indexOf(":");
   const assetPart = colonIdx === -1 ? raw : raw.slice(0, colonIdx);
@@ -180,12 +191,12 @@ export async function resolveSwapInputs(
   src: string,
   dst: string,
   amount: string,
-  enriched: EnrichedRoute[],
+  routes: RouteInfo[],
   opts?: { senderAddress?: string; feeToken?: string; feeReserve?: string },
 ): Promise<ResolvedInputs> {
-  const tokenIndex = buildTokenIndex(enriched);
-  const srcAsset = parseAssetChain(src, enriched, tokenIndex);
-  const dstAsset = parseAssetChain(dst, enriched, tokenIndex);
+  const tokenIndex = buildTokenIndex(routes);
+  const srcAsset = parseAssetChain(src, routes, tokenIndex);
+  const dstAsset = parseAssetChain(dst, routes, tokenIndex);
   const parsed = await parseAmount(amount, srcAsset.symbol, srcAsset.decimals);
 
   if (parsed.type === "all") {

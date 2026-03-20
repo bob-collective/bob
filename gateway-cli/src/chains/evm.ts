@@ -1,10 +1,82 @@
-import { createPublicClient, createWalletClient, http, erc20Abi, isAddressEqual, isHex, formatUnits, type WalletClient, type PublicClient, type Hex, type Chain } from 'viem';
+import { createPublicClient, createWalletClient, http, erc20Abi, isAddressEqual, isHex, type WalletClient, type PublicClient, type Hex, type Chain } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { supportedChainsMapping } from '@gobob/bob-sdk';
-import { getNativeToken } from '../util/route-provider.js';
+import tokenlistJson from '@gobob/tokenlist/tokenlist.json';
 import type { TokenBalance } from './index.js';
-import type { EnrichedToken } from '../util/route-provider.js';
-import type { BalanceJson } from '../output.js';
+import { BTC_DECIMALS } from '../config.js';
+
+// ─── Tokenlist index ─────────────────────────────────────────────────────────
+
+type TokenEntry = { address: string; symbol: string; decimals: number; chainId: number };
+
+interface AddressEntry {
+  canonical: TokenEntry;
+  uniform: boolean;
+  byChainId: Map<number, TokenEntry>;
+}
+
+const tokenIndex = new Map<string, AddressEntry>();
+for (const t of tokenlistJson.tokens as TokenEntry[]) {
+  const key = t.address.toLowerCase();
+  const existing = tokenIndex.get(key);
+  if (existing) {
+    existing.byChainId.set(t.chainId, t);
+    if (existing.uniform && (t.symbol !== existing.canonical.symbol || t.decimals !== existing.canonical.decimals)) {
+      existing.uniform = false;
+    }
+  } else {
+    tokenIndex.set(key, {
+      canonical: t,
+      uniform: true,
+      byChainId: new Map([[t.chainId, t]]),
+    });
+  }
+}
+
+// Chain name → chain ID mapping from supportedChainsMapping
+const CHAIN_IDS: Record<string, number> = Object.fromEntries(
+  Object.entries(supportedChainsMapping).map(([name, chain]) => [name, (chain as Chain).id]),
+);
+
+/** Resolve token metadata from the tokenlist. For BTC, returns { symbol: "BTC", decimals: 8 }. */
+export function getTokenMetadata(address: string, chain: string): { symbol: string; decimals: number } {
+  if (chain === 'bitcoin' || address === 'BTC') {
+    return { symbol: 'BTC', decimals: BTC_DECIMALS };
+  }
+
+  const entry = tokenIndex.get(address.toLowerCase());
+  if (!entry) {
+    return { symbol: address.slice(0, 10), decimals: 18 }; // fallback
+  }
+
+  if (entry.uniform) {
+    return { symbol: entry.canonical.symbol, decimals: entry.canonical.decimals };
+  }
+
+  const chainId = CHAIN_IDS[chain];
+  const token = chainId !== undefined ? entry.byChainId.get(chainId) : undefined;
+  if (token) return { symbol: token.symbol, decimals: token.decimals };
+
+  // Ambiguous — fall back to canonical
+  return { symbol: entry.canonical.symbol, decimals: entry.canonical.decimals };
+}
+
+// ─── Native token metadata ───────────────────────────────────────────────────
+
+const NATIVE_TOKENS: Record<string, { symbol: string; decimals: number }> = Object.fromEntries(
+  Object.entries(supportedChainsMapping).map(([name, chain]) => [
+    name,
+    { symbol: chain.nativeCurrency.symbol, decimals: chain.nativeCurrency.decimals },
+  ]),
+);
+
+export function getNativeToken(chain: string): { symbol: string; decimals: number } {
+  const token = NATIVE_TOKENS[chain];
+  if (!token) throw new Error(`unknown chain "${chain}" — cannot determine native token`);
+  return token;
+}
+
+// ─── RPC client ──────────────────────────────────────────────────────────────
 
 /** Resolve RPC URL from env var EVM_RPC_URL_<CHAIN>, or undefined for viem defaults. */
 export function resolveRpcUrl(chainName: string): string | undefined {
@@ -61,12 +133,24 @@ export async function getEvmTokenBalance(
 
 // ─── All balances for a chain (used by balance command) ─────────────────────
 
-export async function getEvmChainBalances(
+export interface ChainBalanceRaw {
+  address: string;
+  // BTC
+  balance?: string;       // atomic
+  allSpendable?: string;  // atomic
+  // EVM native
+  native?: { symbol: string; decimals: number; balance: string; allSpendable: string };  // atomic
+  // EVM tokens
+  tokens?: Array<{ symbol: string; address: string; decimals: number; balance: string; allSpendable: string }>;  // atomic
+  error?: boolean;
+}
+
+export async function getEvmChainBalancesRaw(
   chain: string,
   address: string,
-  tokens: EnrichedToken[],
+  tokens: Array<{ address: string; symbol: string; decimals: number }>,
   opts?: { feeToken?: string; feeReserve?: string },
-): Promise<BalanceJson[string]> {
+): Promise<ChainBalanceRaw> {
   const client = getClient(chain);
   const nt = getNativeToken(chain);
 
@@ -100,8 +184,9 @@ export async function getEvmChainBalances(
     return {
       symbol: t.symbol,
       address: t.address,
-      balance: formatUnits(bal, t.decimals),
-      allSpendable: formatUnits(allSpendable, t.decimals),
+      decimals: t.decimals,
+      balance: bal.toString(),
+      allSpendable: allSpendable.toString(),
     };
   });
 
@@ -109,8 +194,9 @@ export async function getEvmChainBalances(
     address,
     native: {
       symbol: nt.symbol,
-      balance: formatUnits(nativeBalance, nt.decimals),
-      allSpendable: formatUnits(nativeSpendable, nt.decimals),
+      decimals: nt.decimals,
+      balance: nativeBalance.toString(),
+      allSpendable: nativeSpendable.toString(),
     },
     tokens: tokenBals,
   };

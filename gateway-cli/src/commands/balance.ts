@@ -1,4 +1,5 @@
 import { getAllBalances } from '../chains/index.js';
+import { formatAllBalances } from '../output.js';
 import type { BalanceJson } from '../output.js';
 
 export interface BalanceOptions {
@@ -8,5 +9,6 @@ export interface BalanceOptions {
 }
 
 export async function handleBalance(address: string, opts: BalanceOptions): Promise<BalanceJson> {
-  return getAllBalances(address, opts);
+  const raw = await getAllBalances(address, opts);
+  return formatAllBalances(raw);
 }

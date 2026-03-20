@@ -1,5 +1,5 @@
 import { getInnerQuote } from "@gobob/bob-sdk";
-import { getEnrichedRoutes } from "../util/route-provider.js";
+import { getRoutes } from "../util/route-provider.js";
 import { resolveSwapInputs } from "../util/input-resolver.js";
 import { MempoolClient } from "@gobob/bob-sdk";
 import { loadConfig, getSdk } from "../config.js";
@@ -27,9 +27,9 @@ export async function handleQuote(opts: QuoteOptions): Promise<QuoteResult> {
   const sdk = getSdk();
   const slippageBps = opts.slippage ?? config.slippageBps;
 
-  const enriched = await getEnrichedRoutes();
+  const routes = await getRoutes();
   const { srcAsset, dstAsset, atomicUnits, display } = await resolveSwapInputs(
-    opts.src, opts.dst, opts.amount, enriched,
+    opts.src, opts.dst, opts.amount, routes,
     { senderAddress: opts.sender },
   );
 

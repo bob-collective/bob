@@ -1,3 +1,10 @@
+import { formatUnits } from "viem";
+import { formatBtc } from "@gobob/bob-sdk";
+import type { RouteInfo } from "@gobob/bob-sdk";
+import type { ChainBalanceRaw } from "./chains/evm.js";
+import { getTokenMetadata } from "./chains/evm.js";
+import { BTC_DECIMALS } from "./config.js";
+
 // ─── Output mode ─────────────────────────────────────────────────────────────
 
 export type OutputMode = "json" | "human";
@@ -122,6 +129,43 @@ export interface ConfirmationData {
   recipient: string;
 }
 
+// ─── Raw balance formatting ─────────────────────────────────────────────────
+
+/** Format raw atomic chain balance data into human-readable BalanceJson entry. */
+export function formatBalanceRaw(raw: ChainBalanceRaw, chain: string): BalanceJson[string] {
+  if (raw.error) return { address: raw.address, error: true };
+
+  if (chain === "bitcoin") {
+    return {
+      address: raw.address,
+      balance: raw.balance ? formatBtc(BigInt(raw.balance)) : undefined,
+      allSpendable: raw.allSpendable ? formatBtc(BigInt(raw.allSpendable)) : undefined,
+    };
+  }
+
+  return {
+    address: raw.address,
+    native: raw.native ? {
+      symbol: raw.native.symbol,
+      balance: formatUnits(BigInt(raw.native.balance), raw.native.decimals),
+      allSpendable: formatUnits(BigInt(raw.native.allSpendable), raw.native.decimals),
+    } : undefined,
+    tokens: raw.tokens?.map(t => ({
+      symbol: t.symbol,
+      address: t.address,
+      balance: formatUnits(BigInt(t.balance), t.decimals),
+      allSpendable: formatUnits(BigInt(t.allSpendable), t.decimals),
+    })),
+  };
+}
+
+/** Convert raw balance map to formatted BalanceJson. */
+export function formatAllBalances(raw: Record<string, ChainBalanceRaw>): BalanceJson {
+  return Object.fromEntries(
+    Object.entries(raw).map(([chain, data]) => [chain, formatBalanceRaw(data, chain)]),
+  );
+}
+
 // ─── Formatters (stdout) ─────────────────────────────────────────────────────
 
 /** Render any data as formatted JSON. */
@@ -200,10 +244,14 @@ export function formatTokens(data: TokenJson[]): string {
   );
 }
 
-/** Routes table. */
-export function formatRoutes(data: Array<{ srcChain: string; srcToken: { symbol: string }; dstChain: string; dstToken: { symbol: string } }>): string {
+/** Routes table. Uses getTokenMetadata to resolve symbols from addresses. */
+export function formatRoutes(data: RouteInfo[]): string {
   return formatTable(
     [{ label: "Source", width: 25 }, { label: "Destination", width: 0 }],
-    data.map(r => [`${r.srcChain}:${r.srcToken.symbol}`, `${r.dstChain}:${r.dstToken.symbol}`]),
+    data.map(r => {
+      const srcMeta = getTokenMetadata(r.srcToken, r.srcChain);
+      const dstMeta = getTokenMetadata(r.dstToken, r.dstChain);
+      return [`${r.srcChain}:${srcMeta.symbol}`, `${r.dstChain}:${dstMeta.symbol}`];
+    }),
   );
 }

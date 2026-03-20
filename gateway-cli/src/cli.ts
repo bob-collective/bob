@@ -75,54 +75,36 @@ program
     render(result.quote, mode, () => formatConfirmation(result.confirmation));
   }));
 
-function addSwapOptions(cmd: Command): Command {
-  return cmd
-    .requiredOption("--src <asset[:chain]>", "Source asset (e.g. BTC, USDC:ethereum)")
-    .requiredOption("--dst <asset[:chain]>", "Destination asset (e.g. USDC:ethereum, BTC)")
-    .requiredOption("--amount <value>", "Amount: 0.05BTC, 100USDC, 100USD, 5000000 (atomic), ALL")
-    .option("--recipient <address>", "Recipient address")
-    .option("--sender <address>", "Sender address")
-    .option("--slippage <bps>", "Slippage in basis points")
-    .option("--gas-refill-usd <usd>", "Request ETH gas refill on destination (USD amount)")
-    .option("--btc-fee-rate <sat/vbyte>", "Bitcoin fee rate (default: mempool.space)")
-    .option("--fee-token <address>", "ERC20 token used to pay gas (paymaster)")
-    .option("--fee-reserve <amount>", "Amount of fee token to reserve for gas (default: 0)")
-    .option("--private-key <key>", "Private key (WIF for BTC, hex for EVM)")
-    .option("--no-wait", "Exit after submitting without polling")
-    .option("--unsigned", "Output unsigned PSBT/tx data without signing", false)
-    .option("--timeout <seconds>", "Polling timeout in seconds (default: 1800)", "1800")
-    .option("--no-retry", "Fail immediately on transient errors")
-    .option("--json", "Output as JSON", false);
-}
+program
+  .command("swap")
+  .description("Execute a cross-chain swap (e.g. BTC to USDC, ETH to BTC)")
+  .requiredOption("--src <asset[:chain]>", "Source asset (e.g. BTC, USDC:ethereum)")
+  .requiredOption("--dst <asset[:chain]>", "Destination asset (e.g. USDC:ethereum, BTC)")
+  .requiredOption("--amount <value>", "Amount: 0.05BTC, 100USDC, 100USD, 5000000 (atomic), ALL")
+  .option("--recipient <address>", "Recipient address")
+  .option("--sender <address>", "Sender address")
+  .option("--slippage <bps>", "Slippage in basis points")
+  .option("--gas-refill-usd <usd>", "Request ETH gas refill on destination (USD amount)")
+  .option("--btc-fee-rate <sat/vbyte>", "Bitcoin fee rate (default: mempool.space)")
+  .option("--fee-token <address>", "ERC20 token used to pay gas (paymaster)")
+  .option("--fee-reserve <amount>", "Amount of fee token to reserve for gas (default: 0)")
+  .option("--private-key <key>", "Private key (WIF for BTC, hex for EVM)")
+  .option("--no-wait", "Exit after submitting without polling")
+  .option("--unsigned", "Output unsigned PSBT/tx data without signing", false)
+  .option("--timeout <seconds>", "Polling timeout in seconds (default: 1800)", "1800")
+  .option("--no-retry", "Fail immediately on transient errors")
+  .option("--json", "Output as JSON", false)
+  .action(withErrorHandling(async (opts) => {
+    const mode = modeOf(opts);
+    const parsed = swapSchema.parse(opts);
+    if (!parsed.recipient) throw new Error("--recipient is required");
 
-async function runSwap(opts: any) {
-  const mode = modeOf(opts);
-  const parsed = swapSchema.parse(opts);
-  if (!parsed.recipient) throw new Error("--recipient is required");
+    const log = createLogger(mode);
+    const { handleSwap } = await import("./commands/swap.js");
+    const result = await handleSwap({ ...parsed, recipient: parsed.recipient, sender: parsed.sender }, log);
 
-  const log = createLogger(mode);
-  const { handleSwap } = await import("./commands/swap.js");
-  const result = await handleSwap({ ...parsed, recipient: parsed.recipient, sender: parsed.sender }, log);
-
-  switch (result.type) {
-    case "unsigned":
-    case "submitted":
-    case "confirmed":
-    case "mempoolPending":
-      render("data" in result ? result.data : result, mode);
-      break;
-  }
-}
-
-addSwapOptions(program.command("swap").description("Execute a cross-chain swap (e.g. BTC to USDC, ETH to BTC)"))
-  .action(withErrorHandling(runSwap));
-
-// Hidden alias for backwards compatibility
-{
-  const offrampCmd = addSwapOptions(new Command("offramp").description("(alias for swap)"))
-    .action(withErrorHandling(runSwap));
-  program.addCommand(offrampCmd, { hidden: true });
-}
+    render("data" in result ? result.data : result, mode);
+  }));
 
 program
   .command("status <order-id>")

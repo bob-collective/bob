@@ -1,16 +1,14 @@
 import type { RegisterTx } from '@gobob/bob-sdk';
-import { formatBtc } from '@gobob/bob-sdk';
 import { getSdk } from '../config.js';
-import { getEnrichedRoutes, getUniqueChains, getTokensForChain } from '../util/route-provider.js';
+import { getRoutes, getUniqueChains, getTokensForChain } from '../util/route-provider.js';
 import { getBtcBalance, deriveBtcAddress, resolveBtcSigner } from './bitcoin.js';
 import {
   getEvmNativeBalance,
   getEvmTokenBalance,
-  getEvmChainBalances,
   deriveEvmAddress,
   resolveEvmSigner,
 } from './evm.js';
-import type { BalanceJson } from '../output.js';
+import type { ChainBalanceRaw } from './evm.js';
 
 // ─── Chain family registry ──────────────────────────────────────────────────
 
@@ -49,30 +47,34 @@ export async function getTokenBalance(
   return getEvmTokenBalance(chain, address, tokenAddress, opts?.feeToken, opts?.feeReserve);
 }
 
-// ─── Chain balances (all tokens on a chain, formatted) ─────────────────────
+// ─── Chain balances (all tokens on a chain, raw atomic) ─────────────────────
 
-/** Get all balances for all chains (or a specific chain). One route fetch, one RPC client per chain. */
+export type { ChainBalanceRaw } from './evm.js';
+
+/** Get all balances for all chains (or a specific chain). Returns raw atomic values. */
 export async function getAllBalances(
   address: string,
   opts?: BalanceOpts & { chain?: string },
-): Promise<BalanceJson> {
-  const routes = await getEnrichedRoutes();
+): Promise<Record<string, ChainBalanceRaw>> {
+  const routes = await getRoutes();
   const chains = opts?.chain ? [opts.chain] : getUniqueChains(routes);
 
+  const { getEvmChainBalancesRaw } = await import('./evm.js');
+
   const entries = await Promise.all(
-    chains.map(async (chain): Promise<[string, BalanceJson[string]]> => {
+    chains.map(async (chain): Promise<[string, ChainBalanceRaw]> => {
       try {
         if (getChainFamily(chain) === 'bitcoin') {
           const bal = await getTokenBalance(chain, address);
           return [chain, {
             address,
-            balance: formatBtc(BigInt(bal.total)),
-            allSpendable: formatBtc(BigInt(bal.allSpendable)),
+            balance: bal.total,
+            allSpendable: bal.allSpendable,
           }];
         }
 
         const chainTokens = getTokensForChain(chain, routes);
-        return [chain, await getEvmChainBalances(chain, address, chainTokens, opts)];
+        return [chain, await getEvmChainBalancesRaw(chain, address, chainTokens, opts)];
       } catch {
         return [chain, { address, error: true }];
       }

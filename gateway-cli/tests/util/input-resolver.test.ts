@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import type { EnrichedRoute } from "../../src/util/route-provider.js";
+import type { RouteInfo } from "@gobob/bob-sdk";
 
 // Mock config and price-oracle before importing the module under test
 vi.mock("../../src/config.js", () => ({
@@ -8,6 +8,19 @@ vi.mock("../../src/config.js", () => ({
 
 vi.mock("../../src/util/price-oracle.js", () => ({
   fetchPrice: vi.fn(),
+}));
+
+// Mock getTokenMetadata for token resolution
+vi.mock("../../src/chains/evm.js", () => ({
+  getTokenMetadata: vi.fn((address: string, chain: string) => {
+    if (chain === "bitcoin" || address === "BTC") return { symbol: "BTC", decimals: 8 };
+    const TOKENS: Record<string, { symbol: string; decimals: number }> = {
+      "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913": { symbol: "USDC", decimals: 6 },
+      "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599": { symbol: "WBTC", decimals: 8 },
+      "0x03c7054bcb39f7b2e5b2c7acb37583e32d70cfa3": { symbol: "WBTC", decimals: 8 },
+    };
+    return TOKENS[address.toLowerCase()] ?? { symbol: address.slice(0, 10), decimals: 18 };
+  }),
 }));
 
 import {
@@ -23,18 +36,18 @@ const USDC_ADDR = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913"; // USDC on Base
 const WBTC_ETH_ADDR = "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599"; // WBTC on Ethereum
 const WBTC_BOB_ADDR = "0x03c7054bcb39f7b2e5b2c7acb37583e32d70cfa3"; // WBTC on BOB
 
-const routes: EnrichedRoute[] = [
+const routes: RouteInfo[] = [
   {
     srcChain: "bitcoin",
     dstChain: "base",
-    srcToken: { address: "BTC", symbol: "BTC", decimals: 8, chain: "bitcoin" },
-    dstToken: { address: USDC_ADDR, symbol: "USDC", decimals: 6, chain: "base" },
+    srcToken: "BTC",
+    dstToken: USDC_ADDR,
   },
   {
     srcChain: "ethereum",
     dstChain: "bob",
-    srcToken: { address: WBTC_ETH_ADDR, symbol: "WBTC", decimals: 8, chain: "ethereum" },
-    dstToken: { address: WBTC_BOB_ADDR, symbol: "WBTC", decimals: 8, chain: "bob" },
+    srcToken: WBTC_ETH_ADDR,
+    dstToken: WBTC_BOB_ADDR,
   },
 ];
 
