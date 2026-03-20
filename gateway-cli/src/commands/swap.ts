@@ -1,15 +1,13 @@
 import { getInnerQuote, getQuoteVariant } from "@gobob/bob-sdk";
 import { getEnrichedRoutes } from "../util/route-provider.js";
-import { ScureBitcoinSigner, type BitcoinSigner } from "@gobob/bob-sdk";
-import { createWalletClient, createPublicClient, http, erc20Abi, formatUnits, type WalletClient, type PublicClient, type Hex } from "viem";
-import { privateKeyToAccount } from "viem/accounts";
+import type { BitcoinSigner } from "@gobob/bob-sdk";
+import { formatUnits, type WalletClient, type PublicClient } from "viem";
 import { resolveSwapInputs, humanToAtomic } from "../util/input-resolver.js";
 import { fetchPrice } from "../util/price-oracle.js";
-import { getNativeToken, type EnrichedRoute } from "../util/route-provider.js";
 import { MempoolClient } from "@gobob/bob-sdk";
-import { resolveRpcUrl, getViemChain } from "../util/rpc-resolver.js";
 import pRetry, { AbortError } from "p-retry";
 import { loadConfig, getSdk } from "../config.js";
+import { deriveAddress, resolveSigner, getTokenBalance, buildRegisterPayload, getChainFamily } from "../chains/index.js";
 import type { GatewayOrderInfo, GatewayOrderStatus, GetQuoteParams } from "@gobob/bob-sdk";
 import type { Logger, SwapSuccessJson, SwapSubmittedJson, SwapMempoolPendingJson } from "../output.js";
 
@@ -84,6 +82,8 @@ export interface SwapOptions {
   slippage?: number;
   gasRefillUsd?: number;
   btcFeeRate?: number;
+  feeToken?: string;
+  feeReserve?: string;
   privateKey?: string;
   unsigned: boolean;
   wait: boolean;
@@ -112,7 +112,7 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
   let atomicUnits: string;
   let display: string;
   if (parsed.type === "all") {
-    const resolved = await resolveAllAmount(srcAsset, opts, config, enriched);
+    const resolved = await resolveAllAmount(srcAsset, opts, config);
     atomicUnits = resolved.atomicUnits;
     display = resolved.display;
   } else {
@@ -125,9 +125,12 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
   const timeoutMs = opts.timeout ? opts.timeout * 1000 : config.timeoutMs;
 
   const evmChain = isBtcOnramp ? dstAsset.chain : srcAsset.chain;
-  const signer = isBtcOnramp
-    ? await resolveBtcSigner(opts.privateKey ?? config.bitcoinPrivateKey, opts.unsigned)
-    : resolveEvmSigner(opts.privateKey ?? config.evmPrivateKey, opts.unsigned, evmChain);
+  const signer = await resolveSignerForSwap(
+    isBtcOnramp ? "bitcoin" : evmChain,
+    isBtcOnramp ? (opts.privateKey ?? config.bitcoinPrivateKey) : (opts.privateKey ?? config.evmPrivateKey),
+    opts.unsigned,
+    isBtcOnramp,
+  );
 
   const gasRefillWei = opts.gasRefillUsd
     ? await (async () => {
@@ -180,16 +183,17 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
       const onrampData = (order as any).onramp;
       if (!onrampData?.psbtHex) throw new Error("Gateway did not return a PSBT for this onramp order.");
       const psbtHex = onrampData.psbtHex;
-      txId = await (signer as { signer: BitcoinSigner }).signer.signAllInputs!(psbtHex);
+      txId = await (signer as { signer: BitcoinSigner; address: string }).signer.signAllInputs!(psbtHex);
 
+      const registerTx = buildRegisterPayload(srcAsset.chain, dstAsset.chain, orderId, txId);
       try {
         await withRegistrationRetry(
-          () => sdk.api.registerTx({ registerTx: { onramp: { orderId, bitcoinTxHex: txId } } }),
+          () => sdk.api.registerTx({ registerTx }),
           log,
         );
       } catch (err) { throw registrationError(err, orderId, txId); }
     } else {
-      const { walletClient, publicClient } = signer as { walletClient: WalletClient; publicClient: PublicClient };
+      const { walletClient, publicClient } = signer as { walletClient: WalletClient; publicClient: PublicClient; address: string };
 
       if (opts.sender) {
         const addr = opts.sender as `0x${string}`;
@@ -215,13 +219,10 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
         value: BigInt(txInfo.value || "0"),
       });
 
-      const registerPayload = variant === "layerZero"
-        ? { registerTx: { layerZero: { orderId, evmTxhash: txId } } }
-        : { registerTx: { offramp: { orderId, evmTxhash: txId } } };
-
+      const registerTx = buildRegisterPayload(srcAsset.chain, dstAsset.chain, orderId, txId);
       try {
         await withRegistrationRetry(
-          () => sdk.api.registerTx(registerPayload),
+          () => sdk.api.registerTx({ registerTx }),
           log,
         );
       } catch (err) { throw registrationError(err, orderId, txId); }
@@ -283,27 +284,21 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-type BtcSignerResult = { signer: BitcoinSigner; address: string } | { unsigned: true };
-type EvmSignerResult = { walletClient: WalletClient; publicClient: PublicClient } | { unsigned: true };
+type UnsignedSigner = { unsigned: true };
 
-async function resolveBtcSigner(key: string | undefined, unsigned: boolean): Promise<BtcSignerResult> {
+async function resolveSignerForSwap(
+  chain: string,
+  key: string | undefined,
+  unsigned: boolean,
+  isBtc: boolean,
+): Promise<Awaited<ReturnType<typeof resolveSigner>> | UnsignedSigner> {
   if (unsigned) return { unsigned: true };
-  if (!key) throw new Error("no signer configured for Bitcoin.\n  Set BITCOIN_PRIVATE_KEY or pass --private-key.\n  Use --unsigned to output the PSBT without signing.");
-  const signer = ScureBitcoinSigner.fromKey(key);
-  return { signer, address: await signer.getP2WPKHAddress() };
-}
-
-function resolveEvmSigner(key: string | undefined, unsigned: boolean, chainName: string): EvmSignerResult {
-  if (unsigned) return { unsigned: true };
-  if (!key) throw new Error("no signer configured for EVM.\n  Set EVM_PRIVATE_KEY or pass --private-key.\n  Use --unsigned to output the unsigned transaction.");
-  const rpcUrl = resolveRpcUrl(chainName);
-  const viemChain = getViemChain(chainName);
-  const account = privateKeyToAccount((key.startsWith("0x") ? key : `0x${key}`) as Hex);
-  const transport = http(rpcUrl);
-  return {
-    walletClient: createWalletClient({ account, chain: viemChain, transport }),
-    publicClient: createPublicClient({ chain: viemChain, transport }),
-  };
+  if (!key) {
+    const chainType = isBtc ? "Bitcoin" : "EVM";
+    const envVar = isBtc ? "BITCOIN_PRIVATE_KEY" : "EVM_PRIVATE_KEY";
+    throw new Error(`no signer configured for ${chainType}.\n  Set ${envVar} or pass --private-key.\n  Use --unsigned to output the ${isBtc ? "PSBT" : "unsigned transaction"} without signing.`);
+  }
+  return resolveSigner(chain, key);
 }
 
 function registrationError(err: unknown, orderId: string, txId: string): RegistrationError {
@@ -340,13 +335,10 @@ async function pollOrder(
 
 // ─── ALL amount resolution ──────────────────────────────────────────────────
 
-const NATIVE_GAS_BUFFER = 900_000n;
-
 async function resolveAllAmount(
   srcAsset: { chain: string; address: string; symbol: string; decimals: number },
-  opts: { privateKey?: string; sender?: string; unsigned: boolean },
+  opts: { privateKey?: string; sender?: string; unsigned: boolean; feeToken?: string; feeReserve?: string },
   config: { bitcoinPrivateKey?: string; evmPrivateKey?: string },
-  enriched: EnrichedRoute[],
 ): Promise<{ atomicUnits: string; display: string }> {
   const isBtc = srcAsset.chain === "bitcoin";
 
@@ -359,43 +351,14 @@ async function resolveAllAmount(
     if (!key) {
       throw new Error("--amount ALL requires a sender address. Use --private-key, --sender, or set BITCOIN_PRIVATE_KEY / EVM_PRIVATE_KEY.");
     }
-    if (isBtc) {
-      const signer = ScureBitcoinSigner.fromKey(key);
-      senderAddress = await signer.getP2WPKHAddress();
-    } else {
-      const account = privateKeyToAccount((key.startsWith("0x") ? key : `0x${key}`) as Hex);
-      senderAddress = account.address;
-    }
+    senderAddress = await deriveAddress(srcAsset.chain, key);
   }
 
-  let resolvedAtomic: string;
-  if (isBtc) {
-    const sdk = getSdk();
-    const maxSpendable = await sdk.getMaxSpendable(senderAddress);
-    resolvedAtomic = maxSpendable.amount.amount;
-  } else if (isNativeToken(srcAsset)) {
-    // Native EVM token (ETH, etc.) — reserve gas
-    const rpcUrl = resolveRpcUrl(srcAsset.chain);
-    const client = createPublicClient({ chain: getViemChain(srcAsset.chain), transport: http(rpcUrl) });
-    const [balance, feeData] = await Promise.all([
-      client.getBalance({ address: senderAddress as `0x${string}` }),
-      client.estimateFeesPerGas(),
-    ]);
-    const gasCost = (feeData.maxFeePerGas ?? feeData.gasPrice ?? 0n) * NATIVE_GAS_BUFFER;
-    const available = balance > gasCost ? balance - gasCost : 0n;
-    resolvedAtomic = available.toString();
-  } else {
-    // ERC20 token
-    const rpcUrl = resolveRpcUrl(srcAsset.chain);
-    const client = createPublicClient({ chain: getViemChain(srcAsset.chain), transport: http(rpcUrl) });
-    const balance = await client.readContract({
-      address: srcAsset.address as `0x${string}`,
-      abi: erc20Abi,
-      functionName: "balanceOf",
-      args: [senderAddress as `0x${string}`],
-    });
-    resolvedAtomic = balance.toString();
-  }
+  const bal = await getTokenBalance(srcAsset.chain, senderAddress, srcAsset, {
+    feeToken: opts.feeToken,
+    feeReserve: opts.feeReserve,
+  });
+  const resolvedAtomic = bal.allSpendable;
 
   if (BigInt(resolvedAtomic) === 0n) {
     throw new Error(`No ${srcAsset.symbol} balance found for ${senderAddress}`);
@@ -403,9 +366,4 @@ async function resolveAllAmount(
 
   const humanDisplay = formatUnits(BigInt(resolvedAtomic), srcAsset.decimals);
   return { atomicUnits: resolvedAtomic, display: `${humanDisplay} ${srcAsset.symbol} (max spendable)` };
-}
-
-function isNativeToken(asset: { chain: string; symbol: string }): boolean {
-  const nt = getNativeToken(asset.chain);
-  return asset.symbol.toUpperCase() === nt.symbol.toUpperCase();
 }

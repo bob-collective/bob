@@ -63,6 +63,8 @@ program
   .option("--slippage <bps>", "Slippage in basis points")
   .option("--gas-refill-usd <usd>", "Request ETH gas refill on destination (USD amount)")
   .option("--btc-fee-rate <sat/vbyte>", "Bitcoin fee rate (default: mempool.space next-block)")
+  .option("--fee-token <address>", "ERC20 token used to pay gas (paymaster)")
+  .option("--fee-reserve <amount>", "Amount of fee token to reserve for gas (default: 0)")
   .option("--json", "Output as JSON", false)
   .action(withErrorHandling(async (opts) => {
     const mode = modeOf(opts);
@@ -83,6 +85,8 @@ function addSwapOptions(cmd: Command): Command {
     .option("--slippage <bps>", "Slippage in basis points")
     .option("--gas-refill-usd <usd>", "Request ETH gas refill on destination (USD amount)")
     .option("--btc-fee-rate <sat/vbyte>", "Bitcoin fee rate (default: mempool.space)")
+    .option("--fee-token <address>", "ERC20 token used to pay gas (paymaster)")
+    .option("--fee-reserve <amount>", "Amount of fee token to reserve for gas (default: 0)")
     .option("--private-key <key>", "Private key (WIF for BTC, hex for EVM)")
     .option("--no-wait", "Exit after submitting without polling")
     .option("--unsigned", "Output unsigned PSBT/tx data without signing", false)
@@ -144,10 +148,12 @@ program
   .description("Show token balances on supported chains")
   .argument("<address>", "Wallet address (BTC or EVM)")
   .option("--chain <chain>", "Specific chain to check")
+  .option("--fee-token <address>", "ERC20 token used to pay gas (paymaster)")
+  .option("--fee-reserve <amount>", "Amount of fee token to reserve for gas (default: 0)")
   .option("--json", "Output as JSON", false)
   .action(withErrorHandling(async (address, opts) => {
     const { handleBalance } = await import("./commands/balance.js");
-    render(await handleBalance(address, { chain: opts.chain }), modeOf(opts), formatBalance);
+    render(await handleBalance(address, { chain: opts.chain, feeToken: opts.feeToken, feeReserve: opts.feeReserve }), modeOf(opts), formatBalance);
   }));
 
 program

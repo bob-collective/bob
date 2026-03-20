@@ -1,13 +1,14 @@
-import { getEnrichedRoutes, type EnrichedRoute, type EnrichedToken } from '../util/route-provider.js';
-import { resolveRpcUrl, getViemChain } from '../util/rpc-resolver.js';
-import { getSdk } from '../config.js';
-import { createPublicClient, http, erc20Abi, formatUnits } from 'viem';
-import { EsploraClient, formatBtc } from '@gobob/bob-sdk';
-import { getNativeToken } from '../util/route-provider.js';
+import { getEnrichedRoutes, type EnrichedRoute, type EnrichedToken, getNativeToken } from '../util/route-provider.js';
+import { formatUnits } from 'viem';
+import { formatBtc } from '@gobob/bob-sdk';
+import { getTokenBalance } from '../chains/index.js';
+import { BTC_DECIMALS } from '../config.js';
 import type { BalanceJson } from '../output.js';
 
 export interface BalanceOptions {
   chain?: string;
+  feeToken?: string;
+  feeReserve?: string;
 }
 
 function getUniqueChains(routes: EnrichedRoute[]): string[] {
@@ -31,54 +32,60 @@ function getUniqueTokensForChain(
   return tokens;
 }
 
-async function getBtcBalance(
+async function getBtcChainBalance(
   address: string,
-  sdk: ReturnType<typeof getSdk>,
+  opts: BalanceOptions,
 ): Promise<BalanceJson[string]> {
-  const esplora = new EsploraClient();
-  const [bal, maxSpendable] = await Promise.all([
-    esplora.getBalance(address),
-    sdk.getMaxSpendable(address),
-  ]);
-  const total = bal.confirmed + bal.unconfirmed;
-  return { address, balance: formatBtc(BigInt(total)), maxSpendable: formatBtc(BigInt(Number(maxSpendable.amount.amount))) };
+  const bal = await getTokenBalance('bitcoin', address, { address: 'BTC', symbol: 'BTC', decimals: BTC_DECIMALS });
+  return {
+    address,
+    balance: formatBtc(BigInt(bal.total)),
+    allSpendable: formatBtc(BigInt(Number(bal.allSpendable))),
+  };
 }
 
 async function getEvmChainBalance(
   address: string,
   chain: string,
   routes: EnrichedRoute[],
+  opts: BalanceOptions,
 ): Promise<BalanceJson[string]> {
-  const client = createPublicClient({ chain: getViemChain(chain), transport: http(resolveRpcUrl(chain)) });
   const chainTokens = getUniqueTokensForChain(chain, routes);
-
-  const [nativeBalance, tokenBalances] = await Promise.all([
-    client.getBalance({ address: address as `0x${string}` }),
-    chainTokens.length > 0
-      ? client.multicall({
-          contracts: chainTokens.map(t => ({
-            address: t.address as `0x${string}`,
-            abi: erc20Abi,
-            functionName: 'balanceOf' as const,
-            args: [address as `0x${string}`],
-          })),
-        })
-      : [],
-  ]);
-
   const nt = getNativeToken(chain);
-  const tokens = chainTokens
-    .map((t, i) => ({ symbol: t.symbol, address: t.address, balance: formatUnits((tokenBalances[i]?.result as bigint) ?? 0n, t.decimals) }));
+
+  const nativeToken = { address: '0x0000000000000000000000000000000000000000', symbol: nt.symbol, decimals: nt.decimals };
+  const nativeBal = await getTokenBalance(chain, address, nativeToken, {
+    feeToken: opts.feeToken,
+    feeReserve: opts.feeReserve,
+  });
+
+  const tokenBalances = await Promise.all(
+    chainTokens.map(async (t) => {
+      const bal = await getTokenBalance(chain, address, t, {
+        feeToken: opts.feeToken,
+        feeReserve: opts.feeReserve,
+      });
+      return {
+        symbol: t.symbol,
+        address: t.address,
+        balance: formatUnits(BigInt(bal.total), t.decimals),
+        allSpendable: formatUnits(BigInt(bal.allSpendable), t.decimals),
+      };
+    }),
+  );
 
   return {
     address,
-    native: { symbol: nt.symbol, balance: formatUnits(nativeBalance, nt.decimals) },
-    tokens,
+    native: {
+      symbol: nt.symbol,
+      balance: formatUnits(BigInt(nativeBal.total), nt.decimals),
+      allSpendable: formatUnits(BigInt(nativeBal.allSpendable), nt.decimals),
+    },
+    tokens: tokenBalances,
   };
 }
 
 export async function handleBalance(address: string, opts: BalanceOptions): Promise<BalanceJson> {
-  const sdk = getSdk();
   const enriched = await getEnrichedRoutes();
   const chains = opts.chain
     ? [opts.chain]
@@ -88,8 +95,8 @@ export async function handleBalance(address: string, opts: BalanceOptions): Prom
     chains.map(async (chain): Promise<[string, BalanceJson[string]]> => {
       try {
         const data = chain === 'bitcoin'
-          ? await getBtcBalance(address, sdk)
-          : await getEvmChainBalance(address, chain, enriched);
+          ? await getBtcChainBalance(address, opts)
+          : await getEvmChainBalance(address, chain, enriched, opts);
         return [chain, data];
       } catch {
         return [chain, { address, error: true }];

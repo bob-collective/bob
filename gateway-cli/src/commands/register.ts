@@ -1,18 +1,16 @@
 import { getSdk } from "../config.js";
-import type { RegisterTx } from "@gobob/bob-sdk";
+import { buildRegisterPayload } from "../chains/index.js";
 
 export async function handleRegister(opts: { orderId: string; txid: string }) {
   const sdk = getSdk();
   const order = await sdk.api.getOrder({ id: opts.orderId });
 
-  let registerTx: RegisterTx;
-  if (order.srcInfo.chain === "bitcoin") {
-    registerTx = { onramp: { orderId: opts.orderId, bitcoinTxHex: opts.txid } };
-  } else if (order.dstInfo.chain === "bitcoin") {
-    registerTx = { offramp: { orderId: opts.orderId, evmTxhash: opts.txid } };
-  } else {
-    registerTx = { layerZero: { orderId: opts.orderId, evmTxhash: opts.txid } };
-  }
+  const registerTx = buildRegisterPayload(
+    order.srcInfo.chain,
+    order.dstInfo.chain,
+    opts.orderId,
+    opts.txid,
+  );
 
   return sdk.api.registerTx({ registerTx });
 }

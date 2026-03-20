@@ -99,9 +99,10 @@ export interface BalanceJson {
   [chain: string]: {
     address: string;
     balance?: string;
+    allSpendable?: string;
     maxSpendable?: string;
-    native?: { symbol: string; balance: string };
-    tokens?: Array<{ symbol: string; address: string; balance: string }>;
+    native?: { symbol: string; balance: string; allSpendable?: string };
+    tokens?: Array<{ symbol: string; address: string; balance: string; allSpendable?: string }>;
     error?: boolean;
   };
 }
@@ -167,9 +168,18 @@ export function formatBalance(result: BalanceJson): string {
       continue;
     }
     if (data.balance !== undefined) lines.push(`  Balance:       ${data.balance} BTC`);
-    if (data.maxSpendable !== undefined) lines.push(`  Max spendable: ${data.maxSpendable} BTC`);
-    if (data.native) lines.push(`  ${data.native.symbol}: ${data.native.balance}`);
-    if (data.tokens) for (const t of data.tokens) lines.push(`  ${t.symbol}: ${t.balance}`);
+    if (data.allSpendable !== undefined) lines.push(`  All spendable: ${data.allSpendable} BTC`);
+    if (data.maxSpendable !== undefined && data.allSpendable === undefined) lines.push(`  Max spendable: ${data.maxSpendable} BTC`);
+    if (data.native) {
+      const allSuffix = data.native.allSpendable ? ` (all: ${data.native.allSpendable})` : '';
+      lines.push(`  ${data.native.symbol}: ${data.native.balance}${allSuffix}`);
+    }
+    if (data.tokens) {
+      for (const t of data.tokens) {
+        const allSuffix = t.allSpendable ? ` (all: ${t.allSpendable})` : '';
+        lines.push(`  ${t.symbol}: ${t.balance}${allSuffix}`);
+      }
+    }
   }
   return lines.length === 0 ? "No chains found." : lines.join("\n");
 }

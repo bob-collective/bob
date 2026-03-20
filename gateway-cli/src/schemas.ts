@@ -31,6 +31,8 @@ export const quoteSchema = z.object({
   slippage: positiveInt.optional(),
   gasRefillUsd: positiveNumber.optional(),
   btcFeeRate: positiveInt.optional(),
+  feeToken: z.string().optional(),
+  feeReserve: z.string().optional(),
   json: z.boolean().default(false),
 });
 
