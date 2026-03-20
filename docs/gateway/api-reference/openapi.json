@@ -48,7 +48,7 @@
               }
             }
           },
-          "404": {
+          "400": {
             "description": "Create order error",
             "content": {
               "application/json": {
@@ -131,6 +131,16 @@
               }
             }
           },
+          "400": {
+            "description": "Invalid order ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayError"
+                }
+              }
+            }
+          },
           "404": {
             "description": "Order not found",
             "content": {
@@ -177,7 +187,7 @@
             }
           },
           "400": {
-            "description": "Get all orders error",
+            "description": "Invalid user address",
             "content": {
               "application/json": {
                 "schema": {
@@ -336,7 +346,7 @@
               }
             }
           },
-          "404": {
+          "400": {
             "description": "Get a quote error",
             "content": {
               "application/json": {
