@@ -11,8 +11,8 @@ export async function getBtcBalance(
     esplora.getBalance(address),
     sdk.getMaxSpendable(address),
   ]);
-  const total = BigInt(bal.confirmed + bal.unconfirmed).toString();
-  const allSpendable = String(maxSpendable.amount.amount);
+  const total = BigInt(bal.total).toString();
+  const allSpendable = maxSpendable.amount.amount;
   return { total, allSpendable };
 }
 
