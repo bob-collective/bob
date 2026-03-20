@@ -16,6 +16,7 @@
 import * as runtime from '../runtime';
 import type {
   GatewayCreateOrder,
+  GatewayError,
   GatewayMaxSpendable,
   GatewayOrderInfo,
   GatewayQuote,
@@ -26,6 +27,8 @@ import type {
 import {
     GatewayCreateOrderFromJSON,
     GatewayCreateOrderToJSON,
+    GatewayErrorFromJSON,
+    GatewayErrorToJSON,
     GatewayMaxSpendableFromJSON,
     GatewayMaxSpendableToJSON,
     GatewayOrderInfoFromJSON,

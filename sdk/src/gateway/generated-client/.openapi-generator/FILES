@@ -9,6 +9,16 @@ models/GatewayCreateOrderOneOf1.ts
 models/GatewayCreateOrderOneOf1Offramp.ts
 models/GatewayCreateOrderOneOf2.ts
 models/GatewayCreateOrderOneOfOnramp.ts
+models/GatewayError.ts
+models/GatewayErrorCode.ts
+models/GatewayErrorDetails.ts
+models/GatewayErrorDetailsOneOf.ts
+models/GatewayErrorDetailsOneOf1.ts
+models/GatewayErrorDetailsOneOf2.ts
+models/GatewayErrorDetailsOneOf3.ts
+models/GatewayErrorDetailsOneOf4.ts
+models/GatewayErrorDetailsOneOf5.ts
+models/GatewayErrorDetailsOneOf6.ts
 models/GatewayLayerZeroQuote.ts
 models/GatewayMaxSpendable.ts
 models/GatewayOfframpFeeBreakdown.ts
