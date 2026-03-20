@@ -88,25 +88,13 @@ export function buildRegisterPayload(
   orderId: string,
   txId: string,
 ): RegisterTx {
-  const srcFamily = getChainFamily(srcChain);
-  const dstFamily = getChainFamily(dstChain);
-
-  if (srcFamily === 'bitcoin') {
+  if (getChainFamily(srcChain) === 'bitcoin') {
     return { onramp: { orderId, bitcoinTxHex: txId } };
   }
-
-  if (dstFamily === 'bitcoin') {
-    if (srcFamily === 'evm') {
-      return { offramp: { orderId, evmTxhash: txId } };
-    }
-    throw new Error(`unsupported offramp source chain "${srcChain}"`);
+  if (getChainFamily(dstChain) === 'bitcoin') {
+    return { offramp: { orderId, evmTxhash: txId } };
   }
-
-  if (srcFamily === 'evm') {
-    return { layerZero: { orderId, evmTxhash: txId } };
-  }
-
-  throw new Error(`unsupported cross-chain source "${srcChain}"`);
+  return { layerZero: { orderId, evmTxhash: txId } };
 }
 
 // Re-export chain-specific modules for direct access
