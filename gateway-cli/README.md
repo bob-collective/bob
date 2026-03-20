@@ -5,11 +5,19 @@ CLI for [BOB Gateway](https://docs.gobob.xyz/gateway/overview) — swap between 
 ## Install
 
 ```bash
-pnpm install
-pnpm build
+npm install -g @gobob/gateway-cli
+gateway-cli --help
 ```
 
-Or run directly in development:
+### From source
+
+```bash
+pnpm install && pnpm build
+npm link                      # makes gateway-cli available globally
+gateway-cli --help
+```
+
+For development without linking:
 
 ```bash
 pnpm cli:dev --help
