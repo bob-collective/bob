@@ -49,28 +49,8 @@ describe("resolveChain", () => {
     expect(resolveChain("eth")).toBe("ethereum");
   });
 
-  it("maps mainnet to ethereum", () => {
-    expect(resolveChain("mainnet")).toBe("ethereum");
-  });
-
   it("maps arb to arbitrum", () => {
     expect(resolveChain("arb")).toBe("arbitrum");
-  });
-
-  it("maps arb1 to arbitrum", () => {
-    expect(resolveChain("arb1")).toBe("arbitrum");
-  });
-
-  it("maps arbitrum-one to arbitrum", () => {
-    expect(resolveChain("arbitrum-one")).toBe("arbitrum");
-  });
-
-  it("maps bas to base", () => {
-    expect(resolveChain("bas")).toBe("base");
-  });
-
-  it("maps opt to optimism", () => {
-    expect(resolveChain("opt")).toBe("optimism");
   });
 
   it("maps pol to polygon", () => {

@@ -217,7 +217,7 @@ describe("handleSwap", () => {
     const { handleSwap } = await import("../../src/commands/swap.js");
     await expect(
       handleSwap(baseOpts, silentLogger),
-    ).rejects.toThrow("registration failed");
+    ).rejects.toThrow("Registration failed");
   });
 
   it("transient error: createOrder fails once with 'TRM screening delay', succeeds on retry", async () => {

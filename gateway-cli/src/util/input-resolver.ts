@@ -1,6 +1,7 @@
-import { isAddress } from "viem";
+import { isAddress, formatUnits } from "viem";
 import { fetchPrice } from "./price-oracle.js";
 import { BTC_DECIMALS } from "../config.js";
+import { getTokenBalance } from "../chains/index.js";
 import type { EnrichedRoute, EnrichedToken } from "./route-provider.js";
 
 // ─── Chain aliases ───────────────────────────────────────────────────────────
@@ -168,15 +169,39 @@ export async function parseAmount(
 
 // ─── Combined asset + amount resolution ──────────────────────────────────────
 
+export interface ResolvedInputs {
+  srcAsset: ResolvedAsset;
+  dstAsset: ResolvedAsset;
+  atomicUnits: string;
+  display: string;
+}
+
 export async function resolveSwapInputs(
   src: string,
   dst: string,
   amount: string,
   enriched: EnrichedRoute[],
-) {
+  opts?: { senderAddress?: string; feeToken?: string; feeReserve?: string },
+): Promise<ResolvedInputs> {
   const tokenIndex = buildTokenIndex(enriched);
   const srcAsset = parseAssetChain(src, enriched, tokenIndex);
   const dstAsset = parseAssetChain(dst, enriched, tokenIndex);
   const parsed = await parseAmount(amount, srcAsset.symbol, srcAsset.decimals);
-  return { srcAsset, dstAsset, parsed };
+
+  if (parsed.type === "all") {
+    if (!opts?.senderAddress) {
+      throw new Error("--amount ALL requires a sender address. Use --private-key, --sender, or set BITCOIN_PRIVATE_KEY / EVM_PRIVATE_KEY.");
+    }
+    const bal = await getTokenBalance(srcAsset.chain, opts.senderAddress, srcAsset.address, {
+      feeToken: opts.feeToken,
+      feeReserve: opts.feeReserve,
+    });
+    if (BigInt(bal.allSpendable) === 0n) {
+      throw new Error(`No ${srcAsset.symbol} balance found for ${opts.senderAddress}`);
+    }
+    const display = `${formatUnits(BigInt(bal.allSpendable), srcAsset.decimals)} ${srcAsset.symbol} (all spendable)`;
+    return { srcAsset, dstAsset, atomicUnits: bal.allSpendable, display };
+  }
+
+  return { srcAsset, dstAsset, atomicUnits: parsed.atomicUnits, display: parsed.display };
 }

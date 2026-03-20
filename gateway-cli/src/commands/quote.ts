@@ -28,16 +28,13 @@ export async function handleQuote(opts: QuoteOptions): Promise<QuoteResult> {
   const slippageBps = opts.slippage ?? config.slippageBps;
 
   const enriched = await getEnrichedRoutes();
-  const { srcAsset, dstAsset, parsed } = await resolveSwapInputs(
+  const { srcAsset, dstAsset, atomicUnits, display } = await resolveSwapInputs(
     opts.src, opts.dst, opts.amount, enriched,
+    { senderAddress: opts.sender },
   );
-  if (parsed.type === "all") {
-    throw new Error("--amount ALL is not supported for quote. Use a specific amount.");
-  }
-  const isBtcSrc = srcAsset.chain === "bitcoin";
 
   let feeRate = opts.btcFeeRate ?? config.btcFeeRate;
-  if (isBtcSrc && !feeRate) {
+  if (srcAsset.chain === "bitcoin" && !feeRate) {
     const fees = await new MempoolClient().getRecommendedFees();
     feeRate = fees.fastestFee;
   }
@@ -49,14 +46,14 @@ export async function handleQuote(opts: QuoteOptions): Promise<QuoteResult> {
     toToken: dstAsset.address,
     toUserAddress: opts.recipient,
     fromUserAddress: opts.sender,
-    amount: parsed.atomicUnits,
+    amount: atomicUnits,
     maxSlippage: slippageBps,
   });
   const outputAmount = getInnerQuote(quote).outputAmount.amount;
 
   return {
     quote: {
-      srcAmount: parsed.atomicUnits,
+      srcAmount: atomicUnits,
       srcAsset: srcAsset.symbol,
       dstAmount: outputAmount,
       dstAsset: dstAsset.symbol,
@@ -65,9 +62,9 @@ export async function handleQuote(opts: QuoteOptions): Promise<QuoteResult> {
       feeRateSatPerVbyte: feeRate,
     },
     confirmation: {
-      srcAmount: parsed.atomicUnits,
+      srcAmount: atomicUnits,
       srcAsset: srcAsset.symbol,
-      srcDisplay: parsed.display,
+      srcDisplay: display,
       dstAmount: outputAmount,
       dstAsset: dstAsset.symbol,
       dstChain: dstAsset.chain,

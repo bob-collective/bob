@@ -106,7 +106,6 @@ async function runSwap(opts: any) {
 
   switch (result.type) {
     case "unsigned":
-    case "cancelled":
     case "submitted":
     case "confirmed":
     case "mempoolPending":
