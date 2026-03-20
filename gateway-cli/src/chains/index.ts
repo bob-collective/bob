@@ -51,45 +51,49 @@ export async function getTokenBalance(
 
 // ─── Chain balances (all tokens on a chain, formatted) ─────────────────────
 
-/** Get all balances for a chain — discovers tokens from routes, returns formatted display values. */
-export async function getChainBalances(
-  chain: string,
+/** Get all balances for all chains (or a specific chain). One route fetch, no duplicates. */
+export async function getAllBalances(
   address: string,
-  opts?: BalanceOpts,
-): Promise<BalanceJson[string]> {
-  if (getChainFamily(chain) === 'bitcoin') {
-    const bal = await getTokenBalance(chain, address);
-    return {
-      address,
-      balance: formatBtc(BigInt(bal.total)),
-      allSpendable: formatBtc(BigInt(bal.allSpendable)),
-    };
-  }
-
+  opts?: BalanceOpts & { chain?: string },
+): Promise<BalanceJson> {
   const routes = await getEnrichedRoutes();
-  const nt = getNativeToken(chain);
-  const nativeBal = await getEvmNativeBalance(chain, address);
-  const chainTokens = getTokensForChain(chain, routes);
+  const chains = opts?.chain ? [opts.chain] : getUniqueChains(routes);
 
-  const tokenBals = await Promise.all(chainTokens.map(async (t) => {
-    const bal = await getEvmTokenBalance(chain, address, t.address, opts?.feeToken, opts?.feeReserve);
-    return {
-      symbol: t.symbol,
-      address: t.address,
-      balance: formatUnits(BigInt(bal.total), t.decimals),
-      allSpendable: formatUnits(BigInt(bal.allSpendable), t.decimals),
-    };
-  }));
+  const entries = await Promise.all(
+    chains.map(async (chain): Promise<[string, BalanceJson[string]]> => {
+      try {
+        if (getChainFamily(chain) === 'bitcoin') {
+          const bal = await getTokenBalance(chain, address);
+          return [chain, {
+            address,
+            balance: formatBtc(BigInt(bal.total)),
+            allSpendable: formatBtc(BigInt(bal.allSpendable)),
+          }];
+        }
 
-  return {
-    address,
-    native: {
-      symbol: nt.symbol,
-      balance: formatUnits(BigInt(nativeBal.total), nt.decimals),
-      allSpendable: formatUnits(BigInt(nativeBal.allSpendable), nt.decimals),
-    },
-    tokens: tokenBals,
-  };
+        const nt = getNativeToken(chain);
+        const chainTokens = getTokensForChain(chain, routes);
+        const [nativeBal, ...tokenBals] = await Promise.all([
+          getEvmNativeBalance(chain, address),
+          ...chainTokens.map(t => getEvmTokenBalance(chain, address, t.address, opts?.feeToken, opts?.feeReserve).then(bal => ({
+            symbol: t.symbol, address: t.address,
+            balance: formatUnits(BigInt(bal.total), t.decimals),
+            allSpendable: formatUnits(BigInt(bal.allSpendable), t.decimals),
+          }))),
+        ]);
+
+        return [chain, {
+          address,
+          native: { symbol: nt.symbol, balance: formatUnits(BigInt(nativeBal.total), nt.decimals), allSpendable: formatUnits(BigInt(nativeBal.allSpendable), nt.decimals) },
+          tokens: tokenBals,
+        }];
+      } catch {
+        return [chain, { address, error: true }];
+      }
+    }),
+  );
+
+  return Object.fromEntries(entries);
 }
 
 // ─── Address derivation ─────────────────────────────────────────────────────
