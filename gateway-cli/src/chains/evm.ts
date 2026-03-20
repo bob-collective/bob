@@ -39,7 +39,6 @@ export async function getEvmTokenBalance(
   chain: string,
   address: string,
   tokenAddress: string,
-  decimals: number,
   feeToken?: string,
   feeReserve?: string,
 ): Promise<TokenBalance> {

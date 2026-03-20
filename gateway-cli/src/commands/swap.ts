@@ -349,7 +349,7 @@ async function resolveAllAmount(
     senderAddress = await deriveAddress(srcAsset.chain, key);
   }
 
-  const bal = await getTokenBalance(srcAsset.chain, senderAddress, srcAsset, {
+  const bal = await getTokenBalance(srcAsset.chain, senderAddress, srcAsset.address, {
     feeToken: opts.feeToken,
     feeReserve: opts.feeReserve,
   });
