@@ -3,14 +3,17 @@ import { handleBalance } from "../../src/commands/balance.js";
 
 // ─── Mocks ───────────────────────────────────────────────────────────────────
 
-const mockGetMaxSpendable = vi.fn();
-const mockGetBalance = vi.fn();
-const mockGetRoutes = vi.fn();
+const mockGetTokenBalance = vi.fn();
+
+vi.mock("../../src/chains/index.js", () => ({
+  getChainFamily: vi.fn((chain: string) => chain === "bitcoin" ? "bitcoin" : "evm"),
+  getTokenBalance: (...args: any[]) => mockGetTokenBalance(...args),
+}));
 
 vi.mock("../../src/config.js", () => ({
   getSdk: vi.fn(() => ({
-    getMaxSpendable: mockGetMaxSpendable,
-    getRoutes: mockGetRoutes,
+    getMaxSpendable: vi.fn(),
+    getRoutes: vi.fn(),
   })),
   BTC_DECIMALS: 8,
 }));
@@ -19,9 +22,7 @@ vi.mock("@gobob/bob-sdk", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@gobob/bob-sdk")>();
   return {
     ...actual,
-    EsploraClient: vi.fn(() => ({
-      getBalance: mockGetBalance,
-    })),
+    formatBtc: actual.formatBtc,
   };
 });
 
@@ -45,69 +46,72 @@ vi.mock("../../src/util/rpc-resolver.js", () => ({
   getViemChain: vi.fn().mockReturnValue(undefined),
 }));
 
-vi.mock("viem", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("viem")>();
-  return {
-    ...actual,
-    createPublicClient: vi.fn(() => ({
-      getBalance: vi.fn().mockResolvedValue(0n),
-      multicall: vi.fn().mockResolvedValue([]),
-    })),
-  };
-});
-
 // ─── Tests ───────────────────────────────────────────────────────────────────
 
 describe("handleBalance", () => {
   beforeEach(() => {
-    mockGetMaxSpendable.mockReset();
-    mockGetBalance.mockReset();
-    mockGetRoutes.mockReset();
+    vi.clearAllMocks();
   });
 
-  it("returns BTC total balance and maxSpendable", async () => {
-    mockGetBalance.mockResolvedValueOnce({ confirmed: 500000, unconfirmed: 0 });
-    mockGetMaxSpendable.mockResolvedValueOnce({
-      amount: { amount: "490000" },
-    });
+  it("returns BTC total balance and allSpendable", async () => {
+    mockGetTokenBalance.mockResolvedValueOnce({ total: "500000", allSpendable: "490000" });
 
     const result = await handleBalance("bc1qtest", { chain: "bitcoin" });
 
     expect(result).toHaveProperty("bitcoin");
     expect(result.bitcoin.address).toBe("bc1qtest");
     expect(result.bitcoin.balance).toBeDefined();
-    expect(result.bitcoin.maxSpendable).toBeDefined();
+    expect(result.bitcoin.allSpendable).toBeDefined();
   });
 
-  it("sums confirmed + unconfirmed into balance", async () => {
-    mockGetBalance.mockResolvedValueOnce({ confirmed: 300000, unconfirmed: 50000 });
-    mockGetMaxSpendable.mockResolvedValueOnce({
-      amount: { amount: "290000" },
-    });
+  it("calls getTokenBalance with correct args for BTC", async () => {
+    mockGetTokenBalance.mockResolvedValueOnce({ total: "500000", allSpendable: "490000" });
 
-    const result = await handleBalance("bc1qtest", { chain: "bitcoin" });
+    await handleBalance("bc1qtest", { chain: "bitcoin" });
 
-    expect(result.bitcoin.balance).toBeDefined();
+    expect(mockGetTokenBalance).toHaveBeenCalledWith(
+      "bitcoin",
+      "bc1qtest",
+      { address: "BTC", symbol: "BTC", decimals: 8 },
+    );
   });
 
   it("returns zero balance when balance is zero", async () => {
-    mockGetBalance.mockResolvedValueOnce({ confirmed: 0, unconfirmed: 0 });
-    mockGetMaxSpendable.mockResolvedValueOnce({
-      amount: { amount: "0" },
-    });
+    mockGetTokenBalance.mockResolvedValueOnce({ total: "0", allSpendable: "0" });
 
     const result = await handleBalance("bc1qtest", { chain: "bitcoin" });
 
     expect(result).toHaveProperty("bitcoin");
     expect(result.bitcoin.balance).toBeDefined();
+    expect(result.bitcoin.allSpendable).toBeDefined();
   });
 
   it("returns error entry when RPC fails", async () => {
-    mockGetBalance.mockRejectedValueOnce(new Error("connection refused"));
-    mockGetMaxSpendable.mockRejectedValueOnce(new Error("connection refused"));
+    mockGetTokenBalance.mockRejectedValueOnce(new Error("connection refused"));
 
     const result = await handleBalance("bc1qtest", { chain: "bitcoin" });
 
     expect(result.bitcoin.error).toBe(true);
+  });
+
+  it("passes feeToken and feeReserve options for EVM chains", async () => {
+    // Native balance call
+    mockGetTokenBalance.mockResolvedValueOnce({ total: "1000000000000000000", allSpendable: "900000000000000000" });
+    // Token balance call (USDC)
+    mockGetTokenBalance.mockResolvedValueOnce({ total: "5000000", allSpendable: "4000000" });
+
+    await handleBalance("0xTestAddr", {
+      chain: "base",
+      feeToken: "0xUSDC",
+      feeReserve: "1000000",
+    });
+
+    // Both calls should include feeToken/feeReserve
+    expect(mockGetTokenBalance).toHaveBeenCalledWith(
+      "base",
+      "0xTestAddr",
+      expect.any(Object),
+      expect.objectContaining({ feeToken: "0xUSDC", feeReserve: "1000000" }),
+    );
   });
 });

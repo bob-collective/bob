@@ -50,6 +50,24 @@ describe("CLI smoke tests", () => {
     expect(output).not.toContain("--no-cache");
   });
 
+  it("swap --help shows fee-token and fee-reserve flags", () => {
+    const output = run("swap", "--help");
+    expect(output).toContain("--fee-token");
+    expect(output).toContain("--fee-reserve");
+  });
+
+  it("balance --help shows fee-token and fee-reserve flags", () => {
+    const output = run("balance", "--help");
+    expect(output).toContain("--fee-token");
+    expect(output).toContain("--fee-reserve");
+  });
+
+  it("quote --help shows fee-token and fee-reserve flags", () => {
+    const output = run("quote", "--help");
+    expect(output).toContain("--fee-token");
+    expect(output).toContain("--fee-reserve");
+  });
+
   it("offramp --help works (hidden alias)", () => {
     const output = run("offramp", "--help");
     expect(output).toContain("--src");

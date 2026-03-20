@@ -37,8 +37,12 @@ const mockGetOrder = vi.fn();
 const mockCreateOrder = vi.fn();
 const mockRegisterTx = vi.fn();
 const mockSignAllInputs = vi.fn();
-const mockGetP2WPKHAddress = vi.fn();
 const mockGetAddressMempoolTxs = vi.fn();
+
+const mockBtcSigner = {
+  signAllInputs: mockSignAllInputs,
+  getP2WPKHAddress: vi.fn().mockResolvedValue("bc1qtest"),
+};
 
 // ─── Mocks ───────────────────────────────────────────────────────────────────
 
@@ -71,6 +75,16 @@ vi.mock("../../src/util/rpc-resolver.js", () => ({
   getViemChain: vi.fn(() => undefined),
 }));
 
+vi.mock("../../src/chains/index.js", () => ({
+  getChainFamily: vi.fn((chain: string) => chain === "bitcoin" ? "bitcoin" : "evm"),
+  deriveAddress: vi.fn().mockResolvedValue("bc1qtest"),
+  resolveSigner: vi.fn().mockResolvedValue({ address: "bc1qtest", signer: mockBtcSigner }),
+  getTokenBalance: vi.fn().mockResolvedValue({ total: "5000000", allSpendable: "4900000" }),
+  buildRegisterPayload: vi.fn((_src: string, _dst: string, orderId: string, txId: string) => ({
+    onramp: { orderId, bitcoinTxHex: txId },
+  })),
+}));
+
 vi.mock("@gobob/bob-sdk", () => ({
   getInnerQuote: vi.fn((quote: any) => {
     const variant = quote.onramp ? quote.onramp : quote.layerZero ?? quote.offramp;
@@ -82,10 +96,7 @@ vi.mock("@gobob/bob-sdk", () => ({
     return "offramp";
   }),
   ScureBitcoinSigner: {
-    fromKey: vi.fn(() => ({
-      signAllInputs: mockSignAllInputs,
-      getP2WPKHAddress: mockGetP2WPKHAddress,
-    })),
+    fromKey: vi.fn(() => mockBtcSigner),
   },
   MempoolClient: vi.fn().mockImplementation(() => ({
     getAddressMempoolTxs: mockGetAddressMempoolTxs,
@@ -141,7 +152,6 @@ describe("handleSwap", () => {
     mockCreateOrder.mockResolvedValue(onrampOrder);
     mockRegisterTx.mockResolvedValue(undefined);
     mockSignAllInputs.mockResolvedValue("signed-tx-hex-abc");
-    mockGetP2WPKHAddress.mockResolvedValue("bc1qtest");
     mockGetOrder.mockResolvedValue(confirmedOrder);
     mockGetAddressMempoolTxs.mockResolvedValue([]);
   });
