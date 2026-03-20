@@ -8,12 +8,7 @@ import type { EnrichedRoute, EnrichedToken } from "./route-provider.js";
 const CHAIN_ALIASES: Record<string, string> = {
   btc: "bitcoin",
   eth: "ethereum",
-  mainnet: "ethereum",
   arb: "arbitrum",
-  "arbitrum-one": "arbitrum",
-  bas: "base",
-  opt: "optimism",
-  oeth: "optimism",
   pol: "polygon",
   bnb: "bsc",
   avax: "avalanche",
