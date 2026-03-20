@@ -10,7 +10,6 @@ const CHAIN_ALIASES: Record<string, string> = {
   eth: "ethereum",
   mainnet: "ethereum",
   arb: "arbitrum",
-  arb1: "arbitrum",
   "arbitrum-one": "arbitrum",
   bas: "base",
   opt: "optimism",
