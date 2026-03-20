@@ -54,10 +54,13 @@ export type { ChainBalanceRaw } from './evm.js';
 /** Get all balances for all chains (or a specific chain). Returns raw atomic values. */
 export async function getAllBalances(
   address: string,
-  opts?: BalanceOpts & { chain?: string },
+  opts?: BalanceOpts & { chain?: string; chainFamily?: ChainFamily },
 ): Promise<Record<string, ChainBalanceRaw>> {
   const routes = await getRoutes();
-  const chains = opts?.chain ? [opts.chain] : getUniqueChains(routes);
+  let chains = opts?.chain ? [opts.chain] : getUniqueChains(routes);
+  if (opts?.chainFamily) {
+    chains = chains.filter(c => getChainFamily(c) === opts.chainFamily);
+  }
 
   const { getEvmChainBalancesRaw } = await import('./evm.js');
 

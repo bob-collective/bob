@@ -127,14 +127,14 @@ program
 program
   .command("balance")
   .description("Show token balances on supported chains")
-  .argument("<address>", "Wallet address (BTC or EVM)")
+  .argument("[addresses...]", "Wallet addresses (BTC or EVM). Omit to derive from env var keys.")
   .option("--chain <chain>", "Specific chain to check")
   .option("--fee-token <address>", "ERC20 token used to pay gas (paymaster)")
   .option("--fee-reserve <amount>", "Amount of fee token to reserve for gas (default: 0)")
   .option("--json", "Output as JSON", false)
-  .action(withErrorHandling(async (address, opts) => {
+  .action(withErrorHandling(async (addresses, opts) => {
     const { handleBalance } = await import("./commands/balance.js");
-    render(await handleBalance(address, { chain: opts.chain, feeToken: opts.feeToken, feeReserve: opts.feeReserve }), modeOf(opts), formatBalance);
+    render(await handleBalance(addresses, { chain: opts.chain, feeToken: opts.feeToken, feeReserve: opts.feeReserve }), modeOf(opts), formatBalance);
   }));
 
 program
