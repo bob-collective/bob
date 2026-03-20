@@ -1,12 +1,12 @@
 import type { RegisterTx } from '@gobob/bob-sdk';
 import { formatBtc } from '@gobob/bob-sdk';
-import { formatUnits } from 'viem';
-import { getSdk, BTC_DECIMALS } from '../config.js';
-import { getEnrichedRoutes, getNativeToken, getUniqueChains, getTokensForChain } from '../util/route-provider.js';
+import { getSdk } from '../config.js';
+import { getEnrichedRoutes, getUniqueChains, getTokensForChain } from '../util/route-provider.js';
 import { getBtcBalance, deriveBtcAddress, resolveBtcSigner } from './bitcoin.js';
 import {
   getEvmNativeBalance,
   getEvmTokenBalance,
+  getEvmChainBalances,
   deriveEvmAddress,
   resolveEvmSigner,
 } from './evm.js';
@@ -51,7 +51,7 @@ export async function getTokenBalance(
 
 // ─── Chain balances (all tokens on a chain, formatted) ─────────────────────
 
-/** Get all balances for all chains (or a specific chain). One route fetch, no duplicates. */
+/** Get all balances for all chains (or a specific chain). One route fetch, one RPC client per chain. */
 export async function getAllBalances(
   address: string,
   opts?: BalanceOpts & { chain?: string },
@@ -71,22 +71,8 @@ export async function getAllBalances(
           }];
         }
 
-        const nt = getNativeToken(chain);
         const chainTokens = getTokensForChain(chain, routes);
-        const [nativeBal, ...tokenBals] = await Promise.all([
-          getEvmNativeBalance(chain, address),
-          ...chainTokens.map(t => getEvmTokenBalance(chain, address, t.address, opts?.feeToken, opts?.feeReserve).then(bal => ({
-            symbol: t.symbol, address: t.address,
-            balance: formatUnits(BigInt(bal.total), t.decimals),
-            allSpendable: formatUnits(BigInt(bal.allSpendable), t.decimals),
-          }))),
-        ]);
-
-        return [chain, {
-          address,
-          native: { symbol: nt.symbol, balance: formatUnits(BigInt(nativeBal.total), nt.decimals), allSpendable: formatUnits(BigInt(nativeBal.allSpendable), nt.decimals) },
-          tokens: tokenBals,
-        }];
+        return [chain, await getEvmChainBalances(chain, address, chainTokens, opts)];
       } catch {
         return [chain, { address, error: true }];
       }

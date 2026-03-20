@@ -51,7 +51,6 @@ import {
   getEvmTokenBalance,
   deriveEvmAddress,
   resolveEvmSigner,
-  isNativeToken,
   NATIVE_GAS_BUFFER,
 } from "../../src/chains/evm.js";
 
@@ -187,13 +186,3 @@ describe("resolveEvmSigner", () => {
   });
 });
 
-describe("isNativeToken", () => {
-  it("returns true for native token", () => {
-    expect(isNativeToken("base", "ETH")).toBe(true);
-    expect(isNativeToken("base", "eth")).toBe(true);
-  });
-
-  it("returns false for non-native token", () => {
-    expect(isNativeToken("base", "USDC")).toBe(false);
-  });
-});
