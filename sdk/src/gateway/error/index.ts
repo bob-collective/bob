@@ -1,1 +1,1 @@
-export * from './GatewayError';
+export * from './gateway-error';

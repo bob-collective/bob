@@ -7,7 +7,7 @@ export {
     type NoRouteDetails,
     type SimulationFailedDetails,
     type UnableToCoverFeesDetails,
-} from './error/GatewayError';
+} from './error/gateway-error';
 export { OkxWalletAdapter } from './adapters/okx-wallet';
 export { ReownWalletAdapter } from './adapters/reown';
 export { ExecuteQuoteResult, GatewayApiClient as GatewaySDK } from './client';
