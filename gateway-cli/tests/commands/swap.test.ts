@@ -211,13 +211,13 @@ describe("handleSwap", () => {
     ).rejects.toThrow("no signer configured for Bitcoin");
   });
 
-  it("registration failure throws error with CRITICAL message", async () => {
+  it("registration failure throws error with recovery instructions", async () => {
     mockRegisterTx.mockRejectedValue(new Error("network error"));
 
     const { handleSwap } = await import("../../src/commands/swap.js");
     await expect(
       handleSwap(baseOpts, silentLogger),
-    ).rejects.toThrow("CRITICAL");
+    ).rejects.toThrow("registration failed");
   });
 
   it("transient error: createOrder fails once with 'TRM screening delay', succeeds on retry", async () => {

@@ -84,7 +84,7 @@ export type SwapResult =
 function makeRegistrationError(err: unknown, orderId: string, txId: string): Error {
   const msg = err instanceof Error ? err.message : String(err);
   const error = new Error(
-    `CRITICAL: Transaction signed but registration failed. Last error: ${msg}\n` +
+    `Transaction signed but registration failed. Last error: ${msg}\n` +
     `Order ID: ${orderId}\nManually register with: gateway-cli register ${orderId} ${txId}`,
   );
   (error as any).orderId = orderId;
