@@ -1,3 +1,12 @@
+import {
+    GatewayErrorDetailsOneOf,
+    GatewayErrorDetailsOneOf1,
+    GatewayErrorDetailsOneOf2,
+    GatewayErrorDetailsOneOf3,
+    GatewayErrorDetailsOneOf4,
+    GatewayErrorDetailsOneOf5,
+    GatewayErrorDetailsOneOf6,
+} from '../generated-client';
 import type { GatewayError as GatewayErrorInterface } from '../generated-client/models/GatewayError';
 import { instanceOfGatewayError } from '../generated-client/models/GatewayError';
 import { GatewayErrorCode } from '../generated-client/models/GatewayErrorCode';
@@ -7,50 +16,25 @@ export { GatewayErrorCode };
 // ─── Named detail interfaces (mirror the Rust GatewayErrorDetails enum) ──────
 
 /** Details for {@link GatewayErrorCode.InsufficientAmount} and {@link GatewayErrorCode.InsufficientPaymentAmount} */
-export interface InsufficientAmountDetails {
-    expected: string;
-    actual: string;
-}
+export interface InsufficientAmountDetails extends GatewayErrorDetailsOneOf {}
 
 /** Details for {@link GatewayErrorCode.InsufficientSwapAmount} */
-export interface InsufficientSwapAmountDetails {
-    required: string;
-    available: string;
-}
+export interface InsufficientSwapAmountDetails extends GatewayErrorDetailsOneOf1 {}
 
 /** Details for {@link GatewayErrorCode.InsufficientFunds} */
-export interface InsufficientFundsDetails {
-    sender: string;
-    /** Camel-cased from `min_required_sats` */
-    minRequiredSats: number;
-}
+export interface InsufficientFundsDetails extends GatewayErrorDetailsOneOf2 {}
 
 /** Details for {@link GatewayErrorCode.UnableToCoverFees} */
-export interface UnableToCoverFeesDetails {
-    /** Camel-cased from `total_fees` */
-    totalFees: string;
-    /** Camel-cased from `available_amount` */
-    availableAmount: string;
-}
+export interface UnableToCoverFeesDetails extends GatewayErrorDetailsOneOf3 {}
 
 /** Details for {@link GatewayErrorCode.SimulationFailed} and {@link GatewayErrorCode.GasEstimateFailed} */
-export interface SimulationFailedDetails {
-    /** Camel-cased from `tenderly_url` */
-    tenderlyUrl?: string | null;
-}
+export interface SimulationFailedDetails extends GatewayErrorDetailsOneOf4 {}
 
 /** Details for {@link GatewayErrorCode.NoRoute} */
-export interface NoRouteDetails {
-    srcChain: string;
-    srcToken: string;
-    dstChain: string;
-    dstToken: string;
-}
+export interface NoRouteDetails extends GatewayErrorDetailsOneOf5 {}
 
 /** Details for {@link GatewayErrorCode.ExceededLimit} */
-export interface ExceededLimitDetails {
-    limit: string;
-}
+export interface ExceededLimitDetails extends GatewayErrorDetailsOneOf6 {}
 
 // ─── Code → details type mapping ─────────────────────────────────────────────
 
@@ -166,16 +150,12 @@ export class GatewayError<C extends GatewayErrorCode = GatewayErrorCode>
         const code = body.code as GatewayErrorCode;
         const message = body.error as string;
         const raw =
-            body.details != null && typeof body.details === 'object'
-                ? (body.details as Record<string, unknown>)
-                : null;
+            body.details != null && typeof body.details === 'object' ? (body.details as Record<string, unknown>) : null;
 
         return new GatewayError(code, message, parseDetails(code, raw)) as AnyGatewayError;
     }
 
-    static fromText(
-        message: string
-    ): GatewayError<(typeof GatewayErrorCode)['InternalError']> {
+    static fromText(message: string): GatewayError<(typeof GatewayErrorCode)['InternalError']> {
         return new GatewayError(
             GatewayErrorCode.InternalError,
             message,
@@ -196,10 +176,7 @@ export type AnyGatewayError = { [C in GatewayErrorCode]: GatewayError<C> }[Gatew
 // Reads raw snake_case JSON fields directly, matching Rust serde output.
 // Each case corresponds to a GatewayErrorDetails enum variant in error.rs.
 
-function parseDetails<C extends GatewayErrorCode>(
-    code: C,
-    raw: Record<string, unknown> | null
-): DetailsFor<C> {
+function parseDetails<C extends GatewayErrorCode>(code: C, raw: Record<string, unknown> | null): DetailsFor<C> {
     if (!raw) return null as DetailsFor<C>;
 
     switch (code) {

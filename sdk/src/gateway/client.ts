@@ -130,9 +130,7 @@ export class GatewayApiClient {
                                 try {
                                     body = await context.response.json();
                                 } catch {
-                                    throw GatewayError.fromText(
-                                        context.response.statusText,
-                                    );
+                                    throw GatewayError.fromText(context.response.statusText);
                                 }
 
                                 throw GatewayError.fromResponse(body);
@@ -269,19 +267,17 @@ export class GatewayApiClient {
 
             // Check ETH balance and estimate gas for both potential transactions
             const [allowance] = !isAddressEqual(tokenAddress, zeroAddress)
-                ? (
-                    await publicClient.multicall({
-                        allowFailure: false,
-                        contracts: [
-                            {
-                                address: tokenAddress,
-                                abi: erc20Abi,
-                                functionName: 'allowance',
-                                args: [accountAddress, spenderAddress],
-                            },
-                        ],
-                    })
-                )
+                ? await publicClient.multicall({
+                      allowFailure: false,
+                      contracts: [
+                          {
+                              address: tokenAddress,
+                              abi: erc20Abi,
+                              functionName: 'allowance',
+                              args: [accountAddress, spenderAddress],
+                          },
+                      ],
+                  })
                 : [maxUint256];
 
             const requiredAmount = BigInt(quote.offramp.inputAmount.amount);
