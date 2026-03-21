@@ -16,25 +16,25 @@ export { GatewayErrorCode };
 // ─── Named detail interfaces (mirror the Rust GatewayErrorDetails enum) ──────
 
 /** Details for {@link GatewayErrorCode.InsufficientAmount} and {@link GatewayErrorCode.InsufficientPaymentAmount} */
-export interface InsufficientAmountDetails extends GatewayErrorDetailsOneOf {}
+export type InsufficientAmountDetails = GatewayErrorDetailsOneOf;
 
 /** Details for {@link GatewayErrorCode.InsufficientSwapAmount} */
-export interface InsufficientSwapAmountDetails extends GatewayErrorDetailsOneOf1 {}
+export type InsufficientSwapAmountDetails = GatewayErrorDetailsOneOf1;
 
 /** Details for {@link GatewayErrorCode.InsufficientFunds} */
-export interface InsufficientFundsDetails extends GatewayErrorDetailsOneOf2 {}
+export type InsufficientFundsDetails = GatewayErrorDetailsOneOf2;
 
 /** Details for {@link GatewayErrorCode.UnableToCoverFees} */
-export interface UnableToCoverFeesDetails extends GatewayErrorDetailsOneOf3 {}
+export type UnableToCoverFeesDetails = GatewayErrorDetailsOneOf3;
 
 /** Details for {@link GatewayErrorCode.SimulationFailed} and {@link GatewayErrorCode.GasEstimateFailed} */
-export interface SimulationFailedDetails extends GatewayErrorDetailsOneOf4 {}
+export type SimulationFailedDetails = GatewayErrorDetailsOneOf4;
 
 /** Details for {@link GatewayErrorCode.NoRoute} */
-export interface NoRouteDetails extends GatewayErrorDetailsOneOf5 {}
+export type NoRouteDetails = GatewayErrorDetailsOneOf5;
 
 /** Details for {@link GatewayErrorCode.ExceededLimit} */
-export interface ExceededLimitDetails extends GatewayErrorDetailsOneOf6 {}
+export type ExceededLimitDetails = GatewayErrorDetailsOneOf6;
 
 // ─── Code → details type mapping ─────────────────────────────────────────────
 
@@ -130,7 +130,7 @@ export class GatewayError<C extends GatewayErrorCode = GatewayErrorCode>
      * Returns {@link AnyGatewayError} — a discriminated union over all error codes —
      * so callers can switch on `.code` and have `.details` automatically narrowed.
      */
-    static fromResponse(json: unknown): AnyGatewayError {
+    static fromResponse(json: GatewayErrorInterface | object): AnyGatewayError {
         if (!json || typeof json !== 'object') {
             return GatewayError.fromText(String(json ?? ''));
         }
