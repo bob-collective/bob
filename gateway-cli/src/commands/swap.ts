@@ -60,7 +60,7 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
   if (opts.recipient) {
     recipient = opts.recipient;
   } else {
-    const dstKey = resolvePrivateKey(dstFamily === "bitcoin" ? "bitcoin" : "evm", undefined, config);
+    const dstKey = resolvePrivateKey(dstFamily, undefined, config);
     if (!dstKey) {
       const envVar = dstFamily === "bitcoin" ? "BITCOIN_PRIVATE_KEY" : "EVM_PRIVATE_KEY";
       throw new Error(`--recipient is required when no destination wallet is configured.\n  Set ${envVar} or pass --recipient <address>.`);
