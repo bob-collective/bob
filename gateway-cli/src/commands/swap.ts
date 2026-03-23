@@ -15,7 +15,7 @@ export interface SwapOptions {
   src: string;
   dst: string;
   amount: string;
-  recipient: string;
+  recipient?: string;
   sender?: string;
   slippage?: number;
   gasRefillUsd?: number;
@@ -54,6 +54,21 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
     { senderAddress, feeToken: opts.feeToken, feeReserve: opts.feeReserve },
   );
 
+  // ── Resolve recipient ────────────────────────────────────────────────────
+  const dstFamily = getChainFamily(dstAsset.chain);
+  let recipient: string;
+  if (opts.recipient) {
+    recipient = opts.recipient;
+  } else {
+    const dstKey = resolvePrivateKey(dstFamily === "bitcoin" ? "bitcoin" : "evm", undefined, config);
+    if (!dstKey) {
+      const envVar = dstFamily === "bitcoin" ? "BITCOIN_PRIVATE_KEY" : "EVM_PRIVATE_KEY";
+      throw new Error(`--recipient is required when no destination wallet is configured.\n  Set ${envVar} or pass --recipient <address>.`);
+    }
+    recipient = await deriveAddress(dstAsset.chain, dstKey);
+    log.progress(`Using recipient: ${recipient} (derived from ${dstFamily === "bitcoin" ? "BITCOIN_PRIVATE_KEY" : "EVM_PRIVATE_KEY"})`);
+  }
+
   const slippageBps = opts.slippage ?? config.slippageBps;
   const timeoutMs = opts.timeout ? opts.timeout * 1000 : config.timeoutMs;
 
@@ -75,7 +90,7 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
     toChain: dstAsset.chain,
     fromToken: srcAsset.address,
     toToken: dstAsset.address,
-    toUserAddress: opts.recipient,
+    toUserAddress: recipient,
     fromUserAddress: opts.sender,
     amount: atomicUnits,
     maxSlippage: slippageBps,
@@ -196,7 +211,7 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
       ? Math.round((1 - Number(finalOrder.dstInfo.amount) / Number(outputAmount)) * 10000)
       : 0;
 
-    log.progress(`✓ Confirmed — ${outAmt} ${dstAsset.symbol} delivered to ${opts.recipient}`);
+    log.progress(`✓ Confirmed — ${outAmt} ${dstAsset.symbol} delivered to ${recipient}`);
     return {
       type: "confirmed",
       data: { orderId, status: "confirmed", srcAmount: atomicUnits, srcAsset: srcAsset.symbol, dstAmount: outAmt, dstAsset: dstAsset.symbol, dstChain: dstAsset.chain, quotedDstAmount: outputAmount, actualSlippageBps: slipBps, txId, elapsedMs },
@@ -204,7 +219,7 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
   } catch (err) {
     if (getChainFamily(srcAsset.chain) !== "bitcoin" && err instanceof Error && err.message === "pending") {
       log.progress(`Poll timeout reached. Checking mempool for pending delivery...`);
-      const pendingTxs = await new MempoolClient().getAddressMempoolTxs(opts.recipient).catch(() => []);
+      const pendingTxs = await new MempoolClient().getAddressMempoolTxs(recipient).catch(() => []);
       const mempoolTxId = pendingTxs.find(tx => !tx.status.confirmed)?.txid;
       if (mempoolTxId) {
         log.progress(`~ BTC tx found in mempool (unconfirmed): ${mempoolTxId}`);

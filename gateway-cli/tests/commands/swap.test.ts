@@ -269,4 +269,79 @@ describe("handleSwap", () => {
 
     expect(mockCreateOrder).toHaveBeenCalledTimes(1);
   });
+
+  it("derives recipient from BITCOIN_PRIVATE_KEY when --recipient is omitted and dst is BTC", async () => {
+    const { resolvePrivateKey } = await import("../../src/chains/index.js");
+    const { resolveSwapInputs } = await import("../../src/util/input-resolver.js");
+    vi.mocked(resolveSwapInputs).mockResolvedValueOnce({
+      srcAsset: { chain: "base", address: "0xUSDC", symbol: "USDC", decimals: 6 },
+      dstAsset: { chain: "bitcoin", address: "BTC", symbol: "BTC", decimals: 8 },
+      atomicUnits: "5000000",
+      display: "50 USDC",
+    });
+    vi.mocked(resolvePrivateKey).mockReturnValueOnce("0xEvmSrcKey") // src key (EVM)
+      .mockReturnValueOnce("cBtcDestKey"); // dst key (BTC)
+
+    const { deriveAddress, resolveSigner } = await import("../../src/chains/index.js");
+    vi.mocked(deriveAddress).mockResolvedValue("bc1qderived");
+    const mockEvmWalletClient = { account: { address: "0xSender" }, sendTransaction: vi.fn().mockResolvedValue("0xtxhash") };
+    vi.mocked(resolveSigner).mockResolvedValueOnce({ walletClient: mockEvmWalletClient, publicClient: {} } as any);
+
+    // offramp order with EVM tx data
+    mockCreateOrder.mockResolvedValueOnce({ offramp: { orderId: "order-offramp", tx: { to: "0xGateway", data: "0x", value: "0" } } });
+    mockGetOrder.mockResolvedValueOnce({ status: "success", dstInfo: { amount: "500000" } });
+
+    const { handleSwap } = await import("../../src/commands/swap.js");
+    const progressMessages: string[] = [];
+    const logger: Logger = { progress: (msg: string) => progressMessages.push(msg), warn: () => {} };
+
+    const result = await handleSwap({ ...baseOpts, src: "USDC:base", recipient: undefined, dst: "BTC" }, logger);
+
+    expect(vi.mocked(deriveAddress)).toHaveBeenCalledWith("bitcoin", "cBtcDestKey");
+    expect(mockGetQuote).toHaveBeenCalledWith(
+      expect.objectContaining({ toUserAddress: "bc1qderived" }),
+    );
+    expect(progressMessages.some(m => m.includes("Using recipient"))).toBe(true);
+    expect(progressMessages.some(m => m.includes("bc1qderived"))).toBe(true);
+  });
+
+  it("derives recipient from EVM_PRIVATE_KEY when --recipient is omitted and dst is EVM", async () => {
+    const { resolvePrivateKey } = await import("../../src/chains/index.js");
+    vi.mocked(resolvePrivateKey).mockReturnValueOnce("cTestPrivateKey") // src key
+      .mockReturnValueOnce("0xEvmDestKey"); // dst key
+
+    const { deriveAddress } = await import("../../src/chains/index.js");
+    vi.mocked(deriveAddress).mockResolvedValue("0xDerivedAddr");
+
+    const { handleSwap } = await import("../../src/commands/swap.js");
+    const result = await handleSwap({ ...baseOpts, recipient: undefined }, silentLogger);
+
+    expect(vi.mocked(deriveAddress)).toHaveBeenCalledWith("base", "0xEvmDestKey");
+    expect(mockGetQuote).toHaveBeenCalledWith(
+      expect.objectContaining({ toUserAddress: "0xDerivedAddr" }),
+    );
+  });
+
+  it("explicit --recipient overrides derived address", async () => {
+    const { handleSwap } = await import("../../src/commands/swap.js");
+    const result = await handleSwap({ ...baseOpts, recipient: "0xExplicit" }, silentLogger);
+
+    expect(mockGetQuote).toHaveBeenCalledWith(
+      expect.objectContaining({ toUserAddress: "0xExplicit" }),
+    );
+  });
+
+  it("throws when --recipient is omitted and no destination wallet key is available", async () => {
+    const { resolvePrivateKey } = await import("../../src/chains/index.js");
+    vi.mocked(resolvePrivateKey).mockReturnValueOnce("cTestPrivateKey") // src key
+      .mockReturnValueOnce(undefined); // no dst key
+
+    const { handleSwap } = await import("../../src/commands/swap.js");
+    await expect(
+      handleSwap({ ...baseOpts, recipient: undefined }, silentLogger),
+    ).rejects.toThrow(/--recipient is required.*EVM_PRIVATE_KEY/s);
+
+    // Verify dst key lookup uses undefined (not opts.privateKey)
+    expect(vi.mocked(resolvePrivateKey)).toHaveBeenNthCalledWith(2, "evm", undefined, expect.anything());
+  });
 });
