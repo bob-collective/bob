@@ -65,8 +65,7 @@ const sdkQuote = {
 
 describe("handleQuote", () => {
   beforeEach(() => {
-    mockGetQuote.mockReset();
-    mockGetRecommendedFees.mockReset();
+    vi.clearAllMocks();
   });
 
   it("fetches mempool fee rate when src is bitcoin and no btcFeeRate provided", async () => {
@@ -108,6 +107,9 @@ describe("handleQuote", () => {
     });
 
     expect(vi.mocked(deriveAddress)).toHaveBeenCalledWith("base", "0xEvmKey");
+    expect(mockGetQuote).toHaveBeenCalledWith(
+      expect.objectContaining({ toUserAddress: "0xDerivedAddr" }),
+    );
     expect(result.confirmation.recipient).toBe("0xDerivedAddr");
   });
 
