@@ -94,7 +94,8 @@ export type DetailsFor<C extends GatewayErrorCode> = C extends keyof GatewayErro
  */
 export class GatewayError<C extends GatewayErrorCode = GatewayErrorCode>
     extends Error
-    implements GatewayErrorInterface {
+    implements GatewayErrorInterface
+{
     /** Stable error code, safe to switch/match on. */
     readonly code: C;
 
@@ -141,8 +142,8 @@ export class GatewayError<C extends GatewayErrorCode = GatewayErrorCode>
                 typeof body.error === 'string'
                     ? body.error
                     : typeof body.message === 'string'
-                        ? body.message
-                        : JSON.stringify(json);
+                      ? body.message
+                      : JSON.stringify(json);
             return GatewayError.fromText(message);
         }
 
@@ -155,11 +156,7 @@ export class GatewayError<C extends GatewayErrorCode = GatewayErrorCode>
     }
 
     static fromText(message: string): GatewayError<(typeof GatewayErrorCode)['InternalError']> {
-        return new GatewayError(
-            GatewayErrorCode.InternalError,
-            message,
-            null as DetailsFor<(typeof GatewayErrorCode)['InternalError']>
-        );
+        return new GatewayError(GatewayErrorCode.InternalError, message, null);
     }
 }
 
