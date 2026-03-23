@@ -129,8 +129,12 @@ export class GatewayApiClient {
                                 let body: GatewayErrorInterface;
                                 try {
                                     body = await context.response.json();
-                                } catch {
-                                    throw GatewayError.fromText(context.response.statusText);
+                                } catch (parseError) {
+                                    const err = GatewayError.fromText(
+                                        `Non-JSON response: HTTP ${context.response.status} ${context.response.statusText}`
+                                    );
+                                    err.cause = parseError;
+                                    throw err;
                                 }
 
                                 throw GatewayError.fromResponse(body);
@@ -268,16 +272,16 @@ export class GatewayApiClient {
             // Check ETH balance and estimate gas for both potential transactions
             const [allowance] = !isAddressEqual(tokenAddress, zeroAddress)
                 ? await publicClient.multicall({
-                      allowFailure: false,
-                      contracts: [
-                          {
-                              address: tokenAddress,
-                              abi: erc20Abi,
-                              functionName: 'allowance',
-                              args: [accountAddress, spenderAddress],
-                          },
-                      ],
-                  })
+                    allowFailure: false,
+                    contracts: [
+                        {
+                            address: tokenAddress,
+                            abi: erc20Abi,
+                            functionName: 'allowance',
+                            args: [accountAddress, spenderAddress],
+                        },
+                    ],
+                })
                 : [maxUint256];
 
             const requiredAmount = BigInt(quote.offramp.inputAmount.amount);

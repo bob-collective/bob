@@ -1,16 +1,16 @@
+export { OkxWalletAdapter } from './adapters/okx-wallet';
+export { ReownWalletAdapter } from './adapters/reown';
+export { ExecuteQuoteResult, GatewayApiClient as GatewaySDK } from './client';
 export {
-    GatewayError,
-    type ExceededLimitDetails,
+    GatewayError, GatewayErrorCode, type ExceededLimitDetails,
     type InsufficientAmountDetails,
     type InsufficientFundsDetails,
     type InsufficientSwapAmountDetails,
     type NoRouteDetails,
     type SimulationFailedDetails,
-    type UnableToCoverFeesDetails,
+    type UnableToCoverFeesDetails
 } from './error/gateway-error';
-export { OkxWalletAdapter } from './adapters/okx-wallet';
-export { ReownWalletAdapter } from './adapters/reown';
-export { ExecuteQuoteResult, GatewayApiClient as GatewaySDK } from './client';
 export * from './generated-client';
 export { GatewayQuoteParams, GetQuoteParams } from './types';
 export { formatBtc, parseBtc } from './utils';
+
