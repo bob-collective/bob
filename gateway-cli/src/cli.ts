@@ -69,9 +69,8 @@ program
   .action(withErrorHandling(async (opts) => {
     const mode = modeOf(opts);
     const parsed = quoteSchema.parse(opts);
-    if (!parsed.recipient) throw new Error("--recipient is required");
     const { handleQuote } = await import("./commands/quote.js");
-    const result = await handleQuote({ ...parsed, recipient: parsed.recipient, sender: parsed.sender });
+    const result = await handleQuote({ ...parsed, sender: parsed.sender });
     render(result.quote, mode, () => formatConfirmation(result.confirmation));
   }));
 
@@ -97,11 +96,10 @@ program
   .action(withErrorHandling(async (opts) => {
     const mode = modeOf(opts);
     const parsed = swapSchema.parse(opts);
-    if (!parsed.recipient) throw new Error("--recipient is required");
 
     const log = createLogger(mode);
     const { handleSwap } = await import("./commands/swap.js");
-    const result = await handleSwap({ ...parsed, recipient: parsed.recipient, sender: parsed.sender }, log);
+    const result = await handleSwap({ ...parsed, sender: parsed.sender }, log);
 
     render("data" in result ? result.data : result, mode);
   }));
