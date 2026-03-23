@@ -39,6 +39,9 @@ gateway-cli swap --src BTC --dst USDC:base --amount 0.05BTC --recipient 0xYourAd
 # Send everything
 gateway-cli swap --src BTC --dst USDC:base --amount ALL --recipient 0xYourAddress
 
+# Swap without --recipient (uses derived address from EVM_PRIVATE_KEY)
+gateway-cli swap --src BTC --dst USDC:base --amount 0.05BTC
+
 # Check your balances (derives addresses from keys)
 gateway-cli balance
 ```
@@ -53,7 +56,7 @@ Execute a cross-chain swap.
 gateway-cli swap --src BTC --dst USDC:base --amount 0.05BTC --recipient 0x...
 ```
 
-**Required:** `--src`, `--dst`, `--amount`, `--recipient`
+**Required:** `--src`, `--dst`, `--amount`
 
 ### `quote`
 
@@ -125,7 +128,7 @@ All config via environment variables. No config files.
 --src <asset[:chain]>    Source asset (e.g. BTC, USDC:ethereum)
 --dst <asset[:chain]>    Destination asset
 --amount <value>         Amount (see format table above)
---recipient <address>    Recipient address
+--recipient <address>    Recipient address (optional if destination wallet key is set)
 --sender <address>       Sender address (optional)
 --slippage <bps>         Slippage tolerance in basis points (default: 300)
 --gas-refill-usd <usd>   ETH gas refill on destination
@@ -134,6 +137,12 @@ All config via environment variables. No config files.
 --fee-reserve <amount>   Amount of fee token to reserve for gas
 --json                   Output as JSON
 ```
+
+> **Note:** When `--recipient` is omitted, the CLI derives the recipient from the
+> destination chain's private key (`BITCOIN_PRIVATE_KEY` for BTC destinations,
+> `EVM_PRIVATE_KEY` for EVM destinations). BTC recipients use P2WPKH addresses
+> (`bc1q...`). Other BTC address types are not yet supported. An explicit
+> `--recipient` always overrides the derived address.
 
 ### Swap only
 
