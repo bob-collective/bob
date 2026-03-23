@@ -94,8 +94,7 @@ export type DetailsFor<C extends GatewayErrorCode> = C extends keyof GatewayErro
  */
 export class GatewayError<C extends GatewayErrorCode = GatewayErrorCode>
     extends Error
-    implements GatewayErrorInterface
-{
+    implements GatewayErrorInterface {
     /** Stable error code, safe to switch/match on. */
     readonly code: C;
 
@@ -142,8 +141,8 @@ export class GatewayError<C extends GatewayErrorCode = GatewayErrorCode>
                 typeof body.error === 'string'
                     ? body.error
                     : typeof body.message === 'string'
-                      ? body.message
-                      : JSON.stringify(json);
+                        ? body.message
+                        : JSON.stringify(json);
             return GatewayError.fromText(message);
         }
 
@@ -177,36 +176,34 @@ export type AnyGatewayError = { [C in GatewayErrorCode]: GatewayError<C> }[Gatew
 // Each case corresponds to a GatewayErrorDetails enum variant in error.rs.
 
 function parseDetails<C extends GatewayErrorCode>(code: C, raw: Record<string, unknown> | null): DetailsFor<C> {
-    if (!raw) return null as DetailsFor<C>;
-
     switch (code) {
         // Rust: GatewayErrorDetails::InsufficientAmount { expected, actual }
         case GatewayErrorCode.InsufficientAmount:
         case GatewayErrorCode.InsufficientPaymentAmount:
             return {
-                expected: String(raw.expected ?? ''),
-                actual: String(raw.actual ?? ''),
+                expected: String(raw?.expected ?? ''),
+                actual: String(raw?.actual ?? ''),
             } satisfies InsufficientAmountDetails as DetailsFor<C>;
 
         // Rust: GatewayErrorDetails::InsufficientSwapAmount { required, available }
         case GatewayErrorCode.InsufficientSwapAmount:
             return {
-                required: String(raw.required ?? ''),
-                available: String(raw.available ?? ''),
+                required: String(raw?.required ?? ''),
+                available: String(raw?.available ?? ''),
             } satisfies InsufficientSwapAmountDetails as DetailsFor<C>;
 
         // Rust: GatewayErrorDetails::InsufficientFunds { sender, min_required_sats }
         case GatewayErrorCode.InsufficientFunds:
             return {
-                sender: String(raw.sender ?? ''),
-                minRequiredSats: Number(raw.min_required_sats ?? 0),
+                sender: String(raw?.sender ?? ''),
+                minRequiredSats: Number(raw?.min_required_sats ?? 0),
             } satisfies InsufficientFundsDetails as DetailsFor<C>;
 
         // Rust: GatewayErrorDetails::UnableToCoverFees { total_fees, available_amount }
         case GatewayErrorCode.UnableToCoverFees:
             return {
-                totalFees: String(raw.total_fees ?? ''),
-                availableAmount: String(raw.available_amount ?? ''),
+                totalFees: String(raw?.total_fees ?? ''),
+                availableAmount: String(raw?.available_amount ?? ''),
             } satisfies UnableToCoverFeesDetails as DetailsFor<C>;
 
         // Rust: GatewayErrorDetails::SimulationFailed { tenderly_url }
@@ -214,22 +211,22 @@ function parseDetails<C extends GatewayErrorCode>(code: C, raw: Record<string, u
         case GatewayErrorCode.SimulationFailed:
         case GatewayErrorCode.GasEstimateFailed:
             return {
-                tenderlyUrl: typeof raw.tenderly_url === 'string' ? raw.tenderly_url : null,
+                tenderlyUrl: typeof raw?.tenderly_url === 'string' ? raw?.tenderly_url : null,
             } satisfies SimulationFailedDetails as DetailsFor<C>;
 
         // Rust: GatewayErrorDetails::NoRoute { src_chain, src_token, dst_chain, dst_token }
         case GatewayErrorCode.NoRoute:
             return {
-                srcChain: String(raw.src_chain ?? ''),
-                srcToken: String(raw.src_token ?? ''),
-                dstChain: String(raw.dst_chain ?? ''),
-                dstToken: String(raw.dst_token ?? ''),
+                srcChain: String(raw?.src_chain ?? ''),
+                srcToken: String(raw?.src_token ?? ''),
+                dstChain: String(raw?.dst_chain ?? ''),
+                dstToken: String(raw?.dst_token ?? ''),
             } satisfies NoRouteDetails as DetailsFor<C>;
 
         // Rust: GatewayErrorDetails::ExceededLimit { limit }
         case GatewayErrorCode.ExceededLimit:
             return {
-                limit: String(raw.limit ?? ''),
+                limit: String(raw?.limit ?? ''),
             } satisfies ExceededLimitDetails as DetailsFor<C>;
 
         // Codes with no details in Rust (details field absent or unit variant → {}):
