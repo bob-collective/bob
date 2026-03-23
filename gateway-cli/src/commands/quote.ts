@@ -3,6 +3,7 @@ import { getRoutes } from "../util/route-provider.js";
 import { resolveSwapInputs } from "../util/input-resolver.js";
 import { MempoolClient } from "@gobob/bob-sdk";
 import { loadConfig, getSdk } from "../config.js";
+import { getChainFamily, deriveAddress, resolvePrivateKey } from "../chains/index.js";
 import type { QuoteJson, ConfirmationData } from "../output.js";
 import type { GetQuoteParams } from "@gobob/bob-sdk";
 
@@ -10,7 +11,7 @@ export interface QuoteOptions {
   src: string;
   dst: string;
   amount: string;
-  recipient: string;
+  recipient?: string;
   sender?: string;
   slippage?: number;
   gasRefillUsd?: number;
@@ -33,6 +34,20 @@ export async function handleQuote(opts: QuoteOptions): Promise<QuoteResult> {
     { senderAddress: opts.sender },
   );
 
+  // ── Resolve recipient ────────────────────────────────────────────────────
+  const dstFamily = getChainFamily(dstAsset.chain);
+  let recipient: string;
+  if (opts.recipient) {
+    recipient = opts.recipient;
+  } else {
+    const dstKey = resolvePrivateKey(dstFamily, undefined, config);
+    if (!dstKey) {
+      const envVar = dstFamily === "bitcoin" ? "BITCOIN_PRIVATE_KEY" : "EVM_PRIVATE_KEY";
+      throw new Error(`--recipient is required when no destination wallet is configured.\n  Set ${envVar} or pass --recipient <address>.`);
+    }
+    recipient = await deriveAddress(dstAsset.chain, dstKey);
+  }
+
   let feeRate = opts.btcFeeRate ?? config.btcFeeRate;
   if (srcAsset.chain === "bitcoin" && !feeRate) {
     const fees = await new MempoolClient().getRecommendedFees();
@@ -44,7 +59,7 @@ export async function handleQuote(opts: QuoteOptions): Promise<QuoteResult> {
     toChain: dstAsset.chain,
     fromToken: srcAsset.address,
     toToken: dstAsset.address,
-    toUserAddress: opts.recipient,
+    toUserAddress: recipient,
     fromUserAddress: opts.sender,
     amount: atomicUnits,
     maxSlippage: slippageBps,
@@ -70,7 +85,7 @@ export async function handleQuote(opts: QuoteOptions): Promise<QuoteResult> {
       dstChain: dstAsset.chain,
       feeRateSatPerVbyte: feeRate,
       slippageBps,
-      recipient: opts.recipient,
+      recipient: recipient,
       gasRefillUsd: opts.gasRefillUsd ? String(opts.gasRefillUsd) : undefined,
     },
   };

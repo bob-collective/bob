@@ -47,6 +47,12 @@ vi.mock("../../src/util/input-resolver.js", () => ({
   }),
 }));
 
+vi.mock("../../src/chains/index.js", () => ({
+  getChainFamily: vi.fn((chain: string) => chain === "bitcoin" ? "bitcoin" : "evm"),
+  deriveAddress: vi.fn().mockResolvedValue("0xDerived"),
+  resolvePrivateKey: vi.fn(() => undefined),
+}));
+
 // ─── Tests ───────────────────────────────────────────────────────────────────
 
 const sdkQuote = {
@@ -85,5 +91,46 @@ describe("handleQuote", () => {
 
     expect(mockGetRecommendedFees).not.toHaveBeenCalled();
     expect(result.quote.feeRateSatPerVbyte).toBe(15);
+  });
+
+  it("derives recipient from EVM_PRIVATE_KEY when --recipient is omitted", async () => {
+    mockGetQuote.mockResolvedValueOnce(sdkQuote);
+    mockGetRecommendedFees.mockResolvedValueOnce({ fastestFee: 25 });
+
+    const { resolvePrivateKey } = await import("../../src/chains/index.js");
+    vi.mocked(resolvePrivateKey).mockReturnValueOnce("0xEvmKey");
+
+    const { deriveAddress } = await import("../../src/chains/index.js");
+    vi.mocked(deriveAddress).mockResolvedValueOnce("0xDerivedAddr");
+
+    const result = await handleQuote({
+      src: "BTC", dst: "USDC:base", amount: "5000000",
+    });
+
+    expect(vi.mocked(deriveAddress)).toHaveBeenCalledWith("base", "0xEvmKey");
+    expect(result.confirmation.recipient).toBe("0xDerivedAddr");
+  });
+
+  it("explicit --recipient overrides derived address in quote", async () => {
+    mockGetQuote.mockResolvedValueOnce(sdkQuote);
+    mockGetRecommendedFees.mockResolvedValueOnce({ fastestFee: 25 });
+
+    const result = await handleQuote({
+      src: "BTC", dst: "USDC:base", amount: "5000000", recipient: "0xExplicit",
+    });
+
+    expect(mockGetQuote).toHaveBeenCalledWith(
+      expect.objectContaining({ toUserAddress: "0xExplicit" }),
+    );
+    expect(result.confirmation.recipient).toBe("0xExplicit");
+  });
+
+  it("throws when --recipient omitted and no destination key available in quote", async () => {
+    const { resolvePrivateKey } = await import("../../src/chains/index.js");
+    vi.mocked(resolvePrivateKey).mockReturnValueOnce(undefined);
+
+    await expect(
+      handleQuote({ src: "BTC", dst: "USDC:base", amount: "5000000" }),
+    ).rejects.toThrow("--recipient is required");
   });
 });
