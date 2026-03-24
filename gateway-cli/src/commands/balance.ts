@@ -9,6 +9,7 @@ export interface BalanceOptions {
   chain?: string;
   feeToken?: string;
   feeReserve?: string;
+  nonZero?: boolean;
 }
 
 function classifyAddress(addr: string): "bitcoin" | "evm" {
@@ -41,6 +42,16 @@ export async function handleBalance(addresses: string[], opts: BalanceOptions): 
       chainFamily: family,
     });
     Object.assign(results, formatAllBalances(raw));
+  }
+
+  if (opts.nonZero) {
+    for (const [chain, data] of Object.entries(results)) {
+      if (data.error) continue; // keep errors visible
+      const hasBalance = data.balance !== undefined && parseFloat(data.balance) > 0;
+      const hasNative = data.native !== undefined && parseFloat(data.native.balance) > 0;
+      const hasTokens = data.tokens?.some(t => parseFloat(t.balance) > 0) ?? false;
+      if (!hasBalance && !hasNative && !hasTokens) delete results[chain];
+    }
   }
 
   return results;

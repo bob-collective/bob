@@ -129,10 +129,11 @@ program
   .option("--chain <chain>", "Specific chain to check")
   .option("--fee-token <address>", "ERC20 token used to pay gas (paymaster)")
   .option("--fee-reserve <amount>", "Amount of fee token to reserve for gas (default: 0)")
+  .option("--non-zero", "Only show chains with non-zero balances", false)
   .option("--json", "Output as JSON", false)
   .action(withErrorHandling(async (addresses, opts) => {
     const { handleBalance } = await import("./commands/balance.js");
-    render(await handleBalance(addresses, { chain: opts.chain, feeToken: opts.feeToken, feeReserve: opts.feeReserve }), modeOf(opts), formatBalance);
+    render(await handleBalance(addresses, { chain: opts.chain, feeToken: opts.feeToken, feeReserve: opts.feeReserve, nonZero: opts.nonZero }), modeOf(opts), formatBalance);
   }));
 
 program

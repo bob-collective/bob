@@ -74,6 +74,7 @@ Show token balances across chains.
 gateway-cli balance                           # derive addresses from env keys
 gateway-cli balance bc1q... 0x123...          # explicit addresses
 gateway-cli balance 0x123... --chain base     # specific chain
+gateway-cli balance --non-zero                # only show non-zero balances
 ```
 
 ### `routes`
