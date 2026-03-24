@@ -154,6 +154,10 @@ export async function getEvmChainBalancesRaw(
   const client = getClient(chain);
   const nt = getNativeToken(chain);
 
+  // Filter out the zero address — native ETH is already queried separately
+  const ZERO_ADDR = "0x0000000000000000000000000000000000000000";
+  tokens = tokens.filter(t => !isAddressEqual(t.address as `0x${string}`, ZERO_ADDR as `0x${string}`));
+
   // Single RPC batch: native balance + fee estimation + all token balances
   const [nativeBalance, feeData, ...tokenResults] = await Promise.all([
     client.getBalance({ address: address as `0x${string}` }),
