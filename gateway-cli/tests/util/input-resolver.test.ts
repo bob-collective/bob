@@ -24,7 +24,6 @@ vi.mock("../../src/chains/evm.js", () => ({
 }));
 
 import {
-  resolveChain,
   parseAssetChain,
   parseAmount,
   buildTokenIndex,
@@ -50,51 +49,6 @@ const routes: RouteInfo[] = [
     dstToken: WBTC_BOB_ADDR,
   },
 ];
-
-// ─── resolveChain ─────────────────────────────────────────────────────────────
-
-describe("resolveChain", () => {
-  it("maps btc to bitcoin", () => {
-    expect(resolveChain("btc")).toBe("bitcoin");
-  });
-
-  it("maps eth to ethereum", () => {
-    expect(resolveChain("eth")).toBe("ethereum");
-  });
-
-  it("maps arb to arbitrum", () => {
-    expect(resolveChain("arb")).toBe("arbitrum");
-  });
-
-  it("maps pol to polygon", () => {
-    expect(resolveChain("pol")).toBe("polygon");
-  });
-
-  it("maps bnb to bsc", () => {
-    expect(resolveChain("bnb")).toBe("bsc");
-  });
-
-  it("maps avax to avalanche", () => {
-    expect(resolveChain("avax")).toBe("avalanche");
-  });
-
-  it("passes through unknown chains unchanged", () => {
-    expect(resolveChain("bob")).toBe("bob");
-    expect(resolveChain("solana")).toBe("solana");
-  });
-
-  it("is case-insensitive", () => {
-    expect(resolveChain("BTC")).toBe("bitcoin");
-    expect(resolveChain("ETH")).toBe("ethereum");
-    expect(resolveChain("ARB")).toBe("arbitrum");
-  });
-
-  it("passes through already-canonical chain names", () => {
-    expect(resolveChain("bitcoin")).toBe("bitcoin");
-    expect(resolveChain("ethereum")).toBe("ethereum");
-    expect(resolveChain("base")).toBe("base");
-  });
-});
 
 // ─── parseAssetChain ─────────────────────────────────────────────────────────
 

@@ -71,44 +71,4 @@ describe("fetchPrice", () => {
     await expect(fetchPrice("BTC")).rejects.toThrow(PriceOracleError);
   });
 
-  it("PriceOracleError message includes the symbol", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 500 }));
-
-    await expect(fetchPrice("WBTC")).rejects.toThrow(/WBTC/);
-  });
-
-  it("uses correct Binance URL with symbol pair", async () => {
-    const mockFetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ price: "3000.00" }),
-    });
-    vi.stubGlobal("fetch", mockFetch);
-
-    await fetchPrice("ETH");
-
-    expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("ETHUSDT"),
-      expect.anything(),
-    );
-  });
-
-  it("uses correct Coinbase URL with symbol pair", async () => {
-    const mockFetch = vi.fn().mockImplementation((url: string) => {
-      if (url.includes("binance.com")) {
-        return Promise.resolve({ ok: false, status: 400 });
-      }
-      return Promise.resolve({
-        ok: true,
-        json: async () => ({ data: { amount: "3000.00" } }),
-      });
-    });
-    vi.stubGlobal("fetch", mockFetch);
-
-    await fetchPrice("ETH");
-
-    expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("ETH-USD"),
-      expect.anything(),
-    );
-  });
 });

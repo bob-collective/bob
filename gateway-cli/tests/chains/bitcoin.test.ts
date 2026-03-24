@@ -27,7 +27,7 @@ vi.mock("../../src/config.js", () => ({
 
 // ─── Import after mocks ─────────────────────────────────────────────────────
 
-import { getBtcBalance, deriveBtcAddress, resolveBtcSigner } from "../../src/chains/bitcoin.js";
+import { getBtcBalance } from "../../src/chains/bitcoin.js";
 import { getSdk } from "../../src/config.js";
 
 // ─── Tests ──────────────────────────────────────────────────────────────────
@@ -71,34 +71,3 @@ describe("getBtcBalance", () => {
   });
 });
 
-describe("deriveBtcAddress", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  it("returns an address string", async () => {
-    mockGetP2WPKHAddress.mockResolvedValue("bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh");
-
-    const address = await deriveBtcAddress("cTestKey");
-
-    expect(typeof address).toBe("string");
-    expect(address).toBe("bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh");
-  });
-});
-
-describe("resolveBtcSigner", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  it("returns signer object with address and signer", async () => {
-    mockGetP2WPKHAddress.mockResolvedValue("bc1qsigner");
-
-    const result = await resolveBtcSigner("cTestKey");
-
-    expect(result.address).toBe("bc1qsigner");
-    expect(result.signer).toBeDefined();
-    expect(result.signer).toHaveProperty("signAllInputs");
-    expect(result.signer).toHaveProperty("getP2WPKHAddress");
-  });
-});

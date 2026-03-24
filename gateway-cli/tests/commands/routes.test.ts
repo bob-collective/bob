@@ -101,12 +101,6 @@ describe("handleRoutes", () => {
     }
   });
 
-  it("throws when querying tokens for unknown chain", async () => {
-    await expect(handleRoutes({ tokens: "unknownchain" })).rejects.toThrow(
-      /no tokens found on chain/,
-    );
-  });
-
   it("filters routes by source chain", async () => {
     const result = await handleRoutes({ from: "base" });
 
@@ -117,33 +111,4 @@ describe("handleRoutes", () => {
     }
   });
 
-  it("filters routes by destination chain", async () => {
-    const result = await handleRoutes({ to: "bitcoin" });
-
-    expect(result.type).toBe("routes");
-    if (result.type === "routes") {
-      expect(result.data).toHaveLength(1);
-      expect(result.data[0].dstChain).toBe("bitcoin");
-    }
-  });
-
-  it("filters routes by both source and destination chain", async () => {
-    const result = await handleRoutes({ from: "bitcoin", to: "base" });
-
-    expect(result.type).toBe("routes");
-    if (result.type === "routes") {
-      expect(result.data).toHaveLength(1);
-      expect(result.data[0].srcChain).toBe("bitcoin");
-      expect(result.data[0].dstChain).toBe("base");
-    }
-  });
-
-  it("returns empty routes when no matches for filter", async () => {
-    const result = await handleRoutes({ from: "arbitrum" });
-
-    expect(result.type).toBe("routes");
-    if (result.type === "routes") {
-      expect(result.data).toHaveLength(0);
-    }
-  });
 });

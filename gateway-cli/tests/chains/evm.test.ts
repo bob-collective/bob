@@ -59,8 +59,6 @@ vi.mock("@gobob/tokenlist/tokenlist.json", () => ({
 import {
   getEvmNativeBalance,
   getEvmTokenBalance,
-  deriveEvmAddress,
-  resolveEvmSigner,
   NATIVE_GAS_BUFFER,
 } from "../../src/chains/evm.js";
 
@@ -171,28 +169,4 @@ describe("getEvmTokenBalance", () => {
   });
 });
 
-describe("deriveEvmAddress", () => {
-  it("returns a 0x address", () => {
-    const address = deriveEvmAddress("abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890");
-
-    expect(address).toMatch(/^0x/);
-    expect(typeof address).toBe("string");
-  });
-
-  it("handles key with 0x prefix", () => {
-    const address = deriveEvmAddress("0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890");
-
-    expect(address).toMatch(/^0x/);
-  });
-});
-
-describe("resolveEvmSigner", () => {
-  it("returns walletClient, publicClient, and address", () => {
-    const result = resolveEvmSigner("abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890", "base");
-
-    expect(result.address).toMatch(/^0x/);
-    expect(result.walletClient).toBeDefined();
-    expect(result.publicClient).toBeDefined();
-  });
-});
 

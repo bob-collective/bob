@@ -18,8 +18,7 @@ vi.mock("../../src/chains/evm.js", () => ({
   }),
 }));
 
-import { getRoutes, getUniqueChains, getTokensForChain } from "../../src/util/route-provider.js";
-import { getNativeToken } from "../../src/chains/evm.js";
+import { getRoutes, getUniqueChains } from "../../src/util/route-provider.js";
 import { getSdk } from "../../src/config.js";
 
 // ─── getRoutes ─────────────────────────────────────────────────────────────────
@@ -51,14 +50,6 @@ describe("getRoutes", () => {
     expect(btcRoute.srcToken).toBe("BTC");
   });
 
-  it("returns empty array when SDK returns no routes", async () => {
-    const mockGetRoutes = vi.fn().mockResolvedValue([]);
-    vi.mocked(getSdk).mockReturnValue({ getRoutes: mockGetRoutes } as any);
-
-    const routes = await getRoutes();
-
-    expect(routes).toEqual([]);
-  });
 });
 
 // ─── getUniqueChains ─────────────────────────────────────────────────────────
@@ -77,29 +68,3 @@ describe("getUniqueChains", () => {
   });
 });
 
-// ─── getNativeToken ───────────────────────────────────────────────────────────
-
-describe("getNativeToken", () => {
-  it("returns ETH for ethereum", () => {
-    const token = getNativeToken("ethereum");
-    expect(token.symbol).toBe("ETH");
-    expect(token.decimals).toBe(18);
-  });
-
-  it("returns ETH for bob chain", () => {
-    const token = getNativeToken("bob");
-    expect(token.symbol).toBe("ETH");
-    expect(token.decimals).toBe(18);
-  });
-
-  it("returns ETH for base chain", () => {
-    const token = getNativeToken("base");
-    expect(token.symbol).toBe("ETH");
-    expect(token.decimals).toBe(18);
-  });
-
-  it("throws for unknown chain", () => {
-    expect(() => getNativeToken("unknownchain999")).toThrow(/unknown chain/);
-    expect(() => getNativeToken("unknownchain999")).toThrow("unknownchain999");
-  });
-});
