@@ -142,7 +142,14 @@
             }
           },
           "404": {
-            "description": "Order not found"
+            "description": "Order not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayError"
+                }
+              }
+            }
           }
         }
       }

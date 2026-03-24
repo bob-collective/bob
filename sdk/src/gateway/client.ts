@@ -30,6 +30,8 @@ import {
     type RouteInfo,
     V1Api,
 } from './generated-client';
+import { GatewayError } from './error';
+import type { GatewayError as GatewayErrorInterface } from './generated-client/models/GatewayError';
 import type { BitcoinSigner, GetQuoteParams, StrategyParams } from './types';
 import { formatBtc } from './utils';
 
@@ -124,14 +126,18 @@ export class GatewayApiClient {
                     {
                         async post(context) {
                             if (context.response && (context.response.status < 200 || context.response.status >= 300)) {
-                                let body: Record<string, string>;
+                                let body: GatewayErrorInterface;
                                 try {
                                     body = await context.response.json();
-                                } catch {
-                                    throw new Error(context.response.statusText);
+                                } catch (parseError) {
+                                    const err = GatewayError.fromText(
+                                        `Non-JSON response: HTTP ${context.response.status} ${context.response.statusText}`
+                                    );
+                                    err.cause = parseError;
+                                    throw err;
                                 }
 
-                                throw new Error(body.error || body.message || JSON.stringify(body));
+                                throw GatewayError.fromResponse(body);
                             }
 
                             return context.response;
@@ -264,21 +270,19 @@ export class GatewayApiClient {
             const spenderAddress = order.offramp.tx.to as Address;
 
             // Check ETH balance and estimate gas for both potential transactions
-            const allowance = !isAddressEqual(tokenAddress, zeroAddress)
-                ? (
-                      await publicClient.multicall({
-                          allowFailure: false,
-                          contracts: [
-                              {
-                                  address: tokenAddress,
-                                  abi: erc20Abi,
-                                  functionName: 'allowance',
-                                  args: [accountAddress, spenderAddress],
-                              },
-                          ],
-                      })
-                  )[0]
-                : maxUint256;
+            const [allowance] = !isAddressEqual(tokenAddress, zeroAddress)
+                ? await publicClient.multicall({
+                      allowFailure: false,
+                      contracts: [
+                          {
+                              address: tokenAddress,
+                              abi: erc20Abi,
+                              functionName: 'allowance',
+                              args: [accountAddress, spenderAddress],
+                          },
+                      ],
+                  })
+                : [maxUint256];
 
             const requiredAmount = BigInt(quote.offramp.inputAmount.amount);
             const needsApproval = requiredAmount > allowance;
