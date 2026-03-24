@@ -126,14 +126,15 @@ program
   .command("balance")
   .description("Show token balances on supported chains")
   .argument("[addresses...]", "Wallet addresses (BTC or EVM). Omit to derive from env var keys.")
-  .option("--chain <chain>", "Specific chain to check")
+  .option("--chain <chain...>", "Chains to check (repeatable, comma-separated)")
   .option("--fee-token <address>", "ERC20 token used to pay gas (paymaster)")
   .option("--fee-reserve <amount>", "Amount of fee token to reserve for gas (default: 0)")
   .option("--non-zero", "Only show chains with non-zero balances", false)
   .option("--json", "Output as JSON", false)
   .action(withErrorHandling(async (addresses, opts) => {
+    const chains = opts.chain?.flatMap((c: string) => c.split(",").map((s: string) => s.trim())).filter(Boolean);
     const { handleBalance } = await import("./commands/balance.js");
-    render(await handleBalance(addresses, { chain: opts.chain, feeToken: opts.feeToken, feeReserve: opts.feeReserve, nonZero: opts.nonZero }), modeOf(opts), formatBalance);
+    render(await handleBalance(addresses, { chain: chains, feeToken: opts.feeToken, feeReserve: opts.feeReserve, nonZero: opts.nonZero }), modeOf(opts), formatBalance);
   }));
 
 program
