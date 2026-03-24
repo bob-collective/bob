@@ -91,7 +91,7 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
     fromToken: srcAsset.address,
     toToken: dstAsset.address,
     toUserAddress: recipient,
-    fromUserAddress: opts.sender,
+    fromUserAddress: senderAddress,
     amount: atomicUnits,
     maxSlippage: slippageBps,
     gasRefill: gasRefillWei ? BigInt(gasRefillWei) : undefined,
