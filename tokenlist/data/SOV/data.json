@@ -4,6 +4,8 @@
   "decimals": 18,
   "tokens": {
     "ethereum": {
+      "name": "eSOV",
+      "symbol": "eSOV",
       "address": "0xbdab72602e9AD40FC6a6852CAf43258113B8F7a5",
       "bridge": {
         "bob": "0x3F6cE1b36e5120BBc59D0cFe8A5aC8b6464ac1f7"

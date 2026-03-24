@@ -17,6 +17,7 @@ import {
   telos,
   unichain,
 } from 'viem/chains';
+import { defineChain } from 'viem'
 import { mapByName } from './utils';
 
 export const TOKENLIST_SCHEMA_URL =
@@ -35,7 +36,14 @@ const supportedMainnetChains = [
   bob,
   bsc,
   base,
-  optimism,
+  defineChain({
+    ...optimism,
+    rpcUrls: {
+      default: {
+        http: ['https://optimism-rpc.publicnode.com'],
+      },
+    }
+  }),
   arbitrum,
   polygon,
   avalanche,
