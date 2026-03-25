@@ -1,6 +1,6 @@
 import { createPublicClient, createWalletClient, http, erc20Abi, isAddressEqual, isHex, type WalletClient, type PublicClient, type Hex, type Chain } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
-import { supportedChainsMapping } from '@gobob/bob-sdk';
+import { supportedChainsMapping, getChainConfig } from '@gobob/bob-sdk';
 import tokenlistJson from '@gobob/tokenlist/tokenlist.json';
 import type { TokenBalance } from './index.js';
 import { BTC_DECIMALS } from '../config.js';
@@ -79,25 +79,21 @@ export function getNativeToken(chain: string): { symbol: string; decimals: numbe
 // ─── RPC client ──────────────────────────────────────────────────────────────
 
 /** Resolve RPC URL from env var EVM_RPC_URL_<CHAIN>, or undefined for viem defaults. */
-export function resolveRpcUrl(chainName: string): string | undefined {
-  return process.env[`EVM_RPC_URL_${chainName.toUpperCase()}`];
-}
+import { resolveRpcUrl } from '../util/rpc-resolver.js';
 
-/** Get the viem Chain object for a gateway chain name, if supported. */
-export function getViemChain(chainName: string): Chain | undefined {
-  return (supportedChainsMapping as Record<string, Chain>)[chainName];
-}
+export { resolveRpcUrl };
 
 export const NATIVE_GAS_BUFFER = 900_000n;
 
-function getClient(chain: string): PublicClient {
-  return createPublicClient({ chain: getViemChain(chain), transport: http(resolveRpcUrl(chain)) }) as PublicClient;
+async function getClient(chain: string): Promise<PublicClient> {
+  const rpcUrl = await resolveRpcUrl(chain);
+  return createPublicClient({ chain: getChainConfig(chain), transport: http(rpcUrl) }) as PublicClient;
 }
 
 // ─── Single-token balance (used by --amount ALL in swap) ────────────────────
 
 export async function getEvmNativeBalance(chain: string, address: string): Promise<TokenBalance> {
-  const client = getClient(chain);
+  const client = await getClient(chain);
   const [balance, feeData] = await Promise.all([
     client.getBalance({ address: address as `0x${string}` }),
     client.estimateFeesPerGas(),
@@ -114,7 +110,7 @@ export async function getEvmTokenBalance(
   feeToken?: string,
   feeReserve?: string,
 ): Promise<TokenBalance> {
-  const client = getClient(chain);
+  const client = await getClient(chain);
   const balance = await client.readContract({
     address: tokenAddress as `0x${string}`,
     abi: erc20Abi,
@@ -151,7 +147,7 @@ export async function getEvmChainBalancesRaw(
   tokens: Array<{ address: string; symbol: string; decimals: number }>,
   opts?: { feeToken?: string; feeReserve?: string },
 ): Promise<ChainBalanceRaw> {
-  const client = getClient(chain);
+  const client = await getClient(chain);
   const nt = getNativeToken(chain);
 
   // Filter out the zero address — native ETH is already queried separately
@@ -213,12 +209,12 @@ export function deriveEvmAddress(key: string): string {
   return account.address;
 }
 
-export function resolveEvmSigner(
+export async function resolveEvmSigner(
   key: string,
   chainName: string,
-): { address: string; walletClient: WalletClient; publicClient: PublicClient } {
-  const rpcUrl = resolveRpcUrl(chainName);
-  const viemChain = getViemChain(chainName);
+): Promise<{ address: string; walletClient: WalletClient; publicClient: PublicClient }> {
+  const rpcUrl = await resolveRpcUrl(chainName);
+  const viemChain = getChainConfig(chainName);
   const account = privateKeyToAccount((isHex(key) ? key : `0x${key}`) as Hex);
   const transport = http(rpcUrl);
   return {

@@ -97,7 +97,7 @@ export async function deriveAddress(chain: string, key: string): Promise<string>
 // ─── Signer resolution ──────────────────────────────────────────────────────
 
 export type BtcSigner = Awaited<ReturnType<typeof resolveBtcSigner>>;
-export type EvmSigner = ReturnType<typeof resolveEvmSigner>;
+export type EvmSigner = Awaited<ReturnType<typeof resolveEvmSigner>>;
 
 export async function resolveSigner(
   chain: string,
