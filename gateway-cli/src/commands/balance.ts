@@ -1,6 +1,8 @@
 import { isAddress } from 'viem';
 import { isValidBtcAddress } from '@gobob/bob-sdk';
-import { getAllBalances, deriveAddress } from '../chains/index.js';
+import { getAllBalances, deriveAddress, getChainFamily } from '../chains/index.js';
+import { getRoutes, getUniqueChains } from '../util/route-provider.js';
+import { resolveChain } from '../util/input-resolver.js';
 import { loadConfig } from '../config.js';
 import { formatAllBalances } from '../output.js';
 import type { BalanceJson } from '../output.js';
@@ -33,10 +35,38 @@ export async function handleBalance(addresses: string[], opts: BalanceOptions): 
     }
   }
 
+  if (opts.chain?.length) {
+    const routes = await getRoutes();
+    const knownChains = getUniqueChains(routes).sort();
+    for (const raw of opts.chain) {
+      const resolved = resolveChain(raw);
+      if (!knownChains.includes(resolved)) {
+        console.warn(`Warning: unknown chain '${raw}'. Known chains: ${knownChains.join(", ")}`);
+        process.exitCode = 1;
+      }
+    }
+    // Resolve aliases in the chain list passed to getAllBalances
+    opts = { ...opts, chain: opts.chain.map(c => resolveChain(c)) };
+  }
+
   // Classify addresses and query relevant chains
   const results: BalanceJson = {};
   for (const addr of addresses) {
     const family = classifyAddress(addr);
+
+    if (opts.chain?.length) {
+      for (const chain of opts.chain) {
+        const chainFamily = getChainFamily(chain);
+        if (family === "bitcoin" && chainFamily === "evm") {
+          console.warn(`Warning: BTC address '${addr}' is not valid for EVM chain '${chain}'`);
+          process.exitCode = 1;
+        } else if (family === "evm" && chainFamily === "bitcoin") {
+          console.warn(`Warning: EVM address '${addr}' is not valid for Bitcoin chain '${chain}'`);
+          process.exitCode = 1;
+        }
+      }
+    }
+
     const raw = await getAllBalances(addr, {
       ...opts,
       chainFamily: family,

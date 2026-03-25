@@ -19,17 +19,12 @@ export function getChainFamily(chain: string): ChainFamily {
 
 // ─── Chain balances ─────────────────────────────────────────────────────────
 
-export interface BalanceOpts {
-  feeToken?: string;
-  feeReserve?: string;
-}
-
 export type { ChainBalance } from './evm.js';
 
 /** Get all balances for all chains (or a specific chain). Returns raw atomic values. */
 export async function getAllBalances(
   address: string,
-  opts?: BalanceOpts & { chain?: string[]; chainFamily?: ChainFamily },
+  opts?: { feeToken?: string; feeReserve?: string; chain?: string[]; chainFamily?: ChainFamily },
 ): Promise<Record<string, ChainBalance>> {
   const routes = await getRoutes();
   let chains = opts?.chain?.length ? opts.chain : getUniqueChains(routes);

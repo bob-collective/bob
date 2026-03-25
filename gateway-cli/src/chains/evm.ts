@@ -118,17 +118,11 @@ export interface ChainBalance {
   error?: boolean;
 }
 
-export interface EvmBalanceOpts {
-  feeToken?: string;
-  feeReserve?: string;
-  includeNative?: boolean;
-}
-
 export async function getEvmBalances(
   chain: string,
   address: string,
   tokens?: Array<{ address: string; symbol: string; decimals: number }>,
-  opts?: EvmBalanceOpts,
+  opts?: { feeToken?: string; feeReserve?: string; includeNative?: boolean },
 ): Promise<ChainBalance> {
   const client = await getClient(chain);
 
