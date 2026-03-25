@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/Uniswap/token-lists/refs/heads/main/src/tokenlist.schema.json",
   "name": "BOB Tokens",
-  "timestamp": "2026-03-17T14:19:14.901Z",
+  "timestamp": "2026-03-25T11:57:41.921Z",
   "version": {
     "major": 1,
     "minor": 0,
@@ -401,6 +401,18 @@
       "chainId": 130,
       "address": "0x0000000000000000000000000000000000000000",
       "name": "Ether",
+      "symbol": "ETH",
+      "decimals": 18,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/ETH/logo.svg",
+      "extensions": {
+        "tokenId": "ETH",
+        "bridge": {}
+      }
+    },
+    {
+      "chainId": 56,
+      "address": "0x2170Ed0880ac9A755fd29B2688956BD959F933F8",
+      "name": "Ethereum Token",
       "symbol": "ETH",
       "decimals": 18,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/ETH/logo.svg",
