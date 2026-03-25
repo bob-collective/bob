@@ -6,7 +6,7 @@ import { getRoutes } from "../util/route-provider.js";
 import { resolveSwapInputs, humanToAtomic } from "../util/input-resolver.js";
 import { fetchPrice } from "../util/price-oracle.js";
 import { loadConfig, getSdk } from "../config.js";
-import { deriveAddress, resolveSigner, buildRegisterPayload, getChainFamily, resolvePrivateKey } from "../chains/index.js";
+import { deriveAddress, resolveSigner, buildRegisterPayload, getChainFamily, resolvePrivateKey, resolveRecipient } from "../chains/index.js";
 import type { Logger, SwapSuccessJson, SwapSubmittedJson, SwapMempoolPendingJson } from "../output.js";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -48,6 +48,11 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
   const key = resolvePrivateKey(srcFamily === "bitcoin" ? "bitcoin" : "evm", opts.privateKey, config);
   const senderAddress = opts.sender ?? (key ? await deriveAddress(srcFamily === "bitcoin" ? "bitcoin" : "evm", key) : undefined);
 
+  // UX-8: BTC onramp --unsigned requires a sender address to construct the PSBT
+  if (opts.unsigned && srcFamily === "bitcoin" && !senderAddress) {
+    throw new Error("BTC onramp --unsigned requires --sender or BITCOIN_PRIVATE_KEY to construct the PSBT.");
+  }
+
   const routes = await getRoutes();
   const { srcAsset, dstAsset, atomicUnits, display } = await resolveSwapInputs(
     opts.src, opts.dst, opts.amount, routes,
@@ -55,17 +60,9 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
   );
 
   // ── Resolve recipient ────────────────────────────────────────────────────
-  const dstFamily = getChainFamily(dstAsset.chain);
-  let recipient: string;
-  if (opts.recipient) {
-    recipient = opts.recipient;
-  } else {
-    const dstKey = resolvePrivateKey(dstFamily, undefined, config);
-    if (!dstKey) {
-      const envVar = dstFamily === "bitcoin" ? "BITCOIN_PRIVATE_KEY" : "EVM_PRIVATE_KEY";
-      throw new Error(`--recipient is required when no destination wallet is configured.\n  Set ${envVar} or pass --recipient <address>.`);
-    }
-    recipient = await deriveAddress(dstAsset.chain, dstKey);
+  const recipient = await resolveRecipient(dstAsset.chain, opts.recipient, config);
+  if (!opts.recipient) {
+    const dstFamily = getChainFamily(dstAsset.chain);
     log.progress(`Using recipient: ${recipient} (derived from ${dstFamily === "bitcoin" ? "BITCOIN_PRIVATE_KEY" : "EVM_PRIVATE_KEY"})`);
   }
 

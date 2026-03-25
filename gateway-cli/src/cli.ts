@@ -1,4 +1,6 @@
 import { Command } from "commander";
+import { ZodError } from "zod/v4";
+import { isAddress } from "viem";
 import { type OutputMode, createLogger, render, formatJson, formatConfirmation, formatChains, formatTokens, formatRoutes, formatBalance } from "./output.js";
 import { quoteSchema, swapSchema } from "./schemas.js";
 
@@ -6,7 +8,12 @@ function modeOf(opts: { json?: boolean }): OutputMode {
   return opts.json ? "json" : "human";
 }
 
-const errorMessage = (err: unknown): string => err instanceof Error ? err.message : String(err);
+const errorMessage = (err: unknown): string => {
+  if (err instanceof ZodError) {
+    return err.issues.map(i => `Invalid --${i.path.join(".")}: ${i.message}`).join("\n");
+  }
+  return err instanceof Error ? err.message : String(err);
+};
 
 function withErrorHandling(fn: (...args: any[]) => Promise<void>) {
   return async (...args: any[]) => {
@@ -64,7 +71,7 @@ program
   .option("--gas-refill-usd <usd>", "Request ETH gas refill on destination (USD amount)")
   .option("--btc-fee-rate <sat/vbyte>", "Bitcoin fee rate (default: mempool.space next-block)")
   .option("--fee-token <address>", "ERC20 token used to pay gas (paymaster)")
-  .option("--fee-reserve <amount>", "Amount of fee token to reserve for gas (default: 0)")
+  .option("--fee-reserve <amount>", "Amount of fee token to reserve for gas, in atomic units (e.g. wei)")
   .option("--json", "Output as JSON", false)
   .action(withErrorHandling(async (opts) => {
     const mode = modeOf(opts);
@@ -86,11 +93,11 @@ program
   .option("--gas-refill-usd <usd>", "Request ETH gas refill on destination (USD amount)")
   .option("--btc-fee-rate <sat/vbyte>", "Bitcoin fee rate (default: mempool.space)")
   .option("--fee-token <address>", "ERC20 token used to pay gas (paymaster)")
-  .option("--fee-reserve <amount>", "Amount of fee token to reserve for gas (default: 0)")
+  .option("--fee-reserve <amount>", "Amount of fee token to reserve for gas, in atomic units (e.g. wei)")
   .option("--private-key <key>", "Private key (WIF for BTC, hex for EVM)")
   .option("--no-wait", "Exit after submitting without polling")
   .option("--unsigned", "Output unsigned PSBT/tx data without signing", false)
-  .option("--timeout <seconds>", "Polling timeout in seconds (default: 1800)", "1800")
+  .option("--timeout <seconds>", "Polling timeout in seconds", "1800")
   .option("--no-retry", "Fail immediately on transient errors")
   .option("--json", "Output as JSON", false)
   .action(withErrorHandling(async (opts) => {
@@ -128,10 +135,18 @@ program
   .argument("[addresses...]", "Wallet addresses (BTC or EVM). Omit to derive from env var keys.")
   .option("--chain <chain...>", "Chains to check (repeatable, comma-separated)")
   .option("--fee-token <address>", "ERC20 token used to pay gas (paymaster)")
-  .option("--fee-reserve <amount>", "Amount of fee token to reserve for gas (default: 0)")
+  .option("--fee-reserve <amount>", "Amount of fee token to reserve for gas, in atomic units (e.g. wei)")
   .option("--non-zero", "Only show chains with non-zero balances", false)
   .option("--json", "Output as JSON", false)
   .action(withErrorHandling(async (addresses, opts) => {
+    if (opts.feeToken != null && !isAddress(opts.feeToken, { strict: false })) {
+      throw new Error("Invalid --fee-token: must be a valid EVM address");
+    }
+    if (opts.feeReserve != null) {
+      const n = Number(opts.feeReserve);
+      if (!Number.isInteger(n) || isNaN(n)) throw new Error("Invalid --fee-reserve: must be a non-negative integer");
+      if (n < 0) throw new Error("Invalid --fee-reserve: must be non-negative");
+    }
     const chains = opts.chain?.flatMap((c: string) => c.split(",").map((s: string) => s.trim())).filter(Boolean);
     const { handleBalance } = await import("./commands/balance.js");
     render(await handleBalance(addresses, { chain: chains, feeToken: opts.feeToken, feeReserve: opts.feeReserve, nonZero: opts.nonZero }), modeOf(opts), formatBalance);

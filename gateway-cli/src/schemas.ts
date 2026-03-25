@@ -1,4 +1,5 @@
 import { z } from "zod/v4";
+import { isAddress } from "viem";
 
 // ─── Reusable field schemas ─────────────────────────────────────────────────
 
@@ -31,8 +32,8 @@ export const quoteSchema = z.object({
   slippage: positiveInt.optional(),
   gasRefillUsd: positiveNumber.optional(),
   btcFeeRate: positiveInt.optional(),
-  feeToken: z.string().optional(),
-  feeReserve: z.string().optional(),
+  feeToken: z.string().refine(v => isAddress(v, { strict: false }), { message: "must be a valid EVM address" }).optional(),
+  feeReserve: z.string().refine(v => { const n = Number(v); return Number.isInteger(n) && n >= 0; }, { message: "must be a non-negative integer" }).optional(),
   json: z.boolean().default(false),
 });
 
@@ -40,7 +41,7 @@ export const swapSchema = quoteSchema.and(z.object({
   privateKey: z.string().optional(),
   wait: z.boolean().default(true),
   unsigned: z.boolean().default(false),
-  timeout: positiveInt.optional(),
+  timeout: positiveInt.pipe(z.number().min(1, "timeout must be >= 1")).optional(),
   retry: z.boolean().default(true),
 }));
 

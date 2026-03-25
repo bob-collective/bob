@@ -1,21 +1,45 @@
 import type { RouteInfo } from "@gobob/bob-sdk";
 import { getRoutes, getUniqueChains, getTokensForChain } from "../util/route-provider.js";
-import { resolveChain } from "../util/input-resolver.js";
+import { resolveChain, CHAIN_ALIASES } from "../util/input-resolver.js";
+import { CHAIN_IDS, getTokenMetadata } from "../chains/evm.js";
 
 interface ChainJson { canonical: string; aliases: string[]; chainId: number | null; }
 interface TokenJson { symbol: string; address: string; decimals: number; }
+interface RouteJson { srcChain: string; srcToken: string; srcSymbol: string; dstChain: string; dstToken: string; dstSymbol: string; }
 
 export type RoutesResult =
   | { type: "chains"; data: ChainJson[] }
   | { type: "tokens"; data: TokenJson[] }
-  | { type: "routes"; data: RouteInfo[] };
+  | { type: "routes"; data: RouteJson[] };
 
 export async function handleRoutes(opts: { from?: string; to?: string; chains?: boolean; tokens?: string }): Promise<RoutesResult> {
   const routes = await getRoutes();
+  const knownChains = getUniqueChains(routes).sort();
+
+  // UX-4: Warn when conflicting flags are combined
+  if (opts.chains && opts.tokens) {
+    console.warn("Warning: --chains overrides --tokens; --tokens will be ignored");
+  }
+  if (opts.tokens && (opts.from || opts.to)) {
+    console.warn("Warning: --tokens ignores --src-chain/--dst-chain filters");
+  }
 
   if (opts.chains) {
-    const chains = getUniqueChains(routes).sort();
-    return { type: "chains", data: chains.map(c => ({ canonical: c, aliases: [], chainId: null })) };
+    // Build reverse alias map: canonical → [alias1, alias2, ...]
+    const aliasMap = new Map<string, string[]>();
+    for (const [alias, canonical] of Object.entries(CHAIN_ALIASES)) {
+      const arr = aliasMap.get(canonical) ?? [];
+      arr.push(alias);
+      aliasMap.set(canonical, arr);
+    }
+    return {
+      type: "chains",
+      data: knownChains.map(c => ({
+        canonical: c,
+        aliases: aliasMap.get(c) ?? [],
+        chainId: CHAIN_IDS[c] ?? null,
+      })),
+    };
   }
 
   if (opts.tokens) {
@@ -27,13 +51,31 @@ export async function handleRoutes(opts: { from?: string; to?: string; chains?: 
 
   let filtered = routes;
   if (opts.from) {
-    const from = opts.from.toLowerCase();
+    const from = resolveChain(opts.from);
+    if (!knownChains.includes(from)) {
+      console.warn(`Warning: unknown chain '${opts.from}'. Known chains: ${knownChains.join(", ")}`);
+      process.exitCode = 1;
+    }
     filtered = filtered.filter((r) => r.srcChain.toLowerCase() === from);
   }
   if (opts.to) {
-    const to = opts.to.toLowerCase();
+    const to = resolveChain(opts.to);
+    if (!knownChains.includes(to)) {
+      console.warn(`Warning: unknown chain '${opts.to}'. Known chains: ${knownChains.join(", ")}`);
+      process.exitCode = 1;
+    }
     filtered = filtered.filter((r) => r.dstChain.toLowerCase() === to);
   }
 
-  return { type: "routes", data: filtered };
+  return {
+    type: "routes",
+    data: filtered.map(r => ({
+      srcChain: r.srcChain,
+      srcToken: r.srcToken,
+      srcSymbol: getTokenMetadata(r.srcToken, r.srcChain).symbol,
+      dstChain: r.dstChain,
+      dstToken: r.dstToken,
+      dstSymbol: getTokenMetadata(r.dstToken, r.dstChain).symbol,
+    })),
+  };
 }

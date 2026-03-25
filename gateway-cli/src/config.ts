@@ -22,7 +22,7 @@ export function loadConfig(): Config {
     evmPrivateKey: process.env.EVM_PRIVATE_KEY,
     timeoutMs: 1_800_000,
     slippageBps: 300,
-    btcFeeRate: feeRate && !isNaN(feeRate) ? feeRate : undefined,
+    btcFeeRate: feeRate != null && !isNaN(feeRate) ? feeRate : undefined,
   };
   return _config;
 }
