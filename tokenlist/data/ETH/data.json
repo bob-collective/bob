@@ -23,6 +23,10 @@
     },
     "unichain": {
       "address": "0x0000000000000000000000000000000000000000"
+    },
+    "bnb-smart-chain": {
+      "name": "Ethereum Token",
+      "address": "0x2170Ed0880ac9A755fd29B2688956BD959F933F8"
     }
   }
 }
