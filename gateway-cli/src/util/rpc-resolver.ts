@@ -1,8 +1,4 @@
-import { createPublicClient, http } from "viem";
 import { getChainConfig } from "@gobob/bob-sdk";
-import { join } from "node:path";
-import { homedir } from "node:os";
-import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -11,17 +7,9 @@ interface ChainlistEntry {
   rpc: Array<{ url: string; tracking?: string } | string>;
 }
 
-interface CachedData {
-  fetchedAt: string;
-  data: ChainlistEntry[];
-}
-
 // ─── Constants ──────────────────────────────────────────────────────────────
 
 const CHAINLIST_URL = "https://chainlist.org/rpcs.json";
-const CACHE_DIR = join(homedir(), ".cache", "gateway-cli");
-const CACHE_FILE = join(CACHE_DIR, "rpcs.json");
-const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 const PROBE_TIMEOUT_MS = 3000;
 const MAX_CANDIDATES = 3;
 
@@ -29,25 +17,7 @@ const MAX_CANDIDATES = 3;
 
 const winners = new Map<number, string>();
 
-// ─── Cache management ───────────────────────────────────────────────────────
-
-function readCache(): CachedData | null {
-  try {
-    const raw = readFileSync(CACHE_FILE, "utf-8");
-    const cached: CachedData = JSON.parse(raw);
-    if (Date.now() - new Date(cached.fetchedAt).getTime() < CACHE_TTL_MS) {
-      return cached;
-    }
-  } catch {}
-  return null;
-}
-
-function writeCache(data: ChainlistEntry[]): void {
-  try {
-    mkdirSync(CACHE_DIR, { recursive: true });
-    writeFileSync(CACHE_FILE, JSON.stringify({ fetchedAt: new Date().toISOString(), data }));
-  } catch {}
-}
+// ─── Chainlist fetch ───────────────────────────────────────────────────────
 
 async function fetchChainlist(): Promise<ChainlistEntry[] | null> {
   try {
@@ -58,15 +28,6 @@ async function fetchChainlist(): Promise<ChainlistEntry[] | null> {
   } catch {
     return null;
   }
-}
-
-async function getChainlistData(): Promise<ChainlistEntry[] | null> {
-  const cached = readCache();
-  if (cached) return cached.data;
-
-  const data = await fetchChainlist();
-  if (data) writeCache(data);
-  return data;
 }
 
 // ─── RPC probing ────────────────────────────────────────────────────────────
@@ -136,7 +97,7 @@ export async function resolveRpcUrl(chainName: string): Promise<string | undefin
   if (winners.has(chainId)) return winners.get(chainId);
 
   // 4. Fetch chainlist data and probe candidates
-  const entries = await getChainlistData();
+  const entries = await fetchChainlist();
   if (!entries) return undefined;
 
   const candidates = getCandidateUrls(entries, chainId);

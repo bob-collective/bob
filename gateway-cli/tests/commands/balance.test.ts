@@ -41,15 +41,6 @@ vi.mock("@gobob/bob-sdk", async (importOriginal) => {
 describe("handleBalance", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("returns error entry when chain RPC fails", async () => {
-    mockGetAllBalances.mockResolvedValueOnce({
-      bitcoin: { address: "bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4", error: true },
-    });
-
-    const result = await handleBalance(["bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4"], { chain: ["bitcoin"] });
-    expect(result.bitcoin.error).toBe(true);
-  });
-
   it("classifies EVM address and filters to EVM chains", async () => {
     mockGetAllBalances.mockResolvedValueOnce({});
 

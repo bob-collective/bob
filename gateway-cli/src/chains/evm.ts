@@ -77,10 +77,7 @@ export function getNativeToken(chain: string): { symbol: string; decimals: numbe
 
 // ─── RPC client ──────────────────────────────────────────────────────────────
 
-/** Resolve RPC URL from env var EVM_RPC_URL_<CHAIN>, or undefined for viem defaults. */
 import { resolveRpcUrl } from '../util/rpc-resolver.js';
-
-export { resolveRpcUrl };
 
 export const NATIVE_GAS_BUFFER = 900_000n;
 

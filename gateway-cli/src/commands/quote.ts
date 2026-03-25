@@ -3,7 +3,7 @@ import { getRoutes } from "../util/route-provider.js";
 import { resolveSwapInputs } from "../util/input-resolver.js";
 import { MempoolClient } from "@gobob/bob-sdk";
 import { loadConfig, getSdk } from "../config.js";
-import { getChainFamily, deriveAddress, resolvePrivateKey } from "../chains/index.js";
+import { resolveRecipient } from "../chains/index.js";
 import type { QuoteJson, ConfirmationData } from "../output.js";
 import type { GetQuoteParams } from "@gobob/bob-sdk";
 
@@ -35,21 +35,10 @@ export async function handleQuote(opts: QuoteOptions): Promise<QuoteResult> {
   );
 
   // ── Resolve recipient ────────────────────────────────────────────────────
-  const dstFamily = getChainFamily(dstAsset.chain);
-  let recipient: string;
-  if (opts.recipient) {
-    recipient = opts.recipient;
-  } else {
-    const dstKey = resolvePrivateKey(dstFamily, undefined, config);
-    if (!dstKey) {
-      const envVar = dstFamily === "bitcoin" ? "BITCOIN_PRIVATE_KEY" : "EVM_PRIVATE_KEY";
-      throw new Error(`--recipient is required when no destination wallet is configured.\n  Set ${envVar} or pass --recipient <address>.`);
-    }
-    recipient = await deriveAddress(dstAsset.chain, dstKey);
-  }
+  const recipient = await resolveRecipient(dstAsset.chain, opts.recipient, config);
 
   let feeRate = opts.btcFeeRate ?? config.btcFeeRate;
-  if (srcAsset.chain === "bitcoin" && !feeRate) {
+  if (srcAsset.chain === "bitcoin" && feeRate == null) {
     const fees = await new MempoolClient().getRecommendedFees();
     feeRate = fees.fastestFee;
   }
@@ -75,6 +64,7 @@ export async function handleQuote(opts: QuoteOptions): Promise<QuoteResult> {
       dstChain: dstAsset.chain,
       slippageBps,
       feeRateSatPerVbyte: feeRate,
+      gasRefillUsd: opts.gasRefillUsd ? String(opts.gasRefillUsd) : undefined,
     },
     confirmation: {
       srcAmount: atomicUnits,

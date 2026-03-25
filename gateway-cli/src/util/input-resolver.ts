@@ -44,15 +44,11 @@ interface TokenMeta {
 interface TokenIndex {
   byChainAndSymbol: Map<string, TokenMeta>;
   byChainAndAddress: Map<string, TokenMeta>;
-  chainsBySymbol: Map<string, string[]>;
-  tokensByChain: Map<string, TokenMeta[]>;
 }
 
 export function buildTokenIndex(routes: RouteInfo[]): TokenIndex {
   const byChainAndSymbol = new Map<string, TokenMeta>();
   const byChainAndAddress = new Map<string, TokenMeta>();
-  const chainsBySymbol = new Map<string, string[]>();
-  const tokensByChain = new Map<string, TokenMeta[]>();
 
   const seen = new Set<string>();
   for (const r of routes) {
@@ -64,19 +60,12 @@ export function buildTokenIndex(routes: RouteInfo[]): TokenIndex {
       const meta = getTokenMetadata(addr, chain);
       const t: TokenMeta = { address: addr, symbol: meta.symbol, decimals: meta.decimals, chain };
 
-      const sym = t.symbol.toUpperCase();
-      byChainAndSymbol.set(`${chain}:${sym}`, t);
+      byChainAndSymbol.set(`${chain}:${meta.symbol.toUpperCase()}`, t);
       byChainAndAddress.set(`${chain}:${addr.toLowerCase()}`, t);
-
-      const chains = chainsBySymbol.get(sym);
-      chains ? chains.push(chain) : chainsBySymbol.set(sym, [chain]);
-
-      const list = tokensByChain.get(chain);
-      list ? list.push(t) : tokensByChain.set(chain, [t]);
     }
   }
 
-  return { byChainAndSymbol, byChainAndAddress, chainsBySymbol, tokensByChain };
+  return { byChainAndSymbol, byChainAndAddress };
 }
 
 export function parseAssetChain(raw: string, routes: RouteInfo[], index?: TokenIndex): ResolvedAsset {
@@ -90,8 +79,14 @@ export function parseAssetChain(raw: string, routes: RouteInfo[], index?: TokenI
   }
 
   if (!chainPart) {
-    const chains = idx.chainsBySymbol.get(assetPart.toUpperCase()) ?? [];
-    const suggestions = chains.map((c) => `${assetPart.toUpperCase()}:${c}`).join("  ");
+    const sym = assetPart.toUpperCase();
+    const chains = [...new Set(routes.flatMap(r => {
+      const hits: string[] = [];
+      if (getTokenMetadata(r.srcToken, r.srcChain).symbol.toUpperCase() === sym) hits.push(r.srcChain);
+      if (getTokenMetadata(r.dstToken, r.dstChain).symbol.toUpperCase() === sym) hits.push(r.dstChain);
+      return hits;
+    }))];
+    const suggestions = chains.map((c) => `${sym}:${c}`).join("  ");
     throw new Error(`chain required for token "${assetPart}".\n\n  Specify a chain:  ${suggestions || "(no routes found)"}`);
   }
 
@@ -105,7 +100,12 @@ export function parseAssetChain(raw: string, routes: RouteInfo[], index?: TokenI
 
   const token = idx.byChainAndSymbol.get(`${chain}:${assetPart.toUpperCase()}`);
   if (!token) {
-    const available = (idx.tokensByChain.get(chain) ?? []).map((t) => t.symbol).join(", ");
+    const available = [...new Set(routes.flatMap(r => {
+      const hits: string[] = [];
+      if (r.srcChain === chain) hits.push(getTokenMetadata(r.srcToken, r.srcChain).symbol);
+      if (r.dstChain === chain) hits.push(getTokenMetadata(r.dstToken, r.dstChain).symbol);
+      return hits;
+    }))].join(", ");
     throw new Error(`unknown token "${assetPart}" on chain "${chain}".\n\n  Available on ${chain}: ${available || "(none)"}\n\n  Run 'gateway-cli routes --tokens ${chain}' to see all tokens.`);
   }
   return { chain, address: token.address, symbol: token.symbol, decimals: token.decimals };

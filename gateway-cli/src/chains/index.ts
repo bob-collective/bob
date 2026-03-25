@@ -86,6 +86,24 @@ export function resolvePrivateKey(
   return privateKey ?? (getChainFamily(chain) === 'bitcoin' ? config?.bitcoinPrivateKey : config?.evmPrivateKey);
 }
 
+// ─── Recipient resolution ───────────────────────────────────────────────────
+
+/** Resolve the recipient address: explicit flag > derived from private key > error. */
+export async function resolveRecipient(
+  chain: string,
+  explicit: string | undefined,
+  config: { bitcoinPrivateKey?: string; evmPrivateKey?: string },
+): Promise<string> {
+  if (explicit) return explicit;
+  const family = getChainFamily(chain);
+  const key = resolvePrivateKey(family, undefined, config);
+  if (!key) {
+    const envVar = family === 'bitcoin' ? 'BITCOIN_PRIVATE_KEY' : 'EVM_PRIVATE_KEY';
+    throw new Error(`--recipient is required when no destination wallet is configured.\n  Set ${envVar} or pass --recipient <address>.`);
+  }
+  return deriveAddress(chain, key);
+}
+
 // ─── Registration payload ───────────────────────────────────────────────────
 
 export function buildRegisterPayload(
@@ -109,5 +127,4 @@ export {
   getEvmBalances,
   deriveEvmAddress,
   resolveEvmSigner,
-  NATIVE_GAS_BUFFER,
 } from './evm.js';

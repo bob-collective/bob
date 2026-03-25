@@ -86,6 +86,7 @@ vi.mock("../../src/chains/index.js", () => ({
     onramp: { orderId, bitcoinTxHex: txId },
   })),
   resolvePrivateKey: vi.fn((chain: string, privateKey?: string) => privateKey),
+  resolveRecipient: vi.fn().mockResolvedValue("bc1qtest"),
 }));
 
 vi.mock("@gobob/bob-sdk", () => ({
