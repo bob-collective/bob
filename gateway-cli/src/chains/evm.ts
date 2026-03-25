@@ -34,7 +34,7 @@ for (const t of tokenlistJson.tokens as TokenEntry[]) {
 }
 
 // Chain name → chain ID mapping from supportedChainsMapping
-const CHAIN_IDS: Record<string, number> = Object.fromEntries(
+export const CHAIN_IDS: Record<string, number> = Object.fromEntries(
   Object.entries(supportedChainsMapping).map(([name, chain]) => [name, (chain as Chain).id]),
 );
 
@@ -90,46 +90,55 @@ async function getClient(chain: string): Promise<PublicClient> {
   return createPublicClient({ chain: getChainConfig(chain), transport: http(rpcUrl) }) as PublicClient;
 }
 
-// ─── Single-token balance (used by --amount ALL in swap) ────────────────────
+// ─── Shared helper ──────────────────────────────────────────────────────────
 
-export async function getEvmNativeBalance(chain: string, address: string): Promise<TokenBalance> {
-  const client = await getClient(chain);
-  const [balance, feeData] = await Promise.all([
-    client.getBalance({ address: address as `0x${string}` }),
-    client.estimateFeesPerGas(),
-  ]);
-  const gasCost = (feeData.maxFeePerGas ?? feeData.gasPrice ?? 0n) * NATIVE_GAS_BUFFER;
-  const available = balance > gasCost ? balance - gasCost : 0n;
-  return { total: balance.toString(), allSpendable: available.toString() };
+const ZERO_ADDR = "0x0000000000000000000000000000000000000000" as `0x${string}`;
+
+function isNativeToken(tokenAddress?: string): boolean {
+  return !tokenAddress || isAddressEqual(tokenAddress as `0x${string}`, ZERO_ADDR);
 }
+
+function applyFeeReserve(balance: bigint, tokenAddress: string, feeToken?: string, feeReserve?: string): bigint {
+  if (!feeToken || !feeReserve) return balance;
+  if (!isAddressEqual(tokenAddress as `0x${string}`, feeToken as `0x${string}`)) return balance;
+  const reserved = BigInt(feeReserve);
+  return balance > reserved ? balance - reserved : 0n;
+}
+
+// ─── Single-token balance (used by --amount ALL in swap) ────────────────────
 
 export async function getEvmTokenBalance(
   chain: string,
   address: string,
-  tokenAddress: string,
+  tokenAddress?: string,
   feeToken?: string,
   feeReserve?: string,
 ): Promise<TokenBalance> {
   const client = await getClient(chain);
+
+  if (isNativeToken(tokenAddress)) {
+    const [balance, feeData] = await Promise.all([
+      client.getBalance({ address: address as `0x${string}` }),
+      client.estimateFeesPerGas(),
+    ]);
+    const gasCost = (feeData.maxFeePerGas ?? feeData.gasPrice ?? 0n) * NATIVE_GAS_BUFFER;
+    const available = balance > gasCost ? balance - gasCost : 0n;
+    return { total: balance.toString(), allSpendable: available.toString() };
+  }
+
   const balance = await client.readContract({
     address: tokenAddress as `0x${string}`,
     abi: erc20Abi,
     functionName: 'balanceOf',
     args: [address as `0x${string}`],
   });
-  const total = balance.toString();
-  let allSpendable = total;
-  if (feeToken && feeReserve && isAddressEqual(tokenAddress as `0x${string}`, feeToken as `0x${string}`)) {
-    const reserved = BigInt(feeReserve);
-    const available = balance > reserved ? balance - reserved : 0n;
-    allSpendable = available.toString();
-  }
-  return { total, allSpendable };
+  const spendable = applyFeeReserve(balance, tokenAddress!, feeToken, feeReserve);
+  return { total: balance.toString(), allSpendable: spendable.toString() };
 }
 
 // ─── All balances for a chain (used by balance command) ─────────────────────
 
-export interface ChainBalanceRaw {
+export interface ChainBalance {
   address: string;
   // BTC
   balance?: string;       // atomic
@@ -141,18 +150,17 @@ export interface ChainBalanceRaw {
   error?: boolean;
 }
 
-export async function getEvmChainBalancesRaw(
+export async function getEvmChainBalances(
   chain: string,
   address: string,
   tokens: Array<{ address: string; symbol: string; decimals: number }>,
   opts?: { feeToken?: string; feeReserve?: string },
-): Promise<ChainBalanceRaw> {
+): Promise<ChainBalance> {
   const client = await getClient(chain);
   const nt = getNativeToken(chain);
 
-  // Filter out the zero address — native ETH is already queried separately
-  const ZERO_ADDR = "0x0000000000000000000000000000000000000000";
-  tokens = tokens.filter(t => !isAddressEqual(t.address as `0x${string}`, ZERO_ADDR as `0x${string}`));
+  // Filter out native token — queried separately via getBalance
+  tokens = tokens.filter(t => !isNativeToken(t.address));
 
   // Single RPC batch: native balance + fee estimation + all token balances
   const [nativeBalance, feeData, ...tokenResults] = await Promise.all([
@@ -176,17 +184,12 @@ export async function getEvmChainBalancesRaw(
   const multicallResults = tokenResults[0] as Array<{ result?: bigint }> | undefined;
   const tokenBals = tokens.map((t, i) => {
     const bal = (multicallResults?.[i]?.result as bigint) ?? 0n;
-    let allSpendable = bal;
-    if (opts?.feeToken && opts?.feeReserve && isAddressEqual(t.address as `0x${string}`, opts.feeToken as `0x${string}`)) {
-      const reserved = BigInt(opts.feeReserve);
-      allSpendable = bal > reserved ? bal - reserved : 0n;
-    }
     return {
       symbol: t.symbol,
       address: t.address,
       decimals: t.decimals,
       balance: bal.toString(),
-      allSpendable: allSpendable.toString(),
+      allSpendable: applyFeeReserve(bal, t.address, opts?.feeToken, opts?.feeReserve).toString(),
     };
   });
 

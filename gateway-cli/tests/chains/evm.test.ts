@@ -54,29 +54,34 @@ vi.mock("@gobob/tokenlist/tokenlist.json", () => ({
   default: { tokens: [] },
 }));
 
+vi.mock("../../src/util/rpc-resolver.js", () => ({
+  resolveRpcUrl: vi.fn().mockResolvedValue(undefined),
+}));
+
 // ─── Import after mocks ─────────────────────────────────────────────────────
 
 import {
-  getEvmNativeBalance,
   getEvmTokenBalance,
   NATIVE_GAS_BUFFER,
 } from "../../src/chains/evm.js";
 
 // ─── Tests ──────────────────────────────────────────────────────────────────
 
-describe("getEvmNativeBalance", () => {
+describe("getEvmTokenBalance", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("returns total and allSpendable with gas buffer deduction", async () => {
+  // ─── Native token (no tokenAddress) ─────────────────────────────────────
+
+  it("native: returns total and allSpendable with gas buffer deduction", async () => {
     const balance = 1000000000000000000n; // 1 ETH
     const maxFeePerGas = 50000000000n; // 50 gwei
 
     mockGetBalance.mockResolvedValue(balance);
     mockEstimateFeesPerGas.mockResolvedValue({ maxFeePerGas, gasPrice: 30000000000n });
 
-    const result = await getEvmNativeBalance("base", "0xTestAddress");
+    const result = await getEvmTokenBalance("base", "0xTestAddress");
 
     const expectedGasCost = maxFeePerGas * NATIVE_GAS_BUFFER;
     const expectedSpendable = balance - expectedGasCost;
@@ -85,27 +90,27 @@ describe("getEvmNativeBalance", () => {
     expect(result.allSpendable).toBe(expectedSpendable.toString());
   });
 
-  it("returns zero allSpendable when balance is less than gas cost", async () => {
+  it("native: returns zero allSpendable when balance is less than gas cost", async () => {
     const balance = 100n; // tiny balance
     const maxFeePerGas = 50000000000n;
 
     mockGetBalance.mockResolvedValue(balance);
     mockEstimateFeesPerGas.mockResolvedValue({ maxFeePerGas, gasPrice: 30000000000n });
 
-    const result = await getEvmNativeBalance("base", "0xTestAddress");
+    const result = await getEvmTokenBalance("base", "0xTestAddress");
 
     expect(result.total).toBe("100");
     expect(result.allSpendable).toBe("0");
   });
 
-  it("falls back to gasPrice when maxFeePerGas is null", async () => {
+  it("native: falls back to gasPrice when maxFeePerGas is null", async () => {
     const balance = 1000000000000000000n;
     const gasPrice = 30000000000n;
 
     mockGetBalance.mockResolvedValue(balance);
     mockEstimateFeesPerGas.mockResolvedValue({ maxFeePerGas: null, gasPrice });
 
-    const result = await getEvmNativeBalance("base", "0xTestAddress");
+    const result = await getEvmTokenBalance("base", "0xTestAddress");
 
     const expectedGasCost = gasPrice * NATIVE_GAS_BUFFER;
     const expectedSpendable = balance - expectedGasCost;
@@ -113,14 +118,10 @@ describe("getEvmNativeBalance", () => {
     expect(result.total).toBe(balance.toString());
     expect(result.allSpendable).toBe(expectedSpendable.toString());
   });
-});
 
-describe("getEvmTokenBalance", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
+  // ─── ERC20 token ────────────────────────────────────────────────────────
 
-  it("returns total and allSpendable equal when no fee token", async () => {
+  it("ERC20: returns total and allSpendable equal when no fee token", async () => {
     mockReadContract.mockResolvedValue(5000000n); // 5 USDC
 
     const result = await getEvmTokenBalance("base", "0xTestAddress", "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913");
@@ -129,7 +130,7 @@ describe("getEvmTokenBalance", () => {
     expect(result.allSpendable).toBe("5000000");
   });
 
-  it("deducts fee reserve when fee token matches token address", async () => {
+  it("ERC20: deducts fee reserve when fee token matches token address", async () => {
     mockReadContract.mockResolvedValue(5000000n);
 
     const result = await getEvmTokenBalance(
@@ -142,7 +143,7 @@ describe("getEvmTokenBalance", () => {
     expect(result.allSpendable).toBe("4000000");
   });
 
-  it("does not deduct when fee token does not match", async () => {
+  it("ERC20: does not deduct when fee token does not match", async () => {
     mockReadContract.mockResolvedValue(5000000n);
 
     const result = await getEvmTokenBalance(
@@ -155,7 +156,7 @@ describe("getEvmTokenBalance", () => {
     expect(result.allSpendable).toBe("5000000");
   });
 
-  it("returns zero allSpendable when fee reserve exceeds balance", async () => {
+  it("ERC20: returns zero allSpendable when fee reserve exceeds balance", async () => {
     mockReadContract.mockResolvedValue(500000n);
 
     const result = await getEvmTokenBalance(
@@ -168,5 +169,3 @@ describe("getEvmTokenBalance", () => {
     expect(result.allSpendable).toBe("0");
   });
 });
-
-

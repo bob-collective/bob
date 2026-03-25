@@ -7,6 +7,18 @@ const mockDeriveAddress = vi.fn();
 vi.mock("../../src/chains/index.js", () => ({
   getAllBalances: (...args: any[]) => mockGetAllBalances(...args),
   deriveAddress: (...args: any[]) => mockDeriveAddress(...args),
+  getChainFamily: vi.fn((chain: string) => chain === "bitcoin" ? "bitcoin" : "evm"),
+}));
+
+vi.mock("../../src/util/route-provider.js", () => ({
+  getRoutes: vi.fn().mockResolvedValue([
+    { srcChain: "bitcoin", dstChain: "base", srcToken: "BTC", dstToken: "0xUSDC" },
+  ]),
+  getUniqueChains: vi.fn(() => ["bitcoin", "base"]),
+}));
+
+vi.mock("../../src/util/input-resolver.js", () => ({
+  resolveChain: vi.fn((c: string) => c),
 }));
 
 vi.mock("../../src/config.js", () => ({
@@ -34,7 +46,7 @@ describe("handleBalance", () => {
       bitcoin: { address: "bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4", error: true },
     });
 
-    const result = await handleBalance(["bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4"], { chain: "bitcoin" });
+    const result = await handleBalance(["bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4"], { chain: ["bitcoin"] });
     expect(result.bitcoin.error).toBe(true);
   });
 

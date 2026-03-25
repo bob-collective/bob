@@ -62,6 +62,7 @@ vi.mock("../../src/util/input-resolver.js", () => ({
     const aliases: Record<string, string> = { btc: "bitcoin", eth: "ethereum" };
     return aliases[input.toLowerCase()] ?? input.toLowerCase();
   }),
+  CHAIN_ALIASES: { btc: "bitcoin", eth: "ethereum" },
 }));
 
 // ─── Tests ───────────────────────────────────────────────────────────────────

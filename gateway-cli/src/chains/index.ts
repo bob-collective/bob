@@ -3,12 +3,11 @@ import { getSdk } from '../config.js';
 import { getRoutes, getUniqueChains, getTokensForChain } from '../util/route-provider.js';
 import { getBtcBalance, deriveBtcAddress, resolveBtcSigner } from './bitcoin.js';
 import {
-  getEvmNativeBalance,
   getEvmTokenBalance,
   deriveEvmAddress,
   resolveEvmSigner,
 } from './evm.js';
-import type { ChainBalanceRaw } from './evm.js';
+import type { ChainBalance } from './evm.js';
 
 // ─── Chain family registry ──────────────────────────────────────────────────
 
@@ -41,31 +40,28 @@ export async function getTokenBalance(
   if (getChainFamily(chain) === 'bitcoin') {
     return getBtcBalance(address, getSdk());
   }
-  if (!tokenAddress) {
-    return getEvmNativeBalance(chain, address);
-  }
   return getEvmTokenBalance(chain, address, tokenAddress, opts?.feeToken, opts?.feeReserve);
 }
 
 // ─── Chain balances (all tokens on a chain, raw atomic) ─────────────────────
 
-export type { ChainBalanceRaw } from './evm.js';
+export type { ChainBalance } from './evm.js';
 
 /** Get all balances for all chains (or a specific chain). Returns raw atomic values. */
 export async function getAllBalances(
   address: string,
   opts?: BalanceOpts & { chain?: string[]; chainFamily?: ChainFamily },
-): Promise<Record<string, ChainBalanceRaw>> {
+): Promise<Record<string, ChainBalance>> {
   const routes = await getRoutes();
   let chains = opts?.chain?.length ? opts.chain : getUniqueChains(routes);
   if (opts?.chainFamily) {
     chains = chains.filter(c => getChainFamily(c) === opts.chainFamily);
   }
 
-  const { getEvmChainBalancesRaw } = await import('./evm.js');
+  const { getEvmChainBalances } = await import('./evm.js');
 
   const entries = await Promise.all(
-    chains.map(async (chain): Promise<[string, ChainBalanceRaw]> => {
+    chains.map(async (chain): Promise<[string, ChainBalance]> => {
       try {
         if (getChainFamily(chain) === 'bitcoin') {
           const bal = await getTokenBalance(chain, address);
@@ -77,7 +73,7 @@ export async function getAllBalances(
         }
 
         const chainTokens = getTokensForChain(chain, routes);
-        return [chain, await getEvmChainBalancesRaw(chain, address, chainTokens, opts)];
+        return [chain, await getEvmChainBalances(chain, address, chainTokens, opts)];
       } catch {
         return [chain, { address, error: true }];
       }
@@ -136,7 +132,6 @@ export function buildRegisterPayload(
 // Re-export for direct access
 export { getBtcBalance, deriveBtcAddress, resolveBtcSigner } from './bitcoin.js';
 export {
-  getEvmNativeBalance,
   getEvmTokenBalance,
   deriveEvmAddress,
   resolveEvmSigner,

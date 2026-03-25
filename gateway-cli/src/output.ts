@@ -1,8 +1,6 @@
 import { formatUnits } from "viem";
 import { formatBtc } from "@gobob/bob-sdk";
-import type { RouteInfo } from "@gobob/bob-sdk";
-import type { ChainBalanceRaw } from "./chains/evm.js";
-import { getTokenMetadata } from "./chains/evm.js";
+import type { ChainBalance } from "./chains/evm.js";
 import { BTC_DECIMALS } from "./config.js";
 
 // ─── Output mode ─────────────────────────────────────────────────────────────
@@ -78,6 +76,7 @@ export interface QuoteJson {
   feeRateSatPerVbyte?: number;
   gasEstimateEth?: string;
   gasRefillEth?: string;
+  gasRefillUsd?: string;
 }
 
 export interface ChainJson {
@@ -132,7 +131,7 @@ export interface ConfirmationData {
 // ─── Raw balance formatting ─────────────────────────────────────────────────
 
 /** Format raw atomic chain balance data into human-readable BalanceJson entry. */
-export function formatBalanceRaw(raw: ChainBalanceRaw, chain: string): BalanceJson[string] {
+export function formatBalanceRaw(raw: ChainBalance, chain: string): BalanceJson[string] {
   if (raw.error) return { address: raw.address, error: true };
 
   if (chain === "bitcoin") {
@@ -160,7 +159,7 @@ export function formatBalanceRaw(raw: ChainBalanceRaw, chain: string): BalanceJs
 }
 
 /** Convert raw balance map to formatted BalanceJson. */
-export function formatAllBalances(raw: Record<string, ChainBalanceRaw>): BalanceJson {
+export function formatAllBalances(raw: Record<string, ChainBalance>): BalanceJson {
   return Object.fromEntries(
     Object.entries(raw).map(([chain, data]) => [chain, formatBalanceRaw(data, chain)]),
   );
@@ -244,14 +243,10 @@ export function formatTokens(data: TokenJson[]): string {
   );
 }
 
-/** Routes table. Uses getTokenMetadata to resolve symbols from addresses. */
-export function formatRoutes(data: RouteInfo[]): string {
+/** Routes table. Expects enriched route data with srcSymbol/dstSymbol fields. */
+export function formatRoutes(data: Array<{ srcChain: string; srcSymbol: string; dstChain: string; dstSymbol: string }>): string {
   return formatTable(
     [{ label: "Source", width: 25 }, { label: "Destination", width: 0 }],
-    data.map(r => {
-      const srcMeta = getTokenMetadata(r.srcToken, r.srcChain);
-      const dstMeta = getTokenMetadata(r.dstToken, r.dstChain);
-      return [`${r.srcChain}:${srcMeta.symbol}`, `${r.dstChain}:${dstMeta.symbol}`];
-    }),
+    data.map(r => [`${r.srcChain}:${r.srcSymbol}`, `${r.dstChain}:${r.dstSymbol}`]),
   );
 }
