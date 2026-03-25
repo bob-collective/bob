@@ -2,7 +2,6 @@ import { createPublicClient, createWalletClient, http, erc20Abi, isAddressEqual,
 import { privateKeyToAccount } from 'viem/accounts';
 import { supportedChainsMapping, getChainConfig } from '@gobob/bob-sdk';
 import tokenlistJson from '@gobob/tokenlist/tokenlist.json';
-import type { TokenBalance } from './index.js';
 import { BTC_DECIMALS } from '../config.js';
 
 // ─── Tokenlist index ─────────────────────────────────────────────────────────
@@ -105,38 +104,7 @@ function applyFeeReserve(balance: bigint, tokenAddress: string, feeToken?: strin
   return balance > reserved ? balance - reserved : 0n;
 }
 
-// ─── Single-token balance (used by --amount ALL in swap) ────────────────────
-
-export async function getEvmTokenBalance(
-  chain: string,
-  address: string,
-  tokenAddress?: string,
-  feeToken?: string,
-  feeReserve?: string,
-): Promise<TokenBalance> {
-  const client = await getClient(chain);
-
-  if (isNativeToken(tokenAddress)) {
-    const [balance, feeData] = await Promise.all([
-      client.getBalance({ address: address as `0x${string}` }),
-      client.estimateFeesPerGas(),
-    ]);
-    const gasCost = (feeData.maxFeePerGas ?? feeData.gasPrice ?? 0n) * NATIVE_GAS_BUFFER;
-    const available = balance > gasCost ? balance - gasCost : 0n;
-    return { total: balance.toString(), allSpendable: available.toString() };
-  }
-
-  const balance = await client.readContract({
-    address: tokenAddress as `0x${string}`,
-    abi: erc20Abi,
-    functionName: 'balanceOf',
-    args: [address as `0x${string}`],
-  });
-  const spendable = applyFeeReserve(balance, tokenAddress!, feeToken, feeReserve);
-  return { total: balance.toString(), allSpendable: spendable.toString() };
-}
-
-// ─── All balances for a chain (used by balance command) ─────────────────────
+// ─── EVM balances ───────────────────────────────────────────────────────────
 
 export interface ChainBalance {
   address: string;
@@ -150,59 +118,80 @@ export interface ChainBalance {
   error?: boolean;
 }
 
-export async function getEvmChainBalances(
+export interface EvmBalanceOpts {
+  feeToken?: string;
+  feeReserve?: string;
+  includeNative?: boolean;
+}
+
+export async function getEvmBalances(
   chain: string,
   address: string,
-  tokens: Array<{ address: string; symbol: string; decimals: number }>,
-  opts?: { feeToken?: string; feeReserve?: string },
+  tokens?: Array<{ address: string; symbol: string; decimals: number }>,
+  opts?: EvmBalanceOpts,
 ): Promise<ChainBalance> {
   const client = await getClient(chain);
-  const nt = getNativeToken(chain);
 
-  // Filter out native token — queried separately via getBalance
-  tokens = tokens.filter(t => !isNativeToken(t.address));
+  // Filter out zero address from tokens — native is handled via includeNative
+  const erc20s = (tokens ?? []).filter(t => !isNativeToken(t.address));
 
-  // Single RPC batch: native balance + fee estimation + all token balances
-  const [nativeBalance, feeData, ...tokenResults] = await Promise.all([
-    client.getBalance({ address: address as `0x${string}` }),
-    client.estimateFeesPerGas(),
-    ...(tokens.length > 0
-      ? [client.multicall({
-          contracts: tokens.map(t => ({
-            address: t.address as `0x${string}`,
-            abi: erc20Abi,
-            functionName: 'balanceOf' as const,
-            args: [address as `0x${string}`],
-          })),
-        })]
-      : []),
-  ]);
+  const calls: Promise<any>[] = [];
+  const hasNative = opts?.includeNative ?? false;
+  const hasTokens = erc20s.length > 0;
 
-  const gasCost = (feeData.maxFeePerGas ?? feeData.gasPrice ?? 0n) * NATIVE_GAS_BUFFER;
-  const nativeSpendable = nativeBalance > gasCost ? nativeBalance - gasCost : 0n;
+  // Build a single Promise.all with only the needed RPC calls
+  if (hasNative) {
+    calls.push(
+      client.getBalance({ address: address as `0x${string}` }),
+      client.estimateFeesPerGas(),
+    );
+  }
+  if (hasTokens) {
+    calls.push(client.multicall({
+      contracts: erc20s.map(t => ({
+        address: t.address as `0x${string}`,
+        abi: erc20Abi,
+        functionName: 'balanceOf' as const,
+        args: [address as `0x${string}`],
+      })),
+    }));
+  }
 
-  const multicallResults = tokenResults[0] as Array<{ result?: bigint }> | undefined;
-  const tokenBals = tokens.map((t, i) => {
-    const bal = (multicallResults?.[i]?.result as bigint) ?? 0n;
-    return {
-      symbol: t.symbol,
-      address: t.address,
-      decimals: t.decimals,
-      balance: bal.toString(),
-      allSpendable: applyFeeReserve(bal, t.address, opts?.feeToken, opts?.feeReserve).toString(),
-    };
-  });
+  const results = await Promise.all(calls);
 
-  return {
-    address,
-    native: {
+  // Unpack results based on what was requested
+  let idx = 0;
+  let native: ChainBalance["native"];
+  if (hasNative) {
+    const nativeBalance = results[idx++] as bigint;
+    const feeData = results[idx++] as { maxFeePerGas?: bigint | null; gasPrice?: bigint | null };
+    const gasCost = (feeData.maxFeePerGas ?? feeData.gasPrice ?? 0n) * NATIVE_GAS_BUFFER;
+    const nativeSpendable = nativeBalance > gasCost ? nativeBalance - gasCost : 0n;
+    const nt = getNativeToken(chain);
+    native = {
       symbol: nt.symbol,
       decimals: nt.decimals,
       balance: nativeBalance.toString(),
       allSpendable: nativeSpendable.toString(),
-    },
-    tokens: tokenBals,
-  };
+    };
+  }
+
+  let tokenBals: ChainBalance["tokens"];
+  if (hasTokens) {
+    const multicallResults = results[idx] as Array<{ result?: bigint }>;
+    tokenBals = erc20s.map((t, i) => {
+      const bal = (multicallResults[i]?.result as bigint) ?? 0n;
+      return {
+        symbol: t.symbol,
+        address: t.address,
+        decimals: t.decimals,
+        balance: bal.toString(),
+        allSpendable: applyFeeReserve(bal, t.address, opts?.feeToken, opts?.feeReserve).toString(),
+      };
+    });
+  }
+
+  return { address, native, tokens: tokenBals };
 }
 
 // ─── Signer ─────────────────────────────────────────────────────────────────

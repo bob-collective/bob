@@ -2,12 +2,14 @@ import { isAddress, formatUnits } from "viem";
 import type { RouteInfo } from "@gobob/bob-sdk";
 import { fetchPrice } from "./price-oracle.js";
 import { BTC_DECIMALS } from "../config.js";
-import { getTokenBalance } from "../chains/index.js";
-import { getTokenMetadata } from "../chains/evm.js";
+import { getChainFamily } from "../chains/index.js";
+import { getEvmBalances, getTokenMetadata } from "../chains/evm.js";
+import { getBtcBalance } from "../chains/bitcoin.js";
+import { getSdk } from "../config.js";
 
 // ─── Chain aliases ───────────────────────────────────────────────────────────
 
-const CHAIN_ALIASES: Record<string, string> = {
+export const CHAIN_ALIASES: Record<string, string> = {
   btc: "bitcoin",
   eth: "ethereum",
   arb: "arbitrum",
@@ -162,10 +164,12 @@ export async function parseAmount(
   // Ends with source token symbol → human-readable
   if (upper.endsWith(srcSymbol.toUpperCase())) {
     const numStr = trimmed.slice(0, -srcSymbol.length);
-    const num = parseFloat(numStr);
-    if (isNaN(num) || num <= 0) throw new Error(`Invalid amount "${raw}". ${AMOUNT_HELP}`);
-    const atomicUnits = humanToAtomic(numStr, srcDecimals);
-    return { type: "atomic", atomicUnits, display: `${numStr} ${srcSymbol}` };
+    if (/^\d+(\.\d+)?$/.test(numStr)) {
+      const num = parseFloat(numStr);
+      if (isNaN(num) || num <= 0) throw new Error(`Invalid amount "${raw}". ${AMOUNT_HELP}`);
+      const atomicUnits = humanToAtomic(numStr, srcDecimals);
+      return { type: "atomic", atomicUnits, display: `${numStr} ${srcSymbol}` };
+    }
   }
 
   // Bare integer → atomic units
@@ -203,15 +207,25 @@ export async function resolveSwapInputs(
     if (!opts?.senderAddress) {
       throw new Error("--amount ALL requires a sender address. Use --private-key, --sender, or set BITCOIN_PRIVATE_KEY / EVM_PRIVATE_KEY.");
     }
-    const bal = await getTokenBalance(srcAsset.chain, opts.senderAddress, srcAsset.address, {
-      feeToken: opts.feeToken,
-      feeReserve: opts.feeReserve,
-    });
-    if (BigInt(bal.allSpendable) === 0n) {
+    let allSpendable: string;
+    if (getChainFamily(srcAsset.chain) === 'bitcoin') {
+      const bal = await getBtcBalance(opts.senderAddress, getSdk());
+      allSpendable = bal.allSpendable;
+    } else {
+      const isNative = srcAsset.address === '0x0000000000000000000000000000000000000000';
+      const tokens = isNative ? [] : [{ address: srcAsset.address, symbol: srcAsset.symbol, decimals: srcAsset.decimals }];
+      const result = await getEvmBalances(srcAsset.chain, opts.senderAddress, tokens, {
+        includeNative: isNative,
+        feeToken: opts.feeToken,
+        feeReserve: opts.feeReserve,
+      });
+      allSpendable = isNative ? result.native!.allSpendable : result.tokens![0].allSpendable;
+    }
+    if (BigInt(allSpendable) === 0n) {
       throw new Error(`No ${srcAsset.symbol} balance found for ${opts.senderAddress}`);
     }
-    const display = `${formatUnits(BigInt(bal.allSpendable), srcAsset.decimals)} ${srcAsset.symbol} (all spendable)`;
-    return { srcAsset, dstAsset, atomicUnits: bal.allSpendable, display };
+    const display = `${formatUnits(BigInt(allSpendable), srcAsset.decimals)} ${srcAsset.symbol} (all spendable)`;
+    return { srcAsset, dstAsset, atomicUnits: allSpendable, display };
   }
 
   return { srcAsset, dstAsset, atomicUnits: parsed.atomicUnits, display: parsed.display };

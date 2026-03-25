@@ -1,6 +1,10 @@
 import { EsploraClient, ScureBitcoinSigner, type BitcoinSigner } from '@gobob/bob-sdk';
 import { getSdk } from '../config.js';
-import type { TokenBalance } from './index.js';
+
+export interface TokenBalance {
+  total: string;
+  allSpendable: string;
+}
 
 export async function getBtcBalance(
   address: string,
