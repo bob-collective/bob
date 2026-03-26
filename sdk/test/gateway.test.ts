@@ -1402,4 +1402,25 @@ describe('Gateway Tests', () => {
         expect(sendTransaction).toHaveBeenCalledTimes(1);
         expect(waitForTransactionReceipt).toHaveBeenCalledTimes(1);
     });
+
+    it.each([
+        { field: 'fromToken', value: 'BTC', validToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c' },
+        { field: 'toToken', value: 'WBTC', validToken: '0x0000000000000000000000000000000000000000' },
+    ])('should throw error when $field is not an address', async ({ field, value, validToken }) => {
+        const gatewaySDK = new GatewaySDK();
+
+        const quoteParams = {
+            fromChain: 'bitcoin',
+            fromToken: field === 'fromToken' ? value : validToken,
+            toChain: 'bob',
+            toToken: field === 'toToken' ? value : validToken,
+            fromUserAddress: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+            toUserAddress: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+            amount: 1000,
+        };
+
+        await expect(gatewaySDK.getQuote(quoteParams)).rejects.toThrow(
+            `Invalid ${field}: '${value}'. Expected a token address (e.g. '0x0000000000000000000000000000000000000000'), not a symbol. Use getRoutes() to find supported token addresses.`
+        );
+    });
 });
