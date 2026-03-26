@@ -20,7 +20,7 @@ export async function getBtcBalance(
   return { total, allSpendable };
 }
 
-export async function deriveBtcAddress(key: string): Promise<string> {
+export function deriveBtcAddress(key: string): Promise<string> {
   const signer = ScureBitcoinSigner.fromKey(key);
   return signer.getP2WPKHAddress();
 }
