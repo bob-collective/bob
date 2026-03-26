@@ -1,35 +1,39 @@
 import {
-    Account,
-    Address,
+    type Account,
+    type Address,
     ContractFunctionExecutionError,
     erc20Abi,
     Hex,
     isAddress,
     isAddressEqual,
     maxUint256,
-    PublicClient,
-    Transport,
-    Chain as ViemChain,
-    WalletClient,
+    type PublicClient,
+    type Transport,
+    type Chain as ViemChain,
+    type WalletClient,
     zeroAddress,
 } from 'viem';
 import { strategyCaller, USDTApproveAbi } from './abi';
-import { BitcoinSigner, GetQuoteParams, StrategyParams } from './types';
 import {
     Configuration,
-    V1Api,
-    GatewayOrderInfo,
-    GatewayQuote,
+    type GatewayCreateOrder,
+    type GatewayCreateOrderOneOf,
+    type GatewayMaxSpendable,
+    type GatewayOrderInfo,
+    type GatewayQuote,
     instanceOfGatewayCreateOrderOneOf,
     instanceOfGatewayCreateOrderOneOf1,
+    instanceOfGatewayCreateOrderOneOf2,
     instanceOfGatewayQuoteOneOf,
     instanceOfGatewayQuoteOneOf1,
     instanceOfGatewayQuoteOneOf2,
     instanceOfRegisterTxOneOf,
-    RouteInfo,
-    instanceOfGatewayCreateOrderOneOf2,
-    GatewayMaxSpendable,
+    type RouteInfo,
+    V1Api,
 } from './generated-client';
+import { GatewayError } from './error';
+import type { GatewayError as GatewayErrorInterface } from './generated-client/models/GatewayError';
+import type { BitcoinSigner, GetQuoteParams, StrategyParams } from './types';
 import { formatBtc } from './utils';
 
 export const WBTC_OFT_ADDRESS = '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c';
@@ -67,6 +71,18 @@ export interface AllWalletClientParams extends EvmWalletClientParams {
      */
     btcSigner?: BitcoinSigner;
 }
+
+/**
+ * Result of executing a gateway quote.
+ *
+ * `tx` is the transaction hash/id (Bitcoin txid for onramp, EVM hash for offramp/LayerZero).
+ * It is absent only in the walletless onramp flow, where no `btcSigner` was provided.
+ * In that case, use `order.onramp.address` and `order.onramp.orderId` to complete
+ * the BTC payment externally.
+ */
+export type ExecuteQuoteResult =
+    | { order: GatewayCreateOrder; tx: string }
+    | { order: GatewayCreateOrderOneOf; tx?: undefined };
 
 /**
  * Gateway REST HTTP API client.
@@ -111,14 +127,18 @@ export class GatewayApiClient {
                     {
                         async post(context) {
                             if (context.response && (context.response.status < 200 || context.response.status >= 300)) {
-                                let body: Record<string, string>;
+                                let body: GatewayErrorInterface;
                                 try {
                                     body = await context.response.json();
-                                } catch {
-                                    throw new Error(context.response.statusText);
+                                } catch (parseError) {
+                                    const err = GatewayError.fromText(
+                                        `Non-JSON response: HTTP ${context.response.status} ${context.response.statusText}`
+                                    );
+                                    err.cause = parseError;
+                                    throw err;
                                 }
 
-                                throw new Error(body.error || body.message || JSON.stringify(body));
+                                throw GatewayError.fromResponse(body);
                             }
 
                             return context.response;
@@ -178,23 +198,25 @@ export class GatewayApiClient {
      * For offramp: approves tokens if needed and creates on-chain order
      *
      * @param params Parameters including quote and wallet clients - see {@link GatewayQuote} & {@link AllWalletClientParams}
-     * @returns Promise resolving to transaction hash
+     * @returns Promise resolving to the full order and optional transaction hash
      * @throws {Error} If required signers are missing or transaction fails
      */
     async executeQuote(
         { quote, walletClient, publicClient, btcSigner }: { quote: GatewayQuote } & AllWalletClientParams,
         initOverrides?: RequestInit
-    ): Promise<string> {
+    ): Promise<ExecuteQuoteResult> {
         if (instanceOfGatewayQuoteOneOf(quote)) {
-            const order = await this.api.createOrder({ gatewayQuote: { onramp: quote.onramp } });
+            const order = await this.api.createOrder({
+                gatewayQuote: { onramp: quote.onramp },
+            });
 
             if (!instanceOfGatewayCreateOrderOneOf(order)) {
                 throw new Error('Invalid order type returned from API');
             }
 
             if (!btcSigner) {
-                // Walletless flow: return the order ID for the user to complete payment externally
-                return order.onramp.orderId;
+                // Walletless flow: return the order for the user to complete payment externally
+                return { order };
             }
 
             let bitcoinTxHex: string;
@@ -231,14 +253,14 @@ export class GatewayApiClient {
             );
 
             if (typeof tx === 'string') {
-                return tx;
+                return { order, tx };
             }
 
             if (!instanceOfRegisterTxOneOf(tx)) {
                 throw new Error('Invalid registerTx response type');
             }
 
-            return tx.onramp.txid;
+            return { order, tx: tx.onramp.txid };
         } else if (instanceOfGatewayQuoteOneOf1(quote)) {
             if (!walletClient.account) {
                 throw new Error(`walletClient is required for offramp order`);
@@ -246,7 +268,9 @@ export class GatewayApiClient {
             const accountAddress = walletClient.account.address;
             const tokenAddress = quote.offramp.tokenAddress as Address;
 
-            const order = await this.api.createOrder({ gatewayQuote: { offramp: quote.offramp } });
+            const order = await this.api.createOrder({
+                gatewayQuote: { offramp: quote.offramp },
+            });
 
             if (!instanceOfGatewayCreateOrderOneOf1(order)) {
                 throw new Error('Invalid order type returned from API');
@@ -255,21 +279,19 @@ export class GatewayApiClient {
             const spenderAddress = order.offramp.tx.to as Address;
 
             // Check ETH balance and estimate gas for both potential transactions
-            const allowance = !isAddressEqual(tokenAddress, zeroAddress)
-                ? (
-                      await publicClient.multicall({
-                          allowFailure: false,
-                          contracts: [
-                              {
-                                  address: tokenAddress,
-                                  abi: erc20Abi,
-                                  functionName: 'allowance',
-                                  args: [accountAddress, spenderAddress],
-                              },
-                          ],
-                      })
-                  )[0]
-                : maxUint256;
+            const [allowance] = !isAddressEqual(tokenAddress, zeroAddress)
+                ? await publicClient.multicall({
+                      allowFailure: false,
+                      contracts: [
+                          {
+                              address: tokenAddress,
+                              abi: erc20Abi,
+                              functionName: 'allowance',
+                              args: [accountAddress, spenderAddress],
+                          },
+                      ],
+                  })
+                : [maxUint256];
 
             const requiredAmount = BigInt(quote.offramp.inputAmount.amount);
             const needsApproval = requiredAmount > allowance;
@@ -286,7 +308,9 @@ export class GatewayApiClient {
                         });
 
                         const approveTxHash = await walletClient.writeContract(request);
-                        await publicClient.waitForTransactionReceipt({ hash: approveTxHash });
+                        await publicClient.waitForTransactionReceipt({
+                            hash: approveTxHash,
+                        });
                     }
                 } else {
                     // To change the USDT approval, first set the allowance to 0 (approve(_spender, 0))
@@ -326,26 +350,33 @@ export class GatewayApiClient {
 
             await publicClient?.waitForTransactionReceipt({ hash: transactionHash });
 
-            await this.api.registerTx(
-                {
-                    registerTx: {
-                        offramp: {
-                            orderId: order.offramp.orderId,
-                            evmTxhash: transactionHash,
+            try {
+                await this.api.registerTx(
+                    {
+                        registerTx: {
+                            offramp: {
+                                orderId: order.offramp.orderId,
+                                evmTxhash: transactionHash,
+                            },
                         },
                     },
-                },
-                initOverrides
-            );
+                    initOverrides
+                );
+            } catch {
+                // Best-effort: the on-chain tx already succeeded, so return the result
+                // even if registration fails. The order can be reconciled later.
+            }
 
-            return transactionHash;
+            return { order, tx: transactionHash };
         } else if (instanceOfGatewayQuoteOneOf2(quote)) {
             const tokenAddress = quote.layerZero.inputAmount.address as Address;
             const requiredAmount = BigInt(quote.layerZero.inputAmount.amount);
             const accountAddress = walletClient.account.address;
             const receiver = quote.layerZero.tx.to as Address;
 
-            const order = await this.api.createOrder({ gatewayQuote: { layerZero: quote.layerZero } });
+            const order = await this.api.createOrder({
+                gatewayQuote: { layerZero: quote.layerZero },
+            });
 
             if (!instanceOfGatewayCreateOrderOneOf2(order)) {
                 throw new Error('Invalid order type returned from API');
@@ -399,251 +430,24 @@ export class GatewayApiClient {
 
             await publicClient.waitForTransactionReceipt({ hash: transactionHash });
 
-            await this.api.registerTx(
-                {
-                    registerTx: {
-                        layerZero: {
-                            evmTxhash: transactionHash,
-                            orderId: order.layerZero.orderId,
+            try {
+                await this.api.registerTx(
+                    {
+                        registerTx: {
+                            layerZero: {
+                                evmTxhash: transactionHash,
+                                orderId: order.layerZero.orderId,
+                            },
                         },
                     },
-                },
-                initOverrides
-            );
-
-            return transactionHash;
-        }
-
-        throw new Error('Invalid quote type');
-    }
-
-    /**
-     * Executes a complete quote (onramp or offramp) in a single transaction.
-     *
-     * For onramp: creates order, signs Bitcoin transaction, and finalizes
-     * For offramp: approves tokens if needed and creates on-chain order
-     *
-     * @param params Parameters including quote and wallet clients - see {@link GatewayQuote} & {@link AllWalletClientParams}
-     * @returns Promise resolving to transaction hash
-     * @throws {Error} If required signers are missing or transaction fails
-     */
-    async _executeQuote(
-        { quote, walletClient, publicClient, btcSigner }: { quote: GatewayQuote } & AllWalletClientParams,
-        initOverrides?: RequestInit
-    ): Promise<{ tx: string; orderId?: string; address?: string }> {
-        if (instanceOfGatewayQuoteOneOf(quote)) {
-            const order = await this.api.createOrder({ gatewayQuote: { onramp: quote.onramp } });
-
-            if (!instanceOfGatewayCreateOrderOneOf(order)) {
-                throw new Error('Invalid order type returned from API');
+                    initOverrides
+                );
+            } catch {
+                // Best-effort: the on-chain tx already succeeded, so return the result
+                // even if registration fails. The order can be reconciled later.
             }
 
-            if (!btcSigner) {
-                // Walletless flow: return order details for the user to complete payment externally
-                return {
-                    tx: '',
-                    orderId: order.onramp.orderId,
-                    address: order.onramp.address,
-                };
-            }
-
-            let bitcoinTxHex: string;
-            if (btcSigner.sendBitcoin) {
-                bitcoinTxHex = await btcSigner.sendBitcoin({
-                    from: quote.onramp.sender,
-                    to: order.onramp.address,
-                    value: formatBtc(BigInt(quote.onramp.inputAmount.amount)),
-                    opReturn: order.onramp.opReturnData || undefined,
-                    // isSignet: this.isSignet,
-                });
-            } else if (btcSigner.signAllInputs) {
-                if (!order.onramp.psbtHex) {
-                    throw new Error('PSBT not available: sender address is required when using signAllInputs');
-                }
-                bitcoinTxHex = await btcSigner.signAllInputs(order.onramp.psbtHex);
-            } else {
-                throw new Error('btcSigner must implement either sendBitcoin or signAllInputs method');
-            }
-
-            // bitcoinTxOrId = stripHexPrefix(bitcoinTxOrId);
-            if (!bitcoinTxHex) throw new Error('Failed to get signed transaction');
-
-            const tx = await this.api.registerTx(
-                {
-                    registerTx: {
-                        onramp: {
-                            orderId: order.onramp.orderId,
-                            bitcoinTxHex: bitcoinTxHex,
-                        },
-                    },
-                },
-                initOverrides
-            );
-
-            if (typeof tx === 'string') {
-                return { tx: tx, orderId: order.onramp.orderId };
-            }
-
-            if (!instanceOfRegisterTxOneOf(tx)) {
-                throw new Error('Invalid registerTx response type');
-            }
-
-            return { tx: tx.onramp.txid, orderId: order.onramp.orderId };
-        } else if (instanceOfGatewayQuoteOneOf1(quote)) {
-            if (!walletClient.account) {
-                throw new Error(`walletClient is required for offramp order`);
-            }
-            const accountAddress = walletClient.account.address;
-            const tokenAddress = quote.offramp.tokenAddress as Address;
-
-            const order = await this.api.createOrder({ gatewayQuote: { offramp: quote.offramp } });
-
-            if (!instanceOfGatewayCreateOrderOneOf1(order)) {
-                throw new Error('Invalid order type returned from API');
-            }
-
-            const spenderAddress = order.offramp.tx.to as Address;
-
-            // Check ETH balance and estimate gas for both potential transactions
-            const allowance = !isAddressEqual(tokenAddress, zeroAddress)
-                ? (
-                      await publicClient.multicall({
-                          allowFailure: false,
-                          contracts: [
-                              {
-                                  address: tokenAddress,
-                                  abi: erc20Abi,
-                                  functionName: 'allowance',
-                                  args: [accountAddress, spenderAddress],
-                              },
-                          ],
-                      })
-                  )[0]
-                : maxUint256;
-
-            const requiredAmount = BigInt(quote.offramp.inputAmount.amount);
-            const needsApproval = requiredAmount > allowance;
-
-            if (needsApproval && !isAddressEqual(tokenAddress, zeroAddress)) {
-                if (isAddressEqual(tokenAddress, WBTC_OFT_ADDRESS)) {
-                    if (quote.offramp.srcChain === 'bob') {
-                        const { request } = await publicClient.simulateContract({
-                            account: walletClient.account,
-                            address: tokenAddress,
-                            abi: erc20Abi,
-                            functionName: 'approve',
-                            args: [spenderAddress, maxUint256],
-                        });
-
-                        const approveTxHash = await walletClient.writeContract(request);
-                        await publicClient.waitForTransactionReceipt({ hash: approveTxHash });
-                    }
-                } else {
-                    // To change the USDT approval, first set the allowance to 0 (approve(_spender, 0))
-                    // to avoid the ERC20 race condition:
-                    // https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
-                    if (isAddressEqual(tokenAddress, ETHEREUM_USDT_ADDRESS) && allowance !== 0n) {
-                        const { request: resetRequest } = await publicClient.simulateContract({
-                            account: walletClient.account,
-                            address: tokenAddress,
-                            abi: USDTApproveAbi,
-                            functionName: 'approve',
-                            args: [spenderAddress, 0n],
-                        });
-                        const resetTxHash = await walletClient.writeContract(resetRequest);
-                        await publicClient.waitForTransactionReceipt({ hash: resetTxHash });
-                    }
-
-                    const { request } = await publicClient.simulateContract({
-                        account: walletClient.account,
-                        address: tokenAddress,
-                        abi: isAddressEqual(tokenAddress, ETHEREUM_USDT_ADDRESS) ? USDTApproveAbi : erc20Abi,
-                        functionName: 'approve',
-                        args: [spenderAddress, maxUint256],
-                    });
-
-                    const approveTxHash = await walletClient.writeContract(request);
-                    await publicClient.waitForTransactionReceipt({ hash: approveTxHash });
-                }
-            }
-
-            const transactionHash = await walletClient.sendTransaction({
-                account: walletClient.account,
-                data: order.offramp.tx.data as Hex,
-                to: spenderAddress,
-                value: BigInt(order.offramp.tx.value || 0),
-            });
-
-            await publicClient?.waitForTransactionReceipt({ hash: transactionHash });
-
-            await this.api.registerTx(
-                {
-                    registerTx: {
-                        offramp: {
-                            orderId: order.offramp.orderId,
-                            evmTxhash: transactionHash,
-                        },
-                    },
-                },
-                initOverrides
-            );
-
-            return { tx: transactionHash, orderId: order.offramp.orderId };
-        } else if (instanceOfGatewayQuoteOneOf2(quote)) {
-            const tokenAddress = quote.layerZero.inputAmount.address as Address;
-            const requiredAmount = BigInt(quote.layerZero.inputAmount.amount);
-            const accountAddress = walletClient.account.address;
-            const receiver = quote.layerZero.tx.to as Address;
-
-            if (!isAddressEqual(tokenAddress, WBTC_OFT_ADDRESS)) {
-                // ERC20 token
-                try {
-                    const allowance = await publicClient.readContract({
-                        account: walletClient.account,
-                        address: tokenAddress,
-                        abi: erc20Abi,
-                        functionName: 'allowance',
-                        args: [accountAddress, receiver],
-                    });
-
-                    if (allowance < requiredAmount) {
-                        const { request } = await publicClient.simulateContract({
-                            account: walletClient.account,
-                            address: tokenAddress,
-                            abi: erc20Abi,
-                            functionName: 'approve',
-                            args: [receiver, maxUint256],
-                        });
-
-                        const txHash = await walletClient.writeContract(request);
-
-                        await publicClient.waitForTransactionReceipt({ hash: txHash });
-                    }
-                } catch (error) {
-                    if (error instanceof ContractFunctionExecutionError) {
-                        // https://github.com/wevm/viem/blob/3aa882692d2c4af3f5e9cc152099e07cde28e551/src/actions/public/simulateContract.test.ts#L711
-                        // throw new error
-                        throw new Error(
-                            'Insufficient native funds for source and destination gas fees, please add more native funds to your account',
-                            { cause: error }
-                        );
-                    }
-
-                    throw error;
-                }
-            }
-
-            // execute send call
-            const transactionHash = await walletClient.sendTransaction({
-                account: walletClient.account,
-                data: quote.layerZero.tx.data as Hex,
-                to: receiver,
-                value: BigInt(quote.layerZero.tx.value || 0),
-            });
-
-            await publicClient.waitForTransactionReceipt({ hash: transactionHash });
-
-            return { tx: transactionHash };
+            return { order, tx: transactionHash };
         }
 
         throw new Error('Invalid quote type');
@@ -697,6 +501,7 @@ export class GatewayApiClient {
      * Retrieves the maximum spendable amount for a given Bitcoin address
      *
      * @param address The user's Bitcoin address
+     * @param initOverrides Optional request initialization overrides
      * @returns Promise resolving to the maximum spendable amount
      */
     async getMaxSpendable(address: string, initOverrides?: RequestInit): Promise<GatewayMaxSpendable> {
@@ -707,10 +512,22 @@ export class GatewayApiClient {
      * Retrieves all orders (onramp and offramp) for a specific user address.
      *
      * @param userAddress The user's EVM address
+     * @param initOverrides Optional request initialization overrides
      * @returns Promise resolving to array of typed orders
      */
     async getOrders(userAddress: Address, initOverrides?: RequestInit): Promise<Array<GatewayOrderInfo>> {
         return this.api.getOrders({ userAddress }, initOverrides);
+    }
+
+    /**
+     * Retrieves a specific order by its ID (txId/txHash).
+     *
+     * @param id The order ID (txId/txHash)
+     * @param initOverrides Optional request initialization overrides
+     * @returns Promise resolving to the order information
+     */
+    async getOrder(id: string, initOverrides?: RequestInit): Promise<GatewayOrderInfo> {
+        return this.api.getOrder({ id }, initOverrides);
     }
 
     /**

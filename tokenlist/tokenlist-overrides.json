@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/Uniswap/token-lists/refs/heads/main/src/tokenlist.schema.json",
   "name": "BOB Tokens",
-  "timestamp": "2025-12-16T15:58:58.182Z",
+  "timestamp": "2026-03-25T11:57:41.923Z",
   "version": {
     "major": 1,
     "minor": 0,
@@ -240,7 +240,7 @@
     {
       "chainId": 137,
       "address": "0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063",
-      "name": "Dai Stablecoin",
+      "name": "(PoS) Dai Stablecoin",
       "symbol": "DAI",
       "decimals": 18,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/DAI/logo.svg",
@@ -264,7 +264,7 @@
     {
       "chainId": 56,
       "address": "0x1AF3F329e8BE154074D8769D1FFa4eE058B1DBc3",
-      "name": "Dai Stablecoin",
+      "name": "Dai Token",
       "symbol": "DAI",
       "decimals": 18,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/DAI/logo.svg",
@@ -300,8 +300,8 @@
     {
       "chainId": 1,
       "address": "0xbdBb63F938c8961AF31eaD3deBa5C96e6A323DD1",
-      "name": "DLLR",
-      "symbol": "DLLR",
+      "name": "eDLLR",
+      "symbol": "eDLLR",
       "decimals": 18,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/DLLR/logo.svg",
       "extensions": {
@@ -401,6 +401,18 @@
       "chainId": 130,
       "address": "0x0000000000000000000000000000000000000000",
       "name": "Ether",
+      "symbol": "ETH",
+      "decimals": 18,
+      "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/ETH/logo.svg",
+      "extensions": {
+        "tokenId": "ETH",
+        "bridge": {}
+      }
+    },
+    {
+      "chainId": 56,
+      "address": "0x2170Ed0880ac9A755fd29B2688956BD959F933F8",
+      "name": "Ethereum Token",
       "symbol": "ETH",
       "decimals": 18,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/ETH/logo.svg",
@@ -992,8 +1004,8 @@
     {
       "chainId": 1,
       "address": "0xbdab72602e9AD40FC6a6852CAf43258113B8F7a5",
-      "name": "SOV",
-      "symbol": "SOV",
+      "name": "eSOV",
+      "symbol": "eSOV",
       "decimals": 18,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/SOV/logo.svg",
       "extensions": {
@@ -1116,7 +1128,7 @@
     {
       "chainId": 808813,
       "address": "0xD23F06550b0A7bC98B20eb81D4c21572a97598FA",
-      "name": "tBTC v2",
+      "name": "BOB tBTC v2",
       "symbol": "tBTC",
       "decimals": 18,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/tBTC/logo.svg",
@@ -1128,7 +1140,7 @@
     {
       "chainId": 10,
       "address": "0x6c84a8f1c29108F47a79964b5Fe888D4f4D0dE40",
-      "name": "tBTC v2",
+      "name": "Optimism tBTC v2",
       "symbol": "tBTC",
       "decimals": 18,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/tBTC/logo.svg",
@@ -1140,7 +1152,7 @@
     {
       "chainId": 42161,
       "address": "0x6c84a8f1c29108F47a79964b5Fe888D4f4D0dE40",
-      "name": "tBTC v2",
+      "name": "Arbitrum tBTC v2",
       "symbol": "tBTC",
       "decimals": 18,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/tBTC/logo.svg",
@@ -1267,7 +1279,7 @@
     },
     {
       "chainId": 42161,
-      "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "address": "0x6B2a01A5f79dEb4c2f3c0eDa7b01DF456FbD726a",
       "name": "uniBTC",
       "symbol": "uniBTC",
       "decimals": 8,
@@ -1470,8 +1482,8 @@
     {
       "chainId": 43114,
       "address": "0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7",
-      "name": "Tether USD",
-      "symbol": "USDT",
+      "name": "TetherToken",
+      "symbol": "USDt",
       "decimals": 6,
       "logoURI": "https://raw.githubusercontent.com/bob-collective/bob/refs/heads/master/tokenlist/data/USDT/logo.webp",
       "extensions": {

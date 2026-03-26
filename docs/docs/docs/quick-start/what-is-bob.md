@@ -4,58 +4,61 @@ sidebar_position: 1
 
 # What is BOB?
 
-## The Vision: Putting Bitcoin at the Heart of DeFi
+## The Vision: The Bank of Bitcoin
 
-Bitcoin represents the world's largest and most valuable digital asset, yet it remains largely untapped in DeFi. While Ethereum has achieved ~30% DeFi TVL penetration, Bitcoin sits at just 0.3%. BOB exists to bridge this gap, giving everyone access to Bitcoin's potential.
+BOB is building the Bank of Bitcoin - reimagining banking for the Bitcoin age. One platform for everything: swapping, saving, earning, and borrowing, all on Bitcoin rails.
 
-The Problem: Users and institutions want sustainable returns on their Bitcoin holdings, while projects and apps need liquidity in the world's most trusted asset.
+Bitcoin is the world's most important financial asset, yet its utility has barely been unlocked. BOB exists to change that. By fusing Bitcoin's unmatched security with Ethereum's versatility, BOB's hybrid chain turns BTC into a fully productive asset.
 
-## The Solution: BOB - The Gateway to Bitcoin DeFi
+The Problem: Users and institutions want to do more with their Bitcoin: swap, save, earn, and borrow - but today's options force trade-offs between security, usability, and trust. Projects and apps need liquidity in the world's most trusted asset, without compromising on Bitcoin's guarantees.
 
-BOB combines the security of Bitcoin with the DeFi innovation of Ethereum, creating the best place to build and earn yield with BTC.
+## The Solution: BOB - The Bank of Bitcoin
 
-For Users: 1-click Bitcoin staking, cross-chain BTC swaps, and seamless DeFi access
+BOB is doing for Bitcoin what neobanks did for fiat money - and then taking it into the future. Swap BTC into any asset or deposit directly into DeFi on any chain with a single click, powered by Bitcoin intents. Save, lend, and earn securely with native Bitcoin vaults.
 
-For Developers: "Integrate BOB EVM, get native BTC access"
+For Users: 1-click native BTC swaps, staking, DeFi deposits, and vaults - all accessible in a single transaction. Multi-chain BTC DeFi across 11+ major chains including Ethereum, Base, and BNB. Direct CEX deposits and hardware wallet support.
 
-**Key Innovation:** "BTC on BOB is BTC" - The first chain to achieve finality from both Ethereum and Bitcoin.
+For Developers: BOB Gateway API and SDK bring frictionless Bitcoin interoperability and native BTC access to dapps.
 
-## The Technology: The Hybrid Chain
+**Key Innovation:** The first chain to achieve finality from both Ethereum and Bitcoin.
 
-BOB is an optimistic rollup with ZK proofs on Ethereum secured by billions of dollars of staked Bitcoin, serviced by a hybrid BitVM bridge for native BTC integration.
+## The Technology: The BOB Stack
+
+BOB is building the banking stack for Bitcoin. The hybrid chain is a ZK rollup on Ethereum, also secured by Bitcoin, combining the best of both networks into a single platform.
 
 ### Core Architecture
 
 - **Bitcoin Security**: BTC on BOB is protected by Bitcoin's security model via [BitVM](https://blog.gobob.xyz/posts/what-is-bitvm)
-- **Ethereum Compatibility**: Full EVM compatibility with ZK fraud proofs
-- **Hybrid Finality**: Finality secured by both Bitcoin and Ethereum networks
-- **Native BTC Integration**: Direct BTC access with a single transaction
+- **Ethereum Compatibility**: Full EVM compatibility with ZK proofs
+- **Hybrid Finality**: The first chain with finality secured by both Bitcoin and Ethereum networks.
+- **Native BTC Integration**: 1-click native BTC swaps and DeFi deposits powered by Bitcoin intents, with instant swaps coming soon.
 
 ## Why build on BOB?
 
-### Gateway (to BTC DeFi)
+### 1-click Swap & Earn
 
-- Best Bitcoin UX in the ecosystem
-- [1-click BTC DeFi deployment](https://app.gobob.xyz/en/earn) to any DeFi protocol on any chain
-- Already integrated by Solv, Xverse, Pell, Sovryn
-- BTC to any chain stake & swaps coming soon
+- Best Bitcoin UX in the ecosystem - swap, stake, and earn with just 1 transaction
+- Multi-chain BTC DeFi: 1-click native BTC swaps and DeFi deposits across 11+ major chains
+- Direct CEX deposits and hardware wallet support via BOB Gateway API
+- Instant BTC swaps coming soon
 
 ### BitVM / Bitcoin Security
 
-- BOB co-authored the latest BitVM2 bridge design paper
+- BOB co-authored the BitVM2 bridge design paper
 - Member of the [BitVM Alliance](https://bitvm.org/)
 - Launched [bitvm/acc](https://bitvm-acc.org/) to educate and recruit institutional partners
 - BitVM live on testnet for institutional onboarding
 - Secured by billions of dollars of staked BTC via BOB Finality Providers
 
-### Ecosystem (Home of BTC DeFi)
+### Ecosystem
 
 - Best-in-class EVM and DeFi infrastructure based on the [OP stack](https://docs.optimism.io/stack/getting-started)
-- [Tier 1 DeFi choosing BOB](https://app.gobob.xyz/en/apps): Uniswap, Euler, Aave, LiFi, Lombard, Chainlink, Babylon, Solv
-- Institutions choosing BOB: Fireblocks, Cobo, ForDeFi and more to be announced
-- Strong/fast stablecoin infrastructure with USDC, USDT, Chainlink CCIP, LayerZero
+- 120+ projects and institutional partners building with BOB
+- Tier 1 DeFi choosing BOB: Uniswap, Euler, Aave, LiFi, Chainlink, Babylon, Solv
+- Institutions choosing BOB: Fireblocks, Anchorage Digital, Cobo, ForDeFi, and more
+- Strong stablecoin infrastructure with USDC, USDT, Chainlink CCIP, LayerZero
 
 ## Next Steps
 
 - [Connect Wallet & Bridge Assets](./connect-wallet)
-- [Make Your First Transaction](./first-transaction.md) 
+- [Make Your First Transaction](./first-transaction.md)

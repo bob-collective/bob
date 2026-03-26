@@ -47,6 +47,16 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "Create order error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayError"
+                }
+              }
+            }
           }
         }
       }
@@ -75,6 +85,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/GatewayMaxSpendable"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Get max spendable error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayError"
                 }
               }
             }
@@ -111,8 +131,25 @@
               }
             }
           },
+          "400": {
+            "description": "Invalid order ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayError"
+                }
+              }
+            }
+          },
           "404": {
-            "description": "Order not found"
+            "description": "Order not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayError"
+                }
+              }
+            }
           }
         }
       }
@@ -145,6 +182,16 @@
                   "items": {
                     "$ref": "#/components/schemas/GatewayOrderInfo"
                   }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid user address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayError"
                 }
               }
             }
@@ -298,6 +345,16 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "Get a quote error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayError"
+                }
+              }
+            }
           }
         }
       }
@@ -351,6 +408,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RegisterTxSuccess"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Register error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayError"
                 }
               }
             }
@@ -482,6 +549,181 @@
           }
         ],
         "description": "Created new Gateway order"
+      },
+      "GatewayError": {
+        "type": "object",
+        "description": "Structured error response that the frontend can parse.\nContains an error code, human-readable message, and optional structured details.",
+        "required": [
+          "code",
+          "error"
+        ],
+        "properties": {
+          "code": {
+            "$ref": "#/components/schemas/GatewayErrorCode",
+            "description": "Stable error code for frontend parsing"
+          },
+          "details": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/GatewayErrorDetails",
+                "description": "Optional structured details specific to the error type"
+              }
+            ]
+          },
+          "error": {
+            "type": "string",
+            "description": "Human-readable error message"
+          }
+        }
+      },
+      "GatewayErrorCode": {
+        "type": "string",
+        "description": "Error codes for structured error responses that the frontend can parse.\nThese codes are stable and should not be changed without coordinating with the frontend.",
+        "enum": [
+          "INSUFFICIENT_AMOUNT",
+          "INSUFFICIENT_SWAP_AMOUNT",
+          "INSUFFICIENT_SOLVER_BALANCE",
+          "INSUFFICIENT_FUNDS",
+          "INSUFFICIENT_PAYMENT_AMOUNT",
+          "UNABLE_TO_COVER_FEES",
+          "INSUFFICIENT_CONFIRMED_FUNDS",
+          "SIMULATION_FAILED",
+          "GAS_ESTIMATE_FAILED",
+          "PER_ACCOUNT_LIMIT_EXCEEDED",
+          "GLOBAL_LIMIT_EXCEEDED",
+          "EXCEEDED_LIMIT",
+          "INVALID_REQUEST",
+          "INVALID_ORDER_ARGS",
+          "INVALID_AFFILIATE_FEE",
+          "SLIPPAGE_TOO_LOW",
+          "SLIPPAGE_TOO_HIGH",
+          "NO_ROUTE",
+          "DISABLED_CHAIN",
+          "INVALID_DESTINATION_CHAIN_ID",
+          "ORDER_NOT_FOUND",
+          "ORDER_EXPIRED",
+          "DUPLICATE_ORDER",
+          "INTERNAL_ERROR"
+        ]
+      },
+      "GatewayErrorDetails": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "expected",
+              "actual"
+            ],
+            "properties": {
+              "actual": {
+                "type": "string"
+              },
+              "expected": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "required",
+              "available"
+            ],
+            "properties": {
+              "available": {
+                "type": "string"
+              },
+              "required": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "sender",
+              "min_required_sats"
+            ],
+            "properties": {
+              "min_required_sats": {
+                "type": "integer",
+                "format": "int64",
+                "minimum": 0
+              },
+              "sender": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "total_fees",
+              "available_amount"
+            ],
+            "properties": {
+              "available_amount": {
+                "type": "string"
+              },
+              "total_fees": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "properties": {
+              "tenderly_url": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "src_chain",
+              "src_token",
+              "dst_chain",
+              "dst_token"
+            ],
+            "properties": {
+              "dst_chain": {
+                "type": "string"
+              },
+              "dst_token": {
+                "type": "string"
+              },
+              "src_chain": {
+                "type": "string"
+              },
+              "src_token": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "limit"
+            ],
+            "properties": {
+              "limit": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "type": "null",
+            "default": null
+          }
+        ],
+        "description": "Structured details for specific error types"
       },
       "GatewayLayerZeroQuote": {
         "type": "object",
@@ -672,7 +914,8 @@
           "slippage",
           "feeBreakdown",
           "dstChain",
-          "dstToken"
+          "dstToken",
+          "signedQuoteData"
         ],
         "properties": {
           "affiliateAddress": {
@@ -737,6 +980,10 @@
             ],
             "description": "Sender address"
           },
+          "signedQuoteData": {
+            "type": "string",
+            "description": "The signed quote data to be used in create-order"
+          },
           "slippage": {
             "type": "string",
             "description": "Slippage tolerance"
@@ -763,12 +1010,19 @@
         "type": "object",
         "description": "Gateway order info",
         "required": [
+          "id",
           "timestamp",
           "srcInfo",
           "dstInfo",
           "status"
         ],
         "properties": {
+          "depositAddress": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "dstInfo": {
             "$ref": "#/components/schemas/ChainTxInfo"
           },
@@ -779,6 +1033,9 @@
             ],
             "format": "int64",
             "minimum": 0
+          },
+          "id": {
+            "type": "string"
           },
           "srcInfo": {
             "$ref": "#/components/schemas/ChainTxInfo"
@@ -1044,6 +1301,7 @@
       },
       "RouteInfo": {
         "type": "object",
+        "description": "API response type for route information.",
         "required": [
           "srcChain",
           "dstChain",
@@ -1052,20 +1310,16 @@
         ],
         "properties": {
           "dstChain": {
-            "type": "string",
-            "description": "Destination chain (e.g. bob)"
+            "type": "string"
           },
           "dstToken": {
-            "type": "string",
-            "description": "Destination token address"
+            "type": "string"
           },
           "srcChain": {
-            "type": "string",
-            "description": "Source chain (e.g. bitcoin)"
+            "type": "string"
           },
           "srcToken": {
-            "type": "string",
-            "description": "Source token address"
+            "type": "string"
           }
         }
       },

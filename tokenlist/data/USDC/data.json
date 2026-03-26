@@ -13,6 +13,7 @@
       }
     },
     "sepolia": {
+      "name": "USDC",
       "address": "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
       "overrides": {
         "name": "USDC"
@@ -58,10 +59,8 @@
       "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
     },
     "unichain": {
-      "address": "0x078D782b760474a361dDA0AF3839290b0EF57AD6",
-      "overrides": {
-        "name": "USDC"
-      }
+      "name": "USDC",
+      "address": "0x078D782b760474a361dDA0AF3839290b0EF57AD6"
     },
     "bnb-smart-chain": {
       "address": "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d",
