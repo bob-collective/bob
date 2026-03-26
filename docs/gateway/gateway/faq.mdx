@@ -69,10 +69,10 @@ View audit reports: [docs.gobob.xyz/docs/reference/audits](https://docs.gobob.xy
 
 <Accordion icon="money-check-dollar" title="What are the fees?">
 Fees include:
-- **Protocol fee**: Charged by Gateway (included in quote)
-- **Gas fees**: Estimated and deducted upfront (no ETH required from users)
-- **Affiliate fees**: Optional fees you set (if monetizing your integration)
-- **Bridge fees**: For cross-chain transactions
+- **Protocol fees**: Fees applied by the protocol for processing and routing the swaps. Currently fees are set to merely cover routing and gas costs, with 0 markup. In the future, the BOB DAO may vote to activate a fee markup. Then, collected revenues will go to the BOB DAO treasury.
+- **Solver spread**: Solvers compete to offer the best quotes, typically charging a spread of a few basis points (1-20bps on average depending on the route and Solver). BOB Gateway automatically picks the best quote for each swap.
+- **Broker fees**: Most wallets and web apps apply a "convenience" fee for processing swaps. These are deducted from the swapped amount, on-chain by the protocol smart contracts.
+- **Gas costs**: The gas costs of the destination chain are included in the swap processing fees. The gas costs of the source chain (the chain where the swap was initiated) are handled out-of-protocol by the wallet.
 
 All fees are shown transparently in the quote response.
 </Accordion>
