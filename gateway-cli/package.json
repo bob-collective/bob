@@ -7,7 +7,7 @@
   "bin": {
     "gateway-cli": "dist/bin/gateway-cli.js"
   },
-  "files": ["dist"],
+  "files": ["dist", "bin"],
   "scripts": {
     "build": "tsc",
     "test": "vitest run",
