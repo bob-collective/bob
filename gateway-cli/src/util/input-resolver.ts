@@ -102,8 +102,8 @@ export function parseAssetChain(raw: string, routes: RouteInfo[], index?: TokenI
   if (!token) {
     const available = [...new Set(routes.flatMap(r => {
       const hits: string[] = [];
-      if (r.srcChain === chain) hits.push(getTokenMetadata(r.srcToken, r.srcChain).symbol);
-      if (r.dstChain === chain) hits.push(getTokenMetadata(r.dstToken, r.dstChain).symbol);
+      if (r.srcChain === chain) hits.push(getTokenMetadata(r.srcToken, r.srcChain, { throwOnUnknown: false }).symbol);
+      if (r.dstChain === chain) hits.push(getTokenMetadata(r.dstToken, r.dstChain, { throwOnUnknown: false }).symbol);
       return hits;
     }))].join(", ");
     throw new Error(`unknown token "${assetPart}" on chain "${chain}".\n\n  Available on ${chain}: ${available || "(none)"}\n\n  Run 'gateway-cli routes --tokens ${chain}' to see all tokens.`);

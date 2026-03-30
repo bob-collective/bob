@@ -29,7 +29,7 @@ export async function getTokensForChain(chain: string, routes: RouteInfo[]): Pro
   const { getTokenMetadata } = await import('../chains/evm.js');
   const addrs = getTokenAddressesForChain(chain, routes);
   return addrs.map(addr => {
-    const meta = getTokenMetadata(addr, chain);
+    const meta = getTokenMetadata(addr, chain, { throwOnUnknown: false });
     return { address: addr, symbol: meta.symbol, decimals: meta.decimals };
   });
 }

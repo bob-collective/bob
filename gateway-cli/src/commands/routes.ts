@@ -72,10 +72,10 @@ export async function handleRoutes(opts: { from?: string; to?: string; chains?: 
     data: filtered.map(r => ({
       srcChain: r.srcChain,
       srcToken: r.srcToken,
-      srcSymbol: getTokenMetadata(r.srcToken, r.srcChain).symbol,
+      srcSymbol: getTokenMetadata(r.srcToken, r.srcChain, { throwOnUnknown: false }).symbol,
       dstChain: r.dstChain,
       dstToken: r.dstToken,
-      dstSymbol: getTokenMetadata(r.dstToken, r.dstChain).symbol,
+      dstSymbol: getTokenMetadata(r.dstToken, r.dstChain, { throwOnUnknown: false }).symbol,
     })),
   };
 }
