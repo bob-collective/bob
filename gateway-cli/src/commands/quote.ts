@@ -40,13 +40,21 @@ export async function handleQuote(opts: QuoteOptions): Promise<QuoteResult> {
 
   const routes = await getRoutes();
 
-  // Derive sender from env keys if not provided (needed for --amount ALL)
+  // Derive sender from env keys only when needed (--amount ALL requires it).
+  // Don't derive eagerly — a malformed key shouldn't break ordinary quotes.
   let senderAddress = opts.sender;
-  if (!senderAddress) {
+  if (!senderAddress && opts.amount.toUpperCase() === "ALL") {
     const srcRaw = opts.src.includes(":") ? opts.src.split(":")[1] : opts.src;
     const srcFamily = getChainFamily(srcRaw === "BTC" || srcRaw === "btc" ? "bitcoin" : srcRaw);
     const key = resolvePrivateKey(srcFamily === "bitcoin" ? "bitcoin" : "evm", undefined, config);
-    if (key) senderAddress = await deriveAddress(srcFamily === "bitcoin" ? "bitcoin" : "evm", key);
+    if (key) {
+      try {
+        senderAddress = await deriveAddress(srcFamily === "bitcoin" ? "bitcoin" : "evm", key);
+      } catch (err) {
+        const envVar = srcFamily === "bitcoin" ? "BITCOIN_PRIVATE_KEY" : "EVM_PRIVATE_KEY";
+        throw new Error(`Failed to derive sender address from ${envVar}: ${err instanceof Error ? err.message : String(err)}\n  Use --sender <address> to provide the address directly.`);
+      }
+    }
   }
 
   const { srcAsset, dstAsset, atomicUnits, display } = await resolveSwapInputs(
