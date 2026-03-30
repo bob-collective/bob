@@ -38,10 +38,16 @@ export async function getTokensForChain(chain: string, routes: RouteInfo[]): Pro
   // Dynamic import to avoid circular dependency at module load time
   const { getTokenMetadata } = await import('../chains/evm.js');
   const addrs = getTokenAddressesForChain(chain, routes);
-  return addrs.map(addr => {
-    const meta = getTokenMetadata(addr, chain, { throwOnUnknown: false });
-    return { address: addr, symbol: meta.symbol, decimals: meta.decimals };
-  });
+  const tokens: Array<{ address: string; symbol: string; decimals: number }> = [];
+  for (const addr of addrs) {
+    try {
+      const meta = getTokenMetadata(addr, chain);
+      tokens.push({ address: addr, symbol: meta.symbol, decimals: meta.decimals });
+    } catch {
+      // Skip tokens not in tokenlist — avoids fabricating decimals for balance display
+    }
+  }
+  return tokens;
 }
 
 // ─── Public API ──────────────────────────────────────────────────────────────

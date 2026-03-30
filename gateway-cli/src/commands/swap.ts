@@ -51,7 +51,17 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
   const srcFamily = getChainFamily(parseAssetChain(opts.src, routes, tokenIndex).chain);
 
   const key = resolvePrivateKey(srcFamily === "bitcoin" ? "bitcoin" : "evm", opts.privateKey, config);
-  const senderAddress = opts.sender ?? (key ? await deriveAddress(srcFamily === "bitcoin" ? "bitcoin" : "evm", key) : undefined);
+  const derivedAddress = key ? await deriveAddress(srcFamily === "bitcoin" ? "bitcoin" : "evm", key) : undefined;
+  const senderAddress = opts.sender ?? derivedAddress;
+
+  // Reject --sender that doesn't match the signing key — the order would be created for one address but signed by another
+  if (opts.sender && derivedAddress && opts.sender.toLowerCase() !== derivedAddress.toLowerCase()) {
+    throw new Error(
+      `--sender ${opts.sender} does not match the signing key (${derivedAddress}).\n` +
+      `  The order would be created for one address but signed by another.\n` +
+      `  Remove --sender to use the key-derived address, or use --unsigned to skip signing.`,
+    );
+  }
 
   // UX-8: BTC onramp --unsigned requires a sender address to construct the PSBT
   if (opts.unsigned && srcFamily === "bitcoin" && !senderAddress) {
