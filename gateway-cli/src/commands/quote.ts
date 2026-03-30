@@ -1,6 +1,7 @@
 import { getInnerQuote } from "@gobob/bob-sdk";
 import { getRoutes } from "../util/route-provider.js";
-import { resolveSwapInputs } from "../util/input-resolver.js";
+import { resolveSwapInputs, humanToAtomic } from "../util/input-resolver.js";
+import { fetchPrice } from "../util/price-oracle.js";
 import { MempoolClient } from "@gobob/bob-sdk";
 import { loadConfig, getSdk } from "../config.js";
 import { resolveRecipient } from "../chains/index.js";
@@ -43,6 +44,10 @@ export async function handleQuote(opts: QuoteOptions): Promise<QuoteResult> {
     feeRate = fees.fastestFee;
   }
 
+  const gasRefillWei = opts.gasRefillUsd
+    ? humanToAtomic((opts.gasRefillUsd / (await fetchPrice("ETH")).priceUsd).toFixed(18), 18)
+    : undefined;
+
   const quote = await sdk.getQuote({
     fromChain: srcAsset.chain,
     toChain: dstAsset.chain,
@@ -52,6 +57,7 @@ export async function handleQuote(opts: QuoteOptions): Promise<QuoteResult> {
     fromUserAddress: opts.sender,
     amount: atomicUnits,
     maxSlippage: slippageBps,
+    gasRefill: gasRefillWei ? BigInt(gasRefillWei) : undefined,
   });
   const outputAmount = getInnerQuote(quote).outputAmount.amount;
 
