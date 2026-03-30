@@ -3,7 +3,7 @@ import type { BitcoinSigner, GatewayOrderInfo, GatewayOrderStatus, GetQuoteParam
 import { formatUnits, type WalletClient, type PublicClient } from "viem";
 import pRetry, { AbortError } from "p-retry";
 import { getRoutes } from "../util/route-provider.js";
-import { resolveSwapInputs, humanToAtomic } from "../util/input-resolver.js";
+import { resolveSwapInputs, humanToAtomic, parseAssetChain, buildTokenIndex } from "../util/input-resolver.js";
 import { fetchPrice } from "../util/price-oracle.js";
 import { loadConfig, getSdk } from "../config.js";
 import { deriveAddress, resolveSigner, buildRegisterPayload, getChainFamily, resolvePrivateKey, resolveRecipient } from "../chains/index.js";
@@ -41,9 +41,14 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
   const config = loadConfig();
   const sdk = getSdk();
   const retries = opts.retry ? 5 : 0;
-  const srcFamily = getChainFamily(opts.src.includes(":") ? opts.src.split(":")[1] : opts.src === "BTC" || opts.src === "btc" ? "bitcoin" : opts.src);
 
   // ── Resolve inputs ──────────────────────────────────────────────────────────
+
+  // Fetch routes first so we can accurately determine the source chain family
+  // via the full alias/token resolution path rather than ad-hoc string parsing.
+  const routes = await getRoutes();
+  const tokenIndex = buildTokenIndex(routes);
+  const srcFamily = getChainFamily(parseAssetChain(opts.src, routes, tokenIndex).chain);
 
   const key = resolvePrivateKey(srcFamily === "bitcoin" ? "bitcoin" : "evm", opts.privateKey, config);
   const senderAddress = opts.sender ?? (key ? await deriveAddress(srcFamily === "bitcoin" ? "bitcoin" : "evm", key) : undefined);
@@ -52,8 +57,6 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
   if (opts.unsigned && srcFamily === "bitcoin" && !senderAddress) {
     throw new Error("BTC onramp --unsigned requires --sender or BITCOIN_PRIVATE_KEY to construct the PSBT.");
   }
-
-  const routes = await getRoutes();
   const { srcAsset, dstAsset, atomicUnits, display } = await resolveSwapInputs(
     opts.src, opts.dst, opts.amount, routes,
     { senderAddress, feeToken: opts.feeToken, feeReserve: opts.feeReserve },
@@ -143,9 +146,9 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
   } else {
     const { walletClient, publicClient } = signer as { walletClient: WalletClient; publicClient: PublicClient };
 
-    // Wait for pending nonce to settle before sending
-    if (opts.sender) {
-      const addr = opts.sender as `0x${string}`;
+    // Wait for pending nonce to settle — use senderAddress (derived from key if --sender omitted)
+    if (senderAddress) {
+      const addr = senderAddress as `0x${string}`;
       const deadline = Date.now() + 120_000;
       let settled = false;
       while (Date.now() < deadline) {
@@ -166,7 +169,7 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
     if (!txInfo) throw new Error("Gateway did not return EVM transaction data for this order.");
     txId = await walletClient.sendTransaction({
       account: walletClient.account!,
-      chain: null,
+      chain: walletClient.chain,
       to: txInfo.to as `0x${string}`,
       data: txInfo.data as `0x${string}`,
       value: BigInt(txInfo.value || "0"),
@@ -215,7 +218,7 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
 
   try {
     const finalOrder = await pRetry(async () => {
-      log.progress(`  Waiting for confirmation...`);
+      log.progress(`  Waiting for confirmation... (${Math.round((Date.now() - startMs) / 1000)}s elapsed)`);
       const o = await sdk.getOrder(orderId);
       if (TERMINAL_SUCCESS.includes(o.status as any)) return o;
       if (o.status === "refunded" || (typeof o.status === "object" && o.status !== null && "failed" in o.status)) {

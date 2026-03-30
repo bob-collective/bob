@@ -10,8 +10,13 @@ import type { ChainBalance } from './evm.js';
 
 // ─── Chain family registry ──────────────────────────────────────────────────
 
+/** Chain family type for distinguishing Bitcoin and EVM-compatible chains. */
 export type ChainFamily = 'bitcoin' | 'evm';
 
+/**
+ * Determine the chain family (bitcoin or evm) for a given chain name.
+ * All chains except "bitcoin" are treated as EVM-compatible.
+ */
 export function getChainFamily(chain: string): ChainFamily {
   if (chain === 'bitcoin') return 'bitcoin';
   return 'evm';
@@ -21,7 +26,15 @@ export function getChainFamily(chain: string): ChainFamily {
 
 export type { ChainBalance } from './evm.js';
 
-/** Get all balances for all chains (or a specific chain). Returns raw atomic values. */
+/**
+ * Fetch balances for all chains (or filtered by chain/family).
+ * Returns raw atomic values (satoshis for BTC, wei for EVM tokens).
+ * For EVM chains, deducts estimated gas costs from spendable balance.
+ * 
+ * @param address - Wallet address to query
+ * @param opts - Optional filters: chain list, chain family, fee token/reserve
+ * @returns Map of chain names to balance data
+ */
 export async function getAllBalances(
   address: string,
   opts?: { feeToken?: string; feeReserve?: string; chain?: string[]; chainFamily?: ChainFamily },
@@ -61,6 +74,10 @@ export async function getAllBalances(
 
 // ─── Address derivation ─────────────────────────────────────────────────────
 
+/**
+ * Derive a wallet address from a private key for the specified chain.
+ * For Bitcoin, derives P2WPKH (bech32) address. For EVM, derives standard address.
+ */
 export async function deriveAddress(chain: string, key: string): Promise<string> {
   if (getChainFamily(chain) === 'bitcoin') return deriveBtcAddress(key);
   return deriveEvmAddress(key);
@@ -68,9 +85,16 @@ export async function deriveAddress(chain: string, key: string): Promise<string>
 
 // ─── Signer resolution ──────────────────────────────────────────────────────
 
+/** Bitcoin signer type with address and signer object. */
 export type BtcSigner = Awaited<ReturnType<typeof resolveBtcSigner>>;
+/** EVM signer type with address, wallet client, and public client. */
 export type EvmSigner = Awaited<ReturnType<typeof resolveEvmSigner>>;
 
+/**
+ * Resolve a signer (Bitcoin or EVM) for a given chain and private key.
+ * @param chain - Chain name to determine signer type
+ * @param key - Private key (WIF for BTC, hex for EVM)
+ */
 export async function resolveSigner(
   chain: string,
   key: string,
@@ -79,7 +103,10 @@ export async function resolveSigner(
   return resolveEvmSigner(key, chain);
 }
 
-/** Resolve private key from explicit flag or env var based on chain family. */
+/**
+ * Resolve private key from explicit parameter or environment config.
+ * Priority: explicit privateKey argument > env var based on chain family.
+ */
 export function resolvePrivateKey(
   chain: string,
   privateKey?: string,
@@ -90,7 +117,15 @@ export function resolvePrivateKey(
 
 // ─── Recipient resolution ───────────────────────────────────────────────────
 
-/** Resolve the recipient address: explicit flag > derived from private key > error. */
+/**
+ * Resolve the recipient address for a swap.
+ * Priority: explicit address argument > derive from configured private key > throw error.
+ * 
+ * @param chain - Destination chain name
+ * @param explicit - Optional explicit recipient address
+ * @param config - Config with private keys for derivation
+ * @throws Error if no recipient provided and no private key configured
+ */
 export async function resolveRecipient(
   chain: string,
   explicit: string | undefined,
@@ -108,6 +143,10 @@ export async function resolveRecipient(
 
 // ─── Registration payload ───────────────────────────────────────────────────
 
+/**
+ * Build a registration payload for linking a transaction to an order.
+ * Format depends on swap type: onramp (BTC→EVM), offramp (EVM→BTC), or layerZero (EVM→EVM).
+ */
 export function buildRegisterPayload(
   srcChain: string,
   dstChain: string,

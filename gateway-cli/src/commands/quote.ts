@@ -8,6 +8,7 @@ import { resolveRecipient } from "../chains/index.js";
 import type { QuoteJson, ConfirmationData } from "../output.js";
 import type { GetQuoteParams } from "@gobob/bob-sdk";
 
+/** Quote command options. */
 export interface QuoteOptions {
   src: string;
   dst: string;
@@ -19,11 +20,19 @@ export interface QuoteOptions {
   btcFeeRate?: number;
 }
 
+/** Quote command result with quote data and confirmation display. */
 export interface QuoteResult {
   quote: QuoteJson;
   confirmation: ConfirmationData;
 }
 
+/**
+ * Handle the quote command: fetch a swap quote without executing.
+ * Resolves asset inputs, recipient, and fee rate, then requests quote from Gateway.
+ * 
+ * @param opts - Quote options including source, destination, amount
+ * @returns Quote data and confirmation display info
+ */
 export async function handleQuote(opts: QuoteOptions): Promise<QuoteResult> {
   const config = loadConfig();
   const sdk = getSdk();
@@ -40,6 +49,7 @@ export async function handleQuote(opts: QuoteOptions): Promise<QuoteResult> {
 
   let feeRate = opts.btcFeeRate ?? config.btcFeeRate;
   if (srcAsset.chain === "bitcoin" && feeRate == null) {
+    // Fetch current mempool fee rate for Bitcoin swaps
     const fees = await new MempoolClient().getRecommendedFees();
     feeRate = fees.fastestFee;
   }

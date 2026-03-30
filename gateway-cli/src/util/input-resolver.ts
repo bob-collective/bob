@@ -9,6 +9,10 @@ import { getSdk } from "../config.js";
 
 // ─── Chain aliases ───────────────────────────────────────────────────────────
 
+/**
+ * Map of common chain abbreviations to their canonical names.
+ * Users can use these shortcuts when specifying chains (e.g., --src btc).
+ */
 export const CHAIN_ALIASES: Record<string, string> = {
   btc: "bitcoin",
   eth: "ethereum",
@@ -18,6 +22,10 @@ export const CHAIN_ALIASES: Record<string, string> = {
   avax: "avalanche",
 };
 
+/**
+ * Resolve a chain input to its canonical name.
+ * Checks aliases first, then returns lowercase input if no alias matches.
+ */
 export function resolveChain(input: string): string {
   const lower = input.toLowerCase();
   return CHAIN_ALIASES[lower] ?? lower;
@@ -25,8 +33,13 @@ export function resolveChain(input: string): string {
 
 // ─── Asset resolution ────────────────────────────────────────────────────────
 
+/** Zero address used as placeholder for BTC (which has no contract address). */
 const BTC_ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
+/**
+ * Resolved asset information with chain, address, symbol, and decimals.
+ * Used internally to represent both BTC and EVM tokens uniformly.
+ */
 export interface ResolvedAsset {
   chain: string;
   address: string;
@@ -46,6 +59,10 @@ interface TokenIndex {
   byChainAndAddress: Map<string, TokenMeta>;
 }
 
+/**
+ * Build an index of tokens from routes for fast lookup by symbol or address.
+ * Caches token metadata to avoid repeated lookups during swap resolution.
+ */
 export function buildTokenIndex(routes: RouteInfo[]): TokenIndex {
   const byChainAndSymbol = new Map<string, TokenMeta>();
   const byChainAndAddress = new Map<string, TokenMeta>();
@@ -72,6 +89,13 @@ export function buildTokenIndex(routes: RouteInfo[]): TokenIndex {
   return { byChainAndSymbol, byChainAndAddress };
 }
 
+/**
+ * Parse an asset string (e.g., "BTC", "USDC:base", "0x...:ethereum") into a ResolvedAsset.
+ * BTC without chain defaults to bitcoin. Other tokens require chain specification.
+ * @param raw - Asset string in format "SYMBOL" or "SYMBOL:chain" or "address:chain"
+ * @param routes - Available routes for token lookup
+ * @param index - Optional pre-built token index for performance
+ */
 export function parseAssetChain(raw: string, routes: RouteInfo[], index?: TokenIndex): ResolvedAsset {
   const idx = index ?? buildTokenIndex(routes);
   const colonIdx = raw.indexOf(":");
@@ -117,24 +141,42 @@ export function parseAssetChain(raw: string, routes: RouteInfo[], index?: TokenI
 
 // ─── Amount parsing ─────────────────────────────────────────────────────────
 
+/**
+ * Parsed amount result. Either atomic units (for specific amounts) or "all" (for max balance).
+ */
 export type ParsedAmount =
   | { type: "atomic"; atomicUnits: string; display: string }
   | { type: "all" };
 
-/** Convert human-readable decimal string to atomic units using string math (no floating-point). */
+/**
+ * Convert a human-readable decimal amount to atomic units (smallest denomination).
+ * Uses string manipulation to avoid floating-point precision issues.
+ * @param human - Human-readable amount (e.g., "0.05" for 0.05 ETH)
+ * @param decimals - Token decimals (e.g., 18 for ETH, 6 for USDC)
+ * @returns Atomic units as string (e.g., "50000000000000000" for 0.05 ETH)
+ */
 export function humanToAtomic(human: string, decimals: number): string {
   const [intPart, fracPart = ""] = human.split(".");
   const padded = fracPart.padEnd(decimals, "0").slice(0, decimals);
   const raw = intPart + padded;
-  return BigInt(raw).toString(); // strips leading zeros
+  return BigInt(raw).toString();
 }
 
+/** User-facing help message for valid amount formats. */
 const AMOUNT_HELP = `Expected one of:
-  0.05BTC       human-readable (converted to atomic)
-  100USD        USD value (converted via price oracle)
-  5000000       atomic units (satoshis, wei, etc.)
-  ALL           max spendable balance`;
+  0.05BTC     Amount in BTC (e.g., 0.05, 1.5, 10)
+  100USD      USD dollar amount (converted at market price)
+  5000000     Raw atomic units (satoshis for BTC, wei for ETH)
+  ALL         Your entire spendable balance`;
 
+/**
+ * Parse an amount string into atomic units.
+ * Supports multiple formats: token suffix (0.05BTC), USD suffix (100USD),
+ * atomic units (5000000), or ALL for max balance.
+ * @param raw - Raw amount string from user input
+ * @param srcSymbol - Source token symbol for suffix matching
+ * @param srcDecimals - Source token decimals for conversion
+ */
 export async function parseAmount(
   raw: string,
   srcSymbol: string,
@@ -147,10 +189,10 @@ export async function parseAmount(
 
   const upper = trimmed.toUpperCase();
 
-  // ALL → sentinel
+  // ALL → max spendable balance
   if (upper === "ALL") return { type: "all" };
 
-  // Ends with USD → price oracle
+  // USD suffix → fetch price and convert
   if (upper.endsWith("USD")) {
     const numStr = trimmed.slice(0, -3);
     const usdValue = parseFloat(numStr);
@@ -165,7 +207,7 @@ export async function parseAmount(
     };
   }
 
-  // Ends with source token symbol → human-readable
+  // Token symbol suffix → human-readable amount
   if (upper.endsWith(srcSymbol.toUpperCase())) {
     const numStr = trimmed.slice(0, -srcSymbol.length);
     if (/^\d+(\.\d+)?$/.test(numStr)) {
@@ -176,7 +218,7 @@ export async function parseAmount(
     }
   }
 
-  // Bare integer → atomic units
+  // Bare integer → atomic units (no conversion)
   if (/^\d+$/.test(trimmed)) {
     const val = BigInt(trimmed);
     if (val <= 0n) throw new Error(`Invalid amount "${raw}". Amount must be positive.`);
@@ -188,6 +230,9 @@ export async function parseAmount(
 
 // ─── Combined asset + amount resolution ──────────────────────────────────────
 
+/**
+ * Combined result of resolving swap inputs: source/destination assets and atomic amount.
+ */
 export interface ResolvedInputs {
   srcAsset: ResolvedAsset;
   dstAsset: ResolvedAsset;
@@ -195,6 +240,15 @@ export interface ResolvedInputs {
   display: string;
 }
 
+/**
+ * Resolve all swap inputs (source, destination, amount) into structured data.
+ * Handles asset parsing, amount conversion, and "ALL" balance lookup.
+ * @param src - Source asset string (e.g., "BTC", "USDC:base")
+ * @param dst - Destination asset string
+ * @param amount - Amount string (e.g., "0.05BTC", "100USD", "ALL")
+ * @param routes - Available routes for token lookup
+ * @param opts - Optional sender address and fee token/reserve for balance calculations
+ */
 export async function resolveSwapInputs(
   src: string,
   dst: string,

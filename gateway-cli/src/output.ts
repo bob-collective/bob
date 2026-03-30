@@ -5,13 +5,18 @@ import { BTC_DECIMALS } from "./config.js";
 
 // ─── Output mode ─────────────────────────────────────────────────────────────
 
+/** Output format mode: JSON for machine-readable, human for formatted text. */
 export type OutputMode = "json" | "human";
 
+/** Logger interface for progress and warning messages during operations. */
 export interface Logger {
   progress: (msg: string) => void;
   warn: (msg: string) => void;
 }
 
+/**
+ * Create a logger that outputs to stderr in human mode, silent in JSON mode.
+ */
 export function createLogger(mode: OutputMode): Logger {
   return {
     progress: (msg) => { if (mode === "human") process.stderr.write(msg + "\n"); },
@@ -19,7 +24,10 @@ export function createLogger(mode: OutputMode): Logger {
   };
 }
 
-/** Render data to stdout. JSON mode always uses JSON.stringify; human mode uses a custom formatter if provided, otherwise JSON. */
+/**
+ * Render data to stdout.
+ * JSON mode always uses JSON.stringify; human mode uses a custom formatter if provided.
+ */
 export function render(data: unknown, mode: OutputMode, humanFormatter?: (data: any) => string): void {
   if (mode === "json" || !humanFormatter) {
     console.log(formatJson(data));
@@ -30,6 +38,7 @@ export function render(data: unknown, mode: OutputMode, humanFormatter?: (data: 
 
 // ─── Types (JSON output shapes) ──────────────────────────────────────────────
 
+/** Successful swap confirmation with full details. */
 export interface SwapSuccessJson {
   orderId: string;
   status: "confirmed" | "strategy_skipped" | "strategy_failed";
@@ -44,6 +53,7 @@ export interface SwapSuccessJson {
   elapsedMs: number;
 }
 
+/** Swap submitted successfully, awaiting confirmation. */
 export interface SwapSubmittedJson {
   orderId: string;
   status: "submitted";
@@ -54,6 +64,7 @@ export interface SwapSubmittedJson {
   txId: string;
 }
 
+/** Swap pending in mempool (unconfirmed Bitcoin transaction). */
 export interface SwapMempoolPendingJson {
   orderId: string;
   status: "mempool_pending";
@@ -64,6 +75,7 @@ export interface SwapMempoolPendingJson {
   mempoolTxId: string;
 }
 
+/** Quote details for preview before swap execution. */
 export interface QuoteJson {
   srcAmount: string;
   srcAsset: string;
@@ -79,18 +91,21 @@ export interface QuoteJson {
   gasRefillUsd?: string;
 }
 
+/** Chain information for routes display. */
 export interface ChainJson {
   canonical: string;
   aliases: string[];
   chainId: number | null;
 }
 
+/** Token information for routes display. */
 export interface TokenJson {
   symbol: string;
   address: string;
   decimals: number;
 }
 
+/** Maximum spendable balance information for Bitcoin. */
 export interface MaxSpendableJson {
   asset: string;
   chain: string;
@@ -101,6 +116,7 @@ export interface MaxSpendableJson {
   feeRateSatPerVbyte: number;
 }
 
+/** Balance data across multiple chains. */
 export interface BalanceJson {
   [chain: string]: {
     address: string;
@@ -113,6 +129,7 @@ export interface BalanceJson {
   };
 }
 
+/** Data required for swap/quote confirmation display. */
 export interface ConfirmationData {
   srcAmount: string;
   srcAsset: string;
@@ -130,7 +147,10 @@ export interface ConfirmationData {
 
 // ─── Raw balance formatting ─────────────────────────────────────────────────
 
-/** Format raw atomic chain balance data into human-readable BalanceJson entry. */
+/**
+ * Format raw atomic chain balance data into human-readable BalanceJson entry.
+ * Converts BTC balances using formatBtc, EVM balances using formatUnits.
+ */
 export function formatBalanceRaw(raw: ChainBalance, chain: string): BalanceJson[string] {
   if (raw.error) return { address: raw.address, error: true };
 
@@ -158,7 +178,10 @@ export function formatBalanceRaw(raw: ChainBalance, chain: string): BalanceJson[
   };
 }
 
-/** Convert raw balance map to formatted BalanceJson. */
+/**
+ * Convert raw balance map to formatted BalanceJson.
+ * Iterates over all chains and formats each balance entry.
+ */
 export function formatAllBalances(raw: Record<string, ChainBalance>): BalanceJson {
   return Object.fromEntries(
     Object.entries(raw).map(([chain, data]) => [chain, formatBalanceRaw(data, chain)]),
@@ -167,12 +190,18 @@ export function formatAllBalances(raw: Record<string, ChainBalance>): BalanceJso
 
 // ─── Formatters (stdout) ─────────────────────────────────────────────────────
 
-/** Render any data as formatted JSON. */
+/**
+ * Render any data as formatted JSON with 2-space indentation.
+ */
 export function formatJson(data: unknown): string {
   return JSON.stringify(data, null, 2);
 }
 
-/** Simple column-aligned table. */
+/**
+ * Render a column-aligned table with header, separator, and rows.
+ * @param columns - Column definitions with label and width
+ * @param rows - Row data as arrays of cell values
+ */
 export function formatTable(columns: { label: string; width: number }[], rows: string[][]): string {
   const header = columns.map(c => c.label.padEnd(c.width)).join("");
   const sep = "─".repeat(columns.reduce((sum, c) => sum + c.width, 0));
@@ -182,7 +211,10 @@ export function formatTable(columns: { label: string; width: number }[], rows: s
   return [header, sep, ...body].join("\n");
 }
 
-/** Swap/quote confirmation display. */
+/**
+ * Format swap/quote confirmation for human-readable display.
+ * Shows source/destination amounts, fees, gas estimates, and recipient.
+ */
 export function formatConfirmation(data: ConfirmationData): string {
   const lines: string[] = ["Swap"];
   const srcLine = data.srcDisplay
@@ -201,7 +233,10 @@ export function formatConfirmation(data: ConfirmationData): string {
   return lines.join("\n");
 }
 
-/** Balance display. */
+/**
+ * Format balance data for human-readable display.
+ * Shows balances per chain with native tokens and ERC20 tokens.
+ */
 export function formatBalance(result: BalanceJson): string {
   const lines: string[] = [];
   for (const [chain, data] of Object.entries(result)) {
@@ -227,7 +262,9 @@ export function formatBalance(result: BalanceJson): string {
   return lines.length === 0 ? "No chains found." : lines.join("\n");
 }
 
-/** Chains table. */
+/**
+ * Format chain list as a table with canonical names and chain IDs.
+ */
 export function formatChains(data: ChainJson[]): string {
   return formatTable(
     [{ label: "Chain", width: 20 }, { label: "Chain ID", width: 0 }],
@@ -235,7 +272,9 @@ export function formatChains(data: ChainJson[]): string {
   );
 }
 
-/** Tokens table. */
+/**
+ * Format token list as a table with symbol, address, and decimals.
+ */
 export function formatTokens(data: TokenJson[]): string {
   return formatTable(
     [{ label: "Symbol", width: 10 }, { label: "Address", width: 44 }, { label: "Decimals", width: 0 }],
@@ -243,7 +282,10 @@ export function formatTokens(data: TokenJson[]): string {
   );
 }
 
-/** Routes table. Expects enriched route data with srcSymbol/dstSymbol fields. */
+/**
+ * Format routes as a table showing source and destination pairs.
+ * Expects enriched route data with srcSymbol/dstSymbol fields.
+ */
 export function formatRoutes(data: Array<{ srcChain: string; srcSymbol: string; dstChain: string; dstSymbol: string }>): string {
   return formatTable(
     [{ label: "Source", width: 25 }, { label: "Destination", width: 0 }],
