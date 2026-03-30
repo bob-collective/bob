@@ -18,6 +18,8 @@ export interface QuoteOptions {
   slippage?: number;
   gasRefillUsd?: number;
   btcFeeRate?: number;
+  feeToken?: string;
+  feeReserve?: string;
 }
 
 /** Quote command result with quote data and confirmation display. */
@@ -59,7 +61,7 @@ export async function handleQuote(opts: QuoteOptions): Promise<QuoteResult> {
 
   const { srcAsset, dstAsset, atomicUnits, display } = await resolveSwapInputs(
     opts.src, opts.dst, opts.amount, routes,
-    { senderAddress },
+    { senderAddress, feeToken: opts.feeToken, feeReserve: opts.feeReserve },
   );
 
   // ── Resolve recipient ────────────────────────────────────────────────────

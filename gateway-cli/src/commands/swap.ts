@@ -121,7 +121,11 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
         outputAmount: getInnerQuote(quote).outputAmount.amount as string,
       };
     } catch (err) {
-      if (!isTransient(err)) throw new AbortError(err instanceof Error ? err.message : String(err));
+      if (!isTransient(err)) {
+        const abort = new AbortError(err instanceof Error ? err.message : String(err));
+        if (err instanceof Error) abort.cause = err;
+        throw abort;
+      }
       throw err;
     }
   }, { retries });
@@ -131,7 +135,8 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
   if (opts.unsigned) {
     if (variant === "onramp") {
       const psbtHex = (order as any).onramp?.psbtHex;
-      return { type: "unsigned", orderId, psbtBase64: psbtHex ? Buffer.from(psbtHex, "hex").toString("base64") : undefined };
+      if (!psbtHex) throw new Error("Gateway did not return a PSBT for this onramp order.");
+      return { type: "unsigned", orderId, psbtBase64: Buffer.from(psbtHex, "hex").toString("base64") };
     }
     return { type: "unsigned", orderId, txInfo: (order as any)[variant]?.tx };
   }
