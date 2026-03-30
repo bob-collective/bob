@@ -3,7 +3,7 @@ name: Publish CLI to npm
 on:
   push:
     tags:
-      - 'cli-v*'
+      - '*'
 
 jobs:
   publish:
@@ -41,7 +41,19 @@ jobs:
           "
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
+      - name: Check if version already published
+        run: |
+          cd gateway-cli
+          VERSION=$(node -p "require('./package.json').version")
+          if npm view @gobob/gateway-cli@$VERSION &>/dev/null; then
+            echo "Version $VERSION already published to npm, skipping publish"
+            echo "PUBLISH=false" >> $GITHUB_ENV
+          else
+            echo "PUBLISH=true" >> $GITHUB_ENV
+          fi
+
       - name: Publish
+        if: env.PUBLISH == 'true'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |

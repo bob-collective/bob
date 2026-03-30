@@ -3,7 +3,7 @@ name: SDK NPM Publish
 on:
   push:
     tags:
-      - 'sdk-v*'
+      - '*'
 
 permissions:
   id-token: write
@@ -33,7 +33,18 @@ jobs:
       - name: get sdk version
         id: version
         run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+      - name: check if version already published
+        run: |
+          if npm view @gobob/bob-sdk@${{ steps.version.outputs.version }} &>/dev/null; then
+            echo "Version ${{ steps.version.outputs.version }} already published to npm, skipping publish"
+            echo "PUBLISH=false" >> $GITHUB_ENV
+          else
+            echo "PUBLISH=true" >> $GITHUB_ENV
+          fi
       - name: publish to npm
+        if: env.PUBLISH == 'true'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           if [[ "${{ steps.version.outputs.version }}" == *rc* ]]; then
             npm publish --access public --tag rc
