@@ -57,11 +57,15 @@ export function buildTokenIndex(routes: RouteInfo[]): TokenIndex {
       if (seen.has(dedup)) continue;
       seen.add(dedup);
 
-      const meta = getTokenMetadata(addr, chain, { throwOnUnknown: false });
-      const t: TokenMeta = { address: addr, symbol: meta.symbol, decimals: meta.decimals, chain };
-
-      byChainAndSymbol.set(`${chain}:${meta.symbol.toUpperCase()}`, t);
-      byChainAndAddress.set(`${chain}:${addr.toLowerCase()}`, t);
+      try {
+        const meta = getTokenMetadata(addr, chain);
+        const t: TokenMeta = { address: addr, symbol: meta.symbol, decimals: meta.decimals, chain };
+        byChainAndSymbol.set(`${chain}:${meta.symbol.toUpperCase()}`, t);
+        byChainAndAddress.set(`${chain}:${addr.toLowerCase()}`, t);
+      } catch {
+        // Token not in tokenlist — skip indexing to avoid guessed decimals in amount calculations.
+        // The token will still appear in route/balance display via throwOnUnknown: false call sites.
+      }
     }
   }
 
