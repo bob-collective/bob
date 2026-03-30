@@ -115,7 +115,7 @@ describe("getEvmBalances", () => {
   // ─── Tokens only (no includeNative) ────────────────────────────────────
 
   it("tokens only: returns balances via multicall", async () => {
-    mockMulticall.mockResolvedValue([{ result: 5000000n }]);
+    mockMulticall.mockResolvedValue([{ status: 'success', result: 5000000n }]);
 
     const tokens = [{ address: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", symbol: "USDC", decimals: 6 }];
     const result = await getEvmBalances("base", "0xTestAddress", tokens);
@@ -128,7 +128,7 @@ describe("getEvmBalances", () => {
   });
 
   it("tokens only: applies fee reserve deduction", async () => {
-    mockMulticall.mockResolvedValue([{ result: 5000000n }]);
+    mockMulticall.mockResolvedValue([{ status: 'success', result: 5000000n }]);
 
     const tokens = [{ address: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", symbol: "USDC", decimals: 6 }];
     const result = await getEvmBalances("base", "0xTestAddress", tokens, {
@@ -141,7 +141,7 @@ describe("getEvmBalances", () => {
   });
 
   it("tokens only: no deduction when fee token does not match", async () => {
-    mockMulticall.mockResolvedValue([{ result: 5000000n }]);
+    mockMulticall.mockResolvedValue([{ status: 'success', result: 5000000n }]);
 
     const tokens = [{ address: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", symbol: "USDC", decimals: 6 }];
     const result = await getEvmBalances("base", "0xTestAddress", tokens, {
@@ -153,7 +153,7 @@ describe("getEvmBalances", () => {
   });
 
   it("tokens only: zero allSpendable when fee reserve exceeds balance", async () => {
-    mockMulticall.mockResolvedValue([{ result: 500000n }]);
+    mockMulticall.mockResolvedValue([{ status: 'success', result: 500000n }]);
 
     const tokens = [{ address: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", symbol: "USDC", decimals: 6 }];
     const result = await getEvmBalances("base", "0xTestAddress", tokens, {

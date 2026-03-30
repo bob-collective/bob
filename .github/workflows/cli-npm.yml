@@ -3,7 +3,7 @@ name: Publish CLI to npm
 on:
   push:
     tags:
-      - '*'
+      - 'cli-v*'
 
 permissions:
   id-token: write
@@ -22,19 +22,20 @@ jobs:
         with:
           node-version: '24'
           registry-url: 'https://registry.npmjs.org'
-          cache: 'npm'
-          cache-dependency-path: gateway-cli/package-lock.json
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
 
       - name: Install tokenlist
         working-directory: ./tokenlist
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Install SDK
         working-directory: ./sdk
-        run: npm ci && npm run build
+        run: pnpm install --frozen-lockfile && pnpm run build
 
       - name: Install CLI
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Build CLI
         run: npm run build
