@@ -14,7 +14,7 @@ export {
     type InsufficientSwapAmountDetails,
     type NoRouteDetails,
     type SimulationFailedDetails,
-    type UnableToCoverFeesDetails
+    type UnableToCoverFeesDetails,
 } from './error/gateway-error';
 export * from './generated-client';
 export { BitcoinSigner, GatewayQuoteParams, GetQuoteParams } from './types';
@@ -25,6 +25,5 @@ export {
     parseBtc,
     ScureBitcoinSigner,
     supportedChainsMapping,
-    type InnerQuote
+    type InnerQuote,
 } from './utils';
-
