@@ -45,7 +45,7 @@ export function getTokenMetadata(address: string, chain: string): { symbol: stri
 
   const entry = tokenIndex.get(address.toLowerCase());
   if (!entry) {
-    return { symbol: address.slice(0, 10), decimals: 18 }; // fallback
+    throw new Error(`Unknown token ${address} on chain "${chain}" — cannot determine decimals. Use a known token symbol or verify the address.`);
   }
 
   if (entry.uniform) {

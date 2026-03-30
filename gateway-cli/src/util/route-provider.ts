@@ -24,9 +24,9 @@ export function getTokenAddressesForChain(chain: string, routes: RouteInfo[]): s
 }
 
 /** Unique tokens on a specific chain with metadata (deduped, excludes BTC placeholder). */
-export function getTokensForChain(chain: string, routes: RouteInfo[]): Array<{ address: string; symbol: string; decimals: number }> {
-  // Lazy import to avoid circular dependency at module load time
-  const { getTokenMetadata } = require('../chains/evm.js') as typeof import('../chains/evm.js');
+export async function getTokensForChain(chain: string, routes: RouteInfo[]): Promise<Array<{ address: string; symbol: string; decimals: number }>> {
+  // Dynamic import to avoid circular dependency at module load time
+  const { getTokenMetadata } = await import('../chains/evm.js');
   const addrs = getTokenAddressesForChain(chain, routes);
   return addrs.map(addr => {
     const meta = getTokenMetadata(addr, chain);

@@ -46,9 +46,11 @@ export async function getAllBalances(
           }];
         }
 
-        const chainTokens = getTokensForChain(chain, routes);
+        const chainTokens = await getTokensForChain(chain, routes);
         return [chain, await getEvmBalances(chain, address, chainTokens, { ...opts, includeNative: true })];
-      } catch {
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error(`Warning: ${chain}: ${msg}`);
         return [chain, { address, error: true }];
       }
     }),

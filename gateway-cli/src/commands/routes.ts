@@ -44,7 +44,7 @@ export async function handleRoutes(opts: { from?: string; to?: string; chains?: 
 
   if (opts.tokens) {
     const canonical = resolveChain(opts.tokens);
-    const tokens = getTokensForChain(canonical, routes);
+    const tokens = await getTokensForChain(canonical, routes);
     if (tokens.length === 0) throw new Error(`no tokens found on chain "${canonical}". Run 'gateway-cli routes --chains' to see supported chains.`);
     return { type: "tokens", data: tokens.map(t => ({ symbol: t.symbol, address: t.address, decimals: t.decimals })) };
   }
