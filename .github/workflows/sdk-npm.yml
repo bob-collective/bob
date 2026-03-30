@@ -43,8 +43,6 @@ jobs:
           fi
       - name: publish to npm
         if: env.PUBLISH == 'true'
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           if [[ "${{ steps.version.outputs.version }}" == *rc* ]]; then
             npm publish --access public --tag rc

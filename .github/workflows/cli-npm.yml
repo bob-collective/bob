@@ -17,8 +17,8 @@ jobs:
       run:
         working-directory: ./gateway-cli
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: '24'
           registry-url: 'https://registry.npmjs.org'
@@ -68,8 +68,6 @@ jobs:
 
       - name: Publish
         if: env.PUBLISH == 'true'
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           if [[ "${{ steps.version.outputs.version }}" == *rc* ]]; then
             npm publish --access public --provenance --tag rc
