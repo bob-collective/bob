@@ -5,7 +5,7 @@
   "main": "dist/src/cli.js",
   "types": "dist/src/cli.d.ts",
   "bin": {
-    "gateway-cli": "dist/bin/gateway-cli.js"
+    "gateway-cli": "./bin/gateway-cli.js"
   },
   "files": ["dist", "bin"],
   "scripts": {
