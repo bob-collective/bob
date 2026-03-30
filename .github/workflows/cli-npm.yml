@@ -3,7 +3,7 @@ name: Publish CLI to npm
 on:
   push:
     tags:
-      - 'cli-v*'
+      - '*'
 
 permissions:
   id-token: write
