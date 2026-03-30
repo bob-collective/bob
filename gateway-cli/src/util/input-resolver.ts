@@ -79,9 +79,10 @@ export function buildTokenIndex(routes: RouteInfo[]): TokenIndex {
         const t: TokenMeta = { address: addr, symbol: meta.symbol, decimals: meta.decimals, chain };
         byChainAndSymbol.set(`${chain}:${meta.symbol.toUpperCase()}`, t);
         byChainAndAddress.set(`${chain}:${addr.toLowerCase()}`, t);
-      } catch {
-        // Token not in tokenlist — skip indexing to avoid guessed decimals in amount calculations.
-        // The token will still appear in route/balance display via throwOnUnknown: false call sites.
+      } catch (err) {
+        // Skip tokens not in tokenlist to avoid guessed decimals in amount calculations.
+        // Re-throw unexpected errors (bugs, corrupted data, etc.)
+        if (!(err instanceof Error && err.message.startsWith("Unknown token"))) throw err;
       }
     }
   }

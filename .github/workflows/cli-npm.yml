@@ -23,7 +23,12 @@ jobs:
           node-version: '24'
           registry-url: 'https://registry.npmjs.org'
           cache: 'npm'
-          cache-dependency-path: gateway-cli/package-lock.json
+          cache-dependency-path: |
+            tokenlist/package-lock.json
+            sdk/package-lock.json
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
 
       - name: Install tokenlist
         working-directory: ./tokenlist
@@ -34,7 +39,7 @@ jobs:
         run: npm ci && npm run build
 
       - name: Install CLI
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Build CLI
         run: npm run build

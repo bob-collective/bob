@@ -71,6 +71,8 @@ vi.mock("../../src/util/input-resolver.js", () => ({
     display: "0.05 BTC",
   }),
   humanToAtomic: vi.fn((human: string, decimals: number) => "0"),
+  buildTokenIndex: vi.fn(() => ({ byChainAndSymbol: new Map(), byChainAndAddress: new Map() })),
+  parseAssetChain: vi.fn((asset: string) => ({ chain: "bitcoin", address: "BTC", symbol: "BTC", decimals: 8 })),
 }));
 
 vi.mock("../../src/util/price-oracle.js", () => ({
