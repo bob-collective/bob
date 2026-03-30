@@ -2,9 +2,9 @@ import type { GatewayQuote } from '../generated-client/models/GatewayQuote';
 import type { GatewayOnrampQuote } from '../generated-client/models/GatewayOnrampQuote';
 import type { GatewayOfframpQuote } from '../generated-client/models/GatewayOfframpQuote';
 import type { GatewayLayerZeroQuote } from '../generated-client/models/GatewayLayerZeroQuote';
-import { instanceOfGatewayQuoteOneOf } from '../generated-client/models/GatewayQuoteOneOf';
-import { instanceOfGatewayQuoteOneOf1 } from '../generated-client/models/GatewayQuoteOneOf1';
-import { instanceOfGatewayQuoteOneOf2 } from '../generated-client/models/GatewayQuoteOneOf2';
+import { instanceOfGatewayQuoteOneOf, type GatewayQuoteOneOf } from '../generated-client/models/GatewayQuoteOneOf';
+import { instanceOfGatewayQuoteOneOf1, type GatewayQuoteOneOf1 } from '../generated-client/models/GatewayQuoteOneOf1';
+import { instanceOfGatewayQuoteOneOf2, type GatewayQuoteOneOf2 } from '../generated-client/models/GatewayQuoteOneOf2';
 
 export type InnerQuote = GatewayOnrampQuote | GatewayOfframpQuote | GatewayLayerZeroQuote;
 
@@ -23,8 +23,9 @@ export type InnerQuote = GatewayOnrampQuote | GatewayOfframpQuote | GatewayLayer
  * ```
  */
 export function getInnerQuote(quote: GatewayQuote): InnerQuote {
-    if (instanceOfGatewayQuoteOneOf(quote as object)) return (quote as any).onramp;
-    if (instanceOfGatewayQuoteOneOf1(quote as object)) return (quote as any).offramp;
-    if (instanceOfGatewayQuoteOneOf2(quote as object)) return (quote as any).layerZero;
+    const q = quote as object;
+    if (instanceOfGatewayQuoteOneOf(q)) return (q as GatewayQuoteOneOf).onramp;
+    if (instanceOfGatewayQuoteOneOf1(q)) return (q as GatewayQuoteOneOf1).offramp;
+    if (instanceOfGatewayQuoteOneOf2(q)) return (q as GatewayQuoteOneOf2).layerZero;
     throw new Error('Unknown quote variant');
 }
