@@ -1,4 +1,4 @@
-import { getInnerQuote, getQuoteVariant, MempoolClient } from "@gobob/bob-sdk";
+import { getInnerQuote, MempoolClient } from "@gobob/bob-sdk";
 import type { BitcoinSigner, GatewayOrderInfo, GatewayOrderStatus, GetQuoteParams } from "@gobob/bob-sdk";
 import { formatUnits, type WalletClient, type PublicClient } from "viem";
 import pRetry, { AbortError } from "p-retry";
@@ -99,13 +99,16 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
   const TRANSIENT = [/TRM screening/i, /429/, /Too Many Requests/i, /rate limit/i, /not yet propagated/i, /BTC propagation/i, /timeout/i, /ECONNRESET/, /ETIMEDOUT/];
   const isTransient = (e: unknown) => TRANSIENT.some(p => p.test(e instanceof Error ? e.message : String(e)));
 
-  const { orderId, variant, order, outputAmount } = await pRetry(async () => {
+  // Determine variant from chain families: bitcoin src = onramp, bitcoin dst = offramp, else layerZero
+  const variant = srcFamily === "bitcoin" ? "onramp"
+    : getChainFamily(dstAsset.chain) === "bitcoin" ? "offramp"
+    : "layerZero";
+
+  const { orderId, order, outputAmount } = await pRetry(async () => {
     try {
       const quote = await sdk.getQuote(quoteParams);
-      const variant = getQuoteVariant(quote);
       const order = await sdk.api.createOrder({ gatewayQuote: quote });
       return {
-        variant,
         order,
         orderId: (order as any)[variant].orderId as string,
         outputAmount: getInnerQuote(quote).outputAmount.amount as string,
