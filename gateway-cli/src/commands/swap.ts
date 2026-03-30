@@ -214,7 +214,7 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
     log.progress(`✓ Confirmed — ${outAmt} ${dstAsset.symbol} delivered to ${recipient}`);
     return {
       type: "confirmed",
-      data: { orderId, status: finalOrder.status as SwapSuccessJson["status"], srcAmount: atomicUnits, srcAsset: srcAsset.symbol, dstAmount: outAmt, dstAsset: dstAsset.symbol, dstChain: dstAsset.chain, quotedDstAmount: outputAmount, actualSlippageBps: slipBps, txId, elapsedMs },
+      data: { orderId, status: finalOrder.status === "success" ? "confirmed" : finalOrder.status as SwapSuccessJson["status"], srcAmount: atomicUnits, srcAsset: srcAsset.symbol, dstAmount: outAmt, dstAsset: dstAsset.symbol, dstChain: dstAsset.chain, quotedDstAmount: outputAmount, actualSlippageBps: slipBps, txId, elapsedMs },
     };
   } catch (err) {
     if (getChainFamily(dstAsset.chain) === "bitcoin" && err instanceof Error && err.message === "pending") {
