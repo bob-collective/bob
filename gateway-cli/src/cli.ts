@@ -94,7 +94,7 @@ program
   .option("--btc-fee-rate <sat/vbyte>", "Bitcoin fee rate (default: mempool.space)")
   .option("--fee-token <address>", "ERC20 token used to pay gas (paymaster)")
   .option("--fee-reserve <amount>", "Amount of fee token to reserve for gas, in atomic units (e.g. wei)")
-  .option("--private-key <key>", "Private key (WIF for BTC, hex for EVM)")
+  .option("--private-key <key>", "Private key (WIF for BTC, hex for EVM). WARNING: visible in process listings — prefer env vars")
   .option("--no-wait", "Exit after submitting without polling")
   .option("--unsigned", "Output unsigned PSBT/tx data without signing", false)
   .option("--timeout <seconds>", "Polling timeout in seconds", "1800")

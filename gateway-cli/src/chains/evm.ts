@@ -42,20 +42,20 @@ export const CHAIN_IDS: Record<string, number> = Object.fromEntries(
   Object.entries(supportedChainsMapping).map(([name, chain]) => [name, (chain as Chain).id]),
 );
 
-/**
- * Resolve token metadata (symbol and decimals) for a given token address and chain.
- * For BTC (chain="bitcoin" or address="BTC"), returns { symbol: "BTC", decimals: 8 }.
- * For EVM tokens, looks up from the tokenlist. Falls back to truncated address and 18 decimals if not found.
- */
-export function getTokenMetadata(address: string, chain: string): { symbol: string; decimals: number } {
+/** Resolve token metadata from the tokenlist. For BTC, returns { symbol: "BTC", decimals: 8 }.
+ *  Throws on unknown tokens by default (safe for amount calculations).
+ *  Pass { throwOnUnknown: false } for display paths where best-effort metadata is acceptable. */
+export function getTokenMetadata(address: string, chain: string, opts?: { throwOnUnknown?: boolean }): { symbol: string; decimals: number } {
   if (chain === 'bitcoin' || address === 'BTC') {
     return { symbol: 'BTC', decimals: BTC_DECIMALS };
   }
 
   const entry = tokenIndex.get(address.toLowerCase());
   if (!entry) {
-    // Fallback for unknown tokens: use first 10 chars of address, assume 18 decimals
-    return { symbol: address.slice(0, 10), decimals: 18 };
+    if (opts?.throwOnUnknown === false) {
+      return { symbol: address.slice(0, 10), decimals: 18 };
+    }
+    throw new Error(`Unknown token ${address} on chain "${chain}" — cannot determine decimals. Use a known token symbol or verify the address.`);
   }
 
   if (entry.uniform) {

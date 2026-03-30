@@ -33,20 +33,13 @@ export function getTokenAddressesForChain(chain: string, routes: RouteInfo[]): s
   return addrs;
 }
 
-/**
- * Get token metadata (symbol, decimals) for all tokens on a chain.
- * Uses lazy require() to avoid circular dependency at module load time.
- * 
- * @param chain - Chain name to get tokens for
- * @param routes - All available routes
- * @returns Array of token metadata with address, symbol, and decimals
- */
-export function getTokensForChain(chain: string, routes: RouteInfo[]): Array<{ address: string; symbol: string; decimals: number }> {
-  // Lazy import to avoid circular dependency at module load time
-  const { getTokenMetadata } = require('../chains/evm.js') as typeof import('../chains/evm.js');
+/** Unique tokens on a specific chain with metadata (deduped, excludes BTC placeholder). */
+export async function getTokensForChain(chain: string, routes: RouteInfo[]): Promise<Array<{ address: string; symbol: string; decimals: number }>> {
+  // Dynamic import to avoid circular dependency at module load time
+  const { getTokenMetadata } = await import('../chains/evm.js');
   const addrs = getTokenAddressesForChain(chain, routes);
   return addrs.map(addr => {
-    const meta = getTokenMetadata(addr, chain);
+    const meta = getTokenMetadata(addr, chain, { throwOnUnknown: false });
     return { address: addr, symbol: meta.symbol, decimals: meta.decimals };
   });
 }

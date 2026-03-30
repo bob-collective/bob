@@ -74,11 +74,15 @@ export function buildTokenIndex(routes: RouteInfo[]): TokenIndex {
       if (seen.has(dedup)) continue;
       seen.add(dedup);
 
-      const meta = getTokenMetadata(addr, chain);
-      const t: TokenMeta = { address: addr, symbol: meta.symbol, decimals: meta.decimals, chain };
-
-      byChainAndSymbol.set(`${chain}:${meta.symbol.toUpperCase()}`, t);
-      byChainAndAddress.set(`${chain}:${addr.toLowerCase()}`, t);
+      try {
+        const meta = getTokenMetadata(addr, chain);
+        const t: TokenMeta = { address: addr, symbol: meta.symbol, decimals: meta.decimals, chain };
+        byChainAndSymbol.set(`${chain}:${meta.symbol.toUpperCase()}`, t);
+        byChainAndAddress.set(`${chain}:${addr.toLowerCase()}`, t);
+      } catch {
+        // Token not in tokenlist — skip indexing to avoid guessed decimals in amount calculations.
+        // The token will still appear in route/balance display via throwOnUnknown: false call sites.
+      }
     }
   }
 
@@ -106,8 +110,8 @@ export function parseAssetChain(raw: string, routes: RouteInfo[], index?: TokenI
     const sym = assetPart.toUpperCase();
     const chains = [...new Set(routes.flatMap(r => {
       const hits: string[] = [];
-      if (getTokenMetadata(r.srcToken, r.srcChain).symbol.toUpperCase() === sym) hits.push(r.srcChain);
-      if (getTokenMetadata(r.dstToken, r.dstChain).symbol.toUpperCase() === sym) hits.push(r.dstChain);
+      if (getTokenMetadata(r.srcToken, r.srcChain, { throwOnUnknown: false }).symbol.toUpperCase() === sym) hits.push(r.srcChain);
+      if (getTokenMetadata(r.dstToken, r.dstChain, { throwOnUnknown: false }).symbol.toUpperCase() === sym) hits.push(r.dstChain);
       return hits;
     }))];
     const suggestions = chains.map((c) => `${sym}:${c}`).join("  ");
@@ -126,8 +130,8 @@ export function parseAssetChain(raw: string, routes: RouteInfo[], index?: TokenI
   if (!token) {
     const available = [...new Set(routes.flatMap(r => {
       const hits: string[] = [];
-      if (r.srcChain === chain) hits.push(getTokenMetadata(r.srcToken, r.srcChain).symbol);
-      if (r.dstChain === chain) hits.push(getTokenMetadata(r.dstToken, r.dstChain).symbol);
+      if (r.srcChain === chain) hits.push(getTokenMetadata(r.srcToken, r.srcChain, { throwOnUnknown: false }).symbol);
+      if (r.dstChain === chain) hits.push(getTokenMetadata(r.dstToken, r.dstChain, { throwOnUnknown: false }).symbol);
       return hits;
     }))].join(", ");
     throw new Error(`unknown token "${assetPart}" on chain "${chain}".\n\n  Available on ${chain}: ${available || "(none)"}\n\n  Run 'gateway-cli routes --tokens ${chain}' to see all tokens.`);

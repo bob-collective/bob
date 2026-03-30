@@ -87,7 +87,11 @@ export async function handleBalance(addresses: string[], opts: BalanceOptions): 
       ...opts,
       chainFamily: family,
     });
-    Object.assign(results, formatAllBalances(raw));
+    const formatted = formatAllBalances(raw);
+    for (const [chain, data] of Object.entries(formatted)) {
+      const key = chain in results ? `${chain} (${addr})` : chain;
+      results[key] = data;
+    }
   }
 
   // Filter to non-zero balances if requested
