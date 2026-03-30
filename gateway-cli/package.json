@@ -19,8 +19,8 @@
     "cli:dev": "tsx bin/gateway-cli.ts"
   },
   "dependencies": {
-    "@gobob/bob-sdk": "file:../sdk",
-    "@gobob/tokenlist": "github:bob-collective/bob#master&path:/tokenlist",
+    "@gobob/bob-sdk": "^5.3.1",
+    "@gobob/tokenlist": "github:bob-collective/bob#295be799d481d24c84eeb2e30983309a40c650ec&path:/tokenlist",
     "commander": "^13.1.0",
     "p-retry": "^7.1.1",
     "viem": "^2.31.3",
