@@ -16,6 +16,36 @@ export class ScureBitcoinSigner implements BitcoinSigner {
     }
 
     /**
+     * Create a Bitcoin signer from a WIF-encoded private key
+     * @param wif WIF-encoded private key string
+     * @returns A new ScureBitcoinSigner instance
+     */
+    static fromWIF(wif: string): ScureBitcoinSigner {
+        const decoded = btc.WIF().decode(wif);
+        return new ScureBitcoinSigner(Buffer.from(decoded).toString('hex'));
+    }
+
+    /**
+     * Create a Bitcoin signer from a private key in any supported format (hex or WIF).
+     * Auto-detects the format.
+     * @param key Private key as hex string (with or without 0x prefix) or WIF-encoded
+     * @returns A new ScureBitcoinSigner instance
+     */
+    static fromKey(key: string): ScureBitcoinSigner {
+        const stripped = key.startsWith('0x') ? key.slice(2) : key;
+        if (/^[0-9a-fA-F]{64}$/.test(stripped)) {
+            return new ScureBitcoinSigner(stripped);
+        }
+        try {
+            return ScureBitcoinSigner.fromWIF(key);
+        } catch (e) {
+            throw new Error('Invalid private key: expected 64-char hex (with optional 0x prefix) or WIF-encoded key', {
+                cause: e,
+            });
+        }
+    }
+
+    /**
      * Create a Bitcoin signer from a seed phrase (BIP39 mnemonic)
      * @param seedPhrase The BIP39 mnemonic seed phrase
      * @param derivationPath The derivation path (e.g., "m/84'/0'/0'/0/0")
