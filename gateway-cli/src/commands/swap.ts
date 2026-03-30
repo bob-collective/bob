@@ -108,9 +108,13 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
     try {
       const quote = await sdk.getQuote(quoteParams);
       const order = await sdk.api.createOrder({ gatewayQuote: quote });
+      const orderData = (order as any)[variant];
+      if (!orderData?.orderId) {
+        throw new Error(`Unexpected API response: order.${variant} is missing or has no orderId. Response keys: ${Object.keys(order).join(", ")}`);
+      }
       return {
         order,
-        orderId: (order as any)[variant].orderId as string,
+        orderId: orderData.orderId as string,
         outputAmount: getInnerQuote(quote).outputAmount.amount as string,
       };
     } catch (err) {
@@ -122,7 +126,7 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
   // ── Unsigned → done ─────────────────────────────────────────────────────────
 
   if (opts.unsigned) {
-    if (getChainFamily(srcAsset.chain) === "bitcoin") {
+    if (variant === "onramp") {
       const psbtHex = (order as any).onramp?.psbtHex;
       return { type: "unsigned", orderId, psbtBase64: psbtHex ? Buffer.from(psbtHex, "hex").toString("base64") : undefined };
     }
@@ -132,24 +136,29 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
   // ── Sign (no retry) ────────────────────────────────────────────────────────
 
   let txId: string;
-  if (getChainFamily(srcAsset.chain) === "bitcoin") {
+  if (variant === "onramp") {
     const psbtHex = (order as any).onramp?.psbtHex;
     if (!psbtHex) throw new Error("Gateway did not return a PSBT for this onramp order.");
     txId = await ((signer as any).signer as BitcoinSigner).signAllInputs!(psbtHex);
   } else {
     const { walletClient, publicClient } = signer as { walletClient: WalletClient; publicClient: PublicClient };
 
-    // Wait for pending nonce to settle
+    // Wait for pending nonce to settle before sending
     if (opts.sender) {
       const addr = opts.sender as `0x${string}`;
       const deadline = Date.now() + 120_000;
+      let settled = false;
       while (Date.now() < deadline) {
         const [latest, pending] = await Promise.all([
           publicClient.getTransactionCount({ address: addr, blockTag: "latest" }),
           publicClient.getTransactionCount({ address: addr, blockTag: "pending" }),
         ]);
-        if (pending <= latest) break;
+        if (pending <= latest) { settled = true; break; }
+        log.progress(`  Waiting for pending tx to settle (pending nonce: ${pending}, latest: ${latest})...`);
         await new Promise(r => setTimeout(r, 5000));
+      }
+      if (!settled) {
+        throw new Error(`Timed out waiting for pending transactions to settle for ${addr}. There may be stuck transactions — check your wallet before retrying.`);
       }
     }
 
@@ -167,7 +176,7 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
   // ── Register (retryable) ───────────────────────────────────────────────────
 
   const registerPayload = buildRegisterPayload(srcAsset.chain, dstAsset.chain, orderId, txId);
-  await pRetry(() => sdk.api.registerTx({ registerTx: registerPayload }), { retries })
+  const registerResult = await pRetry(() => sdk.api.registerTx({ registerTx: registerPayload }), { retries })
     .catch(err => {
       const msg = err instanceof Error ? err.message : String(err);
       const error = new Error(
@@ -177,6 +186,16 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
       (error as any).txId = txId;
       throw error;
     });
+
+  // For BTC onramp, registerTx returns the real txid (signAllInputs only gives us the raw tx hex)
+  if (variant === "onramp") {
+    const realTxid = (registerResult as any)?.onramp?.txid;
+    if (realTxid) {
+      txId = realTxid;
+    } else {
+      log.warn("could not extract BTC txid from registerTx response — using raw tx hex as identifier");
+    }
+  }
 
   log.progress(`✓ Order submitted (id: ${orderId})`);
 
@@ -207,19 +226,22 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
 
     const elapsedMs = Date.now() - startMs;
     const outAmt = finalOrder.dstInfo?.amount ?? "?";
-    const slipBps = outputAmount && finalOrder.dstInfo?.amount
-      ? Math.round((1 - Number(finalOrder.dstInfo.amount) / Number(outputAmount)) * 10000)
+    const slipBps = outputAmount && BigInt(outputAmount) !== 0n && finalOrder.dstInfo?.amount
+      ? Number(10000n - BigInt(finalOrder.dstInfo.amount) * 10000n / BigInt(outputAmount))
       : 0;
 
     log.progress(`✓ Confirmed — ${outAmt} ${dstAsset.symbol} delivered to ${recipient}`);
     return {
       type: "confirmed",
-      data: { orderId, status: "confirmed", srcAmount: atomicUnits, srcAsset: srcAsset.symbol, dstAmount: outAmt, dstAsset: dstAsset.symbol, dstChain: dstAsset.chain, quotedDstAmount: outputAmount, actualSlippageBps: slipBps, txId, elapsedMs },
+      data: { orderId, status: finalOrder.status === "success" ? "confirmed" : finalOrder.status as SwapSuccessJson["status"], srcAmount: atomicUnits, srcAsset: srcAsset.symbol, dstAmount: outAmt, dstAsset: dstAsset.symbol, dstChain: dstAsset.chain, quotedDstAmount: outputAmount, actualSlippageBps: slipBps, txId, elapsedMs },
     };
   } catch (err) {
-    if (getChainFamily(srcAsset.chain) !== "bitcoin" && err instanceof Error && err.message === "pending") {
+    if (getChainFamily(dstAsset.chain) === "bitcoin" && err instanceof Error && err.message === "pending") {
       log.progress(`Poll timeout reached. Checking mempool for pending delivery...`);
-      const pendingTxs = await new MempoolClient().getAddressMempoolTxs(recipient).catch(() => []);
+      const pendingTxs = await new MempoolClient().getAddressMempoolTxs(recipient).catch(mempoolErr => {
+        log.warn(`could not check mempool: ${mempoolErr instanceof Error ? mempoolErr.message : String(mempoolErr)}`);
+        return [];
+      });
       const mempoolTxId = pendingTxs.find(tx => !tx.status.confirmed)?.txid;
       if (mempoolTxId) {
         log.progress(`~ BTC tx found in mempool (unconfirmed): ${mempoolTxId}`);

@@ -37,15 +37,20 @@ export const CHAIN_IDS: Record<string, number> = Object.fromEntries(
   Object.entries(supportedChainsMapping).map(([name, chain]) => [name, (chain as Chain).id]),
 );
 
-/** Resolve token metadata from the tokenlist. For BTC, returns { symbol: "BTC", decimals: 8 }. */
-export function getTokenMetadata(address: string, chain: string): { symbol: string; decimals: number } {
+/** Resolve token metadata from the tokenlist. For BTC, returns { symbol: "BTC", decimals: 8 }.
+ *  Throws on unknown tokens by default (safe for amount calculations).
+ *  Pass { throwOnUnknown: false } for display paths where best-effort metadata is acceptable. */
+export function getTokenMetadata(address: string, chain: string, opts?: { throwOnUnknown?: boolean }): { symbol: string; decimals: number } {
   if (chain === 'bitcoin' || address === 'BTC') {
     return { symbol: 'BTC', decimals: BTC_DECIMALS };
   }
 
   const entry = tokenIndex.get(address.toLowerCase());
   if (!entry) {
-    return { symbol: address.slice(0, 10), decimals: 18 }; // fallback
+    if (opts?.throwOnUnknown === false) {
+      return { symbol: address.slice(0, 10), decimals: 18 };
+    }
+    throw new Error(`Unknown token ${address} on chain "${chain}" — cannot determine decimals. Use a known token symbol or verify the address.`);
   }
 
   if (entry.uniform) {
