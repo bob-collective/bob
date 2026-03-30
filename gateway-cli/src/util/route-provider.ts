@@ -3,12 +3,22 @@ import { getSdk } from '../config.js';
 
 // ─── Route helpers ──────────────────────────────────────────────────────────
 
-/** Unique chain names across all routes. */
+/**
+ * Extract unique chain names from all routes.
+ * Returns deduplicated list of source and destination chains.
+ */
 export function getUniqueChains(routes: RouteInfo[]): string[] {
   return [...new Set(routes.flatMap(r => [r.srcChain, r.dstChain]))];
 }
 
-/** Unique token addresses on a specific chain (deduped, excludes BTC placeholder). */
+/**
+ * Get unique token addresses for a specific chain.
+ * Excludes BTC placeholder address. Results are lowercase and deduplicated.
+ * 
+ * @param chain - Chain name to filter tokens
+ * @param routes - All available routes
+ * @returns Array of token addresses on the chain
+ */
 export function getTokenAddressesForChain(chain: string, routes: RouteInfo[]): string[] {
   const seen = new Set<string>();
   const addrs: string[] = [];
@@ -23,7 +33,14 @@ export function getTokenAddressesForChain(chain: string, routes: RouteInfo[]): s
   return addrs;
 }
 
-/** Unique tokens on a specific chain with metadata (deduped, excludes BTC placeholder). */
+/**
+ * Get token metadata (symbol, decimals) for all tokens on a chain.
+ * Uses lazy require() to avoid circular dependency at module load time.
+ * 
+ * @param chain - Chain name to get tokens for
+ * @param routes - All available routes
+ * @returns Array of token metadata with address, symbol, and decimals
+ */
 export function getTokensForChain(chain: string, routes: RouteInfo[]): Array<{ address: string; symbol: string; decimals: number }> {
   // Lazy import to avoid circular dependency at module load time
   const { getTokenMetadata } = require('../chains/evm.js') as typeof import('../chains/evm.js');
@@ -36,7 +53,10 @@ export function getTokensForChain(chain: string, routes: RouteInfo[]): Array<{ a
 
 // ─── Public API ──────────────────────────────────────────────────────────────
 
-/** Fetch routes from SDK. Returns raw RouteInfo (no enrichment). */
+/**
+ * Fetch available swap routes from Gateway SDK.
+ * Returns raw RouteInfo array without enrichment.
+ */
 export async function getRoutes(): Promise<RouteInfo[]> {
   const sdk = getSdk();
   return sdk.getRoutes();

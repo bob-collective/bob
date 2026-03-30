@@ -143,9 +143,7 @@ program
       throw new Error("Invalid --fee-token: must be a valid EVM address");
     }
     if (opts.feeReserve != null) {
-      const n = Number(opts.feeReserve);
-      if (!Number.isInteger(n) || isNaN(n)) throw new Error("Invalid --fee-reserve: must be a non-negative integer");
-      if (n < 0) throw new Error("Invalid --fee-reserve: must be non-negative");
+      if (!/^\d+$/.test(opts.feeReserve)) throw new Error("Invalid --fee-reserve: must be a non-negative integer (no scientific notation)");
     }
     const chains = opts.chain?.flatMap((c: string) => c.split(",").map((s: string) => s.trim())).filter(Boolean);
     const { handleBalance } = await import("./commands/balance.js");

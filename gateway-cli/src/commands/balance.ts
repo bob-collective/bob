@@ -7,6 +7,7 @@ import { loadConfig } from '../config.js';
 import { formatAllBalances } from '../output.js';
 import type { BalanceJson } from '../output.js';
 
+/** Balance command options for filtering and formatting. */
 export interface BalanceOptions {
   chain?: string[];
   feeToken?: string;
@@ -14,12 +15,27 @@ export interface BalanceOptions {
   nonZero?: boolean;
 }
 
+/**
+ * Classify an address as Bitcoin or EVM based on format.
+ * @param addr - Address string to classify
+ * @returns "bitcoin" or "evm"
+ * @throws Error if address format is unsupported
+ */
 function classifyAddress(addr: string): "bitcoin" | "evm" {
   if (isAddress(addr, { strict: false })) return "evm";
   if (isValidBtcAddress(addr)) return "bitcoin";
   throw new Error(`Unsupported address format "${addr}". Expected an EVM address (0x...) or a Bitcoin address.`);
 }
 
+/**
+ * Handle the balance command: show token balances across chains.
+ * Derives addresses from env var keys if none provided.
+ * Filters by chain family (BTC or EVM) for efficiency.
+ * 
+ * @param addresses - Wallet addresses to query (BTC or EVM)
+ * @param opts - Optional filters: chains, fee token/reserve, non-zero only
+ * @returns Balance data across all queried chains
+ */
 export async function handleBalance(addresses: string[], opts: BalanceOptions): Promise<BalanceJson> {
   // If no addresses provided, derive from env var keys
   if (addresses.length === 0) {
@@ -74,6 +90,7 @@ export async function handleBalance(addresses: string[], opts: BalanceOptions): 
     Object.assign(results, formatAllBalances(raw));
   }
 
+  // Filter to non-zero balances if requested
   if (opts.nonZero) {
     for (const [chain, data] of Object.entries(results)) {
       if (data.error) { delete results[chain]; continue; }

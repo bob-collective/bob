@@ -7,11 +7,19 @@ interface ChainJson { canonical: string; aliases: string[]; chainId: number | nu
 interface TokenJson { symbol: string; address: string; decimals: number; }
 interface RouteJson { srcChain: string; srcToken: string; srcSymbol: string; dstChain: string; dstToken: string; dstSymbol: string; }
 
+/** Routes command result: chains list, tokens list, or routes list. */
 export type RoutesResult =
   | { type: "chains"; data: ChainJson[] }
   | { type: "tokens"; data: TokenJson[] }
   | { type: "routes"; data: RouteJson[] };
 
+/**
+ * Handle the routes command: list available swap routes, chains, or tokens.
+ * Supports filtering by source/destination chain and tokens-by-chain view.
+ * 
+ * @param opts - Command options including filters and display mode flags
+ * @returns Chains, tokens, or routes data based on options
+ */
 export async function handleRoutes(opts: { from?: string; to?: string; chains?: boolean; tokens?: string }): Promise<RoutesResult> {
   const routes = await getRoutes();
   const knownChains = getUniqueChains(routes).sort();
