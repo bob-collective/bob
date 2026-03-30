@@ -126,7 +126,7 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
   // ── Unsigned → done ─────────────────────────────────────────────────────────
 
   if (opts.unsigned) {
-    if (getChainFamily(srcAsset.chain) === "bitcoin") {
+    if (variant === "onramp") {
       const psbtHex = (order as any).onramp?.psbtHex;
       return { type: "unsigned", orderId, psbtBase64: psbtHex ? Buffer.from(psbtHex, "hex").toString("base64") : undefined };
     }
@@ -136,12 +136,10 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
   // ── Sign (no retry) ────────────────────────────────────────────────────────
 
   let txId: string;
-  let btcTxHex: string | undefined;
-  if (getChainFamily(srcAsset.chain) === "bitcoin") {
+  if (variant === "onramp") {
     const psbtHex = (order as any).onramp?.psbtHex;
     if (!psbtHex) throw new Error("Gateway did not return a PSBT for this onramp order.");
-    btcTxHex = await ((signer as any).signer as BitcoinSigner).signAllInputs!(psbtHex);
-    txId = btcTxHex; // placeholder until registerTx returns the real txid
+    txId = await ((signer as any).signer as BitcoinSigner).signAllInputs!(psbtHex);
   } else {
     const { walletClient, publicClient } = signer as { walletClient: WalletClient; publicClient: PublicClient };
 
@@ -190,8 +188,13 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
     });
 
   // For BTC onramp, registerTx returns the real txid (signAllInputs only gives us the raw tx hex)
-  if (btcTxHex && (registerResult as any)?.onramp?.txid) {
-    txId = (registerResult as any).onramp.txid;
+  if (variant === "onramp") {
+    const realTxid = (registerResult as any)?.onramp?.txid;
+    if (realTxid) {
+      txId = realTxid;
+    } else {
+      log.warn("could not extract BTC txid from registerTx response — using raw tx hex as identifier");
+    }
   }
 
   log.progress(`✓ Order submitted (id: ${orderId})`);
@@ -223,8 +226,8 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
 
     const elapsedMs = Date.now() - startMs;
     const outAmt = finalOrder.dstInfo?.amount ?? "?";
-    const slipBps = outputAmount && finalOrder.dstInfo?.amount
-      ? Number((10000n - BigInt(finalOrder.dstInfo.amount) * 10000n / BigInt(outputAmount)))
+    const slipBps = outputAmount && BigInt(outputAmount) !== 0n && finalOrder.dstInfo?.amount
+      ? Number(10000n - BigInt(finalOrder.dstInfo.amount) * 10000n / BigInt(outputAmount))
       : 0;
 
     log.progress(`✓ Confirmed — ${outAmt} ${dstAsset.symbol} delivered to ${recipient}`);
@@ -235,7 +238,10 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
   } catch (err) {
     if (getChainFamily(dstAsset.chain) === "bitcoin" && err instanceof Error && err.message === "pending") {
       log.progress(`Poll timeout reached. Checking mempool for pending delivery...`);
-      const pendingTxs = await new MempoolClient().getAddressMempoolTxs(recipient).catch(() => []);
+      const pendingTxs = await new MempoolClient().getAddressMempoolTxs(recipient).catch(mempoolErr => {
+        log.warn(`could not check mempool: ${mempoolErr instanceof Error ? mempoolErr.message : String(mempoolErr)}`);
+        return [];
+      });
       const mempoolTxId = pendingTxs.find(tx => !tx.status.confirmed)?.txid;
       if (mempoolTxId) {
         log.progress(`~ BTC tx found in mempool (unconfirmed): ${mempoolTxId}`);

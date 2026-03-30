@@ -57,7 +57,7 @@ export function buildTokenIndex(routes: RouteInfo[]): TokenIndex {
       if (seen.has(dedup)) continue;
       seen.add(dedup);
 
-      const meta = getTokenMetadata(addr, chain);
+      const meta = getTokenMetadata(addr, chain, { throwOnUnknown: false });
       const t: TokenMeta = { address: addr, symbol: meta.symbol, decimals: meta.decimals, chain };
 
       byChainAndSymbol.set(`${chain}:${meta.symbol.toUpperCase()}`, t);
@@ -82,8 +82,8 @@ export function parseAssetChain(raw: string, routes: RouteInfo[], index?: TokenI
     const sym = assetPart.toUpperCase();
     const chains = [...new Set(routes.flatMap(r => {
       const hits: string[] = [];
-      if (getTokenMetadata(r.srcToken, r.srcChain).symbol.toUpperCase() === sym) hits.push(r.srcChain);
-      if (getTokenMetadata(r.dstToken, r.dstChain).symbol.toUpperCase() === sym) hits.push(r.dstChain);
+      if (getTokenMetadata(r.srcToken, r.srcChain, { throwOnUnknown: false }).symbol.toUpperCase() === sym) hits.push(r.srcChain);
+      if (getTokenMetadata(r.dstToken, r.dstChain, { throwOnUnknown: false }).symbol.toUpperCase() === sym) hits.push(r.dstChain);
       return hits;
     }))];
     const suggestions = chains.map((c) => `${sym}:${c}`).join("  ");
