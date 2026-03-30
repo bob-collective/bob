@@ -158,9 +158,16 @@ export type ParsedAmount =
  */
 export function humanToAtomic(human: string, decimals: number): string {
   const [intPart, fracPart = ""] = human.split(".");
-  const padded = fracPart.padEnd(decimals, "0").slice(0, decimals);
+  if (fracPart.length > decimals) {
+    throw new Error(`Too many decimal places: "${human}" has ${fracPart.length} but the token supports at most ${decimals}.`);
+  }
+  const padded = fracPart.padEnd(decimals, "0");
   const raw = intPart + padded;
-  return BigInt(raw).toString();
+  const result = BigInt(raw).toString();
+  if (result === "0") {
+    throw new Error(`Amount "${human}" is too small — converts to 0 atomic units.`);
+  }
+  return result;
 }
 
 /** User-facing help message for valid amount formats. */
