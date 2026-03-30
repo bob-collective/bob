@@ -2,8 +2,12 @@ export { OkxWalletAdapter } from './adapters/okx-wallet';
 export { ReownWalletAdapter } from './adapters/reown';
 export { ExecuteQuoteResult, GatewayApiClient as GatewaySDK } from './client';
 export {
+    AnyGatewayError,
+    DetailsFor,
     GatewayError,
     GatewayErrorCode,
+    GatewayErrorDetailsMap,
+    isGatewayError,
     type ExceededLimitDetails,
     type InsufficientAmountDetails,
     type InsufficientFundsDetails,
@@ -16,10 +20,10 @@ export * from './generated-client';
 export { BitcoinSigner, GatewayQuoteParams, GetQuoteParams } from './types';
 export {
     formatBtc,
+    getChainConfig,
+    getInnerQuote,
     parseBtc,
     ScureBitcoinSigner,
     supportedChainsMapping,
-    getChainConfig,
-    getInnerQuote,
     type InnerQuote,
 } from './utils';
