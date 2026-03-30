@@ -5,12 +5,9 @@
   "main": "dist/src/cli.js",
   "types": "dist/src/cli.d.ts",
   "bin": {
-    "gateway-cli": "./bin/gateway-cli.js"
+    "gateway-cli": "dist/bin/gateway-cli.js"
   },
-  "files": [
-    "dist",
-    "bin"
-  ],
+  "files": ["dist"],
   "scripts": {
     "build": "tsc",
     "test": "vitest run",
@@ -30,5 +27,11 @@
     "tsx": "^4.19.4",
     "typescript": "^5.9.3",
     "vitest": "^3.2.4"
+  },
+  "pnpm": {
+    "overrides": {
+      "bitcoin-address-validation": "^3.0.0",
+      "base58-js": "^2.0.0"
+    }
   }
 }

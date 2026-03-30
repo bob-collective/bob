@@ -4,6 +4,10 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  bitcoin-address-validation: ^3.0.0
+  base58-js: ^2.0.0
+
 importers:
 
   .:
@@ -583,13 +587,9 @@ packages:
   base-x@4.0.1:
     resolution: {integrity: sha512-uAZ8x6r6S3aUM9rbHGVOIsR15U/ZSc82b3ymnCPsT45Gk1DDvhDPdIgB5MrhirZWt+5K0EEPQH985kNqZgNPFw==}
 
-  base58-js@1.0.5:
-    resolution: {integrity: sha512-LkkAPP8Zu+c0SVNRTRVDyMfKVORThX+rCViget00xdgLRrKkClCTz1T7cIrpr69ShwV5XJuuoZvMvJ43yURwkA==}
+  base58-js@2.0.0:
+    resolution: {integrity: sha512-nAV5d32QXuGcGptSApkKpC1gGakWBnfJMNjKrYTBh4tb0szfZF+ooueFLy8T4VrY+o4SrE/TyrtUnRZcwZchaA==}
     engines: {node: '>= 8'}
-
-  base58-js@3.0.3:
-    resolution: {integrity: sha512-3hf42BysHnUqmZO7mK6e5X/hs1AvyEJIhdVLbG/Mxn/fhFnhGxOO37mWbMHg1RT4TxqcPKXgqj9/bp1YG0GBXA==}
-    engines: {node: '>=16.0.0', npm: '>=7.0.0'}
 
   base64-js@1.5.1:
     resolution: {integrity: sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==}
@@ -607,9 +607,6 @@ packages:
 
   bip39@3.1.0:
     resolution: {integrity: sha512-c9kiwdk45Do5GL0vJMe7tS95VjCii65mYAH7DfWl3uW8AVzXKQVUm64i3hzVybBDMp9r7j9iNxR85+ul8MdN/A==}
-
-  bitcoin-address-validation@2.2.3:
-    resolution: {integrity: sha512-1uGCGl26Ye8JG5qcExtFLQfuib6qEZWNDo1ZlLlwp/z7ygUFby3IxolgEfgMGaC+LG9csbVASLcH8fRLv7DIOg==}
 
   bitcoin-address-validation@3.0.0:
     resolution: {integrity: sha512-R1X1c9EdgjgjTpjshjk5e16TbgF7HYasxBcu7l5ScWMxVs53845vMUg5PvnQ/R/3h8Grly6Y52DgH6/77gazLQ==}
@@ -1444,7 +1441,7 @@ snapshots:
       '@magiceden-oss/runestone-lib': 1.0.2
       '@scure/base': 1.2.6
       '@scure/btc-signer': 1.8.1
-      bitcoin-address-validation: 2.2.3
+      bitcoin-address-validation: 3.0.0
       bitcoinjs-lib: 6.1.7
       ethers: 6.16.0
       global: 4.4.0
@@ -1491,7 +1488,7 @@ snapshots:
       '@tanstack/react-query': 5.91.0(react@19.2.4)
       async-retry: 1.3.3
       bip32: 4.0.0
-      bitcoin-address-validation: 2.2.3
+      bitcoin-address-validation: 3.0.0
       bitcoinjs-lib: 6.1.7
       bs58check: 2.1.2
       clean-package: 2.2.0
@@ -1826,9 +1823,7 @@ snapshots:
 
   base-x@4.0.1: {}
 
-  base58-js@1.0.5: {}
-
-  base58-js@3.0.3: {}
+  base58-js@2.0.0: {}
 
   base64-js@1.5.1: {}
 
@@ -1847,15 +1842,9 @@ snapshots:
     dependencies:
       '@noble/hashes': 1.8.0
 
-  bitcoin-address-validation@2.2.3:
-    dependencies:
-      base58-js: 1.0.5
-      bech32: 2.0.0
-      sha256-uint8array: 0.10.7
-
   bitcoin-address-validation@3.0.0:
     dependencies:
-      base58-js: 3.0.3
+      base58-js: 2.0.0
       bech32: 2.0.0
       sha256-uint8array: 0.10.7
 
