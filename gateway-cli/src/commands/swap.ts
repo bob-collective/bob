@@ -187,8 +187,11 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
   const registerResult = await pRetry(() => sdk.api.registerTx({ registerTx: registerPayload }), { retries })
     .catch(err => {
       const msg = err instanceof Error ? err.message : String(err);
+      const recoveryNote = variant === "onramp"
+        ? `\nNote: the value below is the signed BTC transaction hex (required for recovery).`
+        : "";
       const error = new Error(
-        `Registration failed. Last error: ${msg}\nOrder ID: ${orderId}\nManually register with: gateway-cli register ${orderId} ${txId}`,
+        `Registration failed. Last error: ${msg}\nOrder ID: ${orderId}${recoveryNote}\nManually register with: gateway-cli register ${orderId} ${txId}`,
       );
       (error as any).orderId = orderId;
       (error as any).txId = txId;

@@ -50,6 +50,11 @@ export function getTokenMetadata(address: string, chain: string, opts?: { throwO
     return { symbol: 'BTC', decimals: BTC_DECIMALS };
   }
 
+  // Zero address represents the native token on EVM chains (ETH, BNB, etc.)
+  if (isNativeToken(address)) {
+    return getNativeToken(chain);
+  }
+
   const entry = tokenIndex.get(address.toLowerCase());
   if (!entry) {
     if (opts?.throwOnUnknown === false) {
