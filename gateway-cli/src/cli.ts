@@ -3,6 +3,7 @@ import { ZodError } from "zod/v4";
 import { isAddress } from "viem";
 import { type OutputMode, createLogger, render, formatJson, formatConfirmation, formatChains, formatTokens, formatRoutes, formatBalance } from "./output.js";
 import { quoteSchema, swapSchema } from "./schemas.js";
+import { version } from '../package.json';
 
 function modeOf(opts: { json?: boolean }): OutputMode {
   return opts.json ? "json" : "human";
@@ -37,10 +38,11 @@ function withErrorHandling(fn: (...args: any[]) => Promise<void>) {
   };
 }
 
+
 export const program = new Command()
   .name("gateway-cli")
   .description("Swap between BTC and tokens like USDC, ETH, wBTC via BOB Gateway")
-  .version("0.2.0");
+  .version(version);
 
 program
   .command("routes")
