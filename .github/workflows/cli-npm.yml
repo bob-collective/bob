@@ -30,10 +30,6 @@ jobs:
         with:
           version: 10
 
-      - name: Install tokenlist
-        working-directory: ./tokenlist
-        run: npm ci
-
       - name: Install SDK
         working-directory: ./sdk
         run: npm ci && npm run build
@@ -53,7 +49,6 @@ jobs:
           node -e "
             const pkg = require('./package.json');
             pkg.dependencies['@gobob/bob-sdk'] = '^5.0.0';
-            pkg.dependencies['@gobob/tokenlist'] = '^1.0.0';
             require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));
           "
 
