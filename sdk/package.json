@@ -25,7 +25,7 @@
         "README.md"
     ],
     "devDependencies": {
-        "@gobob/tokenlist": "file:../tokenlist",
+        "@gobob/tokenlist": "github:bob-collective/tokenlist#d6f8135e12a8c99b467b7abde988eb7ea2b0d22c",
         "@openapitools/openapi-generator-cli": "^2.30.2",
         "@scure/bip32": "^2.0.1",
         "@types/node": "^24.3.0",
