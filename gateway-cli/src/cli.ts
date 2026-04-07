@@ -48,7 +48,7 @@ function withErrorHandling(fn: (...args: any[]) => Promise<void>) {
             const d = (err as any).dstAsset;
             console.error(`Route:    ${s.symbol}:${s.chain} → ${d.symbol}:${d.chain}`);
           }
-          if ("functionSelector" in err) console.error(`Selector: ${(err as any).functionSelector}`);
+          if ("functionSelector" in err && (err as any).functionSelector) console.error(`Selector: ${(err as any).functionSelector}`);
           if ("revertData" in err && (err as any).revertData) console.error(`Revert:   ${(err as any).revertData}`);
         }
       }

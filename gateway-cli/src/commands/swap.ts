@@ -195,11 +195,11 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
       (enriched as any).orderId = orderId;
       (enriched as any).txParams = {
         to: txInfo.to,
-        from: walletClient.account!.address,
+        from: walletClient.account?.address,
         value: txInfo.value || "0",
         data: txInfo.data,
-        chainId: walletClient.chain!.id,
-        chainName: walletClient.chain!.name,
+        chainId: walletClient.chain?.id,
+        chainName: walletClient.chain?.name,
       };
       (enriched as any).srcAsset = { symbol: srcAsset.symbol, address: srcAsset.address, chain: srcAsset.chain };
       (enriched as any).dstAsset = { symbol: dstAsset.symbol, address: dstAsset.address, chain: dstAsset.chain };
