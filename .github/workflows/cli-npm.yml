@@ -24,7 +24,6 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
           cache: 'npm'
           cache-dependency-path: |
-            tokenlist/package-lock.json
             sdk/package-lock.json
       - uses: pnpm/action-setup@v4
         with:

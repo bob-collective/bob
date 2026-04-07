@@ -25,9 +25,6 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
           cache: 'npm'
           cache-dependency-path: sdk/package-lock.json
-      - name: install tokenlist dependencies
-        working-directory: ./tokenlist
-        run: npm ci
       - run: npm ci
       - run: npm run build
       - name: get sdk version

@@ -16,8 +16,8 @@ importers:
         specifier: ^5.3.1
         version: 5.3.1(@tanstack/react-query@5.91.0(react@19.2.4))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)(zod@4.3.6)
       '@gobob/tokenlist':
-        specifier: github:bob-collective/tokenlist#d6f8135e12a8c99b467b7abde988eb7ea2b0d22c
-        version: https://codeload.github.com/bob-collective/tokenlist/tar.gz/d6f8135e12a8c99b467b7abde988eb7ea2b0d22c
+        specifier: github:bob-collective/tokenlist#223e98d85d857ce316fe3a8c3814ed00ddd66556
+        version: https://codeload.github.com/bob-collective/tokenlist/tar.gz/223e98d85d857ce316fe3a8c3814ed00ddd66556
       commander:
         specifier: ^13.1.0
         version: 13.1.0
@@ -258,8 +258,8 @@ packages:
       react: '>=18'
       react-dom: '>=18'
 
-  '@gobob/tokenlist@https://codeload.github.com/bob-collective/tokenlist/tar.gz/d6f8135e12a8c99b467b7abde988eb7ea2b0d22c':
-    resolution: {tarball: https://codeload.github.com/bob-collective/tokenlist/tar.gz/d6f8135e12a8c99b467b7abde988eb7ea2b0d22c}
+  '@gobob/tokenlist@https://codeload.github.com/bob-collective/tokenlist/tar.gz/223e98d85d857ce316fe3a8c3814ed00ddd66556':
+    resolution: {tarball: https://codeload.github.com/bob-collective/tokenlist/tar.gz/223e98d85d857ce316fe3a8c3814ed00ddd66556}
     version: 1.0.0
 
   '@jridgewell/sourcemap-codec@1.5.5':
@@ -1503,7 +1503,7 @@ snapshots:
       - utf-8-validate
       - zod
 
-  '@gobob/tokenlist@https://codeload.github.com/bob-collective/tokenlist/tar.gz/d6f8135e12a8c99b467b7abde988eb7ea2b0d22c': {}
+  '@gobob/tokenlist@https://codeload.github.com/bob-collective/tokenlist/tar.gz/223e98d85d857ce316fe3a8c3814ed00ddd66556': {}
 
   '@jridgewell/sourcemap-codec@1.5.5': {}
 
