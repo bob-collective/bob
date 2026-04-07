@@ -72,16 +72,18 @@ const chainIdToChainConfigMapping = Object.values(supportedChainsMapping).reduce
 );
 
 function getChainIdByName(chainName: string) {
-    const chain = Object.values(supportedChainsMapping).find(
-        (chain) => chain.name.toLowerCase() === chainName.toLowerCase()
-    );
+    const needle = chainName.toLowerCase();
 
-    if (!chain) {
-        throw new Error(
-            `Chain id for "${chainName}" not found. Allowed values ${Object.values(supportedChainsMapping).map((chain) => chain.name)}`
-        );
+    // Check by mapping key first (e.g. "bsc", "bera", "optimism")
+    for (const [key, chain] of Object.entries(supportedChainsMapping)) {
+        if (key === needle || chain.name.toLowerCase() === needle) {
+            return chain.id;
+        }
     }
-    return chain.id;
+
+    throw new Error(
+        `Chain id for "${chainName}" not found. Allowed values: ${Object.keys(supportedChainsMapping).join(', ')}`
+    );
 }
 
 function getChainConfigById(chainId: number) {
