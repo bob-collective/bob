@@ -1,6 +1,6 @@
 {
     "name": "@gobob/bob-sdk",
-    "version": "5.3.1",
+    "version": "5.3.2",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
     "repository": {
@@ -25,7 +25,7 @@
         "README.md"
     ],
     "devDependencies": {
-        "@gobob/tokenlist": "github:bob-collective/tokenlist#d6f8135e12a8c99b467b7abde988eb7ea2b0d22c",
+        "@gobob/tokenlist": "github:bob-collective/tokenlist#223e98d85d857ce316fe3a8c3814ed00ddd66556",
         "@openapitools/openapi-generator-cli": "^2.30.2",
         "@scure/bip32": "^2.0.1",
         "@types/node": "^24.3.0",
@@ -58,6 +58,7 @@
         "bitcoin-address-validation": "^3.0.0",
         "bitcoinjs-lib": "^6.1.7",
         "global": "^4.4.0",
+        "globals": "^17.4.0",
         "viem": "^2.33.2"
     }
 }

@@ -18,23 +18,22 @@ jobs:
         working-directory: ./gateway-cli
     steps:
       - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
           registry-url: 'https://registry.npmjs.org'
-          cache: 'npm'
+          cache: 'pnpm'
           cache-dependency-path: |
-            tokenlist/package-lock.json
-            sdk/package-lock.json
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10
+            sdk/pnpm-lock.yaml
 
       - name: Install CLI
         run: pnpm install --frozen-lockfile
 
       - name: Build CLI
-        run: npm run build
+        run: pnpm build
 
       - name: Get CLI version
         id: version
