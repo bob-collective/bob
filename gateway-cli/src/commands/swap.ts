@@ -182,13 +182,33 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
 
     const txInfo = (order as any)[variant]?.tx;
     if (!txInfo) throw new Error("Gateway did not return EVM transaction data for this order.");
-    txId = await walletClient.sendTransaction({
-      account: walletClient.account!,
-      chain: walletClient.chain,
-      to: txInfo.to as `0x${string}`,
-      data: txInfo.data as `0x${string}`,
-      value: BigInt(txInfo.value || "0"),
-    });
+    try {
+      txId = await walletClient.sendTransaction({
+        account: walletClient.account!,
+        chain: walletClient.chain,
+        to: txInfo.to as `0x${string}`,
+        data: txInfo.data as `0x${string}`,
+        value: BigInt(txInfo.value || "0"),
+      });
+    } catch (err) {
+      const enriched = err instanceof Error ? err : new Error(String(err));
+      (enriched as any).orderId = orderId;
+      (enriched as any).txParams = {
+        to: txInfo.to,
+        from: walletClient.account!.address,
+        value: txInfo.value || "0",
+        data: txInfo.data,
+        chainId: walletClient.chain!.id,
+        chainName: walletClient.chain!.name,
+      };
+      (enriched as any).srcAsset = { symbol: srcAsset.symbol, address: srcAsset.address, chain: srcAsset.chain };
+      (enriched as any).dstAsset = { symbol: dstAsset.symbol, address: dstAsset.address, chain: dstAsset.chain };
+      (enriched as any).functionSelector = typeof txInfo.data === "string" && txInfo.data.length >= 10 ? txInfo.data.slice(0, 10) : undefined;
+      // Extract revert data from viem error cause chain
+      const cause = (err as any)?.cause;
+      (enriched as any).revertData = cause?.data ?? undefined;
+      throw enriched;
+    }
   }
 
   // ── Register (retryable) ───────────────────────────────────────────────────
