@@ -15,14 +15,17 @@ jobs:
         working-directory: ./sdk
     steps:
       - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
       - name: Setup node
         uses: actions/setup-node@v6
         with:
           node-version: "24"
-          cache: "npm"
-          cache-dependency-path: sdk/package-lock.json
-      - run: npm ci
+          cache: "pnpm"
+          cache-dependency-path: sdk/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
       - run: npx prettier --check {examples,src,test}
-      - run: npm run lint
+      - run: pnpm lint
       - name: Run tests
-        run: npm test
+        run: pnpm test

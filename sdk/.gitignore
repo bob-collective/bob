@@ -2,4 +2,3 @@ node_modules
 dist
 
 tsconfig.tsbuildinfo
-pnpm-lock.yaml
