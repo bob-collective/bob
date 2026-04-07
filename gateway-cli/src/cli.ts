@@ -28,10 +28,29 @@ function withErrorHandling(fn: (...args: any[]) => Promise<void>) {
         if (err instanceof Error) {
           if ("orderId" in err) errJson.error.orderId = (err as any).orderId;
           if ("txId" in err) errJson.error.txId = (err as any).txId;
+          if ("txParams" in err) errJson.error.txParams = (err as any).txParams;
+          if ("srcAsset" in err) errJson.error.srcAsset = (err as any).srcAsset;
+          if ("dstAsset" in err) errJson.error.dstAsset = (err as any).dstAsset;
+          if ("functionSelector" in err) errJson.error.functionSelector = (err as any).functionSelector;
+          if ("revertData" in err) errJson.error.revertData = (err as any).revertData;
         }
         console.log(JSON.stringify(errJson, null, 2));
       } else {
         console.error(msg);
+        if (err instanceof Error) {
+          if ("orderId" in err) console.error(`Order:    ${(err as any).orderId}`);
+          if ("txParams" in err) {
+            const tp = (err as any).txParams;
+            console.error(`Contract: ${tp.to} (${tp.chainName})`);
+          }
+          if ("srcAsset" in err && "dstAsset" in err) {
+            const s = (err as any).srcAsset;
+            const d = (err as any).dstAsset;
+            console.error(`Route:    ${s.symbol}:${s.chain} → ${d.symbol}:${d.chain}`);
+          }
+          if ("functionSelector" in err) console.error(`Selector: ${(err as any).functionSelector}`);
+          if ("revertData" in err && (err as any).revertData) console.error(`Revert:   ${(err as any).revertData}`);
+        }
       }
       process.exitCode = 1;
     }

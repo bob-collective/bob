@@ -298,7 +298,7 @@ describe("handleSwap", () => {
       chain: { id: 8453, name: "Base" },
       sendTransaction: vi.fn().mockRejectedValue(
         Object.assign(new Error("Execution reverted for an unknown reason."), {
-          cause: { data: "0xdeadbeef" },
+          cause: { cause: { data: "0xdeadbeef" } },
         })
       ),
     };

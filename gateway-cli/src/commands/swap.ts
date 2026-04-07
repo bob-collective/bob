@@ -205,8 +205,14 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
       (enriched as any).dstAsset = { symbol: dstAsset.symbol, address: dstAsset.address, chain: dstAsset.chain };
       (enriched as any).functionSelector = typeof txInfo.data === "string" && txInfo.data.length >= 10 ? txInfo.data.slice(0, 10) : undefined;
       // Extract revert data from viem error cause chain
-      const cause = (err as any)?.cause;
-      (enriched as any).revertData = cause?.data ?? undefined;
+      // viem nests: TransactionExecutionError -> ExecutionRevertedError -> RpcRequestError (has .data)
+      let revertData: unknown;
+      let cursor: unknown = err;
+      while (cursor && typeof cursor === 'object') {
+        if ('data' in cursor && (cursor as any).data) { revertData = (cursor as any).data; break; }
+        cursor = (cursor as any).cause;
+      }
+      (enriched as any).revertData = revertData ?? undefined;
       throw enriched;
     }
   }
