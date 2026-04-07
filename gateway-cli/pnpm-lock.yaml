@@ -13,8 +13,8 @@ importers:
   .:
     dependencies:
       '@gobob/bob-sdk':
-        specifier: ^5.3.1
-        version: 5.3.1(@tanstack/react-query@5.91.0(react@19.2.4))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)(zod@4.3.6)
+        specifier: ^5.3.2
+        version: 5.3.2(@tanstack/react-query@5.91.0(react@19.2.4))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)(zod@4.3.6)
       '@gobob/tokenlist':
         specifier: github:bob-collective/tokenlist#223e98d85d857ce316fe3a8c3814ed00ddd66556
         version: https://codeload.github.com/bob-collective/tokenlist/tar.gz/223e98d85d857ce316fe3a8c3814ed00ddd66556
@@ -248,8 +248,8 @@ packages:
   '@gobob/bob-sdk@3.1.7-alpha0':
     resolution: {integrity: sha512-1qdKAYEigbqNt9x/0jYKeeC/d0u1lh6GluHaBIxp2Pt6p2+4fUVFnDdtGo5pMcgft7Bvo8/tdmlFBTzb3BEc5g==}
 
-  '@gobob/bob-sdk@5.3.1':
-    resolution: {integrity: sha512-OCP2w9hrsvRTNf9fIJolnISt6/CVv4UFRdxYHHGYpcSThjObIcN0kShye2PrLlK54tv9z7Xko+yJhn5ZAY1Mrw==}
+  '@gobob/bob-sdk@5.3.2':
+    resolution: {integrity: sha512-O+7WRyc5bfa8/CMaK6Daq6El4TizCO0TojJ46ObOI3DbpU/rfGsjFaXoPxOCG/fmVR82oyta3kFrlXQ2B/5w1w==}
 
   '@gobob/sats-wagmi@0.3.23':
     resolution: {integrity: sha512-7YAcQXo20v/SKNBv4Jhv9SYJJ9fzXUSC1ntUKwR0hjdCV9Kj0ivIRmGKvZwb8fqwgNYEaL4R5PbrMWnvFNTRgQ==}
@@ -820,6 +820,10 @@ packages:
 
   globals@14.0.0:
     resolution: {integrity: sha512-oahGvuMGQlPw/ivIYBjVSrWAfWLBeku5tpPE2fOPLi+WHffIWbuh2tCjhyQhTBPMf5E9jDEH4FOmTYgYwbKwtQ==}
+    engines: {node: '>=18'}
+
+  globals@17.4.0:
+    resolution: {integrity: sha512-hjrNztw/VajQwOLsMNT1cbJiH2muO3OROCHnbehc8eY5JyD2gqz4AcMHPqgaOR59DjgUjYAYLeH699g/eWi2jw==}
     engines: {node: '>=18'}
 
   gopd@1.2.0:
@@ -1453,7 +1457,7 @@ snapshots:
       - utf-8-validate
       - zod
 
-  '@gobob/bob-sdk@5.3.1(@tanstack/react-query@5.91.0(react@19.2.4))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)(zod@4.3.6)':
+  '@gobob/bob-sdk@5.3.2(@tanstack/react-query@5.91.0(react@19.2.4))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)(zod@4.3.6)':
     dependencies:
       '@bitcoinerlab/secp256k1': 1.2.0
       '@eslint/eslintrc': 3.3.5
@@ -1466,6 +1470,7 @@ snapshots:
       bitcoin-address-validation: 3.0.0
       bitcoinjs-lib: 6.1.7
       global: 4.4.0
+      globals: 17.4.0
       viem: 2.47.5(typescript@5.9.3)(zod@4.3.6)
     transitivePeerDependencies:
       - '@tanstack/react-query'
@@ -2100,6 +2105,8 @@ snapshots:
       process: 0.11.10
 
   globals@14.0.0: {}
+
+  globals@17.4.0: {}
 
   gopd@1.2.0: {}
 
