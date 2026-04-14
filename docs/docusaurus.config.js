@@ -44,39 +44,6 @@ const config = {
     locales: ["en"],
   },
 
-  headTags: [
-    {
-      tagName: "link",
-      attributes: {
-        rel: "preload",
-        href: "/fonts/IBMPlexSans-Regular.ttf",
-        as: "font",
-        type: "font/ttf",
-        crossorigin: "anonymous",
-      },
-    },
-    {
-      tagName: "link",
-      attributes: {
-        rel: "preload",
-        href: "/fonts/Inter_18pt-Regular.ttf",
-        as: "font",
-        type: "font/ttf",
-        crossorigin: "anonymous",
-      },
-    },
-    {
-      tagName: "link",
-      attributes: {
-        rel: "preload",
-        href: "/fonts/Inter_28pt-SemiBold.ttf",
-        as: "font",
-        type: "font/ttf",
-        crossorigin: "anonymous",
-      },
-    },
-  ],
-
   plugins: [
     ['docusaurus-plugin-llms', {
       pathTransformation: { ignorePaths: ['docs'] },
@@ -325,6 +292,38 @@ const config = {
       src: "https://cdn.usefathom.com/script.js",
       site: "NBNJSTNS",
       defer: true,
+    },
+  ],
+  headTags: [
+    {
+      tagName: "link",
+      attributes: {
+        rel: "preload",
+        href: "/fonts/IBMPlexSans-Regular.ttf",
+        as: "font",
+        type: "font/ttf",
+        crossorigin: "anonymous",
+      },
+    },
+    {
+      tagName: "link",
+      attributes: {
+        rel: "preload",
+        href: "/fonts/Inter_18pt-Regular.ttf",
+        as: "font",
+        type: "font/ttf",
+        crossorigin: "anonymous",
+      },
+    },
+    {
+      tagName: "link",
+      attributes: {
+        rel: "preload",
+        href: "/fonts/Inter_28pt-SemiBold.ttf",
+        as: "font",
+        type: "font/ttf",
+        crossorigin: "anonymous",
+      },
     },
   ],
   staticDirectories: ["static"],
