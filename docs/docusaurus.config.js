@@ -22,8 +22,8 @@ const ONE_PAGER =
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: "BOB - Build on Bitcoin",
-  tagline: "A Hybrid Chain powered by Bitcoin and Ethereum.",
+  title: "BOB Developer Docs - The Bank of Bitcoin | Swap, Save, Earn & Borrow on BTC",
+  tagline: "BOB is the Bank of Bitcoin. Get started building in the BTCFi ecosystem where you can swap, save, earn and borrow - all on Bitcoin rails.",
   favicon: "img/favicon.ico",
   url: DOCS_PAGE,
   baseUrl: "/",
@@ -43,6 +43,109 @@ const config = {
     defaultLocale: "en",
     locales: ["en"],
   },
+
+  headTags: [
+    {
+      tagName: "meta",
+      attributes: {
+        property: "og:title",
+        content: "BOB Developer Docs - The Bank of Bitcoin | Swap, Save, Earn & Borrow on BTC",
+      },
+    },
+    {
+      tagName: "meta",
+      attributes: {
+        property: "og:description",
+        content: "BOB is the Bank of Bitcoin. Get started building in the BTCFi ecosystem where you can swap, save, earn and borrow - all on Bitcoin rails.",
+      },
+    },
+    {
+      tagName: "meta",
+      attributes: {
+        property: "og:image",
+        content: "img/app-preview.webp",
+      },
+    },
+    {
+      tagName: "meta",
+      attributes: {
+        property: "og:image:alt",
+        content: "BOB is the Bank of Bitcoin",
+      },
+    },
+    {
+      tagName: "meta",
+      attributes: {
+        name: "twitter:title",
+        content: "BOB Developer Docs - The Bank of Bitcoin | Swap, Save, Earn & Borrow on BTC",
+      },
+    },
+    {
+      tagName: "meta",
+      attributes: {
+        name: "twitter:description",
+        content: "BOB is the Bank of Bitcoin. Get started building in the BTCFi ecosystem where you can swap, save, earn and borrow - all on Bitcoin rails.",
+      },
+    },
+    {
+      tagName: "meta",
+      attributes: {
+        name: "twitter:card",
+        content: "summary_large_image",
+      },
+    },
+    {
+      tagName: "meta",
+      attributes: {
+        property: "twitter:image",
+        content: "img/app-preview.webp",
+      },
+    },
+    {
+      tagName: "meta",
+      attributes: {
+        property: "twitter:image:alt",
+        content: "BOB is the Bank of Bitcoin",
+      },
+    },
+    {
+      tagName: "meta",
+      attributes: {
+        name: "twitter:site",
+        content: "@build_on_bob",
+      },
+    },
+    {
+      tagName: "link",
+      attributes: {
+        rel: "preload",
+        href: "/fonts/IBMPlexSans-Regular.ttf",
+        as: "font",
+        type: "font/ttf",
+        crossorigin: "anonymous",
+      },
+    },
+    {
+      tagName: "link",
+      attributes: {
+        rel: "preload",
+        href: "/fonts/Inter_18pt-Regular.ttf",
+        as: "font",
+        type: "font/ttf",
+        crossorigin: "anonymous",
+      },
+    },
+    {
+      tagName: "link",
+      attributes: {
+        rel: "preload",
+        href: "/fonts/Inter_28pt-SemiBold.ttf",
+        as: "font",
+        type: "font/ttf",
+        crossorigin: "anonymous",
+      },
+    },
+  ],
 
   plugins: [
     ['docusaurus-plugin-llms', {
@@ -141,13 +244,20 @@ const config = {
         showRunmeLink: false,
         runmeLinkLabel: "Checkout via Runme",
       },
-
-      image: "img/bob-social-card.png",
+      image: "img/app-preview.webp",
       metadata: [
+        {
+          name: 'title',
+          content: 'BOB Developer Docs - The Bank of Bitcoin | Swap, Save, Earn & Borrow on BTC',
+        },
+        {
+          name: 'description',
+          content: 'BOB is the Bank of Bitcoin. Get started building in the BTCFi ecosystem where you can swap, save, earn and borrow - all on Bitcoin rails.',
+        },
         {
           name: "keywords",
           content:
-            "bitcoin, layer 2, scaling, rollup, bitvm, rust, smart contracts, evm, solidity, collective, open source, blockchain",
+            "Bank of Bitcoin, BOB protocol, Bitcoin banking, Bitcoin yield, Bitcoin lending, Bitcoin vaults, borrow against Bitcoin, native Bitcoin DeFi, BTCFi, BOB Gateway, cross-chain BTC swaps, BitVM, bitcoin savings, bitcoin stablecoin loans, Bitcoin financial infrastructure, hybrid chain, Bitcoin intents, Bitcoin swaps, BTC Swaps, Stablecoin swaps, wBTC swaps, BOB token, cryptocurrency, tokenomics, staking, governance, hybrid chain, non-custodial, Bitcoin staking, Bitcoin bridge",
         },
       ],
       navbar: {
@@ -285,38 +395,6 @@ const config = {
       src: "https://cdn.usefathom.com/script.js",
       site: "NBNJSTNS",
       defer: true,
-    },
-  ],
-  headTags: [
-    {
-      tagName: "link",
-      attributes: {
-        rel: "preload",
-        href: "/fonts/IBMPlexSans-Regular.ttf",
-        as: "font",
-        type: "font/ttf",
-        crossorigin: "anonymous",
-      },
-    },
-    {
-      tagName: "link",
-      attributes: {
-        rel: "preload",
-        href: "/fonts/Inter_18pt-Regular.ttf",
-        as: "font",
-        type: "font/ttf",
-        crossorigin: "anonymous",
-      },
-    },
-    {
-      tagName: "link",
-      attributes: {
-        rel: "preload",
-        href: "/fonts/Inter_28pt-SemiBold.ttf",
-        as: "font",
-        type: "font/ttf",
-        crossorigin: "anonymous",
-      },
     },
   ],
   staticDirectories: ["static"],
