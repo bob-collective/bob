@@ -144,14 +144,6 @@ const config = {
       image: "img/app-preview.webp",
       metadata: [
         {
-          name: 'title',
-          content: 'BOB Developer Docs - The Bank of Bitcoin | Swap, Save, Earn & Borrow on BTC',
-        },
-        {
-          name: 'description',
-          content: 'BOB is the Bank of Bitcoin. Get started building in the BTCFi ecosystem where you can swap, save, earn and borrow - all on Bitcoin rails.',
-        },
-        {
           name: "keywords",
           content:
             "Bank of Bitcoin, BOB protocol, Bitcoin banking, Bitcoin yield, Bitcoin lending, Bitcoin vaults, borrow against Bitcoin, native Bitcoin DeFi, BTCFi, BOB Gateway, cross-chain BTC swaps, BitVM, bitcoin savings, bitcoin stablecoin loans, Bitcoin financial infrastructure, hybrid chain, Bitcoin intents, Bitcoin swaps, BTC Swaps, Stablecoin swaps, wBTC swaps, BOB token, cryptocurrency, tokenomics, staking, governance, hybrid chain, non-custodial, Bitcoin staking, Bitcoin bridge",
