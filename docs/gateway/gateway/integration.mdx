@@ -43,6 +43,18 @@ const gatewaySDK = new GatewaySDK(bob.id);
 const gatewaySDKTestnet = new GatewaySDK(bobSepolia.id);
 ```
 
+### Authentication
+
+If you have an API key for the Gateway API, pass it as the second argument:
+
+```typescript
+import { GatewaySDK } from '@gobob/bob-sdk';
+
+const gatewaySDK = new GatewaySDK(undefined, 'your-66-character-api-key');
+```
+
+The API key must be exactly 66 characters long. When provided, the SDK will include it in the `Authorization` header as a Bearer token.
+
 ## Get Available Routes
 
 Fetch all supported routes to show users their options:

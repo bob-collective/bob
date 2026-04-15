@@ -106,6 +106,12 @@ export type ExecuteQuoteResult =
  *   toUserAddress: '0x...'
  * });
  * ```
+ *
+ * @example
+ * ```typescript
+ * // With API key authentication
+ * const client = new GatewayApiClient(null, '0x...');
+ * ```
  */
 export class GatewayApiClient {
     api: V1Api;
@@ -113,16 +119,30 @@ export class GatewayApiClient {
     /**
      * Creates a new Gateway API client instance.
      *
+     * @param basePath - Optional custom Gateway API base URL
+     * @param apiKey - Optional API key for authenticated requests (must be 66 characters)
+     *
      * @example
      * ```typescript
      * // Mainnet client
      * const mainnetClient = new GatewayApiClient();
+     *
+     * // Staging client
+     * const stagingClient = new GatewayApiClient('https://gateway-api-staging.gobob.xyz');
+     *
+     * // With API key
+     * const authenticatedClient = new GatewayApiClient(null, '0x1234...');
      * ```
      */
-    constructor(basePath?: string) {
+    constructor(basePath?: string, apiKey?: string) {
+        if (apiKey && apiKey.length !== 66) {
+            throw new Error('apiKey must be exactly 66 characters');
+        }
+
         this.api = new V1Api(
             new Configuration({
                 basePath: basePath || MAINNET_GATEWAY_BASE_URL,
+                headers: apiKey ? { Authorization: `Bearer ${apiKey}` } : undefined,
                 middleware: [
                     {
                         async post(context) {

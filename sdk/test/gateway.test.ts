@@ -1423,4 +1423,176 @@ describe('Gateway Tests', () => {
             `Invalid ${field}: '${value}'. Expected a token address (e.g. '0x0000000000000000000000000000000000000000'), not a symbol. Use getRoutes() to find supported token addresses.`
         );
     });
+
+    it('should throw error when apiKey is not exactly 66 characters', () => {
+        expect(() => new GatewaySDK(undefined, 'short')).toThrow('apiKey must be exactly 66 characters');
+        expect(() => new GatewaySDK(undefined, '0x1234567890')).toThrow('apiKey must be exactly 66 characters');
+        expect(() => new GatewaySDK(undefined, 'a'.repeat(65))).toThrow('apiKey must be exactly 66 characters');
+        expect(() => new GatewaySDK(undefined, 'a'.repeat(67))).toThrow('apiKey must be exactly 66 characters');
+    });
+
+    it('should accept apiKey with exactly 66 characters', () => {
+        const validApiKey = '0x' + 'a'.repeat(64);
+        expect(validApiKey.length).toBe(66);
+        expect(() => new GatewaySDK(undefined, validApiKey)).not.toThrow();
+    });
+
+    it('should include Authorization header when apiKey is provided', async () => {
+        const validApiKey = '0x' + 'a'.repeat(64);
+        const gatewaySDK = new GatewaySDK(undefined, validApiKey);
+
+        const mockOnrampQuote: GatewayQuoteOneOf = {
+            onramp: {
+                dstChain: 'bob',
+                dstToken: WBTC_OFT_ADDRESS,
+                executionFees: {
+                    address: zeroAddress,
+                    amount: '10',
+                    chain: 'bob',
+                },
+                feeBreakdown: {
+                    protocolFee: {
+                        address: zeroAddress,
+                        amount: '5',
+                        chain: 'bob',
+                    },
+                    affiliateFee: {
+                        address: zeroAddress,
+                        amount: '2',
+                        chain: 'bob',
+                    },
+                    executionFee: {
+                        address: zeroAddress,
+                        amount: '1',
+                        chain: 'bob',
+                    },
+                    layerzeroFee: {
+                        address: zeroAddress,
+                        amount: '1',
+                        chain: 'bob',
+                    },
+                    solverFee: {
+                        address: zeroAddress,
+                        amount: '1',
+                        chain: 'bob',
+                    },
+                },
+                fees: {
+                    address: zeroAddress,
+                    amount: '3',
+                    chain: 'bob',
+                },
+                inputAmount: {
+                    address: zeroAddress,
+                    amount: '1000',
+                    chain: 'bob',
+                },
+                outputAmount: {
+                    address: zeroAddress,
+                    amount: '990',
+                    chain: 'bob',
+                },
+                recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+                sender: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+                slippage: '0',
+                token: '0x0000000000000000000000000000000000000000',
+            },
+        };
+
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
+            .get('/v1/get-quote')
+            .query(true)
+            .matchHeader('Authorization', `Bearer ${validApiKey}`)
+            .reply(200, mockOnrampQuote);
+
+        const result = await gatewaySDK.getQuote({
+            fromChain: 'bitcoin',
+            fromToken: '0x0000000000000000000000000000000000000000',
+            toChain: 'bob',
+            toToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
+            fromUserAddress: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+            toUserAddress: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+            amount: 1000,
+        });
+
+        expect(result).toBeDefined();
+        assert(instanceOfGatewayQuoteOneOf(result));
+    });
+
+    it('should not include Authorization header when apiKey is not provided', async () => {
+        const gatewaySDK = new GatewaySDK();
+
+        const mockOnrampQuote: GatewayQuoteOneOf = {
+            onramp: {
+                dstChain: 'bob',
+                dstToken: WBTC_OFT_ADDRESS,
+                executionFees: {
+                    address: zeroAddress,
+                    amount: '10',
+                    chain: 'bob',
+                },
+                feeBreakdown: {
+                    protocolFee: {
+                        address: zeroAddress,
+                        amount: '5',
+                        chain: 'bob',
+                    },
+                    affiliateFee: {
+                        address: zeroAddress,
+                        amount: '2',
+                        chain: 'bob',
+                    },
+                    executionFee: {
+                        address: zeroAddress,
+                        amount: '1',
+                        chain: 'bob',
+                    },
+                    layerzeroFee: {
+                        address: zeroAddress,
+                        amount: '1',
+                        chain: 'bob',
+                    },
+                    solverFee: {
+                        address: zeroAddress,
+                        amount: '1',
+                        chain: 'bob',
+                    },
+                },
+                fees: {
+                    address: zeroAddress,
+                    amount: '3',
+                    chain: 'bob',
+                },
+                inputAmount: {
+                    address: zeroAddress,
+                    amount: '1000',
+                    chain: 'bob',
+                },
+                outputAmount: {
+                    address: zeroAddress,
+                    amount: '990',
+                    chain: 'bob',
+                },
+                recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+                sender: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+                slippage: '0',
+                token: '0x0000000000000000000000000000000000000000',
+            },
+        };
+
+        nock(`${MAINNET_GATEWAY_BASE_URL}`).get('/v1/get-quote').query(true).reply(200, mockOnrampQuote);
+
+        const result = await gatewaySDK.getQuote({
+            fromChain: 'bitcoin',
+            fromToken: '0x0000000000000000000000000000000000000000',
+            toChain: 'bob',
+            toToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
+            fromUserAddress: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+            toUserAddress: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+            amount: 1000,
+        });
+
+        expect(result).toBeDefined();
+        assert(instanceOfGatewayQuoteOneOf(result));
+    });
 });
