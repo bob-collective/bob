@@ -120,7 +120,7 @@ export class GatewayApiClient {
      * Creates a new Gateway API client instance.
      *
      * @param basePath - Optional custom Gateway API base URL
-     * @param apiKey - Optional API key for authenticated requests (must be 66 characters)
+     * @param apiKey - Optional API key for authenticated requests (must be 32 characters)
      *
      * @example
      * ```typescript
@@ -135,8 +135,8 @@ export class GatewayApiClient {
      * ```
      */
     constructor(basePath?: string, apiKey?: string) {
-        if (apiKey && apiKey.length !== 66) {
-            throw new Error('apiKey must be exactly 66 characters');
+        if (apiKey && apiKey.length !== 32) {
+            throw new Error('apiKey must be exactly 32 characters');
         }
 
         this.api = new V1Api(
