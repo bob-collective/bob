@@ -1,0 +1,89 @@
+---
+title: "Supported Routes & Assets"
+description: "All supported chains and token routes available through the BOB Gateway."
+icon: "route"
+---
+
+export const ROUTES_API = "https://gateway-api-mainnet.gobob.xyz/v1/get-routes";
+export const TOKENLIST_URL = "https://raw.githubusercontent.com/bob-collective/tokenlist/main/tokenlist.json";
+export const NON_EVM = { bitcoin: "BTC", aptos: "WBTC" };
+export const CHAIN_LABELS = { bsc: "BSC", bob: "BOB" };
+
+export const cap = (s) => CHAIN_LABELS[s] || s[0].toUpperCase() + s.slice(1);
+export const truncate = (addr) => addr.slice(0, 6) + "\u2026" + addr.slice(-4);
+
+export const SupportedRoutes = () => {
+  const [routes, setRoutes] = useState(null);
+  const [symbols, setSymbols] = useState({});
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    Promise.all([
+      fetch(ROUTES_API).then((r) => r.json()).catch(() => null),
+      fetch(TOKENLIST_URL).then((r) => r.json()).then((d) => d.tokens).catch(() => []),
+    ]).then(([routeData, tokens]) => {
+      if (!routeData) {
+        setError(true);
+        return;
+      }
+      const map = {};
+      for (const t of tokens) map[t.address.toLowerCase()] = t.symbol;
+      setSymbols(map);
+      setRoutes(routeData);
+    });
+  }, []);
+
+  if (error) return <p>Routes could not be loaded.</p>;
+  if (!routes) return <p>Loading routes…</p>;
+
+  const sym = (chain, addr) => {
+    if (NON_EVM[chain]) return NON_EVM[chain];
+    if (symbols[addr.toLowerCase()]) return symbols[addr.toLowerCase()];
+    return truncate(addr);
+  };
+
+  const groups = {};
+  for (const r of routes) {
+    if (!groups[r.srcChain]) groups[r.srcChain] = [];
+    groups[r.srcChain].push(r);
+  }
+
+  return (
+    <div>
+      {Object.keys(groups).sort().map((chain) => {
+        const rows = groups[chain].sort((a, b) =>
+          a.dstChain.localeCompare(b.dstChain) || a.srcToken.localeCompare(b.srcToken)
+        );
+        return (
+          <div key={chain}>
+            <h2>From {cap(chain)}</h2>
+            <table>
+              <thead>
+                <tr>
+                  <th>Source Token</th>
+                  <th>Source Address</th>
+                  <th>Destination Chain</th>
+                  <th>Destination Token</th>
+                  <th>Destination Address</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((r, i) => (
+                  <tr key={i}>
+                    <td>{sym(r.srcChain, r.srcToken)}</td>
+                    <td>{NON_EVM[r.srcChain] ? "" : truncate(r.srcToken)}</td>
+                    <td>{cap(r.dstChain)}</td>
+                    <td>{sym(r.dstChain, r.dstToken)}</td>
+                    <td>{NON_EVM[r.dstChain] ? "" : truncate(r.dstToken)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+<SupportedRoutes />
