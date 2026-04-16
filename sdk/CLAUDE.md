@@ -39,7 +39,7 @@ ESLint ignores `src/gateway/generated-client/**`.
 
 ### GatewaySDK (primary class)
 
-Instantiated with an optional base URL (defaults to mainnet). Core flow:
+Instantiated with optional `basePath` and `apiKey` arguments (defaults to mainnet). Core flow:
 
 1. **`getQuote(params)`** — fetch a quote (returns a discriminated union: onramp | offramp | layerZero)
 2. **`executeQuote({ quote, walletClient, publicClient, btcSigner? })`** — execute the full transaction flow for a quote
