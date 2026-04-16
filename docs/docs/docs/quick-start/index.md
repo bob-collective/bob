@@ -1,6 +1,7 @@
 ---
 sidebar_position: 0
 hide_table_of_contents: true
+description: BOB is the Bank of Bitcoin. Get started building in the BTCFi ecosystem where you can swap, save, earn and borrow - all on Bitcoin rails.
 ---
 
 # Quick Start

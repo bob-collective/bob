@@ -253,6 +253,20 @@ export class MempoolClient {
     }
 
     /**
+     * Get pending (unconfirmed) transactions for a Bitcoin address from the mempool.
+     *
+     * @param {string} address - The Bitcoin address to check.
+     * @returns {Promise<MempoolTxInfo[]>} Array of unconfirmed transactions.
+     *
+     * @example
+     * const mempoolClient = new MempoolClient();
+     * const pendingTxs = await mempoolClient.getAddressMempoolTxs('bc1q...');
+     */
+    async getAddressMempoolTxs(address: string): Promise<MempoolTxInfo[]> {
+        return this.getJson<MempoolTxInfo[]>(`${this.basePath}/address/${address}/txs/mempool`);
+    }
+
+    /**
      * @ignore
      */
     private async getJson<T>(url: string): Promise<T> {

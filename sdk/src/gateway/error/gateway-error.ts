@@ -69,15 +69,16 @@ export type DetailsFor<C extends GatewayErrorCode> = C extends keyof GatewayErro
  *
  * The class is generic over the error code `C` so that `details` is
  * automatically narrowed to the correct shape when the caller discriminates on
- * `code`. Use the {@link AnyGatewayError} union type (returned by
- * {@link GatewayError.fromResponse}) to get full switch-narrowing:
+ * `code`. Use {@link isGatewayError} (instead of `instanceof`) to narrow the
+ * caught error to {@link AnyGatewayError} — a discriminated union over all
+ * error codes — so that switching on `.code` resolves `.details` automatically:
  *
  * @example
  * ```typescript
  * try {
  *   await gatewaySDK.getQuote(params);
  * } catch (err) {
- *   if (err instanceof GatewayError) {
+ *   if (isGatewayError(err)) {
  *     switch (err.code) {
  *       case GatewayErrorCode.NoRoute:
  *         // err.details is NoRouteDetails — no cast needed
@@ -167,6 +168,28 @@ export class GatewayError<C extends GatewayErrorCode = GatewayErrorCode>
  * `.details` to the matching detail interface automatically.
  */
 export type AnyGatewayError = { [C in GatewayErrorCode]: GatewayError<C> }[GatewayErrorCode];
+
+/**
+ * Type guard that narrows `err` to {@link AnyGatewayError}.
+ *
+ * Use this instead of `err instanceof GatewayError`. The `instanceof` check
+ * alone widens to `GatewayError<GatewayErrorCode>` — a single non-union type —
+ * which prevents TypeScript from narrowing `.details` when you switch on
+ * `.code`. This guard returns the discriminated union so narrowing works:
+ *
+ * @example
+ * ```typescript
+ * if (isGatewayError(err)) {
+ *   switch (err.code) {
+ *     case GatewayErrorCode.NoRoute:
+ *       err.details.srcChain; // NoRouteDetails — no cast needed
+ *   }
+ * }
+ * ```
+ */
+export function isGatewayError(err: unknown): err is AnyGatewayError {
+    return err instanceof GatewayError;
+}
 
 // ─── Code-aware detail parser ─────────────────────────────────────────────────
 // Reads raw snake_case JSON fields directly, matching Rust serde output.

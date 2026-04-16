@@ -1,0 +1,66 @@
+name: Publish CLI to npm
+
+on:
+  push:
+    tags:
+      - '*'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: ./gateway-cli
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'pnpm'
+          cache-dependency-path: |
+            sdk/pnpm-lock.yaml
+
+      - name: Install CLI
+        run: pnpm install --frozen-lockfile
+
+      - name: Build CLI
+        run: pnpm build
+
+      - name: Get CLI version
+        id: version
+        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
+      - name: Prepare for publish
+        run: |
+          node -e "
+            const pkg = require('./package.json');
+            pkg.dependencies['@gobob/bob-sdk'] = '^5.0.0';
+            require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));
+          "
+
+      - name: Check if version already published
+        run: |
+          if npm view @gobob/gateway-cli@${{ steps.version.outputs.version }} &>/dev/null; then
+            echo "Version ${{ steps.version.outputs.version }} already published to npm, skipping publish"
+            echo "PUBLISH=false" >> $GITHUB_ENV
+          else
+            echo "PUBLISH=true" >> $GITHUB_ENV
+          fi
+
+      - name: Publish
+        if: env.PUBLISH == 'true'
+        run: |
+          if [[ "${{ steps.version.outputs.version }}" == *rc* ]]; then
+            npm publish --access public --provenance --tag rc
+          else
+            npm publish --access public --provenance
+          fi

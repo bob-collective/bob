@@ -2,7 +2,7 @@
 
 ## Overview
 
-BOB (Build on Bitcoin) — a hybrid chain fusing Bitcoin security with Ethereum versatility. This monorepo contains Solidity smart contracts, a Rust Bitcoin relay, a TypeScript SDK, documentation site, and a token list.
+BOB (Build on Bitcoin) — a hybrid chain fusing Bitcoin security with Ethereum versatility. This monorepo contains Solidity smart contracts, a Rust Bitcoin relay, a TypeScript SDK, and a documentation site.
 
 ## Architecture
 
@@ -13,7 +13,6 @@ BOB (Build on Bitcoin) — a hybrid chain fusing Bitcoin security with Ethereum 
 | Crates | `crates/` | Rust | Shared libraries — `bindings` (generated) and `bob-utils` |
 | SDK | `sdk/` | TypeScript | Client SDK (`@gobob/bob-sdk`) |
 | Docs | `docs/` | TypeScript | Docusaurus documentation site |
-| Token List | `tokenlist/` | TypeScript | BOB token list and metadata |
 
 ## Code Style
 
