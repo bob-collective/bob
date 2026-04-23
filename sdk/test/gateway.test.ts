@@ -10,13 +10,19 @@ import {
     zeroAddress,
 } from 'viem';
 import { afterEach, assert, describe, expect, it, vi } from 'vitest';
-import { GatewaySDK } from '../src/gateway';
+import {
+    GatewayError,
+    GatewayErrorCode,
+    GatewaySDK,
+    isGatewayError,
+} from '../src/gateway';
 import { ETHEREUM_USDT_ADDRESS, MAINNET_GATEWAY_BASE_URL } from '../src/gateway/client';
 import {
     GatewayOrderInfo,
     GatewayQuoteOneOf,
     GatewayQuoteOneOf1,
     GatewayQuoteOneOf2,
+    GatewayQuoteV2OneOf,
     instanceOfGatewayQuoteOneOf,
     instanceOfGatewayQuoteOneOf1,
     instanceOfGatewayQuoteOneOf2,
@@ -24,6 +30,7 @@ import {
 import { BitcoinSigner } from '../src/gateway/types';
 
 const WBTC_OFT_ADDRESS = '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c';
+const MOCK_SIGNED_QUOTE_DATA = 'signed-quote-data';
 
 afterEach(() => {
     nock.cleanAll();
@@ -86,6 +93,7 @@ describe('Gateway Tests', () => {
                 },
                 recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
                 sender: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+                signedQuoteData: MOCK_SIGNED_QUOTE_DATA,
                 slippage: '0',
                 token: '0x0000000000000000000000000000000000000000',
             },
@@ -220,6 +228,7 @@ describe('Gateway Tests', () => {
     it('should get orders', async () => {
         const mockOrders: GatewayOrderInfo[] = [
             {
+                id: 'order-1',
                 status: 'btc-confirmation',
                 dstInfo: {
                     chain: 'bob',
@@ -237,6 +246,7 @@ describe('Gateway Tests', () => {
                 estimatedTimeInSecs: 3600,
             },
             {
+                id: 'order-2',
                 status: 'Accepted',
                 timestamp: 1625247600,
                 estimatedTimeInSecs: 3600,
@@ -254,6 +264,7 @@ describe('Gateway Tests', () => {
                 },
             },
             {
+                id: 'order-3',
                 estimatedTimeInSecs: 600,
                 dstInfo: {
                     chain: 'bsc',
@@ -354,6 +365,7 @@ describe('Gateway Tests', () => {
                 },
                 recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
                 sender: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+                signedQuoteData: MOCK_SIGNED_QUOTE_DATA,
                 slippage: '0',
                 token: '0x0000000000000000000000000000000000000000',
             },
@@ -458,6 +470,7 @@ describe('Gateway Tests', () => {
                 },
                 recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
                 sender: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+                signedQuoteData: MOCK_SIGNED_QUOTE_DATA,
                 slippage: '0',
                 token: '0x0000000000000000000000000000000000000000',
             },
@@ -557,6 +570,7 @@ describe('Gateway Tests', () => {
                 },
                 recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
                 sender: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+                signedQuoteData: MOCK_SIGNED_QUOTE_DATA,
                 slippage: '0',
                 token: '0x0000000000000000000000000000000000000000',
             },
@@ -599,7 +613,7 @@ describe('Gateway Tests', () => {
     it('should execute offramp quote with token approval', async () => {
         const gatewaySDK = new GatewaySDK();
 
-        const mockQuote: GatewayQuoteOneOf1 = {
+        const mockQuote: GatewayQuoteV2OneOf = {
             offramp: {
                 txTo: '0x1234567890123456789012345678901234567890',
                 recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
@@ -628,11 +642,6 @@ describe('Gateway Tests', () => {
                     },
                     fastestFeeRate: '6',
                 },
-                fees: {
-                    address: zeroAddress,
-                    amount: '3',
-                    chain: 'bob',
-                },
                 inputAmount: {
                     address: zeroAddress,
                     amount: '1000',
@@ -644,6 +653,7 @@ describe('Gateway Tests', () => {
                     chain: 'bob',
                 },
                 tokenAddress: WBTC_OFT_ADDRESS,
+                totalFeeUsd: '3',
             },
         };
 
@@ -689,7 +699,7 @@ describe('Gateway Tests', () => {
     it('should approve WBTC on bob offramp', async () => {
         const gatewaySDK = new GatewaySDK();
 
-        const mockQuote: GatewayQuoteOneOf1 = {
+        const mockQuote: GatewayQuoteV2OneOf = {
             offramp: {
                 srcChain: 'bob',
                 feeBreakdown: {
@@ -715,11 +725,6 @@ describe('Gateway Tests', () => {
                     },
                     fastestFeeRate: '6',
                 },
-                fees: {
-                    address: zeroAddress,
-                    amount: '3',
-                    chain: 'bob',
-                },
                 inputAmount: {
                     address: zeroAddress,
                     amount: '1000',
@@ -733,6 +738,7 @@ describe('Gateway Tests', () => {
                 tokenAddress: WBTC_OFT_ADDRESS,
                 recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
                 slippage: 0,
+                totalFeeUsd: '3',
                 txTo: zeroAddress,
             },
         };
@@ -782,7 +788,7 @@ describe('Gateway Tests', () => {
     it('should skip approval for WBTC when srcChain is not bob', async () => {
         const gatewaySDK = new GatewaySDK();
 
-        const mockQuote: GatewayQuoteOneOf1 = {
+        const mockQuote: GatewayQuoteV2OneOf = {
             offramp: {
                 srcChain: 'ethereum',
                 feeBreakdown: {
@@ -808,11 +814,6 @@ describe('Gateway Tests', () => {
                     },
                     fastestFeeRate: '6',
                 },
-                fees: {
-                    address: zeroAddress,
-                    amount: '3',
-                    chain: 'ethereum',
-                },
                 inputAmount: {
                     address: zeroAddress,
                     amount: '1000',
@@ -826,6 +827,7 @@ describe('Gateway Tests', () => {
                 tokenAddress: WBTC_OFT_ADDRESS,
                 recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
                 slippage: 0,
+                totalFeeUsd: '3',
                 txTo: zeroAddress,
             },
         };
@@ -872,7 +874,7 @@ describe('Gateway Tests', () => {
     it('should reset USDT allowance before approving', async () => {
         const gatewaySDK = new GatewaySDK();
 
-        const mockQuote: GatewayQuoteOneOf1 = {
+        const mockQuote: GatewayQuoteV2OneOf = {
             offramp: {
                 recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
                 srcChain: 'ethereum',
@@ -899,11 +901,6 @@ describe('Gateway Tests', () => {
                     },
                     fastestFeeRate: '6',
                 },
-                fees: {
-                    address: zeroAddress,
-                    amount: '3',
-                    chain: 'ethereum',
-                },
                 inputAmount: {
                     address: zeroAddress,
                     amount: '1000',
@@ -916,6 +913,7 @@ describe('Gateway Tests', () => {
                 },
                 tokenAddress: ETHEREUM_USDT_ADDRESS,
                 slippage: 0,
+                totalFeeUsd: '3',
                 txTo: zeroAddress,
             },
         };
@@ -966,7 +964,7 @@ describe('Gateway Tests', () => {
     it('should execute offramp quote without approval when allowance is sufficient', async () => {
         const gatewaySDK = new GatewaySDK();
 
-        const mockQuote: GatewayQuoteOneOf1 = {
+        const mockQuote: GatewayQuoteV2OneOf = {
             offramp: {
                 txTo: '0x1234567890123456789012345678901234567890',
                 recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
@@ -995,11 +993,6 @@ describe('Gateway Tests', () => {
                     },
                     fastestFeeRate: '6',
                 },
-                fees: {
-                    address: zeroAddress,
-                    amount: '3',
-                    chain: 'bob',
-                },
                 inputAmount: {
                     address: zeroAddress,
                     amount: '1000',
@@ -1011,6 +1004,7 @@ describe('Gateway Tests', () => {
                     chain: 'bob',
                 },
                 tokenAddress: WBTC_OFT_ADDRESS,
+                totalFeeUsd: '3',
             },
         };
 
@@ -1129,6 +1123,7 @@ describe('Gateway Tests', () => {
                 },
                 recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
                 sender: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+                signedQuoteData: MOCK_SIGNED_QUOTE_DATA,
                 slippage: '0',
                 token: '0x0000000000000000000000000000000000000000',
             },
@@ -1188,6 +1183,46 @@ describe('Gateway Tests', () => {
                 maxSlippage: 300,
             })
         ).rejects.toThrow(errorMessage);
+    });
+
+    it('should parse QuoteAmountTooLow gateway errors with typed details', () => {
+        const error = GatewayError.fromResponse({
+            code: GatewayErrorCode.QuoteAmountTooLow,
+            error: 'Quote amount too low',
+            details: {
+                minimum: '1000',
+                actual: '10',
+            },
+        });
+
+        expect(isGatewayError(error)).toBe(true);
+        expect(error.code).toBe(GatewayErrorCode.QuoteAmountTooLow);
+        expect(error.details).toEqual({
+            minimum: '1000',
+            actual: '10',
+        });
+    });
+
+    it('should parse camelCase gateway error details', () => {
+        const error = GatewayError.fromResponse({
+            code: GatewayErrorCode.NoRoute,
+            error: 'No route',
+            details: {
+                srcChain: 'bitcoin',
+                srcToken: '0x0000000000000000000000000000000000000000',
+                dstChain: 'bob',
+                dstToken: WBTC_OFT_ADDRESS,
+            },
+        });
+
+        expect(isGatewayError(error)).toBe(true);
+        expect(error.code).toBe(GatewayErrorCode.NoRoute);
+        expect(error.details).toEqual({
+            srcChain: 'bitcoin',
+            srcToken: '0x0000000000000000000000000000000000000000',
+            dstChain: 'bob',
+            dstToken: WBTC_OFT_ADDRESS,
+        });
     });
 
     it('should approve and send transaction for layerzero swap when allowance is low', async () => {
@@ -1494,6 +1529,7 @@ describe('Gateway Tests', () => {
                 },
                 recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
                 sender: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+                signedQuoteData: MOCK_SIGNED_QUOTE_DATA,
                 slippage: '0',
                 token: '0x0000000000000000000000000000000000000000',
             },
@@ -1575,6 +1611,7 @@ describe('Gateway Tests', () => {
                 },
                 recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
                 sender: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+                signedQuoteData: MOCK_SIGNED_QUOTE_DATA,
                 slippage: '0',
                 token: '0x0000000000000000000000000000000000000000',
             },

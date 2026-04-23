@@ -10,7 +10,7 @@ export {
     isGatewayError,
     type ExceededLimitDetails,
     type InsufficientAmountDetails,
-    type InsufficientFundsDetails,
+    type QuoteAmountTooLowDetails,
     type InsufficientSwapAmountDetails,
     type NoRouteDetails,
     type SimulationFailedDetails,

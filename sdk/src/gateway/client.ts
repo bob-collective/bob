@@ -15,21 +15,25 @@ import {
 } from 'viem';
 import { strategyCaller, USDTApproveAbi } from './abi';
 import {
+    BaseAPI,
     Configuration,
     type GatewayCreateOrder,
     type GatewayCreateOrderOneOf,
     type GatewayMaxSpendable,
     type GatewayOrderInfo,
     type GatewayQuote,
+    GatewayQuoteV2,
     instanceOfGatewayCreateOrderOneOf,
     instanceOfGatewayCreateOrderOneOf1,
     instanceOfGatewayCreateOrderOneOf2,
     instanceOfGatewayQuoteOneOf,
     instanceOfGatewayQuoteOneOf1,
     instanceOfGatewayQuoteOneOf2,
+    instanceOfGatewayQuoteV2OneOf,
     instanceOfRegisterTxOneOf,
     type RouteInfo,
     V1Api,
+    V2Api,
 } from './generated-client';
 import { GatewayError } from './error';
 import type { GatewayError as GatewayErrorInterface } from './generated-client/models/GatewayError';
@@ -114,7 +118,7 @@ export type ExecuteQuoteResult =
  * ```
  */
 export class GatewayApiClient {
-    api: V1Api;
+    api: V2Api;
 
     /**
      * Creates a new Gateway API client instance.
@@ -139,7 +143,7 @@ export class GatewayApiClient {
             throw new Error('apiKey must be exactly 32 characters');
         }
 
-        this.api = new V1Api(
+        this.api = new V2Api(
             new Configuration({
                 basePath: basePath || MAINNET_GATEWAY_BASE_URL,
                 headers: apiKey ? { Authorization: `Bearer ${apiKey}` } : undefined,
@@ -181,7 +185,7 @@ export class GatewayApiClient {
      * @returns Promise resolving to quote details with either onrampQuote or offrampQuote populated
      * @throws {Error} If neither onramp nor offramp conditions are met
      */
-    async getQuote(params: GetQuoteParams, initOverrides?: RequestInit): Promise<GatewayQuote> {
+    async getQuote(params: GetQuoteParams, initOverrides?: RequestInit): Promise<GatewayQuoteV2> {
         for (const [name, value] of Object.entries({ fromToken: params.fromToken, toToken: params.toToken })) {
             if (!isAddress(value)) {
                 throw new Error(
@@ -190,7 +194,7 @@ export class GatewayApiClient {
             }
         }
 
-        return this.api.getQuote(
+        return this.api.getQuoteV2(
             {
                 srcChain: params.fromChain.toString(), // TODO: don't use number
                 dstChain: params.toChain.toString(), // TODO: don't use number
@@ -222,12 +226,12 @@ export class GatewayApiClient {
      * @throws {Error} If required signers are missing or transaction fails
      */
     async executeQuote(
-        { quote, walletClient, publicClient, btcSigner }: { quote: GatewayQuote } & AllWalletClientParams,
+        { quote, walletClient, publicClient, btcSigner }: { quote: GatewayQuoteV2 } & AllWalletClientParams,
         initOverrides?: RequestInit
     ): Promise<ExecuteQuoteResult> {
         if (instanceOfGatewayQuoteOneOf(quote)) {
-            const order = await this.api.createOrder({
-                gatewayQuote: { onramp: quote.onramp },
+            const order = await this.api.createOrderV2({
+                gatewayQuoteV2: { onramp: quote.onramp },
             });
 
             if (!instanceOfGatewayCreateOrderOneOf(order)) {
@@ -281,15 +285,15 @@ export class GatewayApiClient {
             }
 
             return { order, tx: tx.onramp.txid };
-        } else if (instanceOfGatewayQuoteOneOf1(quote)) {
+        } else if (instanceOfGatewayQuoteV2OneOf(quote)) {
             if (!walletClient.account) {
                 throw new Error(`walletClient is required for offramp order`);
             }
             const accountAddress = walletClient.account.address;
             const tokenAddress = quote.offramp.tokenAddress as Address;
 
-            const order = await this.api.createOrder({
-                gatewayQuote: { offramp: quote.offramp },
+            const order = await this.api.createOrderV2({
+                gatewayQuoteV2: { offramp: quote.offramp },
             });
 
             if (!instanceOfGatewayCreateOrderOneOf1(order)) {
@@ -394,8 +398,8 @@ export class GatewayApiClient {
             const accountAddress = walletClient.account.address;
             const receiver = quote.layerZero.tx.to as Address;
 
-            const order = await this.api.createOrder({
-                gatewayQuote: { layerZero: quote.layerZero },
+            const order = await this.api.createOrderV2({
+                gatewayQuoteV2: { layerZero: quote.layerZero },
             });
 
             if (!instanceOfGatewayCreateOrderOneOf2(order)) {
