@@ -13,13 +13,13 @@
  */
 
 import { mapValues } from '../runtime';
-import type { GatewayOrderInfo } from './GatewayOrderInfo';
+import type { GatewayOrderInfoV2 } from './GatewayOrderInfoV2';
 import {
-    GatewayOrderInfoFromJSON,
-    GatewayOrderInfoFromJSONTyped,
-    GatewayOrderInfoToJSON,
-    GatewayOrderInfoToJSONTyped,
-} from './GatewayOrderInfo';
+    GatewayOrderInfoV2FromJSON,
+    GatewayOrderInfoV2FromJSONTyped,
+    GatewayOrderInfoV2ToJSON,
+    GatewayOrderInfoV2ToJSONTyped,
+} from './GatewayOrderInfoV2';
 
 /**
  * 
@@ -35,10 +35,10 @@ export interface PaginatedOrdersResponse {
     nextCursor?: string | null;
     /**
      * 
-     * @type {Array<GatewayOrderInfo>}
+     * @type {Array<GatewayOrderInfoV2>}
      * @memberof PaginatedOrdersResponse
      */
-    orders: Array<GatewayOrderInfo>;
+    orders: Array<GatewayOrderInfoV2>;
 }
 
 /**
@@ -60,7 +60,7 @@ export function PaginatedOrdersResponseFromJSONTyped(json: any, ignoreDiscrimina
     return {
         
         'nextCursor': json['nextCursor'] == null ? undefined : json['nextCursor'],
-        'orders': ((json['orders'] as Array<any>).map(GatewayOrderInfoFromJSON)),
+        'orders': ((json['orders'] as Array<any>).map(GatewayOrderInfoV2FromJSON)),
     };
 }
 
@@ -76,7 +76,7 @@ export function PaginatedOrdersResponseToJSONTyped(value?: PaginatedOrdersRespon
     return {
         
         'nextCursor': value['nextCursor'],
-        'orders': ((value['orders'] as Array<any>).map(GatewayOrderInfoToJSON)),
+        'orders': ((value['orders'] as Array<any>).map(GatewayOrderInfoV2ToJSON)),
     };
 }
 

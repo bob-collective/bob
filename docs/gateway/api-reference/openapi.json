@@ -546,8 +546,8 @@
         "tags": [
           "v2"
         ],
-        "summary": "Get all orders for a specific ID.",
-        "operationId": "get_order",
+        "summary": "Get an order by id (v2).",
+        "operationId": "get_order_v2",
         "parameters": [
           {
             "name": "id",
@@ -565,7 +565,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GatewayOrderInfo"
+                  "$ref": "#/components/schemas/GatewayOrderInfoV2"
                 }
               }
             }
@@ -596,7 +596,7 @@
         "tags": [
           "v2"
         ],
-        "summary": "Get user orders with pagination (v2).",
+        "summary": "Get user orders (v2).",
         "operationId": "get_orders_v2",
         "parameters": [
           {
@@ -612,10 +612,11 @@
             "name": "cursor",
             "in": "query",
             "description": "Cursor used to fetch the next page, obtained from the response's `next_cursor`.",
-            "required": true,
+            "required": false,
             "schema": {
               "type": "string"
-            }
+            },
+            "style": "form"
           },
           {
             "name": "limit",
@@ -625,7 +626,8 @@
             "schema": {
               "type": "integer",
               "minimum": 1
-            }
+            },
+            "style": "form"
           }
         ],
         "responses": {
@@ -1643,6 +1645,49 @@
           }
         }
       },
+      "GatewayOrderInfoV2": {
+        "type": "object",
+        "description": "Gateway order info (v2)",
+        "required": [
+          "id",
+          "timestamp",
+          "srcInfo",
+          "dstInfo",
+          "status"
+        ],
+        "properties": {
+          "depositAddress": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "dstInfo": {
+            "$ref": "#/components/schemas/OrderDestinationInfo"
+          },
+          "estimatedTimeInSecs": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "minimum": 0
+          },
+          "id": {
+            "type": "string"
+          },
+          "srcInfo": {
+            "$ref": "#/components/schemas/ChainTxInfo"
+          },
+          "status": {
+            "$ref": "#/components/schemas/GatewayOrderStatusV2"
+          },
+          "timestamp": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
       "GatewayOrderStatus": {
         "oneOf": [
           {
@@ -1712,6 +1757,110 @@
             "enum": [
               "refunded"
             ]
+          }
+        ]
+      },
+      "GatewayOrderStatusV2": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "inProgress"
+            ],
+            "properties": {
+              "inProgress": {
+                "type": "object",
+                "properties": {
+                  "pending_btc_payment": {
+                    "oneOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "$ref": "#/components/schemas/PendingBtcPayment"
+                      }
+                    ]
+                  },
+                  "refund_tx": {
+                    "oneOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "$ref": "#/components/schemas/TxInfo"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "failed"
+            ],
+            "properties": {
+              "failed": {
+                "type": "object",
+                "properties": {
+                  "refund_tx": {
+                    "oneOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "$ref": "#/components/schemas/TxInfo"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "success"
+            ],
+            "properties": {
+              "success": {
+                "type": "object",
+                "required": [
+                  "received_tokens"
+                ],
+                "properties": {
+                  "received_tokens": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/GatewayUserTokenTransfer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "refunded"
+            ],
+            "properties": {
+              "refunded": {
+                "type": "object",
+                "required": [
+                  "refunded_tokens"
+                ],
+                "properties": {
+                  "refunded_tokens": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/GatewayUserTokenTransfer"
+                    }
+                  }
+                }
+              }
+            }
           }
         ]
       },
@@ -1810,6 +1959,49 @@
           }
         }
       },
+      "GatewayUserTokenTransfer": {
+        "type": "object",
+        "required": [
+          "token",
+          "amount",
+          "chain",
+          "txHash"
+        ],
+        "properties": {
+          "amount": {
+            "type": "string"
+          },
+          "chain": {
+            "type": "string"
+          },
+          "token": {
+            "type": "string"
+          },
+          "txHash": {
+            "type": "string"
+          }
+        }
+      },
+      "OrderDestinationInfo": {
+        "type": "object",
+        "required": [
+          "chain",
+          "token",
+          "amount"
+        ],
+        "properties": {
+          "amount": {
+            "type": "string",
+            "description": "The _estimated_ amount of the output token, as determined by initial create-order"
+          },
+          "chain": {
+            "type": "string"
+          },
+          "token": {
+            "type": "string"
+          }
+        }
+      },
       "PaginatedOrdersResponse": {
         "type": "object",
         "required": [
@@ -1825,8 +2017,23 @@
           "orders": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/GatewayOrderInfo"
+              "$ref": "#/components/schemas/GatewayOrderInfoV2"
             }
+          }
+        }
+      },
+      "PendingBtcPayment": {
+        "type": "object",
+        "required": [
+          "txid",
+          "amount"
+        ],
+        "properties": {
+          "amount": {
+            "type": "string"
+          },
+          "txid": {
+            "type": "string"
           }
         }
       },
