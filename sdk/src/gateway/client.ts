@@ -21,6 +21,7 @@ import {
     type GatewayCreateOrderOneOf,
     type GatewayMaxSpendable,
     type GatewayOrderInfo,
+    GatewayOrderInfoV2,
     type GatewayQuote,
     GatewayQuoteV2,
     GetOrdersV2Request,
@@ -552,8 +553,8 @@ export class GatewayApiClient {
      * @param initOverrides Optional request initialization overrides
      * @returns Promise resolving to the order information
      */
-    async getOrder(id: string, initOverrides?: RequestInit): Promise<GatewayOrderInfo> {
-        return this.api.getOrder({ id }, initOverrides);
+    async getOrder(id: string, initOverrides?: RequestInit): Promise<GatewayOrderInfoV2> {
+        return this.api.getOrderV2({ id }, initOverrides);
     }
 
     /**
