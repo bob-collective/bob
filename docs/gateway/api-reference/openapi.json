@@ -596,8 +596,8 @@
         "tags": [
           "v2"
         ],
-        "summary": "Get all user orders.",
-        "operationId": "get_orders",
+        "summary": "Get user orders with pagination (v2).",
+        "operationId": "get_orders_v2",
         "parameters": [
           {
             "name": "user_address",
@@ -607,18 +607,34 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "description": "Cursor used to fetch the next page, obtained from the response's `next_cursor`.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Number of orders to request",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "Get all orders",
+            "description": "Get orders",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/GatewayOrderInfo"
-                  }
+                  "$ref": "#/components/schemas/PaginatedOrdersResponse"
                 }
               }
             }
@@ -628,7 +644,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GatewayError"
+                  "$ref": "#/components/schemas/GatewayErrorV2"
                 }
               }
             }
@@ -1004,7 +1020,7 @@
       },
       "GatewayError": {
         "type": "object",
-        "description": "Structured error response that the frontend can parse.\nContains an error code, human-readable message, and optional structured details.",
+        "description": "Structured error response for V1 API.\nContains an error code, human-readable message, and optional structured details.",
         "required": [
           "code",
           "error"
@@ -1059,6 +1075,24 @@
           "ORDER_EXPIRED",
           "DUPLICATE_ORDER",
           "INTERNAL_ERROR"
+        ]
+      },
+      "GatewayErrorCodeV2": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/GatewayErrorCode"
+          },
+          {
+            "$ref": "#/components/schemas/GatewayErrorCodeV2Variants"
+          }
+        ],
+        "description": "Error codes for V2 API - includes all V1 codes plus new ones."
+      },
+      "GatewayErrorCodeV2Variants": {
+        "type": "string",
+        "description": "New error codes for V2.",
+        "enum": [
+          "INVALID_CURSOR"
         ]
       },
       "GatewayErrorDetails": {
@@ -1173,7 +1207,51 @@
             }
           }
         ],
-        "description": "Structured details for specific error types"
+        "description": "Structured details for V1 error types."
+      },
+      "GatewayErrorDetailsV2": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/GatewayErrorDetails"
+          },
+          {
+            "$ref": "#/components/schemas/GatewayErrorDetailsV2Variants"
+          }
+        ],
+        "description": "Structured details for V2 error types - includes all V1 details plus new ones."
+      },
+      "GatewayErrorDetailsV2Variants": {
+        "type": "null",
+        "default": null
+      },
+      "GatewayErrorV2": {
+        "type": "object",
+        "description": "Structured error response for V2 API.\nContains an error code, human-readable message, and optional structured details.",
+        "required": [
+          "code",
+          "error"
+        ],
+        "properties": {
+          "code": {
+            "$ref": "#/components/schemas/GatewayErrorCodeV2",
+            "description": "Stable error code for frontend parsing"
+          },
+          "details": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/GatewayErrorDetailsV2",
+                "description": "Optional structured details specific to the error type"
+              }
+            ]
+          },
+          "error": {
+            "type": "string",
+            "description": "Human-readable error message"
+          }
+        }
       },
       "GatewayLayerZeroQuote": {
         "type": "object",
@@ -1729,6 +1807,26 @@
           },
           "chain": {
             "type": "string"
+          }
+        }
+      },
+      "PaginatedOrdersResponse": {
+        "type": "object",
+        "required": [
+          "orders"
+        ],
+        "properties": {
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "orders": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GatewayOrderInfo"
+            }
           }
         }
       },

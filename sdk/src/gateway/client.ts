@@ -23,6 +23,7 @@ import {
     type GatewayOrderInfo,
     type GatewayQuote,
     GatewayQuoteV2,
+    GetOrdersV2Request,
     instanceOfGatewayCreateOrderOneOf,
     instanceOfGatewayCreateOrderOneOf1,
     instanceOfGatewayCreateOrderOneOf2,
@@ -31,6 +32,7 @@ import {
     instanceOfGatewayQuoteOneOf2,
     instanceOfGatewayQuoteV2OneOf,
     instanceOfRegisterTxOneOf,
+    PaginatedOrdersResponse,
     type RouteInfo,
     V1Api,
     V2Api,
@@ -118,7 +120,7 @@ export type ExecuteQuoteResult =
  * ```
  */
 export class GatewayApiClient {
-    api: V2Api;
+    private api: V2Api;
 
     /**
      * Creates a new Gateway API client instance.
@@ -539,8 +541,8 @@ export class GatewayApiClient {
      * @param initOverrides Optional request initialization overrides
      * @returns Promise resolving to array of typed orders
      */
-    async getOrders(userAddress: Address, initOverrides?: RequestInit): Promise<Array<GatewayOrderInfo>> {
-        return this.api.getOrders({ userAddress }, initOverrides);
+    async getOrders(requestParameters: GetOrdersV2Request, initOverrides?: RequestInit): Promise<PaginatedOrdersResponse> {
+        return this.api.getOrdersV2(requestParameters, initOverrides);
     }
 
     /**

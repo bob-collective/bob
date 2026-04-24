@@ -17,9 +17,11 @@ import * as runtime from '../runtime';
 import type {
   GatewayCreateOrder,
   GatewayError,
+  GatewayErrorV2,
   GatewayMaxSpendable,
   GatewayOrderInfo,
   GatewayQuoteV2,
+  PaginatedOrdersResponse,
   RegisterTx,
   RegisterTxSuccess,
   RouteInfo,
@@ -29,12 +31,16 @@ import {
     GatewayCreateOrderToJSON,
     GatewayErrorFromJSON,
     GatewayErrorToJSON,
+    GatewayErrorV2FromJSON,
+    GatewayErrorV2ToJSON,
     GatewayMaxSpendableFromJSON,
     GatewayMaxSpendableToJSON,
     GatewayOrderInfoFromJSON,
     GatewayOrderInfoToJSON,
     GatewayQuoteV2FromJSON,
     GatewayQuoteV2ToJSON,
+    PaginatedOrdersResponseFromJSON,
+    PaginatedOrdersResponseToJSON,
     RegisterTxFromJSON,
     RegisterTxToJSON,
     RegisterTxSuccessFromJSON,
@@ -55,8 +61,10 @@ export interface GetOrderRequest {
     id: string;
 }
 
-export interface GetOrdersRequest {
+export interface GetOrdersV2Request {
     userAddress: string;
+    cursor: string;
+    limit?: number;
 }
 
 export interface GetQuoteV2Request {
@@ -213,17 +221,32 @@ export class V2Api extends runtime.BaseAPI {
     }
 
     /**
-     * Get all user orders.
+     * Get user orders with pagination (v2).
      */
-    async getOrdersRaw(requestParameters: GetOrdersRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<GatewayOrderInfo>>> {
+    async getOrdersV2Raw(requestParameters: GetOrdersV2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PaginatedOrdersResponse>> {
         if (requestParameters['userAddress'] == null) {
             throw new runtime.RequiredError(
                 'userAddress',
-                'Required parameter "userAddress" was null or undefined when calling getOrders().'
+                'Required parameter "userAddress" was null or undefined when calling getOrdersV2().'
+            );
+        }
+
+        if (requestParameters['cursor'] == null) {
+            throw new runtime.RequiredError(
+                'cursor',
+                'Required parameter "cursor" was null or undefined when calling getOrdersV2().'
             );
         }
 
         const queryParameters: any = {};
+
+        if (requestParameters['cursor'] != null) {
+            queryParameters['cursor'] = requestParameters['cursor'];
+        }
+
+        if (requestParameters['limit'] != null) {
+            queryParameters['limit'] = requestParameters['limit'];
+        }
 
         const headerParameters: runtime.HTTPHeaders = {};
 
@@ -246,14 +269,14 @@ export class V2Api extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(GatewayOrderInfoFromJSON));
+        return new runtime.JSONApiResponse(response, (jsonValue) => PaginatedOrdersResponseFromJSON(jsonValue));
     }
 
     /**
-     * Get all user orders.
+     * Get user orders with pagination (v2).
      */
-    async getOrders(requestParameters: GetOrdersRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<GatewayOrderInfo>> {
-        const response = await this.getOrdersRaw(requestParameters, initOverrides);
+    async getOrdersV2(requestParameters: GetOrdersV2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PaginatedOrdersResponse> {
+        const response = await this.getOrdersV2Raw(requestParameters, initOverrides);
         return await response.value();
     }
 

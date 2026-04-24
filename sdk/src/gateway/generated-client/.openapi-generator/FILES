@@ -12,6 +12,8 @@ models/GatewayCreateOrderOneOf2.ts
 models/GatewayCreateOrderOneOfOnramp.ts
 models/GatewayError.ts
 models/GatewayErrorCode.ts
+models/GatewayErrorCodeV2.ts
+models/GatewayErrorCodeV2Variants.ts
 models/GatewayErrorDetails.ts
 models/GatewayErrorDetailsOneOf.ts
 models/GatewayErrorDetailsOneOf1.ts
@@ -20,6 +22,8 @@ models/GatewayErrorDetailsOneOf3.ts
 models/GatewayErrorDetailsOneOf4.ts
 models/GatewayErrorDetailsOneOf5.ts
 models/GatewayErrorDetailsOneOf6.ts
+models/GatewayErrorDetailsV2.ts
+models/GatewayErrorV2.ts
 models/GatewayLayerZeroQuote.ts
 models/GatewayMaxSpendable.ts
 models/GatewayOfframpFeeBreakdown.ts
@@ -40,6 +44,7 @@ models/GatewayQuoteOneOf2.ts
 models/GatewayQuoteV2.ts
 models/GatewayQuoteV2OneOf.ts
 models/GatewayTokenAmount.ts
+models/PaginatedOrdersResponse.ts
 models/RegisterTx.ts
 models/RegisterTxOneOf.ts
 models/RegisterTxOneOf1.ts

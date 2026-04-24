@@ -11,8 +11,8 @@ BINDINGS_FOLDER=bindings
 BINDINGS_CRATES_FOLDER=$(CRATES_FOLDER)/$(BINDINGS_FOLDER)
 BINDINGS_OUT_PATH=$(CONTRACTS_PATH)/out/$(BINDINGS_FOLDER)
 
-OPEN_API_SPEC_URL_MAINNET="https://gateway-api-mainnet.gobob.xyz/api-doc.json"
-OPEN_API_SPEC_URL_STAGING="https://gateway-api-staging.gobob.xyz/api-doc.json"
+OPEN_API_SPEC_URL_MAINNET="https://gateway-api-ethereum.gobob.xyz/api-doc.json"
+OPEN_API_SPEC_URL_STAGING="https://gateway-api-ethereum.gobob.xyz/api-doc.json"
 OPEN_API_DOCS_PATH=docs/gateway/api-reference/openapi.json
 
 # Target for generating bindings
