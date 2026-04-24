@@ -24,14 +24,21 @@ export interface GatewayErrorDetailsOneOf6 {
      * @type {string}
      * @memberof GatewayErrorDetailsOneOf6
      */
-    limit: string;
+    actual: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof GatewayErrorDetailsOneOf6
+     */
+    minimum: string;
 }
 
 /**
  * Check if a given object implements the GatewayErrorDetailsOneOf6 interface.
  */
 export function instanceOfGatewayErrorDetailsOneOf6(value: object): value is GatewayErrorDetailsOneOf6 {
-    if (!('limit' in value) || value['limit'] === undefined) return false;
+    if (!('actual' in value) || value['actual'] === undefined) return false;
+    if (!('minimum' in value) || value['minimum'] === undefined) return false;
     return true;
 }
 
@@ -45,7 +52,8 @@ export function GatewayErrorDetailsOneOf6FromJSONTyped(json: any, ignoreDiscrimi
     }
     return {
         
-        'limit': json['limit'],
+        'actual': json['actual'],
+        'minimum': json['minimum'],
     };
 }
 
@@ -60,7 +68,8 @@ export function GatewayErrorDetailsOneOf6ToJSONTyped(value?: GatewayErrorDetails
 
     return {
         
-        'limit': value['limit'],
+        'actual': value['actual'],
+        'minimum': value['minimum'],
     };
 }
 

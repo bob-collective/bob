@@ -29,7 +29,7 @@ import {
 } from './GatewayErrorDetails';
 
 /**
- * Structured error response that the frontend can parse.
+ * Structured error response for V1 API.
  * Contains an error code, human-readable message, and optional structured details.
  * @export
  * @interface GatewayError

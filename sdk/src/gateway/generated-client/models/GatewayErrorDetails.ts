@@ -64,7 +64,7 @@ import {
 
 /**
  * @type GatewayErrorDetails
- * Structured details for specific error types
+ * Structured details for V1 error types.
  * @export
  */
 export type GatewayErrorDetails = GatewayErrorDetailsOneOf | GatewayErrorDetailsOneOf1 | GatewayErrorDetailsOneOf2 | GatewayErrorDetailsOneOf3 | GatewayErrorDetailsOneOf4 | GatewayErrorDetailsOneOf5 | GatewayErrorDetailsOneOf6;
