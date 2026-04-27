@@ -32,6 +32,7 @@ import {
     instanceOfGatewayQuoteOneOf1,
     instanceOfGatewayQuoteOneOf2,
     instanceOfGatewayQuoteV2OneOf,
+    instanceOfGatewayQuoteV2OneOf1,
     instanceOfRegisterTxOneOf,
     PaginatedOrdersResponse,
     type RouteInfo,
@@ -210,7 +211,7 @@ export class GatewayApiClient {
                 amount: params.amount.toString(),
                 slippage: params.maxSlippage?.toString() || DEFAULT_MAX_SLIPPAGE_BPS,
                 gasRefill: params.gasRefill?.toString(),
-                affiliateId: params.affiliateId,
+                affiliates: params.affiliateId,
                 strategyTarget: params.strategyAddress,
                 strategyMessage: params.strategyMessage,
             },
@@ -232,7 +233,7 @@ export class GatewayApiClient {
         { quote, walletClient, publicClient, btcSigner }: { quote: GatewayQuoteV2 } & AllWalletClientParams,
         initOverrides?: RequestInit
     ): Promise<ExecuteQuoteResult> {
-        if (instanceOfGatewayQuoteOneOf(quote)) {
+        if (instanceOfGatewayQuoteV2OneOf(quote)) {
             const order = await this.api.createOrderV2({
                 gatewayQuoteV2: { onramp: quote.onramp },
             });
@@ -288,7 +289,7 @@ export class GatewayApiClient {
             }
 
             return { order, tx: tx.onramp.txid };
-        } else if (instanceOfGatewayQuoteV2OneOf(quote)) {
+        } else if (instanceOfGatewayQuoteV2OneOf1(quote)) {
             if (!walletClient.account) {
                 throw new Error(`walletClient is required for offramp order`);
             }
@@ -395,7 +396,7 @@ export class GatewayApiClient {
             }
 
             return { order, tx: transactionHash };
-        } else if (instanceOfGatewayQuoteOneOf2(quote)) {
+        } else if (instanceOfGatewayQuoteV2OneOf(quote)) {
             const tokenAddress = quote.layerZero.inputAmount.address as Address;
             const requiredAmount = BigInt(quote.layerZero.inputAmount.amount);
             const accountAddress = walletClient.account.address;
