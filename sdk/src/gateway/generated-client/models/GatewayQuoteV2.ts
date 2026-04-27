@@ -12,13 +12,6 @@
  * Do not edit the class manually.
  */
 
-import type { GatewayQuoteOneOf } from './GatewayQuoteOneOf';
-import {
-    instanceOfGatewayQuoteOneOf,
-    GatewayQuoteOneOfFromJSON,
-    GatewayQuoteOneOfFromJSONTyped,
-    GatewayQuoteOneOfToJSON,
-} from './GatewayQuoteOneOf';
 import type { GatewayQuoteOneOf2 } from './GatewayQuoteOneOf2';
 import {
     instanceOfGatewayQuoteOneOf2,
@@ -33,13 +26,20 @@ import {
     GatewayQuoteV2OneOfFromJSONTyped,
     GatewayQuoteV2OneOfToJSON,
 } from './GatewayQuoteV2OneOf';
+import type { GatewayQuoteV2OneOf1 } from './GatewayQuoteV2OneOf1';
+import {
+    instanceOfGatewayQuoteV2OneOf1,
+    GatewayQuoteV2OneOf1FromJSON,
+    GatewayQuoteV2OneOf1FromJSONTyped,
+    GatewayQuoteV2OneOf1ToJSON,
+} from './GatewayQuoteV2OneOf1';
 
 /**
  * @type GatewayQuoteV2
  * Gateway quote.
  * @export
  */
-export type GatewayQuoteV2 = GatewayQuoteOneOf | GatewayQuoteOneOf2 | GatewayQuoteV2OneOf;
+export type GatewayQuoteV2 = GatewayQuoteOneOf2 | GatewayQuoteV2OneOf | GatewayQuoteV2OneOf1;
 
 export function GatewayQuoteV2FromJSON(json: any): GatewayQuoteV2 {
     return GatewayQuoteV2FromJSONTyped(json, false);
@@ -52,14 +52,14 @@ export function GatewayQuoteV2FromJSONTyped(json: any, ignoreDiscriminator: bool
     if (typeof json !== 'object') {
         return json;
     }
-    if (instanceOfGatewayQuoteOneOf(json)) {
-        return GatewayQuoteOneOfFromJSONTyped(json, true);
-    }
     if (instanceOfGatewayQuoteOneOf2(json)) {
         return GatewayQuoteOneOf2FromJSONTyped(json, true);
     }
     if (instanceOfGatewayQuoteV2OneOf(json)) {
         return GatewayQuoteV2OneOfFromJSONTyped(json, true);
+    }
+    if (instanceOfGatewayQuoteV2OneOf1(json)) {
+        return GatewayQuoteV2OneOf1FromJSONTyped(json, true);
     }
     return {} as any;
 }
@@ -75,14 +75,14 @@ export function GatewayQuoteV2ToJSONTyped(value?: GatewayQuoteV2 | null, ignoreD
     if (typeof value !== 'object') {
         return value;
     }
-    if (instanceOfGatewayQuoteOneOf(value)) {
-        return GatewayQuoteOneOfToJSON(value as GatewayQuoteOneOf);
-    }
     if (instanceOfGatewayQuoteOneOf2(value)) {
         return GatewayQuoteOneOf2ToJSON(value as GatewayQuoteOneOf2);
     }
     if (instanceOfGatewayQuoteV2OneOf(value)) {
         return GatewayQuoteV2OneOfToJSON(value as GatewayQuoteV2OneOf);
+    }
+    if (instanceOfGatewayQuoteV2OneOf1(value)) {
+        return GatewayQuoteV2OneOf1ToJSON(value as GatewayQuoteV2OneOf1);
     }
     return {};
 }

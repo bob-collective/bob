@@ -13,13 +13,13 @@
  */
 
 import { mapValues } from '../runtime';
-import type { GatewayOfframpQuoteV2 } from './GatewayOfframpQuoteV2';
+import type { GatewayOnrampQuoteV2 } from './GatewayOnrampQuoteV2';
 import {
-    GatewayOfframpQuoteV2FromJSON,
-    GatewayOfframpQuoteV2FromJSONTyped,
-    GatewayOfframpQuoteV2ToJSON,
-    GatewayOfframpQuoteV2ToJSONTyped,
-} from './GatewayOfframpQuoteV2';
+    GatewayOnrampQuoteV2FromJSON,
+    GatewayOnrampQuoteV2FromJSONTyped,
+    GatewayOnrampQuoteV2ToJSON,
+    GatewayOnrampQuoteV2ToJSONTyped,
+} from './GatewayOnrampQuoteV2';
 
 /**
  * 
@@ -29,17 +29,17 @@ import {
 export interface GatewayQuoteV2OneOf {
     /**
      * 
-     * @type {GatewayOfframpQuoteV2}
+     * @type {GatewayOnrampQuoteV2}
      * @memberof GatewayQuoteV2OneOf
      */
-    offramp: GatewayOfframpQuoteV2;
+    onramp: GatewayOnrampQuoteV2;
 }
 
 /**
  * Check if a given object implements the GatewayQuoteV2OneOf interface.
  */
 export function instanceOfGatewayQuoteV2OneOf(value: object): value is GatewayQuoteV2OneOf {
-    if (!('offramp' in value) || value['offramp'] === undefined) return false;
+    if (!('onramp' in value) || value['onramp'] === undefined) return false;
     return true;
 }
 
@@ -53,7 +53,7 @@ export function GatewayQuoteV2OneOfFromJSONTyped(json: any, ignoreDiscriminator:
     }
     return {
         
-        'offramp': GatewayOfframpQuoteV2FromJSON(json['offramp']),
+        'onramp': GatewayOnrampQuoteV2FromJSON(json['onramp']),
     };
 }
 
@@ -68,7 +68,7 @@ export function GatewayQuoteV2OneOfToJSONTyped(value?: GatewayQuoteV2OneOf | nul
 
     return {
         
-        'offramp': GatewayOfframpQuoteV2ToJSON(value['offramp']),
+        'onramp': GatewayOnrampQuoteV2ToJSON(value['onramp']),
     };
 }
 

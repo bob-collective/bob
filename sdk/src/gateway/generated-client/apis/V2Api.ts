@@ -79,7 +79,7 @@ export interface GetQuoteV2Request {
     gasRefill?: string;
     strategyTarget?: string;
     strategyMessage?: string;
-    affiliateId?: string;
+    affiliates?: string;
 }
 
 export interface RegisterTxRequest {
@@ -373,8 +373,8 @@ export class V2Api extends runtime.BaseAPI {
             queryParameters['strategyMessage'] = requestParameters['strategyMessage'];
         }
 
-        if (requestParameters['affiliateId'] != null) {
-            queryParameters['affiliateId'] = requestParameters['affiliateId'];
+        if (requestParameters['affiliates'] != null) {
+            queryParameters['affiliates'] = requestParameters['affiliates'];
         }
 
         const headerParameters: runtime.HTTPHeaders = {};

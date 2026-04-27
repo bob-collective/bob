@@ -20,6 +20,13 @@ import {
     GatewayOfframpFeeBreakdownToJSON,
     GatewayOfframpFeeBreakdownToJSONTyped,
 } from './GatewayOfframpFeeBreakdown';
+import type { ResolvedAffiliate } from './ResolvedAffiliate';
+import {
+    ResolvedAffiliateFromJSON,
+    ResolvedAffiliateFromJSONTyped,
+    ResolvedAffiliateToJSON,
+    ResolvedAffiliateToJSONTyped,
+} from './ResolvedAffiliate';
 import type { GatewayTokenAmount } from './GatewayTokenAmount';
 import {
     GatewayTokenAmountFromJSON,
@@ -35,11 +42,17 @@ import {
  */
 export interface GatewayOfframpQuoteV2 {
     /**
-     * 
+     * Affiliate address (V1-compatible field; first entry from `affiliates`).
      * @type {string}
      * @memberof GatewayOfframpQuoteV2
      */
     affiliateAddress?: string | null;
+    /**
+     * Resolved affiliate recipients and computed fees (V2).
+     * @type {Array<ResolvedAffiliate>}
+     * @memberof GatewayOfframpQuoteV2
+     */
+    affiliates?: Array<ResolvedAffiliate>;
     /**
      * Estimated time in secs to complete the Order
      * @type {number}
@@ -135,6 +148,7 @@ export function GatewayOfframpQuoteV2FromJSONTyped(json: any, ignoreDiscriminato
     return {
         
         'affiliateAddress': json['affiliateAddress'] == null ? undefined : json['affiliateAddress'],
+        'affiliates': json['affiliates'] == null ? undefined : ((json['affiliates'] as Array<any>).map(ResolvedAffiliateFromJSON)),
         'estimatedTimeInSecs': json['estimatedTimeInSecs'] == null ? undefined : json['estimatedTimeInSecs'],
         'feeBreakdown': GatewayOfframpFeeBreakdownFromJSON(json['feeBreakdown']),
         'inputAmount': GatewayTokenAmountFromJSON(json['inputAmount']),
@@ -161,6 +175,7 @@ export function GatewayOfframpQuoteV2ToJSONTyped(value?: GatewayOfframpQuoteV2 |
     return {
         
         'affiliateAddress': value['affiliateAddress'],
+        'affiliates': value['affiliates'] == null ? undefined : ((value['affiliates'] as Array<any>).map(ResolvedAffiliateToJSON)),
         'estimatedTimeInSecs': value['estimatedTimeInSecs'],
         'feeBreakdown': GatewayOfframpFeeBreakdownToJSON(value['feeBreakdown']),
         'inputAmount': GatewayTokenAmountToJSON(value['inputAmount']),
