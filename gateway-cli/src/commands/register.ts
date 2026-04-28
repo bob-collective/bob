@@ -1,4 +1,4 @@
-import { getSdk } from "../config.js";
+import { getSdk, getApi } from "../config.js";
 import { buildRegisterPayload } from "../chains/index.js";
 
 /**
@@ -19,6 +19,5 @@ export async function handleRegister(opts: { orderId: string; txid: string }) {
     opts.txid,
   );
 
-  // registerTx isn't on the public SDK surface; reach through to the underlying V2Api.
-  return (sdk as any).api.registerTx({ registerTx });
+  return getApi().registerTx({ registerTx });
 }

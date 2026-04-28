@@ -1,12 +1,12 @@
 import { MempoolClient } from "@gobob/bob-sdk";
-import type { BitcoinSigner, GetQuoteParams } from "@gobob/bob-sdk";
+import type { BitcoinSigner, GetQuoteParams, GatewayCreateOrder } from "@gobob/bob-sdk";
 import { getInnerQuoteV2 } from "../util/quote-v2.js";
 import { formatUnits, type WalletClient, type PublicClient } from "viem";
 import pRetry, { AbortError } from "p-retry";
 import { getRoutes } from "../util/route-provider.js";
 import { resolveSwapInputs, humanToAtomic, parseAssetChain, buildTokenIndex } from "../util/input-resolver.js";
 import { fetchPrice } from "../util/price-oracle.js";
-import { loadConfig, getSdk } from "../config.js";
+import { loadConfig, getSdk, getApi } from "../config.js";
 import { deriveAddress, resolveSigner, buildRegisterPayload, getChainFamily, resolvePrivateKey, resolveRecipient } from "../chains/index.js";
 import type { Logger, SwapSuccessJson, SwapSubmittedJson, SwapMempoolPendingJson } from "../output.js";
 
@@ -121,15 +121,20 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
   const { orderId, order, outputAmount } = await pRetry(async () => {
     try {
       const quote = await sdk.getQuote(quoteParams);
-      const order = await (sdk as any).api.createOrderV2({ gatewayQuoteV2: quote });
-      const orderData = (order as any)[variant];
+      const order: GatewayCreateOrder = await getApi().createOrderV2({ gatewayQuoteV2: quote });
+      // Cross-check that the API returned the variant our chain detection expected.
+      const orderData =
+        variant === "onramp" && "onramp" in order ? order.onramp
+        : variant === "offramp" && "offramp" in order ? order.offramp
+        : variant === "layerZero" && "layerZero" in order ? order.layerZero
+        : undefined;
       if (!orderData?.orderId) {
         throw new Error(`Unexpected API response: order.${variant} is missing or has no orderId. Response keys: ${Object.keys(order).join(", ")}`);
       }
       return {
         order,
-        orderId: orderData.orderId as string,
-        outputAmount: getInnerQuoteV2(quote).outputAmount.amount as string,
+        orderId: orderData.orderId,
+        outputAmount: getInnerQuoteV2(quote).outputAmount.amount,
       };
     } catch (err) {
       if (!isTransient(err)) {
@@ -221,7 +226,7 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
   // ── Register (retryable) ───────────────────────────────────────────────────
 
   const registerPayload = buildRegisterPayload(srcAsset.chain, dstAsset.chain, orderId, txId);
-  const registerResult = await pRetry(() => (sdk as any).api.registerTx({ registerTx: registerPayload }), { retries })
+  const registerResult = await pRetry(() => getApi().registerTx({ registerTx: registerPayload }), { retries })
     .catch(err => {
       const msg = err instanceof Error ? err.message : String(err);
       const recoveryNote = variant === "onramp"
@@ -260,7 +265,8 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
 
   const startMs = Date.now();
   // V2 status is a discriminated object union: {success} | {refunded} | {failed} | {inProgress}.
-  const hasKey = (s: unknown, k: string) => typeof s === "object" && s !== null && k in (s as object);
+  const hasKey = <K extends string>(s: unknown, k: K): s is Record<K, unknown> =>
+    typeof s === "object" && s !== null && k in s;
 
   try {
     const finalOrder = await pRetry(async () => {

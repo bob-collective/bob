@@ -10,12 +10,7 @@ import {
     zeroAddress,
 } from 'viem';
 import { afterEach, assert, describe, expect, it, vi } from 'vitest';
-import {
-    GatewayError,
-    GatewayErrorCode,
-    GatewaySDK,
-    isGatewayError,
-} from '../src/gateway';
+import { GatewayError, GatewayErrorCode, GatewaySDK, isGatewayError } from '../src/gateway';
 import { ETHEREUM_USDT_ADDRESS, MAINNET_GATEWAY_BASE_URL } from '../src/gateway/client';
 import {
     GatewayOrderInfo,

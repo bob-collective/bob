@@ -543,7 +543,10 @@ export class GatewayApiClient {
      * @param initOverrides Optional request initialization overrides
      * @returns Promise resolving to array of typed orders
      */
-    async getOrders(requestParameters: GetOrdersV2Request, initOverrides?: RequestInit): Promise<PaginatedOrdersResponse> {
+    async getOrders(
+        requestParameters: GetOrdersV2Request,
+        initOverrides?: RequestInit
+    ): Promise<PaginatedOrdersResponse> {
         return this.api.getOrdersV2(requestParameters, initOverrides);
     }
 
