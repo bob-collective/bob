@@ -15,28 +15,22 @@ import {
 } from 'viem';
 import { strategyCaller, USDTApproveAbi } from './abi';
 import {
-    BaseAPI,
     Configuration,
     type GatewayCreateOrder,
     type GatewayCreateOrderOneOf,
     type GatewayMaxSpendable,
-    type GatewayOrderInfo,
     GatewayOrderInfoV2,
-    type GatewayQuote,
     GatewayQuoteV2,
     GetOrdersV2Request,
     instanceOfGatewayCreateOrderOneOf,
     instanceOfGatewayCreateOrderOneOf1,
     instanceOfGatewayCreateOrderOneOf2,
-    instanceOfGatewayQuoteOneOf,
-    instanceOfGatewayQuoteOneOf1,
     instanceOfGatewayQuoteOneOf2,
     instanceOfGatewayQuoteV2OneOf,
     instanceOfGatewayQuoteV2OneOf1,
     instanceOfRegisterTxOneOf,
     PaginatedOrdersResponse,
     type RouteInfo,
-    V1Api,
     V2Api,
 } from './generated-client';
 import { GatewayError } from './error';
@@ -396,7 +390,7 @@ export class GatewayApiClient {
             }
 
             return { order, tx: transactionHash };
-        } else if (instanceOfGatewayQuoteV2OneOf(quote)) {
+        } else if (instanceOfGatewayQuoteOneOf2(quote)) {
             const tokenAddress = quote.layerZero.inputAmount.address as Address;
             const requiredAmount = BigInt(quote.layerZero.inputAmount.amount);
             const accountAddress = walletClient.account.address;
