@@ -1,5 +1,6 @@
-import { getInnerQuote, MempoolClient } from "@gobob/bob-sdk";
-import type { BitcoinSigner, GatewayOrderInfo, GatewayOrderStatus, GetQuoteParams } from "@gobob/bob-sdk";
+import { MempoolClient } from "@gobob/bob-sdk";
+import type { BitcoinSigner, GetQuoteParams } from "@gobob/bob-sdk";
+import { getInnerQuoteV2 } from "../util/quote-v2.js";
 import { formatUnits, type WalletClient, type PublicClient } from "viem";
 import pRetry, { AbortError } from "p-retry";
 import { getRoutes } from "../util/route-provider.js";
@@ -120,7 +121,7 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
   const { orderId, order, outputAmount } = await pRetry(async () => {
     try {
       const quote = await sdk.getQuote(quoteParams);
-      const order = await sdk.api.createOrder({ gatewayQuote: quote });
+      const order = await (sdk as any).api.createOrderV2({ gatewayQuoteV2: quote });
       const orderData = (order as any)[variant];
       if (!orderData?.orderId) {
         throw new Error(`Unexpected API response: order.${variant} is missing or has no orderId. Response keys: ${Object.keys(order).join(", ")}`);
@@ -128,7 +129,7 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
       return {
         order,
         orderId: orderData.orderId as string,
-        outputAmount: getInnerQuote(quote).outputAmount.amount as string,
+        outputAmount: getInnerQuoteV2(quote).outputAmount.amount as string,
       };
     } catch (err) {
       if (!isTransient(err)) {
@@ -220,7 +221,7 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
   // ── Register (retryable) ───────────────────────────────────────────────────
 
   const registerPayload = buildRegisterPayload(srcAsset.chain, dstAsset.chain, orderId, txId);
-  const registerResult = await pRetry(() => sdk.api.registerTx({ registerTx: registerPayload }), { retries })
+  const registerResult = await pRetry(() => (sdk as any).api.registerTx({ registerTx: registerPayload }), { retries })
     .catch(err => {
       const msg = err instanceof Error ? err.message : String(err);
       const recoveryNote = variant === "onramp"
@@ -258,14 +259,15 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
   // ── Poll ────────────────────────────────────────────────────────────────────
 
   const startMs = Date.now();
-  const TERMINAL_SUCCESS: GatewayOrderStatus[] = ["success", "strategy_skipped", "strategy_failed"];
+  // V2 status is a discriminated object union: {success} | {refunded} | {failed} | {inProgress}.
+  const hasKey = (s: unknown, k: string) => typeof s === "object" && s !== null && k in (s as object);
 
   try {
     const finalOrder = await pRetry(async () => {
       log.progress(`  Waiting for confirmation... (${Math.round((Date.now() - startMs) / 1000)}s elapsed)`);
       const o = await sdk.getOrder(orderId);
-      if (TERMINAL_SUCCESS.includes(o.status as any)) return o;
-      if (o.status === "refunded" || (typeof o.status === "object" && o.status !== null && "failed" in o.status)) {
+      if (hasKey(o.status, "success")) return o;
+      if (hasKey(o.status, "refunded") || hasKey(o.status, "failed")) {
         throw new AbortError(`Order ${orderId} failed: ${JSON.stringify(o.status)}`);
       }
       throw new Error("pending");
@@ -280,7 +282,7 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
     log.progress(`✓ Confirmed — ${outAmt} ${dstAsset.symbol} delivered to ${recipient}`);
     return {
       type: "confirmed",
-      data: { orderId, status: finalOrder.status === "success" ? "confirmed" : finalOrder.status as SwapSuccessJson["status"], srcAmount: atomicUnits, srcAsset: srcAsset.symbol, dstAmount: outAmt, dstAsset: dstAsset.symbol, dstChain: dstAsset.chain, quotedDstAmount: outputAmount, actualSlippageBps: slipBps, txId, elapsedMs },
+      data: { orderId, status: "confirmed", srcAmount: atomicUnits, srcAsset: srcAsset.symbol, dstAmount: outAmt, dstAsset: dstAsset.symbol, dstChain: dstAsset.chain, quotedDstAmount: outputAmount, actualSlippageBps: slipBps, txId, elapsedMs },
     };
   } catch (err) {
     if (getChainFamily(dstAsset.chain) === "bitcoin" && err instanceof Error && err.message === "pending") {

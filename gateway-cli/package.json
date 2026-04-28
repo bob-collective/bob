@@ -20,7 +20,7 @@
     "cli:dev": "tsx bin/gateway-cli.ts"
   },
   "dependencies": {
-    "@gobob/bob-sdk": "^5.3.2",
+    "@gobob/bob-sdk": "^5.5.0-usdt-routing-rc2",
     "@gobob/tokenlist": "github:bob-collective/tokenlist#223e98d85d857ce316fe3a8c3814ed00ddd66556",
     "commander": "^13.1.0",
     "p-retry": "^7.1.1",

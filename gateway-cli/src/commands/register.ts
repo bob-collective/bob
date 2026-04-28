@@ -10,7 +10,7 @@ import { buildRegisterPayload } from "../chains/index.js";
  */
 export async function handleRegister(opts: { orderId: string; txid: string }) {
   const sdk = getSdk();
-  const order = await sdk.api.getOrder({ id: opts.orderId });
+  const order = await sdk.getOrder(opts.orderId);
 
   const registerTx = buildRegisterPayload(
     order.srcInfo.chain,
@@ -19,5 +19,6 @@ export async function handleRegister(opts: { orderId: string; txid: string }) {
     opts.txid,
   );
 
-  return sdk.api.registerTx({ registerTx });
+  // registerTx isn't on the public SDK surface; reach through to the underlying V2Api.
+  return (sdk as any).api.registerTx({ registerTx });
 }
