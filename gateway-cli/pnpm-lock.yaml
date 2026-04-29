@@ -13,8 +13,8 @@ importers:
   .:
     dependencies:
       '@gobob/bob-sdk':
-        specifier: ^5.5.0-usdt-routing-rc2
-        version: 5.5.0-usdt-routing-rc2(@tanstack/react-query@5.91.0(react@19.2.4))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)(zod@4.3.6)
+        specifier: ^5.5.0-usdt-routing-rc4
+        version: 5.5.0-usdt-routing-rc4(@tanstack/react-query@5.91.0(react@19.2.4))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)(zod@4.3.6)
       '@gobob/tokenlist':
         specifier: github:bob-collective/tokenlist#223e98d85d857ce316fe3a8c3814ed00ddd66556
         version: https://codeload.github.com/bob-collective/tokenlist/tar.gz/223e98d85d857ce316fe3a8c3814ed00ddd66556
@@ -248,8 +248,8 @@ packages:
   '@gobob/bob-sdk@3.1.7-alpha0':
     resolution: {integrity: sha512-1qdKAYEigbqNt9x/0jYKeeC/d0u1lh6GluHaBIxp2Pt6p2+4fUVFnDdtGo5pMcgft7Bvo8/tdmlFBTzb3BEc5g==}
 
-  '@gobob/bob-sdk@5.5.0-usdt-routing-rc2':
-    resolution: {integrity: sha512-gHI0EwVjIa+qbCxeh9BmplIapY8OhL9XqwHPPaFXbs8KaaPHg4AfpFbpaphv240iGFtD83O7Sc/pWMBdztxA+g==}
+  '@gobob/bob-sdk@5.5.0-usdt-routing-rc4':
+    resolution: {integrity: sha512-B6gIVuqJJhNajwk3W0nvyAH+BqUzI16NzFiBDNZbXfQfPFOyJj1goMFPhNIb4cdG7g78qAlCTt1r2CBefWPGow==}
 
   '@gobob/sats-wagmi@0.3.23':
     resolution: {integrity: sha512-7YAcQXo20v/SKNBv4Jhv9SYJJ9fzXUSC1ntUKwR0hjdCV9Kj0ivIRmGKvZwb8fqwgNYEaL4R5PbrMWnvFNTRgQ==}
@@ -1457,7 +1457,7 @@ snapshots:
       - utf-8-validate
       - zod
 
-  '@gobob/bob-sdk@5.5.0-usdt-routing-rc2(@tanstack/react-query@5.91.0(react@19.2.4))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)(zod@4.3.6)':
+  '@gobob/bob-sdk@5.5.0-usdt-routing-rc4(@tanstack/react-query@5.91.0(react@19.2.4))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)(zod@4.3.6)':
     dependencies:
       '@bitcoinerlab/secp256k1': 1.2.0
       '@eslint/eslintrc': 3.3.5
