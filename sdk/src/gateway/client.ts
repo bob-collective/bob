@@ -332,20 +332,7 @@ export class GatewayApiClient {
                     });
                     const resetTxHash = await walletClient.writeContract(resetRequest);
                     await publicClient.waitForTransactionReceipt({ hash: resetTxHash });
-                } else {
-                    const { request } = await publicClient.simulateContract({
-                        account: walletClient.account,
-                        address: tokenAddress,
-                        abi: erc20Abi,
-                        functionName: 'approve',
-                        args: [spenderAddress, maxUint256],
-                    });
-
-                    const approveTxHash = await walletClient.writeContract(request);
-                    await publicClient.waitForTransactionReceipt({
-                        hash: approveTxHash,
-                    });
-                } 
+                }
 
                 const { request } = await publicClient.simulateContract({
                     account: walletClient.account,
