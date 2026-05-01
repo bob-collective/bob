@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "@gobob/bob-sdk": "^5.5.0-usdt-routing-rc5",
-    "@gobob/tokenlist": "github:bob-collective/tokenlist#223e98d85d857ce316fe3a8c3814ed00ddd66556",
+    "@gobob/tokenlist": "github:bob-collective/tokenlist#5ee721890cb91657f640440a05698c357a080c87",
     "commander": "^13.1.0",
     "p-retry": "^7.1.1",
     "viem": "^2.31.3",
