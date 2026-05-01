@@ -116,7 +116,7 @@ export type ExecuteQuoteResult =
  * ```
  */
 export class GatewayApiClient {
-    private api: V2Api;
+    api: V2Api;
 
     /**
      * Creates a new Gateway API client instance.
