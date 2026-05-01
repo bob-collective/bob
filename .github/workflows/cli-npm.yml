@@ -39,13 +39,13 @@ jobs:
         id: version
         run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
 
-      - name: Prepare for publish
-        run: |
-          node -e "
-            const pkg = require('./package.json');
-            pkg.dependencies['@gobob/bob-sdk'] = '^5.0.0';
-            require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));
-          "
+      # - name: Prepare for publish
+      #   run: |
+      #     node -e "
+      #       const pkg = require('./package.json');
+      #       pkg.dependencies['@gobob/bob-sdk'] = '^5.0.0';
+      #       require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));
+      #     "
 
       - name: Check if version already published
         run: |
