@@ -1,6 +1,13 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "ignoreCommand": "npx turbo-ignore --fallback=HEAD^1",
+  "redirects": [
+    {
+      "source": "/assets/files/bob-dao-charter-v1-0-82d9bf1cc29070c51df8965e9dba786c.pdf",
+      "destination": "/documents/bob-dao-charter-v1-0.pdf",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/_mintlify/:path*",
