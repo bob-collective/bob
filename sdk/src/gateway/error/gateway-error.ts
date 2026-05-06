@@ -201,22 +201,22 @@ function parseDetails<C extends GatewayErrorCode>(code: C, raw: Record<string, u
         case GatewayErrorCode.InsufficientAmount:
         case GatewayErrorCode.InsufficientPaymentAmount:
             return {
-                expected: readString(raw, 'expected'),
-                actual: readString(raw, 'actual'),
+                expected: String(raw?.expected ?? ''),
+                actual: String(raw?.actual ?? ''),
             } satisfies InsufficientAmountDetails as DetailsFor<C>;
 
         // Rust: GatewayErrorDetails::InsufficientSwapAmount { required, available }
         case GatewayErrorCode.InsufficientSwapAmount:
             return {
-                required: readString(raw, 'required'),
-                available: readString(raw, 'available'),
+                required: String(raw?.required ?? ''),
+                available: String(raw?.available ?? ''),
             } satisfies InsufficientSwapAmountDetails as DetailsFor<C>;
 
         // Rust: GatewayErrorDetails::UnableToCoverFees { total_fees, available_amount }
         case GatewayErrorCode.UnableToCoverFees:
             return {
-                totalFees: readString(raw, 'totalFees', 'total_fees'),
-                availableAmount: readString(raw, 'availableAmount', 'available_amount'),
+                totalFees: String(raw?.total_fees ?? ''),
+                availableAmount: String(raw?.available_amount ?? ''),
             } satisfies UnableToCoverFeesDetails as DetailsFor<C>;
 
         // Rust: GatewayErrorDetails::SimulationFailed { tenderly_url }
@@ -224,29 +224,29 @@ function parseDetails<C extends GatewayErrorCode>(code: C, raw: Record<string, u
         case GatewayErrorCode.SimulationFailed:
         case GatewayErrorCode.GasEstimateFailed:
             return {
-                tenderlyUrl: readNullableString(raw, 'tenderlyUrl', 'tenderly_url'),
+                tenderlyUrl: typeof raw?.tenderly_url === 'string' ? raw?.tenderly_url : null,
             } satisfies SimulationFailedDetails as DetailsFor<C>;
 
         // Rust: GatewayErrorDetails::NoRoute { src_chain, src_token, dst_chain, dst_token }
         case GatewayErrorCode.NoRoute:
             return {
-                srcChain: readString(raw, 'srcChain', 'src_chain'),
-                srcToken: readString(raw, 'srcToken', 'src_token'),
-                dstChain: readString(raw, 'dstChain', 'dst_chain'),
-                dstToken: readString(raw, 'dstToken', 'dst_token'),
+                srcChain: String(raw?.src_chain ?? ''),
+                srcToken: String(raw?.src_token ?? ''),
+                dstChain: String(raw?.dst_chain ?? ''),
+                dstToken: String(raw?.dst_token ?? ''),
             } satisfies NoRouteDetails as DetailsFor<C>;
 
         // Rust: GatewayErrorDetails::ExceededLimit { limit }
         case GatewayErrorCode.ExceededLimit:
             return {
-                limit: readString(raw, 'limit'),
+                limit: String(raw?.limit ?? ''),
             } satisfies ExceededLimitDetails as DetailsFor<C>;
 
         // Rust: GatewayErrorDetails::QuoteAmountTooLow { minimum, actual }
         case GatewayErrorCode.QuoteAmountTooLow:
             return {
-                minimum: readString(raw, 'minimum'),
-                actual: readString(raw, 'actual'),
+                minimum: String(raw?.minimum ?? ''),
+                actual: String(raw?.actual ?? ''),
             } satisfies QuoteAmountTooLowDetails as DetailsFor<C>;
 
         // Codes with no details in Rust (details field absent or unit variant → {}):
@@ -257,29 +257,4 @@ function parseDetails<C extends GatewayErrorCode>(code: C, raw: Record<string, u
         default:
             return null as DetailsFor<C>;
     }
-}
-
-function readString(raw: Record<string, unknown> | null, ...keys: string[]): string {
-    for (const key of keys) {
-        const value = raw?.[key];
-        if (value != null) {
-            return String(value);
-        }
-    }
-
-    return '';
-}
-
-function readNullableString(raw: Record<string, unknown> | null, ...keys: string[]): string | null {
-    for (const key of keys) {
-        const value = raw?.[key];
-        if (typeof value === 'string') {
-            return value;
-        }
-        if (value === null) {
-            return null;
-        }
-    }
-
-    return null;
 }

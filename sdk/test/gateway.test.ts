@@ -18,6 +18,7 @@ import {
     GatewayQuoteOneOf1,
     GatewayQuoteOneOf2,
     GatewayQuoteV2OneOf,
+    GatewayQuoteV2OneOf1,
     instanceOfGatewayQuoteOneOf,
     instanceOfGatewayQuoteOneOf1,
     instanceOfGatewayQuoteOneOf2,
@@ -281,7 +282,7 @@ describe('Gateway Tests', () => {
         nock(`${MAINNET_GATEWAY_BASE_URL}`).get(`/v1/get-orders/${zeroAddress}`).reply(200, mockOrders);
 
         const gatewaySDK = new GatewaySDK();
-        const orders = await gatewaySDK.getOrders(zeroAddress);
+        const orders = await gatewaySDK.getOrders({ userAddress: zeroAddress });
         expect(orders).toBeDefined();
         assert(Array.isArray(orders));
     });
@@ -608,7 +609,7 @@ describe('Gateway Tests', () => {
     it('should execute offramp quote with token approval', async () => {
         const gatewaySDK = new GatewaySDK();
 
-        const mockQuote: GatewayQuoteV2OneOf = {
+        const mockQuote: GatewayQuoteV2OneOf1 = {
             offramp: {
                 txTo: '0x1234567890123456789012345678901234567890',
                 recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
@@ -694,7 +695,7 @@ describe('Gateway Tests', () => {
     it('should approve WBTC on bob offramp', async () => {
         const gatewaySDK = new GatewaySDK();
 
-        const mockQuote: GatewayQuoteV2OneOf = {
+        const mockQuote: GatewayQuoteV2OneOf1 = {
             offramp: {
                 srcChain: 'bob',
                 feeBreakdown: {
@@ -783,7 +784,7 @@ describe('Gateway Tests', () => {
     it('should skip approval for WBTC when srcChain is not bob', async () => {
         const gatewaySDK = new GatewaySDK();
 
-        const mockQuote: GatewayQuoteV2OneOf = {
+        const mockQuote: GatewayQuoteV2OneOf1 = {
             offramp: {
                 srcChain: 'ethereum',
                 feeBreakdown: {
@@ -869,7 +870,7 @@ describe('Gateway Tests', () => {
     it('should reset USDT allowance before approving', async () => {
         const gatewaySDK = new GatewaySDK();
 
-        const mockQuote: GatewayQuoteV2OneOf = {
+        const mockQuote: GatewayQuoteV2OneOf1 = {
             offramp: {
                 recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
                 srcChain: 'ethereum',
@@ -959,7 +960,7 @@ describe('Gateway Tests', () => {
     it('should execute offramp quote without approval when allowance is sufficient', async () => {
         const gatewaySDK = new GatewaySDK();
 
-        const mockQuote: GatewayQuoteV2OneOf = {
+        const mockQuote: GatewayQuoteV2OneOf1 = {
             offramp: {
                 txTo: '0x1234567890123456789012345678901234567890',
                 recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
@@ -1195,28 +1196,6 @@ describe('Gateway Tests', () => {
         expect(error.details).toEqual({
             minimum: '1000',
             actual: '10',
-        });
-    });
-
-    it('should parse camelCase gateway error details', () => {
-        const error = GatewayError.fromResponse({
-            code: GatewayErrorCode.NoRoute,
-            error: 'No route',
-            details: {
-                srcChain: 'bitcoin',
-                srcToken: '0x0000000000000000000000000000000000000000',
-                dstChain: 'bob',
-                dstToken: WBTC_OFT_ADDRESS,
-            },
-        });
-
-        expect(isGatewayError(error)).toBe(true);
-        expect(error.code).toBe(GatewayErrorCode.NoRoute);
-        expect(error.details).toEqual({
-            srcChain: 'bitcoin',
-            srcToken: '0x0000000000000000000000000000000000000000',
-            dstChain: 'bob',
-            dstToken: WBTC_OFT_ADDRESS,
         });
     });
 
