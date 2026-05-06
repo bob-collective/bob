@@ -279,9 +279,7 @@ describe('Gateway Tests', () => {
             },
         ];
 
-        nock(`${MAINNET_GATEWAY_BASE_URL}`)
-            .get(`/v2/get-orders/${zeroAddress}`)
-            .reply(200, { orders: mockOrders });
+        nock(`${MAINNET_GATEWAY_BASE_URL}`).get(`/v2/get-orders/${zeroAddress}`).reply(200, { orders: mockOrders });
 
         const gatewaySDK = new GatewaySDK();
         const result = await gatewaySDK.getOrders({ userAddress: zeroAddress });
