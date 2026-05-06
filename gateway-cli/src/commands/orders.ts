@@ -27,7 +27,7 @@ export async function handleOrders(opts: { address: Address }) {
     throw new Error(`Invalid address format: '${opts.address}'`);
   }
   const sdk = getSdk();
-  const orders = await sdk.getOrders(opts.address);
+  const { orders } = await sdk.getOrders({ userAddress: opts.address });
 
   // UX-6: Sort orders by timestamp descending (most recent first)
   return [...orders].sort((a, b) => b.timestamp - a.timestamp);

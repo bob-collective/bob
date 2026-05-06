@@ -1,4 +1,4 @@
-import { GatewaySDK } from "@gobob/bob-sdk";
+import { GatewaySDK, type V2Api } from "@gobob/bob-sdk";
 
 /** Bitcoin uses 8 decimal places (satoshis). */
 export const BTC_DECIMALS = 8;
@@ -55,4 +55,16 @@ export function getSdk(): InstanceType<typeof GatewaySDK> {
     _sdk = apiUrl ? new GatewaySDK(apiUrl) : new GatewaySDK();
   }
   return _sdk;
+}
+
+/**
+ * Typed accessor for the SDK's underlying V2 generated client.
+ *
+ * The SDK marks its `api` field private and doesn't re-expose `createOrderV2`
+ * or `registerTx` on the public surface, but we need both for the CLI's
+ * unsigned/manual signing flows. Centralize the privacy escape here so call
+ * sites get full V2Api typing without sprinkling `any` around.
+ */
+export function getApi(): V2Api {
+  return (getSdk() as unknown as { api: V2Api }).api;
 }

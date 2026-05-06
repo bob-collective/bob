@@ -17,9 +17,11 @@ import * as runtime from '../runtime';
 import type {
   GatewayCreateOrder,
   GatewayError,
+  GatewayErrorV2,
   GatewayMaxSpendable,
-  GatewayOrderInfo,
-  GatewayQuote,
+  GatewayOrderInfoV2,
+  GatewayQuoteV2,
+  PaginatedOrdersResponse,
   RegisterTx,
   RegisterTxSuccess,
   RouteInfo,
@@ -29,12 +31,16 @@ import {
     GatewayCreateOrderToJSON,
     GatewayErrorFromJSON,
     GatewayErrorToJSON,
+    GatewayErrorV2FromJSON,
+    GatewayErrorV2ToJSON,
     GatewayMaxSpendableFromJSON,
     GatewayMaxSpendableToJSON,
-    GatewayOrderInfoFromJSON,
-    GatewayOrderInfoToJSON,
-    GatewayQuoteFromJSON,
-    GatewayQuoteToJSON,
+    GatewayOrderInfoV2FromJSON,
+    GatewayOrderInfoV2ToJSON,
+    GatewayQuoteV2FromJSON,
+    GatewayQuoteV2ToJSON,
+    PaginatedOrdersResponseFromJSON,
+    PaginatedOrdersResponseToJSON,
     RegisterTxFromJSON,
     RegisterTxToJSON,
     RegisterTxSuccessFromJSON,
@@ -43,23 +49,25 @@ import {
     RouteInfoToJSON,
 } from '../models/index';
 
-export interface CreateOrderRequest {
-    gatewayQuote: GatewayQuote;
+export interface CreateOrderV2Request {
+    gatewayQuoteV2: GatewayQuoteV2;
 }
 
 export interface GetMaxSpendableRequest {
     address: string;
 }
 
-export interface GetOrderRequest {
+export interface GetOrderV2Request {
     id: string;
 }
 
-export interface GetOrdersRequest {
+export interface GetOrdersV2Request {
     userAddress: string;
+    cursor?: string;
+    limit?: number;
 }
 
-export interface GetQuoteRequest {
+export interface GetQuoteV2Request {
     srcChain: string;
     dstChain: string;
     recipient: string;
@@ -71,7 +79,7 @@ export interface GetQuoteRequest {
     gasRefill?: string;
     strategyTarget?: string;
     strategyMessage?: string;
-    affiliateId?: string;
+    affiliates?: string;
 }
 
 export interface RegisterTxRequest {
@@ -81,17 +89,17 @@ export interface RegisterTxRequest {
 /**
  * 
  */
-export class V1Api extends runtime.BaseAPI {
+export class V2Api extends runtime.BaseAPI {
 
     /**
      * Creates a new request, reserves the required liquidity.
      * Create a new gateway order.
      */
-    async createOrderRaw(requestParameters: CreateOrderRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<GatewayCreateOrder>> {
-        if (requestParameters['gatewayQuote'] == null) {
+    async createOrderV2Raw(requestParameters: CreateOrderV2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<GatewayCreateOrder>> {
+        if (requestParameters['gatewayQuoteV2'] == null) {
             throw new runtime.RequiredError(
-                'gatewayQuote',
-                'Required parameter "gatewayQuote" was null or undefined when calling createOrder().'
+                'gatewayQuoteV2',
+                'Required parameter "gatewayQuoteV2" was null or undefined when calling createOrderV2().'
             );
         }
 
@@ -101,23 +109,15 @@ export class V1Api extends runtime.BaseAPI {
 
         headerParameters['Content-Type'] = 'application/json';
 
-        if (this.configuration && this.configuration.accessToken) {
-            const token = this.configuration.accessToken;
-            const tokenString = await token("api_key", []);
 
-            if (tokenString) {
-                headerParameters["Authorization"] = `Bearer ${tokenString}`;
-            }
-        }
-
-        let urlPath = `/v1/create-order`;
+        let urlPath = `/v2/create-order`;
 
         const response = await this.request({
             path: urlPath,
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
-            body: GatewayQuoteToJSON(requestParameters['gatewayQuote']),
+            body: GatewayQuoteV2ToJSON(requestParameters['gatewayQuoteV2']),
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => GatewayCreateOrderFromJSON(jsonValue));
@@ -127,8 +127,8 @@ export class V1Api extends runtime.BaseAPI {
      * Creates a new request, reserves the required liquidity.
      * Create a new gateway order.
      */
-    async createOrder(requestParameters: CreateOrderRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<GatewayCreateOrder> {
-        const response = await this.createOrderRaw(requestParameters, initOverrides);
+    async createOrderV2(requestParameters: CreateOrderV2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<GatewayCreateOrder> {
+        const response = await this.createOrderV2Raw(requestParameters, initOverrides);
         return await response.value();
     }
 
@@ -155,7 +155,7 @@ export class V1Api extends runtime.BaseAPI {
             }
         }
 
-        let urlPath = `/v1/get-max-spendable/{address}`;
+        let urlPath = `/v2/get-max-spendable/{address}`;
         urlPath = urlPath.replace(`{${"address"}}`, encodeURIComponent(String(requestParameters['address'])));
 
         const response = await this.request({
@@ -176,13 +176,13 @@ export class V1Api extends runtime.BaseAPI {
     }
 
     /**
-     * Get all orders for a specific ID.
+     * Get an order by id (v2).
      */
-    async getOrderRaw(requestParameters: GetOrderRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<GatewayOrderInfo>> {
+    async getOrderV2Raw(requestParameters: GetOrderV2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<GatewayOrderInfoV2>> {
         if (requestParameters['id'] == null) {
             throw new runtime.RequiredError(
                 'id',
-                'Required parameter "id" was null or undefined when calling getOrder().'
+                'Required parameter "id" was null or undefined when calling getOrderV2().'
             );
         }
 
@@ -199,7 +199,7 @@ export class V1Api extends runtime.BaseAPI {
             }
         }
 
-        let urlPath = `/v1/get-order/{id}`;
+        let urlPath = `/v2/get-order/{id}`;
         urlPath = urlPath.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters['id'])));
 
         const response = await this.request({
@@ -209,29 +209,37 @@ export class V1Api extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => GatewayOrderInfoFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => GatewayOrderInfoV2FromJSON(jsonValue));
     }
 
     /**
-     * Get all orders for a specific ID.
+     * Get an order by id (v2).
      */
-    async getOrder(requestParameters: GetOrderRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<GatewayOrderInfo> {
-        const response = await this.getOrderRaw(requestParameters, initOverrides);
+    async getOrderV2(requestParameters: GetOrderV2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<GatewayOrderInfoV2> {
+        const response = await this.getOrderV2Raw(requestParameters, initOverrides);
         return await response.value();
     }
 
     /**
-     * Get all user orders.
+     * Get user orders (v2).
      */
-    async getOrdersRaw(requestParameters: GetOrdersRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<GatewayOrderInfo>>> {
+    async getOrdersV2Raw(requestParameters: GetOrdersV2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PaginatedOrdersResponse>> {
         if (requestParameters['userAddress'] == null) {
             throw new runtime.RequiredError(
                 'userAddress',
-                'Required parameter "userAddress" was null or undefined when calling getOrders().'
+                'Required parameter "userAddress" was null or undefined when calling getOrdersV2().'
             );
         }
 
         const queryParameters: any = {};
+
+        if (requestParameters['cursor'] != null) {
+            queryParameters['cursor'] = requestParameters['cursor'];
+        }
+
+        if (requestParameters['limit'] != null) {
+            queryParameters['limit'] = requestParameters['limit'];
+        }
 
         const headerParameters: runtime.HTTPHeaders = {};
 
@@ -244,7 +252,7 @@ export class V1Api extends runtime.BaseAPI {
             }
         }
 
-        let urlPath = `/v1/get-orders/{user_address}`;
+        let urlPath = `/v2/get-orders/{user_address}`;
         urlPath = urlPath.replace(`{${"user_address"}}`, encodeURIComponent(String(requestParameters['userAddress'])));
 
         const response = await this.request({
@@ -254,14 +262,14 @@ export class V1Api extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(GatewayOrderInfoFromJSON));
+        return new runtime.JSONApiResponse(response, (jsonValue) => PaginatedOrdersResponseFromJSON(jsonValue));
     }
 
     /**
-     * Get all user orders.
+     * Get user orders (v2).
      */
-    async getOrders(requestParameters: GetOrdersRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<GatewayOrderInfo>> {
-        const response = await this.getOrdersRaw(requestParameters, initOverrides);
+    async getOrdersV2(requestParameters: GetOrdersV2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PaginatedOrdersResponse> {
+        const response = await this.getOrdersV2Raw(requestParameters, initOverrides);
         return await response.value();
     }
 
@@ -269,53 +277,53 @@ export class V1Api extends runtime.BaseAPI {
      * Checks the available liquidity and provides a quote.
      * Get a gateway quote.
      */
-    async getQuoteRaw(requestParameters: GetQuoteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<GatewayQuote>> {
+    async getQuoteV2Raw(requestParameters: GetQuoteV2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<GatewayQuoteV2>> {
         if (requestParameters['srcChain'] == null) {
             throw new runtime.RequiredError(
                 'srcChain',
-                'Required parameter "srcChain" was null or undefined when calling getQuote().'
+                'Required parameter "srcChain" was null or undefined when calling getQuoteV2().'
             );
         }
 
         if (requestParameters['dstChain'] == null) {
             throw new runtime.RequiredError(
                 'dstChain',
-                'Required parameter "dstChain" was null or undefined when calling getQuote().'
+                'Required parameter "dstChain" was null or undefined when calling getQuoteV2().'
             );
         }
 
         if (requestParameters['recipient'] == null) {
             throw new runtime.RequiredError(
                 'recipient',
-                'Required parameter "recipient" was null or undefined when calling getQuote().'
+                'Required parameter "recipient" was null or undefined when calling getQuoteV2().'
             );
         }
 
         if (requestParameters['srcToken'] == null) {
             throw new runtime.RequiredError(
                 'srcToken',
-                'Required parameter "srcToken" was null or undefined when calling getQuote().'
+                'Required parameter "srcToken" was null or undefined when calling getQuoteV2().'
             );
         }
 
         if (requestParameters['dstToken'] == null) {
             throw new runtime.RequiredError(
                 'dstToken',
-                'Required parameter "dstToken" was null or undefined when calling getQuote().'
+                'Required parameter "dstToken" was null or undefined when calling getQuoteV2().'
             );
         }
 
         if (requestParameters['amount'] == null) {
             throw new runtime.RequiredError(
                 'amount',
-                'Required parameter "amount" was null or undefined when calling getQuote().'
+                'Required parameter "amount" was null or undefined when calling getQuoteV2().'
             );
         }
 
         if (requestParameters['slippage'] == null) {
             throw new runtime.RequiredError(
                 'slippage',
-                'Required parameter "slippage" was null or undefined when calling getQuote().'
+                'Required parameter "slippage" was null or undefined when calling getQuoteV2().'
             );
         }
 
@@ -365,22 +373,14 @@ export class V1Api extends runtime.BaseAPI {
             queryParameters['strategyMessage'] = requestParameters['strategyMessage'];
         }
 
-        if (requestParameters['affiliateId'] != null) {
-            queryParameters['affiliateId'] = requestParameters['affiliateId'];
+        if (requestParameters['affiliates'] != null) {
+            queryParameters['affiliates'] = requestParameters['affiliates'];
         }
 
         const headerParameters: runtime.HTTPHeaders = {};
 
-        if (this.configuration && this.configuration.accessToken) {
-            const token = this.configuration.accessToken;
-            const tokenString = await token("api_key", []);
 
-            if (tokenString) {
-                headerParameters["Authorization"] = `Bearer ${tokenString}`;
-            }
-        }
-
-        let urlPath = `/v1/get-quote`;
+        let urlPath = `/v2/get-quote`;
 
         const response = await this.request({
             path: urlPath,
@@ -389,15 +389,15 @@ export class V1Api extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => GatewayQuoteFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => GatewayQuoteV2FromJSON(jsonValue));
     }
 
     /**
      * Checks the available liquidity and provides a quote.
      * Get a gateway quote.
      */
-    async getQuote(requestParameters: GetQuoteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<GatewayQuote> {
-        const response = await this.getQuoteRaw(requestParameters, initOverrides);
+    async getQuoteV2(requestParameters: GetQuoteV2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<GatewayQuoteV2> {
+        const response = await this.getQuoteV2Raw(requestParameters, initOverrides);
         return await response.value();
     }
 
@@ -418,7 +418,7 @@ export class V1Api extends runtime.BaseAPI {
             }
         }
 
-        let urlPath = `/v1/get-routes`;
+        let urlPath = `/v2/get-routes`;
 
         const response = await this.request({
             path: urlPath,
@@ -465,7 +465,7 @@ export class V1Api extends runtime.BaseAPI {
             }
         }
 
-        let urlPath = `/v1/register-tx`;
+        let urlPath = `/v2/register-tx`;
 
         const response = await this.request({
             path: urlPath,

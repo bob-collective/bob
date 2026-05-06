@@ -20,9 +20,9 @@
  */
 export const GatewayErrorCode = {
     InsufficientAmount: 'INSUFFICIENT_AMOUNT',
+    QuoteAmountTooLow: 'QUOTE_AMOUNT_TOO_LOW',
     InsufficientSwapAmount: 'INSUFFICIENT_SWAP_AMOUNT',
     InsufficientSolverBalance: 'INSUFFICIENT_SOLVER_BALANCE',
-    InsufficientFunds: 'INSUFFICIENT_FUNDS',
     InsufficientPaymentAmount: 'INSUFFICIENT_PAYMENT_AMOUNT',
     UnableToCoverFees: 'UNABLE_TO_COVER_FEES',
     InsufficientConfirmedFunds: 'INSUFFICIENT_CONFIRMED_FUNDS',

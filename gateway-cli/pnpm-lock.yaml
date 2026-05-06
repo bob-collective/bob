@@ -13,11 +13,11 @@ importers:
   .:
     dependencies:
       '@gobob/bob-sdk':
-        specifier: ^5.3.2
-        version: 5.3.2(@tanstack/react-query@5.91.0(react@19.2.4))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)(zod@4.3.6)
+        specifier: ^5.5.0-usdt-routing-rc5
+        version: 5.5.0-usdt-routing-rc5(@tanstack/react-query@5.91.0(react@19.2.4))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)(zod@4.3.6)
       '@gobob/tokenlist':
-        specifier: github:bob-collective/tokenlist#223e98d85d857ce316fe3a8c3814ed00ddd66556
-        version: https://codeload.github.com/bob-collective/tokenlist/tar.gz/223e98d85d857ce316fe3a8c3814ed00ddd66556
+        specifier: github:bob-collective/tokenlist#5ee721890cb91657f640440a05698c357a080c87
+        version: https://codeload.github.com/bob-collective/tokenlist/tar.gz/5ee721890cb91657f640440a05698c357a080c87
       commander:
         specifier: ^13.1.0
         version: 13.1.0
@@ -248,8 +248,8 @@ packages:
   '@gobob/bob-sdk@3.1.7-alpha0':
     resolution: {integrity: sha512-1qdKAYEigbqNt9x/0jYKeeC/d0u1lh6GluHaBIxp2Pt6p2+4fUVFnDdtGo5pMcgft7Bvo8/tdmlFBTzb3BEc5g==}
 
-  '@gobob/bob-sdk@5.3.2':
-    resolution: {integrity: sha512-O+7WRyc5bfa8/CMaK6Daq6El4TizCO0TojJ46ObOI3DbpU/rfGsjFaXoPxOCG/fmVR82oyta3kFrlXQ2B/5w1w==}
+  '@gobob/bob-sdk@5.5.0-usdt-routing-rc5':
+    resolution: {integrity: sha512-/3WWrQ2n/LaSvvFNmDf2NJsQPwhuFpD2L7vLEoRj0GQqioZ0JTSE9fR5gfrQPFJOv5LqBEUhsQzVmXpsn6noqw==}
 
   '@gobob/sats-wagmi@0.3.23':
     resolution: {integrity: sha512-7YAcQXo20v/SKNBv4Jhv9SYJJ9fzXUSC1ntUKwR0hjdCV9Kj0ivIRmGKvZwb8fqwgNYEaL4R5PbrMWnvFNTRgQ==}
@@ -258,8 +258,8 @@ packages:
       react: '>=18'
       react-dom: '>=18'
 
-  '@gobob/tokenlist@https://codeload.github.com/bob-collective/tokenlist/tar.gz/223e98d85d857ce316fe3a8c3814ed00ddd66556':
-    resolution: {tarball: https://codeload.github.com/bob-collective/tokenlist/tar.gz/223e98d85d857ce316fe3a8c3814ed00ddd66556}
+  '@gobob/tokenlist@https://codeload.github.com/bob-collective/tokenlist/tar.gz/5ee721890cb91657f640440a05698c357a080c87':
+    resolution: {tarball: https://codeload.github.com/bob-collective/tokenlist/tar.gz/5ee721890cb91657f640440a05698c357a080c87}
     version: 1.0.0
 
   '@jridgewell/sourcemap-codec@1.5.5':
@@ -1177,6 +1177,7 @@ packages:
 
   uuid@9.0.1:
     resolution: {integrity: sha512-b+1eJOlsR9K8HJpow9Ok3fiWOWSIcIzXodvv0rQjVoOVNpWMpxf1wZNpt4y9h10odCNrqnYp1OBzRktckBe3sA==}
+    deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
     hasBin: true
 
   varuint-bitcoin@1.1.2:
@@ -1457,7 +1458,7 @@ snapshots:
       - utf-8-validate
       - zod
 
-  '@gobob/bob-sdk@5.3.2(@tanstack/react-query@5.91.0(react@19.2.4))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)(zod@4.3.6)':
+  '@gobob/bob-sdk@5.5.0-usdt-routing-rc5(@tanstack/react-query@5.91.0(react@19.2.4))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)(zod@4.3.6)':
     dependencies:
       '@bitcoinerlab/secp256k1': 1.2.0
       '@eslint/eslintrc': 3.3.5
@@ -1508,7 +1509,7 @@ snapshots:
       - utf-8-validate
       - zod
 
-  '@gobob/tokenlist@https://codeload.github.com/bob-collective/tokenlist/tar.gz/223e98d85d857ce316fe3a8c3814ed00ddd66556': {}
+  '@gobob/tokenlist@https://codeload.github.com/bob-collective/tokenlist/tar.gz/5ee721890cb91657f640440a05698c357a080c87': {}
 
   '@jridgewell/sourcemap-codec@1.5.5': {}
 

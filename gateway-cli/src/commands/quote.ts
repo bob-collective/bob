@@ -1,4 +1,4 @@
-import { getInnerQuote } from "@gobob/bob-sdk";
+import { getInnerQuoteV2 } from "../util/quote-v2.js";
 import { getRoutes } from "../util/route-provider.js";
 import { resolveSwapInputs, humanToAtomic } from "../util/input-resolver.js";
 import { fetchPrice } from "../util/price-oracle.js";
@@ -93,7 +93,7 @@ export async function handleQuote(opts: QuoteOptions): Promise<QuoteResult> {
     maxSlippage: slippageBps,
     gasRefill: gasRefillWei ? BigInt(gasRefillWei) : undefined,
   });
-  const outputAmount = getInnerQuote(quote).outputAmount.amount;
+  const outputAmount = getInnerQuoteV2(quote).outputAmount.amount;
 
   return {
     quote: {

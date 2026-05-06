@@ -24,21 +24,13 @@ export interface GatewayErrorDetailsOneOf3 {
      * @type {string}
      * @memberof GatewayErrorDetailsOneOf3
      */
-    availableAmount: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof GatewayErrorDetailsOneOf3
-     */
-    totalFees: string;
+    tenderlyUrl?: string | null;
 }
 
 /**
  * Check if a given object implements the GatewayErrorDetailsOneOf3 interface.
  */
 export function instanceOfGatewayErrorDetailsOneOf3(value: object): value is GatewayErrorDetailsOneOf3 {
-    if (!('availableAmount' in value) || value['availableAmount'] === undefined) return false;
-    if (!('totalFees' in value) || value['totalFees'] === undefined) return false;
     return true;
 }
 
@@ -52,8 +44,7 @@ export function GatewayErrorDetailsOneOf3FromJSONTyped(json: any, ignoreDiscrimi
     }
     return {
         
-        'availableAmount': json['available_amount'],
-        'totalFees': json['total_fees'],
+        'tenderlyUrl': json['tenderly_url'] == null ? undefined : json['tenderly_url'],
     };
 }
 
@@ -68,8 +59,7 @@ export function GatewayErrorDetailsOneOf3ToJSONTyped(value?: GatewayErrorDetails
 
     return {
         
-        'available_amount': value['availableAmount'],
-        'total_fees': value['totalFees'],
+        'tenderly_url': value['tenderlyUrl'],
     };
 }
 
