@@ -20,9 +20,10 @@ const onrampOrder = {
   onramp: { orderId: "order-456", address: "bc1qgateway", psbtHex: "70736274ff" },
 };
 
+// V2 order status is a discriminated object union: { success } | { refunded } | { failed } | { inProgress }.
 const confirmedOrder = {
   id: "order-456",
-  status: "success" as const,
+  status: { success: {} },
   dstInfo: { amount: "4812300000" },
 };
 
@@ -31,8 +32,8 @@ const confirmedOrder = {
 const mockGetQuote = vi.fn();
 const mockGetRoutes = vi.fn();
 const mockGetOrder = vi.fn();
+const mockExecuteQuote = vi.fn();
 const mockCreateOrder = vi.fn();
-const mockRegisterTx = vi.fn();
 const mockSignAllInputs = vi.fn();
 const mockGetAddressMempoolTxs = vi.fn();
 
@@ -54,8 +55,9 @@ vi.mock("../../src/config.js", () => ({
     getQuote: mockGetQuote,
     getRoutes: mockGetRoutes,
     getOrder: mockGetOrder,
-    api: { createOrder: mockCreateOrder, registerTx: mockRegisterTx },
+    executeQuote: mockExecuteQuote,
   })),
+  getApi: vi.fn(() => ({ createOrderV2: mockCreateOrder })),
   BTC_DECIMALS: 8,
 }));
 
@@ -163,14 +165,14 @@ describe("handleSwap", () => {
     vi.clearAllMocks();
 
     mockGetQuote.mockResolvedValue(onrampQuote);
+    mockExecuteQuote.mockResolvedValue({ order: onrampOrder, tx: "signed-tx-hex-abc" });
     mockCreateOrder.mockResolvedValue(onrampOrder);
-    mockRegisterTx.mockResolvedValue(undefined);
     mockSignAllInputs.mockResolvedValue("signed-tx-hex-abc");
     mockGetOrder.mockResolvedValue(confirmedOrder);
     mockGetAddressMempoolTxs.mockResolvedValue([]);
   });
 
-  it("full onramp BTC flow: quote → createOrder → sign → register → poll → confirmed", async () => {
+  it("full onramp BTC flow: quote → executeQuote → poll → confirmed", async () => {
     const { handleSwap } = await import("../../src/commands/swap.js");
     const result = await handleSwap(baseOpts, silentLogger);
 
@@ -185,9 +187,7 @@ describe("handleSwap", () => {
     expect(result.data.dstAsset).toBe("USDC");
 
     expect(mockGetQuote).toHaveBeenCalledOnce();
-    expect(mockCreateOrder).toHaveBeenCalledOnce();
-    expect(mockSignAllInputs).toHaveBeenCalledWith("70736274ff");
-    expect(mockRegisterTx).toHaveBeenCalledOnce();
+    expect(mockExecuteQuote).toHaveBeenCalledOnce();
     expect(mockGetOrder).toHaveBeenCalledWith("order-456");
   });
 
@@ -217,7 +217,7 @@ describe("handleSwap", () => {
     expect(result.psbtBase64).toBe(Buffer.from("70736274ff", "hex").toString("base64"));
 
     expect(mockSignAllInputs).not.toHaveBeenCalled();
-    expect(mockRegisterTx).not.toHaveBeenCalled();
+    expect(mockExecuteQuote).not.toHaveBeenCalled();
   });
 
   it("missing signer throws 'no signer configured for Bitcoin'", async () => {
@@ -227,122 +227,41 @@ describe("handleSwap", () => {
     ).rejects.toThrow("no signer configured for Bitcoin");
   });
 
-  it("registration failure throws error with recovery instructions", async () => {
-    mockRegisterTx.mockRejectedValue(new Error("network error"));
-
-    const { handleSwap } = await import("../../src/commands/swap.js");
-    await expect(
-      handleSwap(baseOpts, silentLogger),
-    ).rejects.toThrow("Registration failed");
-  });
-
-  it("transient error: createOrder fails once with 'TRM screening delay', succeeds on retry", async () => {
+  it("transient error: executeQuote fails once with 'TRM screening delay', succeeds on retry", async () => {
     let callCount = 0;
-    mockCreateOrder.mockImplementation(async () => {
+    mockExecuteQuote.mockImplementation(async () => {
       callCount++;
       if (callCount === 1) throw new Error("TRM screening delay");
-      return onrampOrder;
+      return { order: onrampOrder, tx: "signed-tx-hex-abc" };
     });
 
     const { handleSwap } = await import("../../src/commands/swap.js");
     const result = await handleSwap(baseOpts, silentLogger);
 
     expect(result.type).toBe("confirmed");
-    expect(mockCreateOrder).toHaveBeenCalledTimes(2);
+    expect(mockExecuteQuote).toHaveBeenCalledTimes(2);
   });
 
-  it("non-transient error: createOrder fails with 'Insufficient funds', not retried", async () => {
-    mockCreateOrder.mockRejectedValue(new Error("Insufficient funds"));
+  it("non-transient error: executeQuote fails with 'Insufficient funds', not retried", async () => {
+    mockExecuteQuote.mockRejectedValue(new Error("Insufficient funds"));
 
     const { handleSwap } = await import("../../src/commands/swap.js");
     await expect(
       handleSwap(baseOpts, silentLogger),
     ).rejects.toThrow("Insufficient funds");
 
-    expect(mockCreateOrder).toHaveBeenCalledTimes(1);
+    expect(mockExecuteQuote).toHaveBeenCalledTimes(1);
   });
 
   it("--no-retry: transient error is not retried", async () => {
-    mockCreateOrder.mockRejectedValue(new Error("TRM screening delay"));
+    mockExecuteQuote.mockRejectedValue(new Error("TRM screening delay"));
 
     const { handleSwap } = await import("../../src/commands/swap.js");
     await expect(
       handleSwap({ ...baseOpts, retry: false }, silentLogger),
     ).rejects.toThrow("TRM screening delay");
 
-    expect(mockCreateOrder).toHaveBeenCalledTimes(1);
-  });
-
-  it("EVM sendTransaction revert attaches enriched context to error", async () => {
-    // Reconfigure mocks for an EVM offramp flow (not BTC onramp)
-    const { resolveSwapInputs } = await import("../../src/util/input-resolver.js");
-    (resolveSwapInputs as any).mockResolvedValue({
-      srcAsset: { chain: "base", address: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", symbol: "USDC", decimals: 6 },
-      dstAsset: { chain: "bitcoin", address: "BTC", symbol: "BTC", decimals: 8 },
-      atomicUnits: "10000000",
-      display: "10 USDC",
-    });
-
-    const { parseAssetChain } = await import("../../src/util/input-resolver.js");
-    (parseAssetChain as any).mockImplementation((asset: string) =>
-      asset.includes("BTC") ? { chain: "bitcoin", address: "BTC", symbol: "BTC", decimals: 8 }
-                             : { chain: "base", address: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", symbol: "USDC", decimals: 6 }
-    );
-
-    const { getChainFamily, resolveSigner, resolveRecipient } = await import("../../src/chains/index.js");
-    (getChainFamily as any).mockImplementation((chain: string) => chain === "bitcoin" ? "bitcoin" : "evm");
-    (resolveRecipient as any).mockResolvedValue("bc1qtest");
-
-    const mockWalletClient = {
-      account: { address: "0xAF91558Ba2B1994530c9cfCcbda5AE9cD2b456bb" },
-      chain: { id: 8453, name: "Base" },
-      sendTransaction: vi.fn().mockRejectedValue(
-        Object.assign(new Error("Execution reverted for an unknown reason."), {
-          cause: { cause: { data: "0xdeadbeef" } },
-        })
-      ),
-    };
-    const mockPublicClient = {
-      getTransactionCount: vi.fn().mockResolvedValue(0),
-    };
-    (resolveSigner as any).mockResolvedValue({ walletClient: mockWalletClient, publicClient: mockPublicClient });
-
-    const mockOfframpQuote = {
-      offramp: {
-        inputAmount: { amount: "10000000", address: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", chain: "base" },
-        outputAmount: { amount: "15000", address: "BTC", chain: "bitcoin" },
-        sender: "0xAF91558Ba2B1994530c9cfCcbda5AE9cD2b456bb",
-      },
-    };
-    const mockOfframpOrder = {
-      offramp: {
-        orderId: "revert-order-123",
-        tx: { to: "0x96C33FB0b058c341F5567b0b91E1Fc5F2E5cB1be", data: "0xe5c65df5aabbccdd", value: "369441375065843" },
-      },
-    };
-    mockGetQuote.mockResolvedValue(mockOfframpQuote);
-    mockCreateOrder.mockResolvedValue(mockOfframpOrder);
-
-    const { handleSwap } = await import("../../src/commands/swap.js");
-    try {
-      await handleSwap({ ...baseOpts, src: "USDC:base", dst: "BTC", privateKey: "0xTestEvmKey" }, silentLogger);
-      expect.unreachable("should have thrown");
-    } catch (err: any) {
-      expect(err.message).toContain("Execution reverted");
-      expect(err.orderId).toBe("revert-order-123");
-      expect(err.txParams).toEqual({
-        to: "0x96C33FB0b058c341F5567b0b91E1Fc5F2E5cB1be",
-        from: "0xAF91558Ba2B1994530c9cfCcbda5AE9cD2b456bb",
-        value: "369441375065843",
-        data: "0xe5c65df5aabbccdd",
-        chainId: 8453,
-        chainName: "Base",
-      });
-      expect(err.srcAsset).toEqual({ symbol: "USDC", address: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", chain: "base" });
-      expect(err.dstAsset).toEqual({ symbol: "BTC", address: "BTC", chain: "bitcoin" });
-      expect(err.functionSelector).toBe("0xe5c65df5");
-      expect(err.revertData).toBe("0xdeadbeef");
-    }
+    expect(mockExecuteQuote).toHaveBeenCalledTimes(1);
   });
 
 });
