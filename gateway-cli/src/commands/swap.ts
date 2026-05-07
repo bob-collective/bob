@@ -64,7 +64,7 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
     );
   }
 
-  // BTC onramp --unsigned still needs a sender to construct the PSBT.
+  // UX-8: BTC onramp --unsigned requires a sender address to construct the PSBT
   if (opts.unsigned && srcFamily === "bitcoin" && !senderAddress) {
     throw new Error("BTC onramp --unsigned requires --sender or BITCOIN_PRIVATE_KEY to construct the PSBT.");
   }
