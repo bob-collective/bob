@@ -208,9 +208,8 @@ describe("handleSwap", () => {
     expect(mockGetOrder).not.toHaveBeenCalled();
   });
 
-  it("--unsigned returns PSBT from walletless executeQuote", async () => {
-    // Walletless flow returns { order } without tx.
-    mockExecuteQuote.mockResolvedValue({ order: onrampOrder });
+  it("--unsigned BTC uses createOrderV2 directly and returns PSBT", async () => {
+    mockCreateOrderV2.mockResolvedValue(onrampOrder);
 
     const { handleSwap } = await import("../../src/commands/swap.js");
     const result = await handleSwap({ ...baseOpts, unsigned: true }, silentLogger);
@@ -222,9 +221,16 @@ describe("handleSwap", () => {
     // psbtHex "70736274ff" decoded from hex → base64
     expect(result.psbtBase64).toBe(Buffer.from("70736274ff", "hex").toString("base64"));
 
-    // executeQuote was called without a btcSigner (walletless)
-    expect(mockExecuteQuote.mock.calls[0][0].btcSigner).toBeUndefined();
+    // executeQuote MUST NOT be called for the --unsigned path.
+    expect(mockExecuteQuote).not.toHaveBeenCalled();
     expect(mockSignAllInputs).not.toHaveBeenCalled();
+  });
+
+  it("--unsigned BTC without --sender or key throws", async () => {
+    const { handleSwap } = await import("../../src/commands/swap.js");
+    await expect(
+      handleSwap({ ...baseOpts, unsigned: true, privateKey: undefined }, silentLogger),
+    ).rejects.toThrow("BTC onramp --unsigned requires --sender or BITCOIN_PRIVATE_KEY");
   });
 
   it("missing signer throws 'no signer configured for Bitcoin'", async () => {

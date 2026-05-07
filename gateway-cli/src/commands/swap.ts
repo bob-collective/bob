@@ -10,11 +10,6 @@ import { loadConfig, getSdk, getApi } from "../config.js";
 import { deriveAddress, resolveSigner, getChainFamily, resolvePrivateKey, resolveRecipient } from "../chains/index.js";
 import type { Logger, SwapSuccessJson, SwapSubmittedJson, SwapMempoolPendingJson } from "../output.js";
 
-// Default sender for BTC onramp --unsigned without --sender or BITCOIN_PRIVATE_KEY.
-// The gateway needs a sender to construct the PSBT; this address acts as a stand-in
-// when the caller will substitute their own inputs externally.
-const WALLETLESS_BTC_SENDER = "bc1qxs6ndmct2xhrhpzcmurnfuemhm83asxf4e2dsf";
-
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 export interface SwapOptions {
@@ -58,11 +53,7 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
 
   const key = resolvePrivateKey(srcFamily === "bitcoin" ? "bitcoin" : "evm", opts.privateKey, config);
   const derivedAddress = key ? await deriveAddress(srcFamily === "bitcoin" ? "bitcoin" : "evm", key) : undefined;
-  // BTC onramp --unsigned without --sender or key falls back to a placeholder sender
-  // so the gateway can still construct a PSBT for external signing.
-  const senderAddress = opts.sender
-    ?? derivedAddress
-    ?? (opts.unsigned && srcFamily === "bitcoin" ? WALLETLESS_BTC_SENDER : undefined);
+  const senderAddress = opts.sender ?? derivedAddress;
 
   // Reject --sender that doesn't match the signing key — the order would be created for one address but signed by another
   if (opts.sender && derivedAddress && opts.sender.toLowerCase() !== derivedAddress.toLowerCase()) {
@@ -71,6 +62,11 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
       `  The order would be created for one address but signed by another.\n` +
       `  Remove --sender to use the key-derived address, or use --unsigned to skip signing.`,
     );
+  }
+
+  // BTC onramp --unsigned still needs a sender to construct the PSBT.
+  if (opts.unsigned && srcFamily === "bitcoin" && !senderAddress) {
+    throw new Error("BTC onramp --unsigned requires --sender or BITCOIN_PRIVATE_KEY to construct the PSBT.");
   }
   const { srcAsset, dstAsset, atomicUnits, display } = await resolveSwapInputs(
     opts.src, opts.dst, opts.amount, routes,
@@ -150,9 +146,9 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
     }
   }
 
-  // EVM --unsigned has no public SDK path: executeQuote always signs for EVM.
-  // Use the V2 API directly to fetch the unsigned transaction data.
-  if (opts.unsigned && variant !== "onramp") {
+  // --unsigned has no public SDK path: executeQuote always signs.
+  // Use the V2 API directly to fetch the order with its PSBT (BTC) or unsigned tx (EVM).
+  if (opts.unsigned) {
     const order: GatewayCreateOrder = await pRetry(async () => {
       try {
         const quote = await sdk.getQuote(quoteParams);
@@ -170,10 +166,15 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
     if (!orderData?.orderId) {
       throw new Error(`Unexpected API response: order.${variant} is missing or has no orderId.`);
     }
+    if (variant === "onramp") {
+      const psbtHex = orderData.psbtHex;
+      if (!psbtHex) throw new Error("Gateway did not return a PSBT for this onramp order.");
+      return { type: "unsigned", orderId: orderData.orderId, psbtBase64: Buffer.from(psbtHex, "hex").toString("base64") };
+    }
     return { type: "unsigned", orderId: orderData.orderId, txInfo: orderData.tx };
   }
 
-  // Signed flows + BTC --unsigned (walletless) all go through executeQuote.
+  // Signed flows go through executeQuote.
   // executeQuote handles createOrder + sign + registerTx in one call.
   // For BTC paths the SDK doesn't access walletClient/publicClient; cast to satisfy types.
   const { order, tx, outputAmount } = await pRetry(async () => {
@@ -203,15 +204,6 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
     throw new Error(`Unexpected API response: order.${variant} is missing or has no orderId. Response keys: ${Object.keys(order).join(", ")}`);
   }
   const orderId: string = orderData.orderId;
-
-  // ── Unsigned BTC → return the PSBT from the walletless executeQuote result ──
-
-  if (opts.unsigned) {
-    const psbtHex = (order as any).onramp?.psbtHex;
-    if (!psbtHex) throw new Error("Gateway did not return a PSBT for this onramp order.");
-    return { type: "unsigned", orderId, psbtBase64: Buffer.from(psbtHex, "hex").toString("base64") };
-  }
-
   if (!tx) throw new Error("executeQuote did not return a transaction id for the signed flow.");
   const txId: string = tx;
 
