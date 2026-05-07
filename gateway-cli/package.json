@@ -1,6 +1,6 @@
 {
   "name": "@gobob/gateway-cli",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "CLI for bridging Bitcoin to/from EVM chains via BOB Gateway",
   "repository": {
     "type": "git",
