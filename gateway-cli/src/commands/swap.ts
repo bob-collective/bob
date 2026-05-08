@@ -1,13 +1,13 @@
 import { MempoolClient } from "@gobob/bob-sdk";
 import type { BitcoinSigner, GetQuoteParams, GatewayCreateOrder } from "@gobob/bob-sdk";
 import { getInnerQuoteV2 } from "../util/quote-v2.js";
-import { formatUnits, type WalletClient, type PublicClient } from "viem";
+import { type WalletClient, type PublicClient } from "viem";
 import pRetry, { AbortError } from "p-retry";
 import { getRoutes } from "../util/route-provider.js";
 import { resolveSwapInputs, humanToAtomic, parseAssetChain, buildTokenIndex } from "../util/input-resolver.js";
 import { fetchPrice } from "../util/price-oracle.js";
 import { loadConfig, getSdk, getApi } from "../config.js";
-import { deriveAddress, resolveSigner, buildRegisterPayload, getChainFamily, resolvePrivateKey, resolveRecipient } from "../chains/index.js";
+import { deriveAddress, resolveSigner, getChainFamily, resolvePrivateKey, resolveRecipient } from "../chains/index.js";
 import type { Logger, SwapSuccessJson, SwapSubmittedJson, SwapMempoolPendingJson } from "../output.js";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -108,7 +108,7 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
     gasRefill: gasRefillWei ? BigInt(gasRefillWei) : undefined,
   };
 
-  // ── Quote + order (retryable) ───────────────────────────────────────────────
+  // ── Quote + execute (retryable) ─────────────────────────────────────────────
 
   const TRANSIENT = [/TRM screening/i, /429/, /Too Many Requests/i, /rate limit/i, /not yet propagated/i, /BTC propagation/i, /timeout/i, /ECONNRESET/, /ETIMEDOUT/];
   const isTransient = (e: unknown) => TRANSIENT.some(p => p.test(e instanceof Error ? e.message : String(e)));
@@ -118,24 +118,77 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
     : getChainFamily(dstAsset.chain) === "bitcoin" ? "offramp"
     : "layerZero";
 
-  const { orderId, order, outputAmount } = await pRetry(async () => {
+  // For BTC source, signer holds a BitcoinSigner; for EVM, walletClient + publicClient.
+  const btcSigner = !opts.unsigned && variant === "onramp"
+    ? ((signer as any).signer as BitcoinSigner)
+    : undefined;
+  const evmClients = variant !== "onramp" && !opts.unsigned
+    ? (signer as { walletClient: WalletClient; publicClient: PublicClient })
+    : undefined;
+
+  // EVM wait-for-pending-nonce — only relevant for the signed EVM path.
+  if (evmClients && senderAddress) {
+    const addr = senderAddress as `0x${string}`;
+    const { publicClient } = evmClients;
+    const deadline = Date.now() + 120_000;
+    let settled = false;
+    while (Date.now() < deadline) {
+      const [latest, pending] = await Promise.all([
+        publicClient.getTransactionCount({ address: addr, blockTag: "latest" }),
+        publicClient.getTransactionCount({ address: addr, blockTag: "pending" }),
+      ]);
+      if (pending <= latest) { settled = true; break; }
+      log.progress(`  Waiting for pending tx to settle (pending nonce: ${pending}, latest: ${latest})...`);
+      await new Promise(r => setTimeout(r, 5000));
+    }
+    if (!settled) {
+      throw new Error(`Timed out waiting for pending transactions to settle for ${addr}. There may be stuck transactions — check your wallet before retrying.`);
+    }
+  }
+
+  // --unsigned has no public SDK path: executeQuote always signs.
+  // Use the V2 API directly to fetch the order with its PSBT (BTC) or unsigned tx (EVM).
+  if (opts.unsigned) {
+    const order: GatewayCreateOrder = await pRetry(async () => {
+      try {
+        const quote = await sdk.getQuote(quoteParams);
+        return await getApi().createOrderV2({ gatewayQuoteV2: quote });
+      } catch (err) {
+        if (!isTransient(err)) {
+          const abort = new AbortError(err instanceof Error ? err.message : String(err));
+          if (err instanceof Error) abort.cause = err;
+          throw abort;
+        }
+        throw err;
+      }
+    }, { retries });
+    const orderData = (order as any)[variant];
+    if (!orderData?.orderId) {
+      throw new Error(`Unexpected API response: order.${variant} is missing or has no orderId.`);
+    }
+    if (variant === "onramp") {
+      const psbtHex = orderData.psbtHex;
+      if (!psbtHex) throw new Error("Gateway did not return a PSBT for this onramp order.");
+      return { type: "unsigned", orderId: orderData.orderId, psbtBase64: Buffer.from(psbtHex, "hex").toString("base64") };
+    }
+    return { type: "unsigned", orderId: orderData.orderId, txInfo: orderData.tx };
+  }
+
+  // Signed flows go through executeQuote.
+  // executeQuote handles createOrder + sign + registerTx in one call.
+  // For BTC paths the SDK doesn't access walletClient/publicClient; cast to satisfy types.
+  const { order, tx, outputAmount } = await pRetry(async () => {
     try {
       const quote = await sdk.getQuote(quoteParams);
-      const order: GatewayCreateOrder = await getApi().createOrderV2({ gatewayQuoteV2: quote });
-      // Cross-check that the API returned the variant our chain detection expected.
-      const orderData =
-        variant === "onramp" && "onramp" in order ? order.onramp
-        : variant === "offramp" && "offramp" in order ? order.offramp
-        : variant === "layerZero" && "layerZero" in order ? order.layerZero
-        : undefined;
-      if (!orderData?.orderId) {
-        throw new Error(`Unexpected API response: order.${variant} is missing or has no orderId. Response keys: ${Object.keys(order).join(", ")}`);
-      }
-      return {
-        order,
-        orderId: orderData.orderId,
-        outputAmount: getInnerQuoteV2(quote).outputAmount.amount,
-      };
+      // For BTC paths walletClient/publicClient are unused inside the SDK; the
+      // SDK's type forces them to be present, so we widen via `any` to satisfy it.
+      const result = await sdk.executeQuote({
+        quote,
+        walletClient: evmClients?.walletClient as any,
+        publicClient: evmClients?.publicClient as any,
+        btcSigner,
+      });
+      return { ...result, outputAmount: getInnerQuoteV2(quote).outputAmount.amount };
     } catch (err) {
       if (!isTransient(err)) {
         const abort = new AbortError(err instanceof Error ? err.message : String(err));
@@ -146,109 +199,13 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
     }
   }, { retries });
 
-  // ── Unsigned → done ─────────────────────────────────────────────────────────
-
-  if (opts.unsigned) {
-    if (variant === "onramp") {
-      const psbtHex = (order as any).onramp?.psbtHex;
-      if (!psbtHex) throw new Error("Gateway did not return a PSBT for this onramp order.");
-      return { type: "unsigned", orderId, psbtBase64: Buffer.from(psbtHex, "hex").toString("base64") };
-    }
-    return { type: "unsigned", orderId, txInfo: (order as any)[variant]?.tx };
+  const orderData = (order as any)[variant];
+  if (!orderData?.orderId) {
+    throw new Error(`Unexpected API response: order.${variant} is missing or has no orderId. Response keys: ${Object.keys(order).join(", ")}`);
   }
-
-  // ── Sign (no retry) ────────────────────────────────────────────────────────
-
-  let txId: string;
-  if (variant === "onramp") {
-    const psbtHex = (order as any).onramp?.psbtHex;
-    if (!psbtHex) throw new Error("Gateway did not return a PSBT for this onramp order.");
-    txId = await ((signer as any).signer as BitcoinSigner).signAllInputs!(psbtHex);
-  } else {
-    const { walletClient, publicClient } = signer as { walletClient: WalletClient; publicClient: PublicClient };
-
-    // Wait for pending nonce to settle — use senderAddress (derived from key if --sender omitted)
-    if (senderAddress) {
-      const addr = senderAddress as `0x${string}`;
-      const deadline = Date.now() + 120_000;
-      let settled = false;
-      while (Date.now() < deadline) {
-        const [latest, pending] = await Promise.all([
-          publicClient.getTransactionCount({ address: addr, blockTag: "latest" }),
-          publicClient.getTransactionCount({ address: addr, blockTag: "pending" }),
-        ]);
-        if (pending <= latest) { settled = true; break; }
-        log.progress(`  Waiting for pending tx to settle (pending nonce: ${pending}, latest: ${latest})...`);
-        await new Promise(r => setTimeout(r, 5000));
-      }
-      if (!settled) {
-        throw new Error(`Timed out waiting for pending transactions to settle for ${addr}. There may be stuck transactions — check your wallet before retrying.`);
-      }
-    }
-
-    const txInfo = (order as any)[variant]?.tx;
-    if (!txInfo) throw new Error("Gateway did not return EVM transaction data for this order.");
-    try {
-      txId = await walletClient.sendTransaction({
-        account: walletClient.account!,
-        chain: walletClient.chain,
-        to: txInfo.to as `0x${string}`,
-        data: txInfo.data as `0x${string}`,
-        value: BigInt(txInfo.value || "0"),
-      });
-    } catch (err) {
-      const enriched = err instanceof Error ? err : new Error(String(err));
-      (enriched as any).orderId = orderId;
-      (enriched as any).txParams = {
-        to: txInfo.to,
-        from: walletClient.account?.address,
-        value: txInfo.value || "0",
-        data: txInfo.data,
-        chainId: walletClient.chain?.id,
-        chainName: walletClient.chain?.name,
-      };
-      (enriched as any).srcAsset = { symbol: srcAsset.symbol, address: srcAsset.address, chain: srcAsset.chain };
-      (enriched as any).dstAsset = { symbol: dstAsset.symbol, address: dstAsset.address, chain: dstAsset.chain };
-      (enriched as any).functionSelector = typeof txInfo.data === "string" && txInfo.data.length >= 10 ? txInfo.data.slice(0, 10) : undefined;
-      // Extract revert data from viem error cause chain
-      // viem nests: TransactionExecutionError -> ExecutionRevertedError -> RpcRequestError (has .data)
-      let revertData: unknown;
-      let cursor: unknown = err;
-      while (cursor && typeof cursor === 'object') {
-        if ('data' in cursor && (cursor as any).data) { revertData = (cursor as any).data; break; }
-        cursor = (cursor as any).cause;
-      }
-      (enriched as any).revertData = revertData ?? undefined;
-      throw enriched;
-    }
-  }
-
-  // ── Register (retryable) ───────────────────────────────────────────────────
-
-  const registerPayload = buildRegisterPayload(srcAsset.chain, dstAsset.chain, orderId, txId);
-  const registerResult = await pRetry(() => getApi().registerTx({ registerTx: registerPayload }), { retries })
-    .catch(err => {
-      const msg = err instanceof Error ? err.message : String(err);
-      const recoveryNote = variant === "onramp"
-        ? `\nNote: the value below is the signed BTC transaction hex (required for recovery).`
-        : "";
-      const error = new Error(
-        `Registration failed. Last error: ${msg}\nOrder ID: ${orderId}${recoveryNote}\nManually register with: gateway-cli register ${orderId} ${txId}`,
-      );
-      (error as any).orderId = orderId;
-      (error as any).txId = txId;
-      throw error;
-    });
-
-  // For BTC onramp, registerTx returns the real txid (signAllInputs only gives us the raw tx hex)
-  if (variant === "onramp") {
-    const realTxid = (registerResult as any)?.onramp?.txid;
-    if (realTxid) {
-      txId = realTxid;
-    } else {
-      log.warn("could not extract BTC txid from registerTx response — using raw tx hex as identifier");
-    }
-  }
+  const orderId: string = orderData.orderId;
+  if (!tx) throw new Error("executeQuote did not return a transaction id for the signed flow.");
+  const txId: string = tx;
 
   log.progress(`✓ Order submitted (id: ${orderId})`);
 
