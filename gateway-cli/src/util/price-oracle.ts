@@ -3,6 +3,19 @@ const BINANCE_URL = "https://api.binance.com/api/v3/ticker/price";
 /** Coinbase API endpoint prefix for token price in USD. */
 const COINBASE_URL = "https://api.coinbase.com/v2/prices";
 
+/**
+ * Map token symbols to a major spot pair symbol when exchanges do not list
+ * the token directly (e.g. cbBTC → BTC for USD amount conversion).
+ */
+const SPOT_SYMBOL_ALIASES: Record<string, string> = {
+  CBBTC: "BTC",
+};
+
+function resolveSpotSymbol(symbol: string): string {
+  const key = symbol.toUpperCase();
+  return SPOT_SYMBOL_ALIASES[key] ?? symbol;
+}
+
 /** Price oracle result with USD price and source exchange. */
 export interface PriceResult {
   priceUsd: number;
@@ -62,9 +75,10 @@ async function fromCoinbase(symbol: string): Promise<number> {
  * @throws PriceOracleError if both sources fail
  */
 export async function fetchPrice(symbol: string): Promise<PriceResult> {
+  const spotSymbol = resolveSpotSymbol(symbol);
   const [binance, coinbase] = await Promise.allSettled([
-    fromBinance(symbol),
-    fromCoinbase(symbol),
+    fromBinance(spotSymbol),
+    fromCoinbase(spotSymbol),
   ]);
 
   if (binance.status === "fulfilled" && binance.value > 0) return { priceUsd: binance.value, source: "binance" };
