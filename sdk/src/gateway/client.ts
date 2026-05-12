@@ -331,7 +331,7 @@ export class GatewayApiClient {
                         args: [spenderAddress, 0n],
                     });
                     const resetTxHash = await walletClient.writeContract(resetRequest);
-                    await publicClient.waitForTransactionReceipt({ hash: resetTxHash });
+                    await publicClient.waitForTransactionReceipt({ hash: resetTxHash, retryCount: 8 });
                 }
 
                 const { request } = await publicClient.simulateContract({
@@ -343,7 +343,7 @@ export class GatewayApiClient {
                 });
 
                 const approveTxHash = await walletClient.writeContract(request);
-                await publicClient.waitForTransactionReceipt({ hash: approveTxHash });
+                await publicClient.waitForTransactionReceipt({ hash: approveTxHash, retryCount: 8 });
             }
 
             const transactionHash = await walletClient.sendTransaction({
@@ -353,7 +353,7 @@ export class GatewayApiClient {
                 value: BigInt(order.offramp.tx.value || 0),
             });
 
-            await publicClient?.waitForTransactionReceipt({ hash: transactionHash });
+            await publicClient?.waitForTransactionReceipt({ hash: transactionHash, retryCount: 8 });
 
             try {
                 await this.api.registerTx(
@@ -409,7 +409,7 @@ export class GatewayApiClient {
 
                         const txHash = await walletClient.writeContract(request);
 
-                        await publicClient.waitForTransactionReceipt({ hash: txHash });
+                        await publicClient.waitForTransactionReceipt({ hash: txHash, retryCount: 8 });
                     }
                 } catch (error) {
                     if (error instanceof ContractFunctionExecutionError) {
@@ -433,7 +433,7 @@ export class GatewayApiClient {
                 value: BigInt(quote.layerZero.tx.value || 0),
             });
 
-            await publicClient.waitForTransactionReceipt({ hash: transactionHash });
+            await publicClient.waitForTransactionReceipt({ hash: transactionHash, retryCount: 8 });
 
             try {
                 await this.api.registerTx(
