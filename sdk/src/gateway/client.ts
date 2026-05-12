@@ -38,6 +38,8 @@ import type { GatewayError as GatewayErrorInterface } from './generated-client/m
 import type { BitcoinSigner, GetQuoteParams, StrategyParams } from './types';
 import { formatBtc } from './utils';
 
+const RETRY_COUNT = 8; // Number of times to retry fetching transaction receipt after sending a transaction
+
 export const WBTC_OFT_ADDRESS = '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c';
 export const ETHEREUM_USDT_ADDRESS = '0xdAC17F958D2ee523a2206206994597C13D831ec7';
 
@@ -331,7 +333,7 @@ export class GatewayApiClient {
                         args: [spenderAddress, 0n],
                     });
                     const resetTxHash = await walletClient.writeContract(resetRequest);
-                    await publicClient.waitForTransactionReceipt({ hash: resetTxHash });
+                    await publicClient.waitForTransactionReceipt({ hash: resetTxHash, retryCount: RETRY_COUNT });
                 }
 
                 const { request } = await publicClient.simulateContract({
@@ -343,7 +345,7 @@ export class GatewayApiClient {
                 });
 
                 const approveTxHash = await walletClient.writeContract(request);
-                await publicClient.waitForTransactionReceipt({ hash: approveTxHash });
+                await publicClient.waitForTransactionReceipt({ hash: approveTxHash, retryCount: RETRY_COUNT });
             }
 
             const transactionHash = await walletClient.sendTransaction({
@@ -353,7 +355,7 @@ export class GatewayApiClient {
                 value: BigInt(order.offramp.tx.value || 0),
             });
 
-            await publicClient?.waitForTransactionReceipt({ hash: transactionHash });
+            await publicClient?.waitForTransactionReceipt({ hash: transactionHash, retryCount: RETRY_COUNT });
 
             try {
                 await this.api.registerTx(
@@ -409,7 +411,7 @@ export class GatewayApiClient {
 
                         const txHash = await walletClient.writeContract(request);
 
-                        await publicClient.waitForTransactionReceipt({ hash: txHash });
+                        await publicClient.waitForTransactionReceipt({ hash: txHash, retryCount: RETRY_COUNT });
                     }
                 } catch (error) {
                     if (error instanceof ContractFunctionExecutionError) {
@@ -433,7 +435,7 @@ export class GatewayApiClient {
                 value: BigInt(quote.layerZero.tx.value || 0),
             });
 
-            await publicClient.waitForTransactionReceipt({ hash: transactionHash });
+            await publicClient.waitForTransactionReceipt({ hash: transactionHash, retryCount: RETRY_COUNT });
 
             try {
                 await this.api.registerTx(
@@ -484,7 +486,7 @@ export class GatewayApiClient {
 
             const approveTxHash = await walletClient.writeContract(request);
 
-            await publicClient.waitForTransactionReceipt({ hash: approveTxHash });
+            await publicClient.waitForTransactionReceipt({ hash: approveTxHash, retryCount: RETRY_COUNT });
         }
 
         const { request } = await publicClient.simulateContract({
@@ -497,7 +499,7 @@ export class GatewayApiClient {
 
         const transactionHash = await walletClient.writeContract(request);
 
-        await publicClient?.waitForTransactionReceipt({ hash: transactionHash });
+        await publicClient?.waitForTransactionReceipt({ hash: transactionHash, retryCount: RETRY_COUNT });
 
         return transactionHash;
     }
