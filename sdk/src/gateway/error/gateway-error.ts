@@ -15,52 +15,116 @@ export { GatewayErrorCode };
 
 // ─── Named detail interfaces (mirror the Rust GatewayErrorDetails enum) ──────
 
-/** Details for {@link GatewayErrorCode.InsufficientAmount} and {@link GatewayErrorCode.InsufficientPaymentAmount} */
+/** Details for {@link GatewayErrorCode.InsufficientAmount} */
 export type InsufficientAmountDetails = GatewayErrorDetailsOneOf;
-
-/** Details for {@link GatewayErrorCode.InsufficientSwapAmount} */
-export type InsufficientSwapAmountDetails = GatewayErrorDetailsOneOf1;
-
-/** Details for {@link GatewayErrorCode.UnableToCoverFees} */
-export type UnableToCoverFeesDetails = GatewayErrorDetailsOneOf2;
-
-/** Details for {@link GatewayErrorCode.SimulationFailed} and {@link GatewayErrorCode.GasEstimateFailed} */
-export type SimulationFailedDetails = GatewayErrorDetailsOneOf3;
-
-/** Details for {@link GatewayErrorCode.NoRoute} */
-export type NoRouteDetails = GatewayErrorDetailsOneOf4;
-
-/** Details for {@link GatewayErrorCode.ExceededLimit} */
-export type ExceededLimitDetails = GatewayErrorDetailsOneOf5;
 
 /** Details for {@link GatewayErrorCode.QuoteAmountTooLow} */
 export type QuoteAmountTooLowDetails = GatewayErrorDetailsOneOf6;
 
+/** Details for {@link GatewayErrorCode.InsufficientSwapAmount} */
+export type InsufficientSwapAmountDetails = GatewayErrorDetailsOneOf1;
+
+/** Details for {@link GatewayErrorCode.InsufficientSolverBalance} */
+export type InsufficientSolverBalanceDetails = GatewayErrorDetailsOneOf5;
+
+/** Details for {@link GatewayErrorCode.InsufficientPaymentAmount} */
+export type InsufficientPaymentAmountDetails = GatewayErrorDetailsOneOf;
+
+/** Details for {@link GatewayErrorCode.UnableToCoverFees} */
+export type UnableToCoverFeesDetails = GatewayErrorDetailsOneOf2;
+
+/** Details for {@link GatewayErrorCode.InsufficientConfirmedFunds} */
+export type InsufficientConfirmedFundsDetails = null;
+
+/** Details for {@link GatewayErrorCode.SimulationFailed} */
+export type SimulationFailedDetails = GatewayErrorDetailsOneOf3;
+
+/** Details for {@link GatewayErrorCode.GasEstimateFailed} */
+export type GasEstimateFailedDetails = GatewayErrorDetailsOneOf3;
+
+/** Details for {@link GatewayErrorCode.PerAccountLimitExceeded} */
+export type PerAccountLimitExceededDetails = null;
+
+/** Details for {@link GatewayErrorCode.GlobalLimitExceeded} */
+export type GlobalLimitExceededDetails = null;
+
+/** Details for {@link GatewayErrorCode.ExceededLimit} */
+export type ExceededLimitDetails = GatewayErrorDetailsOneOf5;
+
+/** Details for {@link GatewayErrorCode.InvalidRequest} */
+export type InvalidRequestDetails = null;
+
+/** Details for {@link GatewayErrorCode.InvalidOrderArgs} */
+export type InvalidOrderArgsDetails = null;
+
+/** Details for {@link GatewayErrorCode.InvalidAffiliateFee} */
+export type InvalidAffiliateFeeDetails = null;
+
+/** Details for {@link GatewayErrorCode.SlippageTooLow} */
+export type SlippageTooLowDetails = null;
+
+/** Details for {@link GatewayErrorCode.SlippageTooHigh} */
+export type SlippageTooHighDetails = null;
+
+/** Details for {@link GatewayErrorCode.NoRoute} */
+export type NoRouteDetails = GatewayErrorDetailsOneOf4;
+
+/** Details for {@link GatewayErrorCode.DisabledChain} */
+export type DisabledChainDetails = null;
+
+/** Details for {@link GatewayErrorCode.InvalidDestinationChainId} */
+export type InvalidDestinationChainIdDetails = null;
+
+/** Details for {@link GatewayErrorCode.OrderNotFound} */
+export type OrderNotFoundDetails = null;
+
+/** Details for {@link GatewayErrorCode.OrderExpired} */
+export type OrderExpiredDetails = null;
+
+/** Details for {@link GatewayErrorCode.DuplicateOrder} */
+export type DuplicateOrderDetails = null;
+
+/** Details for {@link GatewayErrorCode.InternalError} */
+export type InternalErrorDetails = null;
+
 // ─── Code → details type mapping ─────────────────────────────────────────────
 
 /**
- * Maps each {@link GatewayErrorCode} that carries structured details to its
- * corresponding detail interface. Codes absent from this map carry `null` details.
+ * Maps every {@link GatewayErrorCode} to its corresponding detail interface.
+ * Codes with no structured details carry `null` details.
  */
 export type GatewayErrorDetailsMap = {
     [GatewayErrorCode.InsufficientAmount]: InsufficientAmountDetails;
-    [GatewayErrorCode.InsufficientPaymentAmount]: InsufficientAmountDetails;
-    [GatewayErrorCode.InsufficientSwapAmount]: InsufficientSwapAmountDetails;
-    [GatewayErrorCode.UnableToCoverFees]: UnableToCoverFeesDetails;
-    [GatewayErrorCode.SimulationFailed]: SimulationFailedDetails;
-    [GatewayErrorCode.GasEstimateFailed]: SimulationFailedDetails;
-    [GatewayErrorCode.NoRoute]: NoRouteDetails;
-    [GatewayErrorCode.ExceededLimit]: ExceededLimitDetails;
     [GatewayErrorCode.QuoteAmountTooLow]: QuoteAmountTooLowDetails;
+    [GatewayErrorCode.InsufficientSwapAmount]: InsufficientSwapAmountDetails;
+    [GatewayErrorCode.InsufficientSolverBalance]: InsufficientSolverBalanceDetails;
+    [GatewayErrorCode.InsufficientPaymentAmount]: InsufficientPaymentAmountDetails;
+    [GatewayErrorCode.UnableToCoverFees]: UnableToCoverFeesDetails;
+    [GatewayErrorCode.InsufficientConfirmedFunds]: InsufficientConfirmedFundsDetails;
+    [GatewayErrorCode.SimulationFailed]: SimulationFailedDetails;
+    [GatewayErrorCode.GasEstimateFailed]: GasEstimateFailedDetails;
+    [GatewayErrorCode.PerAccountLimitExceeded]: PerAccountLimitExceededDetails;
+    [GatewayErrorCode.GlobalLimitExceeded]: GlobalLimitExceededDetails;
+    [GatewayErrorCode.ExceededLimit]: ExceededLimitDetails;
+    [GatewayErrorCode.InvalidRequest]: InvalidRequestDetails;
+    [GatewayErrorCode.InvalidOrderArgs]: InvalidOrderArgsDetails;
+    [GatewayErrorCode.InvalidAffiliateFee]: InvalidAffiliateFeeDetails;
+    [GatewayErrorCode.SlippageTooLow]: SlippageTooLowDetails;
+    [GatewayErrorCode.SlippageTooHigh]: SlippageTooHighDetails;
+    [GatewayErrorCode.NoRoute]: NoRouteDetails;
+    [GatewayErrorCode.DisabledChain]: DisabledChainDetails;
+    [GatewayErrorCode.InvalidDestinationChainId]: InvalidDestinationChainIdDetails;
+    [GatewayErrorCode.OrderNotFound]: OrderNotFoundDetails;
+    [GatewayErrorCode.OrderExpired]: OrderExpiredDetails;
+    [GatewayErrorCode.DuplicateOrder]: DuplicateOrderDetails;
+    [GatewayErrorCode.InternalError]: InternalErrorDetails;
 };
 
 /**
  * Resolves to the detail interface for a known code, or `null` for codes
  * that carry no structured details (e.g. `InternalError`, `InvalidRequest`).
  */
-export type DetailsFor<C extends GatewayErrorCode> = C extends keyof GatewayErrorDetailsMap
-    ? GatewayErrorDetailsMap[C]
-    : null;
+export type DetailsFor<C extends GatewayErrorCode> = GatewayErrorDetailsMap[C];
 
 // ─── Class ───────────────────────────────────────────────────────────────────
 
@@ -237,6 +301,7 @@ function parseDetails<C extends GatewayErrorCode>(code: C, raw: Record<string, u
             } satisfies NoRouteDetails as DetailsFor<C>;
 
         // Rust: GatewayErrorDetails::ExceededLimit { limit }
+        case GatewayErrorCode.InsufficientSolverBalance:
         case GatewayErrorCode.ExceededLimit:
             return {
                 limit: String(raw?.limit ?? ''),
@@ -249,11 +314,21 @@ function parseDetails<C extends GatewayErrorCode>(code: C, raw: Record<string, u
                 actual: String(raw?.actual ?? ''),
             } satisfies QuoteAmountTooLowDetails as DetailsFor<C>;
 
-        // Codes with no details in Rust (details field absent or unit variant → {}):
-        //   InsufficientSolverBalance, InsufficientConfirmedFunds,
-        //   PerAccountLimitExceeded, GlobalLimitExceeded, InvalidRequest, InvalidOrderArgs,
-        //   InvalidAffiliateFee, SlippageTooLow, SlippageTooHigh, DisabledChain,
-        //   InvalidDestinationChainId, OrderNotFound, OrderExpired, DuplicateOrder, InternalError
+        // Codes with no details in Rust (details field absent or unit variant → {}).
+        case GatewayErrorCode.InsufficientConfirmedFunds:
+        case GatewayErrorCode.PerAccountLimitExceeded:
+        case GatewayErrorCode.GlobalLimitExceeded:
+        case GatewayErrorCode.InvalidRequest:
+        case GatewayErrorCode.InvalidOrderArgs:
+        case GatewayErrorCode.InvalidAffiliateFee:
+        case GatewayErrorCode.SlippageTooLow:
+        case GatewayErrorCode.SlippageTooHigh:
+        case GatewayErrorCode.DisabledChain:
+        case GatewayErrorCode.InvalidDestinationChainId:
+        case GatewayErrorCode.OrderNotFound:
+        case GatewayErrorCode.OrderExpired:
+        case GatewayErrorCode.DuplicateOrder:
+        case GatewayErrorCode.InternalError:
         default:
             return null as DetailsFor<C>;
     }

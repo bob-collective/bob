@@ -1113,6 +1113,51 @@ describe('Gateway Tests', () => {
         });
     });
 
+    it('should parse gateway errors without structured details as null', () => {
+        const codesWithoutDetails = [
+            GatewayErrorCode.InsufficientConfirmedFunds,
+            GatewayErrorCode.PerAccountLimitExceeded,
+            GatewayErrorCode.GlobalLimitExceeded,
+            GatewayErrorCode.InvalidRequest,
+            GatewayErrorCode.InvalidOrderArgs,
+            GatewayErrorCode.InvalidAffiliateFee,
+            GatewayErrorCode.SlippageTooLow,
+            GatewayErrorCode.SlippageTooHigh,
+            GatewayErrorCode.DisabledChain,
+            GatewayErrorCode.InvalidDestinationChainId,
+            GatewayErrorCode.OrderNotFound,
+            GatewayErrorCode.OrderExpired,
+            GatewayErrorCode.DuplicateOrder,
+            GatewayErrorCode.InternalError,
+        ];
+
+        for (const code of codesWithoutDetails) {
+            const error = GatewayError.fromResponse({
+                code,
+                error: `${code} failed`,
+                details: {},
+            });
+
+            expect(error.code).toBe(code);
+            expect(error.details).toBeNull();
+        }
+    });
+
+    it('should parse InsufficientSolverBalance gateway errors with typed details', () => {
+        const error = GatewayError.fromResponse({
+            code: GatewayErrorCode.InsufficientSolverBalance,
+            error: 'Insufficient solver balance',
+            details: {
+                limit: '1000',
+            },
+        });
+
+        expect(error.code).toBe(GatewayErrorCode.InsufficientSolverBalance);
+        expect(error.details).toEqual({
+            limit: '1000',
+        });
+    });
+
     it('should approve and send transaction for layerzero swap when allowance is low', async () => {
         const mockedQuote: GatewayQuoteOneOf2 = {
             layerZero: {
