@@ -27,8 +27,11 @@ export type InsufficientSwapAmountDetails = GatewayErrorDetailsOneOf1;
 /** Details for {@link GatewayErrorCode.UnableToCoverFees} */
 export type UnableToCoverFeesDetails = GatewayErrorDetailsOneOf2;
 
-/** Details for {@link GatewayErrorCode.SimulationFailed} and {@link GatewayErrorCode.GasEstimateFailed} */
+/** Details for {@link GatewayErrorCode.SimulationFailed} */
 export type SimulationFailedDetails = GatewayErrorDetailsOneOf3;
+
+/** Details for {@link GatewayErrorCode.GasEstimateFailed} */
+export type GasEstimateFailedDetails = GatewayErrorDetailsOneOf3;
 
 /** Details for {@link GatewayErrorCode.NoRoute} */
 export type NoRouteDetails = GatewayErrorDetailsOneOf4;
@@ -46,8 +49,8 @@ export type QuoteAmountTooLowDetails = GatewayErrorDetailsOneOf6;
 // ─── Code → details type mapping ─────────────────────────────────────────────
 
 /**
- * Maps every {@link GatewayErrorCode} to its corresponding detail interface.
- * Codes with no structured details carry `null` details.
+ * Maps each {@link GatewayErrorCode} that carries structured details to its
+ * corresponding detail interface. Codes absent from this map carry `null` details.
  */
 export type GatewayErrorDetailsMap = {
     [GatewayErrorCode.InsufficientAmount]: InsufficientAmountDetails;
@@ -57,6 +60,7 @@ export type GatewayErrorDetailsMap = {
     [GatewayErrorCode.InsufficientPaymentAmount]: InsufficientPaymentAmountDetails;
     [GatewayErrorCode.UnableToCoverFees]: UnableToCoverFeesDetails;
     [GatewayErrorCode.SimulationFailed]: SimulationFailedDetails;
+    [GatewayErrorCode.GasEstimateFailed]: GasEstimateFailedDetails;
     [GatewayErrorCode.ExceededLimit]: ExceededLimitDetails;
     [GatewayErrorCode.NoRoute]: NoRouteDetails;
 };
