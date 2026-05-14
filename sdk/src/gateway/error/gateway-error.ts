@@ -54,15 +54,15 @@ export type QuoteAmountTooLowDetails = GatewayErrorDetailsOneOf6;
  */
 export type GatewayErrorDetailsMap = {
     [GatewayErrorCode.InsufficientAmount]: InsufficientAmountDetails;
-    [GatewayErrorCode.QuoteAmountTooLow]: QuoteAmountTooLowDetails;
-    [GatewayErrorCode.InsufficientSwapAmount]: InsufficientSwapAmountDetails;
     [GatewayErrorCode.InsufficientSolverBalance]: InsufficientSolverBalanceDetails;
     [GatewayErrorCode.InsufficientPaymentAmount]: InsufficientPaymentAmountDetails;
+    [GatewayErrorCode.InsufficientSwapAmount]: InsufficientSwapAmountDetails;
     [GatewayErrorCode.UnableToCoverFees]: UnableToCoverFeesDetails;
     [GatewayErrorCode.SimulationFailed]: SimulationFailedDetails;
     [GatewayErrorCode.GasEstimateFailed]: GasEstimateFailedDetails;
-    [GatewayErrorCode.ExceededLimit]: ExceededLimitDetails;
     [GatewayErrorCode.NoRoute]: NoRouteDetails;
+    [GatewayErrorCode.ExceededLimit]: ExceededLimitDetails;
+    [GatewayErrorCode.QuoteAmountTooLow]: QuoteAmountTooLowDetails;
 };
 
 /**
