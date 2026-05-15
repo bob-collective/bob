@@ -12,111 +12,27 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
-/**
- * 
- * @export
- * @interface GatewayErrorDetailsV2
- */
-export interface GatewayErrorDetailsV2 {
-    /**
-     * 
-     * @type {string}
-     * @memberof GatewayErrorDetailsV2
-     */
-    actual: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof GatewayErrorDetailsV2
-     */
-    expected: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof GatewayErrorDetailsV2
-     */
-    available: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof GatewayErrorDetailsV2
-     */
-    required: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof GatewayErrorDetailsV2
-     */
-    availableAmount: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof GatewayErrorDetailsV2
-     */
-    totalFees: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof GatewayErrorDetailsV2
-     */
-    tenderlyUrl?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof GatewayErrorDetailsV2
-     */
-    dstChain: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof GatewayErrorDetailsV2
-     */
-    dstToken: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof GatewayErrorDetailsV2
-     */
-    srcChain: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof GatewayErrorDetailsV2
-     */
-    srcToken: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof GatewayErrorDetailsV2
-     */
-    limit: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof GatewayErrorDetailsV2
-     */
-    minimum: string;
-}
+import type { GatewayErrorDetails } from './GatewayErrorDetails';
+import {
+    instanceOfGatewayErrorDetails,
+    GatewayErrorDetailsFromJSON,
+    GatewayErrorDetailsFromJSONTyped,
+    GatewayErrorDetailsToJSON,
+} from './GatewayErrorDetails';
+import type { GatewayErrorDetailsV2Variants } from './GatewayErrorDetailsV2Variants';
+import {
+    instanceOfGatewayErrorDetailsV2Variants,
+    GatewayErrorDetailsV2VariantsFromJSON,
+    GatewayErrorDetailsV2VariantsFromJSONTyped,
+    GatewayErrorDetailsV2VariantsToJSON,
+} from './GatewayErrorDetailsV2Variants';
 
 /**
- * Check if a given object implements the GatewayErrorDetailsV2 interface.
+ * @type GatewayErrorDetailsV2
+ * Structured details for V2 error types - includes all V1 details plus new ones.
+ * @export
  */
-export function instanceOfGatewayErrorDetailsV2(value: object): value is GatewayErrorDetailsV2 {
-    if (!('actual' in value) || value['actual'] === undefined) return false;
-    if (!('expected' in value) || value['expected'] === undefined) return false;
-    if (!('available' in value) || value['available'] === undefined) return false;
-    if (!('required' in value) || value['required'] === undefined) return false;
-    if (!('availableAmount' in value) || value['availableAmount'] === undefined) return false;
-    if (!('totalFees' in value) || value['totalFees'] === undefined) return false;
-    if (!('dstChain' in value) || value['dstChain'] === undefined) return false;
-    if (!('dstToken' in value) || value['dstToken'] === undefined) return false;
-    if (!('srcChain' in value) || value['srcChain'] === undefined) return false;
-    if (!('srcToken' in value) || value['srcToken'] === undefined) return false;
-    if (!('limit' in value) || value['limit'] === undefined) return false;
-    if (!('minimum' in value) || value['minimum'] === undefined) return false;
-    return true;
-}
+export type GatewayErrorDetailsV2 = GatewayErrorDetails | GatewayErrorDetailsV2Variants;
 
 export function GatewayErrorDetailsV2FromJSON(json: any): GatewayErrorDetailsV2 {
     return GatewayErrorDetailsV2FromJSONTyped(json, false);
@@ -126,25 +42,19 @@ export function GatewayErrorDetailsV2FromJSONTyped(json: any, ignoreDiscriminato
     if (json == null) {
         return json;
     }
-    return {
-        
-        'actual': json['actual'],
-        'expected': json['expected'],
-        'available': json['available'],
-        'required': json['required'],
-        'availableAmount': json['available_amount'],
-        'totalFees': json['total_fees'],
-        'tenderlyUrl': json['tenderly_url'] == null ? undefined : json['tenderly_url'],
-        'dstChain': json['dst_chain'],
-        'dstToken': json['dst_token'],
-        'srcChain': json['src_chain'],
-        'srcToken': json['src_token'],
-        'limit': json['limit'],
-        'minimum': json['minimum'],
-    };
+    if (typeof json !== 'object') {
+        return json;
+    }
+    if (instanceOfGatewayErrorDetails(json)) {
+        return GatewayErrorDetailsFromJSONTyped(json, true);
+    }
+    if (instanceOfGatewayErrorDetailsV2Variants(json)) {
+        return GatewayErrorDetailsV2VariantsFromJSONTyped(json, true);
+    }
+    return {} as any;
 }
 
-export function GatewayErrorDetailsV2ToJSON(json: any): GatewayErrorDetailsV2 {
+export function GatewayErrorDetailsV2ToJSON(json: any): any {
     return GatewayErrorDetailsV2ToJSONTyped(json, false);
 }
 
@@ -152,22 +62,15 @@ export function GatewayErrorDetailsV2ToJSONTyped(value?: GatewayErrorDetailsV2 |
     if (value == null) {
         return value;
     }
-
-    return {
-        
-        'actual': value['actual'],
-        'expected': value['expected'],
-        'available': value['available'],
-        'required': value['required'],
-        'available_amount': value['availableAmount'],
-        'total_fees': value['totalFees'],
-        'tenderly_url': value['tenderlyUrl'],
-        'dst_chain': value['dstChain'],
-        'dst_token': value['dstToken'],
-        'src_chain': value['srcChain'],
-        'src_token': value['srcToken'],
-        'limit': value['limit'],
-        'minimum': value['minimum'],
-    };
+    if (typeof value !== 'object') {
+        return value;
+    }
+    if (instanceOfGatewayErrorDetails(value)) {
+        return GatewayErrorDetailsToJSON(value as GatewayErrorDetails);
+    }
+    if (instanceOfGatewayErrorDetailsV2Variants(value)) {
+        return GatewayErrorDetailsV2VariantsToJSON(value as GatewayErrorDetailsV2Variants);
+    }
+    return {};
 }
 

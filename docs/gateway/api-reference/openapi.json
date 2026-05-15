@@ -487,7 +487,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GatewayError"
+                  "$ref": "#/components/schemas/GatewayErrorV2"
                 }
               }
             }
@@ -575,7 +575,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GatewayError"
+                  "$ref": "#/components/schemas/GatewayErrorV2"
                 }
               }
             }
@@ -812,7 +812,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GatewayError"
+                  "$ref": "#/components/schemas/GatewayErrorV2"
                 }
               }
             }
@@ -1095,7 +1095,8 @@
         "type": "string",
         "description": "New error codes for V2.",
         "enum": [
-          "INVALID_CURSOR"
+          "INVALID_CURSOR",
+          "INSUFFICIENT_SOLVER_BALANCE"
         ]
       },
       "GatewayErrorDetails": {
@@ -1224,8 +1225,27 @@
         "description": "Structured details for V2 error types - includes all V1 details plus new ones."
       },
       "GatewayErrorDetailsV2Variants": {
-        "type": "null",
-        "default": null
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "limit",
+              "token",
+              "chain_id"
+            ],
+            "properties": {
+              "chain_id": {
+                "type": "string"
+              },
+              "limit": {
+                "type": "string"
+              },
+              "token": {
+                "type": "string"
+              }
+            }
+          }
+        ]
       },
       "GatewayErrorV2": {
         "type": "object",

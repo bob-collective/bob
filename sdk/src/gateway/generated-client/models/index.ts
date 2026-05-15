@@ -20,6 +20,7 @@ export * from './GatewayErrorDetailsOneOf4';
 export * from './GatewayErrorDetailsOneOf5';
 export * from './GatewayErrorDetailsOneOf6';
 export * from './GatewayErrorDetailsV2';
+export * from './GatewayErrorDetailsV2Variants';
 export * from './GatewayErrorV2';
 export * from './GatewayLayerZeroQuote';
 export * from './GatewayMaxSpendable';
