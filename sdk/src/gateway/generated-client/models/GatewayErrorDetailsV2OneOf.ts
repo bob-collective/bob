@@ -16,44 +16,44 @@ import { mapValues } from '../runtime';
 /**
  * 
  * @export
- * @interface GatewayErrorDetailsV2Variants
+ * @interface GatewayErrorDetailsV2OneOf
  */
-export interface GatewayErrorDetailsV2Variants {
+export interface GatewayErrorDetailsV2OneOf {
     /**
      * 
      * @type {string}
-     * @memberof GatewayErrorDetailsV2Variants
+     * @memberof GatewayErrorDetailsV2OneOf
      */
     chainId: string;
     /**
      * 
      * @type {string}
-     * @memberof GatewayErrorDetailsV2Variants
+     * @memberof GatewayErrorDetailsV2OneOf
      */
     limit: string;
     /**
      * 
      * @type {string}
-     * @memberof GatewayErrorDetailsV2Variants
+     * @memberof GatewayErrorDetailsV2OneOf
      */
     token: string;
 }
 
 /**
- * Check if a given object implements the GatewayErrorDetailsV2Variants interface.
+ * Check if a given object implements the GatewayErrorDetailsV2OneOf interface.
  */
-export function instanceOfGatewayErrorDetailsV2Variants(value: object): value is GatewayErrorDetailsV2Variants {
+export function instanceOfGatewayErrorDetailsV2OneOf(value: object): value is GatewayErrorDetailsV2OneOf {
     if (!('chainId' in value) || value['chainId'] === undefined) return false;
     if (!('limit' in value) || value['limit'] === undefined) return false;
     if (!('token' in value) || value['token'] === undefined) return false;
     return true;
 }
 
-export function GatewayErrorDetailsV2VariantsFromJSON(json: any): GatewayErrorDetailsV2Variants {
-    return GatewayErrorDetailsV2VariantsFromJSONTyped(json, false);
+export function GatewayErrorDetailsV2OneOfFromJSON(json: any): GatewayErrorDetailsV2OneOf {
+    return GatewayErrorDetailsV2OneOfFromJSONTyped(json, false);
 }
 
-export function GatewayErrorDetailsV2VariantsFromJSONTyped(json: any, ignoreDiscriminator: boolean): GatewayErrorDetailsV2Variants {
+export function GatewayErrorDetailsV2OneOfFromJSONTyped(json: any, ignoreDiscriminator: boolean): GatewayErrorDetailsV2OneOf {
     if (json == null) {
         return json;
     }
@@ -65,11 +65,11 @@ export function GatewayErrorDetailsV2VariantsFromJSONTyped(json: any, ignoreDisc
     };
 }
 
-export function GatewayErrorDetailsV2VariantsToJSON(json: any): GatewayErrorDetailsV2Variants {
-    return GatewayErrorDetailsV2VariantsToJSONTyped(json, false);
+export function GatewayErrorDetailsV2OneOfToJSON(json: any): GatewayErrorDetailsV2OneOf {
+    return GatewayErrorDetailsV2OneOfToJSONTyped(json, false);
 }
 
-export function GatewayErrorDetailsV2VariantsToJSONTyped(value?: GatewayErrorDetailsV2Variants | null, ignoreDiscriminator: boolean = false): any {
+export function GatewayErrorDetailsV2OneOfToJSONTyped(value?: GatewayErrorDetailsV2OneOf | null, ignoreDiscriminator: boolean = false): any {
     if (value == null) {
         return value;
     }

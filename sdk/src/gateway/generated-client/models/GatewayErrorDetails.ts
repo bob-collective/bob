@@ -69,19 +69,6 @@ import {
  */
 export type GatewayErrorDetails = GatewayErrorDetailsOneOf | GatewayErrorDetailsOneOf1 | GatewayErrorDetailsOneOf2 | GatewayErrorDetailsOneOf3 | GatewayErrorDetailsOneOf4 | GatewayErrorDetailsOneOf5 | GatewayErrorDetailsOneOf6;
 
-/**
- * Check if a given object implements the GatewayErrorDetails type.
- */
-export function instanceOfGatewayErrorDetails(value: object): value is GatewayErrorDetails {
-    return instanceOfGatewayErrorDetailsOneOf(value) ||
-        instanceOfGatewayErrorDetailsOneOf1(value) ||
-        instanceOfGatewayErrorDetailsOneOf2(value) ||
-        instanceOfGatewayErrorDetailsOneOf3(value) ||
-        instanceOfGatewayErrorDetailsOneOf4(value) ||
-        instanceOfGatewayErrorDetailsOneOf5(value) ||
-        instanceOfGatewayErrorDetailsOneOf6(value);
-}
-
 export function GatewayErrorDetailsFromJSON(json: any): GatewayErrorDetails {
     return GatewayErrorDetailsFromJSONTyped(json, false);
 }
@@ -151,3 +138,4 @@ export function GatewayErrorDetailsToJSONTyped(value?: GatewayErrorDetails | nul
     }
     return {};
 }
+
