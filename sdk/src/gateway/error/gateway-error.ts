@@ -45,7 +45,6 @@ export type InsufficientSolverBalanceDetails = GatewayErrorDetailsOneOf5;
 /** Details for {@link GatewayErrorCode.QuoteAmountTooLow} */
 export type QuoteAmountTooLowDetails = GatewayErrorDetailsOneOf6;
 
-
 // ─── Code → details type mapping ─────────────────────────────────────────────
 
 /**
