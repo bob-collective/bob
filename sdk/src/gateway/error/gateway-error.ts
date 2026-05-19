@@ -6,6 +6,7 @@ import {
     GatewayErrorDetailsOneOf4,
     GatewayErrorDetailsOneOf5,
     GatewayErrorDetailsOneOf6,
+    GatewayErrorDetailsV2OneOf,
 } from '../generated-client';
 import type { GatewayError as GatewayErrorInterface } from '../generated-client/models/GatewayError';
 import { instanceOfGatewayError } from '../generated-client/models/GatewayError';
@@ -40,7 +41,7 @@ export type NoRouteDetails = GatewayErrorDetailsOneOf4;
 export type ExceededLimitDetails = GatewayErrorDetailsOneOf5;
 
 /** Details for {@link GatewayErrorCode.InsufficientSolverBalance} */
-export type InsufficientSolverBalanceDetails = GatewayErrorDetailsOneOf5;
+export type InsufficientSolverBalanceDetails = GatewayErrorDetailsV2OneOf;
 
 /** Details for {@link GatewayErrorCode.QuoteAmountTooLow} */
 export type QuoteAmountTooLowDetails = GatewayErrorDetailsOneOf6;
@@ -246,8 +247,15 @@ function parseDetails<C extends GatewayErrorCode>(code: C, raw: Record<string, u
                 dstToken: String(raw?.dst_token ?? ''),
             } satisfies NoRouteDetails as DetailsFor<C>;
 
-        // Rust: GatewayErrorDetails::ExceededLimit { limit }
+        // Rust: GatewayErrorDetailsV2::InsufficientSolverBalance { limit, token, chain_id },
         case GatewayErrorCode.InsufficientSolverBalance:
+            return {
+                limit: String(raw?.limit ?? ''),
+                token: String(raw?.token ?? ''),
+                chainId: String(raw?.chain_id ?? ''),
+            } satisfies InsufficientSolverBalanceDetails as DetailsFor<C>;
+                
+        // Rust: GatewayErrorDetails::ExceededLimit { limit }
         case GatewayErrorCode.ExceededLimit:
             return {
                 limit: String(raw?.limit ?? ''),
