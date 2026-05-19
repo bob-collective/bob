@@ -18,7 +18,8 @@
  * @export
  */
 export const GatewayErrorCodeV2Variants = {
-    InvalidCursor: 'INVALID_CURSOR'
+    InvalidCursor: 'INVALID_CURSOR',
+    InsufficientSolverBalance: 'INSUFFICIENT_SOLVER_BALANCE'
 } as const;
 export type GatewayErrorCodeV2Variants = typeof GatewayErrorCodeV2Variants[keyof typeof GatewayErrorCodeV2Variants];
 

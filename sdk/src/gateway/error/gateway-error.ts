@@ -15,8 +15,11 @@ export { GatewayErrorCode };
 
 // ─── Named detail interfaces (mirror the Rust GatewayErrorDetails enum) ──────
 
-/** Details for {@link GatewayErrorCode.InsufficientAmount} and {@link GatewayErrorCode.InsufficientPaymentAmount} */
+/** Details for {@link GatewayErrorCode.InsufficientAmount} */
 export type InsufficientAmountDetails = GatewayErrorDetailsOneOf;
+
+/** Details for {@link GatewayErrorCode.InsufficientPaymentAmount} */
+export type InsufficientPaymentAmountDetails = GatewayErrorDetailsOneOf;
 
 /** Details for {@link GatewayErrorCode.InsufficientSwapAmount} */
 export type InsufficientSwapAmountDetails = GatewayErrorDetailsOneOf1;
@@ -24,14 +27,20 @@ export type InsufficientSwapAmountDetails = GatewayErrorDetailsOneOf1;
 /** Details for {@link GatewayErrorCode.UnableToCoverFees} */
 export type UnableToCoverFeesDetails = GatewayErrorDetailsOneOf2;
 
-/** Details for {@link GatewayErrorCode.SimulationFailed} and {@link GatewayErrorCode.GasEstimateFailed} */
+/** Details for {@link GatewayErrorCode.SimulationFailed} */
 export type SimulationFailedDetails = GatewayErrorDetailsOneOf3;
+
+/** Details for {@link GatewayErrorCode.GasEstimateFailed} */
+export type GasEstimateFailedDetails = GatewayErrorDetailsOneOf3;
 
 /** Details for {@link GatewayErrorCode.NoRoute} */
 export type NoRouteDetails = GatewayErrorDetailsOneOf4;
 
 /** Details for {@link GatewayErrorCode.ExceededLimit} */
 export type ExceededLimitDetails = GatewayErrorDetailsOneOf5;
+
+/** Details for {@link GatewayErrorCode.InsufficientSolverBalance} */
+export type InsufficientSolverBalanceDetails = GatewayErrorDetailsOneOf5;
 
 /** Details for {@link GatewayErrorCode.QuoteAmountTooLow} */
 export type QuoteAmountTooLowDetails = GatewayErrorDetailsOneOf6;
@@ -44,11 +53,12 @@ export type QuoteAmountTooLowDetails = GatewayErrorDetailsOneOf6;
  */
 export type GatewayErrorDetailsMap = {
     [GatewayErrorCode.InsufficientAmount]: InsufficientAmountDetails;
-    [GatewayErrorCode.InsufficientPaymentAmount]: InsufficientAmountDetails;
+    [GatewayErrorCode.InsufficientSolverBalance]: InsufficientSolverBalanceDetails;
+    [GatewayErrorCode.InsufficientPaymentAmount]: InsufficientPaymentAmountDetails;
     [GatewayErrorCode.InsufficientSwapAmount]: InsufficientSwapAmountDetails;
     [GatewayErrorCode.UnableToCoverFees]: UnableToCoverFeesDetails;
     [GatewayErrorCode.SimulationFailed]: SimulationFailedDetails;
-    [GatewayErrorCode.GasEstimateFailed]: SimulationFailedDetails;
+    [GatewayErrorCode.GasEstimateFailed]: GasEstimateFailedDetails;
     [GatewayErrorCode.NoRoute]: NoRouteDetails;
     [GatewayErrorCode.ExceededLimit]: ExceededLimitDetails;
     [GatewayErrorCode.QuoteAmountTooLow]: QuoteAmountTooLowDetails;
@@ -237,6 +247,7 @@ function parseDetails<C extends GatewayErrorCode>(code: C, raw: Record<string, u
             } satisfies NoRouteDetails as DetailsFor<C>;
 
         // Rust: GatewayErrorDetails::ExceededLimit { limit }
+        case GatewayErrorCode.InsufficientSolverBalance:
         case GatewayErrorCode.ExceededLimit:
             return {
                 limit: String(raw?.limit ?? ''),

@@ -12,111 +12,72 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
-/**
- * 
- * @export
- * @interface GatewayErrorDetailsV2
- */
-export interface GatewayErrorDetailsV2 {
-    /**
-     * 
-     * @type {string}
-     * @memberof GatewayErrorDetailsV2
-     */
-    actual: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof GatewayErrorDetailsV2
-     */
-    expected: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof GatewayErrorDetailsV2
-     */
-    available: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof GatewayErrorDetailsV2
-     */
-    required: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof GatewayErrorDetailsV2
-     */
-    availableAmount: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof GatewayErrorDetailsV2
-     */
-    totalFees: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof GatewayErrorDetailsV2
-     */
-    tenderlyUrl?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof GatewayErrorDetailsV2
-     */
-    dstChain: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof GatewayErrorDetailsV2
-     */
-    dstToken: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof GatewayErrorDetailsV2
-     */
-    srcChain: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof GatewayErrorDetailsV2
-     */
-    srcToken: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof GatewayErrorDetailsV2
-     */
-    limit: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof GatewayErrorDetailsV2
-     */
-    minimum: string;
-}
+import type { GatewayErrorDetailsOneOf } from './GatewayErrorDetailsOneOf';
+import {
+    instanceOfGatewayErrorDetailsOneOf,
+    GatewayErrorDetailsOneOfFromJSON,
+    GatewayErrorDetailsOneOfFromJSONTyped,
+    GatewayErrorDetailsOneOfToJSON,
+} from './GatewayErrorDetailsOneOf';
+import type { GatewayErrorDetailsOneOf1 } from './GatewayErrorDetailsOneOf1';
+import {
+    instanceOfGatewayErrorDetailsOneOf1,
+    GatewayErrorDetailsOneOf1FromJSON,
+    GatewayErrorDetailsOneOf1FromJSONTyped,
+    GatewayErrorDetailsOneOf1ToJSON,
+} from './GatewayErrorDetailsOneOf1';
+import type { GatewayErrorDetailsOneOf2 } from './GatewayErrorDetailsOneOf2';
+import {
+    instanceOfGatewayErrorDetailsOneOf2,
+    GatewayErrorDetailsOneOf2FromJSON,
+    GatewayErrorDetailsOneOf2FromJSONTyped,
+    GatewayErrorDetailsOneOf2ToJSON,
+} from './GatewayErrorDetailsOneOf2';
+import type { GatewayErrorDetailsOneOf3 } from './GatewayErrorDetailsOneOf3';
+import {
+    instanceOfGatewayErrorDetailsOneOf3,
+    GatewayErrorDetailsOneOf3FromJSON,
+    GatewayErrorDetailsOneOf3FromJSONTyped,
+    GatewayErrorDetailsOneOf3ToJSON,
+} from './GatewayErrorDetailsOneOf3';
+import type { GatewayErrorDetailsOneOf4 } from './GatewayErrorDetailsOneOf4';
+import {
+    instanceOfGatewayErrorDetailsOneOf4,
+    GatewayErrorDetailsOneOf4FromJSON,
+    GatewayErrorDetailsOneOf4FromJSONTyped,
+    GatewayErrorDetailsOneOf4ToJSON,
+} from './GatewayErrorDetailsOneOf4';
+import type { GatewayErrorDetailsOneOf5 } from './GatewayErrorDetailsOneOf5';
+import {
+    instanceOfGatewayErrorDetailsOneOf5,
+    GatewayErrorDetailsOneOf5FromJSON,
+    GatewayErrorDetailsOneOf5FromJSONTyped,
+    GatewayErrorDetailsOneOf5ToJSON,
+} from './GatewayErrorDetailsOneOf5';
+import type { GatewayErrorDetailsOneOf6 } from './GatewayErrorDetailsOneOf6';
+import {
+    instanceOfGatewayErrorDetailsOneOf6,
+    GatewayErrorDetailsOneOf6FromJSON,
+    GatewayErrorDetailsOneOf6FromJSONTyped,
+    GatewayErrorDetailsOneOf6ToJSON,
+} from './GatewayErrorDetailsOneOf6';
+import type { GatewayErrorDetailsV2OneOf } from './GatewayErrorDetailsV2OneOf';
+import {
+    instanceOfGatewayErrorDetailsV2OneOf,
+    GatewayErrorDetailsV2OneOfFromJSON,
+    GatewayErrorDetailsV2OneOfFromJSONTyped,
+    GatewayErrorDetailsV2OneOfToJSON,
+} from './GatewayErrorDetailsV2OneOf';
 
 /**
- * Check if a given object implements the GatewayErrorDetailsV2 interface.
+ * @type GatewayErrorDetailsV2
+ * Structured details for V2 error types - all V1 variants plus V2-only ones.
+ * 
+ * Kept as a single flat `oneOf` (not nested under V1/V2 wrappers) so OpenAPI clients
+ * (e.g. typescript-fetch) can generate type guards correctly.
+ * @export
  */
-export function instanceOfGatewayErrorDetailsV2(value: object): value is GatewayErrorDetailsV2 {
-    if (!('actual' in value) || value['actual'] === undefined) return false;
-    if (!('expected' in value) || value['expected'] === undefined) return false;
-    if (!('available' in value) || value['available'] === undefined) return false;
-    if (!('required' in value) || value['required'] === undefined) return false;
-    if (!('availableAmount' in value) || value['availableAmount'] === undefined) return false;
-    if (!('totalFees' in value) || value['totalFees'] === undefined) return false;
-    if (!('dstChain' in value) || value['dstChain'] === undefined) return false;
-    if (!('dstToken' in value) || value['dstToken'] === undefined) return false;
-    if (!('srcChain' in value) || value['srcChain'] === undefined) return false;
-    if (!('srcToken' in value) || value['srcToken'] === undefined) return false;
-    if (!('limit' in value) || value['limit'] === undefined) return false;
-    if (!('minimum' in value) || value['minimum'] === undefined) return false;
-    return true;
-}
+export type GatewayErrorDetailsV2 = GatewayErrorDetailsOneOf | GatewayErrorDetailsOneOf1 | GatewayErrorDetailsOneOf2 | GatewayErrorDetailsOneOf3 | GatewayErrorDetailsOneOf4 | GatewayErrorDetailsOneOf5 | GatewayErrorDetailsOneOf6 | GatewayErrorDetailsV2OneOf;
 
 export function GatewayErrorDetailsV2FromJSON(json: any): GatewayErrorDetailsV2 {
     return GatewayErrorDetailsV2FromJSONTyped(json, false);
@@ -126,25 +87,37 @@ export function GatewayErrorDetailsV2FromJSONTyped(json: any, ignoreDiscriminato
     if (json == null) {
         return json;
     }
-    return {
-        
-        'actual': json['actual'],
-        'expected': json['expected'],
-        'available': json['available'],
-        'required': json['required'],
-        'availableAmount': json['available_amount'],
-        'totalFees': json['total_fees'],
-        'tenderlyUrl': json['tenderly_url'] == null ? undefined : json['tenderly_url'],
-        'dstChain': json['dst_chain'],
-        'dstToken': json['dst_token'],
-        'srcChain': json['src_chain'],
-        'srcToken': json['src_token'],
-        'limit': json['limit'],
-        'minimum': json['minimum'],
-    };
+    if (typeof json !== 'object') {
+        return json;
+    }
+    if (instanceOfGatewayErrorDetailsOneOf(json)) {
+        return GatewayErrorDetailsOneOfFromJSONTyped(json, true);
+    }
+    if (instanceOfGatewayErrorDetailsOneOf1(json)) {
+        return GatewayErrorDetailsOneOf1FromJSONTyped(json, true);
+    }
+    if (instanceOfGatewayErrorDetailsOneOf2(json)) {
+        return GatewayErrorDetailsOneOf2FromJSONTyped(json, true);
+    }
+    if (instanceOfGatewayErrorDetailsOneOf3(json)) {
+        return GatewayErrorDetailsOneOf3FromJSONTyped(json, true);
+    }
+    if (instanceOfGatewayErrorDetailsOneOf4(json)) {
+        return GatewayErrorDetailsOneOf4FromJSONTyped(json, true);
+    }
+    if (instanceOfGatewayErrorDetailsOneOf5(json)) {
+        return GatewayErrorDetailsOneOf5FromJSONTyped(json, true);
+    }
+    if (instanceOfGatewayErrorDetailsOneOf6(json)) {
+        return GatewayErrorDetailsOneOf6FromJSONTyped(json, true);
+    }
+    if (instanceOfGatewayErrorDetailsV2OneOf(json)) {
+        return GatewayErrorDetailsV2OneOfFromJSONTyped(json, true);
+    }
+    return {} as any;
 }
 
-export function GatewayErrorDetailsV2ToJSON(json: any): GatewayErrorDetailsV2 {
+export function GatewayErrorDetailsV2ToJSON(json: any): any {
     return GatewayErrorDetailsV2ToJSONTyped(json, false);
 }
 
@@ -152,22 +125,33 @@ export function GatewayErrorDetailsV2ToJSONTyped(value?: GatewayErrorDetailsV2 |
     if (value == null) {
         return value;
     }
-
-    return {
-        
-        'actual': value['actual'],
-        'expected': value['expected'],
-        'available': value['available'],
-        'required': value['required'],
-        'available_amount': value['availableAmount'],
-        'total_fees': value['totalFees'],
-        'tenderly_url': value['tenderlyUrl'],
-        'dst_chain': value['dstChain'],
-        'dst_token': value['dstToken'],
-        'src_chain': value['srcChain'],
-        'src_token': value['srcToken'],
-        'limit': value['limit'],
-        'minimum': value['minimum'],
-    };
+    if (typeof value !== 'object') {
+        return value;
+    }
+    if (instanceOfGatewayErrorDetailsOneOf(value)) {
+        return GatewayErrorDetailsOneOfToJSON(value as GatewayErrorDetailsOneOf);
+    }
+    if (instanceOfGatewayErrorDetailsOneOf1(value)) {
+        return GatewayErrorDetailsOneOf1ToJSON(value as GatewayErrorDetailsOneOf1);
+    }
+    if (instanceOfGatewayErrorDetailsOneOf2(value)) {
+        return GatewayErrorDetailsOneOf2ToJSON(value as GatewayErrorDetailsOneOf2);
+    }
+    if (instanceOfGatewayErrorDetailsOneOf3(value)) {
+        return GatewayErrorDetailsOneOf3ToJSON(value as GatewayErrorDetailsOneOf3);
+    }
+    if (instanceOfGatewayErrorDetailsOneOf4(value)) {
+        return GatewayErrorDetailsOneOf4ToJSON(value as GatewayErrorDetailsOneOf4);
+    }
+    if (instanceOfGatewayErrorDetailsOneOf5(value)) {
+        return GatewayErrorDetailsOneOf5ToJSON(value as GatewayErrorDetailsOneOf5);
+    }
+    if (instanceOfGatewayErrorDetailsOneOf6(value)) {
+        return GatewayErrorDetailsOneOf6ToJSON(value as GatewayErrorDetailsOneOf6);
+    }
+    if (instanceOfGatewayErrorDetailsV2OneOf(value)) {
+        return GatewayErrorDetailsV2OneOfToJSON(value as GatewayErrorDetailsV2OneOf);
+    }
+    return {};
 }
 

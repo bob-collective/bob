@@ -23,6 +23,7 @@ models/GatewayErrorDetailsOneOf4.ts
 models/GatewayErrorDetailsOneOf5.ts
 models/GatewayErrorDetailsOneOf6.ts
 models/GatewayErrorDetailsV2.ts
+models/GatewayErrorDetailsV2OneOf.ts
 models/GatewayErrorV2.ts
 models/GatewayLayerZeroQuote.ts
 models/GatewayMaxSpendable.ts
