@@ -1,6 +1,7 @@
 import {
     GatewayErrorCode,
     GatewayErrorCodeV2Variants as GatewayErrorCodeV2,
+    GatewayErrorCodeV2Variants,
     GatewayErrorDetailsOneOf,
     GatewayErrorDetailsOneOf1,
     GatewayErrorDetailsOneOf2,
@@ -9,6 +10,7 @@ import {
     GatewayErrorDetailsOneOf5,
     GatewayErrorDetailsOneOf6,
     GatewayErrorDetailsV2OneOf,
+    GatewayErrorV2,
 } from '../generated-client';
 import type { GatewayError as GatewayErrorInterface } from '../generated-client/models/GatewayError';
 import { instanceOfGatewayError } from '../generated-client/models/GatewayError';
@@ -74,7 +76,7 @@ export type GatewayErrorDetailsMap = {
  * Resolves to the detail interface for a known code, or `null` for codes
  * that carry no structured details (e.g. `InternalError`, `InvalidRequest`).
  */
-export type DetailsFor<C extends GatewayErrorCode> = C extends keyof GatewayErrorDetailsMap
+export type DetailsFor<C extends GatewayErrorCode | GatewayErrorCodeV2> = C extends keyof GatewayErrorDetailsMap
     ? GatewayErrorDetailsMap[C]
     : null;
 
@@ -109,9 +111,8 @@ export type DetailsFor<C extends GatewayErrorCode> = C extends keyof GatewayErro
  * }
  * ```
  */
-export class GatewayError<C extends GatewayErrorCode = GatewayErrorCode>
+export class GatewayError<C extends GatewayErrorCode | GatewayErrorCodeV2 = GatewayErrorCode | GatewayErrorCodeV2>
     extends Error
-    implements GatewayErrorInterface
 {
     /** Stable error code, safe to switch/match on. */
     readonly code: C;
@@ -183,7 +184,7 @@ export class GatewayError<C extends GatewayErrorCode = GatewayErrorCode>
  * When you narrow on `.code` (via `switch` or `===`), TypeScript resolves
  * `.details` to the matching detail interface automatically.
  */
-export type AnyGatewayError = { [C in GatewayErrorCode]: GatewayError<C> }[GatewayErrorCode];
+export type AnyGatewayError = { [C in GatewayErrorCode]: GatewayError<C> }[GatewayErrorCode] | { [C2 in GatewayErrorCodeV2]: GatewayError<C2> }[GatewayErrorCodeV2];
 
 /**
  * Type guard that narrows `err` to {@link AnyGatewayError}.
@@ -211,7 +212,7 @@ export function isGatewayError(err: unknown): err is AnyGatewayError {
 // Reads raw snake_case JSON fields directly, matching Rust serde output.
 // Each case corresponds to a GatewayErrorDetails enum variant in error.rs.
 
-function parseDetails<C extends GatewayErrorCode>(code: C, raw: Record<string, unknown> | null): DetailsFor<C> {
+function parseDetails<C extends GatewayErrorCode | GatewayErrorCodeV2>(code: C, raw: Record<string, unknown> | null): DetailsFor<C> {
     switch (code) {
         // Rust: GatewayErrorDetails::InsufficientAmount { expected, actual }
         case GatewayErrorCode.InsufficientAmount:
