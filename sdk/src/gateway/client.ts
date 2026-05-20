@@ -401,6 +401,21 @@ export class GatewayApiClient {
                     });
 
                     if (allowance < requiredAmount) {
+                        // To change the USDT approval, first set the allowance to 0 (approve(_spender, 0))
+                        // to avoid the ERC20 race condition:
+                        // https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
+                        if (isAddressEqual(tokenAddress, ETHEREUM_USDT_ADDRESS) && allowance !== 0n) {
+                            const { request: resetRequest } = await publicClient.simulateContract({
+                                account: walletClient.account,
+                                address: tokenAddress,
+                                abi: USDTApproveAbi,
+                                functionName: 'approve',
+                                args: [receiver, 0n],
+                            });
+                            const resetTxHash = await walletClient.writeContract(resetRequest);
+                            await publicClient.waitForTransactionReceipt({ hash: resetTxHash, retryCount: RETRY_COUNT });
+                        }
+
                         const { request } = await publicClient.simulateContract({
                             account: walletClient.account,
                             address: tokenAddress,
