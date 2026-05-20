@@ -10,6 +10,8 @@ models/GatewayCreateOrderOneOf1.ts
 models/GatewayCreateOrderOneOf1Offramp.ts
 models/GatewayCreateOrderOneOf2.ts
 models/GatewayCreateOrderOneOfOnramp.ts
+models/GatewayCreateOrderV2.ts
+models/GatewayCreateOrderV2OneOf.ts
 models/GatewayError.ts
 models/GatewayErrorCode.ts
 models/GatewayErrorCodeV2.ts
@@ -54,7 +56,9 @@ models/GatewayQuoteOneOf2.ts
 models/GatewayQuoteV2.ts
 models/GatewayQuoteV2OneOf.ts
 models/GatewayQuoteV2OneOf1.ts
+models/GatewayQuoteV2OneOf2.ts
 models/GatewayTokenAmount.ts
+models/GatewayTokenSwapQuoteV2.ts
 models/GatewayUserTokenTransfer.ts
 models/OrderDestinationInfo.ts
 models/PaginatedOrdersResponse.ts
@@ -68,6 +72,8 @@ models/RegisterTxOneOfOnramp.ts
 models/RegisterTxSuccess.ts
 models/RegisterTxSuccessOneOf.ts
 models/RegisterTxSuccessOneOfOnramp.ts
+models/RegisterTxV2.ts
+models/RegisterTxV2OneOf.ts
 models/ResolvedAffiliate.ts
 models/RouteInfo.ts
 models/TxInfo.ts
