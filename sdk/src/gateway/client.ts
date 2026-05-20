@@ -14,26 +14,26 @@ import {
     zeroAddress,
 } from 'viem';
 import { strategyCaller, USDTApproveAbi } from './abi';
+import { GatewayError } from './error';
 import {
     Configuration,
-    type GatewayCreateOrder,
     type GatewayCreateOrderOneOf,
+    GatewayCreateOrderV2,
     type GatewayMaxSpendable,
     GatewayOrderInfoV2,
     GatewayQuoteV2,
     GetOrdersV2Request,
     instanceOfGatewayCreateOrderOneOf,
     instanceOfGatewayCreateOrderOneOf1,
-    instanceOfGatewayCreateOrderOneOf2,
-    instanceOfGatewayQuoteOneOf2,
+    instanceOfGatewayCreateOrderV2OneOf,
     instanceOfGatewayQuoteV2OneOf,
     instanceOfGatewayQuoteV2OneOf1,
+    instanceOfGatewayQuoteV2OneOf2,
     instanceOfRegisterTxOneOf,
     PaginatedOrdersResponse,
     type RouteInfo,
-    V2Api,
+    V2Api
 } from './generated-client';
-import { GatewayError } from './error';
 import type { GatewayError as GatewayErrorInterface } from './generated-client/models/GatewayError';
 import type { BitcoinSigner, GetQuoteParams, StrategyParams } from './types';
 import { formatBtc } from './utils';
@@ -85,7 +85,7 @@ export interface AllWalletClientParams extends EvmWalletClientParams {
  * the BTC payment externally.
  */
 export type ExecuteQuoteResult =
-    | { order: GatewayCreateOrder; tx: string }
+    | { order: GatewayCreateOrderV2; tx: string }
     | { order: GatewayCreateOrderOneOf; tx?: undefined };
 
 /**
@@ -264,9 +264,9 @@ export class GatewayApiClient {
             // bitcoinTxOrId = stripHexPrefix(bitcoinTxOrId);
             if (!bitcoinTxHex) throw new Error('Failed to get signed transaction');
 
-            const tx = await this.api.registerTx(
+            const tx = await this.api.registerTxV2(
                 {
-                    registerTx: {
+                    registerTxV2: {
                         onramp: {
                             orderId: order.onramp.orderId,
                             bitcoinTxHex: bitcoinTxHex,
@@ -358,9 +358,9 @@ export class GatewayApiClient {
             await publicClient?.waitForTransactionReceipt({ hash: transactionHash, retryCount: RETRY_COUNT });
 
             try {
-                await this.api.registerTx(
+                await this.api.registerTxV2(
                     {
-                        registerTx: {
+                        registerTxV2: {
                             offramp: {
                                 orderId: order.offramp.orderId,
                                 evmTxhash: transactionHash,
@@ -375,17 +375,17 @@ export class GatewayApiClient {
             }
 
             return { order, tx: transactionHash };
-        } else if (instanceOfGatewayQuoteOneOf2(quote)) {
-            const tokenAddress = quote.layerZero.inputAmount.address as Address;
-            const requiredAmount = BigInt(quote.layerZero.inputAmount.amount);
+        } else if (instanceOfGatewayQuoteV2OneOf2(quote)) {
+            const tokenAddress = quote.tokenSwap.inputAmount.address as Address;
+            const requiredAmount = BigInt(quote.tokenSwap.inputAmount.amount);
             const accountAddress = walletClient.account.address;
-            const receiver = quote.layerZero.tx.to as Address;
+            const receiver = quote.tokenSwap.txTo as Address;
 
             const order = await this.api.createOrderV2({
-                gatewayQuoteV2: { layerZero: quote.layerZero },
+                gatewayQuoteV2: { tokenSwap: quote.tokenSwap },
             });
 
-            if (!instanceOfGatewayCreateOrderOneOf2(order)) {
+            if (!instanceOfGatewayCreateOrderV2OneOf(order)) {
                 throw new Error('Invalid order type returned from API');
             }
 
@@ -430,20 +430,20 @@ export class GatewayApiClient {
             // execute send call
             const transactionHash = await walletClient.sendTransaction({
                 account: walletClient.account,
-                data: quote.layerZero.tx.data as Hex,
-                to: receiver,
-                value: BigInt(quote.layerZero.tx.value || 0),
+                data: order.tokenSwap.tx.data as Hex,
+                to: order.tokenSwap.tx.to as Address,
+                value: BigInt(order.tokenSwap.tx.value || 0),
             });
 
             await publicClient.waitForTransactionReceipt({ hash: transactionHash, retryCount: RETRY_COUNT });
 
             try {
-                await this.api.registerTx(
+                await this.api.registerTxV2(
                     {
-                        registerTx: {
-                            layerZero: {
+                        registerTxV2: {
+                            tokenSwap: {
                                 evmTxhash: transactionHash,
-                                orderId: order.layerZero.orderId,
+                                orderId: order.tokenSwap.orderId,
                             },
                         },
                     },

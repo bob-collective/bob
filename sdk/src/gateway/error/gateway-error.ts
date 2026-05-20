@@ -1,4 +1,5 @@
 import {
+    GatewayErrorCodeV2Variants,
     GatewayErrorDetailsOneOf,
     GatewayErrorDetailsOneOf1,
     GatewayErrorDetailsOneOf2,
@@ -11,8 +12,9 @@ import {
 import type { GatewayError as GatewayErrorInterface } from '../generated-client/models/GatewayError';
 import { instanceOfGatewayError } from '../generated-client/models/GatewayError';
 import { GatewayErrorCode } from '../generated-client/models/GatewayErrorCode';
+import { GatewayErrorCodeV2 } from '../generated-client/models/GatewayErrorCodeV2';
 
-export { GatewayErrorCode };
+export { GatewayErrorCodeV2 as GatewayErrorCode };
 
 // ─── Named detail interfaces (mirror the Rust GatewayErrorDetails enum) ──────
 
@@ -37,10 +39,13 @@ export type GasEstimateFailedDetails = GatewayErrorDetailsOneOf3;
 /** Details for {@link GatewayErrorCode.NoRoute} */
 export type NoRouteDetails = GatewayErrorDetailsOneOf4;
 
+/** Details for {@link GatewayErrorCodeV2Variants.AffiliateFeesNotSupportedForRoute} */
+export type AffiliateFeesNotSupportedForRouteDetails = GatewayErrorDetailsOneOf4;
+
 /** Details for {@link GatewayErrorCode.ExceededLimit} */
 export type ExceededLimitDetails = GatewayErrorDetailsOneOf5;
 
-/** Details for {@link GatewayErrorCode.InsufficientSolverBalance} */
+/** Details for {@link GatewayErrorCodeV2Variants.InsufficientSolverBalance} */
 export type InsufficientSolverBalanceDetails = GatewayErrorDetailsV2OneOf;
 
 /** Details for {@link GatewayErrorCode.QuoteAmountTooLow} */
@@ -54,13 +59,14 @@ export type QuoteAmountTooLowDetails = GatewayErrorDetailsOneOf6;
  */
 export type GatewayErrorDetailsMap = {
     [GatewayErrorCode.InsufficientAmount]: InsufficientAmountDetails;
-    [GatewayErrorCode.InsufficientSolverBalance]: InsufficientSolverBalanceDetails;
+    [GatewayErrorCodeV2Variants.InsufficientSolverBalance]: InsufficientSolverBalanceDetails;
     [GatewayErrorCode.InsufficientPaymentAmount]: InsufficientPaymentAmountDetails;
     [GatewayErrorCode.InsufficientSwapAmount]: InsufficientSwapAmountDetails;
     [GatewayErrorCode.UnableToCoverFees]: UnableToCoverFeesDetails;
     [GatewayErrorCode.SimulationFailed]: SimulationFailedDetails;
     [GatewayErrorCode.GasEstimateFailed]: GasEstimateFailedDetails;
     [GatewayErrorCode.NoRoute]: NoRouteDetails;
+    [GatewayErrorCodeV2Variants.AffiliateFeesNotSupportedForRoute]: AffiliateFeesNotSupportedForRouteDetails;
     [GatewayErrorCode.ExceededLimit]: ExceededLimitDetails;
     [GatewayErrorCode.QuoteAmountTooLow]: QuoteAmountTooLowDetails;
 };
