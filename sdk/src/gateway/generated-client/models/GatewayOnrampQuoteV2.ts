@@ -109,6 +109,20 @@ export interface GatewayOnrampQuoteV2 {
      */
     outputAmount: GatewayTokenAmount;
     /**
+     * Price impact as a fraction, e.g. `"-0.05"` means 5% loss. Absent if no price feed is
+     * available.
+     * @type {string}
+     * @memberof GatewayOnrampQuoteV2
+     */
+    priceImpact?: string | null;
+    /**
+     * Price impact in USD, excluding execution fee. E.g. `"-1.00"` means $1 loss. Absent if no
+     * price feed is available.
+     * @type {string}
+     * @memberof GatewayOnrampQuoteV2
+     */
+    priceImpactUsd?: string | null;
+    /**
      * Recipient address
      * @type {string}
      * @memberof GatewayOnrampQuoteV2
@@ -191,6 +205,8 @@ export function GatewayOnrampQuoteV2FromJSONTyped(json: any, ignoreDiscriminator
         'gasRefill': json['gasRefill'] == null ? undefined : json['gasRefill'],
         'inputAmount': GatewayTokenAmountFromJSON(json['inputAmount']),
         'outputAmount': GatewayTokenAmountFromJSON(json['outputAmount']),
+        'priceImpact': json['priceImpact'] == null ? undefined : json['priceImpact'],
+        'priceImpactUsd': json['priceImpactUsd'] == null ? undefined : json['priceImpactUsd'],
         'recipient': json['recipient'],
         'sender': json['sender'] == null ? undefined : json['sender'],
         'signedQuoteData': json['signedQuoteData'],
@@ -223,6 +239,8 @@ export function GatewayOnrampQuoteV2ToJSONTyped(value?: GatewayOnrampQuoteV2 | n
         'gasRefill': value['gasRefill'],
         'inputAmount': GatewayTokenAmountToJSON(value['inputAmount']),
         'outputAmount': GatewayTokenAmountToJSON(value['outputAmount']),
+        'priceImpact': value['priceImpact'],
+        'priceImpactUsd': value['priceImpactUsd'],
         'recipient': value['recipient'],
         'sender': value['sender'],
         'signedQuoteData': value['signedQuoteData'],

@@ -78,6 +78,20 @@ export interface GatewayOfframpQuoteV2 {
      */
     outputAmount: GatewayTokenAmount;
     /**
+     * Price impact as a fraction, e.g. `"-0.05"` means 5% loss. Absent if no price feed is
+     * available.
+     * @type {string}
+     * @memberof GatewayOfframpQuoteV2
+     */
+    priceImpact?: string | null;
+    /**
+     * Price impact in USD, excluding execution fee. E.g. `"-1.00"` means $1 loss. Absent if no
+     * price feed is available.
+     * @type {string}
+     * @memberof GatewayOfframpQuoteV2
+     */
+    priceImpactUsd?: string | null;
+    /**
      * 
      * @type {string}
      * @memberof GatewayOfframpQuoteV2
@@ -153,6 +167,8 @@ export function GatewayOfframpQuoteV2FromJSONTyped(json: any, ignoreDiscriminato
         'feeBreakdown': GatewayOfframpFeeBreakdownFromJSON(json['feeBreakdown']),
         'inputAmount': GatewayTokenAmountFromJSON(json['inputAmount']),
         'outputAmount': GatewayTokenAmountFromJSON(json['outputAmount']),
+        'priceImpact': json['priceImpact'] == null ? undefined : json['priceImpact'],
+        'priceImpactUsd': json['priceImpactUsd'] == null ? undefined : json['priceImpactUsd'],
         'recipient': json['recipient'],
         'sender': json['sender'] == null ? undefined : json['sender'],
         'slippage': json['slippage'],
@@ -180,6 +196,8 @@ export function GatewayOfframpQuoteV2ToJSONTyped(value?: GatewayOfframpQuoteV2 |
         'feeBreakdown': GatewayOfframpFeeBreakdownToJSON(value['feeBreakdown']),
         'inputAmount': GatewayTokenAmountToJSON(value['inputAmount']),
         'outputAmount': GatewayTokenAmountToJSON(value['outputAmount']),
+        'priceImpact': value['priceImpact'],
+        'priceImpactUsd': value['priceImpactUsd'],
         'recipient': value['recipient'],
         'sender': value['sender'],
         'slippage': value['slippage'],
