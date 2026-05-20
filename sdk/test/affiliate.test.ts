@@ -5,9 +5,9 @@ import { ETHEREUM_USDT_ADDRESS } from '../src/gateway/client';
 
 const ETHEREUM_GATEWAY_BASE_URL = 'https://gateway-api-ethereum.gobob.xyz';
 
-const ADDR_A = '0x001Da04C0B6cA5fEcDCD50E071966e4096A31177';
-const ADDR_B = '0x70997970C51812dc3A010C7d01b50e0d17dc79C8';
-const BTC_SENDER = 'bc1q6tgkjx4pgc5qda52fsgeuvjrhml5nuawwplejq';
+const ADDR_A = '0x1111111111111111111111111111111111111111';
+const ADDR_B = '0x2222222222222222222222222222222222222222';
+const BTC_SENDER = 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq';
 const BTC_TOKEN = '0x0000000000000000000000000000000000000000';
 
 describe('Gateway Multiple Affiliates', () => {
@@ -22,7 +22,7 @@ describe('Gateway Multiple Affiliates', () => {
             toToken: ETHEREUM_USDT_ADDRESS,
             fromUserAddress: BTC_SENDER,
             toUserAddress: ADDR_A,
-            amount: 100_000, // 0.001 BTC (within live rate limits)
+            amount: 100_000, // 0.001 BTC
             affiliateIds,
         });
 
@@ -52,7 +52,7 @@ describe('Gateway Multiple Affiliates', () => {
             toToken: BTC_TOKEN,
             fromUserAddress: ADDR_A,
             toUserAddress: BTC_SENDER,
-            amount: 100_000_000, // 100 USDT (6 decimals)
+            amount: 100_000_000, // 100 USDT
             affiliateIds,
         });
 
