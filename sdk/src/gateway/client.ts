@@ -416,10 +416,10 @@ export class GatewayApiClient {
                             await publicClient.waitForTransactionReceipt({ hash: resetTxHash, retryCount: RETRY_COUNT });
                         }
 
-                        const { request } = await publicClient.simulateContract({
+                        const { request, result } = await publicClient.simulateContract({
                             account: walletClient.account,
                             address: tokenAddress,
-                            abi: erc20Abi,
+                            abi: isAddressEqual(tokenAddress, ETHEREUM_USDT_ADDRESS) ? USDTApproveAbi : erc20Abi,
                             functionName: 'approve',
                             args: [receiver, maxUint256],
                         });
