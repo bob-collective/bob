@@ -15,26 +15,35 @@ export { GatewayErrorCode };
 
 // ─── Named detail interfaces (mirror the Rust GatewayErrorDetails enum) ──────
 
-/** Details for {@link GatewayErrorCode.InsufficientAmount} and {@link GatewayErrorCode.InsufficientPaymentAmount} */
+/** Details for {@link GatewayErrorCode.InsufficientAmount} */
 export type InsufficientAmountDetails = GatewayErrorDetailsOneOf;
+
+/** Details for {@link GatewayErrorCode.InsufficientPaymentAmount} */
+export type InsufficientPaymentAmountDetails = GatewayErrorDetailsOneOf;
 
 /** Details for {@link GatewayErrorCode.InsufficientSwapAmount} */
 export type InsufficientSwapAmountDetails = GatewayErrorDetailsOneOf1;
 
-/** Details for {@link GatewayErrorCode.InsufficientFunds} */
-export type InsufficientFundsDetails = GatewayErrorDetailsOneOf2;
-
 /** Details for {@link GatewayErrorCode.UnableToCoverFees} */
-export type UnableToCoverFeesDetails = GatewayErrorDetailsOneOf3;
+export type UnableToCoverFeesDetails = GatewayErrorDetailsOneOf2;
 
-/** Details for {@link GatewayErrorCode.SimulationFailed} and {@link GatewayErrorCode.GasEstimateFailed} */
-export type SimulationFailedDetails = GatewayErrorDetailsOneOf4;
+/** Details for {@link GatewayErrorCode.SimulationFailed} */
+export type SimulationFailedDetails = GatewayErrorDetailsOneOf3;
+
+/** Details for {@link GatewayErrorCode.GasEstimateFailed} */
+export type GasEstimateFailedDetails = GatewayErrorDetailsOneOf3;
 
 /** Details for {@link GatewayErrorCode.NoRoute} */
-export type NoRouteDetails = GatewayErrorDetailsOneOf5;
+export type NoRouteDetails = GatewayErrorDetailsOneOf4;
 
 /** Details for {@link GatewayErrorCode.ExceededLimit} */
-export type ExceededLimitDetails = GatewayErrorDetailsOneOf6;
+export type ExceededLimitDetails = GatewayErrorDetailsOneOf5;
+
+/** Details for {@link GatewayErrorCode.InsufficientSolverBalance} */
+export type InsufficientSolverBalanceDetails = GatewayErrorDetailsOneOf5;
+
+/** Details for {@link GatewayErrorCode.QuoteAmountTooLow} */
+export type QuoteAmountTooLowDetails = GatewayErrorDetailsOneOf6;
 
 // ─── Code → details type mapping ─────────────────────────────────────────────
 
@@ -44,14 +53,15 @@ export type ExceededLimitDetails = GatewayErrorDetailsOneOf6;
  */
 export type GatewayErrorDetailsMap = {
     [GatewayErrorCode.InsufficientAmount]: InsufficientAmountDetails;
-    [GatewayErrorCode.InsufficientPaymentAmount]: InsufficientAmountDetails;
+    [GatewayErrorCode.InsufficientSolverBalance]: InsufficientSolverBalanceDetails;
+    [GatewayErrorCode.InsufficientPaymentAmount]: InsufficientPaymentAmountDetails;
     [GatewayErrorCode.InsufficientSwapAmount]: InsufficientSwapAmountDetails;
-    [GatewayErrorCode.InsufficientFunds]: InsufficientFundsDetails;
     [GatewayErrorCode.UnableToCoverFees]: UnableToCoverFeesDetails;
     [GatewayErrorCode.SimulationFailed]: SimulationFailedDetails;
-    [GatewayErrorCode.GasEstimateFailed]: SimulationFailedDetails;
+    [GatewayErrorCode.GasEstimateFailed]: GasEstimateFailedDetails;
     [GatewayErrorCode.NoRoute]: NoRouteDetails;
     [GatewayErrorCode.ExceededLimit]: ExceededLimitDetails;
+    [GatewayErrorCode.QuoteAmountTooLow]: QuoteAmountTooLowDetails;
 };
 
 /**
@@ -84,9 +94,9 @@ export type DetailsFor<C extends GatewayErrorCode> = C extends keyof GatewayErro
  *         // err.details is NoRouteDetails — no cast needed
  *         console.log(err.details.srcChain);
  *         break;
- *       case GatewayErrorCode.InsufficientFunds:
- *         // err.details is InsufficientFundsDetails
- *         console.log(err.details.minRequiredSats);
+ *       case GatewayErrorCode.QuoteAmountTooLow:
+ *         // err.details is QuoteAmountTooLowDetails
+ *         console.log(err.details.minimum);
  *         break;
  *     }
  *   }
@@ -113,8 +123,8 @@ export class GatewayError<C extends GatewayErrorCode = GatewayErrorCode>
      */
     readonly details: DetailsFor<C>;
 
-    constructor(code: C, message: string, details: DetailsFor<C>) {
-        super(message);
+    constructor(code: C, message: string, details: DetailsFor<C>, options?: ErrorOptions) {
+        super(message, options);
         this.name = 'GatewayError';
         this.code = code;
         this.error = message;
@@ -156,8 +166,8 @@ export class GatewayError<C extends GatewayErrorCode = GatewayErrorCode>
         return new GatewayError(code, message, parseDetails(code, raw)) as AnyGatewayError;
     }
 
-    static fromText(message: string): GatewayError<(typeof GatewayErrorCode)['InternalError']> {
-        return new GatewayError(GatewayErrorCode.InternalError, message, null);
+    static fromText(message: string, options?: ErrorOptions): GatewayError<(typeof GatewayErrorCode)['InternalError']> {
+        return new GatewayError(GatewayErrorCode.InternalError, message, null, options);
     }
 }
 
@@ -212,13 +222,6 @@ function parseDetails<C extends GatewayErrorCode>(code: C, raw: Record<string, u
                 available: String(raw?.available ?? ''),
             } satisfies InsufficientSwapAmountDetails as DetailsFor<C>;
 
-        // Rust: GatewayErrorDetails::InsufficientFunds { sender, min_required_sats }
-        case GatewayErrorCode.InsufficientFunds:
-            return {
-                sender: String(raw?.sender ?? ''),
-                minRequiredSats: Number(raw?.min_required_sats ?? 0),
-            } satisfies InsufficientFundsDetails as DetailsFor<C>;
-
         // Rust: GatewayErrorDetails::UnableToCoverFees { total_fees, available_amount }
         case GatewayErrorCode.UnableToCoverFees:
             return {
@@ -244,13 +247,21 @@ function parseDetails<C extends GatewayErrorCode>(code: C, raw: Record<string, u
             } satisfies NoRouteDetails as DetailsFor<C>;
 
         // Rust: GatewayErrorDetails::ExceededLimit { limit }
+        case GatewayErrorCode.InsufficientSolverBalance:
         case GatewayErrorCode.ExceededLimit:
             return {
                 limit: String(raw?.limit ?? ''),
             } satisfies ExceededLimitDetails as DetailsFor<C>;
 
+        // Rust: GatewayErrorDetails::QuoteAmountTooLow { minimum, actual }
+        case GatewayErrorCode.QuoteAmountTooLow:
+            return {
+                minimum: String(raw?.minimum ?? ''),
+                actual: String(raw?.actual ?? ''),
+            } satisfies QuoteAmountTooLowDetails as DetailsFor<C>;
+
         // Codes with no details in Rust (details field absent or unit variant → {}):
-        //   InsufficientSolverBalance, InsufficientConfirmedFunds (unit variant),
+        //   InsufficientSolverBalance, InsufficientConfirmedFunds,
         //   PerAccountLimitExceeded, GlobalLimitExceeded, InvalidRequest, InvalidOrderArgs,
         //   InvalidAffiliateFee, SlippageTooLow, SlippageTooHigh, DisabledChain,
         //   InvalidDestinationChainId, OrderNotFound, OrderExpired, DuplicateOrder, InternalError

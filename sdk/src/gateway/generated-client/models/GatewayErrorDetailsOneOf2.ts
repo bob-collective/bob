@@ -21,24 +21,24 @@ import { mapValues } from '../runtime';
 export interface GatewayErrorDetailsOneOf2 {
     /**
      * 
-     * @type {number}
+     * @type {string}
      * @memberof GatewayErrorDetailsOneOf2
      */
-    minRequiredSats: number;
+    availableAmount: string;
     /**
      * 
      * @type {string}
      * @memberof GatewayErrorDetailsOneOf2
      */
-    sender: string;
+    totalFees: string;
 }
 
 /**
  * Check if a given object implements the GatewayErrorDetailsOneOf2 interface.
  */
 export function instanceOfGatewayErrorDetailsOneOf2(value: object): value is GatewayErrorDetailsOneOf2 {
-    if (!('minRequiredSats' in value) || value['minRequiredSats'] === undefined) return false;
-    if (!('sender' in value) || value['sender'] === undefined) return false;
+    if (!('availableAmount' in value) || value['availableAmount'] === undefined) return false;
+    if (!('totalFees' in value) || value['totalFees'] === undefined) return false;
     return true;
 }
 
@@ -52,8 +52,8 @@ export function GatewayErrorDetailsOneOf2FromJSONTyped(json: any, ignoreDiscrimi
     }
     return {
         
-        'minRequiredSats': json['min_required_sats'],
-        'sender': json['sender'],
+        'availableAmount': json['available_amount'],
+        'totalFees': json['total_fees'],
     };
 }
 
@@ -68,8 +68,8 @@ export function GatewayErrorDetailsOneOf2ToJSONTyped(value?: GatewayErrorDetails
 
     return {
         
-        'min_required_sats': value['minRequiredSats'],
-        'sender': value['sender'],
+        'available_amount': value['availableAmount'],
+        'total_fees': value['totalFees'],
     };
 }
 

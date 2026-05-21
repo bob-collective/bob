@@ -24,35 +24,14 @@ export interface GatewayErrorDetailsOneOf5 {
      * @type {string}
      * @memberof GatewayErrorDetailsOneOf5
      */
-    dstChain: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof GatewayErrorDetailsOneOf5
-     */
-    dstToken: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof GatewayErrorDetailsOneOf5
-     */
-    srcChain: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof GatewayErrorDetailsOneOf5
-     */
-    srcToken: string;
+    limit: string;
 }
 
 /**
  * Check if a given object implements the GatewayErrorDetailsOneOf5 interface.
  */
 export function instanceOfGatewayErrorDetailsOneOf5(value: object): value is GatewayErrorDetailsOneOf5 {
-    if (!('dstChain' in value) || value['dstChain'] === undefined) return false;
-    if (!('dstToken' in value) || value['dstToken'] === undefined) return false;
-    if (!('srcChain' in value) || value['srcChain'] === undefined) return false;
-    if (!('srcToken' in value) || value['srcToken'] === undefined) return false;
+    if (!('limit' in value) || value['limit'] === undefined) return false;
     return true;
 }
 
@@ -66,10 +45,7 @@ export function GatewayErrorDetailsOneOf5FromJSONTyped(json: any, ignoreDiscrimi
     }
     return {
         
-        'dstChain': json['dst_chain'],
-        'dstToken': json['dst_token'],
-        'srcChain': json['src_chain'],
-        'srcToken': json['src_token'],
+        'limit': json['limit'],
     };
 }
 
@@ -84,10 +60,7 @@ export function GatewayErrorDetailsOneOf5ToJSONTyped(value?: GatewayErrorDetails
 
     return {
         
-        'dst_chain': value['dstChain'],
-        'dst_token': value['dstToken'],
-        'src_chain': value['srcChain'],
-        'src_token': value['srcToken'],
+        'limit': value['limit'],
     };
 }
 

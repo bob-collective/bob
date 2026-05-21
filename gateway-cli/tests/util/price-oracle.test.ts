@@ -71,4 +71,27 @@ describe("fetchPrice", () => {
     await expect(fetchPrice("BTC")).rejects.toThrow(PriceOracleError);
   });
 
+  it("resolves cbBTC to BTC spot pair for exchange APIs", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockImplementation((url: string) => {
+      expect(url).not.toMatch(/CBBTC|cbBTC/i);
+      if (url.includes("binance.com") && url.includes("BTCUSDT")) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ price: "99000.00" }),
+        });
+      }
+      if (url.includes("coinbase.com") && url.includes("BTC-USD")) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ data: { amount: "99100.00" } }),
+        });
+      }
+      return Promise.resolve({ ok: false, status: 404 });
+    }));
+
+    const result = await fetchPrice("cbBTC");
+    expect(result.priceUsd).toBe(99000);
+    expect(result.source).toBe("binance");
+  });
+
 });

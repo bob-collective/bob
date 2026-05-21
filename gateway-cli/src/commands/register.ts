@@ -1,4 +1,4 @@
-import { getSdk } from "../config.js";
+import { getSdk, getApi } from "../config.js";
 import { buildRegisterPayload } from "../chains/index.js";
 
 /**
@@ -10,7 +10,7 @@ import { buildRegisterPayload } from "../chains/index.js";
  */
 export async function handleRegister(opts: { orderId: string; txid: string }) {
   const sdk = getSdk();
-  const order = await sdk.api.getOrder({ id: opts.orderId });
+  const order = await sdk.getOrder(opts.orderId);
 
   const registerTx = buildRegisterPayload(
     order.srcInfo.chain,
@@ -19,5 +19,5 @@ export async function handleRegister(opts: { orderId: string; txid: string }) {
     opts.txid,
   );
 
-  return sdk.api.registerTx({ registerTx });
+  return getApi().registerTx({ registerTx });
 }

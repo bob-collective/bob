@@ -24,13 +24,35 @@ export interface GatewayErrorDetailsOneOf4 {
      * @type {string}
      * @memberof GatewayErrorDetailsOneOf4
      */
-    tenderlyUrl?: string | null;
+    dstChain: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof GatewayErrorDetailsOneOf4
+     */
+    dstToken: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof GatewayErrorDetailsOneOf4
+     */
+    srcChain: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof GatewayErrorDetailsOneOf4
+     */
+    srcToken: string;
 }
 
 /**
  * Check if a given object implements the GatewayErrorDetailsOneOf4 interface.
  */
 export function instanceOfGatewayErrorDetailsOneOf4(value: object): value is GatewayErrorDetailsOneOf4 {
+    if (!('dstChain' in value) || value['dstChain'] === undefined) return false;
+    if (!('dstToken' in value) || value['dstToken'] === undefined) return false;
+    if (!('srcChain' in value) || value['srcChain'] === undefined) return false;
+    if (!('srcToken' in value) || value['srcToken'] === undefined) return false;
     return true;
 }
 
@@ -44,7 +66,10 @@ export function GatewayErrorDetailsOneOf4FromJSONTyped(json: any, ignoreDiscrimi
     }
     return {
         
-        'tenderlyUrl': json['tenderly_url'] == null ? undefined : json['tenderly_url'],
+        'dstChain': json['dst_chain'],
+        'dstToken': json['dst_token'],
+        'srcChain': json['src_chain'],
+        'srcToken': json['src_token'],
     };
 }
 
@@ -59,7 +84,10 @@ export function GatewayErrorDetailsOneOf4ToJSONTyped(value?: GatewayErrorDetails
 
     return {
         
-        'tenderly_url': value['tenderlyUrl'],
+        'dst_chain': value['dstChain'],
+        'dst_token': value['dstToken'],
+        'src_chain': value['srcChain'],
+        'src_token': value['srcToken'],
     };
 }
 

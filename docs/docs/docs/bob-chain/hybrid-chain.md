@@ -46,7 +46,7 @@ BOB uses the [OP Stack](https://docs.optimism.io/stack/getting-started) as its f
 
 - **Proposer:** The proposer is responsible for submitting the latest proposals of BOB to Ethereum.
 - **Batcher:** The batcher is responsible for submitting all data from BOB to Ethereum blobs to ensure that the BOB state can be entirely reconstructed just from data on Ethereum without any dependency on the BOB sequencer.
-- **Execution (op-geth):** The execution client is responsible for processing transactions and BOB blocks.
+- **Execution (op-reth):** The execution client is responsible for processing transactions and BOB blocks.
 - **Consensus (op-node):** The consensus client is responsible for ordering of transactions and BOB blocks from both Ethereum blobs and the L2 data. Full nodes use the consensus client to verify the BOB blocks and transactions purely from Ethereum data.
 - **Fraud Proof:** The fraud proof client usually consists of a verifier and a challenger. The verifier checks if BOB blocks are valid and triggers the challenger to submit a counter-proposal in case the proposer submitted an invalid proposal.
 
