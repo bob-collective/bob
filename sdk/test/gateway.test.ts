@@ -777,7 +777,7 @@ describe('Gateway Tests', () => {
 
         expect(result.tx).toBe('0xtxhash');
         expect(simulateContractMock).toHaveBeenCalledTimes(1);
-        expect(simulateContractMock.mock.calls[0][0].args).toEqual([spenderAddress, 1000n]);
+        expect(simulateContractMock.mock.calls[0][0].args).toEqual([spenderAddress, maxUint256]);
         expect(mockWalletClient.writeContract).toHaveBeenCalledTimes(1);
     });
 
@@ -867,7 +867,7 @@ describe('Gateway Tests', () => {
         expect(result.tx).toBe('0xtxhash');
         expect(simulateContractMock).toHaveBeenCalledTimes(2);
         expect(simulateContractMock.mock.calls[0][0].args).toEqual([spenderAddress, 0n]);
-        expect(simulateContractMock.mock.calls[1][0].args).toEqual([spenderAddress, 1000n]);
+        expect(simulateContractMock.mock.calls[1][0].args).toEqual([spenderAddress, maxUint256]);
         expect(mockWalletClient.writeContract).toHaveBeenCalledTimes(2);
     });
 

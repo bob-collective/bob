@@ -341,7 +341,7 @@ export class GatewayApiClient {
                     address: tokenAddress,
                     abi: isAddressEqual(tokenAddress, ETHEREUM_USDT_ADDRESS) ? USDTApproveAbi : erc20Abi,
                     functionName: 'approve',
-                    args: [spenderAddress, requiredAmount],
+                    args: [spenderAddress, maxUint256],
                 });
 
                 const approveTxHash = await walletClient.writeContract(request);
@@ -421,7 +421,7 @@ export class GatewayApiClient {
                             address: tokenAddress,
                             abi: isAddressEqual(tokenAddress, ETHEREUM_USDT_ADDRESS) ? USDTApproveAbi : erc20Abi,
                             functionName: 'approve',
-                            args: [receiver, requiredAmount],
+                            args: [receiver, maxUint256],
                         });
 
                         const txHash = await walletClient.writeContract(request);
@@ -496,7 +496,7 @@ export class GatewayApiClient {
                 address: params.token,
                 abi: erc20Abi,
                 functionName: 'approve',
-                args: [params.strategyAddress, BigInt(params.amount)],
+                args: [params.strategyAddress, maxUint256],
             });
 
             const approveTxHash = await walletClient.writeContract(request);
