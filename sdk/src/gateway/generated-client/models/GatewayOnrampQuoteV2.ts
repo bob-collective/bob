@@ -13,13 +13,20 @@
  */
 
 import { mapValues } from '../runtime';
-import type { GatewayOnrampFeeBreakdown } from './GatewayOnrampFeeBreakdown';
+import type { GatewayOnrampFeeBreakdownV2 } from './GatewayOnrampFeeBreakdownV2';
 import {
-    GatewayOnrampFeeBreakdownFromJSON,
-    GatewayOnrampFeeBreakdownFromJSONTyped,
-    GatewayOnrampFeeBreakdownToJSON,
-    GatewayOnrampFeeBreakdownToJSONTyped,
-} from './GatewayOnrampFeeBreakdown';
+    GatewayOnrampFeeBreakdownV2FromJSON,
+    GatewayOnrampFeeBreakdownV2FromJSONTyped,
+    GatewayOnrampFeeBreakdownV2ToJSON,
+    GatewayOnrampFeeBreakdownV2ToJSONTyped,
+} from './GatewayOnrampFeeBreakdownV2';
+import type { GatewayTokenAmountV2 } from './GatewayTokenAmountV2';
+import {
+    GatewayTokenAmountV2FromJSON,
+    GatewayTokenAmountV2FromJSONTyped,
+    GatewayTokenAmountV2ToJSON,
+    GatewayTokenAmountV2ToJSONTyped,
+} from './GatewayTokenAmountV2';
 import type { ResolvedAffiliate } from './ResolvedAffiliate';
 import {
     ResolvedAffiliateFromJSON,
@@ -27,13 +34,6 @@ import {
     ResolvedAffiliateToJSON,
     ResolvedAffiliateToJSONTyped,
 } from './ResolvedAffiliate';
-import type { GatewayTokenAmount } from './GatewayTokenAmount';
-import {
-    GatewayTokenAmountFromJSON,
-    GatewayTokenAmountFromJSONTyped,
-    GatewayTokenAmountToJSON,
-    GatewayTokenAmountToJSONTyped,
-} from './GatewayTokenAmount';
 
 /**
  * V2 onramp quote: identical to V1 plus a resolved `affiliates` list. Kept as
@@ -74,22 +74,22 @@ export interface GatewayOnrampQuoteV2 {
     estimatedTimeInSecs?: number | null;
     /**
      * Cost to execute the onramp on-chain
-     * @type {GatewayTokenAmount}
+     * @type {GatewayTokenAmountV2}
      * @memberof GatewayOnrampQuoteV2
      */
-    executionFees: GatewayTokenAmount;
+    executionFees: GatewayTokenAmountV2;
     /**
      * Detailed fee breakdown
-     * @type {GatewayOnrampFeeBreakdown}
+     * @type {GatewayOnrampFeeBreakdownV2}
      * @memberof GatewayOnrampQuoteV2
      */
-    feeBreakdown: GatewayOnrampFeeBreakdown;
+    feeBreakdown: GatewayOnrampFeeBreakdownV2;
     /**
      * Total fees for this swap
-     * @type {GatewayTokenAmount}
+     * @type {GatewayTokenAmountV2}
      * @memberof GatewayOnrampQuoteV2
      */
-    fees: GatewayTokenAmount;
+    fees: GatewayTokenAmountV2;
     /**
      * Optional gas refill amount
      * @type {string}
@@ -98,16 +98,30 @@ export interface GatewayOnrampQuoteV2 {
     gasRefill?: string | null;
     /**
      * Amount requested by the user
-     * @type {GatewayTokenAmount}
+     * @type {GatewayTokenAmountV2}
      * @memberof GatewayOnrampQuoteV2
      */
-    inputAmount: GatewayTokenAmount;
+    inputAmount: GatewayTokenAmountV2;
     /**
      * Final amount after fees
-     * @type {GatewayTokenAmount}
+     * @type {GatewayTokenAmountV2}
      * @memberof GatewayOnrampQuoteV2
      */
-    outputAmount: GatewayTokenAmount;
+    outputAmount: GatewayTokenAmountV2;
+    /**
+     * Price impact as a fraction, e.g. `"-0.05"` means 5% loss. Absent if no price feed is
+     * available.
+     * @type {string}
+     * @memberof GatewayOnrampQuoteV2
+     */
+    priceImpact?: string | null;
+    /**
+     * Price impact in USD, excluding execution fee. E.g. `"-1.00"` means $1 loss. Absent if no
+     * price feed is available.
+     * @type {string}
+     * @memberof GatewayOnrampQuoteV2
+     */
+    priceImpactUsd?: string | null;
     /**
      * Recipient address
      * @type {string}
@@ -185,12 +199,14 @@ export function GatewayOnrampQuoteV2FromJSONTyped(json: any, ignoreDiscriminator
         'dstChain': json['dstChain'],
         'dstToken': json['dstToken'],
         'estimatedTimeInSecs': json['estimatedTimeInSecs'] == null ? undefined : json['estimatedTimeInSecs'],
-        'executionFees': GatewayTokenAmountFromJSON(json['executionFees']),
-        'feeBreakdown': GatewayOnrampFeeBreakdownFromJSON(json['feeBreakdown']),
-        'fees': GatewayTokenAmountFromJSON(json['fees']),
+        'executionFees': GatewayTokenAmountV2FromJSON(json['executionFees']),
+        'feeBreakdown': GatewayOnrampFeeBreakdownV2FromJSON(json['feeBreakdown']),
+        'fees': GatewayTokenAmountV2FromJSON(json['fees']),
         'gasRefill': json['gasRefill'] == null ? undefined : json['gasRefill'],
-        'inputAmount': GatewayTokenAmountFromJSON(json['inputAmount']),
-        'outputAmount': GatewayTokenAmountFromJSON(json['outputAmount']),
+        'inputAmount': GatewayTokenAmountV2FromJSON(json['inputAmount']),
+        'outputAmount': GatewayTokenAmountV2FromJSON(json['outputAmount']),
+        'priceImpact': json['priceImpact'] == null ? undefined : json['priceImpact'],
+        'priceImpactUsd': json['priceImpactUsd'] == null ? undefined : json['priceImpactUsd'],
         'recipient': json['recipient'],
         'sender': json['sender'] == null ? undefined : json['sender'],
         'signedQuoteData': json['signedQuoteData'],
@@ -217,12 +233,14 @@ export function GatewayOnrampQuoteV2ToJSONTyped(value?: GatewayOnrampQuoteV2 | n
         'dstChain': value['dstChain'],
         'dstToken': value['dstToken'],
         'estimatedTimeInSecs': value['estimatedTimeInSecs'],
-        'executionFees': GatewayTokenAmountToJSON(value['executionFees']),
-        'feeBreakdown': GatewayOnrampFeeBreakdownToJSON(value['feeBreakdown']),
-        'fees': GatewayTokenAmountToJSON(value['fees']),
+        'executionFees': GatewayTokenAmountV2ToJSON(value['executionFees']),
+        'feeBreakdown': GatewayOnrampFeeBreakdownV2ToJSON(value['feeBreakdown']),
+        'fees': GatewayTokenAmountV2ToJSON(value['fees']),
         'gasRefill': value['gasRefill'],
-        'inputAmount': GatewayTokenAmountToJSON(value['inputAmount']),
-        'outputAmount': GatewayTokenAmountToJSON(value['outputAmount']),
+        'inputAmount': GatewayTokenAmountV2ToJSON(value['inputAmount']),
+        'outputAmount': GatewayTokenAmountV2ToJSON(value['outputAmount']),
+        'priceImpact': value['priceImpact'],
+        'priceImpactUsd': value['priceImpactUsd'],
         'recipient': value['recipient'],
         'sender': value['sender'],
         'signedQuoteData': value['signedQuoteData'],

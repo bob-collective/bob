@@ -16,12 +16,12 @@ import {
     GatewayOrderInfo,
     GatewayQuoteOneOf,
     GatewayQuoteOneOf1,
-    GatewayQuoteOneOf2,
     GatewayQuoteV2OneOf,
     GatewayQuoteV2OneOf1,
+    GatewayQuoteV2OneOf2,
     instanceOfGatewayQuoteOneOf,
     instanceOfGatewayQuoteOneOf1,
-    instanceOfGatewayQuoteOneOf2,
+    instanceOfGatewayQuoteV2OneOf2,
 } from '../src/gateway/generated-client';
 import { BitcoinSigner } from '../src/gateway/types';
 
@@ -143,8 +143,10 @@ describe('Gateway Tests', () => {
             },
         };
 
-        const mockLayerZeroQuote: GatewayQuoteOneOf2 = {
-            layerZero: {
+        const mockLayerZeroQuote: GatewayQuoteV2OneOf2 = {
+            tokenSwap: {
+                dstChain: 'bob',
+                estimatedTimeInSecs: 60,
                 fees: {
                     address: zeroAddress,
                     amount: '3',
@@ -153,20 +155,17 @@ describe('Gateway Tests', () => {
                 inputAmount: {
                     address: zeroAddress,
                     amount: '1000',
-                    chain: 'bob',
+                    chain: 'bsc',
                 },
                 outputAmount: {
                     address: zeroAddress,
                     amount: '990',
                     chain: 'bob',
                 },
-                tx: {
-                    to: '0x1234567890123456789012345678901234567890',
-                    data: '0xabcdef',
-                    value: '0',
-                    chain: 'bob',
-                },
                 recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+                slippage: 100,
+                srcChain: 'bsc',
+                txTo: '0x1234567890123456789012345678901234567890',
             },
         };
 
@@ -218,7 +217,7 @@ describe('Gateway Tests', () => {
             amount: 1000,
         });
 
-        assert(instanceOfGatewayQuoteOneOf2(result3));
+        assert(instanceOfGatewayQuoteV2OneOf2(result3));
     });
 
     it('should get orders', async () => {
@@ -1155,19 +1154,16 @@ describe('Gateway Tests', () => {
         expect(error.code).toBe(GatewayErrorCode.InsufficientSolverBalance);
         expect(error.details).toEqual({
             limit: '1000',
+            token: '',
+            chainId: '',
         });
     });
 
     it('should approve and send transaction for layerzero swap when allowance is low', async () => {
-        const mockedQuote: GatewayQuoteOneOf2 = {
-            layerZero: {
-                recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
-                tx: {
-                    to: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
-                    data: '0xc7c7f5b3000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000016967ac72e86a000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000007596000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000186a000000000000000000000000000000000000000000000000000000000000186a000000000000000000000000000000000000000000000000000000000000000e000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000120000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000',
-                    value: '397368972470378',
-                    chain: 'ethereum',
-                },
+        const mockedQuote: GatewayQuoteV2OneOf2 = {
+            tokenSwap: {
+                dstChain: 'bob',
+                estimatedTimeInSecs: 60,
                 fees: {
                     amount: '0',
                     address: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
@@ -1183,6 +1179,10 @@ describe('Gateway Tests', () => {
                     address: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
                     chain: 'bob',
                 },
+                recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+                slippage: 100,
+                srcChain: 'ethereum',
+                txTo: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
             },
         };
 
@@ -1197,8 +1197,13 @@ describe('Gateway Tests', () => {
         nock(`${MAINNET_GATEWAY_BASE_URL}`)
             .post('/v2/create-order')
             .reply(200, {
-                layerZero: {
+                tokenSwap: {
                     order_id: 'layerzero-order-123',
+                    tx: {
+                        to: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
+                        data: '0xabcdef',
+                        value: '0',
+                    },
                 },
             });
 
@@ -1224,7 +1229,7 @@ describe('Gateway Tests', () => {
 
         expect(result.tx).toBe('0xsendhash');
         expect(result.order).toEqual(
-            expect.objectContaining({ layerZero: expect.objectContaining({ orderId: 'layerzero-order-123' }) })
+            expect.objectContaining({ tokenSwap: expect.objectContaining({ orderId: 'layerzero-order-123' }) })
         );
         expect(readContract).toHaveBeenCalledTimes(1);
         expect(simulateContract).toHaveBeenCalledTimes(1);
@@ -1234,15 +1239,10 @@ describe('Gateway Tests', () => {
     });
 
     it('should skip approval when allowance is sufficient for layerzero swap', async () => {
-        const mockedQuote: GatewayQuoteOneOf2 = {
-            layerZero: {
-                recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
-                tx: {
-                    to: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
-                    data: '0xc7c7f5b3000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000016967ac72e86a000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000007596000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000186a000000000000000000000000000000000000000000000000000000000000186a000000000000000000000000000000000000000000000000000000000000000e000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000120000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000',
-                    value: '397368972470378',
-                    chain: 'ethereum',
-                },
+        const mockedQuote: GatewayQuoteV2OneOf2 = {
+            tokenSwap: {
+                dstChain: 'bob',
+                estimatedTimeInSecs: 60,
                 fees: {
                     amount: '0',
                     address: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
@@ -1258,6 +1258,10 @@ describe('Gateway Tests', () => {
                     address: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
                     chain: 'bob',
                 },
+                recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+                slippage: 100,
+                srcChain: 'ethereum',
+                txTo: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
             },
         };
 
@@ -1272,8 +1276,13 @@ describe('Gateway Tests', () => {
         nock(`${MAINNET_GATEWAY_BASE_URL}`)
             .post('/v2/create-order')
             .reply(200, {
-                layerZero: {
+                tokenSwap: {
                     order_id: 'layerzero-order-123',
+                    tx: {
+                        to: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
+                        data: '0xabcdef',
+                        value: '0',
+                    },
                 },
             });
 
@@ -1306,15 +1315,10 @@ describe('Gateway Tests', () => {
     });
 
     it('should skip allowance check for WBTC OFT token in layerzero swap', async () => {
-        const mockedQuote: GatewayQuoteOneOf2 = {
-            layerZero: {
-                recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
-                tx: {
-                    to: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
-                    data: '0xc7c7f5b3000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000016967ac72e86a000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000007596000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000186a000000000000000000000000000000000000000000000000000000000000186a000000000000000000000000000000000000000000000000000000000000000e000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000120000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000',
-                    value: '397368972470378',
-                    chain: 'bob',
-                },
+        const mockedQuote: GatewayQuoteV2OneOf2 = {
+            tokenSwap: {
+                dstChain: 'ethereum',
+                estimatedTimeInSecs: 60,
                 fees: {
                     amount: '0',
                     address: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
@@ -1330,6 +1334,10 @@ describe('Gateway Tests', () => {
                     address: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
                     chain: 'ethereum',
                 },
+                recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+                slippage: 100,
+                srcChain: 'bob',
+                txTo: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
             },
         };
 
@@ -1342,8 +1350,13 @@ describe('Gateway Tests', () => {
         nock(`${MAINNET_GATEWAY_BASE_URL}`)
             .post('/v2/create-order')
             .reply(200, {
-                layerZero: {
+                tokenSwap: {
                     order_id: 'layerzero-order-123',
+                    tx: {
+                        to: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
+                        data: '0xabcdef',
+                        value: '0',
+                    },
                 },
             });
 

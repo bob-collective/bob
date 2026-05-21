@@ -15,20 +15,20 @@
 
 import * as runtime from '../runtime';
 import type {
-  GatewayCreateOrder,
+  GatewayCreateOrderV2,
   GatewayError,
   GatewayErrorV2,
   GatewayMaxSpendable,
   GatewayOrderInfoV2,
   GatewayQuoteV2,
   PaginatedOrdersResponse,
-  RegisterTx,
   RegisterTxSuccess,
+  RegisterTxV2,
   RouteInfo,
 } from '../models/index';
 import {
-    GatewayCreateOrderFromJSON,
-    GatewayCreateOrderToJSON,
+    GatewayCreateOrderV2FromJSON,
+    GatewayCreateOrderV2ToJSON,
     GatewayErrorFromJSON,
     GatewayErrorToJSON,
     GatewayErrorV2FromJSON,
@@ -41,10 +41,10 @@ import {
     GatewayQuoteV2ToJSON,
     PaginatedOrdersResponseFromJSON,
     PaginatedOrdersResponseToJSON,
-    RegisterTxFromJSON,
-    RegisterTxToJSON,
     RegisterTxSuccessFromJSON,
     RegisterTxSuccessToJSON,
+    RegisterTxV2FromJSON,
+    RegisterTxV2ToJSON,
     RouteInfoFromJSON,
     RouteInfoToJSON,
 } from '../models/index';
@@ -82,8 +82,8 @@ export interface GetQuoteV2Request {
     affiliates?: string;
 }
 
-export interface RegisterTxRequest {
-    registerTx: RegisterTx;
+export interface RegisterTxV2Request {
+    registerTxV2: RegisterTxV2;
 }
 
 /**
@@ -95,7 +95,7 @@ export class V2Api extends runtime.BaseAPI {
      * Creates a new request, reserves the required liquidity.
      * Create a new gateway order.
      */
-    async createOrderV2Raw(requestParameters: CreateOrderV2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<GatewayCreateOrder>> {
+    async createOrderV2Raw(requestParameters: CreateOrderV2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<GatewayCreateOrderV2>> {
         if (requestParameters['gatewayQuoteV2'] == null) {
             throw new runtime.RequiredError(
                 'gatewayQuoteV2',
@@ -120,14 +120,14 @@ export class V2Api extends runtime.BaseAPI {
             body: GatewayQuoteV2ToJSON(requestParameters['gatewayQuoteV2']),
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => GatewayCreateOrderFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => GatewayCreateOrderV2FromJSON(jsonValue));
     }
 
     /**
      * Creates a new request, reserves the required liquidity.
      * Create a new gateway order.
      */
-    async createOrderV2(requestParameters: CreateOrderV2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<GatewayCreateOrder> {
+    async createOrderV2(requestParameters: CreateOrderV2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<GatewayCreateOrderV2> {
         const response = await this.createOrderV2Raw(requestParameters, initOverrides);
         return await response.value();
     }
@@ -439,14 +439,13 @@ export class V2Api extends runtime.BaseAPI {
     }
 
     /**
-     * Required for the Solver to track and execute some requests.
-     * Register a tx for a request.
+     * Register a tx for a request (V2 body includes token-swap route).
      */
-    async registerTxRaw(requestParameters: RegisterTxRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<RegisterTxSuccess>> {
-        if (requestParameters['registerTx'] == null) {
+    async registerTxV2Raw(requestParameters: RegisterTxV2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<RegisterTxSuccess>> {
+        if (requestParameters['registerTxV2'] == null) {
             throw new runtime.RequiredError(
-                'registerTx',
-                'Required parameter "registerTx" was null or undefined when calling registerTx().'
+                'registerTxV2',
+                'Required parameter "registerTxV2" was null or undefined when calling registerTxV2().'
             );
         }
 
@@ -472,18 +471,17 @@ export class V2Api extends runtime.BaseAPI {
             method: 'PATCH',
             headers: headerParameters,
             query: queryParameters,
-            body: RegisterTxToJSON(requestParameters['registerTx']),
+            body: RegisterTxV2ToJSON(requestParameters['registerTxV2']),
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => RegisterTxSuccessFromJSON(jsonValue));
     }
 
     /**
-     * Required for the Solver to track and execute some requests.
-     * Register a tx for a request.
+     * Register a tx for a request (V2 body includes token-swap route).
      */
-    async registerTx(requestParameters: RegisterTxRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<RegisterTxSuccess> {
-        const response = await this.registerTxRaw(requestParameters, initOverrides);
+    async registerTxV2(requestParameters: RegisterTxV2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<RegisterTxSuccess> {
+        const response = await this.registerTxV2Raw(requestParameters, initOverrides);
         return await response.value();
     }
 
