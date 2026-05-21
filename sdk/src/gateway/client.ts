@@ -207,7 +207,7 @@ export class GatewayApiClient {
                 amount: params.amount.toString(),
                 slippage: params.maxSlippage?.toString() || DEFAULT_MAX_SLIPPAGE_BPS,
                 gasRefill: params.gasRefill?.toString(),
-                affiliates: params.affiliateId,
+                affiliates: params.affiliateIds,
                 strategyTarget: params.strategyAddress,
                 strategyMessage: params.strategyMessage,
             },

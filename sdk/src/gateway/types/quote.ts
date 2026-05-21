@@ -22,8 +22,8 @@ export interface GatewayQuoteParams {
     amount: number | string | bigint; // NOTE: modified from Swing
     /** @description Maximum slippage percentage in bps */
     maxSlippage?: number;
-    /** @description Unique affiliate ID for tracking */
-    affiliateId?: string;
+    /** Comma-separated `address:bps` pairs, e.g. `0xRecipient…:50` or `0xA…:50,0xB…:25` */
+    affiliateIds?: string;
 
     // NOTE: the following are new fields added by us
     /** @description Amount of ETH to get to pay for fees */
