@@ -6,8 +6,33 @@ icon: "route"
 
 export const ROUTES_API = "https://gateway-api-mainnet.gobob.xyz/v1/get-routes";
 export const TOKENLIST_URL = "https://raw.githubusercontent.com/bob-collective/tokenlist/main/tokenlist.json";
-export const NON_EVM = { bitcoin: "BTC", aptos: "WBTC" };
+export const NON_EVM = { bitcoin: "BTC" };
 export const CHAIN_LABELS = { bsc: "BSC", bob: "BOB" };
+export const CHAIN_IDS = {
+  avalanche: 43114,
+  base: 8453,
+  bera: 80094,
+  bob: 60808,
+  bsc: 56,
+  ethereum: 1,
+  sei: 1329,
+  soneium: 1868,
+  sonic: 146,
+  unichain: 130,
+};
+export const EXPLORERS = {
+  avalanche: "https://snowscan.xyz",
+  base: "https://basescan.org",
+  bera: "https://berascan.com",
+  bob: "https://explorer.gobob.xyz",
+  bsc: "https://bscscan.com",
+  ethereum: "https://etherscan.io",
+  sei: "https://seitrace.com",
+  soneium: "https://soneium.blockscout.com",
+  sonic: "https://sonicscan.org",
+  unichain: "https://uniscan.xyz",
+};
+export const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
 export const cap = (s) => CHAIN_LABELS[s] || s[0].toUpperCase() + s.slice(1);
 export const truncate = (addr) => addr.slice(0, 6) + "\u2026" + addr.slice(-4);
@@ -27,7 +52,9 @@ export const SupportedRoutes = () => {
         return;
       }
       const map = {};
-      for (const t of tokens) map[t.address.toLowerCase()] = t.symbol;
+      for (const t of (tokens || [])) {
+        if (t.address) map[`${t.chainId}:${t.address.toLowerCase()}`] = t.symbol;
+      }
       setSymbols(map);
       setRoutes(routeData);
     });
@@ -38,8 +65,21 @@ export const SupportedRoutes = () => {
 
   const sym = (chain, addr) => {
     if (NON_EVM[chain]) return NON_EVM[chain];
-    if (symbols[addr.toLowerCase()]) return symbols[addr.toLowerCase()];
-    return truncate(addr);
+    const chainId = CHAIN_IDS[chain];
+    if (chainId && addr) {
+      const key = `${chainId}:${addr.toLowerCase()}`;
+      if (symbols[key]) return symbols[key];
+    }
+    return addr ? truncate(addr) : "";
+  };
+
+  const addressCell = (chain, addr) => {
+    if (!addr) return "";
+    const lowerAddr = addr.toLowerCase();
+    if (lowerAddr === ZERO_ADDRESS) return truncate(addr);
+    const base = EXPLORERS[chain];
+    if (!base) return truncate(addr);
+    return <a href={`${base}/address/${addr}`} target="_blank" rel="noreferrer">{truncate(addr)}</a>;
   };
 
   const groups = {};
@@ -71,10 +111,10 @@ export const SupportedRoutes = () => {
                 {rows.map((r, i) => (
                   <tr key={i}>
                     <td>{sym(r.srcChain, r.srcToken)}</td>
-                    <td>{NON_EVM[r.srcChain] ? "" : truncate(r.srcToken)}</td>
+                    <td>{addressCell(r.srcChain, r.srcToken)}</td>
                     <td>{cap(r.dstChain)}</td>
                     <td>{sym(r.dstChain, r.dstToken)}</td>
-                    <td>{NON_EVM[r.dstChain] ? "" : truncate(r.dstToken)}</td>
+                    <td>{addressCell(r.dstChain, r.dstToken)}</td>
                   </tr>
                 ))}
               </tbody>
