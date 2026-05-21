@@ -10,11 +10,11 @@
   },
   "servers": [
     {
-      "url": "http://localhost:3000",
+      "url": "https://gateway-api-mainnet.gobob.xyz",
       "description": "Production"
     },
     {
-      "url": "http://localhost:3000",
+      "url": "https://gateway-api-staging.gobob.xyz",
       "description": "Staging"
     }
   ],
@@ -477,7 +477,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GatewayCreateOrderV2"
+                  "$ref": "#/components/schemas/GatewayCreateOrder"
                 }
               }
             }
@@ -854,13 +854,14 @@
         "tags": [
           "v2"
         ],
-        "summary": "Register a tx for a request (V2 body includes token-swap route).",
-        "operationId": "register_tx_v2",
+        "summary": "Register a tx for a request.",
+        "description": "Required for the Solver to track and execute some requests.",
+        "operationId": "register_tx",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/RegisterTxV2"
+                "$ref": "#/components/schemas/RegisterTx"
               }
             }
           },
@@ -1020,103 +1021,6 @@
         ],
         "description": "Created new Gateway order"
       },
-      "GatewayCreateOrderV2": {
-        "oneOf": [
-          {
-            "type": "object",
-            "required": [
-              "onramp"
-            ],
-            "properties": {
-              "onramp": {
-                "type": "object",
-                "required": [
-                  "order_id",
-                  "address"
-                ],
-                "properties": {
-                  "address": {
-                    "type": "string",
-                    "description": "Bitcoin address to pay to"
-                  },
-                  "op_return_data": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
-                    "description": "Optional OP_RETURN data"
-                  },
-                  "order_id": {
-                    "type": "string",
-                    "description": "Unique order id",
-                    "example": "f81d4fae-7dec-11d0-a765-00a0c91e6bf6"
-                  },
-                  "psbt_hex": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
-                    "description": "Hex-encoded Bitcoin PSBT (only present when sender address was provided)"
-                  }
-                }
-              }
-            }
-          },
-          {
-            "type": "object",
-            "required": [
-              "offramp"
-            ],
-            "properties": {
-              "offramp": {
-                "type": "object",
-                "required": [
-                  "order_id",
-                  "tx"
-                ],
-                "properties": {
-                  "order_id": {
-                    "type": "string",
-                    "description": "Unique order id",
-                    "example": "f81d4fae-7dec-11d0-a765-00a0c91e6bf6"
-                  },
-                  "tx": {
-                    "$ref": "#/components/schemas/TxInfo",
-                    "description": "Tx info to execute the swap"
-                  }
-                }
-              }
-            }
-          },
-          {
-            "type": "object",
-            "required": [
-              "tokenSwap"
-            ],
-            "properties": {
-              "tokenSwap": {
-                "type": "object",
-                "required": [
-                  "order_id",
-                  "tx"
-                ],
-                "properties": {
-                  "order_id": {
-                    "type": "string",
-                    "description": "Unique order id",
-                    "example": "f81d4fae-7dec-11d0-a765-00a0c91e6bf6"
-                  },
-                  "tx": {
-                    "$ref": "#/components/schemas/TxInfo",
-                    "description": "Tx info to execute the swap"
-                  }
-                }
-              }
-            }
-          }
-        ],
-        "description": "V2 create-order response"
-      },
       "GatewayError": {
         "type": "object",
         "description": "Structured error response for V1 API.\nContains an error code, human-readable message, and optional structured details.",
@@ -1192,8 +1096,7 @@
         "description": "New error codes for V2.",
         "enum": [
           "INVALID_CURSOR",
-          "INSUFFICIENT_SOLVER_BALANCE",
-          "AFFILIATE_FEES_NOT_SUPPORTED_FOR_ROUTE"
+          "INSUFFICIENT_SOLVER_BALANCE"
         ]
       },
       "GatewayErrorDetails": {
@@ -1313,114 +1216,16 @@
       "GatewayErrorDetailsV2": {
         "oneOf": [
           {
-            "type": "object",
-            "required": [
-              "expected",
-              "actual"
-            ],
-            "properties": {
-              "actual": {
-                "type": "string"
-              },
-              "expected": {
-                "type": "string"
-              }
-            }
+            "$ref": "#/components/schemas/GatewayErrorDetails"
           },
           {
-            "type": "object",
-            "required": [
-              "required",
-              "available"
-            ],
-            "properties": {
-              "available": {
-                "type": "string"
-              },
-              "required": {
-                "type": "string"
-              }
-            }
-          },
-          {
-            "type": "object",
-            "required": [
-              "total_fees",
-              "available_amount"
-            ],
-            "properties": {
-              "available_amount": {
-                "type": "string"
-              },
-              "total_fees": {
-                "type": "string"
-              }
-            }
-          },
-          {
-            "type": "object",
-            "properties": {
-              "tenderly_url": {
-                "type": [
-                  "string",
-                  "null"
-                ]
-              }
-            }
-          },
-          {
-            "type": "object",
-            "required": [
-              "src_chain",
-              "src_token",
-              "dst_chain",
-              "dst_token"
-            ],
-            "properties": {
-              "dst_chain": {
-                "type": "string"
-              },
-              "dst_token": {
-                "type": "string"
-              },
-              "src_chain": {
-                "type": "string"
-              },
-              "src_token": {
-                "type": "string"
-              }
-            }
-          },
-          {
-            "type": "object",
-            "required": [
-              "limit"
-            ],
-            "properties": {
-              "limit": {
-                "type": "string"
-              }
-            }
-          },
-          {
-            "type": "null",
-            "default": null
-          },
-          {
-            "type": "object",
-            "required": [
-              "minimum",
-              "actual"
-            ],
-            "properties": {
-              "actual": {
-                "type": "string"
-              },
-              "minimum": {
-                "type": "string"
-              }
-            }
-          },
+            "$ref": "#/components/schemas/GatewayErrorDetailsV2Variants"
+          }
+        ],
+        "description": "Structured details for V2 error types - includes all V1 details plus new ones."
+      },
+      "GatewayErrorDetailsV2Variants": {
+        "oneOf": [
           {
             "type": "object",
             "required": [
@@ -1439,32 +1244,8 @@
                 "type": "string"
               }
             }
-          },
-          {
-            "type": "object",
-            "required": [
-              "src_chain",
-              "src_token",
-              "dst_chain",
-              "dst_token"
-            ],
-            "properties": {
-              "dst_chain": {
-                "type": "string"
-              },
-              "dst_token": {
-                "type": "string"
-              },
-              "src_chain": {
-                "type": "string"
-              },
-              "src_token": {
-                "type": "string"
-              }
-            }
           }
-        ],
-        "description": "Structured details for V2 error types - all V1 variants plus V2-only ones.\n\nKept as a single flat `oneOf` (not nested under V1/V2 wrappers) so OpenAPI clients\n(e.g. typescript-fetch) can generate type guards correctly."
+        ]
       },
       "GatewayErrorV2": {
         "type": "object",
@@ -1579,34 +1360,6 @@
           }
         }
       },
-      "GatewayOfframpFeeBreakdownV2": {
-        "type": "object",
-        "description": "V2 offramp fee breakdown. Same shape as V1 but each line carries USD.",
-        "required": [
-          "solverFee",
-          "inclusionFee",
-          "protocolFee",
-          "affiliateFee",
-          "fastestFeeRate"
-        ],
-        "properties": {
-          "affiliateFee": {
-            "$ref": "#/components/schemas/GatewayTokenAmountV2"
-          },
-          "fastestFeeRate": {
-            "type": "string"
-          },
-          "inclusionFee": {
-            "$ref": "#/components/schemas/GatewayTokenAmountV2"
-          },
-          "protocolFee": {
-            "$ref": "#/components/schemas/GatewayTokenAmountV2"
-          },
-          "solverFee": {
-            "$ref": "#/components/schemas/GatewayTokenAmountV2"
-          }
-        }
-      },
       "GatewayOfframpQuote": {
         "type": "object",
         "required": [
@@ -1711,27 +1464,13 @@
             "minimum": 0
           },
           "feeBreakdown": {
-            "$ref": "#/components/schemas/GatewayOfframpFeeBreakdownV2"
+            "$ref": "#/components/schemas/GatewayOfframpFeeBreakdown"
           },
           "inputAmount": {
-            "$ref": "#/components/schemas/GatewayTokenAmountV2"
+            "$ref": "#/components/schemas/GatewayTokenAmount"
           },
           "outputAmount": {
-            "$ref": "#/components/schemas/GatewayTokenAmountV2"
-          },
-          "priceImpact": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "Price impact as a fraction, e.g. `\"-0.05\"` means 5% loss. Absent if no price feed is\navailable."
-          },
-          "priceImpactUsd": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "Price impact in USD, excluding execution fee. E.g. `\"-1.00\"` means $1 loss. Absent if no\nprice feed is available."
+            "$ref": "#/components/schemas/GatewayTokenAmount"
           },
           "recipient": {
             "type": "string"
@@ -1785,33 +1524,6 @@
           },
           "solverFee": {
             "$ref": "#/components/schemas/GatewayTokenAmount"
-          }
-        }
-      },
-      "GatewayOnrampFeeBreakdownV2": {
-        "type": "object",
-        "required": [
-          "solverFee",
-          "protocolFee",
-          "affiliateFee",
-          "executionFee",
-          "layerzeroFee"
-        ],
-        "properties": {
-          "affiliateFee": {
-            "$ref": "#/components/schemas/GatewayTokenAmountV2"
-          },
-          "executionFee": {
-            "$ref": "#/components/schemas/GatewayTokenAmountV2"
-          },
-          "layerzeroFee": {
-            "$ref": "#/components/schemas/GatewayTokenAmountV2"
-          },
-          "protocolFee": {
-            "$ref": "#/components/schemas/GatewayTokenAmountV2"
-          },
-          "solverFee": {
-            "$ref": "#/components/schemas/GatewayTokenAmountV2"
           }
         }
       },
@@ -1968,15 +1680,15 @@
             "minimum": 0
           },
           "executionFees": {
-            "$ref": "#/components/schemas/GatewayTokenAmountV2",
+            "$ref": "#/components/schemas/GatewayTokenAmount",
             "description": "Cost to execute the onramp on-chain"
           },
           "feeBreakdown": {
-            "$ref": "#/components/schemas/GatewayOnrampFeeBreakdownV2",
+            "$ref": "#/components/schemas/GatewayOnrampFeeBreakdown",
             "description": "Detailed fee breakdown"
           },
           "fees": {
-            "$ref": "#/components/schemas/GatewayTokenAmountV2",
+            "$ref": "#/components/schemas/GatewayTokenAmount",
             "description": "Total fees for this swap"
           },
           "gasRefill": {
@@ -1987,26 +1699,12 @@
             "description": "Optional gas refill amount"
           },
           "inputAmount": {
-            "$ref": "#/components/schemas/GatewayTokenAmountV2",
+            "$ref": "#/components/schemas/GatewayTokenAmount",
             "description": "Amount requested by the user"
           },
           "outputAmount": {
-            "$ref": "#/components/schemas/GatewayTokenAmountV2",
+            "$ref": "#/components/schemas/GatewayTokenAmount",
             "description": "Final amount after fees"
-          },
-          "priceImpact": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "Price impact as a fraction, e.g. `\"-0.05\"` means 5% loss. Absent if no price feed is\navailable."
-          },
-          "priceImpactUsd": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "Price impact in USD, excluding execution fee. E.g. `\"-1.00\"` means $1 loss. Absent if no\nprice feed is available."
           },
           "recipient": {
             "type": "string",
@@ -2372,11 +2070,11 @@
           {
             "type": "object",
             "required": [
-              "tokenSwap"
+              "layerZero"
             ],
             "properties": {
-              "tokenSwap": {
-                "$ref": "#/components/schemas/GatewayTokenSwapQuoteV2"
+              "layerZero": {
+                "$ref": "#/components/schemas/GatewayLayerZeroQuote"
               }
             }
           }
@@ -2398,100 +2096,6 @@
             "type": "string"
           },
           "chain": {
-            "type": "string"
-          }
-        }
-      },
-      "GatewayTokenAmountV2": {
-        "type": "object",
-        "required": [
-          "amount",
-          "address",
-          "chain"
-        ],
-        "properties": {
-          "address": {
-            "type": "string"
-          },
-          "amount": {
-            "type": "string"
-          },
-          "chain": {
-            "type": "string"
-          },
-          "usd": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "USD value of `amount`, absent if no price feed is available."
-          }
-        }
-      },
-      "GatewayTokenSwapQuoteV2": {
-        "type": "object",
-        "required": [
-          "srcChain",
-          "dstChain",
-          "inputAmount",
-          "outputAmount",
-          "estimatedTimeInSecs",
-          "recipient",
-          "slippage",
-          "fees",
-          "txTo"
-        ],
-        "properties": {
-          "dstChain": {
-            "type": "string"
-          },
-          "estimatedTimeInSecs": {
-            "type": "integer",
-            "format": "int64",
-            "description": "Estimated time in secs to complete the Order",
-            "minimum": 0
-          },
-          "fees": {
-            "$ref": "#/components/schemas/GatewayTokenAmountV2"
-          },
-          "inputAmount": {
-            "$ref": "#/components/schemas/GatewayTokenAmountV2"
-          },
-          "outputAmount": {
-            "$ref": "#/components/schemas/GatewayTokenAmountV2"
-          },
-          "priceImpact": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "Price impact as a fraction, e.g. `\"-0.05\"` means 5% loss. Absent if no price feed is\navailable."
-          },
-          "priceImpactUsd": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "Price impact in USD, excluding execution fee. E.g. `\"-1.00\"` means $1 loss. Absent if no\nprice feed is available."
-          },
-          "recipient": {
-            "type": "string"
-          },
-          "sender": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "slippage": {
-            "type": "integer",
-            "format": "int32",
-            "minimum": 0
-          },
-          "srcChain": {
-            "type": "string"
-          },
-          "txTo": {
             "type": "string"
           }
         }
@@ -2695,98 +2299,6 @@
           }
         ]
       },
-      "RegisterTxV2": {
-        "oneOf": [
-          {
-            "type": "object",
-            "required": [
-              "onramp"
-            ],
-            "properties": {
-              "onramp": {
-                "type": "object",
-                "required": [
-                  "order_id"
-                ],
-                "properties": {
-                  "bitcoin_tx_hex": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
-                    "description": "Hex-encoded full Bitcoin transaction"
-                  },
-                  "bitcoin_txid": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
-                    "description": "Bitcoin transaction ID (txid)"
-                  },
-                  "order_id": {
-                    "type": "string",
-                    "description": "Unique order id",
-                    "example": "f81d4fae-7dec-11d0-a765-00a0c91e6bf6"
-                  }
-                }
-              }
-            }
-          },
-          {
-            "type": "object",
-            "required": [
-              "offramp"
-            ],
-            "properties": {
-              "offramp": {
-                "type": "object",
-                "required": [
-                  "order_id",
-                  "evm_txhash"
-                ],
-                "properties": {
-                  "evm_txhash": {
-                    "type": "string",
-                    "description": "EVM txhash"
-                  },
-                  "order_id": {
-                    "type": "string",
-                    "description": "Unique order id",
-                    "example": "f81d4fae-7dec-11d0-a765-00a0c91e6bf6"
-                  }
-                }
-              }
-            }
-          },
-          {
-            "type": "object",
-            "required": [
-              "tokenSwap"
-            ],
-            "properties": {
-              "tokenSwap": {
-                "type": "object",
-                "required": [
-                  "order_id",
-                  "evm_txhash"
-                ],
-                "properties": {
-                  "evm_txhash": {
-                    "type": "string",
-                    "description": "EVM txhash"
-                  },
-                  "order_id": {
-                    "type": "string",
-                    "description": "Unique order id",
-                    "example": "f81d4fae-7dec-11d0-a765-00a0c91e6bf6"
-                  }
-                }
-              }
-            }
-          }
-        ],
-        "description": "V2 register-tx body (onramp, offramp, and token swap)."
-      },
       "ResolvedAffiliate": {
         "type": "object",
         "description": "Resolved affiliate returned in V2 responses. Includes the computed fee amount in\ninventory asset units (sats for wBTC, 6-decimal units for USDT).",
@@ -2800,7 +2312,7 @@
             "description": "Affiliate recipient address."
           },
           "fee": {
-            "$ref": "#/components/schemas/GatewayTokenAmountV2",
+            "$ref": "#/components/schemas/GatewayTokenAmount",
             "description": "Computed affiliate fee in the inventory asset smallest unit."
           }
         }
