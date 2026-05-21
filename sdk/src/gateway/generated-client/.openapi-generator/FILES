@@ -30,9 +30,11 @@ models/GatewayErrorV2.ts
 models/GatewayLayerZeroQuote.ts
 models/GatewayMaxSpendable.ts
 models/GatewayOfframpFeeBreakdown.ts
+models/GatewayOfframpFeeBreakdownV2.ts
 models/GatewayOfframpQuote.ts
 models/GatewayOfframpQuoteV2.ts
 models/GatewayOnrampFeeBreakdown.ts
+models/GatewayOnrampFeeBreakdownV2.ts
 models/GatewayOnrampQuote.ts
 models/GatewayOnrampQuoteV2.ts
 models/GatewayOrderInfo.ts
@@ -58,6 +60,7 @@ models/GatewayQuoteV2OneOf.ts
 models/GatewayQuoteV2OneOf1.ts
 models/GatewayQuoteV2OneOf2.ts
 models/GatewayTokenAmount.ts
+models/GatewayTokenAmountV2.ts
 models/GatewayTokenSwapQuoteV2.ts
 models/GatewayUserTokenTransfer.ts
 models/OrderDestinationInfo.ts

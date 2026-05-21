@@ -13,13 +13,13 @@
  */
 
 import { mapValues } from '../runtime';
-import type { GatewayTokenAmount } from './GatewayTokenAmount';
+import type { GatewayTokenAmountV2 } from './GatewayTokenAmountV2';
 import {
-    GatewayTokenAmountFromJSON,
-    GatewayTokenAmountFromJSONTyped,
-    GatewayTokenAmountToJSON,
-    GatewayTokenAmountToJSONTyped,
-} from './GatewayTokenAmount';
+    GatewayTokenAmountV2FromJSON,
+    GatewayTokenAmountV2FromJSONTyped,
+    GatewayTokenAmountV2ToJSON,
+    GatewayTokenAmountV2ToJSONTyped,
+} from './GatewayTokenAmountV2';
 
 /**
  * Resolved affiliate returned in V2 responses. Includes the computed fee amount in
@@ -36,10 +36,10 @@ export interface ResolvedAffiliate {
     address: string;
     /**
      * Computed affiliate fee in the inventory asset smallest unit.
-     * @type {GatewayTokenAmount}
+     * @type {GatewayTokenAmountV2}
      * @memberof ResolvedAffiliate
      */
-    fee: GatewayTokenAmount;
+    fee: GatewayTokenAmountV2;
 }
 
 /**
@@ -62,7 +62,7 @@ export function ResolvedAffiliateFromJSONTyped(json: any, ignoreDiscriminator: b
     return {
         
         'address': json['address'],
-        'fee': GatewayTokenAmountFromJSON(json['fee']),
+        'fee': GatewayTokenAmountV2FromJSON(json['fee']),
     };
 }
 
@@ -78,7 +78,7 @@ export function ResolvedAffiliateToJSONTyped(value?: ResolvedAffiliate | null, i
     return {
         
         'address': value['address'],
-        'fee': GatewayTokenAmountToJSON(value['fee']),
+        'fee': GatewayTokenAmountV2ToJSON(value['fee']),
     };
 }
 

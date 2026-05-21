@@ -13,13 +13,13 @@
  */
 
 import { mapValues } from '../runtime';
-import type { GatewayTokenAmount } from './GatewayTokenAmount';
+import type { GatewayTokenAmountV2 } from './GatewayTokenAmountV2';
 import {
-    GatewayTokenAmountFromJSON,
-    GatewayTokenAmountFromJSONTyped,
-    GatewayTokenAmountToJSON,
-    GatewayTokenAmountToJSONTyped,
-} from './GatewayTokenAmount';
+    GatewayTokenAmountV2FromJSON,
+    GatewayTokenAmountV2FromJSONTyped,
+    GatewayTokenAmountV2ToJSON,
+    GatewayTokenAmountV2ToJSONTyped,
+} from './GatewayTokenAmountV2';
 
 /**
  * 
@@ -41,22 +41,36 @@ export interface GatewayTokenSwapQuoteV2 {
     estimatedTimeInSecs: number;
     /**
      * 
-     * @type {GatewayTokenAmount}
+     * @type {GatewayTokenAmountV2}
      * @memberof GatewayTokenSwapQuoteV2
      */
-    fees: GatewayTokenAmount;
+    fees: GatewayTokenAmountV2;
     /**
      * 
-     * @type {GatewayTokenAmount}
+     * @type {GatewayTokenAmountV2}
      * @memberof GatewayTokenSwapQuoteV2
      */
-    inputAmount: GatewayTokenAmount;
+    inputAmount: GatewayTokenAmountV2;
     /**
      * 
-     * @type {GatewayTokenAmount}
+     * @type {GatewayTokenAmountV2}
      * @memberof GatewayTokenSwapQuoteV2
      */
-    outputAmount: GatewayTokenAmount;
+    outputAmount: GatewayTokenAmountV2;
+    /**
+     * Price impact as a fraction, e.g. `"-0.05"` means 5% loss. Absent if no price feed is
+     * available.
+     * @type {string}
+     * @memberof GatewayTokenSwapQuoteV2
+     */
+    priceImpact?: string | null;
+    /**
+     * Price impact in USD, excluding execution fee. E.g. `"-1.00"` means $1 loss. Absent if no
+     * price feed is available.
+     * @type {string}
+     * @memberof GatewayTokenSwapQuoteV2
+     */
+    priceImpactUsd?: string | null;
     /**
      * 
      * @type {string}
@@ -117,9 +131,11 @@ export function GatewayTokenSwapQuoteV2FromJSONTyped(json: any, ignoreDiscrimina
         
         'dstChain': json['dstChain'],
         'estimatedTimeInSecs': json['estimatedTimeInSecs'],
-        'fees': GatewayTokenAmountFromJSON(json['fees']),
-        'inputAmount': GatewayTokenAmountFromJSON(json['inputAmount']),
-        'outputAmount': GatewayTokenAmountFromJSON(json['outputAmount']),
+        'fees': GatewayTokenAmountV2FromJSON(json['fees']),
+        'inputAmount': GatewayTokenAmountV2FromJSON(json['inputAmount']),
+        'outputAmount': GatewayTokenAmountV2FromJSON(json['outputAmount']),
+        'priceImpact': json['priceImpact'] == null ? undefined : json['priceImpact'],
+        'priceImpactUsd': json['priceImpactUsd'] == null ? undefined : json['priceImpactUsd'],
         'recipient': json['recipient'],
         'sender': json['sender'] == null ? undefined : json['sender'],
         'slippage': json['slippage'],
@@ -141,9 +157,11 @@ export function GatewayTokenSwapQuoteV2ToJSONTyped(value?: GatewayTokenSwapQuote
         
         'dstChain': value['dstChain'],
         'estimatedTimeInSecs': value['estimatedTimeInSecs'],
-        'fees': GatewayTokenAmountToJSON(value['fees']),
-        'inputAmount': GatewayTokenAmountToJSON(value['inputAmount']),
-        'outputAmount': GatewayTokenAmountToJSON(value['outputAmount']),
+        'fees': GatewayTokenAmountV2ToJSON(value['fees']),
+        'inputAmount': GatewayTokenAmountV2ToJSON(value['inputAmount']),
+        'outputAmount': GatewayTokenAmountV2ToJSON(value['outputAmount']),
+        'priceImpact': value['priceImpact'],
+        'priceImpactUsd': value['priceImpactUsd'],
         'recipient': value['recipient'],
         'sender': value['sender'],
         'slippage': value['slippage'],
