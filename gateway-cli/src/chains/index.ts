@@ -1,4 +1,4 @@
-import type { RegisterTx } from '@gobob/bob-sdk';
+import type { RegisterTxV2 } from '@gobob/bob-sdk';
 import { getSdk } from '../config.js';
 import { getRoutes, getUniqueChains, getTokensForChain } from '../util/route-provider.js';
 import { getBtcBalance, deriveBtcAddress, resolveBtcSigner } from './bitcoin.js';
@@ -145,21 +145,21 @@ export async function resolveRecipient(
 
 /**
  * Build a registration payload for linking a transaction to an order.
- * Format depends on swap type: onramp (BTC→EVM), offramp (EVM→BTC), or layerZero (EVM→EVM).
+ * Format depends on swap type: onramp (BTC→EVM), offramp (EVM→BTC), or tokenSwap (EVM→EVM).
  */
 export function buildRegisterPayload(
   srcChain: string,
   dstChain: string,
   orderId: string,
   txId: string,
-): RegisterTx {
+): RegisterTxV2 {
   if (getChainFamily(srcChain) === 'bitcoin') {
     return { onramp: { orderId, bitcoinTxHex: txId } };
   }
   if (getChainFamily(dstChain) === 'bitcoin') {
     return { offramp: { orderId, evmTxhash: txId } };
   }
-  return { layerZero: { orderId, evmTxhash: txId } };
+  return { tokenSwap: { orderId, evmTxhash: txId } };
 }
 
 // Re-export for direct access
