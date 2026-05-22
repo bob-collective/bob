@@ -32,7 +32,7 @@ import {
     instanceOfRegisterTxOneOf,
     PaginatedOrdersResponse,
     type RouteInfo,
-    V2Api
+    V2Api,
 } from './generated-client';
 import type { GatewayError as GatewayErrorInterface } from './generated-client/models/GatewayError';
 import type { BitcoinSigner, GetQuoteParams, StrategyParams } from './types';
@@ -57,7 +57,6 @@ export const DEFAULT_MAX_SLIPPAGE_BPS = '300';
  * @default "https://gateway-api-staging.gobob.xyz"
  */
 export const STAGING_GATEWAY_BASE_URL = 'https://gateway-api-staging.gobob.xyz';
-
 
 interface EvmWalletClientParams {
     /**
@@ -397,7 +396,8 @@ export class GatewayApiClient {
             }
 
             const needsApproval = preCheckAllowance < requiredAmount;
-            const needsReset = needsApproval && isAddressEqual(tokenAddress, ETHEREUM_USDT_ADDRESS) && preCheckAllowance !== 0n;
+            const needsReset =
+                needsApproval && isAddressEqual(tokenAddress, ETHEREUM_USDT_ADDRESS) && preCheckAllowance !== 0n;
 
             const order = await this.api.createOrderV2({
                 gatewayQuoteV2: { tokenSwap: quote.tokenSwap },

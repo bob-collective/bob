@@ -111,9 +111,9 @@ export type DetailsFor<C extends GatewayErrorCode | GatewayErrorCodeV2> = C exte
  * }
  * ```
  */
-export class GatewayError<C extends GatewayErrorCode | GatewayErrorCodeV2 = GatewayErrorCode | GatewayErrorCodeV2>
-    extends Error
-{
+export class GatewayError<
+    C extends GatewayErrorCode | GatewayErrorCodeV2 = GatewayErrorCode | GatewayErrorCodeV2,
+> extends Error {
     /** Stable error code, safe to switch/match on. */
     readonly code: C;
 
@@ -184,7 +184,9 @@ export class GatewayError<C extends GatewayErrorCode | GatewayErrorCodeV2 = Gate
  * When you narrow on `.code` (via `switch` or `===`), TypeScript resolves
  * `.details` to the matching detail interface automatically.
  */
-export type AnyGatewayError = { [C in GatewayErrorCode]: GatewayError<C> }[GatewayErrorCode] | { [C2 in GatewayErrorCodeV2]: GatewayError<C2> }[GatewayErrorCodeV2];
+export type AnyGatewayError =
+    | { [C in GatewayErrorCode]: GatewayError<C> }[GatewayErrorCode]
+    | { [C2 in GatewayErrorCodeV2]: GatewayError<C2> }[GatewayErrorCodeV2];
 
 /**
  * Type guard that narrows `err` to {@link AnyGatewayError}.
@@ -212,7 +214,10 @@ export function isGatewayError(err: unknown): err is AnyGatewayError {
 // Reads raw snake_case JSON fields directly, matching Rust serde output.
 // Each case corresponds to a GatewayErrorDetails enum variant in error.rs.
 
-function parseDetails<C extends GatewayErrorCode | GatewayErrorCodeV2>(code: C, raw: Record<string, unknown> | null): DetailsFor<C> {
+function parseDetails<C extends GatewayErrorCode | GatewayErrorCodeV2>(
+    code: C,
+    raw: Record<string, unknown> | null
+): DetailsFor<C> {
     switch (code) {
         // Rust: GatewayErrorDetails::InsufficientAmount { expected, actual }
         case GatewayErrorCode.InsufficientAmount:
@@ -260,7 +265,7 @@ function parseDetails<C extends GatewayErrorCode | GatewayErrorCodeV2>(code: C, 
                 token: String(raw?.token ?? ''),
                 chainId: String(raw?.chain_id ?? ''),
             } satisfies InsufficientSolverBalanceDetails as DetailsFor<C>;
-                
+
         // Rust: GatewayErrorDetails::ExceededLimit { limit }
         case GatewayErrorCode.ExceededLimit:
             return {
