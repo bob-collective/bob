@@ -1,5 +1,5 @@
 import { MempoolClient } from "@gobob/bob-sdk";
-import type { BitcoinSigner, GetQuoteParams, GatewayCreateOrder } from "@gobob/bob-sdk";
+import type { BitcoinSigner, GetQuoteParams, GatewayCreateOrderV2 } from "@gobob/bob-sdk";
 import { getInnerQuoteV2 } from "../util/quote-v2.js";
 import { type WalletClient, type PublicClient } from "viem";
 import pRetry, { AbortError } from "p-retry";
@@ -113,10 +113,10 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
   const TRANSIENT = [/TRM screening/i, /429/, /Too Many Requests/i, /rate limit/i, /not yet propagated/i, /BTC propagation/i, /timeout/i, /ECONNRESET/, /ETIMEDOUT/];
   const isTransient = (e: unknown) => TRANSIENT.some(p => p.test(e instanceof Error ? e.message : String(e)));
 
-  // Determine variant from chain families: bitcoin src = onramp, bitcoin dst = offramp, else layerZero
+  // Determine variant from chain families: bitcoin src = onramp, bitcoin dst = offramp, else tokenSwap
   const variant = srcFamily === "bitcoin" ? "onramp"
     : getChainFamily(dstAsset.chain) === "bitcoin" ? "offramp"
-    : "layerZero";
+    : "tokenSwap";
 
   // For BTC source, signer holds a BitcoinSigner; for EVM, walletClient + publicClient.
   const btcSigner = !opts.unsigned && variant === "onramp"
@@ -149,7 +149,7 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
   // --unsigned has no public SDK path: executeQuote always signs.
   // Use the V2 API directly to fetch the order with its PSBT (BTC) or unsigned tx (EVM).
   if (opts.unsigned) {
-    const order: GatewayCreateOrder = await pRetry(async () => {
+    const order: GatewayCreateOrderV2 = await pRetry(async () => {
       try {
         const quote = await sdk.getQuote(quoteParams);
         return await getApi().createOrderV2({ gatewayQuoteV2: quote });

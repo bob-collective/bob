@@ -61,7 +61,7 @@ export function getSdk(): InstanceType<typeof GatewaySDK> {
  * Typed accessor for the SDK's underlying V2 generated client.
  *
  * The SDK marks its `api` field private and doesn't re-expose `createOrderV2`
- * or `registerTx` on the public surface, but we need both for the CLI's
+ * or `registerTxV2` on the public surface, but we need both for the CLI's
  * unsigned/manual signing flows. Centralize the privacy escape here so call
  * sites get full V2Api typing without sprinkling `any` around.
  */
