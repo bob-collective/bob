@@ -1,0 +1,129 @@
+---
+title: "Supported Routes & Assets"
+description: "All supported chains and token routes available through the BOB Gateway."
+icon: "route"
+---
+
+export const ROUTES_API = "https://gateway-api-mainnet.gobob.xyz/v1/get-routes";
+export const TOKENLIST_URL = "https://raw.githubusercontent.com/bob-collective/tokenlist/main/tokenlist.json";
+export const NON_EVM = { bitcoin: "BTC" };
+export const CHAIN_LABELS = { bsc: "BSC", bob: "BOB" };
+export const CHAIN_IDS = {
+  avalanche: 43114,
+  base: 8453,
+  bera: 80094,
+  bob: 60808,
+  bsc: 56,
+  ethereum: 1,
+  sei: 1329,
+  soneium: 1868,
+  sonic: 146,
+  unichain: 130,
+};
+export const EXPLORERS = {
+  avalanche: "https://snowscan.xyz",
+  base: "https://basescan.org",
+  bera: "https://berascan.com",
+  bob: "https://explorer.gobob.xyz",
+  bsc: "https://bscscan.com",
+  ethereum: "https://etherscan.io",
+  sei: "https://seitrace.com",
+  soneium: "https://soneium.blockscout.com",
+  sonic: "https://sonicscan.org",
+  unichain: "https://uniscan.xyz",
+};
+export const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+
+export const cap = (s) => CHAIN_LABELS[s] || s[0].toUpperCase() + s.slice(1);
+export const truncate = (addr) => addr.slice(0, 6) + "\u2026" + addr.slice(-4);
+
+export const SupportedRoutes = () => {
+  const [routes, setRoutes] = useState(null);
+  const [symbols, setSymbols] = useState({});
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    Promise.all([
+      fetch(ROUTES_API).then((r) => r.json()).catch(() => null),
+      fetch(TOKENLIST_URL).then((r) => r.json()).then((d) => d.tokens).catch(() => []),
+    ]).then(([routeData, tokens]) => {
+      if (!routeData) {
+        setError(true);
+        return;
+      }
+      const map = {};
+      for (const t of (tokens || [])) {
+        if (t.address) map[`${t.chainId}:${t.address.toLowerCase()}`] = t.symbol;
+      }
+      setSymbols(map);
+      setRoutes(routeData);
+    });
+  }, []);
+
+  if (error) return <p>Routes could not be loaded.</p>;
+  if (!routes) return <p>Loading routes…</p>;
+
+  const sym = (chain, addr) => {
+    if (NON_EVM[chain]) return NON_EVM[chain];
+    const chainId = CHAIN_IDS[chain];
+    if (chainId && addr) {
+      const key = `${chainId}:${addr.toLowerCase()}`;
+      if (symbols[key]) return symbols[key];
+    }
+    return addr ? truncate(addr) : "";
+  };
+
+  const addressCell = (chain, addr) => {
+    if (!addr) return "";
+    const lowerAddr = addr.toLowerCase();
+    if (lowerAddr === ZERO_ADDRESS) return truncate(addr);
+    const base = EXPLORERS[chain];
+    if (!base) return truncate(addr);
+    return <a href={`${base}/address/${addr}`} target="_blank" rel="noreferrer">{truncate(addr)}</a>;
+  };
+
+  const groups = {};
+  for (const r of routes) {
+    if (!groups[r.srcChain]) groups[r.srcChain] = [];
+    groups[r.srcChain].push(r);
+  }
+
+  return (
+    <div>
+      {Object.keys(groups).sort().map((chain) => {
+        const rows = groups[chain].sort((a, b) =>
+          a.dstChain.localeCompare(b.dstChain) || a.srcToken.localeCompare(b.srcToken)
+        );
+        return (
+          <div key={chain}>
+            <h2>From {cap(chain)}</h2>
+            <table>
+              <thead>
+                <tr>
+                  <th>Source Token</th>
+                  <th>Source Address</th>
+                  <th>Destination Chain</th>
+                  <th>Destination Token</th>
+                  <th>Destination Address</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((r, i) => (
+                  <tr key={i}>
+                    <td>{sym(r.srcChain, r.srcToken)}</td>
+                    <td>{addressCell(r.srcChain, r.srcToken)}</td>
+                    <td>{cap(r.dstChain)}</td>
+                    <td>{sym(r.dstChain, r.dstToken)}</td>
+                    <td>{addressCell(r.dstChain, r.dstToken)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+<SupportedRoutes />
