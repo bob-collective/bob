@@ -1,4 +1,7 @@
 import {
+    GatewayErrorCode,
+    GatewayErrorCodeV2Variants as GatewayErrorCodeV2,
+    GatewayErrorCodeV2Variants,
     GatewayErrorDetailsOneOf,
     GatewayErrorDetailsOneOf1,
     GatewayErrorDetailsOneOf2,
@@ -6,12 +9,13 @@ import {
     GatewayErrorDetailsOneOf4,
     GatewayErrorDetailsOneOf5,
     GatewayErrorDetailsOneOf6,
+    GatewayErrorDetailsV2OneOf,
+    GatewayErrorV2,
 } from '../generated-client';
 import type { GatewayError as GatewayErrorInterface } from '../generated-client/models/GatewayError';
 import { instanceOfGatewayError } from '../generated-client/models/GatewayError';
-import { GatewayErrorCode } from '../generated-client/models/GatewayErrorCode';
 
-export { GatewayErrorCode };
+export { GatewayErrorCode, GatewayErrorCodeV2 };
 
 // ─── Named detail interfaces (mirror the Rust GatewayErrorDetails enum) ──────
 
@@ -36,11 +40,14 @@ export type GasEstimateFailedDetails = GatewayErrorDetailsOneOf3;
 /** Details for {@link GatewayErrorCode.NoRoute} */
 export type NoRouteDetails = GatewayErrorDetailsOneOf4;
 
+/** Details for {@link GatewayErrorCodeV2.AffiliateFeesNotSupportedForRoute} */
+export type AffiliateFeesNotSupportedForRouteDetails = GatewayErrorDetailsOneOf4;
+
 /** Details for {@link GatewayErrorCode.ExceededLimit} */
 export type ExceededLimitDetails = GatewayErrorDetailsOneOf5;
 
-/** Details for {@link GatewayErrorCode.InsufficientSolverBalance} */
-export type InsufficientSolverBalanceDetails = GatewayErrorDetailsOneOf5;
+/** Details for {@link GatewayErrorCodeV2.InsufficientSolverBalance} */
+export type InsufficientSolverBalanceDetails = GatewayErrorDetailsV2OneOf;
 
 /** Details for {@link GatewayErrorCode.QuoteAmountTooLow} */
 export type QuoteAmountTooLowDetails = GatewayErrorDetailsOneOf6;
@@ -53,13 +60,14 @@ export type QuoteAmountTooLowDetails = GatewayErrorDetailsOneOf6;
  */
 export type GatewayErrorDetailsMap = {
     [GatewayErrorCode.InsufficientAmount]: InsufficientAmountDetails;
-    [GatewayErrorCode.InsufficientSolverBalance]: InsufficientSolverBalanceDetails;
+    [GatewayErrorCodeV2.InsufficientSolverBalance]: InsufficientSolverBalanceDetails;
     [GatewayErrorCode.InsufficientPaymentAmount]: InsufficientPaymentAmountDetails;
     [GatewayErrorCode.InsufficientSwapAmount]: InsufficientSwapAmountDetails;
     [GatewayErrorCode.UnableToCoverFees]: UnableToCoverFeesDetails;
     [GatewayErrorCode.SimulationFailed]: SimulationFailedDetails;
     [GatewayErrorCode.GasEstimateFailed]: GasEstimateFailedDetails;
     [GatewayErrorCode.NoRoute]: NoRouteDetails;
+    [GatewayErrorCodeV2.AffiliateFeesNotSupportedForRoute]: AffiliateFeesNotSupportedForRouteDetails;
     [GatewayErrorCode.ExceededLimit]: ExceededLimitDetails;
     [GatewayErrorCode.QuoteAmountTooLow]: QuoteAmountTooLowDetails;
 };
@@ -68,7 +76,7 @@ export type GatewayErrorDetailsMap = {
  * Resolves to the detail interface for a known code, or `null` for codes
  * that carry no structured details (e.g. `InternalError`, `InvalidRequest`).
  */
-export type DetailsFor<C extends GatewayErrorCode> = C extends keyof GatewayErrorDetailsMap
+export type DetailsFor<C extends GatewayErrorCode | GatewayErrorCodeV2> = C extends keyof GatewayErrorDetailsMap
     ? GatewayErrorDetailsMap[C]
     : null;
 
@@ -103,10 +111,9 @@ export type DetailsFor<C extends GatewayErrorCode> = C extends keyof GatewayErro
  * }
  * ```
  */
-export class GatewayError<C extends GatewayErrorCode = GatewayErrorCode>
-    extends Error
-    implements GatewayErrorInterface
-{
+export class GatewayError<
+    C extends GatewayErrorCode | GatewayErrorCodeV2 = GatewayErrorCode | GatewayErrorCodeV2,
+> extends Error {
     /** Stable error code, safe to switch/match on. */
     readonly code: C;
 
@@ -177,7 +184,9 @@ export class GatewayError<C extends GatewayErrorCode = GatewayErrorCode>
  * When you narrow on `.code` (via `switch` or `===`), TypeScript resolves
  * `.details` to the matching detail interface automatically.
  */
-export type AnyGatewayError = { [C in GatewayErrorCode]: GatewayError<C> }[GatewayErrorCode];
+export type AnyGatewayError =
+    | { [C in GatewayErrorCode]: GatewayError<C> }[GatewayErrorCode]
+    | { [C2 in GatewayErrorCodeV2]: GatewayError<C2> }[GatewayErrorCodeV2];
 
 /**
  * Type guard that narrows `err` to {@link AnyGatewayError}.
@@ -205,7 +214,10 @@ export function isGatewayError(err: unknown): err is AnyGatewayError {
 // Reads raw snake_case JSON fields directly, matching Rust serde output.
 // Each case corresponds to a GatewayErrorDetails enum variant in error.rs.
 
-function parseDetails<C extends GatewayErrorCode>(code: C, raw: Record<string, unknown> | null): DetailsFor<C> {
+function parseDetails<C extends GatewayErrorCode | GatewayErrorCodeV2>(
+    code: C,
+    raw: Record<string, unknown> | null
+): DetailsFor<C> {
     switch (code) {
         // Rust: GatewayErrorDetails::InsufficientAmount { expected, actual }
         case GatewayErrorCode.InsufficientAmount:
@@ -246,8 +258,15 @@ function parseDetails<C extends GatewayErrorCode>(code: C, raw: Record<string, u
                 dstToken: String(raw?.dst_token ?? ''),
             } satisfies NoRouteDetails as DetailsFor<C>;
 
-        // Rust: GatewayErrorDetails::ExceededLimit { limit }
+        // Rust: GatewayErrorDetailsV2::InsufficientSolverBalance { limit, token, chain_id },
         case GatewayErrorCode.InsufficientSolverBalance:
+            return {
+                limit: String(raw?.limit ?? ''),
+                token: String(raw?.token ?? ''),
+                chainId: String(raw?.chain_id ?? ''),
+            } satisfies InsufficientSolverBalanceDetails as DetailsFor<C>;
+
+        // Rust: GatewayErrorDetails::ExceededLimit { limit }
         case GatewayErrorCode.ExceededLimit:
             return {
                 limit: String(raw?.limit ?? ''),

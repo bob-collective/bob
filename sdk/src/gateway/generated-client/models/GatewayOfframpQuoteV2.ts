@@ -13,13 +13,20 @@
  */
 
 import { mapValues } from '../runtime';
-import type { GatewayOfframpFeeBreakdown } from './GatewayOfframpFeeBreakdown';
+import type { GatewayOfframpFeeBreakdownV2 } from './GatewayOfframpFeeBreakdownV2';
 import {
-    GatewayOfframpFeeBreakdownFromJSON,
-    GatewayOfframpFeeBreakdownFromJSONTyped,
-    GatewayOfframpFeeBreakdownToJSON,
-    GatewayOfframpFeeBreakdownToJSONTyped,
-} from './GatewayOfframpFeeBreakdown';
+    GatewayOfframpFeeBreakdownV2FromJSON,
+    GatewayOfframpFeeBreakdownV2FromJSONTyped,
+    GatewayOfframpFeeBreakdownV2ToJSON,
+    GatewayOfframpFeeBreakdownV2ToJSONTyped,
+} from './GatewayOfframpFeeBreakdownV2';
+import type { GatewayTokenAmountV2 } from './GatewayTokenAmountV2';
+import {
+    GatewayTokenAmountV2FromJSON,
+    GatewayTokenAmountV2FromJSONTyped,
+    GatewayTokenAmountV2ToJSON,
+    GatewayTokenAmountV2ToJSONTyped,
+} from './GatewayTokenAmountV2';
 import type { ResolvedAffiliate } from './ResolvedAffiliate';
 import {
     ResolvedAffiliateFromJSON,
@@ -27,13 +34,6 @@ import {
     ResolvedAffiliateToJSON,
     ResolvedAffiliateToJSONTyped,
 } from './ResolvedAffiliate';
-import type { GatewayTokenAmount } from './GatewayTokenAmount';
-import {
-    GatewayTokenAmountFromJSON,
-    GatewayTokenAmountFromJSONTyped,
-    GatewayTokenAmountToJSON,
-    GatewayTokenAmountToJSONTyped,
-} from './GatewayTokenAmount';
 
 /**
  * 
@@ -61,22 +61,36 @@ export interface GatewayOfframpQuoteV2 {
     estimatedTimeInSecs?: number | null;
     /**
      * 
-     * @type {GatewayOfframpFeeBreakdown}
+     * @type {GatewayOfframpFeeBreakdownV2}
      * @memberof GatewayOfframpQuoteV2
      */
-    feeBreakdown: GatewayOfframpFeeBreakdown;
+    feeBreakdown: GatewayOfframpFeeBreakdownV2;
     /**
      * 
-     * @type {GatewayTokenAmount}
+     * @type {GatewayTokenAmountV2}
      * @memberof GatewayOfframpQuoteV2
      */
-    inputAmount: GatewayTokenAmount;
+    inputAmount: GatewayTokenAmountV2;
     /**
      * 
-     * @type {GatewayTokenAmount}
+     * @type {GatewayTokenAmountV2}
      * @memberof GatewayOfframpQuoteV2
      */
-    outputAmount: GatewayTokenAmount;
+    outputAmount: GatewayTokenAmountV2;
+    /**
+     * Price impact as a fraction, e.g. `"-0.05"` means 5% loss. Absent if no price feed is
+     * available.
+     * @type {string}
+     * @memberof GatewayOfframpQuoteV2
+     */
+    priceImpact?: string | null;
+    /**
+     * Price impact in USD, excluding execution fee. E.g. `"-1.00"` means $1 loss. Absent if no
+     * price feed is available.
+     * @type {string}
+     * @memberof GatewayOfframpQuoteV2
+     */
+    priceImpactUsd?: string | null;
     /**
      * 
      * @type {string}
@@ -150,9 +164,11 @@ export function GatewayOfframpQuoteV2FromJSONTyped(json: any, ignoreDiscriminato
         'affiliateAddress': json['affiliateAddress'] == null ? undefined : json['affiliateAddress'],
         'affiliates': json['affiliates'] == null ? undefined : ((json['affiliates'] as Array<any>).map(ResolvedAffiliateFromJSON)),
         'estimatedTimeInSecs': json['estimatedTimeInSecs'] == null ? undefined : json['estimatedTimeInSecs'],
-        'feeBreakdown': GatewayOfframpFeeBreakdownFromJSON(json['feeBreakdown']),
-        'inputAmount': GatewayTokenAmountFromJSON(json['inputAmount']),
-        'outputAmount': GatewayTokenAmountFromJSON(json['outputAmount']),
+        'feeBreakdown': GatewayOfframpFeeBreakdownV2FromJSON(json['feeBreakdown']),
+        'inputAmount': GatewayTokenAmountV2FromJSON(json['inputAmount']),
+        'outputAmount': GatewayTokenAmountV2FromJSON(json['outputAmount']),
+        'priceImpact': json['priceImpact'] == null ? undefined : json['priceImpact'],
+        'priceImpactUsd': json['priceImpactUsd'] == null ? undefined : json['priceImpactUsd'],
         'recipient': json['recipient'],
         'sender': json['sender'] == null ? undefined : json['sender'],
         'slippage': json['slippage'],
@@ -177,9 +193,11 @@ export function GatewayOfframpQuoteV2ToJSONTyped(value?: GatewayOfframpQuoteV2 |
         'affiliateAddress': value['affiliateAddress'],
         'affiliates': value['affiliates'] == null ? undefined : ((value['affiliates'] as Array<any>).map(ResolvedAffiliateToJSON)),
         'estimatedTimeInSecs': value['estimatedTimeInSecs'],
-        'feeBreakdown': GatewayOfframpFeeBreakdownToJSON(value['feeBreakdown']),
-        'inputAmount': GatewayTokenAmountToJSON(value['inputAmount']),
-        'outputAmount': GatewayTokenAmountToJSON(value['outputAmount']),
+        'feeBreakdown': GatewayOfframpFeeBreakdownV2ToJSON(value['feeBreakdown']),
+        'inputAmount': GatewayTokenAmountV2ToJSON(value['inputAmount']),
+        'outputAmount': GatewayTokenAmountV2ToJSON(value['outputAmount']),
+        'priceImpact': value['priceImpact'],
+        'priceImpactUsd': value['priceImpactUsd'],
         'recipient': value['recipient'],
         'sender': value['sender'],
         'slippage': value['slippage'],
