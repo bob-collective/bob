@@ -35,7 +35,13 @@ import {
     V2Api,
 } from './generated-client';
 import type { GatewayError as GatewayErrorInterface } from './generated-client/models/GatewayError';
-import type { BitcoinSigner, GetQuoteParams, StrategyParams } from './types';
+import {
+    type BitcoinSigner,
+    type ExecuteQuoteStep,
+    ExecuteQuoteStepType,
+    type GetQuoteParams,
+    type StrategyParams,
+} from './types';
 import { formatBtc } from './utils';
 
 const RETRY_COUNT = 8; // Number of times to retry fetching transaction receipt after sending a transaction
@@ -226,7 +232,16 @@ export class GatewayApiClient {
      * @throws {Error} If required signers are missing or transaction fails
      */
     async executeQuote(
-        { quote, walletClient, publicClient, btcSigner }: { quote: GatewayQuoteV2 } & AllWalletClientParams,
+        {
+            quote,
+            walletClient,
+            publicClient,
+            btcSigner,
+            callback,
+        }: {
+            quote: GatewayQuoteV2;
+            callback?: (step: ExecuteQuoteStep) => void;
+        } & AllWalletClientParams,
         initOverrides?: RequestInit
     ): Promise<ExecuteQuoteResult> {
         if (instanceOfGatewayQuoteV2OneOf(quote)) {
@@ -245,6 +260,7 @@ export class GatewayApiClient {
 
             let bitcoinTxHex: string;
             if (btcSigner.sendBitcoin) {
+                callback?.({ step: 1, type: ExecuteQuoteStepType.SignBitcoinTransaction, totalSteps: 1 });
                 bitcoinTxHex = await btcSigner.sendBitcoin({
                     from: quote.onramp.sender,
                     to: order.onramp.address,
@@ -256,6 +272,7 @@ export class GatewayApiClient {
                 if (!order.onramp.psbtHex) {
                     throw new Error('PSBT not available: sender address is required when using signAllInputs');
                 }
+                callback?.({ step: 1, type: ExecuteQuoteStepType.SignBitcoinTransaction, totalSteps: 1 });
                 bitcoinTxHex = await btcSigner.signAllInputs(order.onramp.psbtHex);
             } else {
                 throw new Error('btcSigner must implement either sendBitcoin or signAllInputs method');
@@ -321,6 +338,8 @@ export class GatewayApiClient {
             const needsApproval = requiredAmount > allowance && !isAddressEqual(tokenAddress, zeroAddress);
             const needsReset = needsApproval && isAddressEqual(tokenAddress, ETHEREUM_USDT_ADDRESS) && allowance !== 0n;
 
+            const totalSteps = needsReset ? 3 : needsApproval ? 2 : 1;
+
             if (needsApproval) {
                 // To change the USDT approval, first set the allowance to 0 (approve(_spender, 0))
                 // to avoid the ERC20 race condition:
@@ -333,6 +352,7 @@ export class GatewayApiClient {
                         functionName: 'approve',
                         args: [spenderAddress, 0n],
                     });
+                    callback?.({ step: 1, type: ExecuteQuoteStepType.ResetApproval, totalSteps });
                     const resetTxHash = await walletClient.writeContract(resetRequest);
                     await publicClient.waitForTransactionReceipt({ hash: resetTxHash, retryCount: RETRY_COUNT });
                 }
@@ -345,10 +365,12 @@ export class GatewayApiClient {
                     args: [spenderAddress, maxUint256],
                 });
 
+                callback?.({ step: needsReset ? 2 : 1, type: ExecuteQuoteStepType.Approve, totalSteps });
                 const approveTxHash = await walletClient.writeContract(request);
                 await publicClient.waitForTransactionReceipt({ hash: approveTxHash, retryCount: RETRY_COUNT });
             }
 
+            callback?.({ step: totalSteps, type: ExecuteQuoteStepType.SendTransaction, totalSteps });
             const transactionHash = await walletClient.sendTransaction({
                 account: walletClient.account,
                 data: order.offramp.tx.data as Hex,
@@ -399,6 +421,8 @@ export class GatewayApiClient {
             const needsReset =
                 needsApproval && isAddressEqual(tokenAddress, ETHEREUM_USDT_ADDRESS) && preCheckAllowance !== 0n;
 
+            const totalSteps = needsReset ? 3 : needsApproval ? 2 : 1;
+
             const order = await this.api.createOrderV2({
                 gatewayQuoteV2: { tokenSwap: quote.tokenSwap },
             });
@@ -421,6 +445,7 @@ export class GatewayApiClient {
                             functionName: 'approve',
                             args: [receiver, 0n],
                         });
+                        callback?.({ step: 1, type: ExecuteQuoteStepType.ResetApproval, totalSteps });
                         const resetTxHash = await walletClient.writeContract(resetRequest);
                         await publicClient.waitForTransactionReceipt({ hash: resetTxHash, retryCount: RETRY_COUNT });
                     }
@@ -433,6 +458,7 @@ export class GatewayApiClient {
                         args: [receiver, maxUint256],
                     });
 
+                    callback?.({ step: needsReset ? 2 : 1, type: ExecuteQuoteStepType.Approve, totalSteps });
                     const txHash = await walletClient.writeContract(request);
 
                     await publicClient.waitForTransactionReceipt({ hash: txHash, retryCount: RETRY_COUNT });
@@ -450,6 +476,7 @@ export class GatewayApiClient {
                 }
             }
 
+            callback?.({ step: totalSteps, type: ExecuteQuoteStepType.SendTransaction, totalSteps });
             const transactionHash = await walletClient.sendTransaction({
                 account: walletClient.account,
                 data: order.tokenSwap.tx.data as Hex,
