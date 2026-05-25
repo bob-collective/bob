@@ -1,4 +1,4 @@
-export const enum ExecuteQuoteStepType {
+export enum ExecuteQuoteStepType {
     SignBitcoinTransaction = 'sign_bitcoin_transaction',
     ResetApproval = 'reset_approval',
     Approve = 'approve',
