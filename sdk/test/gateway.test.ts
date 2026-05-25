@@ -10,7 +10,15 @@ import {
     zeroAddress,
 } from 'viem';
 import { afterEach, assert, describe, expect, it, vi } from 'vitest';
-import { GatewayError, GatewayErrorCode, GatewaySDK, isGatewayError } from '../src/gateway';
+import {
+    BitcoinSigner,
+    ExecuteQuoteStep,
+    ExecuteQuoteStepType,
+    GatewayError,
+    GatewayErrorCode,
+    GatewaySDK,
+    isGatewayError,
+} from '../src/gateway';
 import { ETHEREUM_USDT_ADDRESS, MAINNET_GATEWAY_BASE_URL } from '../src/gateway/client';
 import {
     GatewayOrderInfo,
@@ -23,7 +31,6 @@ import {
     instanceOfGatewayQuoteOneOf1,
     instanceOfGatewayQuoteV2OneOf2,
 } from '../src/gateway/generated-client';
-import { BitcoinSigner, ExecuteQuoteStep, ExecuteQuoteStepType } from '../src/gateway/types';
 
 const WBTC_OFT_ADDRESS = '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c';
 const MOCK_SIGNED_QUOTE_DATA = 'signed-quote-data';
@@ -1460,14 +1467,20 @@ describe('Gateway Tests', () => {
         const callback = vi.fn<(step: ExecuteQuoteStep) => void>();
         await gatewaySDK.executeQuote({
             quote: mockQuote,
-            walletClient: { account: { address: '0x1234567890123456789012345678901234567890' as Address } } as WalletClient<Transport, ViemChain, Account>,
+            walletClient: {
+                account: { address: '0x1234567890123456789012345678901234567890' as Address },
+            } as WalletClient<Transport, ViemChain, Account>,
             publicClient: {} as PublicClient<Transport>,
             btcSigner: { signAllInputs: async () => signedTx },
             callback,
         });
 
         expect(callback).toHaveBeenCalledTimes(1);
-        expect(callback.mock.calls[0][0]).toEqual({ step: 1, type: ExecuteQuoteStepType.SignBitcoinTransaction, totalSteps: 1 });
+        expect(callback.mock.calls[0][0]).toEqual({
+            step: 1,
+            type: ExecuteQuoteStepType.SignBitcoinTransaction,
+            totalSteps: 1,
+        });
     });
 
     it('should not call callback for walletless onramp (0 wallet calls)', async () => {
@@ -1508,7 +1521,9 @@ describe('Gateway Tests', () => {
         const callback = vi.fn<(step: ExecuteQuoteStep) => void>();
         await gatewaySDK.executeQuote({
             quote: mockQuote,
-            walletClient: { account: { address: '0x1234567890123456789012345678901234567890' as Address } } as WalletClient<Transport, ViemChain, Account>,
+            walletClient: {
+                account: { address: '0x1234567890123456789012345678901234567890' as Address },
+            } as WalletClient<Transport, ViemChain, Account>,
             publicClient: {} as PublicClient<Transport>,
             callback,
         });
@@ -1562,7 +1577,11 @@ describe('Gateway Tests', () => {
         });
 
         expect(callback).toHaveBeenCalledTimes(1);
-        expect(callback.mock.calls[0][0]).toEqual({ step: 1, type: ExecuteQuoteStepType.SendTransaction, totalSteps: 1 });
+        expect(callback.mock.calls[0][0]).toEqual({
+            step: 1,
+            type: ExecuteQuoteStepType.SendTransaction,
+            totalSteps: 1,
+        });
     });
 
     it('should call callback for offramp with approval (2 steps)', async () => {
@@ -1614,7 +1633,11 @@ describe('Gateway Tests', () => {
 
         expect(callback).toHaveBeenCalledTimes(2);
         expect(callback.mock.calls[0][0]).toEqual({ step: 1, type: ExecuteQuoteStepType.Approve, totalSteps: 2 });
-        expect(callback.mock.calls[1][0]).toEqual({ step: 2, type: ExecuteQuoteStepType.SendTransaction, totalSteps: 2 });
+        expect(callback.mock.calls[1][0]).toEqual({
+            step: 2,
+            type: ExecuteQuoteStepType.SendTransaction,
+            totalSteps: 2,
+        });
     });
 
     it('should call callback for offramp with USDT reset + approval (3 steps)', async () => {
@@ -1667,7 +1690,11 @@ describe('Gateway Tests', () => {
         expect(callback).toHaveBeenCalledTimes(3);
         expect(callback.mock.calls[0][0]).toEqual({ step: 1, type: ExecuteQuoteStepType.ResetApproval, totalSteps: 3 });
         expect(callback.mock.calls[1][0]).toEqual({ step: 2, type: ExecuteQuoteStepType.Approve, totalSteps: 3 });
-        expect(callback.mock.calls[2][0]).toEqual({ step: 3, type: ExecuteQuoteStepType.SendTransaction, totalSteps: 3 });
+        expect(callback.mock.calls[2][0]).toEqual({
+            step: 3,
+            type: ExecuteQuoteStepType.SendTransaction,
+            totalSteps: 3,
+        });
     });
 
     it('should call callback for layerzero without approval (1 step: sendTransaction)', async () => {
@@ -1677,7 +1704,11 @@ describe('Gateway Tests', () => {
                 dstChain: 'bob',
                 estimatedTimeInSecs: 60,
                 fees: { amount: '0', address: WBTC_OFT_ADDRESS, chain: 'bob' },
-                inputAmount: { amount: '100000', address: '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599', chain: 'ethereum' },
+                inputAmount: {
+                    amount: '100000',
+                    address: '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599',
+                    chain: 'ethereum',
+                },
                 outputAmount: { amount: '100000', address: WBTC_OFT_ADDRESS, chain: 'bob' },
                 recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
                 slippage: 100,
@@ -1710,7 +1741,11 @@ describe('Gateway Tests', () => {
         });
 
         expect(callback).toHaveBeenCalledTimes(1);
-        expect(callback.mock.calls[0][0]).toEqual({ step: 1, type: ExecuteQuoteStepType.SendTransaction, totalSteps: 1 });
+        expect(callback.mock.calls[0][0]).toEqual({
+            step: 1,
+            type: ExecuteQuoteStepType.SendTransaction,
+            totalSteps: 1,
+        });
     });
 
     it('should call callback for layerzero with approval (2 steps)', async () => {
@@ -1720,7 +1755,11 @@ describe('Gateway Tests', () => {
                 dstChain: 'bob',
                 estimatedTimeInSecs: 60,
                 fees: { amount: '0', address: WBTC_OFT_ADDRESS, chain: 'bob' },
-                inputAmount: { amount: '100000', address: '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599', chain: 'ethereum' },
+                inputAmount: {
+                    amount: '100000',
+                    address: '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599',
+                    chain: 'ethereum',
+                },
                 outputAmount: { amount: '100000', address: WBTC_OFT_ADDRESS, chain: 'bob' },
                 recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
                 slippage: 100,
@@ -1756,7 +1795,11 @@ describe('Gateway Tests', () => {
 
         expect(callback).toHaveBeenCalledTimes(2);
         expect(callback.mock.calls[0][0]).toEqual({ step: 1, type: ExecuteQuoteStepType.Approve, totalSteps: 2 });
-        expect(callback.mock.calls[1][0]).toEqual({ step: 2, type: ExecuteQuoteStepType.SendTransaction, totalSteps: 2 });
+        expect(callback.mock.calls[1][0]).toEqual({
+            step: 2,
+            type: ExecuteQuoteStepType.SendTransaction,
+            totalSteps: 2,
+        });
     });
 
     it('should include Authorization header when apiKey is provided', async () => {

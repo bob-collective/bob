@@ -35,7 +35,13 @@ import {
     V2Api,
 } from './generated-client';
 import type { GatewayError as GatewayErrorInterface } from './generated-client/models/GatewayError';
-import { type BitcoinSigner, type ExecuteQuoteStep, ExecuteQuoteStepType, type GetQuoteParams, type StrategyParams } from './types';
+import {
+    type BitcoinSigner,
+    type ExecuteQuoteStep,
+    ExecuteQuoteStepType,
+    type GetQuoteParams,
+    type StrategyParams,
+} from './types';
 import { formatBtc } from './utils';
 
 const RETRY_COUNT = 8; // Number of times to retry fetching transaction receipt after sending a transaction
@@ -226,7 +232,13 @@ export class GatewayApiClient {
      * @throws {Error} If required signers are missing or transaction fails
      */
     async executeQuote(
-        { quote, walletClient, publicClient, btcSigner, callback }: {
+        {
+            quote,
+            walletClient,
+            publicClient,
+            btcSigner,
+            callback,
+        }: {
             quote: GatewayQuoteV2;
             callback?: (step: ExecuteQuoteStep) => void;
         } & AllWalletClientParams,
