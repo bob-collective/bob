@@ -101,8 +101,8 @@ const quote = await gatewaySDK.getQuote({
   toUserAddress: '0x2D2E86236a5bC1c8a5e5499C517E17Fb88Dbc18c',
   amount: parseBtc("0.1"),
   gasRefill: parseEther("0.00001"),
-  // Monetization with affiliate ID
-  affiliateId: '550e8400-e29b-41d4-a716-446655440000', // Your unique UUID
+  // V2 affiliate fees: <address>:<bps> pairs
+  affiliateIds: '0xYourAddress:50', // 0.50% to one recipient
 });
 ```
 
@@ -353,23 +353,73 @@ This action is irreversible. Once refunded, the order cannot be resumed.
 
 </AccordionGroup>
 
-## Monetization
+## Monetization (Affiliate Fees)
 
-Gateway supports affiliate fees out of the box. You earn a fee on every transaction through your integration:
- by providing your unique affiliate ID:
+Gateway supports affiliate fees out of the box. You can route a basis-point (bps) cut of each swap to one or more EVM recipient addresses, configured per-quote. V2 supports splitting fees across multiple recipients in a single quote.
+
+### How it works
+
+Affiliate fees are basis-point cuts of the swap output, deducted at settlement and sent to the recipient addresses you specify. You set them per-quote via the SDK's `affiliateIds` parameter (the raw API exposes this as the `affiliates` query parameter on `GET /v2/get-quote`).
+
+`1 bps = 0.01%`, so `50` means `0.50%`.
+
+### Single recipient
 
 ```typescript
 const quote = await gatewaySDK.getQuote({
   // ... other params
-  affiliateId: '550e8400-e29b-41d4-a716-446655440000', // Your unique UUID
+  affiliateIds: '0xYourAddress:50', // 0.50% to one recipient
 });
 ```
 
-Your affiliate ID:
-- Must be a valid UUID (universally unique identifier)
-- Tracks all transactions through your integration
-- Automatically associates earned fees with your account
-- Contact the BOB team to register your affiliate ID and set up fee structure
+### Split fees across multiple recipients
+
+V2 lets you split affiliate fees across multiple recipients in a single quote — useful for revenue splits between an aggregator and an underlying integrator, referral programs, or multi-party agreements.
+
+```typescript
+const quote = await gatewaySDK.getQuote({
+  // ... other params
+  affiliateIds: '0xPartnerA:50,0xPartnerB:25', // 0.50% + 0.25%
+});
+```
+
+### Format and rules
+
+- Comma-separated `<address>:<bps>` pairs, no spaces.
+- Each address must be a valid EVM address.
+- Each `bps` MUST be greater than `0`.
+- Omit `affiliateIds` or pass an empty string for no affiliate fees.
+- The gateway enforces caps on recipient count and total bps. Routes that don't support affiliate fees return error code `AFFILIATE_FEES_NOT_SUPPORTED_FOR_ROUTE` — handle this by retrying the quote with `affiliateIds` omitted, or surfacing the error to the user.
+
+### Reading resolved fees from the quote
+
+The V2 quote response includes a resolved `affiliates` array — each entry has the recipient address and the computed fee amount (with optional USD value). Use it to surface the affiliate split to the user:
+
+```typescript
+const quote = await gatewaySDK.getQuote({ /* ... */ });
+
+const onramp = 'onramp' in quote ? quote.onramp : null;
+if (onramp?.affiliates?.length) {
+  for (const a of onramp.affiliates) {
+    console.log(
+      `${a.address} earns ${a.fee.amount} ${a.fee.address}` +
+      (a.fee.usd ? ` (~$${a.fee.usd})` : '')
+    );
+  }
+}
+```
+
+The `affiliates` field is present on all three V2 quote variants (`onramp`, `offramp`, `tokenSwap`).
+
+### Raw API equivalent
+
+For integrators not using the SDK, pass the same pairs to the V2 quote endpoint as the `affiliates` query parameter:
+
+```bash
+GET /v2/get-quote?...&affiliates=0xPartnerA:50,0xPartnerB:25
+```
+
+URL-encode the comma if your client doesn't allow raw commas in query strings.
 
 ## Next Steps
 
