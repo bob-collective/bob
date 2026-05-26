@@ -10,6 +10,19 @@ The BOB Gateway SDK makes it easy to bring Bitcoin onramp functionality directly
 
 We recommend using the API directly, but you may use our SDK for convenience.
 
+## What's new in V2
+
+<Info>
+This guide targets the V2 API. V1 endpoints remain reachable but are deprecated.
+</Info>
+
+V2 adds:
+
+- **Multi-affiliate fees** — split fees across multiple recipients per quote ([details](#monetization-affiliate-fees)).
+- **`tokenSwap` route** — EVM-to-EVM token swaps, replacing the V1 `layerZero` variant.
+- **USD values** — `GatewayTokenAmountV2` carries an optional `usd` field on every token amount and on each line of the V2 fee breakdowns.
+- **Price impact** — V2 quotes expose `priceImpact` (fraction) and `priceImpactUsd` for display.
+
 ## Installation
 
 <CodeGroup>
