@@ -16,70 +16,90 @@ The BOB Gateway API enables seamless cross-chain interactions for Bitcoin-powere
 </Card>
 
 
+## What's new in V2
+
+<Info>
+This reference targets the V2 API. V1 endpoints remain reachable but are deprecated.
+</Info>
+
+V2 adds:
+
+- **`tokenSwap` route** — EVM-to-EVM token swaps, alongside `onramp` (Bitcoin → chain) and `offramp` (chain → Bitcoin).
+- **Multi-affiliate fees** — the `affiliates` query parameter on `GET /v2/get-quote` accepts a comma-separated list of `<address>:<bps>` pairs. See the [Monetization section in the integration guide](/gateway/integration#monetization-affiliate-fees).
+- **USD values** — token amounts and fee-breakdown lines carry an optional `usd` field.
+- **`priceImpact` / `priceImpactUsd`** — exposed on all V2 quote variants.
+
 ## How It Works
 
-Gateway transactions follow a 6-step flow to execute Bitcoin-to-chain or chain-to-Bitcoin swaps:
+Gateway transactions follow a 6-step flow to execute Bitcoin↔chain swaps and EVM token swaps:
 
 <Steps>
   <Step title="Get Available Routes">
-    Call [`GET /v1/get-routes`](/api-reference/v1/get-all-supported-routes) to fetch all supported routes, chains, and tokens. This helps you understand what swaps are available and present options to your users.
+    Call `GET /v2/get-routes` to fetch all supported routes, chains, and tokens. This helps you understand what swaps are available and present options to your users.
 
     ```bash
-    GET /v1/get-routes
+    GET /v2/get-routes
     ```
 
     Returns information about supported chains, tokens, bridges, and fee structures.
   </Step>
 
   <Step title="Get a Quote">
-    Call [`GET /v1/get-quote`](/api-reference/v1/get-a-gateway-quote) with your swap parameters (amount, source/destination chains, tokens, etc.). The API returns a quote with routing information, fees, and expected outputs.
+    Call `GET /v2/get-quote` with your swap parameters (amount, source/destination chains, tokens, etc.). The API returns a discriminated quote (`onramp`, `offramp`, or `tokenSwap`) with routing information, fees, and expected outputs.
 
     ```bash
-    GET /v1/get-quote?srcChain=bitcoin&dstChain=bob&amount=10000000...
+    GET /v2/get-quote?srcChain=bitcoin&dstChain=bob&amount=10000000...
     ```
+
+    Pass `affiliates=0xAddr1:50,0xAddr2:25` to route a basis-point cut to one or more recipients on settlement.
   </Step>
 
   <Step title="Create an Order">
-    Pass the quote to [`POST /v1/create-order`](/api-reference/v1/create-a-new-gateway-order) to lock in the quote and create an order. This reserves liquidity with the market maker and returns transaction details including:
-    - For **onramp** (Bitcoin → Chain): A Bitcoin address to send to, or a PSBT to sign
-    - For **offramp** (Chain → Bitcoin): EVM transaction data to execute
+    Pass the quote to `POST /v2/create-order` to lock in the quote and create an order. This reserves liquidity with the market maker and returns transaction details including:
+    - For **onramp** (Bitcoin → chain): A Bitcoin address to send to, or a PSBT to sign.
+    - For **offramp** (chain → Bitcoin): EVM transaction data to execute.
+    - For **tokenSwap** (EVM → EVM): EVM transaction data to execute.
 
     ```bash
-    POST /v1/create-order
+    POST /v2/create-order
     { "onramp": { ...quote data } }
     ```
   </Step>
 
   <Step title="Sign and Send Transaction">
     Execute the transaction:
-    - For **onramp**: Create and sign a Bitcoin transaction to the provided address, or use the provided PSBT
-    - For **offramp**: Sign and broadcast the EVM transaction using the provided transaction data
+    - For **onramp**: Create and sign a Bitcoin transaction to the provided address, or use the provided PSBT.
+    - For **offramp** or **tokenSwap**: Sign and broadcast the EVM transaction using the provided transaction data.
   </Step>
 
   <Step title="Register Transaction">
-    Call [`PATCH /v1/register-tx`](/api-reference/v1/register-a-tx-for-a-request) with the signed transaction hash/hex. This allows Gateway to track your order and provide status updates.
+    Call `PATCH /v2/register-tx` with the signed transaction hash/hex. This allows Gateway to track your order and provide status updates.
 
     ```bash
-    PATCH /v1/register-tx
-    { "onramp": { "order_id": "...", "bitcoin_tx_hex": "..." } }
+    PATCH /v2/register-tx
+    { "onramp":    { "order_id": "...", "bitcoin_tx_hex": "..." } }
+    { "offramp":   { "order_id": "...", "evm_txhash": "0x..." } }
+    { "tokenSwap": { "order_id": "...", "evm_txhash": "0x..." } }
     ```
+
+    The body shape varies by route: `onramp` carries `bitcoin_tx_hex` (and/or `bitcoin_txid`); `offramp` and `tokenSwap` both carry `evm_txhash`.
   </Step>
 
   <Step title="Monitor Single Order">
-    Track the status of a specific order using [`GET /v1/get-order/{id}`](/api-reference/v1/get-all-orders-for-a-specific-id). This endpoint returns the status and details for a single order by its transaction hash.
+    Track the status of a specific order using `GET /v2/get-order/{id}`. Returns the status and details for a single order by its order ID.
 
     ```bash
-    GET /v1/get-order/0x1234abcd...
+    GET /v2/get-order/0x1234abcd...
     ```
 
     Use this endpoint to monitor the progress of an individual order, including its current state and any updates.
   </Step>
 
   <Step title="Monitor All User Orders">
-    Track the progress of all orders for a user using [`GET /v1/get-orders/{user_address}`](/api-reference/v1/get-all-user-orders). This endpoint returns every order (pending and completed) associated with the specified user address.
+    Track the progress of all orders for a user using `GET /v2/get-orders/{user_address}`. Returns every order (pending and completed) associated with the specified user address.
 
     ```bash
-    GET /v1/get-orders/0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb
+    GET /v2/get-orders/0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb
     ```
 
     Poll this endpoint to update your UI as orders progress through states: pending → confirmed → completed.
