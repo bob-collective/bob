@@ -86,6 +86,7 @@ export class V1Api extends runtime.BaseAPI {
     /**
      * Creates a new request, reserves the required liquidity.
      * Create a new gateway order.
+     * @deprecated
      */
     async createOrderRaw(requestParameters: CreateOrderRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<GatewayCreateOrder>> {
         if (requestParameters['gatewayQuote'] == null) {
@@ -126,6 +127,7 @@ export class V1Api extends runtime.BaseAPI {
     /**
      * Creates a new request, reserves the required liquidity.
      * Create a new gateway order.
+     * @deprecated
      */
     async createOrder(requestParameters: CreateOrderRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<GatewayCreateOrder> {
         const response = await this.createOrderRaw(requestParameters, initOverrides);
@@ -133,6 +135,7 @@ export class V1Api extends runtime.BaseAPI {
     }
 
     /**
+     * @deprecated
      */
     async getMaxSpendableRaw(requestParameters: GetMaxSpendableRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<GatewayMaxSpendable>> {
         if (requestParameters['address'] == null) {
@@ -169,6 +172,7 @@ export class V1Api extends runtime.BaseAPI {
     }
 
     /**
+     * @deprecated
      */
     async getMaxSpendable(requestParameters: GetMaxSpendableRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<GatewayMaxSpendable> {
         const response = await this.getMaxSpendableRaw(requestParameters, initOverrides);
@@ -177,6 +181,7 @@ export class V1Api extends runtime.BaseAPI {
 
     /**
      * Get all orders for a specific ID.
+     * @deprecated
      */
     async getOrderRaw(requestParameters: GetOrderRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<GatewayOrderInfo>> {
         if (requestParameters['id'] == null) {
@@ -214,6 +219,7 @@ export class V1Api extends runtime.BaseAPI {
 
     /**
      * Get all orders for a specific ID.
+     * @deprecated
      */
     async getOrder(requestParameters: GetOrderRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<GatewayOrderInfo> {
         const response = await this.getOrderRaw(requestParameters, initOverrides);
@@ -222,6 +228,7 @@ export class V1Api extends runtime.BaseAPI {
 
     /**
      * Get all user orders.
+     * @deprecated
      */
     async getOrdersRaw(requestParameters: GetOrdersRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<GatewayOrderInfo>>> {
         if (requestParameters['userAddress'] == null) {
@@ -259,6 +266,7 @@ export class V1Api extends runtime.BaseAPI {
 
     /**
      * Get all user orders.
+     * @deprecated
      */
     async getOrders(requestParameters: GetOrdersRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<GatewayOrderInfo>> {
         const response = await this.getOrdersRaw(requestParameters, initOverrides);
@@ -268,6 +276,7 @@ export class V1Api extends runtime.BaseAPI {
     /**
      * Checks the available liquidity and provides a quote.
      * Get a gateway quote.
+     * @deprecated
      */
     async getQuoteRaw(requestParameters: GetQuoteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<GatewayQuote>> {
         if (requestParameters['srcChain'] == null) {
@@ -395,6 +404,7 @@ export class V1Api extends runtime.BaseAPI {
     /**
      * Checks the available liquidity and provides a quote.
      * Get a gateway quote.
+     * @deprecated
      */
     async getQuote(requestParameters: GetQuoteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<GatewayQuote> {
         const response = await this.getQuoteRaw(requestParameters, initOverrides);
@@ -403,6 +413,7 @@ export class V1Api extends runtime.BaseAPI {
 
     /**
      * Get all supported routes.
+     * @deprecated
      */
     async getRoutesRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<RouteInfo>>> {
         const queryParameters: any = {};
@@ -432,6 +443,7 @@ export class V1Api extends runtime.BaseAPI {
 
     /**
      * Get all supported routes.
+     * @deprecated
      */
     async getRoutes(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<RouteInfo>> {
         const response = await this.getRoutesRaw(initOverrides);
@@ -441,6 +453,7 @@ export class V1Api extends runtime.BaseAPI {
     /**
      * Required for the Solver to track and execute some requests.
      * Register a tx for a request.
+     * @deprecated
      */
     async registerTxRaw(requestParameters: RegisterTxRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<RegisterTxSuccess>> {
         if (requestParameters['registerTx'] == null) {
@@ -481,6 +494,7 @@ export class V1Api extends runtime.BaseAPI {
     /**
      * Required for the Solver to track and execute some requests.
      * Register a tx for a request.
+     * @deprecated
      */
     async registerTx(requestParameters: RegisterTxRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<RegisterTxSuccess> {
         const response = await this.registerTxRaw(requestParameters, initOverrides);

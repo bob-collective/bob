@@ -68,6 +68,13 @@ import {
     GatewayErrorDetailsV2OneOfFromJSONTyped,
     GatewayErrorDetailsV2OneOfToJSON,
 } from './GatewayErrorDetailsV2OneOf';
+import type { GatewayErrorDetailsV2OneOf1 } from './GatewayErrorDetailsV2OneOf1';
+import {
+    instanceOfGatewayErrorDetailsV2OneOf1,
+    GatewayErrorDetailsV2OneOf1FromJSON,
+    GatewayErrorDetailsV2OneOf1FromJSONTyped,
+    GatewayErrorDetailsV2OneOf1ToJSON,
+} from './GatewayErrorDetailsV2OneOf1';
 
 /**
  * @type GatewayErrorDetailsV2
@@ -77,7 +84,7 @@ import {
  * (e.g. typescript-fetch) can generate type guards correctly.
  * @export
  */
-export type GatewayErrorDetailsV2 = GatewayErrorDetailsOneOf | GatewayErrorDetailsOneOf1 | GatewayErrorDetailsOneOf2 | GatewayErrorDetailsOneOf3 | GatewayErrorDetailsOneOf4 | GatewayErrorDetailsOneOf5 | GatewayErrorDetailsOneOf6 | GatewayErrorDetailsV2OneOf;
+export type GatewayErrorDetailsV2 = GatewayErrorDetailsOneOf | GatewayErrorDetailsOneOf1 | GatewayErrorDetailsOneOf2 | GatewayErrorDetailsOneOf3 | GatewayErrorDetailsOneOf4 | GatewayErrorDetailsOneOf5 | GatewayErrorDetailsOneOf6 | GatewayErrorDetailsV2OneOf | GatewayErrorDetailsV2OneOf1;
 
 export function GatewayErrorDetailsV2FromJSON(json: any): GatewayErrorDetailsV2 {
     return GatewayErrorDetailsV2FromJSONTyped(json, false);
@@ -113,6 +120,9 @@ export function GatewayErrorDetailsV2FromJSONTyped(json: any, ignoreDiscriminato
     }
     if (instanceOfGatewayErrorDetailsV2OneOf(json)) {
         return GatewayErrorDetailsV2OneOfFromJSONTyped(json, true);
+    }
+    if (instanceOfGatewayErrorDetailsV2OneOf1(json)) {
+        return GatewayErrorDetailsV2OneOf1FromJSONTyped(json, true);
     }
     return {} as any;
 }
@@ -151,6 +161,9 @@ export function GatewayErrorDetailsV2ToJSONTyped(value?: GatewayErrorDetailsV2 |
     }
     if (instanceOfGatewayErrorDetailsV2OneOf(value)) {
         return GatewayErrorDetailsV2OneOfToJSON(value as GatewayErrorDetailsV2OneOf);
+    }
+    if (instanceOfGatewayErrorDetailsV2OneOf1(value)) {
+        return GatewayErrorDetailsV2OneOf1ToJSON(value as GatewayErrorDetailsV2OneOf1);
     }
     return {};
 }

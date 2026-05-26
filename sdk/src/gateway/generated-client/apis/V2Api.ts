@@ -53,7 +53,7 @@ export interface CreateOrderV2Request {
     gatewayQuoteV2: GatewayQuoteV2;
 }
 
-export interface GetMaxSpendableRequest {
+export interface GetMaxSpendableV2Request {
     address: string;
 }
 
@@ -133,12 +133,13 @@ export class V2Api extends runtime.BaseAPI {
     }
 
     /**
+     * Get the maximum spendable Bitcoin amount for the given address (v2).
      */
-    async getMaxSpendableRaw(requestParameters: GetMaxSpendableRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<GatewayMaxSpendable>> {
+    async getMaxSpendableV2Raw(requestParameters: GetMaxSpendableV2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<GatewayMaxSpendable>> {
         if (requestParameters['address'] == null) {
             throw new runtime.RequiredError(
                 'address',
-                'Required parameter "address" was null or undefined when calling getMaxSpendable().'
+                'Required parameter "address" was null or undefined when calling getMaxSpendableV2().'
             );
         }
 
@@ -169,9 +170,10 @@ export class V2Api extends runtime.BaseAPI {
     }
 
     /**
+     * Get the maximum spendable Bitcoin amount for the given address (v2).
      */
-    async getMaxSpendable(requestParameters: GetMaxSpendableRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<GatewayMaxSpendable> {
-        const response = await this.getMaxSpendableRaw(requestParameters, initOverrides);
+    async getMaxSpendableV2(requestParameters: GetMaxSpendableV2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<GatewayMaxSpendable> {
+        const response = await this.getMaxSpendableV2Raw(requestParameters, initOverrides);
         return await response.value();
     }
 
@@ -402,9 +404,9 @@ export class V2Api extends runtime.BaseAPI {
     }
 
     /**
-     * Get all supported routes.
+     * Get all supported routes (v2).
      */
-    async getRoutesRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<RouteInfo>>> {
+    async getRoutesV2Raw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<RouteInfo>>> {
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -431,10 +433,10 @@ export class V2Api extends runtime.BaseAPI {
     }
 
     /**
-     * Get all supported routes.
+     * Get all supported routes (v2).
      */
-    async getRoutes(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<RouteInfo>> {
-        const response = await this.getRoutesRaw(initOverrides);
+    async getRoutesV2(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<RouteInfo>> {
+        const response = await this.getRoutesV2Raw(initOverrides);
         return await response.value();
     }
 

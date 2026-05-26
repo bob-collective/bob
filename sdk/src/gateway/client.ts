@@ -323,16 +323,16 @@ export class GatewayApiClient {
             // Check ETH balance and estimate gas for both potential transactions
             const [allowance] = !isAddressEqual(tokenAddress, zeroAddress)
                 ? await publicClient.multicall({
-                      allowFailure: false,
-                      contracts: [
-                          {
-                              address: tokenAddress,
-                              abi: erc20Abi,
-                              functionName: 'allowance',
-                              args: [accountAddress, spenderAddress],
-                          },
-                      ],
-                  })
+                    allowFailure: false,
+                    contracts: [
+                        {
+                            address: tokenAddress,
+                            abi: erc20Abi,
+                            functionName: 'allowance',
+                            args: [accountAddress, spenderAddress],
+                        },
+                    ],
+                })
                 : [maxUint256];
 
             const needsApproval = requiredAmount > allowance && !isAddressEqual(tokenAddress, zeroAddress);
@@ -561,7 +561,7 @@ export class GatewayApiClient {
      * @returns Promise resolving to the maximum spendable amount
      */
     async getMaxSpendable(address: string, initOverrides?: RequestInit): Promise<GatewayMaxSpendable> {
-        return this.api.getMaxSpendable({ address }, initOverrides);
+        return this.api.getMaxSpendableV2({ address }, initOverrides);
     }
 
     /**
@@ -595,6 +595,6 @@ export class GatewayApiClient {
      * @returns Promise resolving to array of supported routes
      */
     async getRoutes(initOverrides?: RequestInit): Promise<Array<RouteInfo>> {
-        return this.api.getRoutes(initOverrides);
+        return this.api.getRoutesV2(initOverrides);
     }
 }

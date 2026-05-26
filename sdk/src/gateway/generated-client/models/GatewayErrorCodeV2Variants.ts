@@ -20,7 +20,8 @@
 export const GatewayErrorCodeV2Variants = {
     InvalidCursor: 'INVALID_CURSOR',
     InsufficientSolverBalance: 'INSUFFICIENT_SOLVER_BALANCE',
-    AffiliateFeesNotSupportedForRoute: 'AFFILIATE_FEES_NOT_SUPPORTED_FOR_ROUTE'
+    AffiliateFeesNotSupportedForRoute: 'AFFILIATE_FEES_NOT_SUPPORTED_FOR_ROUTE',
+    Unknown: 'UNKNOWN'
 } as const;
 export type GatewayErrorCodeV2Variants = typeof GatewayErrorCodeV2Variants[keyof typeof GatewayErrorCodeV2Variants];
 
