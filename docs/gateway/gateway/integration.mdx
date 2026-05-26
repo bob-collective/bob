@@ -106,15 +106,16 @@ const quote = await gatewaySDK.getQuote({
 });
 ```
 
-```typescript Cross-Chain (LayerZero)
+```typescript EVM Token Swap
+// V2 supports EVM-to-EVM token swaps via the tokenSwap route.
 const quote = await gatewaySDK.getQuote({
-  fromChain: 'bitcoin',
-  fromToken: '0x0000000000000000000000000000000000000000',
-  toChain: 'base', // Bridge to Base
-  toToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c', // wBTC on Base
-  fromUserAddress: 'bc1q...',
+  fromChain: 'bob',
+  fromToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c', // source token on BOB
+  toChain: 'bob',
+  toToken: '0x...', // destination token
+  fromUserAddress: '0x...',
   toUserAddress: '0x...',
-  amount: parseBtc("0.1"),
+  amount: '1000000', // amount in smallest unit
 });
 ```
 
@@ -136,25 +137,28 @@ The `getQuote` response is a discriminated union — access fields through the a
 const quote = await gatewaySDK.getQuote({ /* ... */ });
 
 if ('onramp' in quote) {
-  // Bitcoin → BOB onramp
-  console.log('Input:', quote.onramp.inputAmount);
-  console.log('Fees:', quote.onramp.feeBreakdown);
+  // Bitcoin → BOB/EVM onramp
+  console.log('Input:', quote.onramp.inputAmount);          // GatewayTokenAmountV2 (has optional .usd)
+  console.log('Fees:', quote.onramp.feeBreakdown);          // each line is GatewayTokenAmountV2
+  console.log('Price impact:', quote.onramp.priceImpact);   // optional, fraction e.g. "-0.05"
   console.log('ETA:', quote.onramp.estimatedTimeInSecs, 'seconds');
 } else if ('offramp' in quote) {
-  // BOB → Bitcoin offramp
+  // BOB/EVM → Bitcoin offramp
   console.log('Input:', quote.offramp.inputAmount);
   console.log('Fees:', quote.offramp.feeBreakdown);
+  console.log('Price impact:', quote.offramp.priceImpact);
   console.log('ETA:', quote.offramp.estimatedTimeInSecs, 'seconds');
-} else if ('layerZero' in quote) {
-  // Cross-chain via LayerZero
-  console.log('Input:', quote.layerZero.inputAmount);
-  console.log('Fees:', quote.layerZero.fees);
-  console.log('ETA:', quote.layerZero.estimatedTimeInSecs, 'seconds');
+} else if ('tokenSwap' in quote) {
+  // EVM token swap (V2)
+  console.log('Input:', quote.tokenSwap.inputAmount);
+  console.log('Fees:', quote.tokenSwap.fees);
+  console.log('Price impact:', quote.tokenSwap.priceImpact);
+  console.log('ETA:', quote.tokenSwap.estimatedTimeInSecs, 'seconds');
 }
 ```
 
 <Tip>
-You don't need to handle all quote types — the response type matches your `fromChain`/`toChain` parameters. For example, `fromChain: 'bitcoin'` with `toChain: 'bob'` always returns an `onramp` quote.
+You don't need to handle all quote types — the response type matches your `fromChain`/`toChain` parameters. `fromChain: 'bitcoin'` with `toChain: 'bob'` always returns an `onramp` quote; an EVM-to-EVM pair returns a `tokenSwap` quote.
 </Tip>
 
 ## Execute the Quote
