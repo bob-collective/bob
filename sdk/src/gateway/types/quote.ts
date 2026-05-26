@@ -1,5 +1,16 @@
-import { Hex } from 'viem';
+import { Address, Hex } from 'viem';
 import { Optional } from './utils';
+
+/**
+ * One affiliate-fee split: an EVM recipient and the basis-point cut they
+ * receive from the swap output. 1 bps = 0.01%, so `bps: 50` is 0.50%.
+ */
+export interface Affiliate {
+    /** EVM address that receives the affiliate fee. */
+    address: Address;
+    /** Basis points to route to `address`. Must be > 0. */
+    bps: number;
+}
 
 /**
  * Designed to be compatible with the Swing SDK.
@@ -22,8 +33,13 @@ export interface GatewayQuoteParams {
     amount: number | string | bigint; // NOTE: modified from Swing
     /** @description Maximum slippage percentage in bps */
     maxSlippage?: number;
-    /** Comma-separated `address:bps` pairs, e.g. `0xRecipient…:50` or `0xA…:50,0xB…:25` */
-    affiliateIds?: string;
+    /**
+     * Affiliate fee recipients. One or more `{ address, bps }` pairs; each
+     * `bps` must be > 0. The total cap is enforced by the gateway — routes
+     * that don't support affiliate fees return
+     * `AFFILIATE_FEES_NOT_SUPPORTED_FOR_ROUTE`.
+     */
+    affiliates?: Affiliate[];
 
     // NOTE: the following are new fields added by us
     /** @description Amount of ETH to get to pay for fees */

@@ -114,8 +114,8 @@ const quote = await gatewaySDK.getQuote({
   toUserAddress: '0x2D2E86236a5bC1c8a5e5499C517E17Fb88Dbc18c',
   amount: parseBtc("0.1"),
   gasRefill: parseEther("0.00001"),
-  // V2 affiliate fees: <address>:<bps> pairs
-  affiliateIds: '0xYourAddress:50', // 0.50% to one recipient
+  // V2 affiliate fees: array of { address, bps } pairs
+  affiliates: [{ address: '0xYourAddress', bps: 50 }], // 0.50% to one recipient
 });
 ```
 
@@ -376,7 +376,7 @@ Gateway supports affiliate fees out of the box. You can route a basis-point (bps
 
 ### How it works
 
-Affiliate fees are basis-point cuts of the swap output, deducted at settlement and sent to the recipient addresses you specify. You set them per-quote via the SDK's `affiliateIds` parameter (the raw API exposes this as the `affiliates` query parameter on `GET /v2/get-quote`).
+Affiliate fees are basis-point cuts of the swap output, deducted at settlement and sent to the recipient addresses you specify. You set them per-quote via the SDK's `affiliates` parameter — an array of `{ address, bps }` pairs (the raw API serialises these as the comma-separated `affiliates` query parameter on `GET /v2/get-quote`).
 
 `1 bps = 0.01%`, so `50` means `0.50%`.
 
@@ -385,7 +385,7 @@ Affiliate fees are basis-point cuts of the swap output, deducted at settlement a
 ```typescript
 const quote = await gatewaySDK.getQuote({
   // ... other params
-  affiliateIds: '0xYourAddress:50', // 0.50% to one recipient
+  affiliates: [{ address: '0xYourAddress', bps: 50 }], // 0.50% to one recipient
 });
 ```
 
@@ -396,7 +396,10 @@ V2 lets you split affiliate fees across multiple recipients in a single quote �
 ```typescript
 const quote = await gatewaySDK.getQuote({
   // ... other params
-  affiliateIds: '0xPartnerA:50,0xPartnerB:25', // 0.50% + 0.25%
+  affiliates: [
+    { address: '0xPartnerA', bps: 50 }, // 0.50%
+    { address: '0xPartnerB', bps: 25 }, // 0.25%
+  ],
 });
 ```
 
@@ -405,8 +408,8 @@ const quote = await gatewaySDK.getQuote({
 - Comma-separated `<address>:<bps>` pairs, no spaces.
 - Each address must be a valid EVM address.
 - Each `bps` MUST be greater than `0`.
-- Omit `affiliateIds` or pass an empty string for no affiliate fees.
-- The gateway enforces caps on recipient count and total bps. Routes that don't support affiliate fees return error code `AFFILIATE_FEES_NOT_SUPPORTED_FOR_ROUTE` — handle this by retrying the quote with `affiliateIds` omitted, or surfacing the error to the user.
+- Omit `affiliates` or pass an empty array for no affiliate fees.
+- The gateway enforces caps on recipient count and total bps. Routes that don't support affiliate fees return error code `AFFILIATE_FEES_NOT_SUPPORTED_FOR_ROUTE` — handle this by retrying the quote with `affiliates` omitted, or surfacing the error to the user.
 
 ### Reading resolved fees from the quote
 
