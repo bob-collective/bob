@@ -132,7 +132,7 @@ contract SolvBTCStrategy {
 ```typescript
 import { GatewaySDK, parseBtc } from '@gobob/bob-sdk';
 
-const gatewaySDK = new GatewaySDK(bob.id);
+const gatewaySDK = new GatewaySDK();
 
 // Encode minimum output parameter
 const minOutput = parseUnits("0.099", 8); // Minimum 0.099 BTC worth
@@ -304,7 +304,7 @@ On the destination chain, the solver decodes the vector and executes each call u
 import { encodeAbiParameters, parseAbiParameters, encodeFunctionData, Address } from 'viem';
 import { GatewaySDK, parseBtc } from '@gobob/bob-sdk';
 
-const gatewaySDK = new GatewaySDK(bob.id);
+const gatewaySDK = new GatewaySDK();
 
 // Example: Call two contracts on destination chain
 const TARGET1 = '0xTargetContract1';

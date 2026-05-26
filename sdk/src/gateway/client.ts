@@ -120,17 +120,24 @@ export type ExecuteQuoteResult =
  * @example
  * ```typescript
  * // With API key authentication
- * const client = new GatewayApiClient(null, '0x...');
+ * const client = new GatewayApiClient({ apiKey: '<32-char key>' });
  * ```
  */
+/** Options for {@link GatewayApiClient}. */
+export interface GatewaySDKOptions {
+    /** Custom Gateway API base URL. Defaults to mainnet. */
+    basePath?: string;
+    /** API key for authenticated requests. Must be exactly 32 characters. */
+    apiKey?: string;
+}
+
 export class GatewayApiClient {
     api: V2Api;
 
     /**
      * Creates a new Gateway API client instance.
      *
-     * @param basePath - Optional custom Gateway API base URL
-     * @param apiKey - Optional API key for authenticated requests (must be 32 characters)
+     * @param options - {@link GatewaySDKOptions}
      *
      * @example
      * ```typescript
@@ -138,13 +145,14 @@ export class GatewayApiClient {
      * const mainnetClient = new GatewayApiClient();
      *
      * // Staging client
-     * const stagingClient = new GatewayApiClient('https://gateway-api-staging.gobob.xyz');
+     * const stagingClient = new GatewayApiClient({ basePath: 'https://gateway-api-staging.gobob.xyz' });
      *
      * // With API key
-     * const authenticatedClient = new GatewayApiClient(null, '0x1234...');
+     * const authenticatedClient = new GatewayApiClient({ apiKey: '<32-char key>' });
      * ```
      */
-    constructor(basePath?: string, apiKey?: string) {
+    constructor(options: GatewaySDKOptions = {}) {
+        const { basePath, apiKey } = options;
         if (apiKey && apiKey.length !== 32) {
             throw new Error('apiKey must be exactly 32 characters');
         }

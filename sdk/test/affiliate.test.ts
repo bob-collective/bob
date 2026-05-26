@@ -23,7 +23,7 @@ afterEach(() => {
 });
 
 describe('Gateway Multiple Affiliates', () => {
-    const sdk = new GatewaySDK(ETHEREUM_GATEWAY_BASE_URL);
+    const sdk = new GatewaySDK({ basePath: ETHEREUM_GATEWAY_BASE_URL });
     const affiliates = [
         { address: ADDR_A, bps: 25 },
         { address: ADDR_B, bps: 50 },

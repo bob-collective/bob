@@ -43,27 +43,26 @@ pnpm add @gobob/bob-sdk viem
 
 ## Initialize the SDK
 
-Import the `GatewayApiClient` (exported as `GatewaySDK`) and create an instance:
+Import the `GatewayApiClient` (exported as `GatewaySDK`) and create an instance. The constructor takes an optional options object:
 
 ```typescript
-import { GatewaySDK } from '@gobob/bob-sdk';
-import { bob, bobSepolia } from 'viem/chains';
+import { GatewaySDK, STAGING_GATEWAY_BASE_URL } from '@gobob/bob-sdk';
 
-// Mainnet
-const gatewaySDK = new GatewaySDK(bob.id);
+// Mainnet (default)
+const gatewaySDK = new GatewaySDK();
 
-// Testnet
-const gatewaySDKTestnet = new GatewaySDK(bobSepolia.id);
+// Staging
+const gatewaySDKStaging = new GatewaySDK({ basePath: STAGING_GATEWAY_BASE_URL });
 ```
 
 ### Authentication
 
-If you have an API key for the Gateway API, pass it as the second argument:
+If you have an API key for the Gateway API, pass it in the options object:
 
 ```typescript
 import { GatewaySDK } from '@gobob/bob-sdk';
 
-const gatewaySDK = new GatewaySDK(undefined, 'your-api-key');
+const gatewaySDK = new GatewaySDK({ apiKey: 'your-api-key' });
 ```
 
 The API key must be exactly 32 characters long. When provided, the SDK will include it in the `Authorization` header as a Bearer token.
