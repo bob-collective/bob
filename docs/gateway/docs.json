@@ -45,12 +45,12 @@
             "group": "API reference",
             "openapi": "api-reference/openapi.json",
             "pages": [
-              "GET /v1/get-routes",
-              "GET /v1/get-quote",
-              "POST /v1/create-order",
-              "PATCH /v1/register-tx",
-              "GET /v1/get-order/{id}",
-              "GET /v1/get-orders/{user_address}"
+              "GET /v2/get-routes",
+              "GET /v2/get-quote",
+              "POST /v2/create-order",
+              "PATCH /v2/register-tx",
+              "GET /v2/get-order/{id}",
+              "GET /v2/get-orders/{user_address}"
             ]
           }
         ]
