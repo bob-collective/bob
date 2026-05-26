@@ -120,17 +120,24 @@ export type ExecuteQuoteResult =
  * @example
  * ```typescript
  * // With API key authentication
- * const client = new GatewayApiClient(null, '0x...');
+ * const client = new GatewayApiClient({ apiKey: '<32-char key>' });
  * ```
  */
+/** Options for {@link GatewayApiClient}. */
+export interface GatewaySDKOptions {
+    /** Custom Gateway API base URL. Defaults to mainnet. */
+    basePath?: string;
+    /** API key for authenticated requests. Must be exactly 32 characters. */
+    apiKey?: string;
+}
+
 export class GatewayApiClient {
     api: V2Api;
 
     /**
      * Creates a new Gateway API client instance.
      *
-     * @param basePath - Optional custom Gateway API base URL
-     * @param apiKey - Optional API key for authenticated requests (must be 32 characters)
+     * @param options - {@link GatewaySDKOptions}
      *
      * @example
      * ```typescript
@@ -138,13 +145,14 @@ export class GatewayApiClient {
      * const mainnetClient = new GatewayApiClient();
      *
      * // Staging client
-     * const stagingClient = new GatewayApiClient('https://gateway-api-staging.gobob.xyz');
+     * const stagingClient = new GatewayApiClient({ basePath: 'https://gateway-api-staging.gobob.xyz' });
      *
      * // With API key
-     * const authenticatedClient = new GatewayApiClient(null, '0x1234...');
+     * const authenticatedClient = new GatewayApiClient({ apiKey: '<32-char key>' });
      * ```
      */
-    constructor(basePath?: string, apiKey?: string) {
+    constructor(options: GatewaySDKOptions = {}) {
+        const { basePath, apiKey } = options;
         if (apiKey && apiKey.length !== 32) {
             throw new Error('apiKey must be exactly 32 characters');
         }
@@ -213,7 +221,7 @@ export class GatewayApiClient {
                 amount: params.amount.toString(),
                 slippage: params.maxSlippage?.toString() || DEFAULT_MAX_SLIPPAGE_BPS,
                 gasRefill: params.gasRefill?.toString(),
-                affiliates: params.affiliateIds,
+                affiliates: params.affiliates?.map((a) => `${a.address}:${a.bps}`).join(','),
                 strategyTarget: params.strategyAddress,
                 strategyMessage: params.strategyMessage,
             },
@@ -561,7 +569,7 @@ export class GatewayApiClient {
      * @returns Promise resolving to the maximum spendable amount
      */
     async getMaxSpendable(address: string, initOverrides?: RequestInit): Promise<GatewayMaxSpendable> {
-        return this.api.getMaxSpendable({ address }, initOverrides);
+        return this.api.getMaxSpendableV2({ address }, initOverrides);
     }
 
     /**
@@ -595,6 +603,6 @@ export class GatewayApiClient {
      * @returns Promise resolving to array of supported routes
      */
     async getRoutes(initOverrides?: RequestInit): Promise<Array<RouteInfo>> {
-        return this.api.getRoutes(initOverrides);
+        return this.api.getRoutesV2(initOverrides);
     }
 }

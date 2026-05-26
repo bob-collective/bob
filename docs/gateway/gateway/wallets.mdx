@@ -85,7 +85,7 @@ function GatewayComponent() {
   const { walletProvider } = useAppKitProvider<BitcoinConnector>('bip122');
   const { address: btcAddress } = useAppKitAccount();
   
-  const gatewaySDK = new GatewaySDK(bob.id);
+  const gatewaySDK = new GatewaySDK();
 
   const handleSwap = async () => {
     // Get quote
@@ -163,7 +163,7 @@ function GatewayComponent() {
       await connect({ connector: connectors[0] }); // Connect first
     }
 
-    const gatewaySDK = new GatewaySDK(bob.id);
+    const gatewaySDK = new GatewaySDK();
     
     const quote = await gatewaySDK.getQuote({
       fromChain: 'bitcoin',
@@ -219,7 +219,7 @@ function GatewayComponent() {
       return;
     }
 
-    const gatewaySDK = new GatewaySDK(bob.id);
+    const gatewaySDK = new GatewaySDK();
 
     const quote = await gatewaySDK.getQuote({
       fromChain: 'bitcoin',
@@ -314,7 +314,7 @@ function GatewayComponent() {
     // Get Bitcoin address
     const btcAddress = await primaryWallet.getAddress('bitcoin');
 
-    const gatewaySDK = new GatewaySDK(bob.id);
+    const gatewaySDK = new GatewaySDK();
     
     const quote = await gatewaySDK.getQuote({
       fromChain: 'bitcoin',
@@ -390,9 +390,9 @@ function GatewayComponent() {
 Test your Bitcoin wallet integration on BOB Sepolia testnet:
 
 ```typescript
-import { bobSepolia } from 'viem/chains';
+import { STAGING_GATEWAY_BASE_URL } from '@gobob/bob-sdk';
 
-const gatewaySDK = new GatewaySDK(bobSepolia.id);
+const gatewaySDK = new GatewaySDK({ basePath: STAGING_GATEWAY_BASE_URL });
 
 // Use Bitcoin testnet addresses (starting with tb1...)
 const quote = await gatewaySDK.getQuote({

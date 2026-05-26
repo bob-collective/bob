@@ -10,6 +10,19 @@ The BOB Gateway SDK makes it easy to bring Bitcoin onramp functionality directly
 
 We recommend using the API directly, but you may use our SDK for convenience.
 
+## What's new in V2
+
+<Info>
+This guide targets the V2 API. V1 endpoints remain reachable but are deprecated.
+</Info>
+
+V2 adds:
+
+- **Multi-affiliate fees** — split fees across multiple recipients per quote ([details](#monetization-affiliate-fees)).
+- **`tokenSwap` route** — EVM-to-EVM token swaps, replacing the V1 `layerZero` variant.
+- **USD values** — `GatewayTokenAmountV2` carries an optional `usd` field on every token amount and on each line of the V2 fee breakdowns.
+- **Price impact** — V2 quotes expose `priceImpact` (fraction) and `priceImpactUsd` for display.
+
 ## Installation
 
 <CodeGroup>
@@ -30,27 +43,26 @@ pnpm add @gobob/bob-sdk viem
 
 ## Initialize the SDK
 
-Import the `GatewayApiClient` (exported as `GatewaySDK`) and create an instance:
+Import the `GatewayApiClient` (exported as `GatewaySDK`) and create an instance. The constructor takes an optional options object:
 
 ```typescript
-import { GatewaySDK } from '@gobob/bob-sdk';
-import { bob, bobSepolia } from 'viem/chains';
+import { GatewaySDK, STAGING_GATEWAY_BASE_URL } from '@gobob/bob-sdk';
 
-// Mainnet
-const gatewaySDK = new GatewaySDK(bob.id);
+// Mainnet (default)
+const gatewaySDK = new GatewaySDK();
 
-// Testnet
-const gatewaySDKTestnet = new GatewaySDK(bobSepolia.id);
+// Staging
+const gatewaySDKStaging = new GatewaySDK({ basePath: STAGING_GATEWAY_BASE_URL });
 ```
 
 ### Authentication
 
-If you have an API key for the Gateway API, pass it as the second argument:
+If you have an API key for the Gateway API, pass it in the options object:
 
 ```typescript
 import { GatewaySDK } from '@gobob/bob-sdk';
 
-const gatewaySDK = new GatewaySDK(undefined, 'your-api-key');
+const gatewaySDK = new GatewaySDK({ apiKey: 'your-api-key' });
 ```
 
 The API key must be exactly 32 characters long. When provided, the SDK will include it in the `Authorization` header as a Bearer token.
@@ -101,20 +113,21 @@ const quote = await gatewaySDK.getQuote({
   toUserAddress: '0x2D2E86236a5bC1c8a5e5499C517E17Fb88Dbc18c',
   amount: parseBtc("0.1"),
   gasRefill: parseEther("0.00001"),
-  // Monetization with affiliate ID
-  affiliateId: '550e8400-e29b-41d4-a716-446655440000', // Your unique UUID
+  // V2 affiliate fees: array of { address, bps } pairs
+  affiliates: [{ address: '0xYourAddress', bps: 50 }], // 0.50% to one recipient
 });
 ```
 
-```typescript Cross-Chain (LayerZero)
+```typescript EVM Token Swap
+// V2 supports EVM-to-EVM token swaps via the tokenSwap route.
 const quote = await gatewaySDK.getQuote({
-  fromChain: 'bitcoin',
-  fromToken: '0x0000000000000000000000000000000000000000',
-  toChain: 'base', // Bridge to Base
-  toToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c', // wBTC on Base
-  fromUserAddress: 'bc1q...',
+  fromChain: 'bob',
+  fromToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c', // source token on BOB
+  toChain: 'bob',
+  toToken: '0x...', // destination token
+  fromUserAddress: '0x...',
   toUserAddress: '0x...',
-  amount: parseBtc("0.1"),
+  amount: '1000000', // amount in smallest unit
 });
 ```
 
@@ -136,25 +149,28 @@ The `getQuote` response is a discriminated union — access fields through the a
 const quote = await gatewaySDK.getQuote({ /* ... */ });
 
 if ('onramp' in quote) {
-  // Bitcoin → BOB onramp
-  console.log('Input:', quote.onramp.inputAmount);
-  console.log('Fees:', quote.onramp.feeBreakdown);
+  // Bitcoin → BOB/EVM onramp
+  console.log('Input:', quote.onramp.inputAmount);          // GatewayTokenAmountV2 (has optional .usd)
+  console.log('Fees:', quote.onramp.feeBreakdown);          // each line is GatewayTokenAmountV2
+  console.log('Price impact:', quote.onramp.priceImpact);   // optional, fraction e.g. "-0.05"
   console.log('ETA:', quote.onramp.estimatedTimeInSecs, 'seconds');
 } else if ('offramp' in quote) {
-  // BOB → Bitcoin offramp
+  // BOB/EVM → Bitcoin offramp
   console.log('Input:', quote.offramp.inputAmount);
   console.log('Fees:', quote.offramp.feeBreakdown);
+  console.log('Price impact:', quote.offramp.priceImpact);
   console.log('ETA:', quote.offramp.estimatedTimeInSecs, 'seconds');
-} else if ('layerZero' in quote) {
-  // Cross-chain via LayerZero
-  console.log('Input:', quote.layerZero.inputAmount);
-  console.log('Fees:', quote.layerZero.fees);
-  console.log('ETA:', quote.layerZero.estimatedTimeInSecs, 'seconds');
+} else if ('tokenSwap' in quote) {
+  // EVM token swap (V2)
+  console.log('Input:', quote.tokenSwap.inputAmount);
+  console.log('Fees:', quote.tokenSwap.fees);
+  console.log('Price impact:', quote.tokenSwap.priceImpact);
+  console.log('ETA:', quote.tokenSwap.estimatedTimeInSecs, 'seconds');
 }
 ```
 
 <Tip>
-You don't need to handle all quote types — the response type matches your `fromChain`/`toChain` parameters. For example, `fromChain: 'bitcoin'` with `toChain: 'bob'` always returns an `onramp` quote.
+You don't need to handle all quote types — the response type matches your `fromChain`/`toChain` parameters. `fromChain: 'bitcoin'` with `toChain: 'bob'` always returns an `onramp` quote; an EVM-to-EVM pair returns a `tokenSwap` quote.
 </Tip>
 
 ## Execute the Quote
@@ -353,23 +369,76 @@ This action is irreversible. Once refunded, the order cannot be resumed.
 
 </AccordionGroup>
 
-## Monetization
+## Monetization (Affiliate Fees)
 
-Gateway supports affiliate fees out of the box. You earn a fee on every transaction through your integration:
- by providing your unique affiliate ID:
+Gateway supports affiliate fees out of the box. You can route a basis-point (bps) cut of each swap to one or more EVM recipient addresses, configured per-quote. V2 supports splitting fees across multiple recipients in a single quote.
+
+### How it works
+
+Affiliate fees are basis-point cuts of the swap output, deducted at settlement and sent to the recipient addresses you specify. You set them per-quote via the SDK's `affiliates` parameter — an array of `{ address, bps }` pairs (the raw API serialises these as the comma-separated `affiliates` query parameter on `GET /v2/get-quote`).
+
+`1 bps = 0.01%`, so `50` means `0.50%`.
+
+### Single recipient
 
 ```typescript
 const quote = await gatewaySDK.getQuote({
   // ... other params
-  affiliateId: '550e8400-e29b-41d4-a716-446655440000', // Your unique UUID
+  affiliates: [{ address: '0xYourAddress', bps: 50 }], // 0.50% to one recipient
 });
 ```
 
-Your affiliate ID:
-- Must be a valid UUID (universally unique identifier)
-- Tracks all transactions through your integration
-- Automatically associates earned fees with your account
-- Contact the BOB team to register your affiliate ID and set up fee structure
+### Split fees across multiple recipients
+
+V2 lets you split affiliate fees across multiple recipients in a single quote — useful for revenue splits between an aggregator and an underlying integrator, referral programs, or multi-party agreements.
+
+```typescript
+const quote = await gatewaySDK.getQuote({
+  // ... other params
+  affiliates: [
+    { address: '0xPartnerA', bps: 50 }, // 0.50%
+    { address: '0xPartnerB', bps: 25 }, // 0.25%
+  ],
+});
+```
+
+### Format and rules
+
+- Comma-separated `<address>:<bps>` pairs, no spaces.
+- Each address must be a valid EVM address.
+- Each `bps` MUST be greater than `0`.
+- Omit `affiliates` or pass an empty array for no affiliate fees.
+- The gateway enforces caps on recipient count and total bps. Routes that don't support affiliate fees return error code `AFFILIATE_FEES_NOT_SUPPORTED_FOR_ROUTE` — handle this by retrying the quote with `affiliates` omitted, or surfacing the error to the user.
+
+### Reading resolved fees from the quote
+
+The V2 quote response includes a resolved `affiliates` array — each entry has the recipient address and the computed fee amount (with optional USD value). Use it to surface the affiliate split to the user:
+
+```typescript
+const quote = await gatewaySDK.getQuote({ /* ... */ });
+
+const onramp = 'onramp' in quote ? quote.onramp : null;
+if (onramp?.affiliates?.length) {
+  for (const a of onramp.affiliates) {
+    console.log(
+      `${a.address} earns ${a.fee.amount} ${a.fee.address}` +
+      (a.fee.usd ? ` (~$${a.fee.usd})` : '')
+    );
+  }
+}
+```
+
+The `affiliates` field is present on `onramp` and `offramp` V2 quotes. `tokenSwap` quotes don't currently expose a resolved affiliates list.
+
+### Raw API equivalent
+
+For integrators not using the SDK, pass the same pairs to the V2 quote endpoint as the `affiliates` query parameter:
+
+```bash
+GET /v2/get-quote?...&affiliates=0xPartnerA:50,0xPartnerB:25
+```
+
+URL-encode the comma if your client doesn't allow raw commas in query strings.
 
 ## Next Steps
 

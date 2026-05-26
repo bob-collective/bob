@@ -23,8 +23,11 @@ afterEach(() => {
 });
 
 describe('Gateway Multiple Affiliates', () => {
-    const sdk = new GatewaySDK(ETHEREUM_GATEWAY_BASE_URL);
-    const affiliateIds = `${ADDR_A}:25,${ADDR_B}:50`;
+    const sdk = new GatewaySDK({ basePath: ETHEREUM_GATEWAY_BASE_URL });
+    const affiliates = [
+        { address: ADDR_A, bps: 25 },
+        { address: ADDR_B, bps: 50 },
+    ] as const;
 
     it('resolves multiple affiliates on a bitcoin → ethereum onramp quote', async () => {
         const mockOnrampQuote: GatewayQuoteV2OneOf = {
@@ -53,9 +56,10 @@ describe('Gateway Multiple Affiliates', () => {
             },
         };
 
+        const expectedWireAffiliates = `${ADDR_A}:25,${ADDR_B}:50`;
         nock(ETHEREUM_GATEWAY_BASE_URL)
             .get('/v2/get-quote')
-            .query((q) => q.srcChain === 'bitcoin')
+            .query((q) => q.srcChain === 'bitcoin' && q.affiliates === expectedWireAffiliates)
             .reply(200, mockOnrampQuote);
 
         const quote = await sdk.getQuote({
@@ -66,7 +70,7 @@ describe('Gateway Multiple Affiliates', () => {
             fromUserAddress: BTC_SENDER,
             toUserAddress: ADDR_A,
             amount: 100_000,
-            affiliateIds,
+            affiliates,
         });
 
         expect(instanceOfGatewayQuoteV2OneOf(quote)).toBe(true);
@@ -74,15 +78,15 @@ describe('Gateway Multiple Affiliates', () => {
             return;
         }
 
-        const { affiliates } = quote.onramp;
-        expect(affiliates).toBeDefined();
-        expect(affiliates).toHaveLength(2);
+        const resolved = quote.onramp.affiliates;
+        expect(resolved).toBeDefined();
+        expect(resolved).toHaveLength(2);
 
-        const addresses = affiliates!.map((a) => getAddress(a.address));
-        expect(addresses).toContain(getAddress(ADDR_A));
-        expect(addresses).toContain(getAddress(ADDR_B));
+        const onrampAddresses = resolved!.map((a) => getAddress(a.address));
+        expect(onrampAddresses).toContain(getAddress(ADDR_A));
+        expect(onrampAddresses).toContain(getAddress(ADDR_B));
 
-        for (const affiliate of affiliates!) {
+        for (const affiliate of resolved!) {
             expect(BigInt(affiliate.fee.amount)).toBeGreaterThan(0n);
         }
     });
@@ -125,7 +129,7 @@ describe('Gateway Multiple Affiliates', () => {
             fromUserAddress: ADDR_A,
             toUserAddress: BTC_SENDER,
             amount: 100_000_000,
-            affiliateIds,
+            affiliates,
         });
 
         expect(instanceOfGatewayQuoteV2OneOf1(quote)).toBe(true);
@@ -133,15 +137,15 @@ describe('Gateway Multiple Affiliates', () => {
             return;
         }
 
-        const { affiliates } = quote.offramp;
-        expect(affiliates).toBeDefined();
-        expect(affiliates).toHaveLength(2);
+        const resolved = quote.offramp.affiliates;
+        expect(resolved).toBeDefined();
+        expect(resolved).toHaveLength(2);
 
-        const addresses = affiliates!.map((a) => getAddress(a.address));
-        expect(addresses).toContain(getAddress(ADDR_A));
-        expect(addresses).toContain(getAddress(ADDR_B));
+        const offrampAddresses = resolved!.map((a) => getAddress(a.address));
+        expect(offrampAddresses).toContain(getAddress(ADDR_A));
+        expect(offrampAddresses).toContain(getAddress(ADDR_B));
 
-        for (const affiliate of affiliates!) {
+        for (const affiliate of resolved!) {
             expect(BigInt(affiliate.fee.amount)).toBeGreaterThan(0n);
         }
     });

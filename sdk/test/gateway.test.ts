@@ -1413,16 +1413,16 @@ describe('Gateway Tests', () => {
     });
 
     it('should throw error when apiKey is not exactly 32 characters', () => {
-        expect(() => new GatewaySDK(undefined, 'short')).toThrow('apiKey must be exactly 32 characters');
-        expect(() => new GatewaySDK(undefined, '0x1234567890')).toThrow('apiKey must be exactly 32 characters');
-        expect(() => new GatewaySDK(undefined, 'a'.repeat(34))).toThrow('apiKey must be exactly 32 characters');
-        expect(() => new GatewaySDK(undefined, 'a'.repeat(36))).toThrow('apiKey must be exactly 32 characters');
+        expect(() => new GatewaySDK({ apiKey: 'short' })).toThrow('apiKey must be exactly 32 characters');
+        expect(() => new GatewaySDK({ apiKey: '0x1234567890' })).toThrow('apiKey must be exactly 32 characters');
+        expect(() => new GatewaySDK({ apiKey: 'a'.repeat(34) })).toThrow('apiKey must be exactly 32 characters');
+        expect(() => new GatewaySDK({ apiKey: 'a'.repeat(36) })).toThrow('apiKey must be exactly 32 characters');
     });
 
     it('should accept apiKey with exactly 32 characters', () => {
         const validApiKey = 'a'.repeat(32);
         expect(validApiKey.length).toBe(32);
-        expect(() => new GatewaySDK(undefined, validApiKey)).not.toThrow();
+        expect(() => new GatewaySDK({ apiKey: validApiKey })).not.toThrow();
     });
 
     it('should call callback for onramp with btcSigner (1 step: sign BTC tx)', async () => {
@@ -1804,7 +1804,7 @@ describe('Gateway Tests', () => {
 
     it('should include Authorization header when apiKey is provided', async () => {
         const validApiKey = 'a'.repeat(32);
-        const gatewaySDK = new GatewaySDK(undefined, validApiKey);
+        const gatewaySDK = new GatewaySDK({ apiKey: validApiKey });
 
         const mockOnrampQuote: GatewayQuoteOneOf = {
             onramp: {
