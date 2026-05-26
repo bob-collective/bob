@@ -1,6 +1,6 @@
 {
     "name": "@gobob/bob-sdk",
-    "version": "5.5.5",
+    "version": "5.6.0",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
     "repository": {
