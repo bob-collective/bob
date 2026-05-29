@@ -22,6 +22,9 @@ V2 adds:
 - **`tokenSwap` route** — EVM-to-EVM token swaps, replacing the V1 `layerZero` variant.
 - **USD values** — `GatewayTokenAmountV2` carries an optional `usd` field on every token amount and on each line of the V2 fee breakdowns.
 - **Price impact** — V2 quotes expose `priceImpact` (fraction) and `priceImpactUsd` for display.
+- **Paginated `getOrders`** — `getOrders` now accepts `{ userAddress, cursor?, limit? }` and returns `{ orders, nextCursor }` instead of a bare array. Pass back `nextCursor` to fetch the next page; a null/missing value means you've reached the end ([details](#monitor-orders)).
+- **Order settlement details in status** — `success` and `refunded` are now objects carrying `receivedTokens` / `refundedTokens` (each entry has `chain`, `token`, `amount`, and the settlement `txHash`). In V1 these statuses were bare strings, and the destination `txHash` lived on `dstInfo`; in V2 `dstInfo` no longer carries a `txHash` — read it from the status payload instead.
+- **`pendingBtcPayment` on offramp orders** — while an offramp order is in progress, `status.inProgress.pendingBtcPayment` exposes the gateway's outgoing Bitcoin `{ txid, amount }` so you can show the user the pending payout. This replaces the V1 `bumpFeeTx` field, which is no longer returned.
 
 ## Installation
 
@@ -57,7 +60,9 @@ const gatewaySDKStaging = new GatewaySDK({ basePath: STAGING_GATEWAY_BASE_URL })
 
 ### Authentication
 
-If you have an API key for the Gateway API, pass it in the options object:
+Gateway API keys are **optional**. All V2 endpoints are reachable without authentication; an API key unlocks higher rate limits and access to partner features.
+
+To request a key, contact the BOB team. Once you have one, pass it in the options object:
 
 ```typescript
 import { GatewaySDK } from '@gobob/bob-sdk';
@@ -65,7 +70,7 @@ import { GatewaySDK } from '@gobob/bob-sdk';
 const gatewaySDK = new GatewaySDK({ apiKey: 'your-api-key' });
 ```
 
-The API key must be exactly 32 characters long. When provided, the SDK will include it in the `Authorization` header as a Bearer token.
+The API key must be exactly 32 characters long. When provided, the SDK will include it in the `Authorization` header as a Bearer token (`Authorization: Bearer <api-key>`). If you're calling the API directly, set the same header on every V2 request.
 
 ## Get Available Routes
 
@@ -262,24 +267,24 @@ For detailed wallet integration options including Reown AppKit, sats-wagmi, Dyna
 
 ## Monitor Orders
 
-Get the user's pending and completed orders:
+Fetch a page of the user's pending and completed orders. `getOrders` returns `{ orders, nextCursor }` — pass `nextCursor` back to walk subsequent pages:
 
 ```typescript
-const orders = await gatewaySDK.getOrders(userEvmAddress);
+const { orders, nextCursor } = await gatewaySDK.getOrders({
+  userAddress: userEvmAddress,
+  limit: 20, // optional; omit to use the gateway default
+});
 
-// Display orders in a table or list
 orders.forEach(order => {
   console.log(`Source: ${order.srcInfo.amount} ${order.srcInfo.token} (${order.srcInfo.chain})`);
-  console.log(`Destination: ${order.dstInfo.amount} ${order.dstInfo.token} (${order.dstInfo.chain})`);
+  console.log(`Destination (estimated): ${order.dstInfo.amount} ${order.dstInfo.token} (${order.dstInfo.chain})`);
 
-  // Check order status (discriminated union)
-  if (typeof order.status === 'string') {
-    // Simple status: 'success' or 'refunded'
-    console.log(`Status: ${order.status}`);
-  } else if ('inProgress' in order.status) {
+  // V2 status is always a discriminated object — no bare strings
+  if ('inProgress' in order.status) {
     console.log('Status: in progress');
-    if (order.status.inProgress.bumpFeeTx) {
-      console.log('Fee bump transaction available');
+    if (order.status.inProgress.pendingBtcPayment) {
+      const { txid, amount } = order.status.inProgress.pendingBtcPayment;
+      console.log(`Pending BTC payout: ${amount} sats (txid: ${txid})`);
     }
     if (order.status.inProgress.refundTx) {
       console.log('Refund transaction available');
@@ -289,46 +294,68 @@ orders.forEach(order => {
     if (order.status.failed.refundTx) {
       console.log('Refund transaction available');
     }
+  } else if ('success' in order.status) {
+    console.log('Status: success');
+    // V2: settled token transfers (with on-chain txHash) are on the status payload
+    for (const t of order.status.success.receivedTokens) {
+      console.log(`Received ${t.amount} ${t.token} on ${t.chain} (tx ${t.txHash})`);
+    }
+  } else if ('refunded' in order.status) {
+    console.log('Status: refunded');
+    for (const t of order.status.refunded.refundedTokens) {
+      console.log(`Refunded ${t.amount} ${t.token} on ${t.chain} (tx ${t.txHash})`);
+    }
   }
 });
 ```
 
+### Paginating through all orders
+
+`nextCursor` is `null`/absent once you've reached the last page:
+
+```typescript
+let cursor: string | undefined;
+do {
+  const page = await gatewaySDK.getOrders({
+    userAddress: userEvmAddress,
+    limit: 50,
+    cursor,
+  });
+  // ...handle page.orders
+  cursor = page.nextCursor ?? undefined;
+} while (cursor);
+```
+
+<Tip>
+`order.dstInfo.amount` is the *estimated* output recorded when the order was created. The settled amount and destination `txHash` are reported on `status.success.receivedTokens` (or `status.refunded.refundedTokens`) once the order resolves.
+</Tip>
+
 ## Offramp Features
 
-For offramp (BOB → Bitcoin) transactions, the `get-orders` API now returns EVM transactions that need to be submitted when actions are required:
+For offramp (BOB → Bitcoin) orders, `getOrders` surfaces V2 status fields you can act on while the order is still in progress:
 
 <AccordionGroup>
 
-<Accordion icon="gauge-high" title="Bump Transaction Fees">
+<Accordion icon="clock" title="Track the Pending BTC Payout">
 
-If Bitcoin network fees increase after order placement, the order will include a `bumpFeeTx` that can be submitted to speed up confirmation:
+While the gateway is settling an offramp, `status.inProgress.pendingBtcPayment` carries the outgoing Bitcoin transaction `{ txid, amount }`. Use it to show the user a "payout in flight" state and link to a block explorer:
 
 ```typescript
-const orders = await gatewaySDK.getOrders(userEvmAddress);
+const { orders } = await gatewaySDK.getOrders({ userAddress: userEvmAddress });
 
-// Find order with bump fee transaction
-const orderNeedingBump = orders.find(order =>
-  typeof order.status === 'object'
-  && 'inProgress' in order.status
-  && order.status.inProgress.bumpFeeTx
+const inFlight = orders.find(order =>
+  'inProgress' in order.status && order.status.inProgress.pendingBtcPayment
 );
 
-if (orderNeedingBump && typeof orderNeedingBump.status === 'object' && 'inProgress' in orderNeedingBump.status) {
-  const bumpFeeTx = orderNeedingBump.status.inProgress.bumpFeeTx!;
-  // Submit the bump fee transaction
-  const hash = await walletClient.sendTransaction({
-    to: bumpFeeTx.to,
-    data: bumpFeeTx.data,
-    value: bumpFeeTx.value,
-  });
-
-  await publicClient.waitForTransactionReceipt({ hash });
+if (inFlight && 'inProgress' in inFlight.status) {
+  const { txid, amount } = inFlight.status.inProgress.pendingBtcPayment!;
+  console.log(`Gateway is sending ${amount} sats — track it at https://mempool.space/tx/${txid}`);
 }
 ```
 
-<Warning>
-Only works if the original transaction hasn't been confirmed yet.
-</Warning>
+<Note>
+V2 no longer exposes a `bumpFeeTx` EVM transaction — the gateway manages fee bumps internally for the BTC payout it broadcasts.
+</Note>
 
 </Accordion>
 
@@ -337,19 +364,18 @@ Only works if the original transaction hasn't been confirmed yet.
 If an order gets stuck or needs to be cancelled, the order will include a `refundTx` to unlock the locked assets:
 
 ```typescript
-const orders = await gatewaySDK.getOrders(userEvmAddress);
+const { orders } = await gatewaySDK.getOrders({ userAddress: userEvmAddress });
 
 // Find order with refund transaction available
 const orderNeedingRefund = orders.find(order =>
-  typeof order.status === 'object'
-  && (('inProgress' in order.status && order.status.inProgress.refundTx)
-    || ('failed' in order.status && order.status.failed.refundTx))
+  ('inProgress' in order.status && order.status.inProgress.refundTx)
+  || ('failed' in order.status && order.status.failed.refundTx)
 );
 
-if (orderNeedingRefund && typeof orderNeedingRefund.status === 'object') {
+if (orderNeedingRefund) {
   const refundTx = 'failed' in orderNeedingRefund.status
     ? orderNeedingRefund.status.failed.refundTx!
-    : orderNeedingRefund.status.inProgress.refundTx!;
+    : (orderNeedingRefund.status as { inProgress: { refundTx: any } }).inProgress.refundTx!;
   // Submit the refund transaction
   const hash = await walletClient.sendTransaction({
     to: refundTx.to,

@@ -77,6 +77,20 @@ Fees include:
 All fees are shown transparently in the quote response.
 </Accordion>
 
+<Accordion icon="ban" title="Are any regions blocked from using Gateway?">
+Yes. For compliance reasons, BOB Gateway is unavailable to users connecting from the following jurisdictions:
+
+**Blocked countries** (ISO 3166-1 alpha-2):
+
+Afghanistan (AF), Albania (AL), Bangladesh (BD), Belarus (BY), Cambodia (KH), Central African Republic (CF), China (CN), Cuba (CU), Democratic Republic of the Congo (CD), Guinea (GN), Haiti (HT), Iran (IR), Iraq (IQ), Lebanon (LB), Libya (LY), Mali (ML), Myanmar (MM), Nicaragua (NI), North Korea (KP), Pakistan (PK), Russia (RU), Rwanda (RW), Somalia (SO), South Sudan (SS), Sudan (SD), Syria (SY), Tanzania (TZ), Uganda (UG), United Kingdom (GB), United States (US), Venezuela (VE), Yemen (YE), Zimbabwe (ZW).
+
+**Blocked regions within otherwise-allowed countries** (ISO 3166-2):
+
+- **Ukraine** — Crimea (`UA-43`), Donetsk Oblast (`UA-14`), Luhansk Oblast (`UA-09`), Kherson Oblast (`UA-65`), Zaporizhzhia Oblast (`UA-23`).
+
+If you operate an integration that serves users in these locations, you are responsible for enforcing the same restrictions in your frontend. The list is subject to change as the applicable sanctions and regulatory regimes evolve.
+</Accordion>
+
 <Accordion icon="life-ring" title="Where can I get help?">
 - **Discord**: Join our community at [discord.gg/gobob](https://discord.gg/gobob)
 - **GitHub**: Report issues at [github.com/bob-collective/bob](https://github.com/bob-collective/bob)

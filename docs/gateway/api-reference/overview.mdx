@@ -28,6 +28,21 @@ V2 adds:
 - **Multi-affiliate fees** — the `affiliates` query parameter on `GET /v2/get-quote` accepts a comma-separated list of `<address>:<bps>` pairs. See the [Monetization section in the integration guide](/gateway/integration#monetization-affiliate-fees).
 - **USD values** — token amounts and fee-breakdown lines carry an optional `usd` field.
 - **`priceImpact` / `priceImpactUsd`** — exposed on all V2 quote variants.
+- **Paginated `GET /v2/get-orders`** — accepts `cursor` and `limit` query parameters and returns `{ orders: GatewayOrderInfoV2[], nextCursor: string | null }` instead of a bare array. Pass back `nextCursor` to fetch the next page; a null/missing value means there are no more orders.
+- **Settlement details in order status** — `success` and `refunded` statuses are now objects (`{ success: { received_tokens: [...] } }`, `{ refunded: { refunded_tokens: [...] } }`) where each token entry carries `chain`, `token`, `amount`, and the settlement `txHash`. In V1 these statuses were bare string enums and the destination `txHash` lived on `dstInfo`; V2 `dstInfo` no longer carries a `txHash`.
+- **`pending_btc_payment` on offramp in-progress orders** — `status.inProgress.pending_btc_payment` exposes the gateway's outgoing Bitcoin `{ txid, amount }` while it's still pending. The V1 `bump_fee_tx` field is no longer returned (the gateway manages BTC fee bumps internally).
+
+## Authentication
+
+API keys are **optional**. All V2 endpoints are reachable without authentication; a key unlocks higher rate limits and access to partner features. To request one, contact the BOB team.
+
+When you have a key, send it as a Bearer token on every V2 request:
+
+```http
+Authorization: Bearer <api-key>
+```
+
+Keys are exactly 32 characters long. The SDK takes the same key via `new GatewaySDK({ apiKey })` and sets the header for you.
 
 ## How It Works
 
