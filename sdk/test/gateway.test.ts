@@ -35,6 +35,16 @@ import {
 const WBTC_OFT_ADDRESS = '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c';
 const MOCK_SIGNED_QUOTE_DATA = 'signed-quote-data';
 
+function mockOftReadContract({ approvalRequired, allowance = 0n }: { approvalRequired: boolean; allowance?: bigint }) {
+    return vi.fn().mockImplementation(({ functionName }: { functionName: string }) => {
+        if (functionName === 'approvalRequired') {
+            return Promise.resolve(approvalRequired);
+        }
+
+        return Promise.resolve(allowance);
+    });
+}
+
 afterEach(() => {
     nock.cleanAll();
 });
@@ -681,9 +691,10 @@ describe('Gateway Tests', () => {
         } as unknown as WalletClient<Transport, ViemChain, Account>;
 
         const mockPublicClient = {
-            multicall: async () => [0n, 8], // allowance: 0 (BigInt), decimals: 8 (number)
-            simulateContract: async () => ({ request: {} }),
-            waitForTransactionReceipt: async () => ({}),
+            readContract: mockOftReadContract({ approvalRequired: true }),
+            multicall: vi.fn().mockResolvedValue([0n]),
+            simulateContract: vi.fn().mockResolvedValue({ request: {} }),
+            waitForTransactionReceipt: vi.fn().mockResolvedValue({}),
         } as unknown as PublicClient<Transport>;
 
         const result = await gatewaySDK.executeQuote({
@@ -770,7 +781,8 @@ describe('Gateway Tests', () => {
 
         const simulateContractMock = vi.fn().mockResolvedValue({ request: {} });
         const mockPublicClient = {
-            multicall: async () => [0n],
+            readContract: mockOftReadContract({ approvalRequired: true }),
+            multicall: vi.fn().mockResolvedValue([0n]),
             simulateContract: simulateContractMock,
             waitForTransactionReceipt: vi.fn().mockResolvedValue({}),
         } as unknown as PublicClient<Transport>;
@@ -859,7 +871,8 @@ describe('Gateway Tests', () => {
 
         const simulateContractMock = vi.fn().mockResolvedValue({ request: {} });
         const mockPublicClient = {
-            multicall: async () => [1n],
+            readContract: mockOftReadContract({ approvalRequired: true }),
+            multicall: vi.fn().mockResolvedValue([1n]),
             simulateContract: simulateContractMock,
             waitForTransactionReceipt: vi.fn().mockResolvedValue({}),
         } as unknown as PublicClient<Transport>;
@@ -945,8 +958,9 @@ describe('Gateway Tests', () => {
         } as unknown as WalletClient<Transport, ViemChain, Account>;
 
         const mockPublicClient = {
-            multicall: async () => [maxUint256, 8],
-            waitForTransactionReceipt: async () => ({}),
+            readContract: mockOftReadContract({ approvalRequired: true }),
+            multicall: vi.fn().mockResolvedValue([maxUint256]),
+            waitForTransactionReceipt: vi.fn().mockResolvedValue({}),
         } as unknown as PublicClient<Transport>;
 
         const result = await gatewaySDK.executeQuote({
@@ -959,6 +973,64 @@ describe('Gateway Tests', () => {
         expect(result.order).toEqual(
             expect.objectContaining({ offramp: expect.objectContaining({ orderId: 'offramp-order-456' }) })
         );
+    });
+
+    it('should skip offramp approval when spender approvalRequired is false', async () => {
+        const gatewaySDK = new GatewaySDK();
+
+        const mockQuote: GatewayQuoteV2OneOf1 = {
+            offramp: {
+                txTo: '0x1234567890123456789012345678901234567890',
+                recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+                slippage: 300,
+                srcChain: 'bob',
+                feeBreakdown: {
+                    protocolFee: { address: zeroAddress, amount: '5', chain: 'bob' },
+                    affiliateFee: { address: zeroAddress, amount: '2', chain: 'bob' },
+                    inclusionFee: { address: zeroAddress, amount: '1', chain: 'bob' },
+                    solverFee: { address: zeroAddress, amount: '1', chain: 'bob' },
+                    fastestFeeRate: '6',
+                },
+                inputAmount: { address: zeroAddress, amount: '1000', chain: 'bob' },
+                outputAmount: { address: zeroAddress, amount: '990', chain: 'bob' },
+                tokenAddress: WBTC_OFT_ADDRESS,
+                totalFeeUsd: '3',
+            },
+        };
+
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
+            .post('/v2/create-order')
+            .reply(200, {
+                offramp: {
+                    order_id: 'offramp-order-no-approval',
+                    tx: {
+                        to: '0x1234567890123456789012345678901234567890',
+                        data: '0xabcdef',
+                        value: '0',
+                    },
+                },
+            });
+
+        nock(`${MAINNET_GATEWAY_BASE_URL}`).patch('/v2/register-tx').reply(200, JSON.stringify('ok'));
+
+        const multicall = vi.fn().mockResolvedValue([0n]);
+        const mockPublicClient = {
+            readContract: mockOftReadContract({ approvalRequired: false }),
+            multicall,
+            waitForTransactionReceipt: vi.fn().mockResolvedValue({}),
+        } as unknown as PublicClient<Transport>;
+
+        const result = await gatewaySDK.executeQuote({
+            quote: mockQuote,
+            walletClient: {
+                account: { address: '0xabcd1234abcd1234abcd1234abcd1234abcd1234' as Address },
+                sendTransaction: async () => '0xtxhash' as `0x${string}`,
+            } as unknown as WalletClient<Transport, ViemChain, Account>,
+            publicClient: mockPublicClient,
+        });
+
+        expect(result.tx).toBe('0xtxhash');
+        expect(multicall).not.toHaveBeenCalled();
     });
 
     it('should throw error when invalid quote type is provided', async () => {
@@ -1195,7 +1267,7 @@ describe('Gateway Tests', () => {
 
         const gatewaySDK = new GatewaySDK();
 
-        const readContract = vi.fn().mockResolvedValue(0n);
+        const readContract = mockOftReadContract({ approvalRequired: true, allowance: 0n });
         const simulateContract = vi.fn().mockResolvedValue({ request: {} });
         const waitForTransactionReceipt = vi.fn().mockResolvedValue({});
         const sendTransaction = vi.fn().mockResolvedValue('0xsendhash');
@@ -1238,7 +1310,7 @@ describe('Gateway Tests', () => {
         expect(result.order).toEqual(
             expect.objectContaining({ tokenSwap: expect.objectContaining({ orderId: 'layerzero-order-123' }) })
         );
-        expect(readContract).toHaveBeenCalledTimes(1);
+        expect(readContract).toHaveBeenCalledTimes(2);
         expect(simulateContract).toHaveBeenCalledTimes(1);
         expect(writeContract).toHaveBeenCalledTimes(1);
         expect(sendTransaction).toHaveBeenCalledTimes(1);
@@ -1274,7 +1346,7 @@ describe('Gateway Tests', () => {
 
         const gatewaySDK = new GatewaySDK();
 
-        const readContract = vi.fn().mockResolvedValue(100000n);
+        const readContract = mockOftReadContract({ approvalRequired: true, allowance: 100000n });
         const simulateContract = vi.fn().mockResolvedValue({ request: {} });
         const waitForTransactionReceipt = vi.fn().mockResolvedValue({});
         const sendTransaction = vi.fn().mockResolvedValue('0xsendhash');
@@ -1314,7 +1386,7 @@ describe('Gateway Tests', () => {
         });
 
         expect(result.tx).toBe('0xsendhash');
-        expect(readContract).toHaveBeenCalledTimes(1);
+        expect(readContract).toHaveBeenCalledTimes(2);
         expect(simulateContract).not.toHaveBeenCalled();
         expect(writeContract).not.toHaveBeenCalled();
         expect(sendTransaction).toHaveBeenCalledTimes(1);
@@ -1350,7 +1422,7 @@ describe('Gateway Tests', () => {
 
         const gatewaySDK = new GatewaySDK();
 
-        const readContract = vi.fn().mockResolvedValue(0n);
+        const readContract = mockOftReadContract({ approvalRequired: false });
         const waitForTransactionReceipt = vi.fn().mockResolvedValue({});
         const sendTransaction = vi.fn().mockResolvedValue('0xsendhash');
 
@@ -1386,7 +1458,7 @@ describe('Gateway Tests', () => {
         });
 
         expect(result.tx).toBe('0xsendhash');
-        expect(readContract).not.toHaveBeenCalled();
+        expect(readContract).toHaveBeenCalledTimes(1);
         expect(sendTransaction).toHaveBeenCalledTimes(1);
         expect(waitForTransactionReceipt).toHaveBeenCalledTimes(1);
     });
@@ -1570,8 +1642,9 @@ describe('Gateway Tests', () => {
                 sendTransaction: async () => '0xtxhash' as `0x${string}`,
             } as unknown as WalletClient<Transport, ViemChain, Account>,
             publicClient: {
-                multicall: async () => [maxUint256],
-                waitForTransactionReceipt: async () => ({}),
+                readContract: mockOftReadContract({ approvalRequired: true }),
+                multicall: vi.fn().mockResolvedValue([maxUint256]),
+                waitForTransactionReceipt: vi.fn().mockResolvedValue({}),
             } as unknown as PublicClient<Transport>,
             callback,
         });
@@ -1624,8 +1697,9 @@ describe('Gateway Tests', () => {
                 sendTransaction: vi.fn().mockResolvedValue('0xtxhash' as `0x${string}`),
             } as unknown as WalletClient<Transport, ViemChain, Account>,
             publicClient: {
-                multicall: async () => [0n],
-                simulateContract: async () => ({ request: {} }),
+                readContract: mockOftReadContract({ approvalRequired: true }),
+                multicall: vi.fn().mockResolvedValue([0n]),
+                simulateContract: vi.fn().mockResolvedValue({ request: {} }),
                 waitForTransactionReceipt: vi.fn().mockResolvedValue({}),
             } as unknown as PublicClient<Transport>,
             callback,
@@ -1680,7 +1754,8 @@ describe('Gateway Tests', () => {
                 sendTransaction: vi.fn().mockResolvedValue('0xtxhash' as `0x${string}`),
             } as unknown as WalletClient<Transport, ViemChain, Account>,
             publicClient: {
-                multicall: async () => [1n],
+                readContract: mockOftReadContract({ approvalRequired: true }),
+                multicall: vi.fn().mockResolvedValue([1n]),
                 simulateContract: vi.fn().mockResolvedValue({ request: {} }),
                 waitForTransactionReceipt: vi.fn().mockResolvedValue({}),
             } as unknown as PublicClient<Transport>,
@@ -1734,7 +1809,7 @@ describe('Gateway Tests', () => {
                 sendTransaction: vi.fn().mockResolvedValue('0xsendhash'),
             } as unknown as WalletClient<Transport, ViemChain, Account>,
             publicClient: {
-                readContract: vi.fn().mockResolvedValue(100000n),
+                readContract: mockOftReadContract({ approvalRequired: true, allowance: 100000n }),
                 waitForTransactionReceipt: vi.fn().mockResolvedValue({}),
             } as unknown as PublicClient<Transport>,
             callback,
@@ -1786,7 +1861,7 @@ describe('Gateway Tests', () => {
                 writeContract: vi.fn().mockResolvedValue('0xapprovehash'),
             } as unknown as WalletClient<Transport, ViemChain, Account>,
             publicClient: {
-                readContract: vi.fn().mockResolvedValue(0n),
+                readContract: mockOftReadContract({ approvalRequired: true, allowance: 0n }),
                 simulateContract: vi.fn().mockResolvedValue({ request: {} }),
                 waitForTransactionReceipt: vi.fn().mockResolvedValue({}),
             } as unknown as PublicClient<Transport>,
