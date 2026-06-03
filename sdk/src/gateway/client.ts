@@ -416,7 +416,7 @@ export class GatewayApiClient {
             let preCheckAllowance = 0n;
 
             // Some receiver contracts (eg certain OFTs) do not require approvals, we check that here
-            let requiresApproval = await publicClient
+            const requiresApproval = await publicClient
                 .readContract({
                     address: receiver,
                     abi: oftApprovalRequiredAbi,
@@ -436,16 +436,11 @@ export class GatewayApiClient {
                 });
             }
 
-            console.log('requiresApproval', requiresApproval);
-            console.log('preCheckAllowance', preCheckAllowance);
-
             const needsApproval = requiresApproval && preCheckAllowance < requiredAmount;
-            console.log('needsApproval', needsApproval);
 
             // Only for USDT on Ethereum, we need to reset the allowance to 0 before approving again because of a quirk in their implementation
             const needsReset =
                 needsApproval && isAddressEqual(tokenAddress, ETHEREUM_USDT_ADDRESS) && preCheckAllowance !== 0n;
-            console.log('needsReset', needsReset);
 
             const totalSteps = needsReset ? 3 : needsApproval ? 2 : 1;
 
