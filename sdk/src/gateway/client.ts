@@ -13,7 +13,7 @@ import {
     type WalletClient,
     zeroAddress,
 } from 'viem';
-import { strategyCaller, USDTApproveAbi } from './abi';
+import { oftApprovalRequiredAbi, strategyCaller, USDTApproveAbi } from './abi';
 import { GatewayError } from './error';
 import {
     Configuration,
@@ -46,7 +46,6 @@ import { formatBtc } from './utils';
 
 const RETRY_COUNT = 8; // Number of times to retry fetching transaction receipt after sending a transaction
 
-export const WBTC_OFT_ADDRESS = '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c';
 export const ETHEREUM_USDT_ADDRESS = '0xdAC17F958D2ee523a2206206994597C13D831ec7';
 
 /**
@@ -414,8 +413,20 @@ export class GatewayApiClient {
 
             // Pre-check allowance before createOrder so we can compute totalSteps upfront.
             // receiver is available from the quote (unlike offramp where spender comes from the order).
-            let preCheckAllowance = maxUint256;
-            if (!isAddressEqual(tokenAddress, WBTC_OFT_ADDRESS)) {
+            let preCheckAllowance = 0n;
+
+            // Some receiver contracts (eg certain OFTs) do not require approvals, we check that here
+            let requiresApproval = await publicClient
+                .readContract({
+                    address: receiver,
+                    abi: oftApprovalRequiredAbi,
+                    functionName: 'approvalRequired',
+                })
+                .then((required) => Boolean(required))
+                .catch(() => true);
+
+            if (requiresApproval) {
+                // If the OFT requires approval, we check the allowance already set
                 preCheckAllowance = await publicClient.readContract({
                     account: walletClient.account,
                     address: tokenAddress,
@@ -425,9 +436,16 @@ export class GatewayApiClient {
                 });
             }
 
-            const needsApproval = preCheckAllowance < requiredAmount;
+            console.log('requiresApproval', requiresApproval);
+            console.log('preCheckAllowance', preCheckAllowance);
+
+            const needsApproval = requiresApproval && preCheckAllowance < requiredAmount;
+            console.log('needsApproval', needsApproval);
+
+            // Only for USDT on Ethereum, we need to reset the allowance to 0 before approving again because of a quirk in their implementation
             const needsReset =
                 needsApproval && isAddressEqual(tokenAddress, ETHEREUM_USDT_ADDRESS) && preCheckAllowance !== 0n;
+            console.log('needsReset', needsReset);
 
             const totalSteps = needsReset ? 3 : needsApproval ? 2 : 1;
 
@@ -439,7 +457,7 @@ export class GatewayApiClient {
                 throw new Error('Invalid order type returned from API');
             }
 
-            if (!isAddressEqual(tokenAddress, WBTC_OFT_ADDRESS) && needsApproval) {
+            if (needsApproval) {
                 // ERC20 token
                 try {
                     // To change the USDT approval, first set the allowance to 0 (approve(_spender, 0))
