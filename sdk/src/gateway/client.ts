@@ -359,10 +359,6 @@ export class GatewayApiClient {
                 requiresApproval && requiredAmount > allowance && !isAddressEqual(tokenAddress, zeroAddress);
             const needsReset = needsApproval && isAddressEqual(tokenAddress, ETHEREUM_USDT_ADDRESS) && allowance !== 0n;
 
-            console.log('allowance', allowance);
-            console.log('needsApproval', needsApproval);
-            console.log('needsReset', needsReset);
-
             const totalSteps = needsReset ? 3 : needsApproval ? 2 : 1;
 
             if (needsApproval) {
