@@ -327,23 +327,41 @@ export class GatewayApiClient {
 
             const spenderAddress = order.offramp.tx.to as Address;
 
-            // Check ETH balance and estimate gas for both potential transactions
-            const [allowance] = !isAddressEqual(tokenAddress, zeroAddress)
-                ? await publicClient.multicall({
-                      allowFailure: false,
-                      contracts: [
-                          {
-                              address: tokenAddress,
-                              abi: erc20Abi,
-                              functionName: 'allowance',
-                              args: [accountAddress, spenderAddress],
-                          },
-                      ],
-                  })
-                : [maxUint256];
+            let allowance = maxUint256;
+            let requiresApproval = false;
 
-            const needsApproval = requiredAmount > allowance && !isAddressEqual(tokenAddress, zeroAddress);
+            if (!isAddressEqual(tokenAddress, zeroAddress)) {
+                requiresApproval = await publicClient
+                    .readContract({
+                        address: spenderAddress,
+                        abi: oftApprovalRequiredAbi,
+                        functionName: 'approvalRequired',
+                    })
+                    .then((required) => Boolean(required))
+                    .catch(() => true);
+
+                if (requiresApproval) {
+                    [allowance] = await publicClient.multicall({
+                        allowFailure: false,
+                        contracts: [
+                            {
+                                address: tokenAddress,
+                                abi: erc20Abi,
+                                functionName: 'allowance',
+                                args: [accountAddress, spenderAddress],
+                            },
+                        ],
+                    });
+                }
+            }
+
+            const needsApproval =
+                requiresApproval && requiredAmount > allowance && !isAddressEqual(tokenAddress, zeroAddress);
             const needsReset = needsApproval && isAddressEqual(tokenAddress, ETHEREUM_USDT_ADDRESS) && allowance !== 0n;
+
+            console.log('allowance', allowance);
+            console.log('needsApproval', needsApproval);
+            console.log('needsReset', needsReset);
 
             const totalSteps = needsReset ? 3 : needsApproval ? 2 : 1;
 
