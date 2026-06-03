@@ -1,105 +1,116 @@
 ---
 title: "Gateway Overview"
-description: "Introduction to BOB Gateway - Bitcoin intent bridge for seamless cross-chain interactions"
+description: "Introduction to BOB Gateway - the best swaps engine for native BTC"
 icon: "bridge"
 ---
 
 ## Why Gateway?
 
-Unlock native Bitcoin liquidity for the entire crypto ecosystem.
+Gateway is the cheapest and easiest way to integrate native BTC swaps into your app, wallet, or aggregator.
 
-Bitcoin holders face significant friction when accessing DeFi opportunities - requiring multiple transactions, bridging steps, and complex wallet interactions. Gateway eliminates these barriers by enabling direct settlement from native BTC into any DeFi position across chains.
+Integrate once via the SDK or API to offer your users best-in-market prices for native BTC swaps — across stablecoins, tokenized gold, wBTC, and more — without building or maintaining swap infrastructure. Gateway handles routing, solver liquidity, on-chain verification, and cross-chain settlement. You earn configurable revenue on every swap. No custody at any point.
 
-Whether you're building a DeFi protocol, wallet, or aggregator - Gateway provides the infrastructure to tap into Bitcoin's $1T+ in liquidity with minimal integration effort.
+The market opportunity is significant. BTC↔stablecoin is the single largest trading pair in crypto — accounting for 90% of all BTC swap volume. But almost all of it still flows through centralised exchanges, because competitive onchain infrastructure for native BTC hasn't existed until now. Gateway closes that gap.
 
 ## What is BOB Gateway?
 
-BOB Gateway is a permissionless intent - and RFQ - based protocol that enables frictionless movement of Bitcoin into DeFi.
-It connects Bitcoin holders and DeFi opportunities across chains, enabling settlement of native BTC into any assets or DeFi positions - from Bitcoin to DeFi in a single transaction.
+BOB Gateway is a permissionless, intents- and RFQ-based protocol for native BTC swaps and 1-click BTCFi.
+
+It is currently offers the cheapest rates for BTC↔stablecoin (USDT, USDC), BTC↔wBTC swaps, and BTC↔tokenized gold swaps for all the most popular trade sizes — helping drive higher conversion rates for integrators.
 
 <CardGroup cols={2}>
   <Card title="Integration Guide" icon="code" href="/gateway/integration">
     Get started with the SDK and integrate Gateway into your app
   </Card>
-  <Card title="DeFi Strategies" icon="layer-group" href="/gateway/strategies">
-    Build 1-click DeFi actions for your users
+
+  <Card title="Routes & Assets" icon="layer-group" href="/gateway/supported-routes">
+    See all available routes and assets
   </Card>
+
   <Card title="API Reference" icon="book" href="/api-reference/overview">
     Explore the complete API documentation
   </Card>
+
   <Card title="Bitcoin Wallets" icon="wallet" href="/gateway/wallets">
     Learn how to integrate Bitcoin wallet support
   </Card>
+
+
 </CardGroup>
 
 ## Key Features
 
 <AccordionGroup>
-  <Accordion icon="bolt" title="1-Click BTC ⇒ DeFi">
-    Bridge, swap, or stake BTC in a single transaction.
+  <Accordion icon="arrow-right-arrow-left" title="Best-in-Market Quotes">
+    Gateway delivers the best prices for BTC↔stablecoin, wBTC and tokenized gold swaps. Better quotes mean higher conversion for your integration and more volume over time.
+  </Accordion>
+
+  <Accordion icon="coins" title="BTC↔EVM and EVM↔EVM support">
+    One integration gives your users access to swaps across stablecoins (USDC, USDT), tokenized gold (XAUT, PAXG), ETH, wBTC. Call `getRoutes()` for the current full list of supported routes and assets.
+  </Accordion>
+
+  <Accordion icon="hand-holding-dollar" title="Configurable Revenue">
+    Set a custom fee on every swap your integration processes. Gateway handles routing, execution, and settlement — you earn on volume without infrastructure overhead.
+  </Accordion>
+
+  <Accordion icon="shield-halved" title="Non-Custodial">
+    Atomic cross-chain swaps and an on-chain Bitcoin Light Client mean neither your app nor BOB ever holds user funds. Solvers cannot claim Bitcoin without completing the swap. Users retain custody throughout.
   </Accordion>
 
   <Accordion icon="download" title="Simple Integration">
-    SDK/API with white-label options.
-  </Accordion>
-
-  <Accordion icon="hand-holding-dollar" title="Revenue Opportunities">
-    Configurable monetization for partners.
-  </Accordion>
-
-  <Accordion icon="code" title="Programmable">
-    Open architecture to build custom integrations and products.
-  </Accordion>
-
-  <Accordion icon="cubes" title="Modular">
-    Plug-and-play components for any stack.
+    SDK and API with white-label options. Minimal integration effort to support native Bitcoin wallets, hardware wallets (Ledger, Trezor, OneKey), and CEX-to-onchain flows via QR swap.
   </Accordion>
 </AccordionGroup>
 
 ## How It Works
 
 <Steps>
-  <Step title="User Initiates">
-    User requests a quote through your app for their desired DeFi action (stake, swap, bridge, etc.)
+  <Step title="Quote Request">
+    Your app calls the Gateway API with the user's desired swap — for example, BTC to USDT on Base. Gateway returns a quote with routing, fees, and estimated output.
   </Step>
-  
-  <Step title="Quote Generation">
-    Gateway API provides a quote with routing, fees, and estimated output
+
+  <Step title="Solver Locks Liquidity">
+    A solver locks the output asset in a smart contract, committing to complete the swap before the user sends any Bitcoin.
   </Step>
-  
-  <Step title="Transaction Signing">
-    User signs a single Bitcoin or EVM transaction
+
+  <Step title="User Sends the Asset">
+    The user signs a single Bitcoin or EVM transaction. Gas on the destination chain is estimated upfront and deducted automatically.
   </Step>
-  
-  <Step title="Verification & Execution">
-    Bitcoin Light Client verifies the transaction on-chain, and the protocol executes the DeFi action
+
+  <Step title="On-Chain Verification">
+    BOB's Bitcoin Light Client verifies the transaction on-chain and triggers settlement.
   </Step>
-  
-  <Step title="Token Delivery">
-    User receives their tokens or staking position directly in their wallet
+
+  <Step title="Asset Delivery">
+    The user receives the target asset on the destination chain. Average completion time: 5–10 minutes.
   </Step>
 </Steps>
 
-## Use Cases
+## What You Can Build
 
 <CardGroup cols={3}>
-  <Card title="Staking" icon="coins">
-    One-click BTC to staked BTC LSTs
+  <Card title="BTC ↔ Stablecoin Swaps" icon="arrow-right-arrow-left">
+    Add best-in-market BTC to USDT and USDC swaps. The #1 BTC use case by trading volume.
   </Card>
-  <Card title="Swapping" icon="arrow-right-arrow-left">
-    Direct BTC to any token on BOB or destination chains
+
+  <Card title="BTC ↔ Tokenized Gold" icon="coins">
+    Enable native BTC swaps into Tether Gold (XAUT) and PAX Gold (PAXG) on Ethereum.
   </Card>
-  <Card title="Lending" icon="hand-holding-dollar">
-    Deposit BTC into lending protocols instantly
+
+  <Card title="BTC ↔ wBTC on and off ramping" icon="arrows-split-up-and-left">
+    Offer wBTC delivery via a single native BTC transaction.
   </Card>
-  <Card title="Cross-Chain" icon="arrows-split-up-and-left">
-    Bridge BTC to Ethereum, Base, and more
+
+  <Card title="Staking Flows" icon="layer-group">
+    Let users move from native BTC into staked BTC LSTs and yield positions in one transaction.
   </Card>
-  <Card title="LP Positions" icon="water">
-    Add BTC liquidity to DEX pools
+
+  <Card title="Lending Integrations" icon="hand-holding-dollar">
+    Deposit native BTC directly into lending protocols without intermediate steps.
   </Card>
-  <Card title="Custom Actions" icon="wand-magic-sparkles">
-    Build any DeFi workflow you can imagine
+
+  <Card title="Custom BTC Workflows" icon="wand-magic-sparkles">
+    Build any BTC-native flow via the open API — from DeFi positions to bespoke routing logic.
   </Card>
 </CardGroup>
 
