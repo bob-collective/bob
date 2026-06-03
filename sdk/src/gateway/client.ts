@@ -330,6 +330,7 @@ export class GatewayApiClient {
             let allowance = maxUint256;
             let requiresApproval = false;
 
+            // Some receiver contracts (eg certain OFTs) do not require approvals, we check that here
             if (!isAddressEqual(tokenAddress, zeroAddress)) {
                 requiresApproval = await publicClient
                     .readContract({
@@ -341,6 +342,7 @@ export class GatewayApiClient {
                     .catch(() => true);
 
                 if (requiresApproval) {
+                    // If the OFT requires approval, we check the allowance already set
                     [allowance] = await publicClient.multicall({
                         allowFailure: false,
                         contracts: [
@@ -357,6 +359,7 @@ export class GatewayApiClient {
 
             const needsApproval =
                 requiresApproval && requiredAmount > allowance && !isAddressEqual(tokenAddress, zeroAddress);
+            // Only for USDT on Ethereum, we need to reset the allowance to 0 before approving again because of a quirk in their implementation
             const needsReset = needsApproval && isAddressEqual(tokenAddress, ETHEREUM_USDT_ADDRESS) && allowance !== 0n;
 
             const totalSteps = needsReset ? 3 : needsApproval ? 2 : 1;
