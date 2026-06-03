@@ -35,6 +35,22 @@ import {
 const WBTC_OFT_ADDRESS = '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c';
 const MOCK_SIGNED_QUOTE_DATA = 'signed-quote-data';
 
+function mockOftReadContract({
+    approvalRequired,
+    allowance = 0n,
+}: {
+    approvalRequired: boolean;
+    allowance?: bigint;
+}) {
+    return vi.fn().mockImplementation(({ functionName }: { functionName: string }) => {
+        if (functionName === 'approvalRequired') {
+            return Promise.resolve(approvalRequired);
+        }
+
+        return Promise.resolve(allowance);
+    });
+}
+
 afterEach(() => {
     nock.cleanAll();
 });
@@ -1195,7 +1211,7 @@ describe('Gateway Tests', () => {
 
         const gatewaySDK = new GatewaySDK();
 
-        const readContract = vi.fn().mockResolvedValue(0n);
+        const readContract = mockOftReadContract({ approvalRequired: true, allowance: 0n });
         const simulateContract = vi.fn().mockResolvedValue({ request: {} });
         const waitForTransactionReceipt = vi.fn().mockResolvedValue({});
         const sendTransaction = vi.fn().mockResolvedValue('0xsendhash');
@@ -1238,7 +1254,7 @@ describe('Gateway Tests', () => {
         expect(result.order).toEqual(
             expect.objectContaining({ tokenSwap: expect.objectContaining({ orderId: 'layerzero-order-123' }) })
         );
-        expect(readContract).toHaveBeenCalledTimes(1);
+        expect(readContract).toHaveBeenCalledTimes(2);
         expect(simulateContract).toHaveBeenCalledTimes(1);
         expect(writeContract).toHaveBeenCalledTimes(1);
         expect(sendTransaction).toHaveBeenCalledTimes(1);
@@ -1274,7 +1290,7 @@ describe('Gateway Tests', () => {
 
         const gatewaySDK = new GatewaySDK();
 
-        const readContract = vi.fn().mockResolvedValue(100000n);
+        const readContract = mockOftReadContract({ approvalRequired: true, allowance: 100000n });
         const simulateContract = vi.fn().mockResolvedValue({ request: {} });
         const waitForTransactionReceipt = vi.fn().mockResolvedValue({});
         const sendTransaction = vi.fn().mockResolvedValue('0xsendhash');
@@ -1314,7 +1330,7 @@ describe('Gateway Tests', () => {
         });
 
         expect(result.tx).toBe('0xsendhash');
-        expect(readContract).toHaveBeenCalledTimes(1);
+        expect(readContract).toHaveBeenCalledTimes(2);
         expect(simulateContract).not.toHaveBeenCalled();
         expect(writeContract).not.toHaveBeenCalled();
         expect(sendTransaction).toHaveBeenCalledTimes(1);
@@ -1350,7 +1366,7 @@ describe('Gateway Tests', () => {
 
         const gatewaySDK = new GatewaySDK();
 
-        const readContract = vi.fn().mockResolvedValue(0n);
+        const readContract = mockOftReadContract({ approvalRequired: false });
         const waitForTransactionReceipt = vi.fn().mockResolvedValue({});
         const sendTransaction = vi.fn().mockResolvedValue('0xsendhash');
 
@@ -1386,7 +1402,7 @@ describe('Gateway Tests', () => {
         });
 
         expect(result.tx).toBe('0xsendhash');
-        expect(readContract).not.toHaveBeenCalled();
+        expect(readContract).toHaveBeenCalledTimes(1);
         expect(sendTransaction).toHaveBeenCalledTimes(1);
         expect(waitForTransactionReceipt).toHaveBeenCalledTimes(1);
     });
@@ -1734,7 +1750,7 @@ describe('Gateway Tests', () => {
                 sendTransaction: vi.fn().mockResolvedValue('0xsendhash'),
             } as unknown as WalletClient<Transport, ViemChain, Account>,
             publicClient: {
-                readContract: vi.fn().mockResolvedValue(100000n),
+                readContract: mockOftReadContract({ approvalRequired: true, allowance: 100000n }),
                 waitForTransactionReceipt: vi.fn().mockResolvedValue({}),
             } as unknown as PublicClient<Transport>,
             callback,
@@ -1786,7 +1802,7 @@ describe('Gateway Tests', () => {
                 writeContract: vi.fn().mockResolvedValue('0xapprovehash'),
             } as unknown as WalletClient<Transport, ViemChain, Account>,
             publicClient: {
-                readContract: vi.fn().mockResolvedValue(0n),
+                readContract: mockOftReadContract({ approvalRequired: true, allowance: 0n }),
                 simulateContract: vi.fn().mockResolvedValue({ request: {} }),
                 waitForTransactionReceipt: vi.fn().mockResolvedValue({}),
             } as unknown as PublicClient<Transport>,
