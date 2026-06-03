@@ -35,13 +35,7 @@ import {
 const WBTC_OFT_ADDRESS = '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c';
 const MOCK_SIGNED_QUOTE_DATA = 'signed-quote-data';
 
-function mockOftReadContract({
-    approvalRequired,
-    allowance = 0n,
-}: {
-    approvalRequired: boolean;
-    allowance?: bigint;
-}) {
+function mockOftReadContract({ approvalRequired, allowance = 0n }: { approvalRequired: boolean; allowance?: bigint }) {
     return vi.fn().mockImplementation(({ functionName }: { functionName: string }) => {
         if (functionName === 'approvalRequired') {
             return Promise.resolve(approvalRequired);
