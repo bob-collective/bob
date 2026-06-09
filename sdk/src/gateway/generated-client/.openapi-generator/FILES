@@ -1,6 +1,7 @@
 .openapi-generator-ignore
 apis/V1Api.ts
 apis/V2Api.ts
+apis/V3Api.ts
 apis/index.ts
 index.ts
 models/ChainTxInfo.ts
@@ -34,6 +35,7 @@ models/GatewayOfframpFeeBreakdown.ts
 models/GatewayOfframpFeeBreakdownV2.ts
 models/GatewayOfframpQuote.ts
 models/GatewayOfframpQuoteV2.ts
+models/GatewayOfframpQuoteV3.ts
 models/GatewayOnrampFeeBreakdown.ts
 models/GatewayOnrampFeeBreakdownV2.ts
 models/GatewayOnrampQuote.ts
@@ -60,6 +62,8 @@ models/GatewayQuoteV2.ts
 models/GatewayQuoteV2OneOf.ts
 models/GatewayQuoteV2OneOf1.ts
 models/GatewayQuoteV2OneOf2.ts
+models/GatewayQuoteV3.ts
+models/GatewayQuoteV3OneOf.ts
 models/GatewayTokenAmount.ts
 models/GatewayTokenAmountV2.ts
 models/GatewayTokenSwapQuoteV2.ts
