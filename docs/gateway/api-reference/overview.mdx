@@ -30,7 +30,7 @@ V2 adds:
 - **`priceImpact` / `priceImpactUsd`** — exposed on all V2 quote variants.
 - **Paginated `GET /v2/get-orders`** — accepts `cursor` and `limit` query parameters and returns `{ orders: GatewayOrderInfoV2[], nextCursor: string | null }` instead of a bare array. Pass back `nextCursor` to fetch the next page; a null/missing value means there are no more orders.
 - **Settlement details in order status** — `success` and `refunded` statuses are now objects (`{ success: { received_tokens: [...] } }`, `{ refunded: { refunded_tokens: [...] } }`) where each token entry carries `chain`, `token`, `amount`, and the settlement `txHash`. In V1 these statuses were bare string enums and the destination `txHash` lived on `dstInfo`; V2 `dstInfo` no longer carries a `txHash`.
-- **`pending_btc_payment` on offramp in-progress orders** — `status.inProgress.pending_btc_payment` exposes the gateway's outgoing Bitcoin `{ txid, amount }` while it's still pending. The V1 `bump_fee_tx` field is no longer returned (the gateway manages BTC fee bumps internally).
+- **`pending_btc_payment` on in-progress X-to-BTC orders** — `status.inProgress.pending_btc_payment` exposes the gateway's outgoing Bitcoin `{ txid, amount }` while it's still pending. The V1 `bump_fee_tx` field is no longer returned (the gateway manages BTC fee bumps internally).
 
 ## Authentication
 
@@ -71,8 +71,8 @@ Gateway transactions follow a 7-step flow to execute Bitcoin↔chain swaps and E
 
   <Step title="Create an Order">
     Pass the quote to `POST /v2/create-order` to lock in the quote and create an order. This reserves liquidity with the market maker and returns transaction details including:
-    - For **onramp** (Bitcoin → chain): A Bitcoin address to send to, or a PSBT to sign.
-    - For **offramp** (chain → Bitcoin): EVM transaction data to execute.
+    - For **BTC to X** (`onramp`, Bitcoin → chain): A Bitcoin address to send to, or a PSBT to sign.
+    - For **X to BTC** (`offramp`, chain → Bitcoin): EVM transaction data to execute.
     - For **tokenSwap** (EVM → EVM): EVM transaction data to execute.
 
     ```bash
@@ -83,8 +83,8 @@ Gateway transactions follow a 7-step flow to execute Bitcoin↔chain swaps and E
 
   <Step title="Sign and Send Transaction">
     Execute the transaction:
-    - For **onramp**: Create and sign a Bitcoin transaction to the provided address, or use the provided PSBT.
-    - For **offramp** or **tokenSwap**: Sign and broadcast the EVM transaction using the provided transaction data.
+    - For **BTC to X** (`onramp`): Create and sign a Bitcoin transaction to the provided address, or use the provided PSBT.
+    - For **X to BTC** (`offramp`) or **tokenSwap**: Sign and broadcast the EVM transaction using the provided transaction data.
   </Step>
 
   <Step title="Register Transaction">

@@ -8,7 +8,7 @@ icon: "lightbulb"
 
 BOB Gateway is an intent-based bridge that enables Bitcoin users to access DeFi protocols with a single Bitcoin transaction. The protocol coordinates peer-to-peer swaps between users and Solvers secured by an on-chain Bitcoin Light Client.
 
-## Onramp: Bitcoin → BOB
+## BTC to X (Bitcoin → BOB)
 
 <Steps>
   <Step title="Liquidity">
@@ -46,7 +46,7 @@ BOB Gateway is an intent-based bridge that enables Bitcoin users to access DeFi 
 
 ### Architecture Diagram
 
-The onramp process involves trustless coordination between Bitcoin, the Relayer, and BOB:
+The BTC-to-X process involves trustless coordination between Bitcoin, the Relayer, and BOB:
 
 ```mermaid
 sequenceDiagram
@@ -69,11 +69,11 @@ sequenceDiagram
     Gateway->>User: Execute intent & send tokens
 ```
 
-## Offramp: BOB → Bitcoin
+## X to BTC (BOB → Bitcoin)
 
 <Steps>
   <Step title="Registration">
-    Solvers register their address and fund it with native Bitcoin (BTC) to fulfill offramp orders.
+    Solvers register their address and fund it with native Bitcoin (BTC) to fulfill X-to-BTC orders.
   </Step>
   
   <Step title="User Creates Order">

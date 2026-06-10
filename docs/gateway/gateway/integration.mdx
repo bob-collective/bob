@@ -6,7 +6,7 @@ icon: "code"
 
 ## Overview
 
-The BOB Gateway SDK makes it easy to bring Bitcoin onramp functionality directly into your app. This guide walks through the complete integration process.
+The BOB Gateway SDK makes it easy to bring native BTC swaps directly into your app. This guide walks through the complete integration process.
 
 We recommend using the API directly, but you may use our SDK for convenience.
 
@@ -24,7 +24,7 @@ V2 adds:
 - **Price impact** — V2 quotes expose `priceImpact` (fraction) and `priceImpactUsd` for display.
 - **Paginated `getOrders`** — `getOrders` now accepts `{ userAddress, cursor?, limit? }` and returns `{ orders, nextCursor }` instead of a bare array. Pass back `nextCursor` to fetch the next page; a null/missing value means you've reached the end ([details](#monitor-orders)).
 - **Order settlement details in status** — `success` and `refunded` are now objects carrying `receivedTokens` / `refundedTokens` (each entry has `chain`, `token`, `amount`, and the settlement `txHash`). In V1 these statuses were bare strings, and the destination `txHash` lived on `dstInfo`; in V2 `dstInfo` no longer carries a `txHash` — read it from the status payload instead.
-- **`pendingBtcPayment` on offramp orders** — while an offramp order is in progress, `status.inProgress.pendingBtcPayment` exposes the gateway's outgoing Bitcoin `{ txid, amount }` so you can show the user the pending payout. This replaces the V1 `bumpFeeTx` field, which is no longer returned.
+- **`pendingBtcPayment` on X-to-BTC orders** — while an X-to-BTC order is in progress, `status.inProgress.pendingBtcPayment` exposes the gateway's outgoing Bitcoin `{ txid, amount }` so you can show the user the pending payout. This replaces the V1 `bumpFeeTx` field, which is no longer returned.
 
 ## Installation
 
@@ -92,7 +92,7 @@ Request a quote for the user's desired transaction:
 
 <CodeGroup>
 
-```typescript Basic Onramp
+```typescript BTC to BOB
 import { parseBtc } from '@gobob/bob-sdk';
 import { parseEther } from 'viem';
 
@@ -154,13 +154,13 @@ The `getQuote` response is a discriminated union — access fields through the a
 const quote = await gatewaySDK.getQuote({ /* ... */ });
 
 if ('onramp' in quote) {
-  // Bitcoin → BOB/EVM onramp
+  // BTC to BOB/EVM
   console.log('Input:', quote.onramp.inputAmount);          // GatewayTokenAmountV2 (has optional .usd)
   console.log('Fees:', quote.onramp.feeBreakdown);          // each line is GatewayTokenAmountV2
   console.log('Price impact:', quote.onramp.priceImpact);   // optional, fraction e.g. "-0.05"
   console.log('ETA:', quote.onramp.estimatedTimeInSecs, 'seconds');
 } else if ('offramp' in quote) {
-  // BOB/EVM → Bitcoin offramp
+  // EVM to BTC
   console.log('Input:', quote.offramp.inputAmount);
   console.log('Fees:', quote.offramp.feeBreakdown);
   console.log('Price impact:', quote.offramp.priceImpact);
@@ -330,15 +330,15 @@ do {
 `order.dstInfo.amount` is the *estimated* output recorded when the order was created. The settled amount and destination `txHash` are reported on `status.success.receivedTokens` (or `status.refunded.refundedTokens`) once the order resolves.
 </Tip>
 
-## Offramp Features
+## X to BTC Order Features
 
-For offramp (BOB → Bitcoin) orders, `getOrders` surfaces V2 status fields you can act on while the order is still in progress:
+For X-to-BTC (BOB → Bitcoin) orders, `getOrders` surfaces V2 status fields you can act on while the order is still in progress:
 
 <AccordionGroup>
 
 <Accordion icon="clock" title="Track the Pending BTC Payout">
 
-While the gateway is settling an offramp, `status.inProgress.pendingBtcPayment` carries the outgoing Bitcoin transaction `{ txid, amount }`. Use it to show the user a "payout in flight" state and link to a block explorer:
+While the gateway is settling an X-to-BTC order, `status.inProgress.pendingBtcPayment` carries the outgoing Bitcoin transaction `{ txid, amount }`. Use it to show the user a "payout in flight" state and link to a block explorer:
 
 ```typescript
 const { orders } = await gatewaySDK.getOrders({ userAddress: userEvmAddress });
@@ -401,9 +401,9 @@ Gateway supports affiliate fees out of the box. You can route a basis-point (bps
 
 ### How it works
 
-Affiliate fees are basis-point cuts of the swap output, deducted at settlement and sent to the recipient addresses you specify. You set them per-quote via the SDK's `affiliates` parameter — an array of `{ address, bps }` pairs (the raw API serialises these as the comma-separated `affiliates` query parameter on `GET /v2/get-quote`).
+Affiliate fees are basis-point cuts of each swap, deducted at settlement and **paid out in USDT on Ethereum** to the recipient addresses you specify, regardless of the route. You set them per-quote via the SDK's `affiliates` parameter — an array of `{ address, bps }` pairs (the raw API serialises these as the comma-separated `affiliates` query parameter on `GET /v2/get-quote`).
 
-`1 bps = 0.01%`, so `50` means `0.50%`.
+`1 bps = 0.01%`, so `50` means `0.50%`. For the full fee model, see [Fees](/gateway/fees).
 
 ### Single recipient
 
