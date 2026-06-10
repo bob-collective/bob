@@ -199,14 +199,6 @@ export class GatewayApiClient {
      * @throws {Error} If neither onramp nor offramp conditions are met
      */
     async getQuote(params: GetQuoteParams, initOverrides?: RequestInit): Promise<GatewayQuoteV3> {
-        for (const [name, value] of Object.entries({ fromToken: params.fromToken, toToken: params.toToken })) {
-            if (!isAddress(value)) {
-                throw new Error(
-                    `Invalid ${name}: '${value}'. Expected a token address (e.g. '0x0000000000000000000000000000000000000000'), not a symbol. Use getRoutes() to find supported token addresses.`
-                );
-            }
-        }
-
         return this.api.getQuoteV3(
             {
                 srcChain: params.fromChain.toString(), // TODO: don't use number
@@ -219,7 +211,7 @@ export class GatewayApiClient {
                 dstToken: params.toToken.toString(),
                 amount: params.amount.toString(),
                 slippage: params.maxSlippage?.toString() || DEFAULT_MAX_SLIPPAGE_BPS,
-                ownerAddress: params.fromUserAddress?.toString() ?? params.toUserAddress.toString(),
+                ownerAddress: params.fromUserAddress?.toString(),
                 gasRefill: params.gasRefill?.toString(),
                 affiliates: params.affiliates?.map((a) => `${a.address}:${a.bps}`).join(','),
                 strategyTarget: params.strategyAddress,

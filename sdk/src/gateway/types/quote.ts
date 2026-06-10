@@ -50,4 +50,4 @@ export interface GatewayQuoteParams {
     strategyMessage?: Hex;
 }
 
-export type GetQuoteParams = Optional<GatewayQuoteParams, 'fromUserAddress'>;
+export type GetQuoteParams = GatewayQuoteParams;
