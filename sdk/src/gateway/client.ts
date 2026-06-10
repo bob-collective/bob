@@ -211,7 +211,7 @@ export class GatewayApiClient {
                 dstToken: params.toToken.toString(),
                 amount: params.amount.toString(),
                 slippage: params.maxSlippage?.toString() || DEFAULT_MAX_SLIPPAGE_BPS,
-                ownerAddress: params.fromUserAddress?.toString(),
+                ownerAddress: params.ownerAddress?.toString(),
                 gasRefill: params.gasRefill?.toString(),
                 affiliates: params.affiliates?.map((a) => `${a.address}:${a.bps}`).join(','),
                 strategyTarget: params.strategyAddress,
