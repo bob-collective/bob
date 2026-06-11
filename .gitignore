@@ -55,3 +55,6 @@ Cargo.lock
 # Superpowers / plans
 docs/plans/
 docs/superpowers/
+
+# Vercel
+.vercel
