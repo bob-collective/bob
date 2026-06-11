@@ -1,6 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "ignoreCommand": "npx turbo-ignore --fallback=HEAD^1",
+  "regions": ["fra1"],
   "redirects": [
     {
       "source": "/assets/files/bob-dao-charter-v1-0-82d9bf1cc29070c51df8965e9dba786c.pdf",
