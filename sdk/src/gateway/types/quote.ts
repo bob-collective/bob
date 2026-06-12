@@ -52,4 +52,4 @@ export interface GatewayQuoteParams {
     ownerAddress: string;
 }
 
-export type GetQuoteParams = GatewayQuoteParams;
+export type GetQuoteParams = Optional<GatewayQuoteParams, 'fromUserAddress'>;
