@@ -1,0 +1,67 @@
+---
+title: "Refunds"
+description: "How Gateway refunds work when a swap can't be completed"
+icon: "arrow-rotate-left"
+---
+
+## Overview
+
+Gateway is non-custodial. Swaps are atomic and secured by an on-chain Bitcoin Light Client, so a solver can never take a user's funds without delivering the other side of the swap. If a swap can't be completed, the user gets their funds back. This page explains when and how that happens.
+
+## When a refund happens
+
+There are two situations where funds are returned instead of the expected output:
+
+- **A DeFi action fails (BTC to X).** When a swap includes a strategy or DeFi action — staking, lending, a multicall — and that on-chain action reverts, Gateway falls back to delivering wrapped BTC directly to the user's EVM address rather than failing the whole swap. The user still receives value; they just receive wrapped BTC instead of the intended position.
+
+- **An order gets stuck or can't be filled.** If no solver completes the order — for example a solver goes offline, or an X-to-BTC payout is never made — the locked funds can be reclaimed. The order status carries a `refundTx` you submit to unlock them.
+
+## BTC to X refunds
+
+For BTC-to-X swaps, refunds take the form of the **fallback** described above: if the destination action fails, the user receives wrapped BTC on their EVM address instead. There's no separate reclaim step — Gateway delivers the fallback asset automatically once the Bitcoin payment is verified.
+
+<Tip>
+Always test strategies thoroughly on testnet. A fallback means the user received wrapped BTC rather than the position they intended to open.
+</Tip>
+
+## X to BTC refunds
+
+For X-to-BTC swaps, the user first locks wrapped BTC in a Gateway contract while a solver fulfils the Bitcoin payout. If the payout doesn't happen, the user has two options:
+
+1. **Bump the fee.** If Bitcoin network fees spiked after the order was created, the payout can be sped up. In V2 the gateway manages BTC fee bumps internally for the payout it broadcasts.
+2. **Reclaim the locked funds.** After a claim-delay period, the user can unlock their wrapped BTC and have it returned.
+
+<Warning>
+Reclaiming is irreversible. Once an order is refunded/unlocked, it cannot be resumed.
+</Warning>
+
+<Note>
+Because users cannot currently submit Bitcoin proofs themselves, an order may be temporarily "stuck" if the relayer is offline. Funds remain safe and become reclaimable — they cannot be taken by the relayer or a solver.
+</Note>
+
+## Refund status in the API
+
+A completed refund shows up as the `refunded` order status, which lists the `refundedTokens` actually returned (each with `chain`, `token`, `amount`, and the settlement `txHash`). While an order is still in progress or has failed, a `refundTx` may be available to trigger the reclaim:
+
+- `status.inProgress.refundTx` — refund available on an in-progress order
+- `status.failed.refundTx` — refund available on a failed order
+- `status.refunded.refundedTokens` — the completed refund
+
+## Issuing a refund
+
+When a `refundTx` is present, submit it as a normal EVM transaction to reclaim the locked assets. See the step-by-step code in the integration guide:
+
+<Card title="Refund stuck orders" icon="unlock" href="/gateway/integration#x-to-btc-order-features" horizontal>
+  Detect a refundable order and submit its refundTx
+</Card>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Fees" icon="money-check-dollar" href="/gateway/fees">
+    The full Gateway fee breakdown
+  </Card>
+  <Card title="Deep Dive" icon="lightbulb" href="/gateway/technical">
+    How verification and settlement work end to end
+  </Card>
+</CardGroup>

@@ -1,0 +1,65 @@
+---
+title: "Fees"
+description: "How Gateway fees work — protocol fees, solver spread, affiliate fees, and gas"
+icon: "money-check-dollar"
+---
+
+## Overview
+
+Every Gateway quote is fully costed before the user signs anything. The `getQuote` response breaks each fee out individually so you can show the user exactly what they're paying — in V2 every fee line also carries an optional `usd` value for display.
+
+A Gateway swap has four kinds of fees.
+
+## Protocol fee
+
+Fees applied by the protocol for processing and routing swaps. Today these are set to merely cover routing and gas costs, with **0 markup**. In the future, the BOB DAO may vote to activate a fee markup; collected revenue would then go to the BOB DAO treasury.
+
+## Solver spread
+
+Solvers compete to fill each order and quote a spread — typically a few basis points (around 1–20 bps depending on the route and the solver). Gateway automatically selects the best quote for every swap, so the user always gets the most competitive price available.
+
+## Affiliate fees
+
+Affiliate fees are your revenue share: a basis-point cut of each swap, routed to one or more EVM addresses you control. This is how integrators monetize Gateway.
+
+<Info>
+**Affiliate fees are paid out in USDT on Ethereum as part of each swap** — regardless of which route the user swapped. One basis point (`1 bps`) is `0.01%`, so `50 bps` is `0.50%`.
+</Info>
+
+You configure affiliate fees **per quote** — there's no upfront registration. Pass one or more `{ address, bps }` pairs when you request a quote, and the fee is deducted as part of the swap and paid to your address(es) on settlement. V2 supports splitting the fee across multiple recipients in a single quote — useful for revenue splits between an aggregator and an underlying integrator, referral programs, or multi-party agreements.
+
+Routes that don't support affiliate fees return the error code `AFFILIATE_FEES_NOT_SUPPORTED_FOR_ROUTE`; handle it by retrying the quote without affiliates or surfacing the error to the user.
+
+For the SDK and raw-API code — single recipient, multi-recipient splits, reading the resolved fee back from the quote, and the format rules — see [Monetization (Affiliate Fees)](/gateway/integration#monetization-affiliate-fees) in the integration guide.
+
+## Gas costs
+
+The gas cost of the **destination** chain is included in the swap processing fees and estimated upfront, so users don't need to hold the destination gas token (for BTC-to-X swaps, users don't need ETH on BOB). The gas cost of the **source** chain — the chain where the swap is initiated — is handled out-of-protocol by the wallet.
+
+## Seeing fees in the quote
+
+All fees are returned on the quote so you can display them before the user commits:
+
+```typescript
+const quote = await gatewaySDK.getQuote({ /* ... */ });
+
+if ('onramp' in quote) {
+  // each feeBreakdown line is a GatewayTokenAmountV2 (optional .usd)
+  console.log('Fees:', quote.onramp.feeBreakdown);
+
+  for (const a of quote.onramp.affiliates ?? []) {
+    console.log(`Affiliate ${a.address}: ${a.fee.amount}` + (a.fee.usd ? ` (~$${a.fee.usd})` : ''));
+  }
+}
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Affiliate fee integration" icon="code" href="/gateway/integration#monetization-affiliate-fees">
+    Code examples for configuring affiliate fees via the SDK and raw API
+  </Card>
+  <Card title="Refunds" icon="arrow-rotate-left" href="/gateway/refunds">
+    What happens when a swap can't be completed
+  </Card>
+</CardGroup>

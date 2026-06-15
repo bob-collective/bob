@@ -13,7 +13,7 @@ The Relayer estimates gas costs upfront and deducts them from the transaction. U
 </Accordion>
 
 <Accordion icon="triangle-exclamation" title="What happens if my DeFi action fails?">
-Gateway automatically falls back to sending the wrapped BTC directly to the user's EVM address. Always test thoroughly to avoid fallbacks.
+Gateway falls back to sending wrapped BTC directly to the user's EVM address, so the user still receives value. Always test thoroughly to avoid fallbacks. See [Refunds](/gateway/refunds) for details.
 </Accordion>
 
 <Accordion icon="wallet" title="Do I need Bitcoin wallet support?">
@@ -32,7 +32,7 @@ Yes! Custom strategies can interact with multiple protocols in sequence. For exa
 </Accordion>
 
 <Accordion icon="money-bill" title="How does affiliate fee monetization work?">
-You can earn fees on every transaction which is linked to your affiliate ID. The fee is deducted from the user's input amount and sent directly to you.
+You earn a configurable basis-point fee on every swap linked to your affiliate address, paid out in USDT on Ethereum. See [Fees](/gateway/fees) for the model and the [affiliate integration guide](/gateway/integration#monetization-affiliate-fees) for code.
 </Accordion>
 
 <Accordion icon="clock" title="How long do transactions take?">
@@ -45,18 +45,18 @@ The quote response includes an `estimatedTimeInSecs` field with the expected dur
 </Accordion>
 
 <Accordion icon="arrows-rotate" title="What happens if Bitcoin fees spike after I submit?">
-For offramp transactions, you can bump the transaction fee to speed up confirmation if Bitcoin network fees increase.
+For X-to-BTC transactions, the Bitcoin payout can be bumped to speed up confirmation if network fees increase. See [Refunds](/gateway/refunds).
 </Accordion>
 
 <Accordion icon="xmark" title="Can I cancel a transaction?">
-For offramp transactions, you can unlock an order if it gets stuck. This is irreversible - once unlocked, the order cannot be resumed.
+For X-to-BTC orders, you can reclaim locked funds if an order gets stuck. This is irreversible — once unlocked, the order cannot be resumed. See [Refunds](/gateway/refunds).
 </Accordion>
 
 <Accordion icon="code-branch" title="What chains are supported?">
 Gateway supports:
 - **Bitcoin** → BOB (mainnet)
 - **Bitcoin** → Ethereum, Base, Arbitrum, Optimism (via LayerZero)
-- **BOB** → Bitcoin (offramp)
+- **BOB** → Bitcoin (X to BTC)
 
 Check `getRoutes()` for the complete list of available routes.
 </Accordion>
@@ -68,13 +68,7 @@ View audit reports: [docs.gobob.xyz/docs/reference/audits](https://docs.gobob.xy
 </Accordion>
 
 <Accordion icon="money-check-dollar" title="What are the fees?">
-Fees include:
-- **Protocol fees**: Fees applied by the protocol for processing and routing the swaps. Currently fees are set to merely cover routing and gas costs, with 0 markup. In the future, the BOB DAO may vote to activate a fee markup. Then, collected revenues will go to the BOB DAO treasury.
-- **Solver spread**: Solvers compete to offer the best quotes, typically charging a spread of a few basis points (1-20bps on average depending on the route and Solver). BOB Gateway automatically picks the best quote for each swap.
-- **Broker fees**: Most wallets and web apps apply a "convenience" fee for processing swaps. These are deducted from the swapped amount, on-chain by the protocol smart contracts.
-- **Gas costs**: The gas costs of the destination chain are included in the swap processing fees. The gas costs of the source chain (the chain where the swap was initiated) are handled out-of-protocol by the wallet.
-
-All fees are shown transparently in the quote response.
+A Gateway swap has a protocol fee, a solver spread, optional affiliate fees, and destination gas — all shown transparently in the quote response. See [Fees](/gateway/fees) for the full breakdown.
 </Accordion>
 
 <Accordion icon="ban" title="Are any regions blocked from using Gateway?">
