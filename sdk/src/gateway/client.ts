@@ -339,16 +339,11 @@ export class GatewayApiClient {
 
                 if (requiresApproval) {
                     // If the OFT requires approval, we check the allowance already set
-                    [allowance] = await publicClient.multicall({
-                        allowFailure: false,
-                        contracts: [
-                            {
-                                address: tokenAddress,
-                                abi: erc20Abi,
-                                functionName: 'allowance',
-                                args: [publicClientAccountAddress, publicClientSpenderAddress],
-                            },
-                        ],
+                    allowance = await publicClient.readContract({
+                        address: tokenAddress,
+                        abi: erc20Abi,
+                        functionName: 'allowance',
+                        args: [publicClientAccountAddress, publicClientSpenderAddress],
                     });
                 }
             }
