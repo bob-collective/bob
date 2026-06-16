@@ -394,7 +394,7 @@ export class GatewayApiClient {
 
             callback?.({ step: totalSteps, type: ExecuteQuoteStepType.SendTransaction, totalSteps });
             const transactionHash = await walletClient.sendTransaction({
-                account: walletClient.account,
+                account: walletClient.account.address,
                 data: order.offramp.tx.data as Hex,
                 to: spenderAddress,
                 value: BigInt(order.offramp.tx.value || 0),
@@ -520,7 +520,7 @@ export class GatewayApiClient {
 
             callback?.({ step: totalSteps, type: ExecuteQuoteStepType.SendTransaction, totalSteps });
             const transactionHash = await walletClient.sendTransaction({
-                account: walletClient.account,
+                account: walletClient.account.address,
                 data: order.tokenSwap.tx.data as Hex,
                 to: order.tokenSwap.tx.to as Address,
                 value: BigInt(order.tokenSwap.tx.value || 0),
@@ -568,7 +568,7 @@ export class GatewayApiClient {
 
         if (BigInt(params.amount) > allowance) {
             const { request } = await publicClient.simulateContract({
-                account: walletClient.account,
+                account: walletClient.account.address,
                 address: params.token,
                 abi: erc20Abi,
                 functionName: 'approve',
@@ -585,7 +585,7 @@ export class GatewayApiClient {
             abi: strategyCaller,
             functionName: 'handleGatewayMessageWithSlippageArgs', // TODO: encode args
             args: [params.token, params.amount, params.receiver, { amountOutMin: params.amountOutMin }],
-            account: walletClient.account,
+            account: walletClient.account.address,
         });
 
         const transactionHash = await walletClient.writeContract(request);
