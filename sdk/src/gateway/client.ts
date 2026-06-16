@@ -375,16 +375,7 @@ export class GatewayApiClient {
                         args: [publicClientSpenderAddress, 0n],
                     });
                     callback?.({ step: 1, type: ExecuteQuoteStepType.ResetApproval, totalSteps });
-                    const resetTxHash = await walletClient.writeContract(
-                        isTron
-                            ? ({
-                                  ...resetRequest,
-                                  account: walletClient.account,
-                                  address: quote.offramp.tokenAddress as Address,
-                                  args: [spenderAddress, 0n],
-                              } as typeof resetRequest)
-                            : resetRequest
-                    );
+                    const resetTxHash = await walletClient.writeContract(resetRequest);
                     await publicClient.waitForTransactionReceipt({ hash: resetTxHash, retryCount: RETRY_COUNT });
                 }
 
@@ -397,16 +388,7 @@ export class GatewayApiClient {
                 });
 
                 callback?.({ step: needsReset ? 2 : 1, type: ExecuteQuoteStepType.Approve, totalSteps });
-                const approveTxHash = await walletClient.writeContract(
-                    isTron
-                        ? ({
-                              ...request,
-                              account: walletClient.account,
-                              address: quote.offramp.tokenAddress as Address,
-                              args: [spenderAddress, requiredAmount],
-                          } as typeof request)
-                        : request
-                );
+                const approveTxHash = await walletClient.writeContract(request);
                 await publicClient.waitForTransactionReceipt({ hash: approveTxHash, retryCount: RETRY_COUNT });
             }
 
@@ -506,16 +488,7 @@ export class GatewayApiClient {
                             args: [publicClientReceiver, 0n],
                         });
                         callback?.({ step: 1, type: ExecuteQuoteStepType.ResetApproval, totalSteps });
-                        const resetTxHash = await walletClient.writeContract(
-                            isTron
-                                ? ({
-                                      ...resetRequest,
-                                      account: walletClient.account,
-                                      address: quote.tokenSwap.inputAmount.address as Address,
-                                      args: [receiver, 0n],
-                                  } as typeof resetRequest)
-                                : resetRequest
-                        );
+                        const resetTxHash = await walletClient.writeContract(resetRequest);
                         await publicClient.waitForTransactionReceipt({ hash: resetTxHash, retryCount: RETRY_COUNT });
                     }
 
@@ -528,16 +501,7 @@ export class GatewayApiClient {
                     });
 
                     callback?.({ step: needsReset ? 2 : 1, type: ExecuteQuoteStepType.Approve, totalSteps });
-                    const txHash = await walletClient.writeContract(
-                        isTron
-                            ? ({
-                                  ...request,
-                                  account: walletClient.account,
-                                  address: quote.tokenSwap.inputAmount.address as Address,
-                                  args: [receiver, requiredAmount],
-                              } as typeof request)
-                            : request
-                    );
+                    const txHash = await walletClient.writeContract(request);
 
                     await publicClient.waitForTransactionReceipt({ hash: txHash, retryCount: RETRY_COUNT });
                 } catch (error) {
