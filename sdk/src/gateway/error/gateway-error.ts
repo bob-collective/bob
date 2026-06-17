@@ -1,7 +1,7 @@
 import {
     GatewayErrorCode,
     GatewayErrorCodeV2Variants as GatewayErrorCodeV2,
-    GatewayErrorCodeV2Variants,
+    GatewayErrorCodeV3Variants as GatewayErrorCodeV3,
     GatewayErrorDetailsOneOf,
     GatewayErrorDetailsOneOf1,
     GatewayErrorDetailsOneOf2,
@@ -15,7 +15,7 @@ import {
 import type { GatewayError as GatewayErrorInterface } from '../generated-client/models/GatewayError';
 import { instanceOfGatewayError } from '../generated-client/models/GatewayError';
 
-export { GatewayErrorCode, GatewayErrorCodeV2 };
+export { GatewayErrorCode, GatewayErrorCodeV2, GatewayErrorCodeV3 };
 
 // ─── Named detail interfaces (mirror the Rust GatewayErrorDetails enum) ──────
 
@@ -76,7 +76,7 @@ export type GatewayErrorDetailsMap = {
  * Resolves to the detail interface for a known code, or `null` for codes
  * that carry no structured details (e.g. `InternalError`, `InvalidRequest`).
  */
-export type DetailsFor<C extends GatewayErrorCode | GatewayErrorCodeV2> = C extends keyof GatewayErrorDetailsMap
+export type DetailsFor<C extends GatewayErrorCode | GatewayErrorCodeV2 | GatewayErrorCodeV3> = C extends keyof GatewayErrorDetailsMap
     ? GatewayErrorDetailsMap[C]
     : null;
 
