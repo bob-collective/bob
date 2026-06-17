@@ -326,6 +326,7 @@
           {
             "name": "strategyTarget",
             "in": "query",
+            "description": "Deprecated: custom strategies are no longer supported. Supplying this\nfield is rejected with an error. Removed in V3.",
             "required": false,
             "schema": {
               "type": "string"
@@ -335,6 +336,7 @@
           {
             "name": "strategyMessage",
             "in": "query",
+            "description": "Deprecated: custom strategies are no longer supported. Supplying this\nfield is rejected with an error. Removed in V3.",
             "required": false,
             "schema": {
               "type": "string"
@@ -777,6 +779,7 @@
           {
             "name": "strategyTarget",
             "in": "query",
+            "description": "Deprecated: custom strategies are no longer supported. Supplying this\nfield is rejected with an error. Removed in V3.",
             "required": false,
             "schema": {
               "type": "string"
@@ -786,6 +789,7 @@
           {
             "name": "strategyMessage",
             "in": "query",
+            "description": "Deprecated: custom strategies are no longer supported. Supplying this\nfield is rejected with an error. Removed in V3.",
             "required": false,
             "schema": {
               "type": "string"
@@ -901,6 +905,431 @@
             "api_key": []
           }
         ]
+      }
+    },
+    "/v3/create-order": {
+      "post": {
+        "tags": [
+          "v3"
+        ],
+        "summary": "Create a new gateway order (V3).",
+        "description": "Accepts a `GatewayQuoteV3` — the signed V3 quote with `ownerAddress` embedded in each variant.",
+        "operationId": "create_order_v3",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GatewayQuoteV3"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created order",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayCreateOrderV2"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Create order error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayErrorV3"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v3/get-max-spendable/{address}": {
+      "get": {
+        "tags": [
+          "v3"
+        ],
+        "summary": "Get the maximum spendable Bitcoin amount for the given address (v2).",
+        "operationId": "get_max_spendable_v2",
+        "parameters": [
+          {
+            "name": "address",
+            "in": "path",
+            "description": "Bitcoin address to calculate the maximum spendable amount for",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Get the maximum spendable Bitcoin amount for the given address after accounting for estimated transaction fees",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayMaxSpendable"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Get max spendable error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayErrorV2"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "api_key": []
+          }
+        ]
+      }
+    },
+    "/v3/get-order/{id}": {
+      "get": {
+        "tags": [
+          "v3"
+        ],
+        "summary": "Get an order by id (v2).",
+        "operationId": "get_order_v2",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Order identifier: either the order_id returned by create-order, the source Bitcoin transaction ID , or the source EVM transaction hash",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Get order by either the order_id returned by create-order, the source Bitcoin transaction ID , or the source EVM transaction hash",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayOrderInfoV2"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid order ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayErrorV2"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Order not found"
+          }
+        },
+        "security": [
+          {
+            "api_key": []
+          }
+        ]
+      }
+    },
+    "/v3/get-orders/{user_address}": {
+      "get": {
+        "tags": [
+          "v3"
+        ],
+        "summary": "Get user orders (v2).",
+        "operationId": "get_orders_v2",
+        "parameters": [
+          {
+            "name": "user_address",
+            "in": "path",
+            "description": "User address",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "description": "Cursor used to fetch the next page, obtained from the response's `next_cursor`.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Number of orders to request",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "style": "form"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Get orders",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedOrdersResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid user address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayErrorV2"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "api_key": []
+          }
+        ]
+      }
+    },
+    "/v3/get-quote": {
+      "get": {
+        "tags": [
+          "v3"
+        ],
+        "summary": "Get a gateway quote (v3 — requires `ownerAddress`).",
+        "operationId": "get_quote_v3",
+        "parameters": [
+          {
+            "name": "srcChain",
+            "in": "query",
+            "description": "Source chain",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "style": "form",
+            "example": "bitcoin"
+          },
+          {
+            "name": "dstChain",
+            "in": "query",
+            "description": "Destination chain",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "style": "form",
+            "example": "bob"
+          },
+          {
+            "name": "sender",
+            "in": "query",
+            "description": "Address sending the funds",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "style": "form",
+            "example": "bc1qyhc4uslh46axl553pq3mjclrt7dcgmlzxv0ktx"
+          },
+          {
+            "name": "recipient",
+            "in": "query",
+            "description": "Address receiving the funds",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "style": "form",
+            "example": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+          },
+          {
+            "name": "srcToken",
+            "in": "query",
+            "description": "Source token address",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "style": "form",
+            "example": "0x0000000000000000000000000000000000000000"
+          },
+          {
+            "name": "dstToken",
+            "in": "query",
+            "description": "Destination token address",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "style": "form",
+            "example": "0x0555E30da8f98308EdB960aa94C0Db47230d2B9c"
+          },
+          {
+            "name": "amount",
+            "in": "query",
+            "description": "Amount to swap (in smallest unit, e.g., sats or wei)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "style": "form",
+            "example": "100000"
+          },
+          {
+            "name": "gasRefill",
+            "in": "query",
+            "description": "Optional gas refill amount (in smallest unit, e.g., wei)",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
+            "name": "slippage",
+            "in": "query",
+            "description": "Slippage tolerance (in basis points, e.g., 300 = 3%)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "style": "form",
+            "example": "300"
+          },
+          {
+            "name": "affiliates",
+            "in": "query",
+            "description": "Comma-separated list of `<address>:<bps>` pairs, e.g.\n`0xf39F…:50,0x70997…:25`. Omit or send an empty string for no affiliate\nfees. Max [`intents::MAX_AFFILIATES`] entries; total bps MUST NOT exceed\n[`intents::MAX_AFFILIATE_TOTAL_BPS`]; each bps MUST be > 0.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "style": "form",
+            "example": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266:50,0x70997970C51812dc3A010C7d01b50e0d17dc79C8:25"
+          },
+          {
+            "name": "ownerAddress",
+            "in": "query",
+            "description": "Mandatory EVM owner / refund address (`0x…`). Used as the Bungee\nsource-chain refund target (onramp) and the on-chain order owner\n(offramp). Required on every V3 request.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "style": "form",
+            "example": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Get a quote",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayQuoteV3"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Get a quote error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayErrorV3"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v3/get-routes": {
+      "get": {
+        "tags": [
+          "v3"
+        ],
+        "summary": "Get all supported routes (v3).",
+        "operationId": "get_routes_v3",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RouteInfo"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v3/register-tx": {
+      "patch": {
+        "tags": [
+          "v3"
+        ],
+        "summary": "Register a tx for a request (V3 body; identical shape to V2).",
+        "operationId": "register_tx_v3",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterTxV2"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegisterTxSuccess"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayErrorV3"
+                }
+              }
+            }
+          }
+        }
       }
     }
   },
@@ -1203,6 +1632,27 @@
           "INSUFFICIENT_SOLVER_BALANCE",
           "AFFILIATE_FEES_NOT_SUPPORTED_FOR_ROUTE",
           "UNKNOWN"
+        ]
+      },
+      "GatewayErrorCodeV3": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/GatewayErrorCode"
+          },
+          {
+            "$ref": "#/components/schemas/GatewayErrorCodeV2Variants"
+          },
+          {
+            "$ref": "#/components/schemas/GatewayErrorCodeV3Variants"
+          }
+        ],
+        "description": "Error codes for V3 API - includes all V1/V2 codes plus new ones."
+      },
+      "GatewayErrorCodeV3Variants": {
+        "type": "string",
+        "description": "New error codes for V3.",
+        "enum": [
+          "BUNGEE_NO_ROUTE"
         ]
       },
       "GatewayErrorDetails": {
@@ -1515,6 +1965,35 @@
           }
         }
       },
+      "GatewayErrorV3": {
+        "type": "object",
+        "description": "Structured error response for V3 API.",
+        "required": [
+          "code",
+          "error"
+        ],
+        "properties": {
+          "code": {
+            "$ref": "#/components/schemas/GatewayErrorCodeV3",
+            "description": "Stable error code for frontend parsing"
+          },
+          "details": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/GatewayErrorDetailsV2",
+                "description": "Optional structured details specific to the error type"
+              }
+            ]
+          },
+          "error": {
+            "type": "string",
+            "description": "Human-readable error message"
+          }
+        }
+      },
       "GatewayLayerZeroQuote": {
         "type": "object",
         "required": [
@@ -1738,6 +2217,100 @@
           },
           "outputAmount": {
             "$ref": "#/components/schemas/GatewayTokenAmountV2"
+          },
+          "priceImpact": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Price impact as a fraction, e.g. `\"-0.05\"` means 5% loss. Absent if no price feed is\navailable."
+          },
+          "priceImpactUsd": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Price impact in USD, excluding execution fee. E.g. `\"-1.00\"` means $1 loss. Absent if no\nprice feed is available."
+          },
+          "recipient": {
+            "type": "string"
+          },
+          "sender": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "slippage": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "srcChain": {
+            "type": "string"
+          },
+          "tokenAddress": {
+            "type": "string"
+          },
+          "totalFeeUsd": {
+            "type": "string"
+          },
+          "txTo": {
+            "type": "string"
+          }
+        }
+      },
+      "GatewayOfframpQuoteV3": {
+        "type": "object",
+        "description": "V3 offramp quote: identical to V2 plus `owner_address`.",
+        "required": [
+          "srcChain",
+          "tokenAddress",
+          "inputAmount",
+          "outputAmount",
+          "totalFeeUsd",
+          "feeBreakdown",
+          "recipient",
+          "slippage",
+          "txTo",
+          "ownerAddress"
+        ],
+        "properties": {
+          "affiliateAddress": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Affiliate address (V1-compatible field; first entry from `affiliates`)."
+          },
+          "affiliates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResolvedAffiliate"
+            },
+            "description": "Resolved affiliate recipients and computed fees (V2)."
+          },
+          "estimatedTimeInSecs": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Estimated time in secs to complete the Order",
+            "minimum": 0
+          },
+          "feeBreakdown": {
+            "$ref": "#/components/schemas/GatewayOfframpFeeBreakdownV2"
+          },
+          "inputAmount": {
+            "$ref": "#/components/schemas/GatewayTokenAmountV2"
+          },
+          "outputAmount": {
+            "$ref": "#/components/schemas/GatewayTokenAmountV2"
+          },
+          "ownerAddress": {
+            "type": "string",
+            "description": "Resolved EVM owner / refund-claimant for the on-chain order."
           },
           "priceImpact": {
             "type": [
@@ -2403,6 +2976,44 @@
         ],
         "description": "Gateway quote."
       },
+      "GatewayQuoteV3": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "onramp"
+            ],
+            "properties": {
+              "onramp": {
+                "$ref": "#/components/schemas/GatewayOnrampQuoteV2"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "offramp"
+            ],
+            "properties": {
+              "offramp": {
+                "$ref": "#/components/schemas/GatewayOfframpQuoteV3"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "tokenSwap"
+            ],
+            "properties": {
+              "tokenSwap": {
+                "$ref": "#/components/schemas/GatewayTokenSwapQuoteV2"
+              }
+            }
+          }
+        ],
+        "description": "V3 gateway quote — used for both the get-quote response and the create-order body.\n`ownerAddress` is embedded in each variant that carries an owner concept."
+      },
       "GatewayTokenAmount": {
         "type": "object",
         "required": [
@@ -2888,6 +3499,10 @@
     {
       "name": "v2",
       "description": "BOB Gateway Core API (v2)"
+    },
+    {
+      "name": "v3",
+      "description": "BOB Gateway Core API (v3)"
     }
   ]
 }

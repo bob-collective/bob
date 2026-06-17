@@ -16,8 +16,8 @@
 import * as runtime from '../runtime';
 import type {
   GatewayCreateOrderV2,
-  GatewayError,
   GatewayErrorV2,
+  GatewayErrorV3,
   GatewayMaxSpendable,
   GatewayOrderInfoV2,
   GatewayQuoteV3,
@@ -29,10 +29,10 @@ import type {
 import {
     GatewayCreateOrderV2FromJSON,
     GatewayCreateOrderV2ToJSON,
-    GatewayErrorFromJSON,
-    GatewayErrorToJSON,
     GatewayErrorV2FromJSON,
     GatewayErrorV2ToJSON,
+    GatewayErrorV3FromJSON,
+    GatewayErrorV3ToJSON,
     GatewayMaxSpendableFromJSON,
     GatewayMaxSpendableToJSON,
     GatewayOrderInfoV2FromJSON,
@@ -78,8 +78,6 @@ export interface GetQuoteV3Request {
     ownerAddress: string;
     sender?: string;
     gasRefill?: string;
-    strategyTarget?: string;
-    strategyMessage?: string;
     affiliates?: string;
 }
 
@@ -372,14 +370,6 @@ export class V3Api extends runtime.BaseAPI {
 
         if (requestParameters['slippage'] != null) {
             queryParameters['slippage'] = requestParameters['slippage'];
-        }
-
-        if (requestParameters['strategyTarget'] != null) {
-            queryParameters['strategyTarget'] = requestParameters['strategyTarget'];
-        }
-
-        if (requestParameters['strategyMessage'] != null) {
-            queryParameters['strategyMessage'] = requestParameters['strategyMessage'];
         }
 
         if (requestParameters['affiliates'] != null) {

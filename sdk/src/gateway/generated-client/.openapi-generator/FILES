@@ -17,6 +17,8 @@ models/GatewayError.ts
 models/GatewayErrorCode.ts
 models/GatewayErrorCodeV2.ts
 models/GatewayErrorCodeV2Variants.ts
+models/GatewayErrorCodeV3.ts
+models/GatewayErrorCodeV3Variants.ts
 models/GatewayErrorDetails.ts
 models/GatewayErrorDetailsOneOf.ts
 models/GatewayErrorDetailsOneOf1.ts
@@ -29,6 +31,7 @@ models/GatewayErrorDetailsV2.ts
 models/GatewayErrorDetailsV2OneOf.ts
 models/GatewayErrorDetailsV2OneOf1.ts
 models/GatewayErrorV2.ts
+models/GatewayErrorV3.ts
 models/GatewayLayerZeroQuote.ts
 models/GatewayMaxSpendable.ts
 models/GatewayOfframpFeeBreakdown.ts
