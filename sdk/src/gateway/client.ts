@@ -214,8 +214,6 @@ export class GatewayApiClient {
                 ownerAddress: params.ownerAddress?.toString(),
                 gasRefill: params.gasRefill?.toString(),
                 affiliates: params.affiliates?.map((a) => `${a.address}:${a.bps}`).join(','),
-                strategyTarget: params.strategyAddress,
-                strategyMessage: params.strategyMessage,
             },
             initOverrides
         );
