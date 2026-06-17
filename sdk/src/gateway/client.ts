@@ -356,7 +356,7 @@ export class GatewayApiClient {
                 // https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
                 if (needsReset) {
                     const { request: resetRequest } = await publicClient.simulateContract({
-                        account: walletClient.account,
+                        account: walletClient.account.address,
                         address: tokenAddress,
                         abi: USDTApproveAbi,
                         functionName: 'approve',
@@ -368,7 +368,7 @@ export class GatewayApiClient {
                 }
 
                 const { request } = await publicClient.simulateContract({
-                    account: walletClient.account,
+                    account: walletClient.account.address,
                     address: tokenAddress,
                     abi: isAddressEqual(tokenAddress, ETHEREUM_USDT_ADDRESS) ? USDTApproveAbi : erc20Abi,
                     functionName: 'approve',
@@ -431,7 +431,7 @@ export class GatewayApiClient {
             if (requiresApproval) {
                 // If the OFT requires approval, we check the allowance already set
                 preCheckAllowance = await publicClient.readContract({
-                    account: walletClient.account,
+                    account: walletClient.account.address,
                     address: tokenAddress,
                     abi: erc20Abi,
                     functionName: 'allowance',
@@ -463,7 +463,7 @@ export class GatewayApiClient {
                     // https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
                     if (needsReset) {
                         const { request: resetRequest } = await publicClient.simulateContract({
-                            account: walletClient.account,
+                            account: walletClient.account.address,
                             address: tokenAddress,
                             abi: USDTApproveAbi,
                             functionName: 'approve',
@@ -475,7 +475,7 @@ export class GatewayApiClient {
                     }
 
                     const { request } = await publicClient.simulateContract({
-                        account: walletClient.account,
+                        account: walletClient.account.address,
                         address: tokenAddress,
                         abi: isAddressEqual(tokenAddress, ETHEREUM_USDT_ADDRESS) ? USDTApproveAbi : erc20Abi,
                         functionName: 'approve',
