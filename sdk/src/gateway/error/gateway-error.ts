@@ -10,7 +10,6 @@ import {
     GatewayErrorDetailsOneOf5,
     GatewayErrorDetailsOneOf6,
     GatewayErrorDetailsV2OneOf,
-    GatewayErrorV2,
 } from '../generated-client';
 import type { GatewayError as GatewayErrorInterface } from '../generated-client/models/GatewayError';
 import { instanceOfGatewayError } from '../generated-client/models/GatewayError';
@@ -76,9 +75,8 @@ export type GatewayErrorDetailsMap = {
  * Resolves to the detail interface for a known code, or `null` for codes
  * that carry no structured details (e.g. `InternalError`, `InvalidRequest`).
  */
-export type DetailsFor<C extends GatewayErrorCode | GatewayErrorCodeV2 | GatewayErrorCodeV3> = C extends keyof GatewayErrorDetailsMap
-    ? GatewayErrorDetailsMap[C]
-    : null;
+export type DetailsFor<C extends GatewayErrorCode | GatewayErrorCodeV2 | GatewayErrorCodeV3> =
+    C extends keyof GatewayErrorDetailsMap ? GatewayErrorDetailsMap[C] : null;
 
 // ─── Class ───────────────────────────────────────────────────────────────────
 

@@ -1,14 +1,15 @@
 import nock from 'nock';
-import { getAddress } from 'viem';
+import { getAddress, type Address } from 'viem';
 import { afterEach, describe, expect, it } from 'vitest';
 import { GatewaySDK, instanceOfGatewayQuoteV2OneOf, instanceOfGatewayQuoteV2OneOf1 } from '../src/gateway';
 import { ETHEREUM_USDT_ADDRESS } from '../src/gateway/client';
 import { GatewayQuoteV2OneOf, GatewayQuoteV2OneOf1 } from '../src/gateway/generated-client';
+import type { Affiliate } from '../src/gateway/types';
 
 const ETHEREUM_GATEWAY_BASE_URL = 'https://gateway-api-ethereum.gobob.xyz';
 
-const ADDR_A = '0x1111111111111111111111111111111111111111';
-const ADDR_B = '0x2222222222222222222222222222222222222222';
+const ADDR_A = '0x1111111111111111111111111111111111111111' as Address;
+const ADDR_B = '0x2222222222222222222222222222222222222222' as Address;
 const BTC_SENDER = 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq';
 const BTC_TOKEN = '0x0000000000000000000000000000000000000000';
 
@@ -24,10 +25,10 @@ afterEach(() => {
 
 describe('Gateway Multiple Affiliates', () => {
     const sdk = new GatewaySDK({ basePath: ETHEREUM_GATEWAY_BASE_URL });
-    const affiliates = [
+    const affiliates: Affiliate[] = [
         { address: ADDR_A, bps: 25 },
         { address: ADDR_B, bps: 50 },
-    ] as const;
+    ];
 
     it('resolves multiple affiliates on a bitcoin → ethereum onramp quote', async () => {
         const mockOnrampQuote: GatewayQuoteV2OneOf = {
@@ -69,6 +70,7 @@ describe('Gateway Multiple Affiliates', () => {
             toToken: ETHEREUM_USDT_ADDRESS,
             fromUserAddress: BTC_SENDER,
             toUserAddress: ADDR_A,
+            ownerAddress: ADDR_A,
             amount: 100_000,
             affiliates,
         });
@@ -128,6 +130,7 @@ describe('Gateway Multiple Affiliates', () => {
             toToken: BTC_TOKEN,
             fromUserAddress: ADDR_A,
             toUserAddress: BTC_SENDER,
+            ownerAddress: ADDR_A,
             amount: 100_000_000,
             affiliates,
         });

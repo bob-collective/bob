@@ -27,6 +27,7 @@ import {
     GatewayQuoteV2OneOf,
     GatewayQuoteV2OneOf1,
     GatewayQuoteV2OneOf2,
+    GatewayQuoteV3OneOf,
     instanceOfGatewayQuoteOneOf,
     instanceOfGatewayQuoteOneOf1,
     instanceOfGatewayQuoteV2OneOf2,
@@ -208,6 +209,7 @@ describe('Gateway Tests', () => {
             toToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
             fromUserAddress: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
             toUserAddress: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+            ownerAddress: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
             amount: 1000,
         });
 
@@ -219,6 +221,7 @@ describe('Gateway Tests', () => {
             toChain: 'bitcoin',
             toToken: '0x0000000000000000000000000000000000000000',
             toUserAddress: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+            ownerAddress: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
             amount: 1000,
         });
 
@@ -231,6 +234,7 @@ describe('Gateway Tests', () => {
             toToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
             fromUserAddress: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
             toUserAddress: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+            ownerAddress: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
             amount: 1000,
         });
 
@@ -625,7 +629,7 @@ describe('Gateway Tests', () => {
     it('should execute offramp quote with token approval', async () => {
         const gatewaySDK = new GatewaySDK();
 
-        const mockQuote: GatewayQuoteV2OneOf1 = {
+        const mockQuote: GatewayQuoteV3OneOf = {
             offramp: {
                 txTo: '0x1234567890123456789012345678901234567890',
                 recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
@@ -665,6 +669,7 @@ describe('Gateway Tests', () => {
                     chain: 'bob',
                 },
                 tokenAddress: WBTC_OFT_ADDRESS,
+                ownerAddress: '0xabcd1234abcd1234abcd1234abcd1234abcd1234',
                 totalFeeUsd: '3',
             },
         };
@@ -712,7 +717,7 @@ describe('Gateway Tests', () => {
     it('should approve WBTC on bob offramp', async () => {
         const gatewaySDK = new GatewaySDK();
 
-        const mockQuote: GatewayQuoteV2OneOf1 = {
+        const mockQuote: GatewayQuoteV3OneOf = {
             offramp: {
                 srcChain: 'bob',
                 feeBreakdown: {
@@ -749,6 +754,7 @@ describe('Gateway Tests', () => {
                     chain: 'bob',
                 },
                 tokenAddress: WBTC_OFT_ADDRESS,
+                ownerAddress: '0xabcd1234abcd1234abcd1234abcd1234abcd1234',
                 recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
                 slippage: 0,
                 totalFeeUsd: '3',
@@ -802,7 +808,7 @@ describe('Gateway Tests', () => {
     it('should reset USDT allowance before approving', async () => {
         const gatewaySDK = new GatewaySDK();
 
-        const mockQuote: GatewayQuoteV2OneOf1 = {
+        const mockQuote: GatewayQuoteV3OneOf = {
             offramp: {
                 recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
                 srcChain: 'ethereum',
@@ -840,6 +846,7 @@ describe('Gateway Tests', () => {
                     chain: 'ethereum',
                 },
                 tokenAddress: ETHEREUM_USDT_ADDRESS,
+                ownerAddress: '0xabcd1234abcd1234abcd1234abcd1234abcd1234',
                 slippage: 0,
                 totalFeeUsd: '3',
                 txTo: zeroAddress,
@@ -871,7 +878,7 @@ describe('Gateway Tests', () => {
 
         const simulateContractMock = vi.fn().mockResolvedValue({ request: {} });
         const mockPublicClient = {
-            readContract: mockOftReadContract({ approvalRequired: true }),
+            readContract: mockOftReadContract({ approvalRequired: true, allowance: 1n }),
             multicall: vi.fn().mockResolvedValue([1n]),
             simulateContract: simulateContractMock,
             waitForTransactionReceipt: vi.fn().mockResolvedValue({}),
@@ -893,7 +900,7 @@ describe('Gateway Tests', () => {
     it('should execute offramp quote without approval when allowance is sufficient', async () => {
         const gatewaySDK = new GatewaySDK();
 
-        const mockQuote: GatewayQuoteV2OneOf1 = {
+        const mockQuote: GatewayQuoteV3OneOf = {
             offramp: {
                 txTo: '0x1234567890123456789012345678901234567890',
                 recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
@@ -933,6 +940,7 @@ describe('Gateway Tests', () => {
                     chain: 'bob',
                 },
                 tokenAddress: WBTC_OFT_ADDRESS,
+                ownerAddress: '0xabcd1234abcd1234abcd1234abcd1234abcd1234',
                 totalFeeUsd: '3',
             },
         };
@@ -958,7 +966,7 @@ describe('Gateway Tests', () => {
         } as unknown as WalletClient<Transport, ViemChain, Account>;
 
         const mockPublicClient = {
-            readContract: mockOftReadContract({ approvalRequired: true }),
+            readContract: mockOftReadContract({ approvalRequired: true, allowance: maxUint256 }),
             multicall: vi.fn().mockResolvedValue([maxUint256]),
             waitForTransactionReceipt: vi.fn().mockResolvedValue({}),
         } as unknown as PublicClient<Transport>;
@@ -978,7 +986,7 @@ describe('Gateway Tests', () => {
     it('should skip offramp approval when spender approvalRequired is false', async () => {
         const gatewaySDK = new GatewaySDK();
 
-        const mockQuote: GatewayQuoteV2OneOf1 = {
+        const mockQuote: GatewayQuoteV3OneOf = {
             offramp: {
                 txTo: '0x1234567890123456789012345678901234567890',
                 recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
@@ -994,6 +1002,7 @@ describe('Gateway Tests', () => {
                 inputAmount: { address: zeroAddress, amount: '1000', chain: 'bob' },
                 outputAmount: { address: zeroAddress, amount: '990', chain: 'bob' },
                 tokenAddress: WBTC_OFT_ADDRESS,
+                ownerAddress: '0xabcd1234abcd1234abcd1234abcd1234abcd1234',
                 totalFeeUsd: '3',
             },
         };
@@ -1168,6 +1177,7 @@ describe('Gateway Tests', () => {
                 amount: 100000,
                 fromUserAddress: 'bc1qyhc4uslh46axl553pq3mjclrt7dcgmlzxv0ktx',
                 toUserAddress: '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
+                ownerAddress: '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
                 maxSlippage: 300,
             })
         ).rejects.toThrow(errorMessage);
@@ -1548,12 +1558,14 @@ describe('Gateway Tests', () => {
             toToken: field === 'toToken' ? value : validToken,
             fromUserAddress: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
             toUserAddress: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+            ownerAddress: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
             amount: 1000,
         };
 
-        await expect(gatewaySDK.getQuote(quoteParams)).rejects.toThrow(
-            `Invalid ${field}: '${value}'. Expected a token address (e.g. '0x0000000000000000000000000000000000000000'), not a symbol. Use getRoutes() to find supported token addresses.`
-        );
+        const errorMessage = `Invalid ${field}: '${value}'. Expected a token address (e.g. '0x0000000000000000000000000000000000000000'), not a symbol. Use getRoutes() to find supported token addresses.`;
+        nock(MAINNET_GATEWAY_BASE_URL).get('/v3/get-quote').query(true).reply(400, { error: errorMessage });
+
+        await expect(gatewaySDK.getQuote(quoteParams)).rejects.toThrow(errorMessage);
     });
 
     it('should throw error when apiKey is not exactly 32 characters', () => {
@@ -1677,7 +1689,7 @@ describe('Gateway Tests', () => {
 
     it('should call callback for offramp without approval (1 step: sendTransaction)', async () => {
         const gatewaySDK = new GatewaySDK();
-        const mockQuote: GatewayQuoteV2OneOf1 = {
+        const mockQuote: GatewayQuoteV3OneOf = {
             offramp: {
                 txTo: '0x1234567890123456789012345678901234567890',
                 recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
@@ -1693,6 +1705,7 @@ describe('Gateway Tests', () => {
                 inputAmount: { address: zeroAddress, amount: '1000', chain: 'bob' },
                 outputAmount: { address: zeroAddress, amount: '990', chain: 'bob' },
                 tokenAddress: WBTC_OFT_ADDRESS,
+                ownerAddress: '0xabcd1234abcd1234abcd1234abcd1234abcd1234',
                 totalFeeUsd: '3',
             },
         };
@@ -1714,7 +1727,7 @@ describe('Gateway Tests', () => {
                 sendTransaction: async () => '0xtxhash' as `0x${string}`,
             } as unknown as WalletClient<Transport, ViemChain, Account>,
             publicClient: {
-                readContract: mockOftReadContract({ approvalRequired: true }),
+                readContract: mockOftReadContract({ approvalRequired: true, allowance: maxUint256 }),
                 multicall: vi.fn().mockResolvedValue([maxUint256]),
                 waitForTransactionReceipt: vi.fn().mockResolvedValue({}),
             } as unknown as PublicClient<Transport>,
@@ -1731,7 +1744,7 @@ describe('Gateway Tests', () => {
 
     it('should call callback for offramp with approval (2 steps)', async () => {
         const gatewaySDK = new GatewaySDK();
-        const mockQuote: GatewayQuoteV2OneOf1 = {
+        const mockQuote: GatewayQuoteV3OneOf = {
             offramp: {
                 txTo: '0x1234567890123456789012345678901234567890',
                 recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
@@ -1747,6 +1760,7 @@ describe('Gateway Tests', () => {
                 inputAmount: { address: zeroAddress, amount: '1000', chain: 'bob' },
                 outputAmount: { address: zeroAddress, amount: '990', chain: 'bob' },
                 tokenAddress: WBTC_OFT_ADDRESS,
+                ownerAddress: '0xabcd1234abcd1234abcd1234abcd1234abcd1234',
                 totalFeeUsd: '3',
             },
         };
@@ -1788,7 +1802,7 @@ describe('Gateway Tests', () => {
 
     it('should call callback for offramp with USDT reset + approval (3 steps)', async () => {
         const gatewaySDK = new GatewaySDK();
-        const mockQuote: GatewayQuoteV2OneOf1 = {
+        const mockQuote: GatewayQuoteV3OneOf = {
             offramp: {
                 recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
                 srcChain: 'ethereum',
@@ -1802,6 +1816,7 @@ describe('Gateway Tests', () => {
                 inputAmount: { address: zeroAddress, amount: '1000', chain: 'ethereum' },
                 outputAmount: { address: zeroAddress, amount: '990', chain: 'ethereum' },
                 tokenAddress: ETHEREUM_USDT_ADDRESS,
+                ownerAddress: '0xabcd1234abcd1234abcd1234abcd1234abcd1234',
                 slippage: 0,
                 totalFeeUsd: '3',
                 txTo: zeroAddress,
@@ -1826,7 +1841,7 @@ describe('Gateway Tests', () => {
                 sendTransaction: vi.fn().mockResolvedValue('0xtxhash' as `0x${string}`),
             } as unknown as WalletClient<Transport, ViemChain, Account>,
             publicClient: {
-                readContract: mockOftReadContract({ approvalRequired: true }),
+                readContract: mockOftReadContract({ approvalRequired: true, allowance: 1n }),
                 multicall: vi.fn().mockResolvedValue([1n]),
                 simulateContract: vi.fn().mockResolvedValue({ request: {} }),
                 waitForTransactionReceipt: vi.fn().mockResolvedValue({}),
@@ -2025,6 +2040,7 @@ describe('Gateway Tests', () => {
             toToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
             fromUserAddress: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
             toUserAddress: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+            ownerAddress: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
             amount: 1000,
         });
 
@@ -2103,6 +2119,7 @@ describe('Gateway Tests', () => {
             toToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
             fromUserAddress: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
             toUserAddress: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+            ownerAddress: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
             amount: 1000,
         });
 
