@@ -431,7 +431,6 @@ export class GatewayApiClient {
             if (requiresApproval) {
                 // If the OFT requires approval, we check the allowance already set
                 preCheckAllowance = await publicClient.readContract({
-                    account: walletClient.account.address,
                     address: tokenAddress,
                     abi: erc20Abi,
                     functionName: 'allowance',
