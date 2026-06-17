@@ -1463,6 +1463,78 @@ describe('Gateway Tests', () => {
         expect(waitForTransactionReceipt).toHaveBeenCalledTimes(1);
     });
 
+    it('should skip approval checks for native token layerzero swap', async () => {
+        const mockedQuote: GatewayQuoteV2OneOf2 = {
+            tokenSwap: {
+                dstChain: 'bob',
+                estimatedTimeInSecs: 60,
+                fees: {
+                    amount: '0',
+                    address: zeroAddress,
+                    chain: 'ethereum',
+                },
+                inputAmount: {
+                    amount: '100000',
+                    address: zeroAddress,
+                    chain: 'ethereum',
+                },
+                outputAmount: {
+                    amount: '100000',
+                    address: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
+                    chain: 'bob',
+                },
+                recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+                slippage: 100,
+                srcChain: 'ethereum',
+                txTo: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
+            },
+        };
+
+        const gatewaySDK = new GatewaySDK();
+
+        const readContract = vi.fn();
+        const simulateContract = vi.fn();
+        const waitForTransactionReceipt = vi.fn().mockResolvedValue({});
+        const sendTransaction = vi.fn().mockResolvedValue('0xsendhash');
+        const writeContract = vi.fn();
+
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
+            .post('/v3/create-order')
+            .reply(200, {
+                tokenSwap: {
+                    order_id: 'layerzero-native-order-123',
+                    tx: {
+                        to: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
+                        data: '0xabcdef',
+                        value: '100000',
+                    },
+                },
+            });
+
+        nock(`${MAINNET_GATEWAY_BASE_URL}`).patch('/v3/register-tx').reply(200, JSON.stringify('tx-hash-123'));
+
+        const result = await gatewaySDK.executeQuote({
+            quote: mockedQuote,
+            walletClient: {
+                account: { address: '0x1234567890123456789012345678901234567890' as Address },
+                sendTransaction,
+                writeContract,
+            } as unknown as WalletClient<Transport, ViemChain, Account>,
+            publicClient: {
+                readContract,
+                simulateContract,
+                waitForTransactionReceipt,
+            } as unknown as PublicClient<Transport>,
+        });
+
+        expect(result.tx).toBe('0xsendhash');
+        expect(readContract).not.toHaveBeenCalled();
+        expect(simulateContract).not.toHaveBeenCalled();
+        expect(writeContract).not.toHaveBeenCalled();
+        expect(sendTransaction).toHaveBeenCalledTimes(1);
+        expect(waitForTransactionReceipt).toHaveBeenCalledTimes(1);
+    });
+
     it.each([
         { field: 'fromToken', value: 'BTC', validToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c' },
         { field: 'toToken', value: 'WBTC', validToken: '0x0000000000000000000000000000000000000000' },

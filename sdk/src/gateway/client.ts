@@ -42,7 +42,7 @@ import {
     type GetQuoteParams,
     type StrategyParams,
 } from './types';
-import { formatBtc } from './utils';
+import { formatBtc, isValidTronAddress, tronAddressToHex } from './utils';
 
 const RETRY_COUNT = 8; // Number of times to retry fetching transaction receipt after sending a transaction
 
@@ -305,7 +305,7 @@ export class GatewayApiClient {
                 throw new Error(`walletClient is required for offramp order`);
             }
             const accountAddress = walletClient.account.address;
-            const tokenAddress = quote.offramp.tokenAddress as Address;
+            const tokenAddress = quote.offramp.tokenAddress;
             const requiredAmount = BigInt(quote.offramp.inputAmount.amount);
 
             const order = await this.api.createOrderV3({
@@ -321,8 +321,13 @@ export class GatewayApiClient {
             let allowance = maxUint256;
             let requiresApproval = false;
 
+            const requiresApprove =
+                (isValidTronAddress(tokenAddress) &&
+                    !isAddressEqual(tronAddressToHex(tokenAddress) as Address, zeroAddress)) ||
+                (isAddress(tokenAddress) && !isAddressEqual(tokenAddress, zeroAddress));
+
             // Some receiver contracts (eg certain OFTs) do not require approvals, we check that here
-            if (isAddress(tokenAddress) && !isAddressEqual(tokenAddress, zeroAddress)) {
+            if (requiresApprove) {
                 requiresApproval = await publicClient
                     .readContract({
                         address: spenderAddress,
@@ -335,7 +340,7 @@ export class GatewayApiClient {
                 if (requiresApproval) {
                     // If the OFT requires approval, we check the allowance already set
                     allowance = await publicClient.readContract({
-                        address: tokenAddress,
+                        address: tokenAddress as Address,
                         abi: erc20Abi,
                         functionName: 'allowance',
                         args: [accountAddress, spenderAddress],
@@ -343,10 +348,13 @@ export class GatewayApiClient {
                 }
             }
 
-            const needsApproval =
-                requiresApproval && requiredAmount > allowance && isAddress(tokenAddress) && !isAddressEqual(tokenAddress, zeroAddress);
+            const needsApproval = requiresApproval && requiredAmount > allowance && requiresApprove;
             // Only for USDT on Ethereum, we need to reset the allowance to 0 before approving again because of a quirk in their implementation
-            const needsReset = needsApproval && isAddress(tokenAddress) && isAddressEqual(tokenAddress, ETHEREUM_USDT_ADDRESS) && allowance !== 0n;
+            const needsReset =
+                needsApproval &&
+                isAddress(tokenAddress) &&
+                isAddressEqual(tokenAddress, ETHEREUM_USDT_ADDRESS) &&
+                allowance !== 0n;
 
             const totalSteps = needsReset ? 3 : needsApproval ? 2 : 1;
 
@@ -369,8 +377,12 @@ export class GatewayApiClient {
 
                 const { request } = await publicClient.simulateContract({
                     account: walletClient.account.address,
-                    address: tokenAddress,
-                    abi: isAddressEqual(tokenAddress, ETHEREUM_USDT_ADDRESS) ? USDTApproveAbi : erc20Abi,
+                    address: tokenAddress as Address,
+                    abi:
+                        isAddress(tokenAddress as Address) &&
+                        isAddressEqual(tokenAddress as Address, ETHEREUM_USDT_ADDRESS)
+                            ? USDTApproveAbi
+                            : erc20Abi,
                     functionName: 'approve',
                     args: [spenderAddress, requiredAmount],
                 });
@@ -409,40 +421,51 @@ export class GatewayApiClient {
 
             return { order, tx: transactionHash };
         } else if (instanceOfGatewayQuoteV2OneOf2(quote)) {
-            const tokenAddress = quote.tokenSwap.inputAmount.address as Address;
+            const tokenAddress = quote.tokenSwap.inputAmount.address;
             const requiredAmount = BigInt(quote.tokenSwap.inputAmount.amount);
             const accountAddress = walletClient.account.address;
             const receiver = quote.tokenSwap.txTo as Address;
 
             // Pre-check allowance before createOrder so we can compute totalSteps upfront.
             // receiver is available from the quote (unlike offramp where spender comes from the order).
-            let preCheckAllowance = 0n;
+            let allowance = maxUint256;
+            let requiresApproval = false;
+
+            const requiresApprove =
+                (isValidTronAddress(tokenAddress) &&
+                    !isAddressEqual(tronAddressToHex(tokenAddress) as Address, zeroAddress)) ||
+                (isAddress(tokenAddress) && !isAddressEqual(tokenAddress, zeroAddress));
 
             // Some receiver contracts (eg certain OFTs) do not require approvals, we check that here
-            const requiresApproval = await publicClient
-                .readContract({
-                    address: receiver,
-                    abi: oftApprovalRequiredAbi,
-                    functionName: 'approvalRequired',
-                })
-                .then((required) => Boolean(required))
-                .catch(() => true);
+            if (requiresApprove) {
+                requiresApproval = await publicClient
+                    .readContract({
+                        address: receiver,
+                        abi: oftApprovalRequiredAbi,
+                        functionName: 'approvalRequired',
+                    })
+                    .then((required) => Boolean(required))
+                    .catch(() => true);
 
-            if (requiresApproval) {
-                // If the OFT requires approval, we check the allowance already set
-                preCheckAllowance = await publicClient.readContract({
-                    address: tokenAddress,
-                    abi: erc20Abi,
-                    functionName: 'allowance',
-                    args: [accountAddress, receiver],
-                });
+                if (requiresApproval) {
+                    // If the OFT requires approval, we check the allowance already set
+                    allowance = await publicClient.readContract({
+                        address: tokenAddress as Address,
+                        abi: erc20Abi,
+                        functionName: 'allowance',
+                        args: [accountAddress, receiver],
+                    });
+                }
             }
 
-            const needsApproval = requiresApproval && preCheckAllowance < requiredAmount;
+            const needsApproval = requiresApproval && requiredAmount > allowance && requiresApprove;
 
             // Only for USDT on Ethereum, we need to reset the allowance to 0 before approving again because of a quirk in their implementation
             const needsReset =
-                needsApproval && isAddressEqual(tokenAddress, ETHEREUM_USDT_ADDRESS) && preCheckAllowance !== 0n;
+                needsApproval &&
+                isAddress(tokenAddress) &&
+                isAddressEqual(tokenAddress, ETHEREUM_USDT_ADDRESS) &&
+                allowance !== 0n;
 
             const totalSteps = needsReset ? 3 : needsApproval ? 2 : 1;
 
@@ -463,7 +486,7 @@ export class GatewayApiClient {
                     if (needsReset) {
                         const { request: resetRequest } = await publicClient.simulateContract({
                             account: walletClient.account.address,
-                            address: tokenAddress,
+                            address: tokenAddress as Address,
                             abi: USDTApproveAbi,
                             functionName: 'approve',
                             args: [receiver, 0n],
@@ -475,8 +498,11 @@ export class GatewayApiClient {
 
                     const { request } = await publicClient.simulateContract({
                         account: walletClient.account.address,
-                        address: tokenAddress,
-                        abi: isAddressEqual(tokenAddress, ETHEREUM_USDT_ADDRESS) ? USDTApproveAbi : erc20Abi,
+                        address: tokenAddress as Address,
+                        abi:
+                            isAddress(tokenAddress) && isAddressEqual(tokenAddress, ETHEREUM_USDT_ADDRESS)
+                                ? USDTApproveAbi
+                                : erc20Abi,
                         functionName: 'approve',
                         args: [receiver, requiredAmount],
                     });
