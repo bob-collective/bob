@@ -24,13 +24,13 @@ const gateway = new GatewaySDK(); // mainnet by default
 
 // 1. Quote
 const quote = await gateway.getQuote({
-  fromChain: 'bitcoin',
-  toChain: 'bob',
-  fromToken: 'BTC',
-  toToken: 'WBTC',
-  fromUserAddress: 'bc1q...',
-  toUserAddress: '0x...',
-  amount: 100_000_000, // 1 BTC in satoshis
+    fromChain: 'bitcoin',
+    toChain: 'bob',
+    fromToken: 'BTC',
+    toToken: 'WBTC',
+    fromUserAddress: 'bc1q...',
+    toUserAddress: '0x...',
+    amount: 100_000_000, // 1 BTC in satoshis
 });
 
 // 2. Execute
@@ -38,23 +38,23 @@ const publicClient = createPublicClient({ chain: bob, transport: http() });
 const walletClient = createWalletClient({ chain: bob, transport: custom(window.ethereum) });
 
 const { order, tx } = await gateway.executeQuote({
-  quote,
-  walletClient,
-  publicClient,
-  btcSigner, // BitcoinSigner — required for onramp signing, optional for the walletless flow
+    quote,
+    walletClient,
+    publicClient,
+    btcSigner, // BitcoinSigner — required for onramp signing, optional for the walletless flow
 });
 ```
 
 ## Core methods
 
-| Method | Purpose |
-|--------|---------|
-| `getQuote(params)` | Fetch a quote. Onramp vs offramp inferred from `fromChain` / `toChain`. |
-| `executeQuote({ quote, walletClient, publicClient, btcSigner?, callback? })` | Run the full flow for a quote (approvals → on-chain tx / BTC signing). |
-| `getOrders({ userAddress, cursor?, limit? })` | Paginated orders for an EVM address → `{ orders, nextCursor? }`. |
-| `getOrder(id)` | Single order by id (txId/txHash). |
-| `getRoutes()` | Supported routes — chains, tokens, bridges. Source of valid `fromToken` / `toToken` addresses. |
-| `getMaxSpendable(address)` | Max spendable BTC for an address. |
+| Method                                                                       | Purpose                                                                                        |
+| ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `getQuote(params)`                                                           | Fetch a quote. Onramp vs offramp inferred from `fromChain` / `toChain`.                        |
+| `executeQuote({ quote, walletClient, publicClient, btcSigner?, callback? })` | Run the full flow for a quote (approvals → on-chain tx / BTC signing).                         |
+| `getOrders({ userAddress, cursor?, limit? })`                                | Paginated orders for an EVM address → `{ orders, nextCursor? }`.                               |
+| `getOrder(id)`                                                               | Single order by id (txId/txHash).                                                              |
+| `getRoutes()`                                                                | Supported routes — chains, tokens, bridges. Source of valid `fromToken` / `toToken` addresses. |
+| `getMaxSpendable(address)`                                                   | Max spendable BTC for an address.                                                              |
 
 `getQuote` returns a discriminated union — narrow it with the generated type guards
 (`instanceOfGatewayQuoteV2OneOf` = onramp, `instanceOfGatewayQuoteV3OneOf` = offramp).
@@ -91,19 +91,19 @@ for non-EVM chains like Tron.
 
 ### `publicClient` — required surface
 
-| Member | Used for |
-|--------|----------|
-| `readContract({ address, abi, functionName, args? })` | ERC-20 `allowance`, OFT `approvalRequired`. |
+| Member                                                                            | Used for                                                      |
+| --------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| `readContract({ address, abi, functionName, args? })`                             | ERC-20 `allowance`, OFT `approvalRequired`.                   |
 | `simulateContract({ account, address, abi, functionName, args })` → `{ request }` | Build the validated `approve` / reset request before writing. |
-| `waitForTransactionReceipt({ hash, retryCount })` | Block on approval / send receipts. |
+| `waitForTransactionReceipt({ hash, retryCount })`                                 | Block on approval / send receipts.                            |
 
 ### `walletClient` — required surface
 
-| Member | Used for |
-|--------|----------|
-| `account` (`Account` with `.address`) | Sender address; `executeQuote` throws if absent for offramp. |
-| `writeContract(request)` → `Hash` | Send the `approve` / allowance-reset tx produced by `simulateContract`. |
-| `sendTransaction({ account, to, data, value })` → `Hash` | Broadcast the gateway order transaction. |
+| Member                                                   | Used for                                                                |
+| -------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `account` (`Account` with `.address`)                    | Sender address; `executeQuote` throws if absent for offramp.            |
+| `writeContract(request)` → `Hash`                        | Send the `approve` / allowance-reset tx produced by `simulateContract`. |
+| `sendTransaction({ account, to, data, value })` → `Hash` | Broadcast the gateway order transaction.                                |
 
 ## Tron support
 
@@ -121,47 +121,42 @@ import type { Abi, Account, Address, Hash, Hex } from 'viem';
 
 // --- publicClient ---
 interface TronPublicClient {
-  readContract(args: {
-    address: Address;
-    abi: Abi;
-    functionName: string;
-    args?: readonly unknown[];
-  }): Promise<unknown>;
+    readContract(args: {
+        address: Address;
+        abi: Abi;
+        functionName: string;
+        args?: readonly unknown[];
+    }): Promise<unknown>;
 
-  simulateContract(args: {
-    account: Address;
-    address: Address;
-    abi: Abi;
-    functionName: string;
-    args: readonly unknown[];
-  }): Promise<{ request: unknown }>; // `request` is passed verbatim to writeContract
+    simulateContract(args: {
+        account: Address;
+        address: Address;
+        abi: Abi;
+        functionName: string;
+        args: readonly unknown[];
+    }): Promise<{ request: unknown }>; // `request` is passed verbatim to writeContract
 
-  waitForTransactionReceipt(args: {
-    hash: Hash;
-    retryCount?: number;
-  }): Promise<{ status: 'success' | 'reverted' } & Record<string, unknown>>;
+    waitForTransactionReceipt(args: {
+        hash: Hash;
+        retryCount?: number;
+    }): Promise<{ status: 'success' | 'reverted' } & Record<string, unknown>>;
 }
 
 // --- walletClient ---
 interface TronWalletClient {
-  account: Account; // must carry `.address`
+    account: Account; // must carry `.address`
 
-  // Consumes the `request` returned by publicClient.simulateContract
-  writeContract(request: unknown): Promise<Hash>;
+    // Consumes the `request` returned by publicClient.simulateContract
+    writeContract(request: unknown): Promise<Hash>;
 
-  sendTransaction(args: {
-    account: Address;
-    to: Address;
-    data: Hex;
-    value: bigint;
-  }): Promise<Hash>;
+    sendTransaction(args: { account: Address; to: Address; data: Hex; value: bigint }): Promise<Hash>;
 }
 ```
 
 Notes for the adapter author:
 
 - **`account.address` is mandatory.** Offramp throws `walletClient is required for
-  offramp order` if `walletClient.account` is missing.
+offramp order` if `walletClient.account` is missing.
 - **`simulateContract` → `writeContract` is a pair.** The object you return as
   `request` is handed straight back to `writeContract`; keep whatever your signer
   needs inside it.
@@ -181,17 +176,17 @@ patterns (an adapter implements one):
 
 ```typescript
 interface BitcoinSigner {
-  // High-level: wallet builds + broadcasts (e.g. OKX). Returns txid/hex.
-  sendBitcoin?(params: {
-    from: string | null | undefined;
-    to: string;
-    value: string;
-    opReturn?: string;
-    isSignet?: boolean;
-  }): Promise<string>;
+    // High-level: wallet builds + broadcasts (e.g. OKX). Returns txid/hex.
+    sendBitcoin?(params: {
+        from: string | null | undefined;
+        to: string;
+        value: string;
+        opReturn?: string;
+        isSignet?: boolean;
+    }): Promise<string>;
 
-  // Low-level: sign a PSBT, return signed hex (e.g. Reown).
-  signAllInputs?(psbtHex: string): Promise<string>;
+    // Low-level: sign a PSBT, return signed hex (e.g. Reown).
+    signAllInputs?(psbtHex: string): Promise<string>;
 }
 ```
 
@@ -201,18 +196,13 @@ interface BitcoinSigner {
 import type { BitcoinSigner } from '@gobob/bob-sdk';
 
 class CustomWalletAdapter implements BitcoinSigner {
-  async sendBitcoin(params: {
-    from: string;
-    to: string;
-    value: string;
-    opReturn?: string;
-  }): Promise<string> {
-    // build, sign, broadcast — return txid/signed hex
-  }
+    async sendBitcoin(params: { from: string; to: string; value: string; opReturn?: string }): Promise<string> {
+        // build, sign, broadcast — return txid/signed hex
+    }
 
-  async signAllInputs(psbtHex: string): Promise<string> {
-    // sign PSBT, return signed hex
-  }
+    async signAllInputs(psbtHex: string): Promise<string> {
+        // sign PSBT, return signed hex
+    }
 }
 ```
 
@@ -223,11 +213,11 @@ quote. Each entry is `{ address, bps }` (1 bps = 0.01%); `bps` must be > 0:
 
 ```typescript
 const quote = await gateway.getQuote({
-  // ...other params
-  affiliates: [
-    { address: '0xPartnerA', bps: 50 }, // 0.50%
-    { address: '0xPartnerB', bps: 25 }, // 0.25%
-  ],
+    // ...other params
+    affiliates: [
+        { address: '0xPartnerA', bps: 50 }, // 0.50%
+        { address: '0xPartnerB', bps: 25 }, // 0.25%
+    ],
 });
 ```
 

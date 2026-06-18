@@ -110,7 +110,10 @@ export type DetailsFor<C extends GatewayErrorCode | GatewayErrorCodeV2 | Gateway
  * ```
  */
 export class GatewayError<
-    C extends GatewayErrorCode | GatewayErrorCodeV2 | GatewayErrorCodeV3 = GatewayErrorCode | GatewayErrorCodeV2 | GatewayErrorCodeV3,
+    C extends GatewayErrorCode | GatewayErrorCodeV2 | GatewayErrorCodeV3 =
+        | GatewayErrorCode
+        | GatewayErrorCodeV2
+        | GatewayErrorCodeV3,
 > extends Error {
     /** Stable error code, safe to switch/match on. */
     readonly code: C;
