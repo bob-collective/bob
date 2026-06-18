@@ -770,6 +770,8 @@ describe('Gateway Tests', () => {
                 offramp: {
                     order_id: 'offramp-order-789',
                     tx: {
+                        type: 'evm',
+                        chain: 'bob',
                         to: spenderAddress,
                         data: '0xabcdef',
                         value: '0',
@@ -861,6 +863,8 @@ describe('Gateway Tests', () => {
                 offramp: {
                     order_id: 'offramp-order-791',
                     tx: {
+                        type: 'evm',
+                        chain: 'ethereum',
                         to: spenderAddress,
                         data: '0xabcdef',
                         value: '0',
