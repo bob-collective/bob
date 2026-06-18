@@ -48,6 +48,8 @@ export interface GatewayQuoteParams {
     strategyAddress?: string;
     /** @description Cross chain message - strategy data */
     strategyMessage?: Hex;
+    /** @description Owner address */
+    ownerAddress: string;
 }
 
 export type GetQuoteParams = Optional<GatewayQuoteParams, 'fromUserAddress'>;

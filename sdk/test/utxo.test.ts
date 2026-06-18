@@ -322,7 +322,7 @@ describe('UTXO Tests', () => {
         ];
 
         const amounts = [undefined, 2000, 3000];
-        const feeRates = [undefined, 10];
+        const feeRates = [4, 10];
 
         // EVM address for OP return
         const opReturn = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2';

@@ -1,7 +1,7 @@
 import {
     GatewayErrorCode,
     GatewayErrorCodeV2Variants as GatewayErrorCodeV2,
-    GatewayErrorCodeV2Variants,
+    GatewayErrorCodeV3Variants as GatewayErrorCodeV3,
     GatewayErrorDetailsOneOf,
     GatewayErrorDetailsOneOf1,
     GatewayErrorDetailsOneOf2,
@@ -10,12 +10,11 @@ import {
     GatewayErrorDetailsOneOf5,
     GatewayErrorDetailsOneOf6,
     GatewayErrorDetailsV2OneOf,
-    GatewayErrorV2,
 } from '../generated-client';
 import type { GatewayError as GatewayErrorInterface } from '../generated-client/models/GatewayError';
 import { instanceOfGatewayError } from '../generated-client/models/GatewayError';
 
-export { GatewayErrorCode, GatewayErrorCodeV2 };
+export { GatewayErrorCode, GatewayErrorCodeV2, GatewayErrorCodeV3 };
 
 // ─── Named detail interfaces (mirror the Rust GatewayErrorDetails enum) ──────
 
@@ -76,9 +75,8 @@ export type GatewayErrorDetailsMap = {
  * Resolves to the detail interface for a known code, or `null` for codes
  * that carry no structured details (e.g. `InternalError`, `InvalidRequest`).
  */
-export type DetailsFor<C extends GatewayErrorCode | GatewayErrorCodeV2> = C extends keyof GatewayErrorDetailsMap
-    ? GatewayErrorDetailsMap[C]
-    : null;
+export type DetailsFor<C extends GatewayErrorCode | GatewayErrorCodeV2 | GatewayErrorCodeV3> =
+    C extends keyof GatewayErrorDetailsMap ? GatewayErrorDetailsMap[C] : null;
 
 // ─── Class ───────────────────────────────────────────────────────────────────
 
@@ -112,7 +110,10 @@ export type DetailsFor<C extends GatewayErrorCode | GatewayErrorCodeV2> = C exte
  * ```
  */
 export class GatewayError<
-    C extends GatewayErrorCode | GatewayErrorCodeV2 = GatewayErrorCode | GatewayErrorCodeV2,
+    C extends GatewayErrorCode | GatewayErrorCodeV2 | GatewayErrorCodeV3 =
+        | GatewayErrorCode
+        | GatewayErrorCodeV2
+        | GatewayErrorCodeV3,
 > extends Error {
     /** Stable error code, safe to switch/match on. */
     readonly code: C;
@@ -186,7 +187,8 @@ export class GatewayError<
  */
 export type AnyGatewayError =
     | { [C in GatewayErrorCode]: GatewayError<C> }[GatewayErrorCode]
-    | { [C2 in GatewayErrorCodeV2]: GatewayError<C2> }[GatewayErrorCodeV2];
+    | { [C2 in GatewayErrorCodeV2]: GatewayError<C2> }[GatewayErrorCodeV2]
+    | { [C3 in GatewayErrorCodeV3]: GatewayError<C3> }[GatewayErrorCodeV3];
 
 /**
  * Type guard that narrows `err` to {@link AnyGatewayError}.
@@ -214,7 +216,7 @@ export function isGatewayError(err: unknown): err is AnyGatewayError {
 // Reads raw snake_case JSON fields directly, matching Rust serde output.
 // Each case corresponds to a GatewayErrorDetails enum variant in error.rs.
 
-function parseDetails<C extends GatewayErrorCode | GatewayErrorCodeV2>(
+function parseDetails<C extends GatewayErrorCode | GatewayErrorCodeV2 | GatewayErrorCodeV3>(
     code: C,
     raw: Record<string, unknown> | null
 ): DetailsFor<C> {
