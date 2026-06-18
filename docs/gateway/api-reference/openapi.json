@@ -931,7 +931,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GatewayCreateOrderV2"
+                  "$ref": "#/components/schemas/GatewayCreateOrderV3"
                 }
               }
             }
@@ -1001,13 +1001,13 @@
         "tags": [
           "v3"
         ],
-        "summary": "Get an order by id (v2).",
-        "operationId": "get_order_v2",
+        "summary": "Get an order by id (v3 — amounts carry USD).",
+        "operationId": "get_order_v3",
         "parameters": [
           {
             "name": "id",
             "in": "path",
-            "description": "Order identifier: either the order_id returned by create-order, the source Bitcoin transaction ID , or the source EVM transaction hash",
+            "description": "Order identifier: order_id, source Bitcoin txid, or source EVM tx hash",
             "required": true,
             "schema": {
               "type": "string"
@@ -1016,11 +1016,11 @@
         ],
         "responses": {
           "200": {
-            "description": "Get order by either the order_id returned by create-order, the source Bitcoin transaction ID , or the source EVM transaction hash",
+            "description": "Get order by order_id, source Bitcoin txid, or source EVM tx hash",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GatewayOrderInfoV2"
+                  "$ref": "#/components/schemas/GatewayOrderInfoV3"
                 }
               }
             }
@@ -1051,8 +1051,8 @@
         "tags": [
           "v3"
         ],
-        "summary": "Get user orders (v2).",
-        "operationId": "get_orders_v2",
+        "summary": "Get user orders (v3 — amounts carry USD).",
+        "operationId": "get_orders_v3",
         "parameters": [
           {
             "name": "user_address",
@@ -1091,7 +1091,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PaginatedOrdersResponse"
+                  "$ref": "#/components/schemas/PaginatedOrdersResponseV3"
                 }
               }
             }
@@ -1147,7 +1147,7 @@
           {
             "name": "sender",
             "in": "query",
-            "description": "Address sending the funds",
+            "description": "Address sending the funds\n(`0x…` on EVM chains, Base58 on Tron/Solana).",
             "required": false,
             "schema": {
               "type": "string"
@@ -1158,7 +1158,7 @@
           {
             "name": "recipient",
             "in": "query",
-            "description": "Address receiving the funds",
+            "description": "Address receiving the funds\n(`0x…` on EVM chains, Base58 on Tron/Solana).",
             "required": true,
             "schema": {
               "type": "string"
@@ -1169,7 +1169,7 @@
           {
             "name": "srcToken",
             "in": "query",
-            "description": "Source token address",
+            "description": "Source token address\n(`0x…` on EVM chains, Base58 mint on Tron/Solana).",
             "required": true,
             "schema": {
               "type": "string"
@@ -1180,7 +1180,7 @@
           {
             "name": "dstToken",
             "in": "query",
-            "description": "Destination token address",
+            "description": "Destination token address\n(`0x…` on EVM chains, Base58 mint on Tron/Solana).",
             "required": true,
             "schema": {
               "type": "string"
@@ -1234,13 +1234,24 @@
           {
             "name": "ownerAddress",
             "in": "query",
-            "description": "Mandatory EVM owner / refund address (`0x…`). Used as the Bungee\nsource-chain refund target (onramp) and the on-chain order owner\n(offramp). Required on every V3 request.",
-            "required": true,
+            "description": "EVM owner / refund address (`0x…`). This address is used for order lookup,\nand may be used for refunds. The request may be rejected when it is not provided.",
+            "required": false,
             "schema": {
               "type": "string"
             },
             "style": "form",
             "example": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+          },
+          {
+            "name": "refundAddress",
+            "in": "query",
+            "description": "Optional refund bitcoin address to be used in a bitcoin onramp request.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "style": "form",
+            "example": "bc1qyhc4uslh46axl553pq3mjclrt7dcgmlzxv0ktx"
           }
         ],
         "responses": {
@@ -1296,13 +1307,13 @@
         "tags": [
           "v3"
         ],
-        "summary": "Register a tx for a request (V3 body; identical shape to V2).",
+        "summary": "Register a tx for a request (V3 body).",
         "operationId": "register_tx_v3",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/RegisterTxV2"
+                "$ref": "#/components/schemas/RegisterTxV3"
               }
             }
           },
@@ -1357,6 +1368,39 @@
               "string",
               "null"
             ]
+          }
+        }
+      },
+      "ChainTxInfoV3": {
+        "type": "object",
+        "description": "Source-chain tx info (v3) — adds `usd`.",
+        "required": [
+          "chain",
+          "token",
+          "amount"
+        ],
+        "properties": {
+          "amount": {
+            "type": "string"
+          },
+          "chain": {
+            "type": "string"
+          },
+          "token": {
+            "type": "string"
+          },
+          "txHash": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "usd": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "USD value of `amount` at order time. Absent if no price feed was available."
           }
         }
       },
@@ -1554,6 +1598,103 @@
         ],
         "description": "V2 create-order response"
       },
+      "GatewayCreateOrderV3": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "onramp"
+            ],
+            "properties": {
+              "onramp": {
+                "type": "object",
+                "required": [
+                  "order_id",
+                  "address"
+                ],
+                "properties": {
+                  "address": {
+                    "type": "string",
+                    "description": "Bitcoin address to pay to"
+                  },
+                  "op_return_data": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "Optional OP_RETURN data"
+                  },
+                  "order_id": {
+                    "type": "string",
+                    "description": "Unique order id",
+                    "example": "f81d4fae-7dec-11d0-a765-00a0c91e6bf6"
+                  },
+                  "psbt_hex": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "Hex-encoded Bitcoin PSBT (only present when sender address was provided)"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "offramp"
+            ],
+            "properties": {
+              "offramp": {
+                "type": "object",
+                "required": [
+                  "order_id",
+                  "tx"
+                ],
+                "properties": {
+                  "order_id": {
+                    "type": "string",
+                    "description": "Unique order id",
+                    "example": "f81d4fae-7dec-11d0-a765-00a0c91e6bf6"
+                  },
+                  "tx": {
+                    "$ref": "#/components/schemas/GatewayTxData",
+                    "description": "Tx data to execute the swap (EVM or Solana)"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "tokenSwap"
+            ],
+            "properties": {
+              "tokenSwap": {
+                "type": "object",
+                "required": [
+                  "order_id",
+                  "tx"
+                ],
+                "properties": {
+                  "order_id": {
+                    "type": "string",
+                    "description": "Unique order id",
+                    "example": "f81d4fae-7dec-11d0-a765-00a0c91e6bf6"
+                  },
+                  "tx": {
+                    "$ref": "#/components/schemas/GatewayTxData",
+                    "description": "Tx data to execute the swap (EVM or Solana)"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "description": "V3 create-order response; offramp and token-swap carry polymorphic `GatewayTxData`."
+      },
       "GatewayError": {
         "type": "object",
         "description": "Structured error response for V1 API.\nContains an error code, human-readable message, and optional structured details.",
@@ -1652,7 +1793,8 @@
         "type": "string",
         "description": "New error codes for V3.",
         "enum": [
-          "BUNGEE_NO_ROUTE"
+          "BUNGEE_NO_ROUTE",
+          "MISSING_OWNER_ADDRESS"
         ]
       },
       "GatewayErrorDetails": {
@@ -2724,6 +2866,49 @@
           }
         }
       },
+      "GatewayOrderInfoV3": {
+        "type": "object",
+        "description": "Gateway order info (v3) — v2 shape plus USD on every amount field.",
+        "required": [
+          "id",
+          "timestamp",
+          "srcInfo",
+          "dstInfo",
+          "status"
+        ],
+        "properties": {
+          "depositAddress": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "dstInfo": {
+            "$ref": "#/components/schemas/OrderDestinationInfoV3"
+          },
+          "estimatedTimeInSecs": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "minimum": 0
+          },
+          "id": {
+            "type": "string"
+          },
+          "srcInfo": {
+            "$ref": "#/components/schemas/ChainTxInfoV3"
+          },
+          "status": {
+            "$ref": "#/components/schemas/GatewayOrderStatusV3"
+          },
+          "timestamp": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
       "GatewayOrderStatus": {
         "oneOf": [
           {
@@ -2900,6 +3085,111 @@
           }
         ]
       },
+      "GatewayOrderStatusV3": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "inProgress"
+            ],
+            "properties": {
+              "inProgress": {
+                "type": "object",
+                "properties": {
+                  "pending_btc_payment": {
+                    "oneOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "$ref": "#/components/schemas/PendingBtcPaymentV3"
+                      }
+                    ]
+                  },
+                  "refund_tx": {
+                    "oneOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "$ref": "#/components/schemas/TxInfo"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "failed"
+            ],
+            "properties": {
+              "failed": {
+                "type": "object",
+                "properties": {
+                  "refund_tx": {
+                    "oneOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "$ref": "#/components/schemas/TxInfo"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "success"
+            ],
+            "properties": {
+              "success": {
+                "type": "object",
+                "required": [
+                  "received_tokens"
+                ],
+                "properties": {
+                  "received_tokens": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/GatewayUserTokenTransferV3"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "refunded"
+            ],
+            "properties": {
+              "refunded": {
+                "type": "object",
+                "required": [
+                  "refunded_tokens"
+                ],
+                "properties": {
+                  "refunded_tokens": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/GatewayUserTokenTransferV3"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "description": "Gateway order status (v3) — mirrors v2 with USD-carrying transfer types."
+      },
       "GatewayQuote": {
         "oneOf": [
           {
@@ -3014,6 +3304,25 @@
         ],
         "description": "V3 gateway quote — used for both the get-quote response and the create-order body.\n`ownerAddress` is embedded in each variant that carries an owner concept."
       },
+      "GatewaySolanaTx": {
+        "type": "object",
+        "description": "Solana transaction returned on V3 create-order (offramp / token-swap).\n\n`transaction` is base64-encoded bincode serialization of an unsigned `VersionedTransaction`.\nClients must decode, sign, re-serialize, and broadcast — do not sign the base64 string directly.",
+        "required": [
+          "chainId",
+          "transaction"
+        ],
+        "properties": {
+          "chainId": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "transaction": {
+            "type": "string",
+            "example": "AgAAA..."
+          }
+        }
+      },
       "GatewayTokenAmount": {
         "type": "object",
         "required": [
@@ -3127,6 +3436,74 @@
           }
         }
       },
+      "GatewayTxData": {
+        "oneOf": [
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TxInfo"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "type"
+                ],
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "evm"
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TronTxData"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "type"
+                ],
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "tron"
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GatewaySolanaTx"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "type"
+                ],
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "solana"
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        ],
+        "description": "Tagged union of EVM, Tron and Solana transaction data for V3 create-order responses."
+      },
       "GatewayUserTokenTransfer": {
         "type": "object",
         "required": [
@@ -3150,6 +3527,37 @@
           }
         }
       },
+      "GatewayUserTokenTransferV3": {
+        "type": "object",
+        "description": "User token transfer (v3) — adds `usd`.",
+        "required": [
+          "token",
+          "amount",
+          "chain",
+          "txHash"
+        ],
+        "properties": {
+          "amount": {
+            "type": "string"
+          },
+          "chain": {
+            "type": "string"
+          },
+          "token": {
+            "type": "string"
+          },
+          "txHash": {
+            "type": "string"
+          },
+          "usd": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "USD value of `amount` at the time the transfer settled."
+          }
+        }
+      },
       "OrderDestinationInfo": {
         "type": "object",
         "required": [
@@ -3167,6 +3575,34 @@
           },
           "token": {
             "type": "string"
+          }
+        }
+      },
+      "OrderDestinationInfoV3": {
+        "type": "object",
+        "description": "Destination info (v3) — adds `usd`.",
+        "required": [
+          "chain",
+          "token",
+          "amount"
+        ],
+        "properties": {
+          "amount": {
+            "type": "string",
+            "description": "The _estimated_ amount of the output token, as determined by create-order."
+          },
+          "chain": {
+            "type": "string"
+          },
+          "token": {
+            "type": "string"
+          },
+          "usd": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "USD value of the estimated output at order time."
           }
         }
       },
@@ -3190,6 +3626,27 @@
           }
         }
       },
+      "PaginatedOrdersResponseV3": {
+        "type": "object",
+        "description": "Paginated orders response (v3).",
+        "required": [
+          "orders"
+        ],
+        "properties": {
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "orders": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GatewayOrderInfoV3"
+            }
+          }
+        }
+      },
       "PendingBtcPayment": {
         "type": "object",
         "required": [
@@ -3202,6 +3659,29 @@
           },
           "txid": {
             "type": "string"
+          }
+        }
+      },
+      "PendingBtcPaymentV3": {
+        "type": "object",
+        "description": "Pending BTC payment (v3) — adds `usd`.",
+        "required": [
+          "txid",
+          "amount"
+        ],
+        "properties": {
+          "amount": {
+            "type": "string"
+          },
+          "txid": {
+            "type": "string"
+          },
+          "usd": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "USD value of the pending BTC amount, derived from the order's input rate."
           }
         }
       },
@@ -3418,6 +3898,108 @@
         ],
         "description": "V2 register-tx body (onramp, offramp, and token swap)."
       },
+      "RegisterTxV3": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "onramp"
+            ],
+            "properties": {
+              "onramp": {
+                "type": "object",
+                "required": [
+                  "order_id"
+                ],
+                "properties": {
+                  "bitcoin_tx_hex": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "Hex-encoded full Bitcoin transaction"
+                  },
+                  "bitcoin_txid": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "Bitcoin transaction ID (txid)"
+                  },
+                  "order_id": {
+                    "type": "string",
+                    "description": "Unique order id",
+                    "example": "f81d4fae-7dec-11d0-a765-00a0c91e6bf6"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "offramp"
+            ],
+            "properties": {
+              "offramp": {
+                "type": "object",
+                "required": [
+                  "order_id",
+                  "src_tx_hash",
+                  "src_chain"
+                ],
+                "properties": {
+                  "order_id": {
+                    "type": "string",
+                    "description": "Unique order id",
+                    "example": "f81d4fae-7dec-11d0-a765-00a0c91e6bf6"
+                  },
+                  "src_chain": {
+                    "type": "string",
+                    "description": "Source chain (e.g. `\"ethereum\"`, `\"solana\"`)"
+                  },
+                  "src_tx_hash": {
+                    "type": "string",
+                    "description": "Source-chain transaction hash (`0x…` on EVM, Base58 signature on Solana)"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "tokenSwap"
+            ],
+            "properties": {
+              "tokenSwap": {
+                "type": "object",
+                "required": [
+                  "order_id",
+                  "src_tx_hash",
+                  "src_chain"
+                ],
+                "properties": {
+                  "order_id": {
+                    "type": "string",
+                    "description": "Unique order id",
+                    "example": "f81d4fae-7dec-11d0-a765-00a0c91e6bf6"
+                  },
+                  "src_chain": {
+                    "type": "string",
+                    "description": "Source chain (e.g. `\"ethereum\"`, `\"solana\"`)"
+                  },
+                  "src_tx_hash": {
+                    "type": "string",
+                    "description": "Source-chain transaction hash (`0x…` on EVM, Base58 signature on Solana)"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "description": "V3 register-tx body. Offramp and token-swap use chain-aware `srcTxHash` + `srcChain`\n(EVM `0x…` on EVM chains, Base58 signature on Solana)."
+      },
       "ResolvedAffiliate": {
         "type": "object",
         "description": "Resolved affiliate returned in V2 responses. Includes the computed fee amount in\ninventory asset units (sats for wBTC, 6-decimal units for USDT).",
@@ -3456,6 +4038,34 @@
             "type": "string"
           },
           "srcToken": {
+            "type": "string"
+          }
+        }
+      },
+      "TronTxData": {
+        "type": "object",
+        "description": "Tron transaction data: the EVM-style call fields plus `feeLimit`, the max TRX\n(in sun) a Tron wallet may burn on energy/bandwidth. EVM chains have no such\nconcept, so it lives on the dedicated Tron entry rather than every tx.",
+        "required": [
+          "to",
+          "data",
+          "value",
+          "chain",
+          "feeLimit"
+        ],
+        "properties": {
+          "chain": {
+            "type": "string"
+          },
+          "data": {
+            "type": "string"
+          },
+          "feeLimit": {
+            "type": "string"
+          },
+          "to": {
+            "type": "string"
+          },
+          "value": {
             "type": "string"
           }
         }

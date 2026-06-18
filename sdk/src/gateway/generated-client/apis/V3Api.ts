@@ -15,36 +15,36 @@
 
 import * as runtime from '../runtime';
 import type {
-  GatewayCreateOrderV2,
+  GatewayCreateOrderV3,
   GatewayErrorV2,
   GatewayErrorV3,
   GatewayMaxSpendable,
-  GatewayOrderInfoV2,
+  GatewayOrderInfoV3,
   GatewayQuoteV3,
-  PaginatedOrdersResponse,
+  PaginatedOrdersResponseV3,
   RegisterTxSuccess,
-  RegisterTxV2,
+  RegisterTxV3,
   RouteInfo,
 } from '../models/index';
 import {
-    GatewayCreateOrderV2FromJSON,
-    GatewayCreateOrderV2ToJSON,
+    GatewayCreateOrderV3FromJSON,
+    GatewayCreateOrderV3ToJSON,
     GatewayErrorV2FromJSON,
     GatewayErrorV2ToJSON,
     GatewayErrorV3FromJSON,
     GatewayErrorV3ToJSON,
     GatewayMaxSpendableFromJSON,
     GatewayMaxSpendableToJSON,
-    GatewayOrderInfoV2FromJSON,
-    GatewayOrderInfoV2ToJSON,
+    GatewayOrderInfoV3FromJSON,
+    GatewayOrderInfoV3ToJSON,
     GatewayQuoteV3FromJSON,
     GatewayQuoteV3ToJSON,
-    PaginatedOrdersResponseFromJSON,
-    PaginatedOrdersResponseToJSON,
+    PaginatedOrdersResponseV3FromJSON,
+    PaginatedOrdersResponseV3ToJSON,
     RegisterTxSuccessFromJSON,
     RegisterTxSuccessToJSON,
-    RegisterTxV2FromJSON,
-    RegisterTxV2ToJSON,
+    RegisterTxV3FromJSON,
+    RegisterTxV3ToJSON,
     RouteInfoFromJSON,
     RouteInfoToJSON,
 } from '../models/index';
@@ -57,11 +57,11 @@ export interface GetMaxSpendableV2Request {
     address: string;
 }
 
-export interface GetOrderV2Request {
+export interface GetOrderV3Request {
     id: string;
 }
 
-export interface GetOrdersV2Request {
+export interface GetOrdersV3Request {
     userAddress: string;
     cursor?: string;
     limit?: number;
@@ -75,14 +75,15 @@ export interface GetQuoteV3Request {
     dstToken: string;
     amount: string;
     slippage: string;
-    ownerAddress: string;
     sender?: string;
     gasRefill?: string;
     affiliates?: string;
+    ownerAddress?: string;
+    refundAddress?: string;
 }
 
 export interface RegisterTxV3Request {
-    registerTxV2: RegisterTxV2;
+    registerTxV3: RegisterTxV3;
 }
 
 /**
@@ -94,7 +95,7 @@ export class V3Api extends runtime.BaseAPI {
      * Accepts a `GatewayQuoteV3` — the signed V3 quote with `ownerAddress` embedded in each variant.
      * Create a new gateway order (V3).
      */
-    async createOrderV3Raw(requestParameters: CreateOrderV3Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<GatewayCreateOrderV2>> {
+    async createOrderV3Raw(requestParameters: CreateOrderV3Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<GatewayCreateOrderV3>> {
         if (requestParameters['gatewayQuoteV3'] == null) {
             throw new runtime.RequiredError(
                 'gatewayQuoteV3',
@@ -119,14 +120,14 @@ export class V3Api extends runtime.BaseAPI {
             body: GatewayQuoteV3ToJSON(requestParameters['gatewayQuoteV3']),
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => GatewayCreateOrderV2FromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => GatewayCreateOrderV3FromJSON(jsonValue));
     }
 
     /**
      * Accepts a `GatewayQuoteV3` — the signed V3 quote with `ownerAddress` embedded in each variant.
      * Create a new gateway order (V3).
      */
-    async createOrderV3(requestParameters: CreateOrderV3Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<GatewayCreateOrderV2> {
+    async createOrderV3(requestParameters: CreateOrderV3Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<GatewayCreateOrderV3> {
         const response = await this.createOrderV3Raw(requestParameters, initOverrides);
         return await response.value();
     }
@@ -177,13 +178,13 @@ export class V3Api extends runtime.BaseAPI {
     }
 
     /**
-     * Get an order by id (v2).
+     * Get an order by id (v3 — amounts carry USD).
      */
-    async getOrderV2Raw(requestParameters: GetOrderV2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<GatewayOrderInfoV2>> {
+    async getOrderV3Raw(requestParameters: GetOrderV3Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<GatewayOrderInfoV3>> {
         if (requestParameters['id'] == null) {
             throw new runtime.RequiredError(
                 'id',
-                'Required parameter "id" was null or undefined when calling getOrderV2().'
+                'Required parameter "id" was null or undefined when calling getOrderV3().'
             );
         }
 
@@ -210,25 +211,25 @@ export class V3Api extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => GatewayOrderInfoV2FromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => GatewayOrderInfoV3FromJSON(jsonValue));
     }
 
     /**
-     * Get an order by id (v2).
+     * Get an order by id (v3 — amounts carry USD).
      */
-    async getOrderV2(requestParameters: GetOrderV2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<GatewayOrderInfoV2> {
-        const response = await this.getOrderV2Raw(requestParameters, initOverrides);
+    async getOrderV3(requestParameters: GetOrderV3Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<GatewayOrderInfoV3> {
+        const response = await this.getOrderV3Raw(requestParameters, initOverrides);
         return await response.value();
     }
 
     /**
-     * Get user orders (v2).
+     * Get user orders (v3 — amounts carry USD).
      */
-    async getOrdersV2Raw(requestParameters: GetOrdersV2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PaginatedOrdersResponse>> {
+    async getOrdersV3Raw(requestParameters: GetOrdersV3Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PaginatedOrdersResponseV3>> {
         if (requestParameters['userAddress'] == null) {
             throw new runtime.RequiredError(
                 'userAddress',
-                'Required parameter "userAddress" was null or undefined when calling getOrdersV2().'
+                'Required parameter "userAddress" was null or undefined when calling getOrdersV3().'
             );
         }
 
@@ -263,14 +264,14 @@ export class V3Api extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => PaginatedOrdersResponseFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => PaginatedOrdersResponseV3FromJSON(jsonValue));
     }
 
     /**
-     * Get user orders (v2).
+     * Get user orders (v3 — amounts carry USD).
      */
-    async getOrdersV2(requestParameters: GetOrdersV2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PaginatedOrdersResponse> {
-        const response = await this.getOrdersV2Raw(requestParameters, initOverrides);
+    async getOrdersV3(requestParameters: GetOrdersV3Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PaginatedOrdersResponseV3> {
+        const response = await this.getOrdersV3Raw(requestParameters, initOverrides);
         return await response.value();
     }
 
@@ -327,13 +328,6 @@ export class V3Api extends runtime.BaseAPI {
             );
         }
 
-        if (requestParameters['ownerAddress'] == null) {
-            throw new runtime.RequiredError(
-                'ownerAddress',
-                'Required parameter "ownerAddress" was null or undefined when calling getQuoteV3().'
-            );
-        }
-
         const queryParameters: any = {};
 
         if (requestParameters['srcChain'] != null) {
@@ -378,6 +372,10 @@ export class V3Api extends runtime.BaseAPI {
 
         if (requestParameters['ownerAddress'] != null) {
             queryParameters['ownerAddress'] = requestParameters['ownerAddress'];
+        }
+
+        if (requestParameters['refundAddress'] != null) {
+            queryParameters['refundAddress'] = requestParameters['refundAddress'];
         }
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -433,13 +431,13 @@ export class V3Api extends runtime.BaseAPI {
     }
 
     /**
-     * Register a tx for a request (V3 body; identical shape to V2).
+     * Register a tx for a request (V3 body).
      */
     async registerTxV3Raw(requestParameters: RegisterTxV3Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<RegisterTxSuccess>> {
-        if (requestParameters['registerTxV2'] == null) {
+        if (requestParameters['registerTxV3'] == null) {
             throw new runtime.RequiredError(
-                'registerTxV2',
-                'Required parameter "registerTxV2" was null or undefined when calling registerTxV3().'
+                'registerTxV3',
+                'Required parameter "registerTxV3" was null or undefined when calling registerTxV3().'
             );
         }
 
@@ -457,14 +455,14 @@ export class V3Api extends runtime.BaseAPI {
             method: 'PATCH',
             headers: headerParameters,
             query: queryParameters,
-            body: RegisterTxV2ToJSON(requestParameters['registerTxV2']),
+            body: RegisterTxV3ToJSON(requestParameters['registerTxV3']),
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => RegisterTxSuccessFromJSON(jsonValue));
     }
 
     /**
-     * Register a tx for a request (V3 body; identical shape to V2).
+     * Register a tx for a request (V3 body).
      */
     async registerTxV3(requestParameters: RegisterTxV3Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<RegisterTxSuccess> {
         const response = await this.registerTxV3Raw(requestParameters, initOverrides);

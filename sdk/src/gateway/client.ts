@@ -281,7 +281,7 @@ export class GatewayApiClient {
 
             const tx = await this.api.registerTxV3(
                 {
-                    registerTxV2: {
+                    registerTxV3: {
                         onramp: {
                             orderId: order.onramp.orderId,
                             bitcoinTxHex: bitcoinTxHex,
@@ -405,10 +405,11 @@ export class GatewayApiClient {
             try {
                 await this.api.registerTxV3(
                     {
-                        registerTxV2: {
+                        registerTxV3: {
                             offramp: {
+                                srcTxHash: transactionHash,
                                 orderId: order.offramp.orderId,
-                                evmTxhash: transactionHash,
+                                srcChain: quote.offramp.srcChain,
                             },
                         },
                     },
@@ -538,10 +539,11 @@ export class GatewayApiClient {
             try {
                 await this.api.registerTxV3(
                     {
-                        registerTxV2: {
+                        registerTxV3: {
                             tokenSwap: {
-                                evmTxhash: transactionHash,
+                                srcTxHash: transactionHash,
                                 orderId: order.tokenSwap.orderId,
+                                srcChain: quote.tokenSwap.srcChain,
                             },
                         },
                     },
@@ -624,7 +626,7 @@ export class GatewayApiClient {
         requestParameters: GetOrdersV3Request,
         initOverrides?: RequestInit
     ): Promise<PaginatedOrdersResponse> {
-        return this.api.getOrdersV2(requestParameters, initOverrides);
+        return this.api.getOrdersV3(requestParameters, initOverrides);
     }
 
     /**
@@ -635,7 +637,7 @@ export class GatewayApiClient {
      * @returns Promise resolving to the order information
      */
     async getOrder(id: string, initOverrides?: RequestInit): Promise<GatewayOrderInfoV2> {
-        return this.api.getOrderV2({ id }, initOverrides);
+        return this.api.getOrderV3({ id }, initOverrides);
     }
 
     /**

@@ -18,7 +18,8 @@
  * @export
  */
 export const GatewayErrorCodeV3Variants = {
-    BungeeNoRoute: 'BUNGEE_NO_ROUTE'
+    BungeeNoRoute: 'BUNGEE_NO_ROUTE',
+    MissingOwnerAddress: 'MISSING_OWNER_ADDRESS'
 } as const;
 export type GatewayErrorCodeV3Variants = typeof GatewayErrorCodeV3Variants[keyof typeof GatewayErrorCodeV3Variants];
 
