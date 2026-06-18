@@ -110,7 +110,7 @@ export type DetailsFor<C extends GatewayErrorCode | GatewayErrorCodeV2 | Gateway
  * ```
  */
 export class GatewayError<
-    C extends GatewayErrorCode | GatewayErrorCodeV2 = GatewayErrorCode | GatewayErrorCodeV2,
+    C extends GatewayErrorCode | GatewayErrorCodeV2 | GatewayErrorCodeV3 = GatewayErrorCode | GatewayErrorCodeV2 | GatewayErrorCodeV3,
 > extends Error {
     /** Stable error code, safe to switch/match on. */
     readonly code: C;
@@ -184,7 +184,8 @@ export class GatewayError<
  */
 export type AnyGatewayError =
     | { [C in GatewayErrorCode]: GatewayError<C> }[GatewayErrorCode]
-    | { [C2 in GatewayErrorCodeV2]: GatewayError<C2> }[GatewayErrorCodeV2];
+    | { [C2 in GatewayErrorCodeV2]: GatewayError<C2> }[GatewayErrorCodeV2]
+    | { [C3 in GatewayErrorCodeV3]: GatewayError<C3> }[GatewayErrorCodeV3];
 
 /**
  * Type guard that narrows `err` to {@link AnyGatewayError}.
@@ -212,7 +213,7 @@ export function isGatewayError(err: unknown): err is AnyGatewayError {
 // Reads raw snake_case JSON fields directly, matching Rust serde output.
 // Each case corresponds to a GatewayErrorDetails enum variant in error.rs.
 
-function parseDetails<C extends GatewayErrorCode | GatewayErrorCodeV2>(
+function parseDetails<C extends GatewayErrorCode | GatewayErrorCodeV2 | GatewayErrorCodeV3>(
     code: C,
     raw: Record<string, unknown> | null
 ): DetailsFor<C> {
