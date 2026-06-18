@@ -20,13 +20,13 @@ import {
     GatewayErrorCodeV3ToJSON,
     GatewayErrorCodeV3ToJSONTyped,
 } from './GatewayErrorCodeV3';
-import type { GatewayErrorDetailsV2 } from './GatewayErrorDetailsV2';
+import type { GatewayErrorDetailsV3 } from './GatewayErrorDetailsV3';
 import {
-    GatewayErrorDetailsV2FromJSON,
-    GatewayErrorDetailsV2FromJSONTyped,
-    GatewayErrorDetailsV2ToJSON,
-    GatewayErrorDetailsV2ToJSONTyped,
-} from './GatewayErrorDetailsV2';
+    GatewayErrorDetailsV3FromJSON,
+    GatewayErrorDetailsV3FromJSONTyped,
+    GatewayErrorDetailsV3ToJSON,
+    GatewayErrorDetailsV3ToJSONTyped,
+} from './GatewayErrorDetailsV3';
 
 /**
  * Structured error response for V3 API.
@@ -42,10 +42,10 @@ export interface GatewayErrorV3 {
     code: GatewayErrorCodeV3;
     /**
      * Optional structured details specific to the error type
-     * @type {GatewayErrorDetailsV2}
+     * @type {GatewayErrorDetailsV3}
      * @memberof GatewayErrorV3
      */
-    details?: GatewayErrorDetailsV2 | null;
+    details?: GatewayErrorDetailsV3 | null;
     /**
      * Human-readable error message
      * @type {string}
@@ -74,7 +74,7 @@ export function GatewayErrorV3FromJSONTyped(json: any, ignoreDiscriminator: bool
     return {
         
         'code': GatewayErrorCodeV3FromJSON(json['code']),
-        'details': json['details'] == null ? undefined : GatewayErrorDetailsV2FromJSON(json['details']),
+        'details': json['details'] == null ? undefined : GatewayErrorDetailsV3FromJSON(json['details']),
         'error': json['error'],
     };
 }
@@ -91,7 +91,7 @@ export function GatewayErrorV3ToJSONTyped(value?: GatewayErrorV3 | null, ignoreD
     return {
         
         'code': GatewayErrorCodeV3ToJSON(value['code']),
-        'details': GatewayErrorDetailsV2ToJSON(value['details']),
+        'details': GatewayErrorDetailsV3ToJSON(value['details']),
         'error': value['error'],
     };
 }
