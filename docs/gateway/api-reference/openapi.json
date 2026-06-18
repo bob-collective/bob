@@ -1794,7 +1794,8 @@
         "description": "New error codes for V3.",
         "enum": [
           "BUNGEE_NO_ROUTE",
-          "MISSING_OWNER_ADDRESS"
+          "MISSING_OWNER_ADDRESS",
+          "NON_COMPLIANT_ADDRESSES"
         ]
       },
       "GatewayErrorDetails": {
@@ -2078,6 +2079,187 @@
         ],
         "description": "Structured details for V2 error types - all V1 variants plus V2-only ones.\n\nKept as a single flat `oneOf` (not nested under V1/V2 wrappers) so OpenAPI clients\n(e.g. typescript-fetch) can generate type guards correctly."
       },
+      "GatewayErrorDetailsV3": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "addresses"
+            ],
+            "properties": {
+              "addresses": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "expected",
+              "actual"
+            ],
+            "properties": {
+              "actual": {
+                "type": "string"
+              },
+              "expected": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "required",
+              "available"
+            ],
+            "properties": {
+              "available": {
+                "type": "string"
+              },
+              "required": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "total_fees",
+              "available_amount"
+            ],
+            "properties": {
+              "available_amount": {
+                "type": "string"
+              },
+              "total_fees": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "properties": {
+              "tenderly_url": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "src_chain",
+              "src_token",
+              "dst_chain",
+              "dst_token"
+            ],
+            "properties": {
+              "dst_chain": {
+                "type": "string"
+              },
+              "dst_token": {
+                "type": "string"
+              },
+              "src_chain": {
+                "type": "string"
+              },
+              "src_token": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "limit"
+            ],
+            "properties": {
+              "limit": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "type": "null",
+            "default": null
+          },
+          {
+            "type": "object",
+            "required": [
+              "minimum",
+              "actual"
+            ],
+            "properties": {
+              "actual": {
+                "type": "string"
+              },
+              "minimum": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "limit",
+              "token",
+              "chain_id"
+            ],
+            "properties": {
+              "chain_id": {
+                "type": "string"
+              },
+              "limit": {
+                "type": "string"
+              },
+              "token": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "src_chain",
+              "src_token",
+              "dst_chain",
+              "dst_token"
+            ],
+            "properties": {
+              "dst_chain": {
+                "type": "string"
+              },
+              "dst_token": {
+                "type": "string"
+              },
+              "src_chain": {
+                "type": "string"
+              },
+              "src_token": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "message"
+            ],
+            "properties": {
+              "message": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "description": "Structured details for V3 error types - all V2 variants plus V3-only ones.\n\nKept as a single flat `oneOf` (not nested under V1/V2/V3 wrappers) so OpenAPI clients\n(e.g. typescript-fetch) can generate type guards correctly."
+      },
       "GatewayErrorV2": {
         "type": "object",
         "description": "Structured error response for V2 API.\nContains an error code, human-readable message, and optional structured details.",
@@ -2125,7 +2307,7 @@
                 "type": "null"
               },
               {
-                "$ref": "#/components/schemas/GatewayErrorDetailsV2",
+                "$ref": "#/components/schemas/GatewayErrorDetailsV3",
                 "description": "Optional structured details specific to the error type"
               }
             ]
