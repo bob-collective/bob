@@ -1,4 +1,4 @@
-import type { RegisterTxV2 } from '@gobob/bob-sdk';
+import type { RegisterTxV3 } from '@gobob/bob-sdk';
 import { getSdk } from '../config.js';
 import { getRoutes, getUniqueChains, getTokensForChain } from '../util/route-provider.js';
 import { getBtcBalance, deriveBtcAddress, resolveBtcSigner } from './bitcoin.js';
@@ -152,14 +152,14 @@ export function buildRegisterPayload(
   dstChain: string,
   orderId: string,
   txId: string,
-): RegisterTxV2 {
+): RegisterTxV3 {
   if (getChainFamily(srcChain) === 'bitcoin') {
     return { onramp: { orderId, bitcoinTxHex: txId } };
   }
   if (getChainFamily(dstChain) === 'bitcoin') {
-    return { offramp: { orderId, evmTxhash: txId } };
+    return { offramp: { orderId, srcChain, srcTxHash: txId } };
   }
-  return { tokenSwap: { orderId, evmTxhash: txId } };
+  return { tokenSwap: { orderId, srcChain, srcTxHash: txId } };
 }
 
 // Re-export for direct access
