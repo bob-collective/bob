@@ -88,6 +88,7 @@ program
   .requiredOption("--amount <value>", "Amount: 0.05BTC, 100USDC, 100USD, 5000000 (atomic), ALL")
   .option("--recipient <address>", "Recipient address")
   .option("--sender <address>", "Sender address")
+  .option("--owner <address>", "Order owner EVM address")
   .option("--slippage <bps>", "Slippage in basis points")
   .option("--gas-refill-usd <usd>", "Request ETH gas refill on destination (USD amount)")
   .option("--btc-fee-rate <sat/vbyte>", "Bitcoin fee rate (default: mempool.space next-block)")
@@ -98,7 +99,7 @@ program
     const mode = modeOf(opts);
     const parsed = quoteSchema.parse(opts);
     const { handleQuote } = await import("./commands/quote.js");
-    const result = await handleQuote({ ...parsed, sender: parsed.sender });
+    const result = await handleQuote({ ...parsed, sender: parsed.sender, ownerAddress: parsed.owner });
     render(result.quote, mode, () => formatConfirmation(result.confirmation));
   }));
 
@@ -110,6 +111,7 @@ program
   .requiredOption("--amount <value>", "Amount: 0.05BTC, 100USDC, 100USD, 5000000 (atomic), ALL")
   .option("--recipient <address>", "Recipient address")
   .option("--sender <address>", "Sender address")
+  .option("--owner <address>", "Order owner EVM address")
   .option("--slippage <bps>", "Slippage in basis points")
   .option("--gas-refill-usd <usd>", "Request ETH gas refill on destination (USD amount)")
   .option("--btc-fee-rate <sat/vbyte>", "Bitcoin fee rate (default: mempool.space)")
@@ -127,7 +129,7 @@ program
 
     const log = createLogger(mode);
     const { handleSwap } = await import("./commands/swap.js");
-    const result = await handleSwap({ ...parsed, sender: parsed.sender }, log);
+    const result = await handleSwap({ ...parsed, sender: parsed.sender, owner: parsed.owner }, log);
 
     render("data" in result ? result.data : result, mode);
   }));

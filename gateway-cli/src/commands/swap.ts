@@ -1,6 +1,6 @@
 import { MempoolClient } from "@gobob/bob-sdk";
-import type { BitcoinSigner, GetQuoteParams, GatewayCreateOrderV2 } from "@gobob/bob-sdk";
-import { getInnerQuoteV2 } from "../util/quote-v2.js";
+import type { BitcoinSigner, GetQuoteParams, GatewayCreateOrderV3 } from "@gobob/bob-sdk";
+import { getInnerQuoteV3 } from "../util/quote.js";
 import { type WalletClient, type PublicClient } from "viem";
 import pRetry, { AbortError } from "p-retry";
 import { getRoutes } from "../util/route-provider.js";
@@ -18,6 +18,7 @@ export interface SwapOptions {
   amount: string;
   recipient?: string;
   sender?: string;
+  owner?: string;
   slippage?: number;
   gasRefillUsd?: number;
   btcFeeRate?: number;
@@ -96,6 +97,8 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
     ? humanToAtomic((opts.gasRefillUsd / (await fetchPrice("ETH")).priceUsd).toFixed(18), 18)
     : undefined;
 
+  const ownerAddress = opts.owner ?? (srcFamily === "bitcoin" ? recipient : (senderAddress ?? recipient));
+
   const quoteParams: GetQuoteParams = {
     fromChain: srcAsset.chain,
     toChain: dstAsset.chain,
@@ -103,6 +106,7 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
     toToken: dstAsset.address,
     toUserAddress: recipient,
     fromUserAddress: senderAddress,
+    ownerAddress,
     amount: atomicUnits,
     maxSlippage: slippageBps,
     gasRefill: gasRefillWei ? BigInt(gasRefillWei) : undefined,
@@ -147,12 +151,12 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
   }
 
   // --unsigned has no public SDK path: executeQuote always signs.
-  // Use the V2 API directly to fetch the order with its PSBT (BTC) or unsigned tx (EVM).
+  // Use the V3 API directly to fetch the order with its PSBT (BTC) or unsigned tx (EVM).
   if (opts.unsigned) {
-    const order: GatewayCreateOrderV2 = await pRetry(async () => {
+    const order: GatewayCreateOrderV3 = await pRetry(async () => {
       try {
         const quote = await sdk.getQuote(quoteParams);
-        return await getApi().createOrderV2({ gatewayQuoteV2: quote });
+        return await getApi().createOrderV3({ gatewayQuoteV3: quote });
       } catch (err) {
         if (!isTransient(err)) {
           const abort = new AbortError(err instanceof Error ? err.message : String(err));
@@ -188,7 +192,7 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
         publicClient: evmClients?.publicClient as any,
         btcSigner,
       });
-      return { ...result, outputAmount: getInnerQuoteV2(quote).outputAmount.amount };
+      return { ...result, outputAmount: getInnerQuoteV3(quote).outputAmount.amount };
     } catch (err) {
       if (!isTransient(err)) {
         const abort = new AbortError(err instanceof Error ? err.message : String(err));

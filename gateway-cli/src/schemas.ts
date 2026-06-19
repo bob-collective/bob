@@ -41,6 +41,7 @@ export const quoteSchema = z.object({
   amount: z.string(),
   recipient: z.string().optional(),
   sender: z.string().optional(),
+  owner: z.string().refine(v => isAddress(v, { strict: false }), { message: "must be a valid EVM address" }).optional(),
   slippage: positiveInt.optional(),
   gasRefillUsd: positiveNumber.optional(),
   btcFeeRate: positiveInt.optional(),

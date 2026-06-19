@@ -57,7 +57,7 @@ vi.mock("../../src/config.js", () => ({
     getOrder: mockGetOrder,
     executeQuote: mockExecuteQuote,
   })),
-  getApi: vi.fn(() => ({ createOrderV2: mockCreateOrder })),
+  getApi: vi.fn(() => ({ createOrderV3: mockCreateOrder })),
   BTC_DECIMALS: 8,
 }));
 

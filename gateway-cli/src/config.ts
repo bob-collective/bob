@@ -1,4 +1,4 @@
-import { GatewaySDK, type V2Api } from "@gobob/bob-sdk";
+import { GatewaySDK, type V3Api } from "@gobob/bob-sdk";
 
 /** Bitcoin uses 8 decimal places (satoshis). */
 export const BTC_DECIMALS = 8;
@@ -52,19 +52,19 @@ let _sdk: InstanceType<typeof GatewaySDK> | null = null;
 export function getSdk(): InstanceType<typeof GatewaySDK> {
   if (!_sdk) {
     const { apiUrl } = loadConfig();
-    _sdk = apiUrl ? new GatewaySDK(apiUrl) : new GatewaySDK();
+    _sdk = apiUrl ? new GatewaySDK({ basePath: apiUrl }) : new GatewaySDK();
   }
   return _sdk;
 }
 
 /**
- * Typed accessor for the SDK's underlying V2 generated client.
+ * Typed accessor for the SDK's underlying V3 generated client.
  *
- * The SDK marks its `api` field private and doesn't re-expose `createOrderV2`
- * or `registerTxV2` on the public surface, but we need both for the CLI's
+ * The SDK marks its `api` field private and doesn't re-expose `createOrderV3`
+ * or `registerTxV3` on the public surface, but we need both for the CLI's
  * unsigned/manual signing flows. Centralize the privacy escape here so call
- * sites get full V2Api typing without sprinkling `any` around.
+ * sites get full V3Api typing without sprinkling `any` around.
  */
-export function getApi(): V2Api {
-  return (getSdk() as unknown as { api: V2Api }).api;
+export function getApi(): V3Api {
+  return (getSdk() as unknown as { api: V3Api }).api;
 }
