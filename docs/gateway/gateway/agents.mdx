@@ -1,0 +1,276 @@
+---
+title: "Gateway for AI Agents"
+description: "Add native BTC swaps to any AI agent with the Gateway CLI — no SDK binding, no language lock-in, no custody of user keys."
+icon: "robot"
+---
+
+# Gateway for AI Agents
+
+Gateway is the best swaps engine for native BTC. It supports a growing set of assets and chains — run `gateway-cli routes --json` to see what is available.
+
+The Gateway CLI makes that engine available to any AI agent that can run a shell command. No SDK to bind, no language to match, no service to host. A Python agent, a TypeScript agent, a shell script, or a scheduled job can all call the same interface and get structured output back.
+
+---
+
+## What your agents can do
+
+<CardGroup cols={2}>
+  <Card title="Swap native BTC across chains" icon="bitcoin-sign">
+    Swap BTC to and from ETH, USDC, USDT, WBTC, cbBTC, DAI, PAXG, XAUt, and more — across Ethereum, Base, BSC, Arbitrum, Avalanche and other major chains.
+  </Card>
+
+  <Card title="No routing logic needed" icon="arrow-right-arrow-left">
+    Gateway handles solver liquidity, cross-chain settlement, and on-chain verification. Your agent just calls `quote` and `swap`.
+  </Card>
+
+  <Card title="Quote before committing" icon="magnifying-glass-dollar">
+    Get real-time quotes with slippage, fees, and the exact receive amount before the agent executes anything.
+  </Card>
+
+  <Card title="Sign nothing — or sign everything" icon="shield-halved">
+    Return unsigned PSBTs or EVM transactions and pass them to your own signer. Or sign inside a trusted sandbox and track settlement asynchronously.
+  </Card>
+</CardGroup>
+
+---
+
+## Who this is for
+
+<CardGroup cols={2}>
+  <Card title="Agent developers" icon="code">
+    Building autonomous agents in Python, TypeScript, or any language that can shell out. The CLI gives you a clean tool interface without writing a Gateway SDK wrapper yourself.
+  </Card>
+
+  <Card title="Framework builders" icon="layer-group">
+    Adding Bitcoin swap capabilities to an agent framework (LangChain, LlamaIndex, AgentKit, or your own). Wrap the CLI in a tool function and expose it to the model.
+  </Card>
+
+  <Card title="Teams building agentic DeFi" icon="chart-line">
+    Agents that allocate capital, execute yield strategies, or rebalance across chains — and need to touch native BTC as part of those workflows.
+  </Card>
+
+  <Card title="MCP builders" icon="plug">
+    The CLI is a clean blueprint for an MCP server. Wrap it once and the same BTC swap tool works across every MCP client.
+  </Card>
+</CardGroup>
+
+---
+
+## Why the CLI is a good agent tool
+
+Agents call tools and read structured output. The Gateway CLI is built around that interface. None of this is an AI feature — it is good CLI design, which turns out to be most of what an agent needs.
+
+<AccordionGroup>
+  <Accordion icon="brackets-curly" title="JSON on every command">
+    Add `--json` to any `quote`, `swap`, `balance`, `routes`, or `status` call and get structured output. Errors come back structured too — an agent can branch on a failure instead of parsing prose.
+
+    ```bash
+    gateway-cli quote --src BTC --dst USDC:base --amount 100USD --json
+    ```
+  </Accordion>
+
+  <Accordion icon="key" title="Unsigned by default when you need it">
+    The `--unsigned` flag returns an unsigned Bitcoin PSBT or EVM transaction and stops. The agent never holds a key. It passes the payload to whatever signer or policy layer you trust, and that layer decides whether to sign.
+  </Accordion>
+
+  <Accordion icon="bolt" title="Fire and forget">
+    `--no-wait` submits a swap and returns an order ID instead of blocking until settlement. The agent moves on; your polling loop checks status separately.
+  </Accordion>
+
+  <Accordion icon="dollar-sign" title="Amounts in dollars">
+    `--amount 100USD` resolves to the correct amount of BTC at the current price. "Move a hundred dollars of Bitcoin to Base" maps almost word-for-word onto a command.
+  </Accordion>
+
+  <Accordion icon="gear" title="Config from the environment">
+    Keys and endpoints come from environment variables. No config file left behind — the right way to inject secrets into a sandbox or container.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## The agent loop
+
+An agentic swap follows a consistent pattern: discover what is possible, get a quote, decide, then settle.
+
+<Steps>
+  <Step title="Discover available routes">
+    The agent queries available routes so it isn't guessing at assets or chains.
+
+    ```bash
+    gateway-cli routes --json
+    ```
+  </Step>
+
+  <Step title="Get a quote">
+    Slippage, fees, and the real receive amount become visible here. The agent should always quote before committing.
+
+    ```bash
+    gateway-cli quote \
+      --src BTC \
+      --dst USDC:base \
+      --amount 100USD \
+      --json
+    ```
+  </Step>
+
+  <Step title="Settle — without handing over a key">
+    Return an unsigned transaction and pass it to your signer:
+
+    ```bash
+    gateway-cli swap \
+      --src BTC \
+      --dst USDC:base \
+      --amount 100USD \
+      --unsigned \
+      --json
+    ```
+
+    Or, if the CLI is running inside a trusted sandbox, submit and move on:
+
+    ```bash
+    # Returns an order ID immediately
+    gateway-cli swap \
+      --src BTC \
+      --dst USDC:base \
+      --amount 100USD \
+      --no-wait \
+      --json
+    ```
+  </Step>
+
+  <Step title="Track settlement">
+    Poll the order ID until the swap settles. The agent can check in between other work.
+
+    ```bash
+    gateway-cli status <order-id> --json
+    ```
+
+    To list all orders for an address — useful for agents that need to reconcile outstanding positions:
+
+    ```bash
+    gateway-cli orders --json
+    ```
+  </Step>
+</Steps>
+
+<Note>
+  If an agent submits a transaction outside of the CLI (e.g. via a custom signer) and needs to register it for tracking, use `gateway-cli register --json`. This is the recovery path for agents that handle signing separately.
+</Note>
+
+---
+
+## Expose Gateway to a model
+
+Wrapping the CLI in a tool takes a few lines. Here is a minimal Python example:
+
+```python
+import subprocess, json
+
+def gateway_swap(src: str, dst: str, amount: str) -> dict:
+    """Swap native BTC and EVM tokens via BOB Gateway. Returns an unsigned tx for your signer to approve."""
+    out = subprocess.run(
+        ["gateway-cli", "swap", "--src", src, "--dst", dst,
+         "--amount", amount, "--unsigned", "--json"],
+        capture_output=True, text=True, check=True,
+    )
+    return json.loads(out.stdout)
+```
+
+Give the model that function plus matching `quote` and `status` tools and the loop runs itself. The agent quotes, reasons about the result, requests an unsigned swap, your signer approves, and the agent tracks settlement to completion. "Swap $100 of BTC to USDC on Base" becomes a sequence of tool calls with a signature you control in the middle.
+
+---
+
+## Example: the Gateway starter bot
+
+The [gateway-starter-bot](https://github.com/bob-collective/gateway-starter-bot) is a minimal, educational example of a trading bot built entirely on the Gateway CLI. It's a single bash script that demonstrates the full agent loop in a real strategy.
+
+The bot executes a **"buy the dip"** round-trip:
+
+1. **Onramp** — swap BTC → USDT on Ethereum.
+2. **Watch** — poll the reverse quote (USDT → BTC) until BTC gets cheaper.
+3. **Buy the dip** — swap USDT → BTC, ending with more sats than it started with.
+
+The interesting part: there is no external price feed. The gateway quote *is* the price signal. The bot sold a known number of satoshis; it buys back the moment the gateway would return more sats than were sold (by a configurable threshold). Fees and slippage are already priced into the quote — one tool, one source of truth.
+
+The entire strategy is `gateway-cli ... --json` piped through `jq`. Read `dip-bot.sh` top to bottom — that's the whole thing.
+
+```bash
+# Safe to run — quotes only, no real swaps
+./dip-bot.sh --dry-run
+```
+
+Example dry-run output:
+
+```
+! DRY RUN — no real swaps will be executed. Quotes only.
+▸ Trade size 100USD | dip threshold 500bps | poll 60s | max wait 3600s
+▸ Onramp: 100USD of BTC -> USDT on Ethereum
+✓ Sold 0.00094000 BTC (94000 sats), now holding USDT
+▸ Will buy back when a quote returns >= 0.00098700 BTC (98700 sats)
+▸ No dip yet: quote 0.00094100 BTC < target 0.00098700 BTC. Waiting 60s…
+✓ Dip detected: quote returns 0.00098750 BTC (>= target)
+▸ Summary:
+  sold:   0.00094000 BTC (94000 sats)
+  bought: 0.00098750 BTC (98750 sats)
+  net:    +0.00004750 BTC (4750 sats)
+```
+
+<Warning>
+  Live mode performs real swaps with real funds on mainnet. Use a throwaway wallet with a small balance, and always run `--dry-run` first.
+</Warning>
+
+<Card title="gateway-starter-bot on GitHub" icon="github" href="https://github.com/bob-collective/gateway-starter-bot">
+  Educational "buy the dip" bot — a single bash script. Read it, run it, adapt it.
+</Card>
+
+---
+
+## BOB Gateway integration paths
+
+The CLI is the fastest path into BOB Gateway, not the only one. The same engine is available through multiple surfaces:
+
+| Path | Best for |
+|------|----------|
+| [**Gateway CLI**](https://github.com/bob-collective/bob/tree/master/gateway-cli) | Any agent that can shell out. Zero binding, works in any language, fastest to prototype. |
+| [**Gateway SDK**](/gateway/integration) | Agents built in TypeScript or Node. Type-safe, same swap engine, suitable for production web services. |
+| [**Gateway API**](/api-reference/overview) | Any language, server-to-server. Full control over request/response handling. |
+| **MCP server** | Agents using the Model Context Protocol. Wrap Gateway once and it works across every MCP client. |
+
+Gateway has already powered experiments like a Bitcoin yield bot built on Coinbase AgentKit. Frameworks evolve fast — the engine underneath does not. Whether an agent reaches Gateway through a CLI, an MCP server, or next year's framework, it is calling the same swaps engine for native BTC. Build the Bitcoin layer once and let the toolchains find it.
+
+---
+
+## Install and try it
+
+```bash
+npm install -g @gobob/gateway-cli
+gateway-cli --help
+```
+
+Set your keys and run a quote to verify the setup:
+
+```bash
+export BITCOIN_PRIVATE_KEY=...
+export EVM_PRIVATE_KEY=...
+
+# Or stay in unsigned mode — no keys required for quoting
+gateway-cli quote --src BTC --dst USDC:base --amount 100USD --json
+```
+
+<CardGroup cols={2}>
+  <Card title="BOB Gateway CLI on GitHub" icon="github" href="https://github.com/bob-collective/bob/tree/master/gateway-cli">
+    Source code, installation, and full command reference.
+  </Card>
+
+  <Card title="BOB Gateway docs" icon="book-open" href="/gateway">
+    Integration guides, supported routes, and SDK reference.
+  </Card>
+
+  <Card title="API reference" icon="book" href="/api-reference/overview">
+    Use the REST API directly from your agent.
+  </Card>
+
+  <Card title="Discord" icon="discord" href="https://discord.gg/gobob">
+    Show us what you build.
+  </Card>
+</CardGroup>
