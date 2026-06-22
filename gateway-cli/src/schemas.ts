@@ -66,3 +66,21 @@ export const swapSchema = quoteSchema.and(z.object({
 export type QuoteInput = z.input<typeof quoteSchema>;
 /** TypeScript type inferred from swapSchema input. */
 export type SwapInput = z.input<typeof swapSchema>;
+
+/**
+ * Zod schema for the send command (direct, single-chain transfer).
+ */
+export const sendSchema = z.object({
+  asset: z.string(),
+  amount: z.string(),
+  to: z.string(),
+  privateKey: z.string().optional(),
+  btcFeeRate: positiveInt.optional(),
+  unsigned: z.boolean().default(false),
+  wait: z.boolean().default(true),
+  timeout: positiveInt.pipe(z.number().min(1, "timeout must be >= 1")).optional(),
+  json: z.boolean().default(false),
+});
+
+/** TypeScript type inferred from sendSchema input. */
+export type SendInput = z.input<typeof sendSchema>;
