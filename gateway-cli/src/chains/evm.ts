@@ -308,7 +308,7 @@ export function buildUnsignedEvmTx(asset: ResolvedAsset, to: string, amount: big
 
 /** Execute a direct EVM transfer (native or ERC20). Returns the tx hash. */
 export async function sendEvm(signer: EvmSigner, asset: ResolvedAsset, to: string, amount: bigint): Promise<Hex> {
-  const { walletClient, address } = signer;
+  const { walletClient } = signer;
   const account = walletClient.account!;
   const chain = walletClient.chain!;
   if (isNativeToken(asset.address)) {
