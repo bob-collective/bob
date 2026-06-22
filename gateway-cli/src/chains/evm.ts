@@ -1,4 +1,4 @@
-import { createPublicClient, createWalletClient, http, erc20Abi, isAddressEqual, isHex, encodeFunctionData, type WalletClient, type PublicClient, type Hex, type Chain } from 'viem';
+import { createPublicClient, createWalletClient, http, erc20Abi, isAddress, isAddressEqual, isHex, encodeFunctionData, type WalletClient, type PublicClient, type Hex, type Chain } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { supportedChainsMapping, getChainConfig } from '@gobob/bob-sdk';
 import tokenlistJson from '@gobob/tokenlist/tokenlist.json';
@@ -129,7 +129,12 @@ const ZERO_ADDR = "0x0000000000000000000000000000000000000000" as `0x${string}`;
  * Native tokens have no contract address (represented by zero address or undefined).
  */
 function isNativeToken(tokenAddress?: string): boolean {
-  return !tokenAddress || isAddressEqual(tokenAddress as `0x${string}`, ZERO_ADDR);
+  if (!tokenAddress) return true;
+  // Non-EVM addresses (e.g. Tron base58 tokens from Tron routes) are never the
+  // EVM native token. Guard here — isAddressEqual throws on non-EVM input, which
+  // would otherwise abort the whole swap instead of skipping the foreign route.
+  if (!isAddress(tokenAddress, { strict: false })) return false;
+  return isAddressEqual(tokenAddress as `0x${string}`, ZERO_ADDR);
 }
 
 /**
