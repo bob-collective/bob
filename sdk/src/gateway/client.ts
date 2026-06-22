@@ -46,6 +46,23 @@ import { formatBtc, isValidTronAddress, tronAddressToHex } from './utils';
 
 const RETRY_COUNT = 8; // Number of times to retry fetching transaction receipt after sending a transaction
 
+/**
+ * Resolve the `account` to pass to viem write/simulate/send calls.
+ *
+ * Local accounts (e.g. gateway-cli / bots holding a private key) must be passed
+ * as the account OBJECT so viem signs locally (`eth_sendRawTransaction`).
+ * Passing their `.address` downgrades them to a json-rpc account, forcing
+ * `eth_sendTransaction`, which key-signing callers and non-EIP-1193 RPCs
+ * (e.g. Tenderly) reject with "not supported".
+ *
+ * json-rpc accounts keep using the address string — unchanged behaviour for
+ * browser wallets (the connected wallet signs) and the UI's custom Tron client,
+ * which stores a base58 address and handles base58<->hex conversion itself.
+ */
+function signerAccount(walletClient: WalletClient<Transport, ViemChain, Account>): Account | Address {
+    return walletClient.account.type === 'local' ? walletClient.account : walletClient.account.address;
+}
+
 export const ETHEREUM_USDT_ADDRESS = '0xdAC17F958D2ee523a2206206994597C13D831ec7';
 
 /**
@@ -364,7 +381,7 @@ export class GatewayApiClient {
                 // https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
                 if (needsReset) {
                     const { request: resetRequest } = await publicClient.simulateContract({
-                        account: walletClient.account.address,
+                        account: signerAccount(walletClient),
                         address: tokenAddress,
                         abi: USDTApproveAbi,
                         functionName: 'approve',
@@ -376,7 +393,7 @@ export class GatewayApiClient {
                 }
 
                 const { request } = await publicClient.simulateContract({
-                    account: walletClient.account.address,
+                    account: signerAccount(walletClient),
                     address: tokenAddress as Address,
                     abi:
                         isAddress(tokenAddress as Address) &&
@@ -394,7 +411,7 @@ export class GatewayApiClient {
 
             callback?.({ step: totalSteps, type: ExecuteQuoteStepType.SendTransaction, totalSteps });
             const transactionHash = await walletClient.sendTransaction({
-                account: walletClient.account.address,
+                account: signerAccount(walletClient),
                 data: order.offramp.tx.data as Hex,
                 to: spenderAddress,
                 value: BigInt(order.offramp.tx.value || 0),
@@ -486,7 +503,7 @@ export class GatewayApiClient {
                     // https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
                     if (needsReset) {
                         const { request: resetRequest } = await publicClient.simulateContract({
-                            account: walletClient.account.address,
+                            account: signerAccount(walletClient),
                             address: tokenAddress as Address,
                             abi: USDTApproveAbi,
                             functionName: 'approve',
@@ -498,7 +515,7 @@ export class GatewayApiClient {
                     }
 
                     const { request } = await publicClient.simulateContract({
-                        account: walletClient.account.address,
+                        account: signerAccount(walletClient),
                         address: tokenAddress as Address,
                         abi:
                             isAddress(tokenAddress) && isAddressEqual(tokenAddress, ETHEREUM_USDT_ADDRESS)
@@ -528,7 +545,7 @@ export class GatewayApiClient {
 
             callback?.({ step: totalSteps, type: ExecuteQuoteStepType.SendTransaction, totalSteps });
             const transactionHash = await walletClient.sendTransaction({
-                account: walletClient.account.address,
+                account: signerAccount(walletClient),
                 data: order.tokenSwap.tx.data as Hex,
                 to: order.tokenSwap.tx.to as Address,
                 value: BigInt(order.tokenSwap.tx.value || 0),
@@ -577,7 +594,7 @@ export class GatewayApiClient {
 
         if (BigInt(params.amount) > allowance) {
             const { request } = await publicClient.simulateContract({
-                account: walletClient.account.address,
+                account: signerAccount(walletClient),
                 address: params.token,
                 abi: erc20Abi,
                 functionName: 'approve',
@@ -594,7 +611,7 @@ export class GatewayApiClient {
             abi: strategyCaller,
             functionName: 'handleGatewayMessageWithSlippageArgs', // TODO: encode args
             args: [params.token, params.amount, params.receiver, { amountOutMin: params.amountOutMin }],
-            account: walletClient.account.address,
+            account: signerAccount(walletClient),
         });
 
         const transactionHash = await walletClient.writeContract(request);
