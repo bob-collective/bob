@@ -819,9 +819,7 @@ describe('Gateway Tests', () => {
         // because their account stays type 'json-rpc' either way.
         const gatewaySDK = new GatewaySDK();
         // Throwaway placeholder key (= 1); only used to build a local viem account.
-        const account = privateKeyToAccount(
-            '0x0000000000000000000000000000000000000000000000000000000000000001'
-        );
+        const account = privateKeyToAccount('0x0000000000000000000000000000000000000000000000000000000000000001');
 
         const mockQuote: GatewayQuoteV3OneOf = {
             offramp: {
