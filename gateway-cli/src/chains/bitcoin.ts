@@ -1,5 +1,8 @@
-import { EsploraClient, ScureBitcoinSigner, createBitcoinPsbt, type BitcoinSigner } from '@gobob/bob-sdk';
+import { EsploraClient, ScureBitcoinSigner, createBitcoinPsbt, estimateTxFee, getBalance, type BitcoinSigner } from '@gobob/bob-sdk';
 import { getSdk } from '../config.js';
+
+/** Bitcoin dust threshold in satoshis (matches the SDK's selectUTXO default). */
+const BTC_DUST_SATS = 546n;
 
 /** Bitcoin balance with total and maximum spendable amounts in satoshis. */
 export interface TokenBalance {
@@ -65,6 +68,35 @@ export function psbtBase64ToHex(base64: string): string {
  */
 export function buildBtcPsbt(from: string, to: string, amount: bigint, feeRate?: number): Promise<string> {
   return createBitcoinPsbt(from, to, Number(amount), undefined, undefined, feeRate);
+}
+
+/**
+ * Compute the sweepable BTC amount for `--amount ALL`: the confirmed safe-UTXO
+ * balance minus the network fee to spend every UTXO into a single output.
+ *
+ * Both values come from the SDK's own UTXO machinery over the SAME safe-UTXO set
+ * (`getBalance` and `estimateTxFee` both use `findSafeUtxos`), so `confirmed - fee`
+ * is the amount `createBitcoinPsbt` can then drain into one recipient output.
+ * `estimateTxFee(from, undefined, ...)` selects all UTXOs (strategy `'all'`).
+ *
+ * @returns The atomic sweep amount in satoshis.
+ * @throws if the balance cannot cover the fee (result at or below dust).
+ */
+export async function estimateBtcSweepAmount(from: string, feeRate?: number): Promise<bigint> {
+  const [{ confirmed }, fee] = await Promise.all([
+    getBalance(from),
+    estimateTxFee(from, undefined, undefined, undefined, feeRate),
+  ]);
+  return btcSweepAmount(confirmed, fee ?? 0n);
+}
+
+/** Sweep amount = confirmed balance minus fee, rejecting results at or below dust. Pure. */
+export function btcSweepAmount(confirmed: bigint, fee: bigint): bigint {
+  const sweep = confirmed - fee;
+  if (sweep <= BTC_DUST_SATS) {
+    throw new Error(`BTC balance (${confirmed} sats) is too low to cover the sweep fee (${fee} sats). Nothing to send.`);
+  }
+  return sweep;
 }
 
 /**

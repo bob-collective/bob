@@ -1,4 +1,4 @@
-import { type Hex } from "viem";
+import { type Hex, zeroAddress } from "viem";
 import type { ResolvedAsset } from "../util/input-resolver.js";
 import { parseAmount } from "../util/input-resolver.js";
 import { resolveSendAsset } from "../util/asset-resolver.js";
@@ -8,11 +8,10 @@ import {
   type BtcSigner, type EvmSigner,
 } from "../chains/index.js";
 import { sendEvm, buildUnsignedEvmTx, nativeSweepAmount, getEvmBalances, CHAIN_IDS } from "../chains/evm.js";
-import { sendBtc, buildBtcPsbt } from "../chains/bitcoin.js";
+import { sendBtc, buildBtcPsbt, estimateBtcSweepAmount } from "../chains/bitcoin.js";
 import type { SendSuccessJson, SendUnsignedJson, Logger } from "../output.js";
 
-const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
-const isNative = (address: string) => address.toLowerCase() === ZERO_ADDRESS;
+const isNative = (address: string) => address.toLowerCase() === zeroAddress;
 
 export interface SendOptions {
   asset: string;
@@ -76,7 +75,7 @@ export async function handleSend(opts: SendOptions, log: Logger): Promise<SendRe
   const amount = await resolveSendAmount(opts, asset, senderAddress, {
     spendable: async () => {
       if (family === "bitcoin") {
-        throw new Error("--amount ALL is not yet supported for BTC — specify an explicit amount (e.g. 0.001BTC or atomic sats). Sweep/drain semantics still need mainnet verification.");
+        return estimateBtcSweepAmount(senderAddress!, feeRate);
       }
       if (!signer) throw new Error("An EVM RPC connection is required for --amount ALL. Set a working RPC or remove --unsigned.");
       const evmSigner = signer as EvmSigner;
@@ -98,7 +97,7 @@ export async function handleSend(opts: SendOptions, log: Logger): Promise<SendRe
       const psbtBase64 = await buildBtcPsbt(senderAddress!, opts.to, amount, feeRate);
       return { type: "unsigned", data: { unsigned: true, chain: asset.chain, asset: asset.symbol, amount: amount.toString(), to: opts.to, psbtBase64 } };
     }
-    const from = senderAddress ?? ZERO_ADDRESS;
+    const from = senderAddress ?? zeroAddress;
     const tx = buildUnsignedEvmTx(asset, opts.to, amount, from, CHAIN_IDS[asset.chain]);
     return { type: "unsigned", data: { unsigned: true, chain: asset.chain, asset: asset.symbol, amount: amount.toString(), to: opts.to, tx } };
   }
@@ -122,7 +121,11 @@ export async function handleSend(opts: SendOptions, log: Logger): Promise<SendRe
   if (family === "bitcoin") {
     await waitForBtcConfirmation(txId, timeoutMs, log);
   } else {
-    await (signer as EvmSigner).publicClient.waitForTransactionReceipt({ hash: txId as Hex, timeout: timeoutMs });
+    try {
+      await (signer as EvmSigner).publicClient.waitForTransactionReceipt({ hash: txId as Hex, timeout: timeoutMs });
+    } catch (err) {
+      throw new Error(`Timed out waiting for confirmation of ${txId}. The tx was broadcast and may still confirm — check a block explorer. ${err instanceof Error ? err.message : String(err)}`);
+    }
   }
   log.progress(`✓ Confirmed: ${txId}`);
   return { type: "sent", data: { asset: asset.symbol, chain: asset.chain, amount: amount.toString(), to: opts.to, txId, status: "confirmed" } };
@@ -145,8 +148,9 @@ async function waitForBtcConfirmation(txId: string, timeoutMs: number, log: Logg
     } catch {
       // tx may not be indexed yet; keep polling
     }
-    log.progress(`  Waiting for confirmation... (${Math.round((deadline - Date.now()) / 1000)}s left)`);
-    await new Promise(r => setTimeout(r, 15_000));
+    const remaining = deadline - Date.now();
+    log.progress(`  Waiting for confirmation... (${Math.round(remaining / 1000)}s left)`);
+    await new Promise(r => setTimeout(r, Math.min(15_000, remaining)));
   }
   throw new Error(`Timed out waiting for confirmation of ${txId}. The tx may still confirm — check a block explorer.`);
 }

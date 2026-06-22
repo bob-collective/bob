@@ -1,4 +1,4 @@
-import { isAddress, createPublicClient, http, erc20Abi } from "viem";
+import { isAddress, createPublicClient, http, erc20Abi, zeroAddress } from "viem";
 import { getChainConfig } from "@gobob/bob-sdk";
 import tokenlistJson from "@gobob/tokenlist/tokenlist.json";
 import type { ResolvedAsset } from "./input-resolver.js";
@@ -6,8 +6,6 @@ import { resolveChain } from "./input-resolver.js";
 import { CHAIN_IDS, getNativeToken } from "../chains/evm.js";
 import { resolveRpcUrl } from "./rpc-resolver.js";
 import { BTC_DECIMALS } from "../config.js";
-
-const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
 /** Token metadata index keyed by `${chainId}:SYMBOL` and `${chainId}:address` (lowercase). */
 type Meta = { address: string; symbol: string; decimals: number };
@@ -60,8 +58,9 @@ export async function resolveSendAsset(raw: string, deps?: Partial<AssetResolver
   const assetPart = colon === -1 ? raw : raw.slice(0, colon);
   const chainPart = colon === -1 ? undefined : raw.slice(colon + 1);
 
-  if (assetPart.toUpperCase() === "BTC" && !chainPart) {
-    return { chain: "bitcoin", address: ZERO_ADDRESS, symbol: "BTC", decimals: BTC_DECIMALS };
+  // BTC with no chain, or explicitly BTC:bitcoin (incl. the "btc" alias)
+  if (assetPart.toUpperCase() === "BTC" && (!chainPart || resolveChain(chainPart) === "bitcoin")) {
+    return { chain: "bitcoin", address: zeroAddress, symbol: "BTC", decimals: BTC_DECIMALS };
   }
   if (!chainPart) {
     throw new Error(`chain required for token "${assetPart}".\n  Specify a chain, e.g. ${assetPart}:base`);
@@ -72,13 +71,16 @@ export async function resolveSendAsset(raw: string, deps?: Partial<AssetResolver
   try {
     const native = getNativeToken(chain);
     if (assetPart.toUpperCase() === native.symbol.toUpperCase()) {
-      return { chain, address: ZERO_ADDRESS, symbol: native.symbol, decimals: native.decimals };
+      return { chain, address: zeroAddress, symbol: native.symbol, decimals: native.decimals };
     }
   } catch {
     // unknown chain for native lookup — fall through to token resolution / errors below
   }
 
   if (isAddress(assetPart, { strict: false })) {
+    if (chain === "bitcoin") {
+      throw new Error(`"${chain}" does not support EVM token addresses — only BTC can be sent on bitcoin.`);
+    }
     const hit = lookupToken(chain, assetPart.toLowerCase());
     if (hit) return { chain, address: assetPart, symbol: hit.symbol, decimals: hit.decimals };
     const onchain = await readOnChainToken(chain, assetPart);

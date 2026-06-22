@@ -62,4 +62,19 @@ describe("resolveSendAsset", () => {
   it("throws when a non-BTC asset has no chain", async () => {
     await expect(resolveSendAsset("USDC", deps)).rejects.toThrow(/chain required/i);
   });
+
+  it("resolves BTC:bitcoin (explicit chain) the same as bare BTC", async () => {
+    const a = await resolveSendAsset("BTC:bitcoin", deps);
+    expect(a).toEqual({ chain: "bitcoin", address: "0x0000000000000000000000000000000000000000", symbol: "BTC", decimals: 8 });
+  });
+
+  it("resolves BTC via the btc alias (BTC:btc)", async () => {
+    const a = await resolveSendAsset("BTC:btc", deps);
+    expect(a.chain).toBe("bitcoin");
+    expect(a.symbol).toBe("BTC");
+  });
+
+  it("rejects an EVM token address on the bitcoin chain", async () => {
+    await expect(resolveSendAsset(`${USDC_BASE}:bitcoin`, deps)).rejects.toThrow(/does not support EVM token addresses/i);
+  });
 });
