@@ -881,6 +881,72 @@ describe('Gateway Tests', () => {
         expect((passedAccount as Account).type).toBe('local');
     });
 
+    it('passes the address string for json-rpc accounts on offramp (browser/Tron unchanged)', async () => {
+        // Guarantee: the local-account fix must NOT change behaviour for json-rpc
+        // accounts. Browser wallets (wagmi) and the UI's custom Tron client both
+        // use type 'json-rpc' and store the address as a string (base58 for Tron).
+        // They must keep receiving `account.address`, so the wallet signs and any
+        // base58<->hex conversion is handled by the injected client as before.
+        const gatewaySDK = new GatewaySDK();
+        const jsonRpcAddress = '0xabcd1234abcd1234abcd1234abcd1234abcd1234' as Address;
+
+        const mockQuote: GatewayQuoteV3OneOf = {
+            offramp: {
+                srcChain: 'bob',
+                feeBreakdown: {
+                    protocolFee: { address: zeroAddress, amount: '5', chain: 'bob' },
+                    affiliateFee: { address: zeroAddress, amount: '2', chain: 'bob' },
+                    solverFee: { address: zeroAddress, amount: '1', chain: 'bob' },
+                    inclusionFee: { address: zeroAddress, amount: '1', chain: 'bob' },
+                    fastestFeeRate: '6',
+                },
+                inputAmount: { address: zeroAddress, amount: '1000', chain: 'bob' },
+                outputAmount: { address: zeroAddress, amount: '990', chain: 'bob' },
+                tokenAddress: WBTC_OFT_ADDRESS,
+                ownerAddress: jsonRpcAddress,
+                recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+                slippage: 0,
+                totalFeeUsd: '3',
+                txTo: zeroAddress,
+            },
+        };
+
+        const spenderAddress = '0x1234567890123456789012345678901234567890';
+
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
+            .post('/v3/create-order')
+            .reply(200, {
+                offramp: {
+                    order_id: 'offramp-order-jsonrpc',
+                    tx: { type: 'evm', chain: 'bob', to: spenderAddress, data: '0xabcdef', value: '0' },
+                },
+            });
+        nock(`${MAINNET_GATEWAY_BASE_URL}`).patch('/v3/register-tx').reply(200, JSON.stringify('ok'));
+
+        const sendTransactionMock = vi.fn().mockResolvedValue('0xtxhash' as `0x${string}`);
+        const mockWalletClient = {
+            account: { address: jsonRpcAddress, type: 'json-rpc' },
+            writeContract: vi.fn().mockResolvedValue('0xapprovehash' as `0x${string}`),
+            sendTransaction: sendTransactionMock,
+        } as unknown as WalletClient<Transport, ViemChain, Account>;
+
+        const mockPublicClient = {
+            readContract: mockOftReadContract({ approvalRequired: false }),
+            simulateContract: vi.fn().mockResolvedValue({ request: {} }),
+            waitForTransactionReceipt: vi.fn().mockResolvedValue({}),
+        } as unknown as PublicClient<Transport>;
+
+        await gatewaySDK.executeQuote({
+            quote: mockQuote,
+            walletClient: mockWalletClient,
+            publicClient: mockPublicClient,
+        });
+
+        expect(sendTransactionMock).toHaveBeenCalledTimes(1);
+        // json-rpc account -> address string is passed (unchanged from pre-fix behaviour).
+        expect(sendTransactionMock.mock.calls[0][0].account).toBe(jsonRpcAddress);
+    });
+
     it('should reset USDT allowance before approving', async () => {
         const gatewaySDK = new GatewaySDK();
 
