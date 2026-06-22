@@ -2,13 +2,13 @@ import { type Hex } from "viem";
 import type { ResolvedAsset } from "../util/input-resolver.js";
 import { parseAmount } from "../util/input-resolver.js";
 import { resolveSendAsset } from "../util/asset-resolver.js";
-import { loadConfig, getSdk } from "../config.js";
+import { loadConfig } from "../config.js";
 import {
   validateRecipient, getChainFamily, resolvePrivateKey, deriveAddress, resolveSigner,
   type BtcSigner, type EvmSigner,
 } from "../chains/index.js";
 import { sendEvm, buildUnsignedEvmTx, nativeSweepAmount, getEvmBalances, CHAIN_IDS } from "../chains/evm.js";
-import { sendBtc, buildBtcPsbt, getBtcBalance } from "../chains/bitcoin.js";
+import { sendBtc, buildBtcPsbt } from "../chains/bitcoin.js";
 import type { SendSuccessJson, SendUnsignedJson, Logger } from "../output.js";
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
@@ -76,7 +76,7 @@ export async function handleSend(opts: SendOptions, log: Logger): Promise<SendRe
   const amount = await resolveSendAmount(opts, asset, senderAddress, {
     spendable: async () => {
       if (family === "bitcoin") {
-        return BigInt((await getBtcBalance(senderAddress!, getSdk())).allSpendable);
+        throw new Error("--amount ALL is not yet supported for BTC — specify an explicit amount (e.g. 0.001BTC or atomic sats). Sweep/drain semantics still need mainnet verification.");
       }
       if (!signer) throw new Error("An EVM RPC connection is required for --amount ALL. Set a working RPC or remove --unsigned.");
       const evmSigner = signer as EvmSigner;
