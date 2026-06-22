@@ -1,4 +1,4 @@
-import { EsploraClient, ScureBitcoinSigner, type BitcoinSigner } from '@gobob/bob-sdk';
+import { EsploraClient, ScureBitcoinSigner, createBitcoinPsbt, type BitcoinSigner } from '@gobob/bob-sdk';
 import { getSdk } from '../config.js';
 
 /** Bitcoin balance with total and maximum spendable amounts in satoshis. */
@@ -50,4 +50,30 @@ export async function resolveBtcSigner(
   const signer = ScureBitcoinSigner.fromKey(key);
   const address = await signer.getP2WPKHAddress();
   return { address, signer };
+}
+
+// ─── Send (direct transfer) ───────────────────────────────────────────────────
+
+/** Convert a base64-encoded PSBT (as produced by createBitcoinPsbt) to hex (as expected by signAllInputs). */
+export function psbtBase64ToHex(base64: string): string {
+  return Buffer.from(base64, "base64").toString("hex");
+}
+
+/**
+ * Build an unsigned PSBT (base64) for a P2WPKH send. UTXO selection, fee, and change
+ * are handled by the SDK. Public key is not required for P2WPKH senders.
+ */
+export function buildBtcPsbt(from: string, to: string, amount: bigint, feeRate?: number): Promise<string> {
+  return createBitcoinPsbt(from, to, Number(amount), undefined, undefined, feeRate);
+}
+
+/**
+ * Execute a direct BTC transfer: build PSBT → sign (finalize) → broadcast.
+ * @returns The broadcast transaction id.
+ */
+export async function sendBtc(signer: BitcoinSigner, from: string, to: string, amount: bigint, feeRate?: number): Promise<string> {
+  const psbtBase64 = await buildBtcPsbt(from, to, amount, feeRate);
+  if (!signer.signAllInputs) throw new Error("Bitcoin signer cannot sign PSBTs (missing signAllInputs).");
+  const signedTxHex = await signer.signAllInputs(psbtBase64ToHex(psbtBase64));
+  return new EsploraClient().broadcastTx(signedTxHex);
 }
