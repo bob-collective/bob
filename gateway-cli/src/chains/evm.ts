@@ -1,4 +1,4 @@
-import { createPublicClient, createWalletClient, http, erc20Abi, isAddressEqual, isHex, type WalletClient, type PublicClient, type Hex, type Chain } from 'viem';
+import { createPublicClient, createWalletClient, http, erc20Abi, isAddressEqual, isHex, encodeFunctionData, type WalletClient, type PublicClient, type Hex, type Chain } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { supportedChainsMapping, getChainConfig } from '@gobob/bob-sdk';
 import tokenlistJson from '@gobob/tokenlist/tokenlist.json';
@@ -281,4 +281,45 @@ export async function resolveEvmSigner(
     walletClient: createWalletClient({ account, chain: viemChain, transport }),
     publicClient: createPublicClient({ chain: viemChain, transport }),
   };
+}
+
+// ─── Send (direct transfer) ───────────────────────────────────────────────────
+
+import type { ResolvedAsset } from '../util/input-resolver.js';
+import type { EvmSigner } from './index.js';
+
+/** Default gas units for a simple value/ERC20 transfer when sweeping native balance. */
+const TRANSFER_GAS_LIMIT = 21_000n;
+
+/** Spendable native amount for a sweep: balance minus the exact gas cost of one transfer. */
+export function nativeSweepAmount(balance: bigint, maxFeePerGas: bigint, gasLimit: bigint = TRANSFER_GAS_LIMIT): bigint {
+  const cost = gasLimit * maxFeePerGas;
+  return balance > cost ? balance - cost : 0n;
+}
+
+/** Build unsigned EVM tx params for native or ERC20 transfer (for --unsigned output). */
+export function buildUnsignedEvmTx(asset: ResolvedAsset, to: string, amount: bigint, from: string, chainId: number) {
+  if (isNativeToken(asset.address)) {
+    return { from, to, value: amount.toString(), data: "0x", chainId };
+  }
+  const data = encodeFunctionData({ abi: erc20Abi, functionName: "transfer", args: [to as `0x${string}`, amount] });
+  return { from, to: asset.address, value: "0", data, chainId };
+}
+
+/** Execute a direct EVM transfer (native or ERC20). Returns the tx hash. */
+export async function sendEvm(signer: EvmSigner, asset: ResolvedAsset, to: string, amount: bigint): Promise<Hex> {
+  const { walletClient, address } = signer;
+  const account = walletClient.account!;
+  const chain = walletClient.chain!;
+  if (isNativeToken(asset.address)) {
+    return walletClient.sendTransaction({ account, chain, to: to as `0x${string}`, value: amount });
+  }
+  return walletClient.writeContract({
+    account,
+    chain,
+    address: asset.address as `0x${string}`,
+    abi: erc20Abi,
+    functionName: "transfer",
+    args: [to as `0x${string}`, amount],
+  });
 }
