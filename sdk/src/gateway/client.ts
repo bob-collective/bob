@@ -364,7 +364,7 @@ export class GatewayApiClient {
                 // https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
                 if (needsReset) {
                     const { request: resetRequest } = await publicClient.simulateContract({
-                        account: walletClient.account.address,
+                        account: walletClient.account,
                         address: tokenAddress,
                         abi: USDTApproveAbi,
                         functionName: 'approve',
@@ -376,7 +376,7 @@ export class GatewayApiClient {
                 }
 
                 const { request } = await publicClient.simulateContract({
-                    account: walletClient.account.address,
+                    account: walletClient.account,
                     address: tokenAddress as Address,
                     abi:
                         isAddress(tokenAddress as Address) &&
@@ -394,7 +394,7 @@ export class GatewayApiClient {
 
             callback?.({ step: totalSteps, type: ExecuteQuoteStepType.SendTransaction, totalSteps });
             const transactionHash = await walletClient.sendTransaction({
-                account: walletClient.account.address,
+                account: walletClient.account,
                 data: order.offramp.tx.data as Hex,
                 to: spenderAddress,
                 value: BigInt(order.offramp.tx.value || 0),
@@ -486,7 +486,7 @@ export class GatewayApiClient {
                     // https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
                     if (needsReset) {
                         const { request: resetRequest } = await publicClient.simulateContract({
-                            account: walletClient.account.address,
+                            account: walletClient.account,
                             address: tokenAddress as Address,
                             abi: USDTApproveAbi,
                             functionName: 'approve',
@@ -498,7 +498,7 @@ export class GatewayApiClient {
                     }
 
                     const { request } = await publicClient.simulateContract({
-                        account: walletClient.account.address,
+                        account: walletClient.account,
                         address: tokenAddress as Address,
                         abi:
                             isAddress(tokenAddress) && isAddressEqual(tokenAddress, ETHEREUM_USDT_ADDRESS)
@@ -528,7 +528,7 @@ export class GatewayApiClient {
 
             callback?.({ step: totalSteps, type: ExecuteQuoteStepType.SendTransaction, totalSteps });
             const transactionHash = await walletClient.sendTransaction({
-                account: walletClient.account.address,
+                account: walletClient.account,
                 data: order.tokenSwap.tx.data as Hex,
                 to: order.tokenSwap.tx.to as Address,
                 value: BigInt(order.tokenSwap.tx.value || 0),
@@ -577,7 +577,7 @@ export class GatewayApiClient {
 
         if (BigInt(params.amount) > allowance) {
             const { request } = await publicClient.simulateContract({
-                account: walletClient.account.address,
+                account: walletClient.account,
                 address: params.token,
                 abi: erc20Abi,
                 functionName: 'approve',
@@ -594,7 +594,7 @@ export class GatewayApiClient {
             abi: strategyCaller,
             functionName: 'handleGatewayMessageWithSlippageArgs', // TODO: encode args
             args: [params.token, params.amount, params.receiver, { amountOutMin: params.amountOutMin }],
-            account: walletClient.account.address,
+            account: walletClient.account,
         });
 
         const transactionHash = await walletClient.writeContract(request);
