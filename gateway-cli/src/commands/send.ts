@@ -1,4 +1,4 @@
-import { erc20Abi, type Hex } from "viem";
+import { type Hex } from "viem";
 import type { ResolvedAsset } from "../util/input-resolver.js";
 import { parseAmount } from "../util/input-resolver.js";
 import { resolveSendAsset } from "../util/asset-resolver.js";
@@ -78,6 +78,7 @@ export async function handleSend(opts: SendOptions, log: Logger): Promise<SendRe
       if (family === "bitcoin") {
         return BigInt((await getBtcBalance(senderAddress!, getSdk())).allSpendable);
       }
+      if (!signer) throw new Error("An EVM RPC connection is required for --amount ALL. Set a working RPC or remove --unsigned.");
       const evmSigner = signer as EvmSigner;
       if (isNative(asset.address)) {
         const [balance, fees] = await Promise.all([
