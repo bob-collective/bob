@@ -1,6 +1,6 @@
 # gateway-cli
 
-CLI for [BOB Gateway](https://docs.gobob.xyz/gateway/overview) — swap between BTC and EVM tokens from the terminal.
+CLI for [BOB Gateway](https://docs.gobob.xyz/gateway/overview) — swap between BTC and EVM tokens, and send funds on a single chain, from the terminal.
 
 ## Install
 
@@ -42,6 +42,10 @@ gateway-cli swap --src BTC --dst USDC:base --amount ALL --recipient 0xYourAddres
 # Swap without --recipient (uses derived address from EVM_PRIVATE_KEY)
 gateway-cli swap --src BTC --dst USDC:base --amount 0.05BTC
 
+# Send funds directly on a single chain (no Gateway)
+gateway-cli send --asset USDC:base --amount 100USDC --to 0xRecipient
+gateway-cli send --asset BTC --amount 0.01BTC --to bc1qRecipient
+
 # Check your balances (derives addresses from keys)
 gateway-cli balance
 ```
@@ -57,6 +61,31 @@ gateway-cli swap --src BTC --dst USDC:base --amount 0.05BTC --recipient 0x...
 ```
 
 **Required:** `--src`, `--dst`, `--amount`
+
+### `send`
+
+Send BTC or an EVM token (native or ERC20) directly to an address — a plain
+single-chain transfer, **not** a Gateway swap.
+
+```bash
+gateway-cli send --asset USDC:base --amount 100USDC --to 0x...   # ERC20
+gateway-cli send --asset ETH:base --amount 0.1ETH --to 0x...     # EVM native
+gateway-cli send --asset BTC --amount 0.01BTC --to bc1q...       # BTC
+gateway-cli send --asset BTC --amount ALL --to bc1q...           # sweep entire balance
+gateway-cli send --asset USDC:base --amount 100USDC --to 0x... --unsigned   # don't broadcast
+```
+
+**Required:** `--asset`, `--amount`, `--to`
+
+- `--asset` accepts a known symbol (`BTC`, `ETH:base`, `USDC:arbitrum`) or a raw
+  token address (`0xToken:base`); decimals come from the token list or an on-chain
+  lookup. A chain is required for everything except `BTC`.
+- `--to` must match the asset's chain family — a BTC address for `BTC`, an EVM
+  address otherwise.
+- `--amount ALL` sends the full spendable balance: ERC20 = full balance, EVM
+  native = balance minus gas, BTC = all UTXOs minus the network fee.
+- The signing key comes from `--private-key` or the env keys. The sender is the
+  key's own address (there is no `--sender`); BTC sends from a P2WPKH (`bc1q`) address.
 
 ### `quote`
 
@@ -155,6 +184,20 @@ All config via environment variables. No config files.
 --no-wait                Exit after submitting without polling
 --no-retry               Fail immediately on transient errors
 --timeout <seconds>      Polling timeout (default: 1800)
+```
+
+### Send only
+
+```
+--asset <asset[:chain]>  Asset to send (e.g. BTC, ETH:base, USDC:arbitrum, 0xToken:base)
+--amount <value>         Amount (see format table above)
+--to <address>           Recipient address (BTC or EVM, must match the asset chain)
+--private-key <key>      Signing key (or use env vars)
+--btc-fee-rate <sat>     Bitcoin fee rate override
+--unsigned               Output unsigned tx (EVM) or PSBT (BTC) without broadcasting
+--no-wait                Broadcast without waiting for confirmation
+--timeout <seconds>      Confirmation wait timeout (default: 1800)
+--json                   Output as JSON
 ```
 
 ## Output modes
