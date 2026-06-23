@@ -17,6 +17,7 @@ export interface SendOptions {
   asset: string;
   amount: string;
   to: string;
+  from?: string;
   privateKey?: string;
   btcFeeRate?: number;
   unsigned: boolean;
@@ -55,14 +56,23 @@ export async function handleSend(opts: SendOptions, log: Logger): Promise<SendRe
   validateRecipient(asset.chain, opts.to);
 
   const key = resolvePrivateKey(asset.chain, opts.privateKey, config);
-  const senderAddress = key ? await deriveAddress(asset.chain, key) : undefined;
+  // The key-derived address wins; otherwise --from supplies the sender for the keyless
+  // unsigned path. A source address only needs to be valid for the asset's chain family
+  // (validateRecipient checks exactly that), so reuse it here for --from.
+  let senderAddress: string | undefined;
+  if (key) {
+    senderAddress = await deriveAddress(asset.chain, key);
+  } else if (opts.from) {
+    validateRecipient(asset.chain, opts.from);
+    senderAddress = opts.from;
+  }
 
   // A full-balance sweep selects every UTXO; a normal send selects a subset (+ change).
   const isSweep = opts.amount.trim().toUpperCase() === "ALL";
-  // ALL and BTC --unsigned require knowing the sender, which (no --sender flag) means a key.
+  // ALL and BTC --unsigned require knowing the sender — supplied by a key or --from.
   const needsSender = isSweep || (opts.unsigned && family === "bitcoin");
   if (needsSender && !senderAddress) {
-    throw new Error(`A signing key is required for this operation.\n  Set ${family === "bitcoin" ? "BITCOIN_PRIVATE_KEY" : "EVM_PRIVATE_KEY"} or pass --private-key.`);
+    throw new Error(`A signing key${opts.unsigned ? " or --from <address>" : ""} is required for this operation.\n  Set ${family === "bitcoin" ? "BITCOIN_PRIVATE_KEY" : "EVM_PRIVATE_KEY"} or pass --private-key${opts.unsigned ? " or --from" : ""}.`);
   }
 
   // Resolve signer up-front for the signed path (also gives EVM publicClient for ALL/fees).

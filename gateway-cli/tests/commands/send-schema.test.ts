@@ -15,4 +15,8 @@ describe("sendSchema", () => {
   it("rejects a non-positive btcFeeRate", () => {
     expect(() => sendSchema.parse({ asset: "BTC", amount: "1000", to: "bc1qxyz", btcFeeRate: "0" })).toThrow();
   });
+  it("accepts an optional --from sender address", () => {
+    const out = sendSchema.parse({ asset: "BTC", amount: "1000", to: "bc1qxyz", from: "bc1qsender" });
+    expect(out.from).toBe("bc1qsender");
+  });
 });

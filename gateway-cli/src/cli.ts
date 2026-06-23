@@ -131,6 +131,7 @@ program
   .requiredOption("--asset <asset[:chain]>", "Asset to send (e.g. BTC, ETH:base, USDC:arbitrum, 0xToken:base)")
   .requiredOption("--amount <value>", "Amount: 0.01BTC, 100USDC, 100USD, 5000000 (atomic), ALL")
   .requiredOption("--to <address>", "Recipient address (BTC or EVM, must match the asset chain)")
+  .option("--from <address>", "Sender address for --unsigned without a key (BTC PSBT or EVM tx, must match the asset chain)")
   .option("--private-key <key>", "Private key (WIF for BTC, hex for EVM). WARNING: visible in process listings — prefer env vars")
   .option("--btc-fee-rate <sat/vbyte>", "Bitcoin fee rate (default: Esplora estimate)")
   .option("--unsigned", "Output unsigned tx (EVM) or PSBT (BTC) without broadcasting", false)

@@ -74,6 +74,7 @@ export const sendSchema = z.object({
   asset: z.string(),
   amount: z.string(),
   to: z.string(),
+  from: z.string().optional(),
   privateKey: z.string().optional(),
   btcFeeRate: positiveInt.optional(),
   unsigned: z.boolean().default(false),
