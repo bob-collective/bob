@@ -57,8 +57,10 @@ export async function handleSend(opts: SendOptions, log: Logger): Promise<SendRe
   const key = resolvePrivateKey(asset.chain, opts.privateKey, config);
   const senderAddress = key ? await deriveAddress(asset.chain, key) : undefined;
 
+  // A full-balance sweep selects every UTXO; a normal send selects a subset (+ change).
+  const isSweep = opts.amount.trim().toUpperCase() === "ALL";
   // ALL and BTC --unsigned require knowing the sender, which (no --sender flag) means a key.
-  const needsSender = opts.amount.trim().toUpperCase() === "ALL" || (opts.unsigned && family === "bitcoin");
+  const needsSender = isSweep || (opts.unsigned && family === "bitcoin");
   if (needsSender && !senderAddress) {
     throw new Error(`A signing key is required for this operation.\n  Set ${family === "bitcoin" ? "BITCOIN_PRIVATE_KEY" : "EVM_PRIVATE_KEY"} or pass --private-key.`);
   }
@@ -94,7 +96,7 @@ export async function handleSend(opts: SendOptions, log: Logger): Promise<SendRe
   // ── unsigned path ──
   if (opts.unsigned) {
     if (family === "bitcoin") {
-      const psbtBase64 = await buildBtcPsbt(senderAddress!, opts.to, amount, feeRate);
+      const psbtBase64 = await buildBtcPsbt(senderAddress!, opts.to, amount, feeRate, isSweep ? "all" : "default");
       return { type: "unsigned", data: { unsigned: true, chain: asset.chain, asset: asset.symbol, amount: amount.toString(), to: opts.to, psbtBase64 } };
     }
     const from = senderAddress ?? zeroAddress;
@@ -106,7 +108,7 @@ export async function handleSend(opts: SendOptions, log: Logger): Promise<SendRe
   log.progress(`Sending ${amount} ${asset.symbol} (atomic) to ${opts.to} on ${asset.chain}...`);
   let txId: string;
   if (family === "bitcoin") {
-    txId = await sendBtc((signer as BtcSigner).signer, senderAddress!, opts.to, amount, feeRate);
+    txId = await sendBtc((signer as BtcSigner).signer, senderAddress!, opts.to, amount, feeRate, isSweep ? "all" : "default");
   } else {
     txId = await sendEvm(signer as EvmSigner, asset, opts.to, amount);
   }
@@ -131,12 +133,7 @@ export async function handleSend(opts: SendOptions, log: Logger): Promise<SendRe
   return { type: "sent", data: { asset: asset.symbol, chain: asset.chain, amount: amount.toString(), to: opts.to, txId, status: "confirmed" } };
 }
 
-/** Poll Esplora until the tx has at least one confirmation, or throw on timeout.
- *
- * Step 3b verification: `getTransaction` is confirmed present on EsploraClient.prototype
- * and returns the full mempool.space tx object with shape `{ status: { confirmed: boolean } }`.
- * No change needed from the brief.
- */
+/** Poll Esplora until the tx has at least one confirmation, or throw on timeout. */
 async function waitForBtcConfirmation(txId: string, timeoutMs: number, log: Logger): Promise<void> {
   const { EsploraClient } = await import("@gobob/bob-sdk");
   const esplora = new EsploraClient();

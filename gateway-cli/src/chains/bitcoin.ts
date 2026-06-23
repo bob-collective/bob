@@ -65,9 +65,19 @@ export function psbtBase64ToHex(base64: string): string {
 /**
  * Build an unsigned PSBT (base64) for a P2WPKH send. UTXO selection, fee, and change
  * are handled by the SDK. Public key is not required for P2WPKH senders.
+ *
+ * `strategy` defaults to `'default'` (subset selection + change). For a full-balance
+ * sweep pass `'all'` so the PSBT spends every UTXO, matching the `'all'` fee estimate
+ * used to derive the sweep amount.
  */
-export function buildBtcPsbt(from: string, to: string, amount: bigint, feeRate?: number): Promise<string> {
-  return createBitcoinPsbt(from, to, Number(amount), undefined, undefined, feeRate);
+export function buildBtcPsbt(
+  from: string,
+  to: string,
+  amount: bigint,
+  feeRate?: number,
+  strategy: "all" | "default" = "default",
+): Promise<string> {
+  return createBitcoinPsbt(from, to, Number(amount), undefined, undefined, feeRate, undefined, undefined, strategy);
 }
 
 /**
@@ -76,8 +86,9 @@ export function buildBtcPsbt(from: string, to: string, amount: bigint, feeRate?:
  *
  * Both values come from the SDK's own UTXO machinery over the SAME safe-UTXO set
  * (`getBalance` and `estimateTxFee` both use `findSafeUtxos`), so `confirmed - fee`
- * is the amount `createBitcoinPsbt` can then drain into one recipient output.
- * `estimateTxFee(from, undefined, ...)` selects all UTXOs (strategy `'all'`).
+ * is the amount `createBitcoinPsbt` can then drain into one recipient output. The fee
+ * estimate forces the `'all'` strategy, matching `buildBtcPsbt(..., "all")` on the build
+ * side so the actual tx spends exactly the UTXOs the fee assumed (no subset/change drift).
  *
  * @returns The atomic sweep amount in satoshis.
  * @throws if the balance cannot cover the fee (result at or below dust).
@@ -85,7 +96,7 @@ export function buildBtcPsbt(from: string, to: string, amount: bigint, feeRate?:
 export async function estimateBtcSweepAmount(from: string, feeRate?: number): Promise<bigint> {
   const [{ confirmed }, fee] = await Promise.all([
     getBalance(from),
-    estimateTxFee(from, undefined, undefined, undefined, feeRate),
+    estimateTxFee(from, undefined, undefined, undefined, feeRate, undefined, undefined, "all"),
   ]);
   return btcSweepAmount(confirmed, fee ?? 0n);
 }
@@ -103,8 +114,15 @@ export function btcSweepAmount(confirmed: bigint, fee: bigint): bigint {
  * Execute a direct BTC transfer: build PSBT → sign (finalize) → broadcast.
  * @returns The broadcast transaction id.
  */
-export async function sendBtc(signer: BitcoinSigner, from: string, to: string, amount: bigint, feeRate?: number): Promise<string> {
-  const psbtBase64 = await buildBtcPsbt(from, to, amount, feeRate);
+export async function sendBtc(
+  signer: BitcoinSigner,
+  from: string,
+  to: string,
+  amount: bigint,
+  feeRate?: number,
+  strategy: "all" | "default" = "default",
+): Promise<string> {
+  const psbtBase64 = await buildBtcPsbt(from, to, amount, feeRate, strategy);
   if (!signer.signAllInputs) throw new Error("Bitcoin signer cannot sign PSBTs (missing signAllInputs).");
   const signedTxHex = await signer.signAllInputs(psbtBase64ToHex(psbtBase64));
   return new EsploraClient().broadcastTx(signedTxHex);
