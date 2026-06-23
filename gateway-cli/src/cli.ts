@@ -1,8 +1,8 @@
 import { Command } from "commander";
 import { ZodError } from "zod/v4";
 import { isAddress } from "viem";
-import { type OutputMode, createLogger, render, formatJson, formatConfirmation, formatChains, formatTokens, formatRoutes, formatBalance } from "./output.js";
-import { quoteSchema, swapSchema } from "./schemas.js";
+import { type OutputMode, createLogger, render, formatJson, formatConfirmation, formatChains, formatTokens, formatRoutes, formatBalance, formatSend } from "./output.js";
+import { quoteSchema, swapSchema, sendSchema } from "./schemas.js";
 import { SwapError } from "./errors.js";
 import { version } from '../package.json';
 
@@ -123,6 +123,28 @@ program
     const result = await handleSwap({ ...parsed, sender: parsed.sender, owner: parsed.owner }, log);
 
     render("data" in result ? result.data : result, mode);
+  }));
+
+program
+  .command("send")
+  .description("Send BTC or an EVM token directly to an address (no Gateway)")
+  .requiredOption("--asset <asset[:chain]>", "Asset to send (e.g. BTC, ETH:base, USDC:arbitrum, 0xToken:base)")
+  .requiredOption("--amount <value>", "Amount: 0.01BTC, 100USDC, 100USD, 5000000 (atomic), ALL")
+  .requiredOption("--to <address>", "Recipient address (BTC or EVM, must match the asset chain)")
+  .option("--from <address>", "Sender address for --unsigned without a key (BTC PSBT or EVM tx, must match the asset chain)")
+  .option("--private-key <key>", "Private key (WIF for BTC, hex for EVM). WARNING: visible in process listings — prefer env vars")
+  .option("--btc-fee-rate <sat/vbyte>", "Bitcoin fee rate (default: Esplora estimate)")
+  .option("--unsigned", "Output unsigned tx (EVM) or PSBT (BTC) without broadcasting", false)
+  .option("--no-wait", "Broadcast without waiting for confirmation")
+  .option("--timeout <seconds>", "Confirmation wait timeout in seconds", "1800")
+  .option("--json", "Output as JSON", false)
+  .action(withErrorHandling(async (opts) => {
+    const mode = modeOf(opts);
+    const parsed = sendSchema.parse(opts);
+    const log = createLogger(mode);
+    const { handleSend } = await import("./commands/send.js");
+    const result = await handleSend(parsed, log);
+    render(result.data, mode, formatSend);
   }));
 
 program

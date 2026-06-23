@@ -292,3 +292,44 @@ export function formatRoutes(data: Array<{ srcChain: string; srcSymbol: string; 
     data.map(r => [`${r.srcChain}:${r.srcSymbol}`, `${r.dstChain}:${r.dstSymbol}`]),
   );
 }
+
+/** JSON result for a successful direct send. */
+export interface SendSuccessJson {
+  asset: string;
+  chain: string;
+  amount: string;
+  to: string;
+  txId: string;
+  status: "broadcast" | "confirmed";
+}
+
+/** JSON result for an --unsigned send (PSBT for BTC, tx params for EVM). */
+export interface SendUnsignedJson {
+  unsigned: true;
+  chain: string;
+  asset: string;
+  amount: string;
+  to: string;
+  psbtBase64?: string;
+  tx?: { from: string; to: string; value: string; data: string; chainId: number };
+}
+
+/** Human-readable formatter for send results. */
+export function formatSend(data: SendSuccessJson | SendUnsignedJson): string {
+  if ("unsigned" in data) {
+    const lines = [
+      `Unsigned ${data.asset} transfer (${data.chain})`,
+      `  Amount: ${data.amount} (atomic)`,
+      `  To:     ${data.to}`,
+    ];
+    if (data.psbtBase64) lines.push(`  PSBT (base64):`, data.psbtBase64);
+    if (data.tx) lines.push(`  Tx: ${JSON.stringify(data.tx)}`);
+    return lines.join("\n");
+  }
+  const verb = data.status === "confirmed" ? "✓ Confirmed" : "~ Broadcast";
+  return [
+    `${verb} — sent ${data.amount} ${data.asset} (atomic) on ${data.chain}`,
+    `  To:  ${data.to}`,
+    `  Tx:  ${data.txId}`,
+  ].join("\n");
+}
