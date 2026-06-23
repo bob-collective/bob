@@ -148,13 +148,13 @@ An agentic swap follows a consistent pattern: discover what is possible, get a q
     To list all orders for an address — useful for agents that need to reconcile outstanding positions:
 
     ```bash
-    gateway-cli orders --json
+    gateway-cli orders <address> --json
     ```
   </Step>
 </Steps>
 
 <Note>
-  If an agent submits a transaction outside of the CLI (e.g. via a custom signer) and needs to register it for tracking, use `gateway-cli register --json`. This is the recovery path for agents that handle signing separately.
+  If an agent submits a transaction outside of the CLI (e.g. via a custom signer) and needs to register it for tracking, use `gateway-cli register <order-id> <txid> --json`. This is the recovery path for agents that handle signing separately.
 </Note>
 
 ---
