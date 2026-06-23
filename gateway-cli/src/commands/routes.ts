@@ -1,7 +1,8 @@
 import type { RouteInfo } from "@gobob/bob-sdk";
 import { getRoutes, getUniqueChains, getTokensForChain } from "../util/route-provider.js";
 import { resolveChain, CHAIN_ALIASES } from "../util/input-resolver.js";
-import { CHAIN_IDS, getTokenMetadata } from "../chains/evm.js";
+import { CHAIN_IDS } from "../chains/evm.js";
+import { getTokenMetadata } from "../chains/tokens.js";
 
 interface ChainJson { canonical: string; aliases: string[]; chainId: number | null; }
 interface TokenJson { symbol: string; address: string; decimals: number; }

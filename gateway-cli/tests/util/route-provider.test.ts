@@ -6,15 +6,11 @@ vi.mock("../../src/config.js", () => ({
   getSdk: vi.fn(),
 }));
 
-// Mock chains/evm.js for getTokenMetadata (used by getTokensForChain)
-vi.mock("../../src/chains/evm.js", () => ({
+// Mock chains/tokens.js for getTokenMetadata (used by getTokensForChain)
+vi.mock("../../src/chains/tokens.js", () => ({
   getTokenMetadata: vi.fn((address: string, chain: string) => {
     if (chain === "bitcoin" || address === "BTC") return { symbol: "BTC", decimals: 8 };
     return { symbol: address.slice(0, 10), decimals: 18 };
-  }),
-  getNativeToken: vi.fn((chain: string) => {
-    if (chain === "ethereum" || chain === "bob" || chain === "base") return { symbol: "ETH", decimals: 18 };
-    throw new Error(`unknown chain "${chain}" — cannot determine native token`);
   }),
 }));
 

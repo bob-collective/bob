@@ -3,7 +3,10 @@ import type { RouteInfo } from "@gobob/bob-sdk";
 import { fetchPrice } from "./price-oracle.js";
 import { BTC_DECIMALS } from "../config.js";
 import { getChainFamily } from "../chains/index.js";
-import { getEvmBalances, getTokenMetadata } from "../chains/evm.js";
+import { getEvmBalances } from "../chains/evm.js";
+import { getTronBalances } from "../chains/tron/signer.js";
+import { getTokenMetadata } from "../chains/tokens.js";
+import { tokenAddressKey, isValidTronAddress } from "../chains/tron/addresses.js";
 import { getBtcBalance } from "../chains/bitcoin.js";
 import { getSdk } from "../config.js";
 
@@ -20,6 +23,7 @@ export const CHAIN_ALIASES: Record<string, string> = {
   pol: "polygon",
   bnb: "bsc",
   avax: "avalanche",
+  trx: "tron",
 };
 
 /**
@@ -78,7 +82,7 @@ export function buildTokenIndex(routes: RouteInfo[]): TokenIndex {
         const meta = getTokenMetadata(addr, chain);
         const t: TokenMeta = { address: addr, symbol: meta.symbol, decimals: meta.decimals, chain };
         byChainAndSymbol.set(`${chain}:${meta.symbol.toUpperCase()}`, t);
-        byChainAndAddress.set(`${chain}:${addr.toLowerCase()}`, t);
+        byChainAndAddress.set(tokenAddressKey(chain, addr), t);
       } catch (err) {
         // Skip tokens not in tokenlist to avoid guessed decimals in amount calculations.
         // Re-throw unexpected errors (bugs, corrupted data, etc.)
@@ -122,7 +126,13 @@ export function parseAssetChain(raw: string, routes: RouteInfo[], index?: TokenI
   const chain = resolveChain(chainPart);
 
   if (isAddress(assetPart, { strict: false })) {
-    const token = idx.byChainAndAddress.get(`${chain}:${assetPart.toLowerCase()}`);
+    const token = idx.byChainAndAddress.get(tokenAddressKey(chain, assetPart));
+    if (!token) throw new Error(`unknown token address "${assetPart}" on chain "${chain}" — decimals cannot be determined.\n\n  Use a known token symbol instead, or verify the address is correct.`);
+    return { chain, address: assetPart, symbol: token.symbol, decimals: token.decimals };
+  }
+
+  if (isValidTronAddress(assetPart)) {
+    const token = idx.byChainAndAddress.get(tokenAddressKey(chain, assetPart));
     if (!token) throw new Error(`unknown token address "${assetPart}" on chain "${chain}" — decimals cannot be determined.\n\n  Use a known token symbol instead, or verify the address is correct.`);
     return { chain, address: assetPart, symbol: token.symbol, decimals: token.decimals };
   }
@@ -271,12 +281,18 @@ export async function resolveSwapInputs(
 
   if (parsed.type === "all") {
     if (!opts?.senderAddress) {
-      throw new Error("--amount ALL requires a sender address. Use --private-key, --sender, or set BITCOIN_PRIVATE_KEY / EVM_PRIVATE_KEY.");
+      throw new Error("--amount ALL requires a sender address. Use --private-key, --sender, or set BITCOIN_PRIVATE_KEY / EVM_PRIVATE_KEY / TRON_PRIVATE_KEY.");
     }
     let allSpendable: string;
-    if (getChainFamily(srcAsset.chain) === 'bitcoin') {
+    const family = getChainFamily(srcAsset.chain);
+    if (family === 'bitcoin') {
       const bal = await getBtcBalance(opts.senderAddress, getSdk());
       allSpendable = bal.allSpendable;
+    } else if (family === 'tron') {
+      const isNative = srcAsset.address === '0x0000000000000000000000000000000000000000';
+      const tokens = isNative ? [] : [{ address: srcAsset.address, symbol: srcAsset.symbol, decimals: srcAsset.decimals }];
+      const result = await getTronBalances(opts.senderAddress, tokens, { includeNative: isNative });
+      allSpendable = isNative ? result.native!.allSpendable : result.tokens![0].allSpendable;
     } else {
       const isNative = srcAsset.address === '0x0000000000000000000000000000000000000000';
       const tokens = isNative ? [] : [{ address: srcAsset.address, symbol: srcAsset.symbol, decimals: srcAsset.decimals }];

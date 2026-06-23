@@ -1,4 +1,6 @@
 import type { RegisterTxV3 } from '@gobob/bob-sdk';
+import { isValidBtcAddress } from '@gobob/bob-sdk';
+import { isAddress } from 'viem';
 import { getSdk } from '../config.js';
 import { getRoutes, getUniqueChains, getTokensForChain } from '../util/route-provider.js';
 import { getBtcBalance, deriveBtcAddress, resolveBtcSigner } from './bitcoin.js';
@@ -6,20 +8,54 @@ import {
   deriveEvmAddress,
   resolveEvmSigner,
 } from './evm.js';
+import {
+  deriveTronAddress,
+  resolveTronSigner,
+  getTronBalances,
+} from './tron/signer.js';
+import { isValidTronAddress } from './tron/addresses.js';
 import type { ChainBalance } from './evm.js';
 
 // ─── Chain family registry ──────────────────────────────────────────────────
 
-/** Chain family type for distinguishing Bitcoin and EVM-compatible chains. */
-export type ChainFamily = 'bitcoin' | 'evm';
+/** Chain family type for distinguishing Bitcoin, Tron, and EVM-compatible chains. */
+export type ChainFamily = 'bitcoin' | 'evm' | 'tron';
 
 /**
- * Determine the chain family (bitcoin or evm) for a given chain name.
- * All chains except "bitcoin" are treated as EVM-compatible.
+ * Determine the chain family for a given chain name.
  */
 export function getChainFamily(chain: string): ChainFamily {
   if (chain === 'bitcoin') return 'bitcoin';
+  if (chain === 'tron') return 'tron';
   return 'evm';
+}
+
+/**
+ * Validate that a recipient address matches the asset's chain family.
+ */
+export function validateRecipient(chain: string, to: string): void {
+  const family = getChainFamily(chain);
+  if (family === 'bitcoin') {
+    if (!isValidBtcAddress(to)) throw new Error(`--to "${to}" is not a valid Bitcoin address.`);
+    return;
+  }
+  if (family === 'tron') {
+    if (!isValidTronAddress(to)) throw new Error(`--to "${to}" is not a valid Tron address.`);
+    return;
+  }
+  if (!isAddress(to, { strict: false })) throw new Error(`--to "${to}" is not a valid EVM address.`);
+}
+
+export function privateKeyEnvVar(chain: string): string {
+  const family = getChainFamily(chain);
+  if (family === 'bitcoin') return 'BITCOIN_PRIVATE_KEY';
+  if (family === 'tron') return 'TRON_PRIVATE_KEY';
+  return 'EVM_PRIVATE_KEY';
+}
+
+export function addressesMatch(a: string, b: string, chain: string): boolean {
+  if (getChainFamily(chain) === 'evm') return a.toLowerCase() === b.toLowerCase();
+  return a === b;
 }
 
 // ─── Chain balances ─────────────────────────────────────────────────────────
@@ -28,12 +64,6 @@ export type { ChainBalance } from './evm.js';
 
 /**
  * Fetch balances for all chains (or filtered by chain/family).
- * Returns raw atomic values (satoshis for BTC, wei for EVM tokens).
- * For EVM chains, deducts estimated gas costs from spendable balance.
- * 
- * @param address - Wallet address to query
- * @param opts - Optional filters: chain list, chain family, fee token/reserve
- * @returns Map of chain names to balance data
  */
 export async function getAllBalances(
   address: string,
@@ -59,6 +89,11 @@ export async function getAllBalances(
           }];
         }
 
+        if (getChainFamily(chain) === 'tron') {
+          const chainTokens = await getTokensForChain(chain, routes);
+          return [chain, await getTronBalances(address, chainTokens, { includeNative: true })];
+        }
+
         const chainTokens = await getTokensForChain(chain, routes);
         return [chain, await getEvmBalances(chain, address, chainTokens, { ...opts, includeNative: true })];
       } catch (err) {
@@ -74,79 +109,54 @@ export async function getAllBalances(
 
 // ─── Address derivation ─────────────────────────────────────────────────────
 
-/**
- * Derive a wallet address from a private key for the specified chain.
- * For Bitcoin, derives P2WPKH (bech32) address. For EVM, derives standard address.
- */
 export async function deriveAddress(chain: string, key: string): Promise<string> {
-  if (getChainFamily(chain) === 'bitcoin') return deriveBtcAddress(key);
+  const family = getChainFamily(chain);
+  if (family === 'bitcoin') return deriveBtcAddress(key);
+  if (family === 'tron') return deriveTronAddress(key);
   return deriveEvmAddress(key);
 }
 
 // ─── Signer resolution ──────────────────────────────────────────────────────
 
-/** Bitcoin signer type with address and signer object. */
 export type BtcSigner = Awaited<ReturnType<typeof resolveBtcSigner>>;
-/** EVM signer type with address, wallet client, and public client. */
 export type EvmSigner = Awaited<ReturnType<typeof resolveEvmSigner>>;
+export type TronSigner = Awaited<ReturnType<typeof resolveTronSigner>>;
 
-/**
- * Resolve a signer (Bitcoin or EVM) for a given chain and private key.
- * @param chain - Chain name to determine signer type
- * @param key - Private key (WIF for BTC, hex for EVM)
- */
 export async function resolveSigner(
   chain: string,
   key: string,
-): Promise<BtcSigner | EvmSigner> {
-  if (getChainFamily(chain) === 'bitcoin') return resolveBtcSigner(key);
+): Promise<BtcSigner | EvmSigner | TronSigner> {
+  const family = getChainFamily(chain);
+  if (family === 'bitcoin') return resolveBtcSigner(key);
+  if (family === 'tron') return resolveTronSigner(key);
   return resolveEvmSigner(key, chain);
 }
 
-/**
- * Resolve private key from explicit parameter or environment config.
- * Priority: explicit privateKey argument > env var based on chain family.
- */
 export function resolvePrivateKey(
   chain: string,
   privateKey?: string,
-  config?: { bitcoinPrivateKey?: string; evmPrivateKey?: string },
+  config?: { bitcoinPrivateKey?: string; evmPrivateKey?: string; tronPrivateKey?: string },
 ): string | undefined {
-  return privateKey ?? (getChainFamily(chain) === 'bitcoin' ? config?.bitcoinPrivateKey : config?.evmPrivateKey);
+  if (privateKey) return privateKey;
+  const family = getChainFamily(chain);
+  if (family === 'bitcoin') return config?.bitcoinPrivateKey;
+  if (family === 'tron') return config?.tronPrivateKey;
+  return config?.evmPrivateKey;
 }
 
-// ─── Recipient resolution ───────────────────────────────────────────────────
-
-/**
- * Resolve the recipient address for a swap.
- * Priority: explicit address argument > derive from configured private key > throw error.
- * 
- * @param chain - Destination chain name
- * @param explicit - Optional explicit recipient address
- * @param config - Config with private keys for derivation
- * @throws Error if no recipient provided and no private key configured
- */
 export async function resolveRecipient(
   chain: string,
   explicit: string | undefined,
-  config: { bitcoinPrivateKey?: string; evmPrivateKey?: string },
+  config: { bitcoinPrivateKey?: string; evmPrivateKey?: string; tronPrivateKey?: string },
 ): Promise<string> {
   if (explicit) return explicit;
-  const family = getChainFamily(chain);
-  const key = resolvePrivateKey(family, undefined, config);
+  const key = resolvePrivateKey(chain, undefined, config);
   if (!key) {
-    const envVar = family === 'bitcoin' ? 'BITCOIN_PRIVATE_KEY' : 'EVM_PRIVATE_KEY';
-    throw new Error(`--recipient is required when no destination wallet is configured.\n  Set ${envVar} or pass --recipient <address>.`);
+    throw new Error(`--recipient is required when no destination wallet is configured.\n  Set ${privateKeyEnvVar(chain)} or pass --recipient <address>.`);
   }
   return deriveAddress(chain, key);
 }
 
-// ─── Registration payload ───────────────────────────────────────────────────
-
-/**
- * Build a registration payload for linking a transaction to an order.
- * Format depends on swap type: onramp (BTC→EVM), offramp (EVM→BTC), or tokenSwap (EVM→EVM).
- */
 export function buildRegisterPayload(
   srcChain: string,
   dstChain: string,
@@ -162,10 +172,15 @@ export function buildRegisterPayload(
   return { tokenSwap: { orderId, srcChain, srcTxHash: txId } };
 }
 
-// Re-export for direct access
 export { getBtcBalance, deriveBtcAddress, resolveBtcSigner } from './bitcoin.js';
 export {
   getEvmBalances,
   deriveEvmAddress,
   resolveEvmSigner,
 } from './evm.js';
+export {
+  deriveTronAddress,
+  resolveTronSigner,
+  getTronBalances,
+} from './tron/signer.js';
+export { getTokenMetadata } from './tokens.js';

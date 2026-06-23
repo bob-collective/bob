@@ -1,5 +1,10 @@
 import { z } from "zod/v4";
 import { isAddress } from "viem";
+import { isValidTronAddress } from "./chains/tron/addresses.js";
+
+function isOwnerAddress(value: string): boolean {
+  return isAddress(value, { strict: false }) || isValidTronAddress(value);
+}
 
 // ─── Reusable field schemas ─────────────────────────────────────────────────
 
@@ -41,7 +46,7 @@ export const quoteSchema = z.object({
   amount: z.string(),
   recipient: z.string().optional(),
   sender: z.string().optional(),
-  owner: z.string().refine(v => isAddress(v, { strict: false }), { message: "must be a valid EVM address" }).optional(),
+  owner: z.string().refine(isOwnerAddress, { message: "must be a valid EVM or Tron address" }).optional(),
   slippage: positiveInt.optional(),
   gasRefillUsd: positiveNumber.optional(),
   btcFeeRate: positiveInt.optional(),
