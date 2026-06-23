@@ -42,7 +42,7 @@ import {
     type GetQuoteParams,
     type StrategyParams,
 } from './types';
-import { formatBtc, isValidTronAddress, tronAddressToHex } from './utils';
+import { estimateGasWithBuffer, formatBtc, isValidTronAddress, tronAddressToHex } from './utils';
 
 const RETRY_COUNT = 8; // Number of times to retry fetching transaction receipt after sending a transaction
 
@@ -61,47 +61,6 @@ const RETRY_COUNT = 8; // Number of times to retry fetching transaction receipt 
  */
 function signerAccount(walletClient: WalletClient<Transport, ViemChain, Account>): Account | Address {
     return walletClient.account.type === 'local' ? walletClient.account : walletClient.account.address;
-}
-
-/**
- * Gas-limit buffer for offramp / tokenSwap sends (bob#1088).
- *
- * Takes the max of a 1.2x multiplier and a fixed 300k cushion, so small txs get
- * the fixed floor and large (aggregator) txs get the multiplier. Unused gas is
- * refunded, so a generous limit is nearly free while a tight one causes
- * out-of-gas failures on gas-heavy routes.
- */
-const GAS_BUFFER_NUM = 12n;
-const GAS_BUFFER_DEN = 10n;
-const GAS_BUFFER_FIXED = 300_000n;
-
-function applyGasBuffer(estimate: bigint): bigint {
-    const multiplied = (estimate * GAS_BUFFER_NUM) / GAS_BUFFER_DEN;
-    const fixed = estimate + GAS_BUFFER_FIXED;
-    return multiplied > fixed ? multiplied : fixed;
-}
-
-/**
- * Buffered gas limit for local-key sends, or `undefined` to fall back to viem's
- * default estimation. If `eth_estimateGas` reverts we return `undefined` so the
- * send behaves exactly as it does today — never introducing a new failure mode.
- */
-async function estimateGasWithBuffer(
-    publicClient: PublicClient<Transport>,
-    account: Account,
-    tx: { to: Address; data: Hex; value: bigint }
-): Promise<bigint | undefined> {
-    try {
-        const estimate = await publicClient.estimateGas({
-            account,
-            to: tx.to,
-            data: tx.data,
-            value: tx.value,
-        });
-        return applyGasBuffer(estimate);
-    } catch {
-        return undefined;
-    }
 }
 
 export const ETHEREUM_USDT_ADDRESS = '0xdAC17F958D2ee523a2206206994597C13D831ec7';
