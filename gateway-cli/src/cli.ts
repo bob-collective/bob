@@ -3,6 +3,7 @@ import { ZodError } from "zod/v4";
 import { isAddress } from "viem";
 import { type OutputMode, createLogger, render, formatJson, formatConfirmation, formatChains, formatTokens, formatRoutes, formatBalance } from "./output.js";
 import { quoteSchema, swapSchema } from "./schemas.js";
+import { SwapError } from "./errors.js";
 import { version } from '../package.json';
 
 function modeOf(opts: { json?: boolean }): OutputMode {
@@ -25,31 +26,21 @@ function withErrorHandling(fn: (...args: any[]) => Promise<void>) {
       const msg = errorMessage(err);
       if (mode === "json") {
         const errJson: any = { error: { message: msg } };
-        if (err instanceof Error) {
-          if ("orderId" in err) errJson.error.orderId = (err as any).orderId;
-          if ("txId" in err) errJson.error.txId = (err as any).txId;
-          if ("txParams" in err) errJson.error.txParams = (err as any).txParams;
-          if ("srcAsset" in err) errJson.error.srcAsset = (err as any).srcAsset;
-          if ("dstAsset" in err) errJson.error.dstAsset = (err as any).dstAsset;
-          if ("functionSelector" in err) errJson.error.functionSelector = (err as any).functionSelector;
-          if ("revertData" in err) errJson.error.revertData = (err as any).revertData;
+        if (err instanceof SwapError) {
+          for (const [k, v] of Object.entries(err.context)) {
+            if (v !== undefined) errJson.error[k] = v;
+          }
         }
         console.log(JSON.stringify(errJson, null, 2));
       } else {
         console.error(msg);
-        if (err instanceof Error) {
-          if ("orderId" in err) console.error(`Order:    ${(err as any).orderId}`);
-          if ("txParams" in err) {
-            const tp = (err as any).txParams;
-            console.error(`Contract: ${tp.to} (${tp.chainName})`);
-          }
-          if ("srcAsset" in err && "dstAsset" in err) {
-            const s = (err as any).srcAsset;
-            const d = (err as any).dstAsset;
-            console.error(`Route:    ${s.symbol}:${s.chain} → ${d.symbol}:${d.chain}`);
-          }
-          if ("functionSelector" in err && (err as any).functionSelector) console.error(`Selector: ${(err as any).functionSelector}`);
-          if ("revertData" in err && (err as any).revertData) console.error(`Revert:   ${(err as any).revertData}`);
+        if (err instanceof SwapError) {
+          const c = err.context;
+          if (c.orderId) console.error(`Order:    ${c.orderId}`);
+          if (c.txParams) console.error(`Contract: ${c.txParams.to} (${c.txParams.chainName})`);
+          if (c.srcAsset && c.dstAsset) console.error(`Route:    ${c.srcAsset.symbol}:${c.srcAsset.chain} → ${c.dstAsset.symbol}:${c.dstAsset.chain}`);
+          if (c.functionSelector) console.error(`Selector: ${c.functionSelector}`);
+          if (c.revertData) console.error(`Revert:   ${c.revertData}`);
         }
       }
       process.exitCode = 1;

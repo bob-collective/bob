@@ -133,12 +133,17 @@ vi.mock("p-retry", () => ({
     }
     throw lastError;
   }),
+  // Mirrors real p-retry: when constructed from an Error, that Error becomes
+  // `originalError` (preserving any fields attached to it); from a string, it
+  // wraps a fresh Error. p-retry throws `originalError`, so fields survive only
+  // when attached to the Error passed in.
   AbortError: class AbortError extends Error {
     readonly name = "AbortError";
-    readonly originalError?: Error;
-    constructor(msg: string) {
-      super(msg);
+    readonly originalError: Error;
+    constructor(message: string | Error) {
+      super(typeof message === "string" ? message : message.message);
       this.name = "AbortError";
+      this.originalError = typeof message === "string" ? new Error(message) : message;
     }
   },
 }));
@@ -262,6 +267,59 @@ describe("handleSwap", () => {
     ).rejects.toThrow("TRM screening delay");
 
     expect(mockExecuteQuote).toHaveBeenCalledTimes(1);
+  });
+
+  it("tokenSwap order-failed error carries txId + txParams.chainId for receipt lookup", async () => {
+    // An EVM→EVM tokenSwap settles via an on-chain tx. When the order fails,
+    // the thrown error must carry the settlement tx hash + chainId so downstream
+    // alerting can fetch the receipt and detect out-of-gas — without these the
+    // failure is undiagnosable.
+    const { resolveSwapInputs, parseAssetChain } = await import("../../src/util/input-resolver.js");
+    // srcFamily is derived from parseAssetChain(opts.src) → drives variant.
+    // Make src EVM so variant resolves to "tokenSwap" (not onramp).
+    vi.mocked(parseAssetChain).mockReturnValueOnce({ chain: "ethereum", address: "0xUSDT", symbol: "USDT", decimals: 6 } as any);
+    vi.mocked(resolveSwapInputs).mockResolvedValueOnce({
+      srcAsset: { chain: "ethereum", address: "0xUSDT", symbol: "USDT", decimals: 6 },
+      dstAsset: { chain: "base", address: "0xUSDC", symbol: "USDC", decimals: 6 },
+      atomicUnits: "50000000",
+      display: "50 USDT",
+    } as any);
+    // EVM src means the signing-key path runs: getChainFamily("ethereum") → "evm".
+    const { getChainFamily, resolveSigner, deriveAddress, resolveRecipient } = await import("../../src/chains/index.js");
+    vi.mocked(getChainFamily).mockImplementation((chain: string) => chain === "bitcoin" ? "bitcoin" : "evm");
+    // EVM signed path uses { walletClient, publicClient }; pending-nonce check
+    // calls publicClient.getTransactionCount (latest >= pending → settled).
+    const publicClient = { getTransactionCount: vi.fn().mockResolvedValue(0) } as any;
+    vi.mocked(resolveSigner).mockResolvedValue({ address: "0xSender", walletClient: {} as any, publicClient } as any);
+    vi.mocked(deriveAddress).mockResolvedValue("0xSender");
+    vi.mocked(resolveRecipient).mockResolvedValue("0xRecipient");
+
+    const tokenSwapOrder = { tokenSwap: { orderId: "order-789", tx: { to: "0xGatewayContract" } } };
+    mockExecuteQuote.mockResolvedValue({ order: tokenSwapOrder, tx: "0xsettlementhash" });
+    mockGetOrder.mockResolvedValue({ id: "order-789", status: { failed: {} } });
+
+    const { handleSwap } = await import("../../src/commands/swap.js");
+    const { SwapError } = await import("../../src/errors.js");
+
+    let caught: any;
+    try {
+      await handleSwap(
+        { ...baseOpts, src: "USDT:ethereum", dst: "USDC:base", privateKey: "0xevmkey" },
+        silentLogger,
+      );
+    } catch (e) {
+      caught = e;
+    }
+
+    expect(caught).toBeInstanceOf(SwapError);
+    // Message preserved so existing categorization still matches as a fallback.
+    expect(caught.message).toContain("order-789 failed");
+    expect(caught.context.orderId).toBe("order-789");
+    expect(caught.context.txId).toBe("0xsettlementhash");
+    expect(caught.context.txParams.chainId).toBe(1); // ethereum
+    expect(caught.context.txParams.to).toBe("0xGatewayContract");
+    expect(caught.context.srcAsset).toEqual({ symbol: "USDT", chain: "ethereum" });
+    expect(caught.context.dstAsset).toEqual({ symbol: "USDC", chain: "base" });
   });
 
 });
