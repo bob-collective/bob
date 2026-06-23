@@ -42,7 +42,7 @@ import {
     type GetQuoteParams,
     type StrategyParams,
 } from './types';
-import { formatBtc, isValidTronAddress, tronAddressToHex } from './utils';
+import { estimateGasWithBuffer, formatBtc, isValidTronAddress, tronAddressToHex } from './utils';
 
 const RETRY_COUNT = 8; // Number of times to retry fetching transaction receipt after sending a transaction
 
@@ -410,11 +410,23 @@ export class GatewayApiClient {
             }
 
             callback?.({ step: totalSteps, type: ExecuteQuoteStepType.SendTransaction, totalSteps });
+            const offrampData = order.offramp.tx.data as Hex;
+            const offrampValue = BigInt(order.offramp.tx.value || 0);
+            const offrampGas =
+                walletClient.account.type === 'local'
+                    ? await estimateGasWithBuffer(publicClient, walletClient.account, {
+                          to: spenderAddress,
+                          data: offrampData,
+                          value: offrampValue,
+                      })
+                    : undefined;
+
             const transactionHash = await walletClient.sendTransaction({
                 account: signerAccount(walletClient),
-                data: order.offramp.tx.data as Hex,
+                data: offrampData,
                 to: spenderAddress,
-                value: BigInt(order.offramp.tx.value || 0),
+                value: offrampValue,
+                ...(offrampGas !== undefined && { gas: offrampGas }),
             });
 
             await publicClient?.waitForTransactionReceipt({ hash: transactionHash, retryCount: RETRY_COUNT });
@@ -544,11 +556,24 @@ export class GatewayApiClient {
             }
 
             callback?.({ step: totalSteps, type: ExecuteQuoteStepType.SendTransaction, totalSteps });
+            const tokenSwapTo = order.tokenSwap.tx.to as Address;
+            const tokenSwapData = order.tokenSwap.tx.data as Hex;
+            const tokenSwapValue = BigInt(order.tokenSwap.tx.value || 0);
+            const tokenSwapGas =
+                walletClient.account.type === 'local'
+                    ? await estimateGasWithBuffer(publicClient, walletClient.account, {
+                          to: tokenSwapTo,
+                          data: tokenSwapData,
+                          value: tokenSwapValue,
+                      })
+                    : undefined;
+
             const transactionHash = await walletClient.sendTransaction({
                 account: signerAccount(walletClient),
-                data: order.tokenSwap.tx.data as Hex,
-                to: order.tokenSwap.tx.to as Address,
-                value: BigInt(order.tokenSwap.tx.value || 0),
+                data: tokenSwapData,
+                to: tokenSwapTo,
+                value: tokenSwapValue,
+                ...(tokenSwapGas !== undefined && { gas: tokenSwapGas }),
             });
 
             await publicClient.waitForTransactionReceipt({ hash: transactionHash, retryCount: RETRY_COUNT });
