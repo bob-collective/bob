@@ -160,6 +160,8 @@ export interface Input {
  * @param feeRate Optional fee rate in satoshis per byte.
  * @param confirmationTarget The number of blocks to include this tx (for fee estimation).
  * @param isSignet True if using Bitcoin Signet.
+ * @param utxoSelectionStrategy UTXO selection strategy. `'default'` selects a subset (may leave change);
+ *   `'all'` spends every safe UTXO (used for full-balance sweeps so the tx matches an `'all'` fee estimate).
  * @returns {Promise<string>} The Base64 encoded PSBT.
  *
  * @example
@@ -185,12 +187,10 @@ export async function createBitcoinPsbt(
     opReturnData?: string,
     feeRate?: number,
     confirmationTarget: number = 3,
-    isSignet: boolean = false
+    isSignet: boolean = false,
+    utxoSelectionStrategy: 'all' | 'default' = 'default'
 ): Promise<string> {
     const addressInfo = getAddressInfo(fromAddress, isSignet);
-
-    // TODO: possibly, allow other strategies to be passed to this function
-    const utxoSelectionStrategy: 'all' | 'default' = 'default';
 
     if (addressInfo.network === 'regtest') {
         throw new Error('Bitcoin regtest not supported');
@@ -322,9 +322,23 @@ export function getInputFromUtxoAndTx(
 }
 
 /**
- * @deprecated This method is deprecated and will be removed in a future release.
+ * Estimate the Bitcoin network fee (in satoshis) to spend from `fromAddress`.
  *
- * For full balance sweeping, first call `getBalance(address)` to get the confirmed balance, then pass that as the `amount` to `getQuote`.
+ * Used for direct (non-Gateway) sends. With `amount` omitted, all safe UTXOs are
+ * selected (a full-balance sweep estimate); otherwise the fee is estimated for the
+ * given `amount`. Pass `utxoSelectionStrategy` to force a strategy regardless of `amount`
+ * (e.g. `'all'` to match a sweep built with `createBitcoinPsbt(..., 'all')`).
+ *
+ * @param fromAddress The Bitcoin address spending the funds.
+ * @param amount The amount (in satoshis) to send; omit to estimate a full-balance sweep.
+ * @param publicKey Optional public key needed if using P2SH-P2WPKH.
+ * @param opReturnData Optional OP_RETURN data to include in an output.
+ * @param feeRate Optional fee rate in satoshis per byte.
+ * @param confirmationTarget The number of blocks to include this tx (for fee estimation).
+ * @param isSignet True if using Bitcoin Signet.
+ * @param utxoSelectionStrategy Optional UTXO selection strategy override. Defaults to `'all'`
+ *   when `amount` is omitted, otherwise `'default'`.
+ * @returns {Promise<bigint | undefined>} The estimated fee in satoshis.
  */
 export async function estimateTxFee(
     fromAddress: string,
@@ -333,7 +347,8 @@ export async function estimateTxFee(
     opReturnData?: string,
     feeRate?: number,
     confirmationTarget: number = 3,
-    isSignet: boolean = false
+    isSignet: boolean = false,
+    utxoSelectionStrategy?: 'all' | 'default'
 ): Promise<bigint | undefined> {
     const addressInfo = getAddressInfo(fromAddress, isSignet);
 
@@ -384,17 +399,14 @@ export async function estimateTxFee(
         });
     }
 
-    // Select all UTXOs if no amount is specified
-    let utxoSelectionStrategy: 'all' | 'default' = 'default';
-    if (amount === undefined) {
-        utxoSelectionStrategy = 'all';
-    }
+    // An explicit strategy wins; otherwise select all UTXOs when no amount is specified.
+    const strategy: 'all' | 'default' = utxoSelectionStrategy ?? (amount === undefined ? 'all' : 'default');
 
     // Outsource UTXO selection to btc-signer
     // https://github.com/paulmillr/scure-btc-signer?tab=readme-ov-file#utxo-selection
     // default = exactBiggest/accumBiggest creates tx with smallest fees, but it breaks
     // big outputs to small ones, which in the end will create a lot of outputs close to dust.
-    const transaction = selectUTXO(possibleInputs, outputs, utxoSelectionStrategy, {
+    const transaction = selectUTXO(possibleInputs, outputs, strategy, {
         changeAddress: fromAddress, // Refund surplus to the payment address
         feePerByte: BigInt(Math.ceil(feeRate)), // round up to the nearest integer
         bip69: true, // Sort inputs and outputs according to BIP69
