@@ -2,7 +2,7 @@ import { MempoolClient } from "@gobob/bob-sdk";
 import type { BitcoinSigner, GetQuoteParams, GatewayCreateOrderV3 } from "@gobob/bob-sdk";
 import { getInnerQuoteV3 } from "../util/quote.js";
 import { type WalletClient, type PublicClient } from "viem";
-import pRetry, { AbortError } from "p-retry";
+import { withRetry, SwapError } from "../errors.js";
 import { getRoutes } from "../util/route-provider.js";
 import { resolveSwapInputs, humanToAtomic, parseAssetChain, buildTokenIndex } from "../util/input-resolver.js";
 import { fetchPrice } from "../util/price-oracle.js";
@@ -154,19 +154,10 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
   // --unsigned has no public SDK path: executeQuote always signs.
   // Use the V3 API directly to fetch the order with its PSBT (BTC) or unsigned tx (EVM).
   if (opts.unsigned) {
-    const order: GatewayCreateOrderV3 = await pRetry(async () => {
-      try {
-        const quote = await sdk.getQuote(quoteParams);
-        return await getApi().createOrderV3({ gatewayQuoteV3: quote });
-      } catch (err) {
-        if (!isTransient(err)) {
-          const abort = new AbortError(err instanceof Error ? err.message : String(err));
-          if (err instanceof Error) abort.cause = err;
-          throw abort;
-        }
-        throw err;
-      }
-    }, { retries });
+    const order: GatewayCreateOrderV3 = await withRetry(async () => {
+      const quote = await sdk.getQuote(quoteParams);
+      return await getApi().createOrderV3({ gatewayQuoteV3: quote });
+    }, { retries, isTransient });
     const orderData = (order as any)[variant];
     if (!orderData?.orderId) {
       throw new Error(`Unexpected API response: order.${variant} is missing or has no orderId.`);
@@ -182,27 +173,18 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
   // Signed flows go through executeQuote.
   // executeQuote handles createOrder + sign + registerTx in one call.
   // For BTC paths the SDK doesn't access walletClient/publicClient; cast to satisfy types.
-  const { order, tx, outputAmount } = await pRetry(async () => {
-    try {
-      const quote = await sdk.getQuote(quoteParams);
-      // For BTC paths walletClient/publicClient are unused inside the SDK; the
-      // SDK's type forces them to be present, so we widen via `any` to satisfy it.
-      const result = await sdk.executeQuote({
-        quote,
-        walletClient: evmClients?.walletClient as any,
-        publicClient: evmClients?.publicClient as any,
-        btcSigner,
-      });
-      return { ...result, outputAmount: getInnerQuoteV3(quote).outputAmount.amount };
-    } catch (err) {
-      if (!isTransient(err)) {
-        const abort = new AbortError(err instanceof Error ? err.message : String(err));
-        if (err instanceof Error) abort.cause = err;
-        throw abort;
-      }
-      throw err;
-    }
-  }, { retries });
+  const { order, tx, outputAmount } = await withRetry(async () => {
+    const quote = await sdk.getQuote(quoteParams);
+    // For BTC paths walletClient/publicClient are unused inside the SDK; the
+    // SDK's type forces them to be present, so we widen via `any` to satisfy it.
+    const result = await sdk.executeQuote({
+      quote,
+      walletClient: evmClients?.walletClient as any,
+      publicClient: evmClients?.publicClient as any,
+      btcSigner,
+    });
+    return { ...result, outputAmount: getInnerQuoteV3(quote).outputAmount.amount };
+  }, { retries, isTransient });
 
   const orderData = (order as any)[variant];
   if (!orderData?.orderId) {
@@ -231,36 +213,27 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
     typeof s === "object" && s !== null && k in s;
 
   try {
-    const finalOrder = await pRetry(async () => {
+    const finalOrder = await withRetry(async () => {
       log.progress(`  Waiting for confirmation... (${Math.round((Date.now() - startMs) / 1000)}s elapsed)`);
       const o = await sdk.getOrder(orderId);
       if (hasKey(o.status, "success")) return o;
       if (hasKey(o.status, "refunded") || hasKey(o.status, "failed")) {
-        // Attach the on-chain settlement tx hash + route metadata so the --json
-        // serializer (cli.ts) can surface them — enables downstream alerting to
-        // fetch the receipt and detect out-of-gas. Message kept unchanged so
-        // existing error categorization still matches as a fallback.
-        //
-        // p-retry's AbortError unwraps to `originalError` and throws THAT, so the
-        // fields must live on the Error passed into AbortError (not the AbortError
-        // itself) to survive the retry wrapper.
-        const failure = new Error(`Order ${orderId} failed: ${JSON.stringify(o.status)}`) as Error & {
-          txId?: string;
-          txParams?: { to?: string; from?: string; chainId?: number; chainName?: string };
-          srcAsset?: { symbol: string; chain: string };
-          dstAsset?: { symbol: string; chain: string };
-        };
+        // Carry the on-chain settlement tx hash + route so the --json serializer
+        // surfaces them (downstream alerting fetches the receipt to detect
+        // out-of-gas). Message unchanged so existing categorization still matches.
         // Only offramp/tokenSwap have an EVM settlement tx; onramp settles on BTC.
-        if (variant !== "onramp") {
-          failure.txId = txId;
-          failure.txParams = { to: orderData.tx?.to, from: senderAddress, chainId: CHAIN_IDS[evmChain], chainName: evmChain };
-          failure.srcAsset = { symbol: srcAsset.symbol, chain: srcAsset.chain };
-          failure.dstAsset = { symbol: dstAsset.symbol, chain: dstAsset.chain };
-        }
-        throw new AbortError(failure);
+        throw new SwapError(`Order ${orderId} failed: ${JSON.stringify(o.status)}`, {
+          orderId,
+          ...(variant !== "onramp" && {
+            txId,
+            txParams: { to: orderData.tx?.to, from: senderAddress, chainId: CHAIN_IDS[evmChain], chainName: evmChain },
+            srcAsset: { symbol: srcAsset.symbol, chain: srcAsset.chain },
+            dstAsset: { symbol: dstAsset.symbol, chain: dstAsset.chain },
+          }),
+        });
       }
       throw new Error("pending");
-    }, { retries: Math.ceil(timeoutMs / 15_000), minTimeout: 15_000, maxTimeout: 15_000, factor: 1 });
+    }, { retries: Math.ceil(timeoutMs / 15_000), isTransient: (e) => e instanceof Error && e.message === "pending", minTimeout: 15_000, maxTimeout: 15_000 });
 
     const elapsedMs = Date.now() - startMs;
     const outAmt = finalOrder.dstInfo?.amount ?? "?";

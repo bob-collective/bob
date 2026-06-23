@@ -299,6 +299,7 @@ describe("handleSwap", () => {
     mockGetOrder.mockResolvedValue({ id: "order-789", status: { failed: {} } });
 
     const { handleSwap } = await import("../../src/commands/swap.js");
+    const { SwapError } = await import("../../src/errors.js");
 
     let caught: any;
     try {
@@ -310,14 +311,15 @@ describe("handleSwap", () => {
       caught = e;
     }
 
-    expect(caught).toBeDefined();
+    expect(caught).toBeInstanceOf(SwapError);
     // Message preserved so existing categorization still matches as a fallback.
     expect(caught.message).toContain("order-789 failed");
-    expect(caught.txId).toBe("0xsettlementhash");
-    expect(caught.txParams.chainId).toBe(1); // ethereum
-    expect(caught.txParams.to).toBe("0xGatewayContract");
-    expect(caught.srcAsset).toEqual({ symbol: "USDT", chain: "ethereum" });
-    expect(caught.dstAsset).toEqual({ symbol: "USDC", chain: "base" });
+    expect(caught.context.orderId).toBe("order-789");
+    expect(caught.context.txId).toBe("0xsettlementhash");
+    expect(caught.context.txParams.chainId).toBe(1); // ethereum
+    expect(caught.context.txParams.to).toBe("0xGatewayContract");
+    expect(caught.context.srcAsset).toEqual({ symbol: "USDT", chain: "ethereum" });
+    expect(caught.context.dstAsset).toEqual({ symbol: "USDC", chain: "base" });
   });
 
 });
