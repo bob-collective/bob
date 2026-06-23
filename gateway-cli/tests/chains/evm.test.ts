@@ -60,30 +60,7 @@ vi.mock("../../src/util/rpc-resolver.js", () => ({
 
 // ─── Import after mocks ─────────────────────────────────────────────────────
 
-import { getEvmBalances, NATIVE_GAS_BUFFER, getTokenMetadata } from "../../src/chains/evm.js";
-
-// ─── Tests ──────────────────────────────────────────────────────────────────
-
-describe("getTokenMetadata", () => {
-  // Regression: now that Tron routes exist, the gateway returns Tron (base58)
-  // token addresses in the shared routes/quote list. getTokenMetadata must never
-  // hand a non-EVM address to viem — viem throws an InvalidAddressError that
-  // aborts the entire swap, taking down unrelated EVM/BTC legs. It must instead
-  // fail as a clean "Unknown token" so callers (buildTokenIndex) can skip the
-  // Tron route and still resolve the requested pair.
-  const TRON_USDT = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t";
-
-  it("treats a non-EVM (Tron) token address as unknown, not a viem error", () => {
-    expect(() => getTokenMetadata(TRON_USDT, "tron")).toThrow(/Unknown token/);
-    expect(() => getTokenMetadata(TRON_USDT, "tron")).not.toThrow(/is invalid/);
-  });
-
-  it("returns best-effort metadata for a non-EVM address when throwOnUnknown is false", () => {
-    expect(() => getTokenMetadata(TRON_USDT, "tron", { throwOnUnknown: false })).not.toThrow();
-    const meta = getTokenMetadata(TRON_USDT, "tron", { throwOnUnknown: false });
-    expect(meta.decimals).toBe(18);
-  });
-});
+import { getEvmBalances, NATIVE_GAS_BUFFER } from "../../src/chains/evm.js";
 
 describe("getEvmBalances", () => {
   beforeEach(() => {

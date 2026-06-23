@@ -119,6 +119,10 @@ All config via environment variables. No config files.
 |----------|------------|
 | `BITCOIN_PRIVATE_KEY` | BTC private key (WIF or hex) |
 | `EVM_PRIVATE_KEY` | EVM private key (hex) |
+| `TRON_PRIVATE_KEY` | Tron private key (hex, as exported from TronLink) |
+| `TRON_RPC_URL` | Tron full-node HTTP RPC (default: Pocket Network) |
+| `TRONGRID_API_KEY` | TronGrid API key (recommended — avoids public-node 429 rate limits) |
+| `TRON_RPC_GAP_MS` | Min spacing between Tron RPC calls (default: 1000) |
 | `GATEWAY_API_URL` | Gateway API base URL (default: production) |
 | `BTC_FEE_RATE` | Bitcoin fee rate in sat/vbyte (default: mempool fastest) |
 | `EVM_RPC_URL_<CHAIN>` | Custom RPC URL per chain (e.g. `EVM_RPC_URL_ETHEREUM`) |
@@ -142,10 +146,27 @@ All config via environment variables. No config files.
 ```
 
 > **Note:** When `--recipient` is omitted, the CLI derives the recipient from the
-> destination chain's private key (`BITCOIN_PRIVATE_KEY` for BTC destinations,
-> `EVM_PRIVATE_KEY` for EVM destinations). BTC recipients use P2WPKH addresses
+> destination chain's private key (`BITCOIN_PRIVATE_KEY` for BTC, `EVM_PRIVATE_KEY`
+> for EVM, `TRON_PRIVATE_KEY` for Tron). BTC recipients use P2WPKH addresses
 > (`bc1q...`). Other BTC address types are not yet supported. An explicit
 > `--recipient` always overrides the derived address.
+
+### Tron examples
+
+```bash
+export TRON_PRIVATE_KEY="<64-char-hex-from-tronlink>"
+
+# Quote Tron → BTC
+gateway-cli quote --src USDT:tron --dst BTC --amount 100USDT \
+  --sender TYourTronAddress --recipient bc1q...
+
+# Signed offramp
+gateway-cli swap --src USDT:tron --dst BTC --amount 50USDT --recipient bc1q...
+
+# Unsigned offramp (inspect tx, sign externally, then register)
+gateway-cli swap --src USDT:tron --dst BTC --amount 50USDT \
+  --sender TYourTronAddress --recipient bc1q... --unsigned --json
+```
 
 ### Swap only
 

@@ -22,8 +22,10 @@
   "dependencies": {
     "@gobob/bob-sdk": "^5.7.2",
     "@gobob/tokenlist": "github:bob-collective/tokenlist#5ee721890cb91657f640440a05698c357a080c87",
+    "@scure/base": "^1.2.6",
     "commander": "^13.1.0",
     "p-retry": "^7.1.1",
+    "tronweb": "^6.0.3",
     "viem": "^2.31.3",
     "zod": "^4.3.6"
   },

@@ -1,10 +1,10 @@
 import { getInnerQuoteV3 } from "../util/quote.js";
 import { getRoutes } from "../util/route-provider.js";
-import { resolveSwapInputs, humanToAtomic } from "../util/input-resolver.js";
+import { resolveSwapInputs, humanToAtomic, parseAssetChain, buildTokenIndex } from "../util/input-resolver.js";
 import { fetchPrice } from "../util/price-oracle.js";
 import { MempoolClient } from "@gobob/bob-sdk";
 import { loadConfig, getSdk } from "../config.js";
-import { resolveRecipient, deriveAddress, getChainFamily, resolvePrivateKey } from "../chains/index.js";
+import { resolveRecipient, deriveAddress, resolvePrivateKey, privateKeyEnvVar } from "../chains/index.js";
 import type { QuoteJson, ConfirmationData } from "../output.js";
 
 /** Quote command options. */
@@ -41,20 +41,18 @@ export async function handleQuote(opts: QuoteOptions): Promise<QuoteResult> {
   const slippageBps = opts.slippage ?? config.slippageBps;
 
   const routes = await getRoutes();
+  const tokenIndex = buildTokenIndex(routes);
 
   // Derive sender from env keys only when needed (--amount ALL requires it).
-  // Don't derive eagerly — a malformed key shouldn't break ordinary quotes.
   let senderAddress = opts.sender;
   if (!senderAddress && opts.amount.toUpperCase() === "ALL") {
-    const srcRaw = opts.src.includes(":") ? opts.src.split(":")[1] : opts.src;
-    const srcFamily = getChainFamily(srcRaw === "BTC" || srcRaw === "btc" ? "bitcoin" : srcRaw);
-    const key = resolvePrivateKey(srcFamily === "bitcoin" ? "bitcoin" : "evm", undefined, config);
+    const srcChain = parseAssetChain(opts.src, routes, tokenIndex).chain;
+    const key = resolvePrivateKey(srcChain, undefined, config);
     if (key) {
       try {
-        senderAddress = await deriveAddress(srcFamily === "bitcoin" ? "bitcoin" : "evm", key);
+        senderAddress = await deriveAddress(srcChain, key);
       } catch (err) {
-        const envVar = srcFamily === "bitcoin" ? "BITCOIN_PRIVATE_KEY" : "EVM_PRIVATE_KEY";
-        throw new Error(`Failed to derive sender address from ${envVar}: ${err instanceof Error ? err.message : String(err)}\n  Use --sender <address> to provide the address directly.`);
+        throw new Error(`Failed to derive sender address from ${privateKeyEnvVar(srcChain)}: ${err instanceof Error ? err.message : String(err)}\n  Use --sender <address> to provide the address directly.`);
       }
     }
   }

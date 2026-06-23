@@ -45,13 +45,16 @@ vi.mock("../../src/util/input-resolver.js", () => ({
     atomicUnits: "5000000",
     display: "0.05 BTC",
   }),
+  buildTokenIndex: vi.fn(() => ({ byChainAndSymbol: new Map(), byChainAndAddress: new Map() })),
+  parseAssetChain: vi.fn(() => ({ chain: "bitcoin", address: "BTC", symbol: "BTC", decimals: 8 })),
 }));
 
 vi.mock("../../src/chains/index.js", () => ({
-  getChainFamily: vi.fn((chain: string) => chain === "bitcoin" ? "bitcoin" : "evm"),
+  getChainFamily: vi.fn((chain: string) => chain === "bitcoin" ? "bitcoin" : chain === "tron" ? "tron" : "evm"),
   deriveAddress: vi.fn().mockResolvedValue("0xDerived"),
   resolvePrivateKey: vi.fn(() => undefined),
   resolveRecipient: vi.fn().mockResolvedValue("0xDerived"),
+  privateKeyEnvVar: vi.fn((chain: string) => chain === "bitcoin" ? "BITCOIN_PRIVATE_KEY" : chain === "tron" ? "TRON_PRIVATE_KEY" : "EVM_PRIVATE_KEY"),
 }));
 
 // ─── Tests ───────────────────────────────────────────────────────────────────

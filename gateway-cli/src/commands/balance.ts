@@ -1,6 +1,7 @@
 import { isAddress } from 'viem';
 import { isValidBtcAddress } from '@gobob/bob-sdk';
 import { getAllBalances, deriveAddress, getChainFamily } from '../chains/index.js';
+import { isValidTronAddress } from '../chains/tron/addresses.js';
 import { getRoutes, getUniqueChains } from '../util/route-provider.js';
 import { resolveChain } from '../util/input-resolver.js';
 import { loadConfig } from '../config.js';
@@ -15,39 +16,27 @@ export interface BalanceOptions {
   nonZero?: boolean;
 }
 
-/**
- * Classify an address as Bitcoin or EVM based on format.
- * @param addr - Address string to classify
- * @returns "bitcoin" or "evm"
- * @throws Error if address format is unsupported
- */
-function classifyAddress(addr: string): "bitcoin" | "evm" {
-  if (isAddress(addr, { strict: false })) return "evm";
-  if (isValidBtcAddress(addr)) return "bitcoin";
-  throw new Error(`Unsupported address format "${addr}". Expected an EVM address (0x...) or a Bitcoin address.`);
+function classifyAddress(addr: string): 'bitcoin' | 'evm' | 'tron' {
+  if (isValidBtcAddress(addr)) return 'bitcoin';
+  if (isValidTronAddress(addr)) return 'tron';
+  if (isAddress(addr, { strict: false })) return 'evm';
+  throw new Error(`Unsupported address format "${addr}". Expected a Bitcoin (bc1...), Tron (T...), or EVM (0x...) address.`);
 }
 
-/**
- * Handle the balance command: show token balances across chains.
- * Derives addresses from env var keys if none provided.
- * Filters by chain family (BTC or EVM) for efficiency.
- * 
- * @param addresses - Wallet addresses to query (BTC or EVM)
- * @param opts - Optional filters: chains, fee token/reserve, non-zero only
- * @returns Balance data across all queried chains
- */
 export async function handleBalance(addresses: string[], opts: BalanceOptions): Promise<BalanceJson> {
-  // If no addresses provided, derive from env var keys
   if (addresses.length === 0) {
     const config = loadConfig();
     if (config.bitcoinPrivateKey) {
-      addresses.push(await deriveAddress("bitcoin", config.bitcoinPrivateKey));
+      addresses.push(await deriveAddress('bitcoin', config.bitcoinPrivateKey));
     }
     if (config.evmPrivateKey) {
-      addresses.push(await deriveAddress("evm", config.evmPrivateKey));
+      addresses.push(await deriveAddress('ethereum', config.evmPrivateKey));
+    }
+    if (config.tronPrivateKey) {
+      addresses.push(await deriveAddress('tron', config.tronPrivateKey));
     }
     if (addresses.length === 0) {
-      throw new Error("No addresses provided and no private keys configured.\n  Pass an address or set BITCOIN_PRIVATE_KEY / EVM_PRIVATE_KEY.");
+      throw new Error('No addresses provided and no private keys configured.\n  Pass an address or set BITCOIN_PRIVATE_KEY / EVM_PRIVATE_KEY / TRON_PRIVATE_KEY.');
     }
   }
 
@@ -57,15 +46,13 @@ export async function handleBalance(addresses: string[], opts: BalanceOptions): 
     for (const raw of opts.chain) {
       const resolved = resolveChain(raw);
       if (!knownChains.includes(resolved)) {
-        console.warn(`Warning: unknown chain '${raw}'. Known chains: ${knownChains.join(", ")}`);
+        console.warn(`Warning: unknown chain '${raw}'. Known chains: ${knownChains.join(', ')}`);
         process.exitCode = 1;
       }
     }
-    // Resolve aliases in the chain list passed to getAllBalances
     opts = { ...opts, chain: opts.chain.map(c => resolveChain(c)) };
   }
 
-  // Classify addresses and query relevant chains
   const results: BalanceJson = {};
   for (const addr of addresses) {
     const family = classifyAddress(addr);
@@ -73,11 +60,8 @@ export async function handleBalance(addresses: string[], opts: BalanceOptions): 
     if (opts.chain?.length) {
       for (const chain of opts.chain) {
         const chainFamily = getChainFamily(chain);
-        if (family === "bitcoin" && chainFamily === "evm") {
-          console.warn(`Warning: BTC address '${addr}' is not valid for EVM chain '${chain}'`);
-          process.exitCode = 1;
-        } else if (family === "evm" && chainFamily === "bitcoin") {
-          console.warn(`Warning: EVM address '${addr}' is not valid for Bitcoin chain '${chain}'`);
+        if (family !== chainFamily) {
+          console.warn(`Warning: ${family} address '${addr}' is not valid for ${chainFamily} chain '${chain}'`);
           process.exitCode = 1;
         }
       }
@@ -94,11 +78,9 @@ export async function handleBalance(addresses: string[], opts: BalanceOptions): 
     }
   }
 
-  // Filter to non-zero balances if requested
   if (opts.nonZero) {
     for (const [chain, data] of Object.entries(results)) {
       if (data.error) { delete results[chain]; continue; }
-      // Filter zero-balance tokens within the chain
       if (data.tokens) {
         data.tokens = data.tokens.filter(t => parseFloat(t.balance) > 0);
       }

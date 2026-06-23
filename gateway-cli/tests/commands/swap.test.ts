@@ -50,6 +50,7 @@ vi.mock("../../src/config.js", () => ({
     timeoutMs: 5000,
     bitcoinPrivateKey: undefined,
     evmPrivateKey: undefined,
+    tronPrivateKey: undefined,
   })),
   getSdk: vi.fn(() => ({
     getQuote: mockGetQuote,
@@ -82,7 +83,7 @@ vi.mock("../../src/util/price-oracle.js", () => ({
 }));
 
 vi.mock("../../src/chains/index.js", () => ({
-  getChainFamily: vi.fn((chain: string) => chain === "bitcoin" ? "bitcoin" : "evm"),
+  getChainFamily: vi.fn((chain: string) => chain === "bitcoin" ? "bitcoin" : chain === "tron" ? "tron" : "evm"),
   deriveAddress: vi.fn().mockResolvedValue("bc1qtest"),
   resolveSigner: vi.fn().mockResolvedValue({ address: "bc1qtest", signer: mockBtcSigner }),
   getTokenBalance: vi.fn().mockResolvedValue({ total: "5000000", allSpendable: "4900000" }),
@@ -91,6 +92,8 @@ vi.mock("../../src/chains/index.js", () => ({
   })),
   resolvePrivateKey: vi.fn((chain: string, privateKey?: string) => privateKey),
   resolveRecipient: vi.fn().mockResolvedValue("bc1qtest"),
+  addressesMatch: vi.fn((a: string, b: string, chain: string) => chain === "evm" ? a.toLowerCase() === b.toLowerCase() : a === b),
+  privateKeyEnvVar: vi.fn((chain: string) => chain === "bitcoin" ? "BITCOIN_PRIVATE_KEY" : chain === "tron" ? "TRON_PRIVATE_KEY" : "EVM_PRIVATE_KEY"),
 }));
 
 vi.mock("@gobob/bob-sdk", () => ({

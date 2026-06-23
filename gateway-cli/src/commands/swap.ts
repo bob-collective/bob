@@ -7,7 +7,7 @@ import { getRoutes } from "../util/route-provider.js";
 import { resolveSwapInputs, humanToAtomic, parseAssetChain, buildTokenIndex } from "../util/input-resolver.js";
 import { fetchPrice } from "../util/price-oracle.js";
 import { loadConfig, getSdk, getApi } from "../config.js";
-import { deriveAddress, resolveSigner, getChainFamily, resolvePrivateKey, resolveRecipient } from "../chains/index.js";
+import { deriveAddress, resolveSigner, getChainFamily, resolvePrivateKey, resolveRecipient, addressesMatch, privateKeyEnvVar } from "../chains/index.js";
 import { CHAIN_IDS } from "../chains/evm.js";
 import type { Logger, SwapSuccessJson, SwapSubmittedJson, SwapMempoolPendingJson } from "../output.js";
 
@@ -51,14 +51,14 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
   // via the full alias/token resolution path rather than ad-hoc string parsing.
   const routes = await getRoutes();
   const tokenIndex = buildTokenIndex(routes);
-  const srcFamily = getChainFamily(parseAssetChain(opts.src, routes, tokenIndex).chain);
+  const srcParsed = parseAssetChain(opts.src, routes, tokenIndex);
+  const srcFamily = getChainFamily(srcParsed.chain);
 
-  const key = resolvePrivateKey(srcFamily === "bitcoin" ? "bitcoin" : "evm", opts.privateKey, config);
-  const derivedAddress = key ? await deriveAddress(srcFamily === "bitcoin" ? "bitcoin" : "evm", key) : undefined;
+  const key = resolvePrivateKey(srcParsed.chain, opts.privateKey, config);
+  const derivedAddress = key ? await deriveAddress(srcParsed.chain, key) : undefined;
   const senderAddress = opts.sender ?? derivedAddress;
 
-  // Reject --sender that doesn't match the signing key — the order would be created for one address but signed by another
-  if (opts.sender && derivedAddress && opts.sender.toLowerCase() !== derivedAddress.toLowerCase()) {
+  if (opts.sender && derivedAddress && !addressesMatch(opts.sender, derivedAddress, srcParsed.chain)) {
     throw new Error(
       `--sender ${opts.sender} does not match the signing key (${derivedAddress}).\n` +
       `  The order would be created for one address but signed by another.\n` +
@@ -66,9 +66,11 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
     );
   }
 
-  // UX-8: BTC onramp --unsigned requires a sender address to construct the PSBT
   if (opts.unsigned && srcFamily === "bitcoin" && !senderAddress) {
     throw new Error("BTC onramp --unsigned requires --sender or BITCOIN_PRIVATE_KEY to construct the PSBT.");
+  }
+  if (opts.unsigned && srcFamily === "tron" && !senderAddress) {
+    throw new Error("Tron offramp --unsigned requires --sender or TRON_PRIVATE_KEY.");
   }
   const { srcAsset, dstAsset, atomicUnits, display } = await resolveSwapInputs(
     opts.src, opts.dst, opts.amount, routes,
@@ -78,8 +80,7 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
   // ── Resolve recipient ────────────────────────────────────────────────────
   const recipient = await resolveRecipient(dstAsset.chain, opts.recipient, config);
   if (!opts.recipient) {
-    const dstFamily = getChainFamily(dstAsset.chain);
-    log.progress(`Using recipient: ${recipient} (derived from ${dstFamily === "bitcoin" ? "BITCOIN_PRIVATE_KEY" : "EVM_PRIVATE_KEY"})`);
+    log.progress(`Using recipient: ${recipient} (derived from ${privateKeyEnvVar(dstAsset.chain)})`);
   }
 
   const slippageBps = opts.slippage ?? config.slippageBps;
@@ -87,11 +88,13 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
 
   // Resolve signer
   if (!opts.unsigned && !key) {
-    const isBtc = getChainFamily(srcAsset.chain) === "bitcoin";
-    throw new Error(`no signer configured for ${isBtc ? "Bitcoin" : "EVM"}.\n  Set ${isBtc ? "BITCOIN_PRIVATE_KEY" : "EVM_PRIVATE_KEY"} or pass --private-key.\n  Use --unsigned to output the ${isBtc ? "PSBT" : "unsigned transaction"} without signing.`);
+    const chain = srcAsset.chain;
+    const family = getChainFamily(chain);
+    const label = family === "bitcoin" ? "Bitcoin" : family === "tron" ? "Tron" : "EVM";
+    throw new Error(`no signer configured for ${label}.\n  Set ${privateKeyEnvVar(chain)} or pass --private-key.\n  Use --unsigned to output the ${family === "bitcoin" ? "PSBT" : "unsigned transaction"} without signing.`);
   }
-  const evmChain = getChainFamily(srcAsset.chain) === "bitcoin" ? dstAsset.chain : srcAsset.chain;
-  const signer = opts.unsigned ? null : await resolveSigner(getChainFamily(srcAsset.chain) === "bitcoin" ? "bitcoin" : evmChain, key!);
+  const signingChain = getChainFamily(srcAsset.chain) === "bitcoin" ? dstAsset.chain : srcAsset.chain;
+  const signer = opts.unsigned ? null : await resolveSigner(signingChain, key!);
 
   // Gas refill
   const gasRefillWei = opts.gasRefillUsd
@@ -127,14 +130,13 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
   const btcSigner = !opts.unsigned && variant === "onramp"
     ? ((signer as any).signer as BitcoinSigner)
     : undefined;
-  const evmClients = variant !== "onramp" && !opts.unsigned
+  const chainClients = variant !== "onramp" && !opts.unsigned
     ? (signer as { walletClient: WalletClient; publicClient: PublicClient })
     : undefined;
 
-  // EVM wait-for-pending-nonce — only relevant for the signed EVM path.
-  if (evmClients && senderAddress) {
+  if (chainClients && senderAddress && getChainFamily(signingChain) === "evm") {
     const addr = senderAddress as `0x${string}`;
-    const { publicClient } = evmClients;
+    const { publicClient } = chainClients;
     const deadline = Date.now() + 120_000;
     let settled = false;
     while (Date.now() < deadline) {
@@ -179,8 +181,8 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
     // SDK's type forces them to be present, so we widen via `any` to satisfy it.
     const result = await sdk.executeQuote({
       quote,
-      walletClient: evmClients?.walletClient as any,
-      publicClient: evmClients?.publicClient as any,
+      walletClient: chainClients?.walletClient as any,
+      publicClient: chainClients?.publicClient as any,
       btcSigner,
     });
     return { ...result, outputAmount: getInnerQuoteV3(quote).outputAmount.amount };
@@ -226,7 +228,9 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
           orderId,
           ...(variant !== "onramp" && {
             txId,
-            txParams: { to: orderData.tx?.to, from: senderAddress, chainId: CHAIN_IDS[evmChain], chainName: evmChain },
+            ...(getChainFamily(signingChain) === "evm" && {
+              txParams: { to: orderData.tx?.to, from: senderAddress, chainId: CHAIN_IDS[signingChain], chainName: signingChain },
+            }),
             srcAsset: { symbol: srcAsset.symbol, chain: srcAsset.chain },
             dstAsset: { symbol: dstAsset.symbol, chain: dstAsset.chain },
           }),

@@ -14,6 +14,12 @@ export interface Config {
   bitcoinPrivateKey?: string;
   /** EVM private key in hex format. */
   evmPrivateKey?: string;
+  /** Tron private key in hex format (as exported from TronLink). */
+  tronPrivateKey?: string;
+  /** Tron full-node HTTP RPC URL. */
+  tronRpcUrl?: string;
+  /** TronGrid API key (avoids public-node 429 rate limits). */
+  tronGridApiKey?: string;
   /** Polling timeout in milliseconds (default: 30 minutes). */
   timeoutMs: number;
   /** Default slippage tolerance in basis points (default: 300 = 3%). */
@@ -35,6 +41,9 @@ export function loadConfig(): Config {
     apiUrl: process.env.GATEWAY_API_URL,
     bitcoinPrivateKey: process.env.BITCOIN_PRIVATE_KEY,
     evmPrivateKey: process.env.EVM_PRIVATE_KEY,
+    tronPrivateKey: process.env.TRON_PRIVATE_KEY,
+    tronRpcUrl: process.env.TRON_RPC_URL,
+    tronGridApiKey: process.env.TRONGRID_API_KEY,
     timeoutMs: 1_800_000,
     slippageBps: 300,
     btcFeeRate: feeRate != null && !isNaN(feeRate) ? feeRate : undefined,

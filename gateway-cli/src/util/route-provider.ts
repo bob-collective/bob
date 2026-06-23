@@ -1,5 +1,6 @@
 import type { RouteInfo } from '@gobob/bob-sdk';
 import { getSdk } from '../config.js';
+import { getChainFamily } from '../chains/index.js';
 
 // ─── Route helpers ──────────────────────────────────────────────────────────
 
@@ -24,8 +25,10 @@ export function getTokenAddressesForChain(chain: string, routes: RouteInfo[]): s
   const addrs: string[] = [];
   for (const r of routes) {
     for (const [c, addr] of [[r.srcChain, r.srcToken], [r.dstChain, r.dstToken]] as const) {
-      if (c === chain && addr !== 'BTC' && !seen.has(addr.toLowerCase())) {
-        seen.add(addr.toLowerCase());
+      if (c !== chain || addr === 'BTC') continue;
+      const key = getChainFamily(c) === 'tron' ? `${c}:${addr}` : `${c}:${addr.toLowerCase()}`;
+      if (!seen.has(key)) {
+        seen.add(key);
         addrs.push(addr);
       }
     }
@@ -36,7 +39,7 @@ export function getTokenAddressesForChain(chain: string, routes: RouteInfo[]): s
 /** Unique tokens on a specific chain with metadata (deduped, excludes BTC placeholder). */
 export async function getTokensForChain(chain: string, routes: RouteInfo[]): Promise<Array<{ address: string; symbol: string; decimals: number }>> {
   // Dynamic import to avoid circular dependency at module load time
-  const { getTokenMetadata } = await import('../chains/evm.js');
+  const { getTokenMetadata } = await import('../chains/tokens.js');
   const addrs = getTokenAddressesForChain(chain, routes);
   const tokens: Array<{ address: string; symbol: string; decimals: number }> = [];
   for (const addr of addrs) {
