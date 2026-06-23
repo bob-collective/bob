@@ -13,8 +13,8 @@ importers:
   .:
     dependencies:
       '@gobob/bob-sdk':
-        specifier: ^5.7.2
-        version: 5.7.2(@tanstack/react-query@5.91.0(react@19.2.4))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)(zod@4.3.6)
+        specifier: ^5.7.3
+        version: 5.7.3(@tanstack/react-query@5.91.0(react@19.2.4))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)(zod@4.3.6)
       '@gobob/tokenlist':
         specifier: github:bob-collective/tokenlist#5ee721890cb91657f640440a05698c357a080c87
         version: https://codeload.github.com/bob-collective/tokenlist/tar.gz/5ee721890cb91657f640440a05698c357a080c87
@@ -248,8 +248,8 @@ packages:
   '@gobob/bob-sdk@3.1.7-alpha0':
     resolution: {integrity: sha512-1qdKAYEigbqNt9x/0jYKeeC/d0u1lh6GluHaBIxp2Pt6p2+4fUVFnDdtGo5pMcgft7Bvo8/tdmlFBTzb3BEc5g==}
 
-  '@gobob/bob-sdk@5.7.2':
-    resolution: {integrity: sha512-vi7znURjIZ0OaTql7YYnzMhI6eC4gv0Q0Zl0JdMBt7a9syR7DkhpW88/gs+hCio4XJePWeQ48SToR/LBZXQi/g==}
+  '@gobob/bob-sdk@5.7.3':
+    resolution: {integrity: sha512-0kVxJtfLC2da0V+ZL72tUSSHnYt1GQAe3H7Iee+OncH9c4n4hhwanAcMxYoH/wiHBGocK6FxZBfkAOMckuVBIA==}
 
   '@gobob/sats-wagmi@0.3.23':
     resolution: {integrity: sha512-7YAcQXo20v/SKNBv4Jhv9SYJJ9fzXUSC1ntUKwR0hjdCV9Kj0ivIRmGKvZwb8fqwgNYEaL4R5PbrMWnvFNTRgQ==}
@@ -1471,7 +1471,7 @@ snapshots:
       - utf-8-validate
       - zod
 
-  '@gobob/bob-sdk@5.7.2(@tanstack/react-query@5.91.0(react@19.2.4))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)(zod@4.3.6)':
+  '@gobob/bob-sdk@5.7.3(@tanstack/react-query@5.91.0(react@19.2.4))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)(zod@4.3.6)':
     dependencies:
       '@bitcoinerlab/secp256k1': 1.2.0
       '@eslint/eslintrc': 3.3.5
