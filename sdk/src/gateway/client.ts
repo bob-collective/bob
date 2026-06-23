@@ -63,6 +63,49 @@ function signerAccount(walletClient: WalletClient<Transport, ViemChain, Account>
     return walletClient.account.type === 'local' ? walletClient.account : walletClient.account.address;
 }
 
+/**
+ * Gas-limit buffer for offramp / tokenSwap sends (bob#1088).
+ *
+ * Combines the two buffers bob-gateway already uses: velora multiplies its
+ * estimate by 1.2 (crates/velora/src/api/client.rs) and the intents path adds a
+ * fixed 300k cushion (crates/intents/src/constant.rs). We take the max so small
+ * txs get the fixed floor and large (velora) txs get the multiplier. A gas
+ * *limit* is not a gas *cost* — unused gas is refunded — so erring generous is
+ * nearly free, while erring tight causes silent out-of-gas order failures.
+ */
+const GAS_BUFFER_NUM = 12n;
+const GAS_BUFFER_DEN = 10n;
+const GAS_BUFFER_FIXED = 300_000n;
+
+function applyGasBuffer(estimate: bigint): bigint {
+    const multiplied = (estimate * GAS_BUFFER_NUM) / GAS_BUFFER_DEN;
+    const fixed = estimate + GAS_BUFFER_FIXED;
+    return multiplied > fixed ? multiplied : fixed;
+}
+
+/**
+ * Buffered gas limit for local-key sends, or `undefined` to fall back to viem's
+ * default estimation. If `eth_estimateGas` reverts we return `undefined` so the
+ * send behaves exactly as it does today — never introducing a new failure mode.
+ */
+async function estimateGasWithBuffer(
+    publicClient: PublicClient<Transport>,
+    account: Account,
+    tx: { to: Address; data: Hex; value: bigint }
+): Promise<bigint | undefined> {
+    try {
+        const estimate = await publicClient.estimateGas({
+            account,
+            to: tx.to,
+            data: tx.data,
+            value: tx.value,
+        });
+        return applyGasBuffer(estimate);
+    } catch {
+        return undefined;
+    }
+}
+
 export const ETHEREUM_USDT_ADDRESS = '0xdAC17F958D2ee523a2206206994597C13D831ec7';
 
 /**
@@ -410,11 +453,23 @@ export class GatewayApiClient {
             }
 
             callback?.({ step: totalSteps, type: ExecuteQuoteStepType.SendTransaction, totalSteps });
+            const offrampData = order.offramp.tx.data as Hex;
+            const offrampValue = BigInt(order.offramp.tx.value || 0);
+            const offrampGas =
+                walletClient.account.type === 'local'
+                    ? await estimateGasWithBuffer(publicClient, walletClient.account, {
+                          to: spenderAddress,
+                          data: offrampData,
+                          value: offrampValue,
+                      })
+                    : undefined;
+
             const transactionHash = await walletClient.sendTransaction({
                 account: signerAccount(walletClient),
-                data: order.offramp.tx.data as Hex,
+                data: offrampData,
                 to: spenderAddress,
-                value: BigInt(order.offramp.tx.value || 0),
+                value: offrampValue,
+                ...(offrampGas !== undefined && { gas: offrampGas }),
             });
 
             await publicClient?.waitForTransactionReceipt({ hash: transactionHash, retryCount: RETRY_COUNT });
@@ -544,11 +599,24 @@ export class GatewayApiClient {
             }
 
             callback?.({ step: totalSteps, type: ExecuteQuoteStepType.SendTransaction, totalSteps });
+            const tokenSwapTo = order.tokenSwap.tx.to as Address;
+            const tokenSwapData = order.tokenSwap.tx.data as Hex;
+            const tokenSwapValue = BigInt(order.tokenSwap.tx.value || 0);
+            const tokenSwapGas =
+                walletClient.account.type === 'local'
+                    ? await estimateGasWithBuffer(publicClient, walletClient.account, {
+                          to: tokenSwapTo,
+                          data: tokenSwapData,
+                          value: tokenSwapValue,
+                      })
+                    : undefined;
+
             const transactionHash = await walletClient.sendTransaction({
                 account: signerAccount(walletClient),
-                data: order.tokenSwap.tx.data as Hex,
-                to: order.tokenSwap.tx.to as Address,
-                value: BigInt(order.tokenSwap.tx.value || 0),
+                data: tokenSwapData,
+                to: tokenSwapTo,
+                value: tokenSwapValue,
+                ...(tokenSwapGas !== undefined && { gas: tokenSwapGas }),
             });
 
             await publicClient.waitForTransactionReceipt({ hash: transactionHash, retryCount: RETRY_COUNT });
