@@ -8,6 +8,7 @@ import { resolveSwapInputs, humanToAtomic, parseAssetChain, buildTokenIndex } fr
 import { fetchPrice } from "../util/price-oracle.js";
 import { loadConfig, getSdk, getApi } from "../config.js";
 import { deriveAddress, resolveSigner, getChainFamily, resolvePrivateKey, resolveRecipient } from "../chains/index.js";
+import { CHAIN_IDS } from "../chains/evm.js";
 import type { Logger, SwapSuccessJson, SwapSubmittedJson, SwapMempoolPendingJson } from "../output.js";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -235,7 +236,28 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
       const o = await sdk.getOrder(orderId);
       if (hasKey(o.status, "success")) return o;
       if (hasKey(o.status, "refunded") || hasKey(o.status, "failed")) {
-        throw new AbortError(`Order ${orderId} failed: ${JSON.stringify(o.status)}`);
+        // Attach the on-chain settlement tx hash + route metadata so the --json
+        // serializer (cli.ts) can surface them — enables downstream alerting to
+        // fetch the receipt and detect out-of-gas. Message kept unchanged so
+        // existing error categorization still matches as a fallback.
+        //
+        // p-retry's AbortError unwraps to `originalError` and throws THAT, so the
+        // fields must live on the Error passed into AbortError (not the AbortError
+        // itself) to survive the retry wrapper.
+        const failure = new Error(`Order ${orderId} failed: ${JSON.stringify(o.status)}`) as Error & {
+          txId?: string;
+          txParams?: { to?: string; from?: string; chainId?: number; chainName?: string };
+          srcAsset?: { symbol: string; chain: string };
+          dstAsset?: { symbol: string; chain: string };
+        };
+        // Only offramp/tokenSwap have an EVM settlement tx; onramp settles on BTC.
+        if (variant !== "onramp") {
+          failure.txId = txId;
+          failure.txParams = { to: orderData.tx?.to, from: senderAddress, chainId: CHAIN_IDS[evmChain], chainName: evmChain };
+          failure.srcAsset = { symbol: srcAsset.symbol, chain: srcAsset.chain };
+          failure.dstAsset = { symbol: dstAsset.symbol, chain: dstAsset.chain };
+        }
+        throw new AbortError(failure);
       }
       throw new Error("pending");
     }, { retries: Math.ceil(timeoutMs / 15_000), minTimeout: 15_000, maxTimeout: 15_000, factor: 1 });
