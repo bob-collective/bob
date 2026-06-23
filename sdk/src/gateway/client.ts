@@ -66,12 +66,10 @@ function signerAccount(walletClient: WalletClient<Transport, ViemChain, Account>
 /**
  * Gas-limit buffer for offramp / tokenSwap sends (bob#1088).
  *
- * Combines the two buffers bob-gateway already uses: velora multiplies its
- * estimate by 1.2 (crates/velora/src/api/client.rs) and the intents path adds a
- * fixed 300k cushion (crates/intents/src/constant.rs). We take the max so small
- * txs get the fixed floor and large (velora) txs get the multiplier. A gas
- * *limit* is not a gas *cost* — unused gas is refunded — so erring generous is
- * nearly free, while erring tight causes silent out-of-gas order failures.
+ * Takes the max of a 1.2x multiplier and a fixed 300k cushion, so small txs get
+ * the fixed floor and large (aggregator) txs get the multiplier. Unused gas is
+ * refunded, so a generous limit is nearly free while a tight one causes
+ * out-of-gas failures on gas-heavy routes.
  */
 const GAS_BUFFER_NUM = 12n;
 const GAS_BUFFER_DEN = 10n;
