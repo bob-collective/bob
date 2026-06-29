@@ -93,6 +93,15 @@ Agents call tools and read structured output. The Gateway CLI is built around th
 An agentic swap follows a consistent pattern: discover what is possible, get a quote, decide, then settle.
 
 <Steps>
+  <Step title="Install the CLI">
+    Install globally with npm so `gateway-cli` is on the PATH wherever the agent runs.
+
+    ```bash
+    npm install -g @gobob/gateway-cli
+    gateway-cli --help
+    ```
+  </Step>
+
   <Step title="Discover available routes">
     The agent queries available routes so it isn't guessing at assets or chains.
 
@@ -240,12 +249,7 @@ Gateway has already powered experiments like a Bitcoin yield bot built on Coinba
 
 ---
 
-## Install and try it
-
-```bash
-npm install -g @gobob/gateway-cli
-gateway-cli --help
-```
+## Try it
 
 Set your keys and run a quote to verify the setup:
 
