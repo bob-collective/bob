@@ -19,13 +19,6 @@ import {
     GatewayQuoteV2OneOfFromJSONTyped,
     GatewayQuoteV2OneOfToJSON,
 } from './GatewayQuoteV2OneOf';
-import type { GatewayQuoteV2OneOf2 } from './GatewayQuoteV2OneOf2';
-import {
-    instanceOfGatewayQuoteV2OneOf2,
-    GatewayQuoteV2OneOf2FromJSON,
-    GatewayQuoteV2OneOf2FromJSONTyped,
-    GatewayQuoteV2OneOf2ToJSON,
-} from './GatewayQuoteV2OneOf2';
 import type { GatewayQuoteV3OneOf } from './GatewayQuoteV3OneOf';
 import {
     instanceOfGatewayQuoteV3OneOf,
@@ -33,6 +26,13 @@ import {
     GatewayQuoteV3OneOfFromJSONTyped,
     GatewayQuoteV3OneOfToJSON,
 } from './GatewayQuoteV3OneOf';
+import type { GatewayQuoteV3OneOf1 } from './GatewayQuoteV3OneOf1';
+import {
+    instanceOfGatewayQuoteV3OneOf1,
+    GatewayQuoteV3OneOf1FromJSON,
+    GatewayQuoteV3OneOf1FromJSONTyped,
+    GatewayQuoteV3OneOf1ToJSON,
+} from './GatewayQuoteV3OneOf1';
 
 /**
  * @type GatewayQuoteV3
@@ -40,7 +40,7 @@ import {
  * `ownerAddress` is embedded in each variant that carries an owner concept.
  * @export
  */
-export type GatewayQuoteV3 = GatewayQuoteV2OneOf | GatewayQuoteV2OneOf2 | GatewayQuoteV3OneOf;
+export type GatewayQuoteV3 = GatewayQuoteV2OneOf | GatewayQuoteV3OneOf | GatewayQuoteV3OneOf1;
 
 export function GatewayQuoteV3FromJSON(json: any): GatewayQuoteV3 {
     return GatewayQuoteV3FromJSONTyped(json, false);
@@ -56,11 +56,11 @@ export function GatewayQuoteV3FromJSONTyped(json: any, ignoreDiscriminator: bool
     if (instanceOfGatewayQuoteV2OneOf(json)) {
         return GatewayQuoteV2OneOfFromJSONTyped(json, true);
     }
-    if (instanceOfGatewayQuoteV2OneOf2(json)) {
-        return GatewayQuoteV2OneOf2FromJSONTyped(json, true);
-    }
     if (instanceOfGatewayQuoteV3OneOf(json)) {
         return GatewayQuoteV3OneOfFromJSONTyped(json, true);
+    }
+    if (instanceOfGatewayQuoteV3OneOf1(json)) {
+        return GatewayQuoteV3OneOf1FromJSONTyped(json, true);
     }
     return {} as any;
 }
@@ -79,11 +79,11 @@ export function GatewayQuoteV3ToJSONTyped(value?: GatewayQuoteV3 | null, ignoreD
     if (instanceOfGatewayQuoteV2OneOf(value)) {
         return GatewayQuoteV2OneOfToJSON(value as GatewayQuoteV2OneOf);
     }
-    if (instanceOfGatewayQuoteV2OneOf2(value)) {
-        return GatewayQuoteV2OneOf2ToJSON(value as GatewayQuoteV2OneOf2);
-    }
     if (instanceOfGatewayQuoteV3OneOf(value)) {
         return GatewayQuoteV3OneOfToJSON(value as GatewayQuoteV3OneOf);
+    }
+    if (instanceOfGatewayQuoteV3OneOf1(value)) {
+        return GatewayQuoteV3OneOf1ToJSON(value as GatewayQuoteV3OneOf1);
     }
     return {};
 }

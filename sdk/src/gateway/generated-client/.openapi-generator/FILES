@@ -37,6 +37,7 @@ models/GatewayErrorDetailsV2OneOf.ts
 models/GatewayErrorDetailsV2OneOf1.ts
 models/GatewayErrorDetailsV3.ts
 models/GatewayErrorDetailsV3OneOf.ts
+models/GatewayErrorDetailsV3OneOf1.ts
 models/GatewayErrorV2.ts
 models/GatewayErrorV3.ts
 models/GatewayLayerZeroQuote.ts
@@ -82,10 +83,12 @@ models/GatewayQuoteV2OneOf1.ts
 models/GatewayQuoteV2OneOf2.ts
 models/GatewayQuoteV3.ts
 models/GatewayQuoteV3OneOf.ts
+models/GatewayQuoteV3OneOf1.ts
 models/GatewaySolanaTx.ts
 models/GatewayTokenAmount.ts
 models/GatewayTokenAmountV2.ts
 models/GatewayTokenSwapQuoteV2.ts
+models/GatewayTokenSwapQuoteV3.ts
 models/GatewayTxData.ts
 models/GatewayTxDataOneOf.ts
 models/GatewayTxDataOneOf1.ts
@@ -115,6 +118,7 @@ models/RegisterTxV3OneOf1.ts
 models/RegisterTxV3OneOfOfframp.ts
 models/ResolvedAffiliate.ts
 models/RouteInfo.ts
+models/TokenSwapAffiliateV3.ts
 models/TronTxData.ts
 models/TxInfo.ts
 models/index.ts
