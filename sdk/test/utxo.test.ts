@@ -717,9 +717,9 @@ describe('UTXO Tests', () => {
             // Mock only the network boundary: one confirmed, cardinal UTXO + its funding tx.
             vi.spyOn(EsploraClient.prototype, 'getAddressUtxos').mockResolvedValue([utxo]);
             vi.spyOn(EsploraClient.prototype, 'getTransactionHex').mockResolvedValue(txHex);
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-expect-error partial mock: only `outpoint` is read by getSafeUtxos
             vi.spyOn(OrdinalsClient.prototype, 'getOutputsFromAddress').mockResolvedValue([
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-expect-error partial mock: only `outpoint` is read by getSafeUtxos
                 { outpoint: OutPoint.toString(utxo) },
             ]);
             // Canned selection result so the assertion does not depend on real coin selection succeeding.
