@@ -296,7 +296,7 @@ const { orders, nextCursor } = await gatewaySDK.getOrders({
 
 orders.forEach(order => {
   // V3: srcInfo/dstInfo now carry an optional `usd` value alongside the amount
-  console.log(`Source: ${order.srcInfo.amount} ${order.srcInfo.token} (${order.srcInfo.chain})`, order.srcInfo.usd && `~$${order.srcInfo.usd}`);
+  console.log(`Source: ${order.srcInfo.amount} ${order.srcInfo.token} (${order.srcInfo.chain})${order.srcInfo.usd ? ` ~$${order.srcInfo.usd}` : ''}`);
   console.log(`Destination (estimated): ${order.dstInfo.amount} ${order.dstInfo.token} (${order.dstInfo.chain})`);
 
   // Order status is always a discriminated object — no bare strings
@@ -318,7 +318,7 @@ orders.forEach(order => {
     console.log('Status: success');
     // Settled token transfers (with on-chain txHash, and V3 `usd`) are on the status payload
     for (const t of order.status.success.receivedTokens) {
-      console.log(`Received ${t.amount} ${t.token} on ${t.chain} (tx ${t.txHash})`, t.usd && `~$${t.usd}`);
+      console.log(`Received ${t.amount} ${t.token} on ${t.chain} (tx ${t.txHash})${t.usd ? ` ~$${t.usd}` : ''}`);
     }
   } else if ('refunded' in order.status) {
     console.log('Status: refunded');
