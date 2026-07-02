@@ -82,6 +82,13 @@ import {
     GatewayErrorDetailsV3OneOfFromJSONTyped,
     GatewayErrorDetailsV3OneOfToJSON,
 } from './GatewayErrorDetailsV3OneOf';
+import type { GatewayErrorDetailsV3OneOf1 } from './GatewayErrorDetailsV3OneOf1';
+import {
+    instanceOfGatewayErrorDetailsV3OneOf1,
+    GatewayErrorDetailsV3OneOf1FromJSON,
+    GatewayErrorDetailsV3OneOf1FromJSONTyped,
+    GatewayErrorDetailsV3OneOf1ToJSON,
+} from './GatewayErrorDetailsV3OneOf1';
 
 /**
  * @type GatewayErrorDetailsV3
@@ -91,7 +98,7 @@ import {
  * (e.g. typescript-fetch) can generate type guards correctly.
  * @export
  */
-export type GatewayErrorDetailsV3 = GatewayErrorDetailsOneOf | GatewayErrorDetailsOneOf1 | GatewayErrorDetailsOneOf2 | GatewayErrorDetailsOneOf3 | GatewayErrorDetailsOneOf4 | GatewayErrorDetailsOneOf5 | GatewayErrorDetailsOneOf6 | GatewayErrorDetailsV2OneOf | GatewayErrorDetailsV2OneOf1 | GatewayErrorDetailsV3OneOf;
+export type GatewayErrorDetailsV3 = GatewayErrorDetailsOneOf | GatewayErrorDetailsOneOf1 | GatewayErrorDetailsOneOf2 | GatewayErrorDetailsOneOf3 | GatewayErrorDetailsOneOf4 | GatewayErrorDetailsOneOf5 | GatewayErrorDetailsOneOf6 | GatewayErrorDetailsV2OneOf | GatewayErrorDetailsV2OneOf1 | GatewayErrorDetailsV3OneOf | GatewayErrorDetailsV3OneOf1;
 
 export function GatewayErrorDetailsV3FromJSON(json: any): GatewayErrorDetailsV3 {
     return GatewayErrorDetailsV3FromJSONTyped(json, false);
@@ -133,6 +140,9 @@ export function GatewayErrorDetailsV3FromJSONTyped(json: any, ignoreDiscriminato
     }
     if (instanceOfGatewayErrorDetailsV3OneOf(json)) {
         return GatewayErrorDetailsV3OneOfFromJSONTyped(json, true);
+    }
+    if (instanceOfGatewayErrorDetailsV3OneOf1(json)) {
+        return GatewayErrorDetailsV3OneOf1FromJSONTyped(json, true);
     }
     return {} as any;
 }
@@ -177,6 +187,9 @@ export function GatewayErrorDetailsV3ToJSONTyped(value?: GatewayErrorDetailsV3 |
     }
     if (instanceOfGatewayErrorDetailsV3OneOf(value)) {
         return GatewayErrorDetailsV3OneOfToJSON(value as GatewayErrorDetailsV3OneOf);
+    }
+    if (instanceOfGatewayErrorDetailsV3OneOf1(value)) {
+        return GatewayErrorDetailsV3OneOf1ToJSON(value as GatewayErrorDetailsV3OneOf1);
     }
     return {};
 }

@@ -11,7 +11,6 @@ import {
     PublicClient,
     Transport,
     zeroAddress,
-    parseEther,
 } from 'viem';
 import { bob } from 'viem/chains';
 import { GatewaySDK, parseBtc } from '../src/gateway';
@@ -35,12 +34,12 @@ export async function swapBtcForToken(evmAddress: Address) {
     const quote = await gatewaySDK.getQuote({
         fromChain: 'bitcoin',
         fromToken: '0x0000000000000000000000000000000000000000',
+        ownerAddress: '0x0000000000000000000000000000000000000000',
         fromUserAddress: 'bc1qafk4yhqvj4wep57m62dgrmutldusqde8adh20d',
         toChain: 'bob',
         toUserAddress: evmAddress,
         toToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
         amount: parseBtc('0.1'), // BTC
-        gasRefill: parseEther('0.00001'), // ETH
     });
 
     const onrampTx = await gatewaySDK.executeQuote({
@@ -55,6 +54,7 @@ export async function swapBtcForToken(evmAddress: Address) {
     const offrampQuote = await gatewaySDK.getQuote({
         fromChain: 'bob',
         fromToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
+        ownerAddress: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
         toChain: 'bitcoin',
         toUserAddress: 'bc1qafk4yhqvj4wep57m62dgrmutldusqde8adh20d',
         toToken: '0x0000000000000000000000000000000000000000',
@@ -130,9 +130,9 @@ export async function onrampAndDeposit(evmAddress: Address) {
         fromUserAddress: 'bc1qafk4yhqvj4wep57m62dgrmutldusqde8adh20d',
         toChain: 'bob',
         toUserAddress: evmAddress,
+        ownerAddress: evmAddress,
         toToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
         amount: parseBtc('0.1'), // BTC
-        gasRefill: parseEther('0.00001'), // ETH
         strategyMessage: generateMessageForMulticallHandler(
             evmAddress,
             '0x35B3F1BFe7cbE1e95A3DC2Ad054eB6f0D4c879b6', // Avalon pool

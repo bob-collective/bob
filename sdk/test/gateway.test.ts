@@ -242,6 +242,35 @@ describe('Gateway Tests', () => {
         assert(instanceOfGatewayQuoteV2OneOf2(result3));
     });
 
+    it('getQuote forwards refundAddress and affiliates as query params', async () => {
+        const gatewaySDK = new GatewaySDK();
+
+        let capturedQuery: Record<string, string> = {};
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
+            .get('/v3/get-quote')
+            .query((q) => {
+                capturedQuery = q as Record<string, string>;
+                return true;
+            })
+            .reply(200, {});
+
+        await gatewaySDK.getQuote({
+            fromChain: 'bitcoin',
+            fromToken: '0x0000000000000000000000000000000000000000',
+            toChain: 'bob',
+            toToken: WBTC_OFT_ADDRESS,
+            fromUserAddress: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+            toUserAddress: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+            ownerAddress: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+            amount: 1000,
+            refundAddress: 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq',
+            affiliates: [{ address: '0xabcd1234abcd1234abcd1234abcd1234abcd1234', bps: 50 }],
+        });
+
+        expect(capturedQuery.refundAddress).toBe('bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq');
+        expect(capturedQuery.affiliates).toBe('0xabcd1234abcd1234abcd1234abcd1234abcd1234:50');
+    });
+
     it('should get orders', async () => {
         const mockOrders: GatewayOrderInfo[] = [
             {
