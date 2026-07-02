@@ -16,27 +16,26 @@ The BOB Gateway API enables seamless cross-chain interactions for Bitcoin-powere
 </Card>
 
 
-## What's new in V2
+## What's new in V3
 
 <Info>
-This reference targets the V2 API. V1 endpoints remain reachable but are deprecated.
+This reference targets the V3 API. V1 and V2 endpoints remain reachable but are superseded — new integrations should use `/v3`.
 </Info>
 
-V2 adds:
+V3 builds on V2 with multi-chain support and richer settlement data:
 
-- **`tokenSwap` route** — EVM-to-EVM token swaps, alongside `onramp` (Bitcoin → chain) and `offramp` (chain → Bitcoin).
-- **Multi-affiliate fees** — the `affiliates` query parameter on `GET /v2/get-quote` accepts a comma-separated list of `<address>:<bps>` pairs. See the [Monetization section in the integration guide](/gateway/integration#monetization-affiliate-fees).
-- **USD values** — token amounts and fee-breakdown lines carry an optional `usd` field.
-- **`priceImpact` / `priceImpactUsd`** — exposed on all V2 quote variants.
-- **Paginated `GET /v2/get-orders`** — accepts `cursor` and `limit` query parameters and returns `{ orders: GatewayOrderInfoV2[], nextCursor: string | null }` instead of a bare array. Pass back `nextCursor` to fetch the next page; a null/missing value means there are no more orders.
-- **Settlement details in order status** — `success` and `refunded` statuses are now objects (`{ success: { received_tokens: [...] } }`, `{ refunded: { refunded_tokens: [...] } }`) where each token entry carries `chain`, `token`, `amount`, and the settlement `txHash`. In V1 these statuses were bare string enums and the destination `txHash` lived on `dstInfo`; V2 `dstInfo` no longer carries a `txHash`.
-- **`pending_btc_payment` on in-progress X-to-BTC orders** — `status.inProgress.pending_btc_payment` exposes the gateway's outgoing Bitcoin `{ txid, amount }` while it's still pending. The V1 `bump_fee_tx` field is no longer returned (the gateway manages BTC fee bumps internally).
+- **Non-EVM chains (Tron & Solana)** — `srcChain`/`dstChain` and the address/token parameters now accept `0x…` on EVM chains and Base58 on Tron/Solana. `POST /v3/create-order` returns a tagged `GatewayTxData` union — `{ "type": "evm" | "tron" | "solana", ... }` — so a client dispatches on `type`. The Solana entry returns a base64-encoded, unsigned `VersionedTransaction`: decode, sign, re-serialize, and broadcast it (don't sign the base64 string directly). The Tron entry adds `feeLimit` (max TRX, in sun, the wallet may burn).
+- **Chain-aware `PATCH /v3/register-tx`** — for `offramp` and `tokenSwap`, the body now carries `src_tx_hash` + `src_chain` (EVM `0x…` hash or Base58 Solana signature) instead of V2's `evm_txhash`. `onramp` is unchanged (`bitcoin_tx_hex` / `bitcoin_txid`).
+- **USD on order info** — `srcInfo`, `dstInfo`, settled token transfers (`received_tokens` / `refunded_tokens`), and `pending_btc_payment` now each carry an optional `usd` field, valued at order time. In V2, `usd` was only on quote amounts and fee-breakdown lines.
+- **Affiliate fees on `tokenSwap`** — `tokenSwap` quotes now embed a single resolved `affiliate` (`{ address, bps }`), charged by the aggregator (Bungee/Velora) on the **source chain**. Because the quote *is* the create-order body, embedding the affiliate is what stops it being dropped on the round-trip. Aggregators allow only one partner fee per swap, so passing more than one affiliate returns the new `TOO_MANY_AFFILIATES` error code. (`onramp`/`offramp` keep V2's multi-recipient `affiliates` list — see the [Monetization section in the integration guide](/gateway/integration#monetization-affiliate-fees).)
+- **`ownerAddress` & `refundAddress`** — `GET /v3/get-quote` accepts an optional `ownerAddress` (EVM owner / refund-claimant, also used for order lookup) that is resolved onto each quote variant, and an optional `refundAddress` (Bitcoin refund address for onramps). Routes that need an owner but don't get one return the new `MISSING_OWNER_ADDRESS` error code.
+- **Removed parameters** — `gasRefill`, `strategyTarget`, and `strategyMessage` are no longer supported; supplying any of them is rejected with an error.
 
 ## Authentication
 
-API keys are **optional**. All V2 endpoints are reachable without authentication; a key unlocks higher rate limits and access to partner features. To request one, contact the BOB team.
+API keys are **optional**. All V3 endpoints are reachable without authentication; a key unlocks higher rate limits and access to partner features. To request one, contact the BOB team.
 
-When you have a key, send it as a Bearer token on every V2 request:
+When you have a key, send it as a Bearer token on every V3 request:
 
 ```http
 Authorization: Bearer <api-key>
@@ -46,75 +45,77 @@ Keys are exactly 32 characters long. The SDK takes the same key via `new Gateway
 
 ## How It Works
 
-Gateway transactions follow a 7-step flow to execute Bitcoin↔chain swaps and EVM token swaps:
+Gateway transactions follow a 7-step flow to execute Bitcoin↔chain swaps and cross-chain token swaps:
 
 <Steps>
   <Step title="Get Available Routes">
-    Call `GET /v2/get-routes` to fetch all supported routes, chains, and tokens. This helps you understand what swaps are available and present options to your users.
+    Call `GET /v3/get-routes` to fetch all supported routes, chains, and tokens. This helps you understand what swaps are available and present options to your users.
 
     ```bash
-    GET /v2/get-routes
+    GET /v3/get-routes
     ```
 
     Returns information about supported chains, tokens, bridges, and fee structures.
   </Step>
 
   <Step title="Get a Quote">
-    Call `GET /v2/get-quote` with your swap parameters (amount, source/destination chains, tokens, etc.). The API returns a discriminated quote (`onramp`, `offramp`, or `tokenSwap`) with routing information, fees, and expected outputs.
+    Call `GET /v3/get-quote` with your swap parameters (amount, source/destination chains, tokens, etc.). The API returns a discriminated quote (`onramp`, `offramp`, or `tokenSwap`) with routing information, fees, and expected outputs.
 
     ```bash
-    GET /v2/get-quote?srcChain=bitcoin&dstChain=bob&amount=10000000...
+    GET /v3/get-quote?srcChain=bitcoin&dstChain=bob&amount=10000000...
     ```
 
-    Pass `affiliates=0xAddr1:50,0xAddr2:25` to route a basis-point cut to one or more recipients on settlement.
+    Addresses and token identifiers are `0x…` on EVM chains and Base58 on Tron/Solana. Pass `affiliates=0xAddr1:50,0xAddr2:25` to route a basis-point cut to one or more recipients on settlement, and `ownerAddress`/`refundAddress` where the route requires them.
   </Step>
 
   <Step title="Create an Order">
-    Pass the quote to `POST /v2/create-order` to lock in the quote and create an order. This reserves liquidity with the market maker and returns transaction details including:
+    Pass the quote to `POST /v3/create-order` to lock in the quote and create an order. This reserves liquidity with the market maker and returns transaction details including:
     - For **BTC to X** (`onramp`, Bitcoin → chain): A Bitcoin address to send to, or a PSBT to sign.
-    - For **X to BTC** (`offramp`, chain → Bitcoin): EVM transaction data to execute.
-    - For **tokenSwap** (EVM → EVM): EVM transaction data to execute.
+    - For **X to BTC** (`offramp`, chain → Bitcoin): chain transaction data to execute.
+    - For **tokenSwap** (chain → chain): chain transaction data to execute.
 
     ```bash
-    POST /v2/create-order
+    POST /v3/create-order
     { "onramp": { ...quote data } }
     ```
+
+    For `offramp` and `tokenSwap`, the returned transaction data is a tagged `GatewayTxData` union — dispatch on `type` (`"evm"`, `"tron"`, or `"solana"`).
   </Step>
 
   <Step title="Sign and Send Transaction">
     Execute the transaction:
     - For **BTC to X** (`onramp`): Create and sign a Bitcoin transaction to the provided address, or use the provided PSBT.
-    - For **X to BTC** (`offramp`) or **tokenSwap**: Sign and broadcast the EVM transaction using the provided transaction data.
+    - For **X to BTC** (`offramp`) or **tokenSwap**: Sign and broadcast the chain transaction using the provided transaction data. On EVM/Tron use the call fields (`to`, `data`, `value`); on Solana, decode the base64 unsigned `VersionedTransaction`, sign it, re-serialize, and broadcast.
   </Step>
 
   <Step title="Register Transaction">
-    Call `PATCH /v2/register-tx` with the signed transaction hash/hex. This allows Gateway to track your order and provide status updates.
+    Call `PATCH /v3/register-tx` with the signed transaction hash/hex. This allows Gateway to track your order and provide status updates.
 
     ```bash
-    PATCH /v2/register-tx
+    PATCH /v3/register-tx
     { "onramp":    { "order_id": "...", "bitcoin_tx_hex": "..." } }
-    { "offramp":   { "order_id": "...", "evm_txhash": "0x..." } }
-    { "tokenSwap": { "order_id": "...", "evm_txhash": "0x..." } }
+    { "offramp":   { "order_id": "...", "src_tx_hash": "0x...", "src_chain": "ethereum" } }
+    { "tokenSwap": { "order_id": "...", "src_tx_hash": "0x...", "src_chain": "ethereum" } }
     ```
 
-    The body shape varies by route: `onramp` carries `bitcoin_tx_hex` (and/or `bitcoin_txid`); `offramp` and `tokenSwap` both carry `evm_txhash`.
+    The body shape varies by route: `onramp` carries `bitcoin_tx_hex` (and/or `bitcoin_txid`); `offramp` and `tokenSwap` carry `src_tx_hash` + `src_chain` (a `0x…` hash on EVM, a Base58 signature on Solana).
   </Step>
 
   <Step title="Monitor Single Order">
-    Track the status of a specific order using `GET /v2/get-order/{id}`. Returns the status and details for a single order by its order ID.
+    Track the status of a specific order using `GET /v3/get-order/{id}`. Returns the status and details for a single order by its order ID.
 
     ```bash
-    GET /v2/get-order/0x1234abcd...
+    GET /v3/get-order/0x1234abcd...
     ```
 
     Use this endpoint to monitor the progress of an individual order, including its current state and any updates.
   </Step>
 
   <Step title="Monitor All User Orders">
-    Track the progress of all orders for a user using `GET /v2/get-orders/{user_address}`. Returns every order (pending and completed) associated with the specified user address.
+    Track the progress of all orders for a user using `GET /v3/get-orders/{user_address}`. Returns every order (pending and completed) associated with the specified user address.
 
     ```bash
-    GET /v2/get-orders/0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb
+    GET /v3/get-orders/0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb
     ```
 
     Poll this endpoint to update your UI as orders progress through states: pending → confirmed → completed.
