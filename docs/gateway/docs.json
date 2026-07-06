@@ -53,6 +53,19 @@
             "group": "API reference",
             "openapi": "api-reference/openapi.json",
             "pages": [
+              "GET /v3/get-routes",
+              "GET /v3/get-quote",
+              "POST /v3/create-order",
+              "PATCH /v3/register-tx",
+              "GET /v3/get-order/{id}",
+              "GET /v3/get-orders/{user_address}"
+            ]
+          },
+          {
+            "group": "API reference (V2, deprecated)",
+            "hidden": true,
+            "openapi": "api-reference/openapi.json",
+            "pages": [
               "GET /v2/get-routes",
               "GET /v2/get-quote",
               "POST /v2/create-order",
