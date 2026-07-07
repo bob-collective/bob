@@ -32,6 +32,7 @@
             "group": "Integration",
             "pages": [
               "gateway/integration",
+              "gateway/migration",
               "gateway/agents",
               "gateway/strategies",
               "gateway/wallets",
