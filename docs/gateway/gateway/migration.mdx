@@ -8,6 +8,10 @@ icon: "arrow-up-right-dots"
 
 The V3 API is the current version of BOB Gateway. It adds non-EVM chains (Tron & Solana), richer settlement data, and cross-chain token swaps with affiliate fees. V1 and V2 endpoints remain reachable, but they are superseded and receive no new features — new integrations should target `/v3`, and existing ones should migrate.
 
+<Warning>
+**The V1 API will be deprecated on 31 July 2026.** V1 endpoints keep working until then, but will be shut down afterwards — migrate any V1 integration to V3 before that date. V2 remains supported.
+</Warning>
+
 <Info>
 If you use the **`@gobob/bob-sdk`** SDK, you don't call versioned endpoints directly — the SDK calls `/v3` under the hood. Skip to [Migrating the SDK](#migrating-the-sdk) for the package-level changes. The endpoint sections below are for integrators calling the API directly.
 </Info>

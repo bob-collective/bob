@@ -22,6 +22,10 @@ The BOB Gateway API enables seamless cross-chain interactions for Bitcoin-powere
 This reference targets the V3 API. V1 and V2 endpoints remain reachable but are superseded — new integrations should use `/v3`. Upgrading from V1 or V2? See the [Migration Guide](/gateway/migration).
 </Info>
 
+<Warning>
+**The V1 API will be deprecated on 31 July 2026** and shut down afterwards. Migrate any V1 integration to V3 before that date — see the [Migration Guide](/gateway/migration). V2 remains supported.
+</Warning>
+
 V3 builds on V2 with multi-chain support and richer settlement data:
 
 - **Non-EVM chains (Tron & Solana)** — `srcChain`/`dstChain` and the address/token parameters now accept `0x…` on EVM chains and Base58 on Tron/Solana. `POST /v3/create-order` returns a tagged `GatewayTxData` union — `{ "type": "evm" | "tron" | "solana", ... }` — so a client dispatches on `type`. The Solana entry returns a base64-encoded, unsigned `VersionedTransaction`: decode, sign, re-serialize, and broadcast it (don't sign the base64 string directly). The Tron entry adds `feeLimit` (max TRX, in sun, the wallet may burn).
