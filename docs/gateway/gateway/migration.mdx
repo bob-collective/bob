@@ -160,13 +160,13 @@ Gateway no longer exposes a `bumpFeeTx` EVM transaction for X-to-BTC orders — 
 
 ### V2 upgrade checklist
 
-- [ ] Repoint all endpoints from `/v2` to `/v3`.
-- [ ] Add `ownerAddress` to `get-quote`; add `refundAddress` for onramps where desired.
-- [ ] Remove `gasRefill`, `strategyTarget`, and `strategyMessage` from `get-quote`.
-- [ ] Swap `evm_txhash` for `src_tx_hash` + `src_chain` in `offramp`/`tokenSwap` `register-tx` bodies.
-- [ ] Dispatch on the `create-order` transaction `type` (`evm` / `tron` / `solana`).
-- [ ] Send exactly one affiliate on `tokenSwap` quotes.
-- [ ] Handle `MISSING_OWNER_ADDRESS`, `TOO_MANY_AFFILIATES`, `AFFILIATE_FEES_NOT_SUPPORTED_FOR_ROUTE`.
+- Repoint all endpoints from `/v2` to `/v3`.
+- Add `ownerAddress` to `get-quote`; add `refundAddress` for onramps where desired.
+- Remove `gasRefill`, `strategyTarget`, and `strategyMessage` from `get-quote`.
+- Swap `evm_txhash` for `src_tx_hash` + `src_chain` in `offramp`/`tokenSwap` `register-tx` bodies.
+- Dispatch on the `create-order` transaction `type` (`evm` / `tron` / `solana`).
+- Send exactly one affiliate on `tokenSwap` quotes.
+- Handle `MISSING_OWNER_ADDRESS`, `TOO_MANY_AFFILIATES`, `AFFILIATE_FEES_NOT_SUPPORTED_FOR_ROUTE`.
 
 ---
 
@@ -229,10 +229,10 @@ V2 quote amounts use `GatewayTokenAmountV2`, which carries an optional `usd` fie
 
 ### V1 → V3 checklist
 
-- [ ] Replace `affiliateId` with the `affiliates` list.
-- [ ] Rename the `layerZero` variant to `tokenSwap` in `create-order` and `register-tx`.
-- [ ] Switch `get-orders` parsing to the paginated `{ orders, nextCursor }` shape.
-- [ ] Then apply the full [V2 upgrade checklist](#v2-upgrade-checklist).
+- Replace `affiliateId` with the `affiliates` list.
+- Rename the `layerZero` variant to `tokenSwap` in `create-order` and `register-tx`.
+- Switch `get-orders` parsing to the paginated `{ orders, nextCursor }` shape.
+- Then apply the full [V2 upgrade checklist](#v2-upgrade-checklist).
 
 ---
 
