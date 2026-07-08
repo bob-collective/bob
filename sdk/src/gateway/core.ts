@@ -21,12 +21,8 @@ export {
 } from './error/gateway-error';
 export * from './generated-client';
 export { BitcoinSigner, ExecuteQuoteStep, ExecuteQuoteStepType, GatewayQuoteParams, GetQuoteParams } from './types';
-export {
-    formatBtc,
-    getChainConfig,
-    getInnerQuote,
-    parseBtc,
-    ScureBitcoinSigner,
-    supportedChainsMapping,
-    type InnerQuote,
-} from './utils';
+// Import from specific util modules (not the './utils' barrel) so this lean entry does
+// not pull in the bitcoin-signer helper (and its scure signing deps). Consumers that need
+// the ScureBitcoinSigner helper import it from the package root / full gateway barrel.
+export { formatBtc, getChainConfig, parseBtc, supportedChainsMapping } from './utils/common';
+export { getInnerQuote, type InnerQuote } from './utils/quote';

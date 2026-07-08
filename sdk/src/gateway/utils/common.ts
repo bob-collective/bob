@@ -1,4 +1,3 @@
-import * as bitcoin from 'bitcoinjs-lib';
 import { createPublicClient, formatUnits, http, parseUnits, Chain as ViemChain } from 'viem';
 import {
     avalanche,
@@ -14,12 +13,6 @@ import {
     unichain,
     arbitrum,
 } from 'viem/chains';
-
-export function toHexScriptPubKey(userAddress: string, network: bitcoin.Network): string {
-    const address = bitcoin.address.toOutputScript(userAddress, network);
-    const buffer = Buffer.concat([Buffer.from([address.length]), address]);
-    return '0x' + buffer.toString('hex'); // Convert buffer to hex string
-}
 
 export function isHexPrefixed(str: string): boolean {
     return str.slice(0, 2) === '0x';

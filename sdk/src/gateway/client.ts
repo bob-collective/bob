@@ -42,7 +42,9 @@ import {
     type GetQuoteParams,
     type StrategyParams,
 } from './types';
-import { estimateGasWithBuffer, formatBtc, isValidTronAddress, tronAddressToHex } from './utils';
+import { formatBtc } from './utils/common';
+import { estimateGasWithBuffer } from './utils/gas';
+import { isValidTronAddress, tronAddressToHex } from './utils/tron';
 
 const RETRY_COUNT = 8; // Number of times to retry fetching transaction receipt after sending a transaction
 
