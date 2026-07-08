@@ -3,6 +3,19 @@
     "version": "5.8.1",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
+    "sideEffects": false,
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "default": "./dist/index.js"
+        },
+        "./gateway": {
+            "types": "./dist/gateway/core.d.ts",
+            "default": "./dist/gateway/core.js"
+        },
+        "./package.json": "./package.json",
+        "./*": "./*"
+    },
     "repository": {
         "type": "git",
         "url": "git+https://github.com/bob-collective/bob.git"
