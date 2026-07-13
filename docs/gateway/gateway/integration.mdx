@@ -10,21 +10,25 @@ The BOB Gateway SDK makes it easy to bring native BTC swaps directly into your a
 
 We recommend using the API directly, but you may use our SDK for convenience.
 
-## What's new in V2
+## What's new in V3
 
 <Info>
-This guide targets the V2 API. V1 endpoints remain reachable but are deprecated.
+This guide targets the V3 API. V1 and V2 endpoints remain reachable but are superseded — the SDK calls `/v3` under the hood. Upgrading an existing integration? See the [Migration Guide](/gateway/migration).
 </Info>
 
-V2 adds:
+<Warning>
+**The V1 API will be deprecated at the end of July 2026** and shut down afterwards. Migrate any V1 integration to V3 before that date — see the [Migration Guide](/gateway/migration). V2 remains supported.
+</Warning>
 
-- **Multi-affiliate fees** — split fees across multiple recipients per quote ([details](#monetization-affiliate-fees)).
-- **`tokenSwap` route** — EVM-to-EVM token swaps, replacing the V1 `layerZero` variant.
-- **USD values** — `GatewayTokenAmountV2` carries an optional `usd` field on every token amount and on each line of the V2 fee breakdowns.
-- **Price impact** — V2 quotes expose `priceImpact` (fraction) and `priceImpactUsd` for display.
-- **Paginated `getOrders`** — `getOrders` now accepts `{ userAddress, cursor?, limit? }` and returns `{ orders, nextCursor }` instead of a bare array. Pass back `nextCursor` to fetch the next page; a null/missing value means you've reached the end ([details](#monitor-orders)).
-- **Order settlement details in status** — `success` and `refunded` are now objects carrying `receivedTokens` / `refundedTokens` (each entry has `chain`, `token`, `amount`, and the settlement `txHash`). In V1 these statuses were bare strings, and the destination `txHash` lived on `dstInfo`; in V2 `dstInfo` no longer carries a `txHash` — read it from the status payload instead.
-- **`pendingBtcPayment` on X-to-BTC orders** — while an X-to-BTC order is in progress, `status.inProgress.pendingBtcPayment` exposes the gateway's outgoing Bitcoin `{ txid, amount }` so you can show the user the pending payout. This replaces the V1 `bumpFeeTx` field, which is no longer returned.
+V3 builds on V2 with multi-chain support and richer settlement data:
+
+- **Non-EVM chains (Tron & Solana)** — quotes and orders now span EVM, Tron, and Solana as well as Bitcoin. Addresses and token identifiers are `0x…` on EVM chains and Base58 on Tron/Solana. `executeQuote` signs and broadcasts the right transaction shape for each chain; if you build transactions yourself, `createOrder` returns a tagged union you dispatch on (`type: 'evm' | 'tron' | 'solana'`).
+- **`ownerAddress` (required) and `refundAddress`** — `getQuote` now takes an `ownerAddress` (the EVM owner / refund-claimant, also used for order lookup) and an optional Bitcoin `refundAddress` for onramps. Routes that need an owner but don't get one fail with `MISSING_OWNER_ADDRESS`.
+- **USD on order info** — `srcInfo`, `dstInfo`, settled transfers (`receivedTokens` / `refundedTokens`), and `pendingBtcPayment` now each carry an optional `usd` value (valued at order time). In V2, `usd` was only on quote amounts and fee-breakdown lines.
+- **Affiliate fees on `tokenSwap`** — `tokenSwap` quotes now expose a resolved single `affiliate` (`{ address, bps }`), charged by the aggregator on the source chain. Aggregators allow only one partner fee per swap, so passing more than one affiliate returns `TOO_MANY_AFFILIATES`. `onramp`/`offramp` keep the V2 multi-recipient `affiliates` list ([details](#monetization-affiliate-fees)).
+- **Removed parameters** — `gasRefill`, `strategyAddress`/`strategyTarget`, and `strategyMessage` are no longer supported and are rejected by the gateway.
+- **Paginated `getOrders`** — `getOrders` accepts `{ userAddress, cursor?, limit? }` and returns `{ orders, nextCursor }` (carried over from V2). Pass back `nextCursor` to fetch the next page; a null/missing value means you've reached the end ([details](#monitor-orders)).
+- **Discriminated order status** — `success` / `refunded` are objects carrying `receivedTokens` / `refundedTokens` (each entry has `chain`, `token`, `amount`, the settlement `txHash`, and now `usd`); `status.inProgress.pendingBtcPayment` exposes the gateway's outgoing Bitcoin `{ txid, amount, usd }` on in-progress X-to-BTC orders. Read the destination `txHash` from the status payload — `dstInfo` doesn't carry one.
 
 ## Installation
 
@@ -60,7 +64,7 @@ const gatewaySDKStaging = new GatewaySDK({ basePath: STAGING_GATEWAY_BASE_URL })
 
 ### Authentication
 
-Gateway API keys are **optional**. All V2 endpoints are reachable without authentication; an API key unlocks higher rate limits and access to partner features.
+Gateway API keys are **optional**. All V3 endpoints are reachable without authentication; an API key unlocks higher rate limits and access to partner features.
 
 To request a key, contact the BOB team. Once you have one, pass it in the options object:
 
@@ -70,7 +74,7 @@ import { GatewaySDK } from '@gobob/bob-sdk';
 const gatewaySDK = new GatewaySDK({ apiKey: 'your-api-key' });
 ```
 
-The API key must be exactly 32 characters long. When provided, the SDK will include it in the `Authorization` header as a Bearer token (`Authorization: Bearer <api-key>`). If you're calling the API directly, set the same header on every V2 request.
+The API key must be exactly 32 characters long. When provided, the SDK will include it in the `Authorization` header as a Bearer token (`Authorization: Bearer <api-key>`). If you're calling the API directly, set the same header on every V3 request.
 
 ## Get Available Routes
 
@@ -94,7 +98,6 @@ Request a quote for the user's desired transaction:
 
 ```typescript BTC to BOB
 import { parseBtc } from '@gobob/bob-sdk';
-import { parseEther } from 'viem';
 
 const quote = await gatewaySDK.getQuote({
   fromChain: 'bitcoin',
@@ -103,8 +106,8 @@ const quote = await gatewaySDK.getQuote({
   toChain: 'bob',
   toToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
   toUserAddress: '0x2D2E86236a5bC1c8a5e5499C517E17Fb88Dbc18c',
+  ownerAddress: '0x2D2E86236a5bC1c8a5e5499C517E17Fb88Dbc18c', // EVM owner / refund-claimant
   amount: parseBtc("0.1"), // 0.1 BTC
-  gasRefill: parseEther("0.00001"), // Optional ETH gas refill
 });
 ```
 
@@ -116,15 +119,15 @@ const quote = await gatewaySDK.getQuote({
   toChain: 'bob',
   toToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
   toUserAddress: '0x2D2E86236a5bC1c8a5e5499C517E17Fb88Dbc18c',
+  ownerAddress: '0x2D2E86236a5bC1c8a5e5499C517E17Fb88Dbc18c',
   amount: parseBtc("0.1"),
-  gasRefill: parseEther("0.00001"),
-  // V2 affiliate fees: array of { address, bps } pairs
+  // onramp/offramp accept multiple recipients; tokenSwap accepts exactly one
   affiliates: [{ address: '0xYourAddress', bps: 50 }], // 0.50% to one recipient
 });
 ```
 
-```typescript EVM Token Swap
-// V2 supports EVM-to-EVM token swaps via the tokenSwap route.
+```typescript Token Swap
+// V3 supports cross-chain token swaps via the tokenSwap route.
 const quote = await gatewaySDK.getQuote({
   fromChain: 'bob',
   fromToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c', // source token on BOB
@@ -132,14 +135,29 @@ const quote = await gatewaySDK.getQuote({
   toToken: '0x...', // destination token
   fromUserAddress: '0x...',
   toUserAddress: '0x...',
+  ownerAddress: '0x...',
   amount: '1000000', // amount in smallest unit
+});
+```
+
+```typescript To Solana / Tron
+// Destination addresses and tokens on Tron/Solana are Base58, not 0x-hex.
+const quote = await gatewaySDK.getQuote({
+  fromChain: 'bitcoin',
+  fromToken: '0x0000000000000000000000000000000000000000',
+  fromUserAddress: 'bc1qafk4yhqvj4wep57m62dgrmutldusqde8adh20d',
+  toChain: 'solana',
+  toToken: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', // USDC mint (Base58)
+  toUserAddress: '7xKX...9aBc', // Base58 wallet address
+  ownerAddress: '0x2D2E86236a5bC1c8a5e5499C517E17Fb88Dbc18c', // EVM owner for lookup
+  amount: parseBtc("0.1"),
 });
 ```
 
 </CodeGroup>
 
 <Warning>
-Token parameters (`fromToken`, `toToken`) must be `0x`-prefixed hex addresses, not symbols. Use `getRoutes()` to find supported token addresses. For BTC, use the zero address `0x0000000000000000000000000000000000000000`.
+On EVM chains, token parameters (`fromToken`, `toToken`) must be `0x`-prefixed hex addresses, not symbols; on Tron/Solana they are Base58 identifiers. Use `getRoutes()` to find supported token addresses. For BTC, use the zero address `0x0000000000000000000000000000000000000000`.
 </Warning>
 
 <Tip>
@@ -166,16 +184,21 @@ if ('onramp' in quote) {
   console.log('Price impact:', quote.offramp.priceImpact);
   console.log('ETA:', quote.offramp.estimatedTimeInSecs, 'seconds');
 } else if ('tokenSwap' in quote) {
-  // EVM token swap (V2)
+  // Cross-chain token swap (V3)
   console.log('Input:', quote.tokenSwap.inputAmount);
   console.log('Fees:', quote.tokenSwap.fees);
   console.log('Price impact:', quote.tokenSwap.priceImpact);
   console.log('ETA:', quote.tokenSwap.estimatedTimeInSecs, 'seconds');
+  // V3: the resolved single affiliate (null for fee-free swaps)
+  if (quote.tokenSwap.affiliate) {
+    const { address, bps } = quote.tokenSwap.affiliate;
+    console.log(`Affiliate: ${bps} bps to ${address}`);
+  }
 }
 ```
 
 <Tip>
-You don't need to handle all quote types — the response type matches your `fromChain`/`toChain` parameters. `fromChain: 'bitcoin'` with `toChain: 'bob'` always returns an `onramp` quote; an EVM-to-EVM pair returns a `tokenSwap` quote.
+You don't need to handle all quote types — the response type matches your `fromChain`/`toChain` parameters. `fromChain: 'bitcoin'` with `toChain: 'bob'` always returns an `onramp` quote; a token-to-token pair (including to Tron/Solana) returns a `tokenSwap` quote.
 </Tip>
 
 ## Execute the Quote
@@ -276,10 +299,11 @@ const { orders, nextCursor } = await gatewaySDK.getOrders({
 });
 
 orders.forEach(order => {
-  console.log(`Source: ${order.srcInfo.amount} ${order.srcInfo.token} (${order.srcInfo.chain})`);
+  // V3: srcInfo/dstInfo now carry an optional `usd` value alongside the amount
+  console.log(`Source: ${order.srcInfo.amount} ${order.srcInfo.token} (${order.srcInfo.chain})${order.srcInfo.usd ? ` ~$${order.srcInfo.usd}` : ''}`);
   console.log(`Destination (estimated): ${order.dstInfo.amount} ${order.dstInfo.token} (${order.dstInfo.chain})`);
 
-  // V2 status is always a discriminated object — no bare strings
+  // Order status is always a discriminated object — no bare strings
   if ('inProgress' in order.status) {
     console.log('Status: in progress');
     if (order.status.inProgress.pendingBtcPayment) {
@@ -296,9 +320,9 @@ orders.forEach(order => {
     }
   } else if ('success' in order.status) {
     console.log('Status: success');
-    // V2: settled token transfers (with on-chain txHash) are on the status payload
+    // Settled token transfers (with on-chain txHash, and V3 `usd`) are on the status payload
     for (const t of order.status.success.receivedTokens) {
-      console.log(`Received ${t.amount} ${t.token} on ${t.chain} (tx ${t.txHash})`);
+      console.log(`Received ${t.amount} ${t.token} on ${t.chain} (tx ${t.txHash})${t.usd ? ` ~$${t.usd}` : ''}`);
     }
   } else if ('refunded' in order.status) {
     console.log('Status: refunded');
@@ -332,7 +356,7 @@ do {
 
 ## X to BTC Order Features
 
-For X-to-BTC (BOB → Bitcoin) orders, `getOrders` surfaces V2 status fields you can act on while the order is still in progress:
+For X-to-BTC (BOB → Bitcoin) orders, `getOrders` surfaces status fields you can act on while the order is still in progress:
 
 <AccordionGroup>
 
@@ -354,7 +378,7 @@ if (inFlight && 'inProgress' in inFlight.status) {
 ```
 
 <Note>
-V2 no longer exposes a `bumpFeeTx` EVM transaction — the gateway manages fee bumps internally for the BTC payout it broadcasts.
+Gateway no longer exposes a `bumpFeeTx` EVM transaction — it manages fee bumps internally for the BTC payout it broadcasts.
 </Note>
 
 </Accordion>
@@ -397,11 +421,10 @@ This action is irreversible. Once refunded, the order cannot be resumed.
 
 ## Monetization (Affiliate Fees)
 
-Gateway supports affiliate fees out of the box. You can route a basis-point (bps) cut of each swap to one or more EVM recipient addresses, configured per-quote. V2 supports splitting fees across multiple recipients in a single quote.
+Gateway supports affiliate fees out of the box. You set them per-quote via the SDK's `affiliates` parameter — an array of `{ address, bps }` pairs. How they're charged depends on the route:
 
-### How it works
-
-Affiliate fees are basis-point cuts of each swap, deducted at settlement and **paid out in USDT on Ethereum** to the recipient addresses you specify, regardless of the route. You set them per-quote via the SDK's `affiliates` parameter — an array of `{ address, bps }` pairs (the raw API serialises these as the comma-separated `affiliates` query parameter on `GET /v2/get-quote`).
+- **`onramp` / `offramp`** — fees are deducted at settlement and **paid out in USDT on Ethereum** to the recipient addresses you specify, regardless of the route. These routes accept **multiple** recipients per quote.
+- **`tokenSwap`** — the fee is charged by the aggregator (Bungee/Velora) on the **source chain**. Aggregators allow only **one** partner fee per swap, so a `tokenSwap` quote accepts exactly one affiliate. Passing more than one returns `TOO_MANY_AFFILIATES`.
 
 `1 bps = 0.01%`, so `50` means `0.50%`. For the full fee model, see [Fees](/gateway/fees).
 
@@ -416,7 +439,7 @@ const quote = await gatewaySDK.getQuote({
 
 ### Split fees across multiple recipients
 
-V2 lets you split affiliate fees across multiple recipients in a single quote — useful for revenue splits between an aggregator and an underlying integrator, referral programs, or multi-party agreements.
+`onramp` and `offramp` quotes let you split affiliate fees across multiple recipients in a single quote — useful for revenue splits between an aggregator and an underlying integrator, referral programs, or multi-party agreements. (`tokenSwap` accepts only one affiliate.)
 
 ```typescript
 const quote = await gatewaySDK.getQuote({
@@ -434,11 +457,12 @@ const quote = await gatewaySDK.getQuote({
 - Each address must be a valid EVM address.
 - Each `bps` MUST be greater than `0`.
 - Omit `affiliates` or pass an empty array for no affiliate fees.
+- `tokenSwap` accepts at most one affiliate; more than one returns `TOO_MANY_AFFILIATES`.
 - The gateway enforces caps on recipient count and total bps. Routes that don't support affiliate fees return error code `AFFILIATE_FEES_NOT_SUPPORTED_FOR_ROUTE` — handle this by retrying the quote with `affiliates` omitted, or surfacing the error to the user.
 
 ### Reading resolved fees from the quote
 
-The V2 quote response includes a resolved `affiliates` array — each entry has the recipient address and the computed fee amount (with optional USD value). Use it to surface the affiliate split to the user:
+`onramp` and `offramp` quotes include a resolved `affiliates` array — each entry has the recipient address and the computed fee amount (with optional USD value). Use it to surface the affiliate split to the user:
 
 ```typescript
 const quote = await gatewaySDK.getQuote({ /* ... */ });
@@ -454,14 +478,22 @@ if (onramp?.affiliates?.length) {
 }
 ```
 
-The `affiliates` field is present on `onramp` and `offramp` V2 quotes. `tokenSwap` quotes don't currently expose a resolved affiliates list.
+`tokenSwap` quotes instead expose a single resolved `affiliate` (`{ address, bps }`, or `null` for a fee-free swap):
+
+```typescript
+const tokenSwap = 'tokenSwap' in quote ? quote.tokenSwap : null;
+if (tokenSwap?.affiliate) {
+  const { address, bps } = tokenSwap.affiliate;
+  console.log(`${address} earns ${bps} bps on the source chain`);
+}
+```
 
 ### Raw API equivalent
 
-For integrators not using the SDK, pass the same pairs to the V2 quote endpoint as the `affiliates` query parameter:
+For integrators not using the SDK, pass the same pairs to the V3 quote endpoint as the `affiliates` query parameter:
 
 ```bash
-GET /v2/get-quote?...&affiliates=0xPartnerA:50,0xPartnerB:25
+GET /v3/get-quote?...&affiliates=0xPartnerA:50,0xPartnerB:25
 ```
 
 URL-encode the comma if your client doesn't allow raw commas in query strings.

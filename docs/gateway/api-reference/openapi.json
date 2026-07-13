@@ -305,7 +305,7 @@
           {
             "name": "gasRefill",
             "in": "query",
-            "description": "Optional gas refill amount (in smallest unit, e.g., wei)",
+            "description": "Deprecated: gas refill is no longer supported. Supplying this field is\nrejected with an error. Removed in V3.",
             "required": false,
             "schema": {
               "type": "string"
@@ -758,7 +758,7 @@
           {
             "name": "gasRefill",
             "in": "query",
-            "description": "Optional gas refill amount (in smallest unit, e.g., wei)",
+            "description": "Deprecated: gas refill is no longer supported. Supplying this field is\nrejected with an error. Removed in V3.",
             "required": false,
             "schema": {
               "type": "string"
@@ -1198,16 +1198,6 @@
             },
             "style": "form",
             "example": "100000"
-          },
-          {
-            "name": "gasRefill",
-            "in": "query",
-            "description": "Optional gas refill amount (in smallest unit, e.g., wei)",
-            "required": false,
-            "schema": {
-              "type": "string"
-            },
-            "style": "form"
           },
           {
             "name": "slippage",
@@ -1795,7 +1785,8 @@
         "enum": [
           "BUNGEE_NO_ROUTE",
           "MISSING_OWNER_ADDRESS",
-          "NON_COMPLIANT_ADDRESSES"
+          "NON_COMPLIANT_ADDRESSES",
+          "TOO_MANY_AFFILIATES"
         ]
       },
       "GatewayErrorDetails": {
@@ -2242,6 +2233,21 @@
                 "type": "string"
               },
               "src_token": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "max",
+              "actual"
+            ],
+            "properties": {
+              "actual": {
+                "type": "string"
+              },
+              "max": {
                 "type": "string"
               }
             }
@@ -3479,7 +3485,7 @@
             ],
             "properties": {
               "tokenSwap": {
-                "$ref": "#/components/schemas/GatewayTokenSwapQuoteV2"
+                "$ref": "#/components/schemas/GatewayTokenSwapQuoteV3"
               }
             }
           }
@@ -3564,6 +3570,86 @@
           "txTo"
         ],
         "properties": {
+          "dstChain": {
+            "type": "string"
+          },
+          "estimatedTimeInSecs": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Estimated time in secs to complete the Order",
+            "minimum": 0
+          },
+          "fees": {
+            "$ref": "#/components/schemas/GatewayTokenAmountV2"
+          },
+          "inputAmount": {
+            "$ref": "#/components/schemas/GatewayTokenAmountV2"
+          },
+          "outputAmount": {
+            "$ref": "#/components/schemas/GatewayTokenAmountV2"
+          },
+          "priceImpact": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Price impact as a fraction, e.g. `\"-0.05\"` means 5% loss. Absent if no price feed is\navailable."
+          },
+          "priceImpactUsd": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Price impact in USD, excluding execution fee. E.g. `\"-1.00\"` means $1 loss. Absent if no\nprice feed is available."
+          },
+          "recipient": {
+            "type": "string"
+          },
+          "sender": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "slippage": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "srcChain": {
+            "type": "string"
+          },
+          "txTo": {
+            "type": "string"
+          }
+        }
+      },
+      "GatewayTokenSwapQuoteV3": {
+        "type": "object",
+        "description": "V3 token-swap quote: the V2 shape plus a resolved `affiliate`. The quote *is*\nthe create-order body, so carrying the affiliate here is what stops it being\ndropped on the round-trip — the aggregator (Bungee/Velora) charges it on the\nsource chain. Mirrors how onramp/offramp embed affiliates in their quotes.",
+        "required": [
+          "srcChain",
+          "dstChain",
+          "inputAmount",
+          "outputAmount",
+          "estimatedTimeInSecs",
+          "recipient",
+          "slippage",
+          "fees",
+          "txTo"
+        ],
+        "properties": {
+          "affiliate": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TokenSwapAffiliateV3",
+                "description": "Affiliate fee applied to this swap, if any. Absent for fee-free swaps."
+              }
+            ]
+          },
           "dstChain": {
             "type": "string"
           },
@@ -4221,6 +4307,26 @@
           },
           "srcToken": {
             "type": "string"
+          }
+        }
+      },
+      "TokenSwapAffiliateV3": {
+        "type": "object",
+        "description": "A single affiliate fee on a token swap: `bps` of the swap input paid to\n`address` by the aggregator on the source chain. Aggregators charge one\npartner fee, so a swap carries at most one.",
+        "required": [
+          "address",
+          "bps"
+        ],
+        "properties": {
+          "address": {
+            "type": "string",
+            "description": "Affiliate fee recipient, encoded for the source chain (`0x…` on EVM)."
+          },
+          "bps": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Affiliate fee size in basis points of the swap input.",
+            "minimum": 0
           }
         }
       },

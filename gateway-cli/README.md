@@ -2,30 +2,12 @@
 
 CLI for [BOB Gateway](https://docs.gobob.xyz/gateway/overview) — swap between BTC and EVM tokens, and send funds on a single chain, from the terminal.
 
-## Install
-
-```bash
-npm install -g @gobob/gateway-cli
-gateway-cli --help
-```
-
-### From source
-
-```bash
-pnpm install && pnpm build
-npm link                      # makes gateway-cli available globally
-gateway-cli --help
-```
-
-For development without linking:
-
-```bash
-pnpm cli:dev --help
-```
-
 ## Quick start
 
 ```bash
+# Install
+npm install -g @gobob/gateway-cli
+
 # Set your keys
 export BITCOIN_PRIVATE_KEY="<wif-or-hex>"
 export EVM_PRIVATE_KEY="<hex>"
@@ -48,6 +30,20 @@ gateway-cli send --asset BTC --amount 0.01BTC --to bc1qRecipient
 
 # Check your balances (derives addresses from keys)
 gateway-cli balance
+```
+
+## Install from source
+
+```bash
+pnpm install && pnpm build
+npm link                      # makes gateway-cli available globally
+gateway-cli --help
+```
+
+For development without linking:
+
+```bash
+pnpm cli:dev --help
 ```
 
 ## Commands

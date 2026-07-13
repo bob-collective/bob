@@ -76,7 +76,6 @@ export interface GetQuoteV3Request {
     amount: string;
     slippage: string;
     sender?: string;
-    gasRefill?: string;
     affiliates?: string;
     ownerAddress?: string;
     refundAddress?: string;
@@ -356,10 +355,6 @@ export class V3Api extends runtime.BaseAPI {
 
         if (requestParameters['amount'] != null) {
             queryParameters['amount'] = requestParameters['amount'];
-        }
-
-        if (requestParameters['gasRefill'] != null) {
-            queryParameters['gasRefill'] = requestParameters['gasRefill'];
         }
 
         if (requestParameters['slippage'] != null) {
