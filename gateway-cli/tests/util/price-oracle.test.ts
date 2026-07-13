@@ -94,7 +94,7 @@ describe("fetchPrice", () => {
     expect(result.source).toBe("binance");
   });
 
-  it("uses CoinGecko by id first when a coingeckoId is provided", async () => {
+  it("falls back to CoinGecko when the exchanges don't list the token", async () => {
     vi.stubGlobal("fetch", vi.fn().mockImplementation((url: string) => {
       if (url.includes("coingecko.com")) {
         return Promise.resolve({ ok: true, json: async () => ({ usdt0: { usd: 0.9998 } }) });
@@ -108,12 +108,11 @@ describe("fetchPrice", () => {
     expect(result.source).toBe("coingecko");
   });
 
-  it("falls back to exchange symbols when the CoinGecko id lookup fails", async () => {
+  it("prefers the exchange price over CoinGecko when both resolve", async () => {
     vi.stubGlobal("fetch", vi.fn().mockImplementation((url: string) => {
-      if (url.includes("coingecko.com")) return Promise.resolve({ ok: false, status: 429 });
-      if (url.includes("binance.com")) {
-        return Promise.resolve({ ok: true, json: async () => ({ price: "2500.00" }) });
-      }
+      // CoinGecko returns a deliberately wrong price; the exchange price must win.
+      if (url.includes("coingecko.com")) return Promise.resolve({ ok: true, json: async () => ({ ethereum: { usd: 999999 } }) });
+      if (url.includes("binance.com")) return Promise.resolve({ ok: true, json: async () => ({ price: "2500.00" }) });
       return Promise.resolve({ ok: false, status: 404 });
     }));
 

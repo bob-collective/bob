@@ -77,8 +77,6 @@ async function fromCoinbase(symbol: string): Promise<number> {
 async function fromCoinGecko(id: string): Promise<number> {
   const res = await fetch(
     `${COINGECKO_URL}?ids=${encodeURIComponent(id)}&vs_currencies=usd`,
-    // Short timeout: CoinGecko is the preferred source, but a slow/rate-limited
-    // response must not stall the command when an exchange price is already available.
     { signal: AbortSignal.timeout(2500) },
   );
   if (!res.ok) throw new Error(`CoinGecko HTTP ${res.status}`);
@@ -89,10 +87,10 @@ async function fromCoinGecko(id: string): Promise<number> {
 }
 
 /**
- * Fetch USD price for a token. All sources are queried in parallel and the first
- * that succeeds — in preference order CoinGecko (by id) → Binance → Coinbase — is
- * returned. CoinGecko is preferred because exchanges don't list tokens like USD₮0
- * under a spot symbol. Throws PriceOracleError only if every source fails.
+ * Fetch USD price for a token. Exchange spot prices (Binance, then Coinbase) are
+ * authoritative and preferred; CoinGecko-by-id is only a fallback for tokens the
+ * exchanges don't list under a spot symbol (e.g. USD₮0), used when both exchanges
+ * fail. Throws PriceOracleError only if every applicable source fails.
  *
  * @param symbol - Token symbol (e.g., "BTC", "ETH")
  * @param coingeckoId - Optional CoinGecko coin id from the tokenlist
@@ -101,30 +99,26 @@ async function fromCoinGecko(id: string): Promise<number> {
  */
 export async function fetchPrice(symbol: string, coingeckoId?: string): Promise<PriceResult> {
   const spotSymbol = resolveSpotSymbol(symbol);
-  // Fire the exchange lookups immediately so a CoinGecko miss never adds serial latency.
-  const exchanges = Promise.allSettled([fromBinance(spotSymbol), fromCoinbase(spotSymbol)]);
+  // Exchange spot prices are authoritative for listed tokens: prefer them, so a swap amount
+  // is never scaled by an unchecked CoinGecko value when a real exchange price is available.
+  const [binance, coinbase] = await Promise.allSettled([
+    fromBinance(spotSymbol),
+    fromCoinbase(spotSymbol),
+  ]);
+  if (binance.status === "fulfilled" && binance.value > 0) return { priceUsd: binance.value, source: "binance" };
+  if (coinbase.status === "fulfilled" && coinbase.value > 0) return { priceUsd: coinbase.value, source: "coinbase" };
 
-  // Prefer CoinGecko when the tokenlist provides an id (covers exchange-unlisted tokens like
-  // USD₮0). Its timeout is short, so a slow/rate-limited CoinGecko can't stall the command;
-  // any failure falls through to the exchange results that are already in flight.
-  let coingeckoErr: unknown;
+  // Exchanges don't list this token (e.g. USD₮0) — fall back to CoinGecko by id.
   if (coingeckoId) {
     try {
       const price = await fromCoinGecko(coingeckoId);
       if (price > 0) return { priceUsd: price, source: "coingecko" };
     } catch (err) {
-      coingeckoErr = err;
+      throw new PriceOracleError(symbol, err);
     }
   }
 
-  const [binance, coinbase] = await exchanges;
-  if (binance.status === "fulfilled" && binance.value > 0) return { priceUsd: binance.value, source: "binance" };
-  if (coinbase.status === "fulfilled" && coinbase.value > 0) return { priceUsd: coinbase.value, source: "coinbase" };
-
-  // Every source failed. Prefer the CoinGecko failure as the cause when we queried it
-  // (e.g. a 429 rate-limit), so the error isn't a misleading "unlisted on exchanges".
   const cause =
-    coingeckoErr ||
     (binance.status === "rejected" && binance.reason) ||
     (coinbase.status === "rejected" && coinbase.reason) ||
     new Error("all price sources returned a non-positive value");
