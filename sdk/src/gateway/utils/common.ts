@@ -6,6 +6,7 @@ import {
     berachain,
     bob,
     bsc,
+    hyperEvm,
     mainnet,
     optimism,
     sei,
@@ -61,6 +62,10 @@ export const supportedChainsMapping = {
     soneium,
     optimism,
     arbitrum,
+    hyperevm: hyperEvm,
+    // `hyperliquid` is the staging gateway's name for the same chain (id 999);
+    // register both aliases so the CLI resolves either until the API canonicalizes to `hyperevm`.
+    hyperliquid: hyperEvm,
 } as const;
 
 const chainIdToChainConfigMapping = Object.values(supportedChainsMapping).reduce(
