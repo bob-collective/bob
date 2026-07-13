@@ -119,20 +119,15 @@ describe("parseAssetChain", () => {
     expect(result.symbol).toBe("USDC");
   });
 
-  it("resolves a chain by any of its names sharing a chainId (hyperevm ↔ hyperliquid)", () => {
+  it("resolves an address on a HyperEVM route by the gateway's chain name + carries coingeckoId", () => {
     const USDT0 = "0xb8ce59fc3717ada4c02eadf9682a9e934f625ebb";
     const hlRoutes: RouteInfo[] = [
-      { srcChain: "hyperliquid", dstChain: "bitcoin", srcToken: USDT0, dstToken: "BTC" },
+      { srcChain: "hyperevm", dstChain: "bitcoin", srcToken: USDT0, dstToken: "BTC" },
     ];
-    // The gateway returns the chain as "hyperliquid"; a user may call it "hyperevm".
-    // Both must resolve, and the returned chain stays the gateway's own name so the
-    // outbound API call matches what the gateway expects.
-    for (const name of ["hyperliquid", "hyperevm"]) {
-      const result = parseAssetChain(`${USDT0}:${name}`, hlRoutes);
-      expect(result.chain).toBe("hyperliquid");
-      expect(result.symbol).toBe("USD₮0");
-      expect(result.coingeckoId).toBe("usdt0");
-    }
+    const result = parseAssetChain(`${USDT0}:hyperevm`, hlRoutes);
+    expect(result.chain).toBe("hyperevm");
+    expect(result.symbol).toBe("USD₮0");
+    expect(result.coingeckoId).toBe("usdt0");
   });
 
   it("carries the token's coingeckoId onto the resolved asset", () => {

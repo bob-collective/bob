@@ -3,7 +3,7 @@ import type { RouteInfo } from "@gobob/bob-sdk";
 import { fetchPrice } from "./price-oracle.js";
 import { BTC_DECIMALS } from "../config.js";
 import { getChainFamily } from "../chains/index.js";
-import { getEvmBalances, getTokenMetadata, CHAIN_IDS } from "../chains/evm.js";
+import { getEvmBalances, getTokenMetadata } from "../chains/evm.js";
 import { getBtcBalance } from "../chains/bitcoin.js";
 import { getSdk } from "../config.js";
 
@@ -29,18 +29,6 @@ export const CHAIN_ALIASES: Record<string, string> = {
 export function resolveChain(input: string): string {
   const lower = input.toLowerCase();
   return CHAIN_ALIASES[lower] ?? lower;
-}
-
-/**
- * Stable key for indexing tokens by chain. Uses the numeric chainId when the
- * chain is known to the SDK, so distinct names that share an id (e.g. the
- * gateway's `hyperliquid` and the canonical `hyperevm`, both chainId 999)
- * collapse to one key and resolve interchangeably. Falls back to the resolved
- * name for non-EVM chains (e.g. `bitcoin`). Input should already be resolved.
- */
-function chainKey(resolvedChain: string): string {
-  const id = CHAIN_IDS[resolvedChain];
-  return id !== undefined ? `#${id}` : resolvedChain;
 }
 
 // ─── Asset resolution ────────────────────────────────────────────────────────
@@ -91,12 +79,9 @@ export function buildTokenIndex(routes: RouteInfo[]): TokenIndex {
 
       try {
         const meta = getTokenMetadata(addr, chain);
-        // Preserve the route's own chain name for outbound API calls, but index
-        // by chainId so callers can refer to the chain by any of its names.
         const t: TokenMeta = { address: addr, symbol: meta.symbol, decimals: meta.decimals, coingeckoId: meta.coingeckoId, chain };
-        const ck = chainKey(resolveChain(chain));
-        byChainAndSymbol.set(`${ck}:${meta.symbol.toUpperCase()}`, t);
-        byChainAndAddress.set(`${ck}:${addr.toLowerCase()}`, t);
+        byChainAndSymbol.set(`${chain}:${meta.symbol.toUpperCase()}`, t);
+        byChainAndAddress.set(`${chain}:${addr.toLowerCase()}`, t);
       } catch (err) {
         // Skip tokens not in tokenlist to avoid guessed decimals in amount calculations.
         // Re-throw unexpected errors (bugs, corrupted data, etc.)
@@ -138,27 +123,24 @@ export function parseAssetChain(raw: string, routes: RouteInfo[], index?: TokenI
   }
 
   const chain = resolveChain(chainPart);
-  const ck = chainKey(chain);
 
   if (isAddress(assetPart, { strict: false })) {
-    const token = idx.byChainAndAddress.get(`${ck}:${assetPart.toLowerCase()}`);
+    const token = idx.byChainAndAddress.get(`${chain}:${assetPart.toLowerCase()}`);
     if (!token) throw new Error(`unknown token address "${assetPart}" on chain "${chain}" — decimals cannot be determined.\n\n  Use a known token symbol instead, or verify the address is correct.`);
-    // Return the route's own chain name (token.chain) so the outbound API call
-    // uses the name the gateway expects, regardless of which alias the user gave.
-    return { chain: token.chain, address: assetPart, symbol: token.symbol, decimals: token.decimals, coingeckoId: token.coingeckoId };
+    return { chain, address: assetPart, symbol: token.symbol, decimals: token.decimals, coingeckoId: token.coingeckoId };
   }
 
-  const token = idx.byChainAndSymbol.get(`${ck}:${assetPart.toUpperCase()}`);
+  const token = idx.byChainAndSymbol.get(`${chain}:${assetPart.toUpperCase()}`);
   if (!token) {
     const available = [...new Set(routes.flatMap(r => {
       const hits: string[] = [];
-      if (chainKey(resolveChain(r.srcChain)) === ck) hits.push(getTokenMetadata(r.srcToken, r.srcChain, { throwOnUnknown: false }).symbol);
-      if (chainKey(resolveChain(r.dstChain)) === ck) hits.push(getTokenMetadata(r.dstToken, r.dstChain, { throwOnUnknown: false }).symbol);
+      if (r.srcChain === chain) hits.push(getTokenMetadata(r.srcToken, r.srcChain, { throwOnUnknown: false }).symbol);
+      if (r.dstChain === chain) hits.push(getTokenMetadata(r.dstToken, r.dstChain, { throwOnUnknown: false }).symbol);
       return hits;
     }))].join(", ");
     throw new Error(`unknown token "${assetPart}" on chain "${chain}".\n\n  Available on ${chain}: ${available || "(none)"}\n\n  Run 'gateway-cli routes --tokens ${chain}' to see all tokens.`);
   }
-  return { chain: token.chain, address: token.address, symbol: token.symbol, decimals: token.decimals, coingeckoId: token.coingeckoId };
+  return { chain, address: token.address, symbol: token.symbol, decimals: token.decimals, coingeckoId: token.coingeckoId };
 }
 
 // ─── Amount parsing ─────────────────────────────────────────────────────────
