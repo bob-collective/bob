@@ -136,6 +136,10 @@ export async function handleBalance(addresses: string[], opts: BalanceOptions): 
       }
     }
 
+    // fetchPrice memoizes by (symbol, coingeckoId) per process, so assets that
+    // resolve to the same price source — e.g. ETH or USDC held on several chains
+    // — collapse to a single network call even though we map one target per
+    // (asset, chain) here.
     const settled = await Promise.allSettled(targets.map(t => fetchPrice(t.symbol, t.coingeckoId)));
     settled.forEach((r, i) => {
       const t = targets[i];
