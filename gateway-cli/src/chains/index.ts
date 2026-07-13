@@ -182,4 +182,5 @@ export {
   getEvmBalances,
   deriveEvmAddress,
   resolveEvmSigner,
+  getTokenMetadata,
 } from './evm.js';

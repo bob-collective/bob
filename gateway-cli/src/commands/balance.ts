@@ -1,10 +1,11 @@
 import { isAddress } from 'viem';
 import { isValidBtcAddress } from '@gobob/bob-sdk';
-import { getAllBalances, deriveAddress, getChainFamily } from '../chains/index.js';
+import { getAllBalances, deriveAddress, getChainFamily, getTokenMetadata } from '../chains/index.js';
 import { getRoutes, getUniqueChains } from '../util/route-provider.js';
 import { resolveChain } from '../util/input-resolver.js';
 import { loadConfig } from '../config.js';
 import { formatAllBalances } from '../output.js';
+import { fetchPrice } from '../util/price-oracle.js';
 import type { BalanceJson } from '../output.js';
 
 /** Balance command options for filtering and formatting. */
@@ -13,6 +14,7 @@ export interface BalanceOptions {
   feeToken?: string;
   feeReserve?: string;
   nonZero?: boolean;
+  usd?: boolean;
 }
 
 /**
@@ -107,6 +109,47 @@ export async function handleBalance(addresses: string[], opts: BalanceOptions): 
       const hasTokens = (data.tokens?.length ?? 0) > 0;
       if (!hasBalance && !hasNative && !hasTokens) delete results[chain];
     }
+  }
+
+  // Annotate priceable assets with priceUsd / usdValue. Each asset is priced by
+  // its own symbol + coingeckoId (no shared symbol-keyed map, so same-symbol
+  // tokens on different chains can't cross-contaminate). Zero balances are
+  // skipped — their USD value is 0 regardless of price, which also means pricing
+  // is unaffected by the --non-zero filter above. Best-effort: an asset we can't
+  // price is left unannotated with a warning, not a hard failure.
+  if (opts.usd) {
+    interface PriceTarget { asset: { priceUsd?: number; usdValue?: number }; balance: string; symbol: string; coingeckoId?: string; }
+    const targets: PriceTarget[] = [];
+    for (const [chainKey, data] of Object.entries(results)) {
+      if (data.error) continue;
+      const chain = chainKey.split(" (")[0];
+      if (data.balance !== undefined && parseFloat(data.balance) > 0) {
+        targets.push({ asset: data, balance: data.balance, symbol: "BTC" });
+      }
+      if (data.native && parseFloat(data.native.balance) > 0) {
+        targets.push({ asset: data.native, balance: data.native.balance, symbol: data.native.symbol });
+      }
+      for (const t of data.tokens ?? []) {
+        if (parseFloat(t.balance) <= 0) continue;
+        const { coingeckoId } = getTokenMetadata(t.address, chain, { throwOnUnknown: false });
+        targets.push({ asset: t, balance: t.balance, symbol: t.symbol, coingeckoId });
+      }
+    }
+
+    // fetchPrice memoizes by (symbol, coingeckoId) per process, so assets that
+    // resolve to the same price source — e.g. ETH or USDC held on several chains
+    // — collapse to a single network call even though we map one target per
+    // (asset, chain) here.
+    const settled = await Promise.allSettled(targets.map(t => fetchPrice(t.symbol, t.coingeckoId)));
+    settled.forEach((r, i) => {
+      const t = targets[i];
+      if (r.status === "fulfilled") {
+        t.asset.priceUsd = r.value.priceUsd;
+        t.asset.usdValue = parseFloat(t.balance) * r.value.priceUsd;
+      } else {
+        console.warn(`Warning: no USD price for ${t.symbol}`);
+      }
+    });
   }
 
   return results;

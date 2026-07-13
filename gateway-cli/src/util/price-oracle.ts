@@ -11,6 +11,7 @@ const COINGECKO_URL = "https://api.coingecko.com/api/v3/simple/price";
  */
 const SPOT_SYMBOL_ALIASES: Record<string, string> = {
   CBBTC: "BTC",
+  BTCB: "BTC",
 };
 
 function resolveSpotSymbol(symbol: string): string {
@@ -86,18 +87,45 @@ async function fromCoinGecko(id: string): Promise<number> {
   return price;
 }
 
+// ─── In-memory memoization (per-process) ────────────────────────────────────
+
 /**
- * Fetch USD price for a token. Exchange spot prices (Binance, then Coinbase) are
- * authoritative and preferred; CoinGecko-by-id is only a fallback for tokens the
- * exchanges don't list under a spot symbol (e.g. USD₮0), used when both exchanges
- * fail. Throws PriceOracleError only if every applicable source fails.
+ * Cache of in-flight/settled price lookups keyed by (symbol, coingeckoId). The
+ * CLI is short-lived, so a price is stable for a run — this collapses repeat and
+ * concurrent lookups (e.g. ETH or USDC held on several chains) into a single
+ * network call for every caller. Rejections are evicted so a transient failure
+ * isn't cached for the rest of the process.
+ */
+const priceCache = new Map<string, Promise<PriceResult>>();
+
+/** Clear the price cache. Intended for test isolation between cases. */
+export function clearPriceCache(): void {
+  priceCache.clear();
+}
+
+/**
+ * Fetch USD price for a token, memoized per process (see {@link priceCache}).
+ * Exchange spot prices (Binance, then Coinbase) are authoritative and preferred;
+ * CoinGecko-by-id is only a fallback for tokens the exchanges don't list under a
+ * spot symbol (e.g. USD₮0). Throws PriceOracleError only if every applicable
+ * source fails.
  *
  * @param symbol - Token symbol (e.g., "BTC", "ETH")
  * @param coingeckoId - Optional CoinGecko coin id from the tokenlist
  * @returns Price in USD and source
  * @throws PriceOracleError if all sources fail
  */
-export async function fetchPrice(symbol: string, coingeckoId?: string): Promise<PriceResult> {
+export function fetchPrice(symbol: string, coingeckoId?: string): Promise<PriceResult> {
+  const key = `${symbol.toUpperCase()}|${coingeckoId ?? ""}`;
+  const cached = priceCache.get(key);
+  if (cached) return cached;
+  const pending = fetchPriceUncached(symbol, coingeckoId);
+  priceCache.set(key, pending);
+  pending.catch(() => priceCache.delete(key));
+  return pending;
+}
+
+async function fetchPriceUncached(symbol: string, coingeckoId?: string): Promise<PriceResult> {
   const spotSymbol = resolveSpotSymbol(symbol);
   // Exchange spot prices are authoritative for listed tokens: prefer them, so a swap amount
   // is never scaled by an unchecked CoinGecko value when a real exchange price is available.

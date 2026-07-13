@@ -123,8 +123,10 @@ export interface BalanceJson {
     balance?: string;
     allSpendable?: string;
     maxSpendable?: string;
-    native?: { symbol: string; balance: string; allSpendable?: string };
-    tokens?: Array<{ symbol: string; address: string; balance: string; allSpendable?: string }>;
+    priceUsd?: number;
+    usdValue?: number;
+    native?: { symbol: string; balance: string; allSpendable?: string; priceUsd?: number; usdValue?: number };
+    tokens?: Array<{ symbol: string; address: string; balance: string; allSpendable?: string; priceUsd?: number; usdValue?: number }>;
     error?: boolean;
   };
 }
@@ -245,17 +247,18 @@ export function formatBalance(result: BalanceJson): string {
       lines.push(`  N/A (RPC unreachable)`);
       continue;
     }
-    if (data.balance !== undefined) lines.push(`  Balance:       ${data.balance} BTC`);
+    const usd = (v?: number) => v !== undefined ? `  ($${v.toFixed(2)})` : '';
+    if (data.balance !== undefined) lines.push(`  Balance:       ${data.balance} BTC${usd(data.usdValue)}`);
     if (data.allSpendable !== undefined) lines.push(`  All spendable: ${data.allSpendable} BTC`);
     if (data.maxSpendable !== undefined && data.allSpendable === undefined) lines.push(`  Max spendable: ${data.maxSpendable} BTC`);
     if (data.native) {
       const allSuffix = data.native.allSpendable ? ` (all: ${data.native.allSpendable})` : '';
-      lines.push(`  ${data.native.symbol}: ${data.native.balance}${allSuffix}`);
+      lines.push(`  ${data.native.symbol}: ${data.native.balance}${allSuffix}${usd(data.native.usdValue)}`);
     }
     if (data.tokens) {
       for (const t of data.tokens) {
         const allSuffix = t.allSpendable ? ` (all: ${t.allSpendable})` : '';
-        lines.push(`  ${t.symbol}: ${t.balance}${allSuffix}`);
+        lines.push(`  ${t.symbol}: ${t.balance}${allSuffix}${usd(t.usdValue)}`);
       }
     }
   }

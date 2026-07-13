@@ -1,11 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { fetchPrice, PriceOracleError } from "../../src/util/price-oracle.js";
+import { fetchPrice, clearPriceCache, PriceOracleError } from "../../src/util/price-oracle.js";
 
 // ─── fetchPrice ───────────────────────────────────────────────────────────────
 
 describe("fetchPrice", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    clearPriceCache(); // isolate cases: fetchPrice memoizes per process
   });
 
   it("returns price from Binance when it succeeds", async () => {
@@ -143,4 +144,49 @@ describe("fetchPrice", () => {
     await expect(fetchPrice("USD₮0", "usdt0")).rejects.toThrow(/CoinGecko HTTP 429/);
   });
 
+});
+
+describe("fetchPrice memoization", () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    clearPriceCache();
+  });
+
+  const stubBinance = (price: string) =>
+    vi.stubGlobal("fetch", vi.fn().mockImplementation((url: string) =>
+      url.includes("binance.com")
+        ? Promise.resolve({ ok: true, json: async () => ({ price }) })
+        : Promise.resolve({ ok: false, status: 404 }),
+    ));
+
+  it("collapses repeated lookups into a single network fetch", async () => {
+    stubBinance("50000.00");
+    const a = await fetchPrice("BTC");
+    const b = await fetchPrice("BTC");
+    expect(a.priceUsd).toBe(50000);
+    expect(b.priceUsd).toBe(50000);
+    // One uncached lookup issues one Binance call (Coinbase 404s); the second
+    // fetchPrice must be served from cache, so exactly one binance.com call.
+    const binanceCalls = (fetch as any).mock.calls.filter((c: any[]) => String(c[0]).includes("binance.com"));
+    expect(binanceCalls.length).toBe(1);
+  });
+
+  it("refetches after clearPriceCache", async () => {
+    stubBinance("50000.00");
+    await fetchPrice("BTC");
+    clearPriceCache();
+    await fetchPrice("BTC");
+    const binanceCalls = (fetch as any).mock.calls.filter((c: any[]) => String(c[0]).includes("binance.com"));
+    expect(binanceCalls.length).toBe(2);
+  });
+
+  it("does not cache a failed lookup (a later call retries)", async () => {
+    // First call: all sources fail → rejects and must not be cached.
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 500 }));
+    await expect(fetchPrice("BTC")).rejects.toThrow(PriceOracleError);
+    // Second call with a working source should succeed, proving no cached rejection.
+    stubBinance("50000.00");
+    const result = await fetchPrice("BTC");
+    expect(result.priceUsd).toBe(50000);
+  });
 });
