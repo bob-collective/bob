@@ -39,7 +39,7 @@ export async function resolveSendAmount(
   _senderAddress: string | undefined,
   deps: { spendable: () => Promise<bigint> },
 ): Promise<bigint> {
-  const parsed = await parseAmount(opts.amount, asset.symbol, asset.decimals);
+  const parsed = await parseAmount(opts.amount, asset.symbol, asset.decimals, asset.coingeckoId);
   if (parsed.type === "all") {
     const all = await deps.spendable();
     if (all === 0n) throw new Error(`No ${asset.symbol} balance available to send.`);

@@ -11,7 +11,13 @@ import { BTC_DECIMALS } from '../config.js';
  * Groups tokens by address (case-insensitive) and tracks whether metadata
  * is uniform across all chains or varies by chain.
  */
-type TokenEntry = { address: string; symbol: string; decimals: number; chainId: number };
+type TokenEntry = {
+  address: string;
+  symbol: string;
+  decimals: number;
+  chainId: number;
+  extensions?: { coingeckoId?: string };
+};
 
 interface AddressEntry {
   canonical: TokenEntry;
@@ -25,7 +31,7 @@ for (const t of tokenlistJson.tokens as TokenEntry[]) {
   const existing = tokenIndex.get(key);
   if (existing) {
     existing.byChainId.set(t.chainId, t);
-    if (existing.uniform && (t.symbol !== existing.canonical.symbol || t.decimals !== existing.canonical.decimals)) {
+    if (existing.uniform && (t.symbol !== existing.canonical.symbol || t.decimals !== existing.canonical.decimals || t.extensions?.coingeckoId !== existing.canonical.extensions?.coingeckoId)) {
       existing.uniform = false;
     }
   } else {
@@ -45,7 +51,7 @@ export const CHAIN_IDS: Record<string, number> = Object.fromEntries(
 /** Resolve token metadata from the tokenlist. For BTC, returns { symbol: "BTC", decimals: 8 }.
  *  Throws on unknown tokens by default (safe for amount calculations).
  *  Pass { throwOnUnknown: false } for display paths where best-effort metadata is acceptable. */
-export function getTokenMetadata(address: string, chain: string, opts?: { throwOnUnknown?: boolean }): { symbol: string; decimals: number } {
+export function getTokenMetadata(address: string, chain: string, opts?: { throwOnUnknown?: boolean }): { symbol: string; decimals: number; coingeckoId?: string } {
   if (chain === 'bitcoin' || address === 'BTC') {
     return { symbol: 'BTC', decimals: BTC_DECIMALS };
   }
@@ -63,16 +69,19 @@ export function getTokenMetadata(address: string, chain: string, opts?: { throwO
     throw new Error(`Unknown token ${address} on chain "${chain}" — cannot determine decimals. Use a known token symbol or verify the address.`);
   }
 
-  if (entry.uniform) {
-    return { symbol: entry.canonical.symbol, decimals: entry.canonical.decimals };
-  }
+  // coingeckoId lives under `extensions` and identifies the underlying asset.
+  const toMetadata = (t: TokenEntry) => ({ symbol: t.symbol, decimals: t.decimals, coingeckoId: t.extensions?.coingeckoId });
+
+  if (entry.uniform) return toMetadata(entry.canonical);
 
   const chainId = CHAIN_IDS[chain];
   const token = chainId !== undefined ? entry.byChainId.get(chainId) : undefined;
-  if (token) return { symbol: token.symbol, decimals: token.decimals };
+  // Use the chain-specific entry as-is — never borrow another entry's coingeckoId,
+  // so a price is only ever resolved against this exact token.
+  if (token) return toMetadata(token);
 
-  // Token has varying metadata across chains; use canonical (first seen) values
-  return { symbol: entry.canonical.symbol, decimals: entry.canonical.decimals };
+  // No chain-specific entry: fall back to the canonical entry as a whole (self-consistent).
+  return toMetadata(entry.canonical);
 }
 
 // ─── Native token metadata ───────────────────────────────────────────────────

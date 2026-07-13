@@ -45,6 +45,8 @@ export interface ResolvedAsset {
   address: string;
   symbol: string;
   decimals: number;
+  /** CoinGecko coin id from the tokenlist, if any (used for USD price lookups). */
+  coingeckoId?: string;
 }
 
 interface TokenMeta {
@@ -52,6 +54,7 @@ interface TokenMeta {
   symbol: string;
   decimals: number;
   chain: string;
+  coingeckoId?: string;
 }
 
 interface TokenIndex {
@@ -76,7 +79,7 @@ export function buildTokenIndex(routes: RouteInfo[]): TokenIndex {
 
       try {
         const meta = getTokenMetadata(addr, chain);
-        const t: TokenMeta = { address: addr, symbol: meta.symbol, decimals: meta.decimals, chain };
+        const t: TokenMeta = { address: addr, symbol: meta.symbol, decimals: meta.decimals, coingeckoId: meta.coingeckoId, chain };
         byChainAndSymbol.set(`${chain}:${meta.symbol.toUpperCase()}`, t);
         byChainAndAddress.set(`${chain}:${addr.toLowerCase()}`, t);
       } catch (err) {
@@ -124,7 +127,7 @@ export function parseAssetChain(raw: string, routes: RouteInfo[], index?: TokenI
   if (isAddress(assetPart, { strict: false })) {
     const token = idx.byChainAndAddress.get(`${chain}:${assetPart.toLowerCase()}`);
     if (!token) throw new Error(`unknown token address "${assetPart}" on chain "${chain}" — decimals cannot be determined.\n\n  Use a known token symbol instead, or verify the address is correct.`);
-    return { chain, address: assetPart, symbol: token.symbol, decimals: token.decimals };
+    return { chain, address: assetPart, symbol: token.symbol, decimals: token.decimals, coingeckoId: token.coingeckoId };
   }
 
   const token = idx.byChainAndSymbol.get(`${chain}:${assetPart.toUpperCase()}`);
@@ -137,7 +140,7 @@ export function parseAssetChain(raw: string, routes: RouteInfo[], index?: TokenI
     }))].join(", ");
     throw new Error(`unknown token "${assetPart}" on chain "${chain}".\n\n  Available on ${chain}: ${available || "(none)"}\n\n  Run 'gateway-cli routes --tokens ${chain}' to see all tokens.`);
   }
-  return { chain, address: token.address, symbol: token.symbol, decimals: token.decimals };
+  return { chain, address: token.address, symbol: token.symbol, decimals: token.decimals, coingeckoId: token.coingeckoId };
 }
 
 // ─── Amount parsing ─────────────────────────────────────────────────────────
@@ -189,6 +192,7 @@ export async function parseAmount(
   raw: string,
   srcSymbol: string,
   srcDecimals: number,
+  srcCoingeckoId?: string,
 ): Promise<ParsedAmount> {
   const trimmed = raw.trim();
   if (!trimmed || trimmed.includes(" ")) {
@@ -205,8 +209,13 @@ export async function parseAmount(
     const numStr = trimmed.slice(0, -3);
     const usdValue = parseFloat(numStr);
     if (isNaN(usdValue) || usdValue <= 0) throw new Error(`Invalid amount "${raw}". ${AMOUNT_HELP}`);
-    const { priceUsd, source } = await fetchPrice(srcSymbol);
+    const { priceUsd, source } = await fetchPrice(srcSymbol, srcCoingeckoId);
     const humanAmount = usdValue / priceUsd;
+    // Number.toFixed() switches to exponential notation at >= 1e21, which humanToAtomic
+    // (and BigInt) cannot parse. Reject before that rather than crash on a malformed string.
+    if (!Number.isFinite(humanAmount) || humanAmount >= 1e21) {
+      throw new Error(`Amount too large to convert: $${usdValue} at $${priceUsd}/${srcSymbol}.\n  Specify the amount directly in ${srcSymbol} or in atomic units instead.`);
+    }
     const atomicUnits = humanToAtomic(humanAmount.toFixed(srcDecimals), srcDecimals);
     return {
       type: "atomic",
@@ -267,7 +276,7 @@ export async function resolveSwapInputs(
   const tokenIndex = buildTokenIndex(routes);
   const srcAsset = parseAssetChain(src, routes, tokenIndex);
   const dstAsset = parseAssetChain(dst, routes, tokenIndex);
-  const parsed = await parseAmount(amount, srcAsset.symbol, srcAsset.decimals);
+  const parsed = await parseAmount(amount, srcAsset.symbol, srcAsset.decimals, srcAsset.coingeckoId);
 
   if (parsed.type === "all") {
     if (!opts?.senderAddress) {
