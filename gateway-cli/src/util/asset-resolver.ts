@@ -8,13 +8,13 @@ import { resolveRpcUrl } from "./rpc-resolver.js";
 import { BTC_DECIMALS } from "../config.js";
 
 /** Token metadata index keyed by `${chainId}:SYMBOL` and `${chainId}:address` (lowercase). */
-type Meta = { address: string; symbol: string; decimals: number };
+type Meta = { address: string; symbol: string; decimals: number; coingeckoId?: string };
 let _index: Map<string, Meta> | null = null;
 function tokenlistIndex(): Map<string, Meta> {
   if (_index) return _index;
   const idx = new Map<string, Meta>();
-  for (const t of tokenlistJson.tokens as Array<{ address: string; symbol: string; decimals: number; chainId: number }>) {
-    const meta: Meta = { address: t.address, symbol: t.symbol, decimals: t.decimals };
+  for (const t of tokenlistJson.tokens as Array<{ address: string; symbol: string; decimals: number; chainId: number; extensions?: { coingeckoId?: string } }>) {
+    const meta: Meta = { address: t.address, symbol: t.symbol, decimals: t.decimals, coingeckoId: t.extensions?.coingeckoId };
     idx.set(`${t.chainId}:${t.symbol.toUpperCase()}`, meta);
     idx.set(`${t.chainId}:${t.address.toLowerCase()}`, meta);
   }
@@ -82,7 +82,7 @@ export async function resolveSendAsset(raw: string, deps?: Partial<AssetResolver
       throw new Error(`"${chain}" does not support EVM token addresses — only BTC can be sent on bitcoin.`);
     }
     const hit = lookupToken(chain, assetPart.toLowerCase());
-    if (hit) return { chain, address: assetPart, symbol: hit.symbol, decimals: hit.decimals };
+    if (hit) return { chain, address: assetPart, symbol: hit.symbol, decimals: hit.decimals, coingeckoId: hit.coingeckoId };
     const onchain = await readOnChainToken(chain, assetPart);
     return { chain, address: assetPart, symbol: onchain.symbol, decimals: onchain.decimals };
   }
@@ -91,5 +91,5 @@ export async function resolveSendAsset(raw: string, deps?: Partial<AssetResolver
   if (!hit) {
     throw new Error(`unknown token "${assetPart}" on chain "${chain}".\n  Use a known symbol, a raw 0x address, or run 'gateway-cli routes --tokens ${chain}'.`);
   }
-  return { chain, address: hit.address, symbol: hit.symbol, decimals: hit.decimals };
+  return { chain, address: hit.address, symbol: hit.symbol, decimals: hit.decimals, coingeckoId: hit.coingeckoId };
 }

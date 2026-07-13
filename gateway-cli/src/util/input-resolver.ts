@@ -229,6 +229,11 @@ export async function parseAmount(
     if (isNaN(usdValue) || usdValue <= 0) throw new Error(`Invalid amount "${raw}". ${AMOUNT_HELP}`);
     const { priceUsd, source } = await fetchPrice(srcSymbol, srcCoingeckoId);
     const humanAmount = usdValue / priceUsd;
+    // Number.toFixed() switches to exponential notation at >= 1e21, which humanToAtomic
+    // (and BigInt) cannot parse. Reject before that rather than crash on a malformed string.
+    if (!Number.isFinite(humanAmount) || humanAmount >= 1e21) {
+      throw new Error(`Amount too large to convert: $${usdValue} at $${priceUsd}/${srcSymbol}.\n  Specify the amount directly in ${srcSymbol} or in atomic units instead.`);
+    }
     const atomicUnits = humanToAtomic(humanAmount.toFixed(srcDecimals), srcDecimals);
     return {
       type: "atomic",

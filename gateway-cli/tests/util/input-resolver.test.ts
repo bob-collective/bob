@@ -195,6 +195,13 @@ describe("parseAmount", () => {
     expect(result.display).toContain("coingecko");
   });
 
+  it("rejects (does not crash) when USD converts to an astronomically large token amount", async () => {
+    // A near-zero price + large USD would make humanAmount >= 1e21, where toFixed()
+    // emits exponential notation that BigInt cannot parse.
+    vi.mocked(fetchPrice).mockResolvedValueOnce({ priceUsd: 1e-18, source: "coingecko" });
+    await expect(parseAmount("1000000USD", "USD₮0", 6, "usdt0")).rejects.toThrow(/too large to convert/);
+  });
+
   it("'ALL' → returns { type: 'all' }", async () => {
     const result = await parseAmount("ALL", "BTC", 8);
     expect(result).toEqual({ type: "all" });
