@@ -76,9 +76,11 @@ export function getTokenMetadata(address: string, chain: string, opts?: { throwO
 
   const chainId = CHAIN_IDS[chain];
   const token = chainId !== undefined ? entry.byChainId.get(chainId) : undefined;
-  // Chain-specific metadata; coingeckoId falls back to the canonical entry (same asset).
-  if (token) return { ...toMetadata(token), coingeckoId: token.extensions?.coingeckoId ?? entry.canonical.extensions?.coingeckoId };
+  // Use the chain-specific entry as-is — never borrow another entry's coingeckoId,
+  // so a price is only ever resolved against this exact token.
+  if (token) return toMetadata(token);
 
+  // No chain-specific entry: fall back to the canonical entry as a whole (self-consistent).
   return toMetadata(entry.canonical);
 }
 
