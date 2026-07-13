@@ -3,7 +3,7 @@ import type { RouteInfo } from "@gobob/bob-sdk";
 import { fetchPrice } from "./price-oracle.js";
 import { BTC_DECIMALS } from "../config.js";
 import { getChainFamily } from "../chains/index.js";
-import { getEvmBalances, getTokenMetadata } from "../chains/evm.js";
+import { getEvmBalances, getTokenMetadata, CHAIN_IDS } from "../chains/evm.js";
 import { getBtcBalance } from "../chains/bitcoin.js";
 import { getSdk } from "../config.js";
 
@@ -31,6 +31,18 @@ export function resolveChain(input: string): string {
   return CHAIN_ALIASES[lower] ?? lower;
 }
 
+/**
+ * Stable key for indexing tokens by chain. Uses the numeric chainId when the
+ * chain is known to the SDK, so distinct names that share an id (e.g. the
+ * gateway's `hyperliquid` and the canonical `hyperevm`, both chainId 999)
+ * collapse to one key and resolve interchangeably. Falls back to the resolved
+ * name for non-EVM chains (e.g. `bitcoin`). Input should already be resolved.
+ */
+function chainKey(resolvedChain: string): string {
+  const id = CHAIN_IDS[resolvedChain];
+  return id !== undefined ? `#${id}` : resolvedChain;
+}
+
 // ─── Asset resolution ────────────────────────────────────────────────────────
 
 /** Zero address used as placeholder for BTC (which has no contract address). */
@@ -45,6 +57,8 @@ export interface ResolvedAsset {
   address: string;
   symbol: string;
   decimals: number;
+  /** CoinGecko coin id from the tokenlist, if any (used for USD price lookups). */
+  coingeckoId?: string;
 }
 
 interface TokenMeta {
@@ -52,6 +66,7 @@ interface TokenMeta {
   symbol: string;
   decimals: number;
   chain: string;
+  coingeckoId?: string;
 }
 
 interface TokenIndex {
@@ -76,9 +91,12 @@ export function buildTokenIndex(routes: RouteInfo[]): TokenIndex {
 
       try {
         const meta = getTokenMetadata(addr, chain);
-        const t: TokenMeta = { address: addr, symbol: meta.symbol, decimals: meta.decimals, chain };
-        byChainAndSymbol.set(`${chain}:${meta.symbol.toUpperCase()}`, t);
-        byChainAndAddress.set(`${chain}:${addr.toLowerCase()}`, t);
+        // Preserve the route's own chain name for outbound API calls, but index
+        // by chainId so callers can refer to the chain by any of its names.
+        const t: TokenMeta = { address: addr, symbol: meta.symbol, decimals: meta.decimals, coingeckoId: meta.coingeckoId, chain };
+        const ck = chainKey(resolveChain(chain));
+        byChainAndSymbol.set(`${ck}:${meta.symbol.toUpperCase()}`, t);
+        byChainAndAddress.set(`${ck}:${addr.toLowerCase()}`, t);
       } catch (err) {
         // Skip tokens not in tokenlist to avoid guessed decimals in amount calculations.
         // Re-throw unexpected errors (bugs, corrupted data, etc.)
@@ -120,24 +138,27 @@ export function parseAssetChain(raw: string, routes: RouteInfo[], index?: TokenI
   }
 
   const chain = resolveChain(chainPart);
+  const ck = chainKey(chain);
 
   if (isAddress(assetPart, { strict: false })) {
-    const token = idx.byChainAndAddress.get(`${chain}:${assetPart.toLowerCase()}`);
+    const token = idx.byChainAndAddress.get(`${ck}:${assetPart.toLowerCase()}`);
     if (!token) throw new Error(`unknown token address "${assetPart}" on chain "${chain}" — decimals cannot be determined.\n\n  Use a known token symbol instead, or verify the address is correct.`);
-    return { chain, address: assetPart, symbol: token.symbol, decimals: token.decimals };
+    // Return the route's own chain name (token.chain) so the outbound API call
+    // uses the name the gateway expects, regardless of which alias the user gave.
+    return { chain: token.chain, address: assetPart, symbol: token.symbol, decimals: token.decimals, coingeckoId: token.coingeckoId };
   }
 
-  const token = idx.byChainAndSymbol.get(`${chain}:${assetPart.toUpperCase()}`);
+  const token = idx.byChainAndSymbol.get(`${ck}:${assetPart.toUpperCase()}`);
   if (!token) {
     const available = [...new Set(routes.flatMap(r => {
       const hits: string[] = [];
-      if (r.srcChain === chain) hits.push(getTokenMetadata(r.srcToken, r.srcChain, { throwOnUnknown: false }).symbol);
-      if (r.dstChain === chain) hits.push(getTokenMetadata(r.dstToken, r.dstChain, { throwOnUnknown: false }).symbol);
+      if (chainKey(resolveChain(r.srcChain)) === ck) hits.push(getTokenMetadata(r.srcToken, r.srcChain, { throwOnUnknown: false }).symbol);
+      if (chainKey(resolveChain(r.dstChain)) === ck) hits.push(getTokenMetadata(r.dstToken, r.dstChain, { throwOnUnknown: false }).symbol);
       return hits;
     }))].join(", ");
     throw new Error(`unknown token "${assetPart}" on chain "${chain}".\n\n  Available on ${chain}: ${available || "(none)"}\n\n  Run 'gateway-cli routes --tokens ${chain}' to see all tokens.`);
   }
-  return { chain, address: token.address, symbol: token.symbol, decimals: token.decimals };
+  return { chain: token.chain, address: token.address, symbol: token.symbol, decimals: token.decimals, coingeckoId: token.coingeckoId };
 }
 
 // ─── Amount parsing ─────────────────────────────────────────────────────────
@@ -189,6 +210,7 @@ export async function parseAmount(
   raw: string,
   srcSymbol: string,
   srcDecimals: number,
+  srcCoingeckoId?: string,
 ): Promise<ParsedAmount> {
   const trimmed = raw.trim();
   if (!trimmed || trimmed.includes(" ")) {
@@ -205,7 +227,7 @@ export async function parseAmount(
     const numStr = trimmed.slice(0, -3);
     const usdValue = parseFloat(numStr);
     if (isNaN(usdValue) || usdValue <= 0) throw new Error(`Invalid amount "${raw}". ${AMOUNT_HELP}`);
-    const { priceUsd, source } = await fetchPrice(srcSymbol);
+    const { priceUsd, source } = await fetchPrice(srcSymbol, srcCoingeckoId);
     const humanAmount = usdValue / priceUsd;
     const atomicUnits = humanToAtomic(humanAmount.toFixed(srcDecimals), srcDecimals);
     return {
@@ -267,7 +289,7 @@ export async function resolveSwapInputs(
   const tokenIndex = buildTokenIndex(routes);
   const srcAsset = parseAssetChain(src, routes, tokenIndex);
   const dstAsset = parseAssetChain(dst, routes, tokenIndex);
-  const parsed = await parseAmount(amount, srcAsset.symbol, srcAsset.decimals);
+  const parsed = await parseAmount(amount, srcAsset.symbol, srcAsset.decimals, srcAsset.coingeckoId);
 
   if (parsed.type === "all") {
     if (!opts?.senderAddress) {

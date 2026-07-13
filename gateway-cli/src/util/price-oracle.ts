@@ -2,6 +2,8 @@
 const BINANCE_URL = "https://api.binance.com/api/v3/ticker/price";
 /** Coinbase API endpoint prefix for token price in USD. */
 const COINBASE_URL = "https://api.coinbase.com/v2/prices";
+/** CoinGecko simple-price endpoint (price by coin id, not exchange symbol). */
+const COINGECKO_URL = "https://api.coingecko.com/api/v3/simple/price";
 
 /**
  * Map token symbols to a major spot pair symbol when exchanges do not list
@@ -16,10 +18,10 @@ function resolveSpotSymbol(symbol: string): string {
   return SPOT_SYMBOL_ALIASES[key] ?? symbol;
 }
 
-/** Price oracle result with USD price and source exchange. */
+/** Price oracle result with USD price and source. */
 export interface PriceResult {
   priceUsd: number;
-  source: "binance" | "coinbase";
+  source: "binance" | "coinbase" | "coingecko";
 }
 
 /**
@@ -66,15 +68,47 @@ async function fromCoinbase(symbol: string): Promise<number> {
 }
 
 /**
- * Fetch USD price for a token symbol from Binance or Coinbase.
- * Tries Binance first (USDT pair), falls back to Coinbase (USD pair).
- * Returns first successful result; throws PriceOracleError if both fail.
- * 
- * @param symbol - Token symbol (e.g., "BTC", "ETH")
- * @returns Price in USD and source exchange
- * @throws PriceOracleError if both sources fail
+ * Fetch USD price from CoinGecko by coin id.
+ * Used for tokens the exchanges do not list under a spot symbol (e.g. USD₮0),
+ * where the tokenlist provides a `coingeckoId`.
+ * @param id - CoinGecko coin id (e.g. "usdt0", "hyperliquid")
+ * @returns Price in USD
  */
-export async function fetchPrice(symbol: string): Promise<PriceResult> {
+async function fromCoinGecko(id: string): Promise<number> {
+  const res = await fetch(
+    `${COINGECKO_URL}?ids=${encodeURIComponent(id)}&vs_currencies=usd`,
+    { signal: AbortSignal.timeout(5000) },
+  );
+  if (!res.ok) throw new Error(`CoinGecko HTTP ${res.status}`);
+  const data = (await res.json()) as Record<string, { usd?: number }>;
+  const price = data[id]?.usd;
+  if (price === undefined) throw new Error(`CoinGecko: no price for id "${id}"`);
+  return price;
+}
+
+/**
+ * Fetch USD price for a token. When a `coingeckoId` is given it is tried first
+ * (CoinGecko by id), which covers tokens exchanges don't list under a spot
+ * symbol (e.g. USD₮0); otherwise/failing that, tries Binance then Coinbase by
+ * symbol. Returns the first successful result; throws PriceOracleError if all fail.
+ *
+ * @param symbol - Token symbol (e.g., "BTC", "ETH")
+ * @param coingeckoId - Optional CoinGecko coin id from the tokenlist
+ * @returns Price in USD and source
+ * @throws PriceOracleError if all sources fail
+ */
+export async function fetchPrice(symbol: string, coingeckoId?: string): Promise<PriceResult> {
+  // Prefer CoinGecko by id when the tokenlist provides one: exchanges don't list
+  // tokens like USD₮0 under a spot symbol, so the symbol-based sources 404.
+  if (coingeckoId) {
+    try {
+      const price = await fromCoinGecko(coingeckoId);
+      if (price > 0) return { priceUsd: price, source: "coingecko" };
+    } catch {
+      // Fall through to symbol-based sources.
+    }
+  }
+
   const spotSymbol = resolveSpotSymbol(symbol);
   const [binance, coinbase] = await Promise.allSettled([
     fromBinance(spotSymbol),

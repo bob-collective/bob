@@ -12,12 +12,16 @@ vi.mock("../../src/util/price-oracle.js", () => ({
 
 // Mock getTokenMetadata for token resolution
 vi.mock("../../src/chains/evm.js", () => ({
+  // `hyperevm` and `hyperliquid` share chainId 999 on purpose: distinct names,
+  // one chain — so the resolver can accept either.
+  CHAIN_IDS: { ethereum: 1, base: 8453, bob: 60808, hyperevm: 999, hyperliquid: 999 } as Record<string, number>,
   getTokenMetadata: vi.fn((address: string, chain: string) => {
     if (chain === "bitcoin" || address === "BTC") return { symbol: "BTC", decimals: 8 };
-    const TOKENS: Record<string, { symbol: string; decimals: number }> = {
-      "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913": { symbol: "USDC", decimals: 6 },
+    const TOKENS: Record<string, { symbol: string; decimals: number; coingeckoId?: string }> = {
+      "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913": { symbol: "USDC", decimals: 6, coingeckoId: "usd-coin" },
       "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599": { symbol: "WBTC", decimals: 8 },
       "0x03c7054bcb39f7b2e5b2c7acb37583e32d70cfa3": { symbol: "WBTC", decimals: 8 },
+      "0xb8ce59fc3717ada4c02eadf9682a9e934f625ebb": { symbol: "USD₮0", decimals: 6, coingeckoId: "usdt0" },
     };
     return TOKENS[address.toLowerCase()] ?? { symbol: address.slice(0, 10), decimals: 18 };
   }),
@@ -114,6 +118,27 @@ describe("parseAssetChain", () => {
     const result = parseAssetChain("USDC:base", routes, index);
     expect(result.symbol).toBe("USDC");
   });
+
+  it("resolves a chain by any of its names sharing a chainId (hyperevm ↔ hyperliquid)", () => {
+    const USDT0 = "0xb8ce59fc3717ada4c02eadf9682a9e934f625ebb";
+    const hlRoutes: RouteInfo[] = [
+      { srcChain: "hyperliquid", dstChain: "bitcoin", srcToken: USDT0, dstToken: "BTC" },
+    ];
+    // The gateway returns the chain as "hyperliquid"; a user may call it "hyperevm".
+    // Both must resolve, and the returned chain stays the gateway's own name so the
+    // outbound API call matches what the gateway expects.
+    for (const name of ["hyperliquid", "hyperevm"]) {
+      const result = parseAssetChain(`${USDT0}:${name}`, hlRoutes);
+      expect(result.chain).toBe("hyperliquid");
+      expect(result.symbol).toBe("USD₮0");
+      expect(result.coingeckoId).toBe("usdt0");
+    }
+  });
+
+  it("carries the token's coingeckoId onto the resolved asset", () => {
+    const result = parseAssetChain("USDC:base", routes);
+    expect(result.coingeckoId).toBe("usd-coin");
+  });
 });
 
 // ─── parseAmount ──────────────────────────────────────────────────────────────
@@ -149,7 +174,7 @@ describe("parseAmount", () => {
   it("USD suffix '100USD' → calls fetchPrice, returns atomic", async () => {
     vi.mocked(fetchPrice).mockResolvedValueOnce({ priceUsd: 50000, source: "binance" });
     const result = await parseAmount("100USD", "BTC", 8);
-    expect(fetchPrice).toHaveBeenCalledWith("BTC");
+    expect(fetchPrice).toHaveBeenCalledWith("BTC", undefined);
     expect(result.type).toBe("atomic");
     if (result.type !== "atomic") return;
     // $100 / $50000 per BTC = 0.002 BTC = 200000 satoshis
@@ -157,6 +182,17 @@ describe("parseAmount", () => {
     expect(result.display).toContain("BTC");
     expect(result.display).toContain("100");
     expect(result.display).toContain("binance");
+  });
+
+  it("USD suffix forwards the token's coingeckoId to fetchPrice", async () => {
+    vi.mocked(fetchPrice).mockResolvedValueOnce({ priceUsd: 1, source: "coingecko" });
+    const result = await parseAmount("47USD", "USD₮0", 6, "usdt0");
+    expect(fetchPrice).toHaveBeenCalledWith("USD₮0", "usdt0");
+    expect(result.type).toBe("atomic");
+    if (result.type !== "atomic") return;
+    // $47 / $1 = 47 USD₮0 = 47_000_000 (6 decimals)
+    expect(result.atomicUnits).toBe("47000000");
+    expect(result.display).toContain("coingecko");
   });
 
   it("'ALL' → returns { type: 'all' }", async () => {

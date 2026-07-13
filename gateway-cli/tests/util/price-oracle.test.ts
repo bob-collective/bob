@@ -94,4 +94,32 @@ describe("fetchPrice", () => {
     expect(result.source).toBe("binance");
   });
 
+  it("uses CoinGecko by id first when a coingeckoId is provided", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockImplementation((url: string) => {
+      if (url.includes("coingecko.com")) {
+        return Promise.resolve({ ok: true, json: async () => ({ usdt0: { usd: 0.9998 } }) });
+      }
+      // Exchanges don't list USD₮0 under a spot symbol.
+      return Promise.resolve({ ok: false, status: 404 });
+    }));
+
+    const result = await fetchPrice("USD₮0", "usdt0");
+    expect(result.priceUsd).toBe(0.9998);
+    expect(result.source).toBe("coingecko");
+  });
+
+  it("falls back to exchange symbols when the CoinGecko id lookup fails", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockImplementation((url: string) => {
+      if (url.includes("coingecko.com")) return Promise.resolve({ ok: false, status: 429 });
+      if (url.includes("binance.com")) {
+        return Promise.resolve({ ok: true, json: async () => ({ price: "2500.00" }) });
+      }
+      return Promise.resolve({ ok: false, status: 404 });
+    }));
+
+    const result = await fetchPrice("ETH", "ethereum");
+    expect(result.priceUsd).toBe(2500);
+    expect(result.source).toBe("binance");
+  });
+
 });

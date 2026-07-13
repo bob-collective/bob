@@ -11,7 +11,10 @@ import { BTC_DECIMALS } from '../config.js';
  * Groups tokens by address (case-insensitive) and tracks whether metadata
  * is uniform across all chains or varies by chain.
  */
-type TokenEntry = { address: string; symbol: string; decimals: number; chainId: number };
+type TokenEntry = { address: string; symbol: string; decimals: number; chainId: number; coingeckoId?: string };
+
+/** Raw tokenlist entry — `coingeckoId` lives under `extensions`. */
+type RawTokenlistEntry = TokenEntry & { extensions?: { coingeckoId?: string } };
 
 interface AddressEntry {
   canonical: TokenEntry;
@@ -20,7 +23,14 @@ interface AddressEntry {
 }
 
 const tokenIndex = new Map<string, AddressEntry>();
-for (const t of tokenlistJson.tokens as TokenEntry[]) {
+for (const raw of tokenlistJson.tokens as RawTokenlistEntry[]) {
+  const t: TokenEntry = {
+    address: raw.address,
+    symbol: raw.symbol,
+    decimals: raw.decimals,
+    chainId: raw.chainId,
+    coingeckoId: raw.extensions?.coingeckoId,
+  };
   const key = t.address.toLowerCase();
   const existing = tokenIndex.get(key);
   if (existing) {
@@ -45,7 +55,7 @@ export const CHAIN_IDS: Record<string, number> = Object.fromEntries(
 /** Resolve token metadata from the tokenlist. For BTC, returns { symbol: "BTC", decimals: 8 }.
  *  Throws on unknown tokens by default (safe for amount calculations).
  *  Pass { throwOnUnknown: false } for display paths where best-effort metadata is acceptable. */
-export function getTokenMetadata(address: string, chain: string, opts?: { throwOnUnknown?: boolean }): { symbol: string; decimals: number } {
+export function getTokenMetadata(address: string, chain: string, opts?: { throwOnUnknown?: boolean }): { symbol: string; decimals: number; coingeckoId?: string } {
   if (chain === 'bitcoin' || address === 'BTC') {
     return { symbol: 'BTC', decimals: BTC_DECIMALS };
   }
@@ -64,15 +74,15 @@ export function getTokenMetadata(address: string, chain: string, opts?: { throwO
   }
 
   if (entry.uniform) {
-    return { symbol: entry.canonical.symbol, decimals: entry.canonical.decimals };
+    return { symbol: entry.canonical.symbol, decimals: entry.canonical.decimals, coingeckoId: entry.canonical.coingeckoId };
   }
 
   const chainId = CHAIN_IDS[chain];
   const token = chainId !== undefined ? entry.byChainId.get(chainId) : undefined;
-  if (token) return { symbol: token.symbol, decimals: token.decimals };
+  if (token) return { symbol: token.symbol, decimals: token.decimals, coingeckoId: token.coingeckoId ?? entry.canonical.coingeckoId };
 
   // Token has varying metadata across chains; use canonical (first seen) values
-  return { symbol: entry.canonical.symbol, decimals: entry.canonical.decimals };
+  return { symbol: entry.canonical.symbol, decimals: entry.canonical.decimals, coingeckoId: entry.canonical.coingeckoId };
 }
 
 // ─── Native token metadata ───────────────────────────────────────────────────
