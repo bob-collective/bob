@@ -11,6 +11,7 @@ const COINGECKO_URL = "https://api.coingecko.com/api/v3/simple/price";
  */
 const SPOT_SYMBOL_ALIASES: Record<string, string> = {
   CBBTC: "BTC",
+  BTCB: "BTC",
 };
 
 function resolveSpotSymbol(symbol: string): string {

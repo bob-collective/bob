@@ -123,8 +123,10 @@ export interface BalanceJson {
     balance?: string;
     allSpendable?: string;
     maxSpendable?: string;
-    native?: { symbol: string; balance: string; allSpendable?: string };
-    tokens?: Array<{ symbol: string; address: string; balance: string; allSpendable?: string }>;
+    priceUsd?: number;
+    usdValue?: number;
+    native?: { symbol: string; balance: string; allSpendable?: string; priceUsd?: number; usdValue?: number };
+    tokens?: Array<{ symbol: string; address: string; balance: string; allSpendable?: string; priceUsd?: number; usdValue?: number }>;
     error?: boolean;
   };
 }

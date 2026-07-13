@@ -1,10 +1,12 @@
 import { isAddress } from 'viem';
 import { isValidBtcAddress } from '@gobob/bob-sdk';
-import { getAllBalances, deriveAddress, getChainFamily } from '../chains/index.js';
+import { getAllBalances, deriveAddress, getChainFamily, getTokenMetadata } from '../chains/index.js';
 import { getRoutes, getUniqueChains } from '../util/route-provider.js';
 import { resolveChain } from '../util/input-resolver.js';
 import { loadConfig } from '../config.js';
 import { formatAllBalances } from '../output.js';
+import { fetchPrice } from '../util/price-oracle.js';
+import { annotateBalancesUsd, type PriceBySymbol } from '../util/balance-usd.js';
 import type { BalanceJson } from '../output.js';
 
 /** Balance command options for filtering and formatting. */
@@ -13,6 +15,7 @@ export interface BalanceOptions {
   feeToken?: string;
   feeReserve?: string;
   nonZero?: boolean;
+  usd?: boolean;
 }
 
 /**
@@ -67,6 +70,9 @@ export async function handleBalance(addresses: string[], opts: BalanceOptions): 
 
   // Classify addresses and query relevant chains
   const results: BalanceJson = {};
+  // symbol (uppercase) -> coingeckoId, collected while iterating raw balances
+  // so USD pricing can prefer CoinGecko by id for tokens exchanges don't list.
+  const priceRefs = new Map<string, string | undefined>();
   for (const addr of addresses) {
     const family = classifyAddress(addr);
 
@@ -92,6 +98,18 @@ export async function handleBalance(addresses: string[], opts: BalanceOptions): 
       const key = chain in results ? `${chain} (${addr})` : chain;
       results[key] = data;
     }
+
+    if (opts.usd) {
+      for (const [chain, data] of Object.entries(raw)) {
+        if (data.error) continue;
+        if (data.balance !== undefined) priceRefs.set("BTC", undefined);
+        if (data.native) priceRefs.set(data.native.symbol.toUpperCase(), undefined);
+        for (const t of data.tokens ?? []) {
+          const meta = getTokenMetadata(t.address, chain, { throwOnUnknown: false });
+          priceRefs.set(t.symbol.toUpperCase(), meta.coingeckoId);
+        }
+      }
+    }
   }
 
   // Filter to non-zero balances if requested
@@ -107,6 +125,21 @@ export async function handleBalance(addresses: string[], opts: BalanceOptions): 
       const hasTokens = (data.tokens?.length ?? 0) > 0;
       if (!hasBalance && !hasNative && !hasTokens) delete results[chain];
     }
+  }
+
+  // Annotate each priceable asset with priceUsd / usdValue. Pricing is
+  // best-effort: a symbol we can't price is left unannotated (a warning is
+  // logged) rather than failing the whole command.
+  if (opts.usd && priceRefs.size > 0) {
+    const refs = [...priceRefs.entries()];
+    const settled = await Promise.allSettled(refs.map(([sym, id]) => fetchPrice(sym, id)));
+    const prices: PriceBySymbol = {};
+    settled.forEach((r, i) => {
+      const sym = refs[i][0];
+      if (r.status === "fulfilled") prices[sym] = r.value.priceUsd;
+      else console.warn(`Warning: no USD price for ${sym}`);
+    });
+    return annotateBalancesUsd(results, prices);
   }
 
   return results;
