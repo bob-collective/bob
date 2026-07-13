@@ -87,10 +87,10 @@ async function fromCoinGecko(id: string): Promise<number> {
 }
 
 /**
- * Fetch USD price for a token. When a `coingeckoId` is given it is tried first
- * (CoinGecko by id), which covers tokens exchanges don't list under a spot
- * symbol (e.g. USD₮0); otherwise/failing that, tries Binance then Coinbase by
- * symbol. Returns the first successful result; throws PriceOracleError if all fail.
+ * Fetch USD price for a token. All sources are queried in parallel and the first
+ * that succeeds — in preference order CoinGecko (by id) → Binance → Coinbase — is
+ * returned. CoinGecko is preferred because exchanges don't list tokens like USD₮0
+ * under a spot symbol. Throws PriceOracleError only if every source fails.
  *
  * @param symbol - Token symbol (e.g., "BTC", "ETH")
  * @param coingeckoId - Optional CoinGecko coin id from the tokenlist
@@ -98,26 +98,28 @@ async function fromCoinGecko(id: string): Promise<number> {
  * @throws PriceOracleError if all sources fail
  */
 export async function fetchPrice(symbol: string, coingeckoId?: string): Promise<PriceResult> {
-  // Prefer CoinGecko by id when the tokenlist provides one: exchanges don't list
-  // tokens like USD₮0 under a spot symbol, so the symbol-based sources 404.
-  if (coingeckoId) {
-    try {
-      const price = await fromCoinGecko(coingeckoId);
-      if (price > 0) return { priceUsd: price, source: "coingecko" };
-    } catch {
-      // Fall through to symbol-based sources.
-    }
-  }
-
   const spotSymbol = resolveSpotSymbol(symbol);
-  const [binance, coinbase] = await Promise.allSettled([
+  const [coingecko, binance, coinbase] = await Promise.allSettled([
+    coingeckoId ? fromCoinGecko(coingeckoId) : Promise.reject(new Error("no coingeckoId")),
     fromBinance(spotSymbol),
     fromCoinbase(spotSymbol),
   ]);
 
-  if (binance.status === "fulfilled" && binance.value > 0) return { priceUsd: binance.value, source: "binance" };
-  if (coinbase.status === "fulfilled" && coinbase.value > 0) return { priceUsd: coinbase.value, source: "coinbase" };
+  const preference: Array<[PromiseSettledResult<number>, PriceResult["source"]]> = [
+    [coingecko, "coingecko"],
+    [binance, "binance"],
+    [coinbase, "coinbase"],
+  ];
+  for (const [result, source] of preference) {
+    if (result.status === "fulfilled" && result.value > 0) return { priceUsd: result.value, source };
+  }
 
-  const cause = coinbase.status === "rejected" ? coinbase.reason : binance.status === "rejected" ? binance.reason : new Error("price was zero");
+  // Every source failed. Prefer the CoinGecko failure as the cause when we queried it
+  // (e.g. a 429 rate-limit), so the error isn't a misleading "unlisted on exchanges".
+  const cause =
+    (coingeckoId && coingecko.status === "rejected" && coingecko.reason) ||
+    (binance.status === "rejected" && binance.reason) ||
+    (coinbase.status === "rejected" && coinbase.reason) ||
+    new Error("all price sources returned a non-positive value");
   throw new PriceOracleError(symbol, cause);
 }

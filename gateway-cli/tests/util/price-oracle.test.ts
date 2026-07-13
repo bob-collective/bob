@@ -122,4 +122,26 @@ describe("fetchPrice", () => {
     expect(result.source).toBe("binance");
   });
 
+  it("returns a price if any single source succeeds (only Coinbase up)", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockImplementation((url: string) => {
+      if (url.includes("coingecko.com")) return Promise.resolve({ ok: false, status: 429 });
+      if (url.includes("binance.com")) return Promise.reject(new Error("network error"));
+      return Promise.resolve({ ok: true, json: async () => ({ data: { amount: "3100.00" } }) });
+    }));
+
+    const result = await fetchPrice("ETH", "ethereum");
+    expect(result.priceUsd).toBe(3100);
+    expect(result.source).toBe("coinbase");
+  });
+
+  it("surfaces the CoinGecko failure as the cause when every source fails", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockImplementation((url: string) => {
+      if (url.includes("coingecko.com")) return Promise.resolve({ ok: false, status: 429 });
+      return Promise.resolve({ ok: false, status: 404 });
+    }));
+
+    // With a coingeckoId, the error should point at the CoinGecko 429, not the exchange 404.
+    await expect(fetchPrice("USD₮0", "usdt0")).rejects.toThrow(/CoinGecko HTTP 429/);
+  });
+
 });
