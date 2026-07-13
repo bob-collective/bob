@@ -6,7 +6,6 @@ import { resolveChain } from '../util/input-resolver.js';
 import { loadConfig } from '../config.js';
 import { formatAllBalances } from '../output.js';
 import { fetchPrice } from '../util/price-oracle.js';
-import { applyUsd } from '../util/balance-usd.js';
 import type { BalanceJson } from '../output.js';
 
 /** Balance command options for filtering and formatting. */
@@ -140,8 +139,12 @@ export async function handleBalance(addresses: string[], opts: BalanceOptions): 
     const settled = await Promise.allSettled(targets.map(t => fetchPrice(t.symbol, t.coingeckoId)));
     settled.forEach((r, i) => {
       const t = targets[i];
-      if (r.status === "fulfilled") applyUsd(t.asset, t.balance, r.value.priceUsd);
-      else console.warn(`Warning: no USD price for ${t.symbol}`);
+      if (r.status === "fulfilled") {
+        t.asset.priceUsd = r.value.priceUsd;
+        t.asset.usdValue = parseFloat(t.balance) * r.value.priceUsd;
+      } else {
+        console.warn(`Warning: no USD price for ${t.symbol}`);
+      }
     });
   }
 
