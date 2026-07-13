@@ -6,7 +6,7 @@ import { resolveChain } from '../util/input-resolver.js';
 import { loadConfig } from '../config.js';
 import { formatAllBalances } from '../output.js';
 import { fetchPrice } from '../util/price-oracle.js';
-import { annotateBalancesUsd, type PriceBySymbol } from '../util/balance-usd.js';
+import { applyUsd } from '../util/balance-usd.js';
 import type { BalanceJson } from '../output.js';
 
 /** Balance command options for filtering and formatting. */
@@ -70,9 +70,6 @@ export async function handleBalance(addresses: string[], opts: BalanceOptions): 
 
   // Classify addresses and query relevant chains
   const results: BalanceJson = {};
-  // symbol (uppercase) -> coingeckoId, collected while iterating raw balances
-  // so USD pricing can prefer CoinGecko by id for tokens exchanges don't list.
-  const priceRefs = new Map<string, string | undefined>();
   for (const addr of addresses) {
     const family = classifyAddress(addr);
 
@@ -98,18 +95,6 @@ export async function handleBalance(addresses: string[], opts: BalanceOptions): 
       const key = chain in results ? `${chain} (${addr})` : chain;
       results[key] = data;
     }
-
-    if (opts.usd) {
-      for (const [chain, data] of Object.entries(raw)) {
-        if (data.error) continue;
-        if (data.balance !== undefined) priceRefs.set("BTC", undefined);
-        if (data.native) priceRefs.set(data.native.symbol.toUpperCase(), undefined);
-        for (const t of data.tokens ?? []) {
-          const meta = getTokenMetadata(t.address, chain, { throwOnUnknown: false });
-          priceRefs.set(t.symbol.toUpperCase(), meta.coingeckoId);
-        }
-      }
-    }
   }
 
   // Filter to non-zero balances if requested
@@ -127,19 +112,37 @@ export async function handleBalance(addresses: string[], opts: BalanceOptions): 
     }
   }
 
-  // Annotate each priceable asset with priceUsd / usdValue. Pricing is
-  // best-effort: a symbol we can't price is left unannotated (a warning is
-  // logged) rather than failing the whole command.
-  if (opts.usd && priceRefs.size > 0) {
-    const refs = [...priceRefs.entries()];
-    const settled = await Promise.allSettled(refs.map(([sym, id]) => fetchPrice(sym, id)));
-    const prices: PriceBySymbol = {};
+  // Annotate priceable assets with priceUsd / usdValue. Each asset is priced by
+  // its own symbol + coingeckoId (no shared symbol-keyed map, so same-symbol
+  // tokens on different chains can't cross-contaminate). Zero balances are
+  // skipped — their USD value is 0 regardless of price, which also means pricing
+  // is unaffected by the --non-zero filter above. Best-effort: an asset we can't
+  // price is left unannotated with a warning, not a hard failure.
+  if (opts.usd) {
+    interface PriceTarget { asset: { priceUsd?: number; usdValue?: number }; balance: string; symbol: string; coingeckoId?: string; }
+    const targets: PriceTarget[] = [];
+    for (const [chainKey, data] of Object.entries(results)) {
+      if (data.error) continue;
+      const chain = chainKey.split(" (")[0];
+      if (data.balance !== undefined && parseFloat(data.balance) > 0) {
+        targets.push({ asset: data, balance: data.balance, symbol: "BTC" });
+      }
+      if (data.native && parseFloat(data.native.balance) > 0) {
+        targets.push({ asset: data.native, balance: data.native.balance, symbol: data.native.symbol });
+      }
+      for (const t of data.tokens ?? []) {
+        if (parseFloat(t.balance) <= 0) continue;
+        const { coingeckoId } = getTokenMetadata(t.address, chain, { throwOnUnknown: false });
+        targets.push({ asset: t, balance: t.balance, symbol: t.symbol, coingeckoId });
+      }
+    }
+
+    const settled = await Promise.allSettled(targets.map(t => fetchPrice(t.symbol, t.coingeckoId)));
     settled.forEach((r, i) => {
-      const sym = refs[i][0];
-      if (r.status === "fulfilled") prices[sym] = r.value.priceUsd;
-      else console.warn(`Warning: no USD price for ${sym}`);
+      const t = targets[i];
+      if (r.status === "fulfilled") applyUsd(t.asset, t.balance, r.value.priceUsd);
+      else console.warn(`Warning: no USD price for ${t.symbol}`);
     });
-    return annotateBalancesUsd(results, prices);
   }
 
   return results;
