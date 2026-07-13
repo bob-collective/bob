@@ -31,7 +31,7 @@ for (const t of tokenlistJson.tokens as TokenEntry[]) {
   const existing = tokenIndex.get(key);
   if (existing) {
     existing.byChainId.set(t.chainId, t);
-    if (existing.uniform && (t.symbol !== existing.canonical.symbol || t.decimals !== existing.canonical.decimals)) {
+    if (existing.uniform && (t.symbol !== existing.canonical.symbol || t.decimals !== existing.canonical.decimals || t.extensions?.coingeckoId !== existing.canonical.extensions?.coingeckoId)) {
       existing.uniform = false;
     }
   } else {

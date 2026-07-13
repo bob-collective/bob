@@ -77,7 +77,9 @@ async function fromCoinbase(symbol: string): Promise<number> {
 async function fromCoinGecko(id: string): Promise<number> {
   const res = await fetch(
     `${COINGECKO_URL}?ids=${encodeURIComponent(id)}&vs_currencies=usd`,
-    { signal: AbortSignal.timeout(5000) },
+    // Short timeout: CoinGecko is the preferred source, but a slow/rate-limited
+    // response must not stall the command when an exchange price is already available.
+    { signal: AbortSignal.timeout(2500) },
   );
   if (!res.ok) throw new Error(`CoinGecko HTTP ${res.status}`);
   const data = (await res.json()) as Record<string, { usd?: number }>;
@@ -99,25 +101,30 @@ async function fromCoinGecko(id: string): Promise<number> {
  */
 export async function fetchPrice(symbol: string, coingeckoId?: string): Promise<PriceResult> {
   const spotSymbol = resolveSpotSymbol(symbol);
-  const [coingecko, binance, coinbase] = await Promise.allSettled([
-    coingeckoId ? fromCoinGecko(coingeckoId) : Promise.reject(new Error("no coingeckoId")),
-    fromBinance(spotSymbol),
-    fromCoinbase(spotSymbol),
-  ]);
+  // Fire the exchange lookups immediately so a CoinGecko miss never adds serial latency.
+  const exchanges = Promise.allSettled([fromBinance(spotSymbol), fromCoinbase(spotSymbol)]);
 
-  const preference: Array<[PromiseSettledResult<number>, PriceResult["source"]]> = [
-    [coingecko, "coingecko"],
-    [binance, "binance"],
-    [coinbase, "coinbase"],
-  ];
-  for (const [result, source] of preference) {
-    if (result.status === "fulfilled" && result.value > 0) return { priceUsd: result.value, source };
+  // Prefer CoinGecko when the tokenlist provides an id (covers exchange-unlisted tokens like
+  // USD₮0). Its timeout is short, so a slow/rate-limited CoinGecko can't stall the command;
+  // any failure falls through to the exchange results that are already in flight.
+  let coingeckoErr: unknown;
+  if (coingeckoId) {
+    try {
+      const price = await fromCoinGecko(coingeckoId);
+      if (price > 0) return { priceUsd: price, source: "coingecko" };
+    } catch (err) {
+      coingeckoErr = err;
+    }
   }
+
+  const [binance, coinbase] = await exchanges;
+  if (binance.status === "fulfilled" && binance.value > 0) return { priceUsd: binance.value, source: "binance" };
+  if (coinbase.status === "fulfilled" && coinbase.value > 0) return { priceUsd: coinbase.value, source: "coinbase" };
 
   // Every source failed. Prefer the CoinGecko failure as the cause when we queried it
   // (e.g. a 429 rate-limit), so the error isn't a misleading "unlisted on exchanges".
   const cause =
-    (coingeckoId && coingecko.status === "rejected" && coingecko.reason) ||
+    coingeckoErr ||
     (binance.status === "rejected" && binance.reason) ||
     (coinbase.status === "rejected" && coinbase.reason) ||
     new Error("all price sources returned a non-positive value");
