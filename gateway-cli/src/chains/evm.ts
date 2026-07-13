@@ -11,10 +11,13 @@ import { BTC_DECIMALS } from '../config.js';
  * Groups tokens by address (case-insensitive) and tracks whether metadata
  * is uniform across all chains or varies by chain.
  */
-type TokenEntry = { address: string; symbol: string; decimals: number; chainId: number; coingeckoId?: string };
-
-/** Raw tokenlist entry — `coingeckoId` lives under `extensions`. */
-type RawTokenlistEntry = TokenEntry & { extensions?: { coingeckoId?: string } };
+type TokenEntry = {
+  address: string;
+  symbol: string;
+  decimals: number;
+  chainId: number;
+  extensions?: { coingeckoId?: string };
+};
 
 interface AddressEntry {
   canonical: TokenEntry;
@@ -23,14 +26,7 @@ interface AddressEntry {
 }
 
 const tokenIndex = new Map<string, AddressEntry>();
-for (const raw of tokenlistJson.tokens as RawTokenlistEntry[]) {
-  const t: TokenEntry = {
-    address: raw.address,
-    symbol: raw.symbol,
-    decimals: raw.decimals,
-    chainId: raw.chainId,
-    coingeckoId: raw.extensions?.coingeckoId,
-  };
+for (const t of tokenlistJson.tokens as TokenEntry[]) {
   const key = t.address.toLowerCase();
   const existing = tokenIndex.get(key);
   if (existing) {
@@ -73,16 +69,17 @@ export function getTokenMetadata(address: string, chain: string, opts?: { throwO
     throw new Error(`Unknown token ${address} on chain "${chain}" — cannot determine decimals. Use a known token symbol or verify the address.`);
   }
 
-  if (entry.uniform) {
-    return { symbol: entry.canonical.symbol, decimals: entry.canonical.decimals, coingeckoId: entry.canonical.coingeckoId };
-  }
+  // coingeckoId lives under `extensions` and identifies the underlying asset.
+  const toMetadata = (t: TokenEntry) => ({ symbol: t.symbol, decimals: t.decimals, coingeckoId: t.extensions?.coingeckoId });
+
+  if (entry.uniform) return toMetadata(entry.canonical);
 
   const chainId = CHAIN_IDS[chain];
   const token = chainId !== undefined ? entry.byChainId.get(chainId) : undefined;
-  if (token) return { symbol: token.symbol, decimals: token.decimals, coingeckoId: token.coingeckoId ?? entry.canonical.coingeckoId };
+  // Chain-specific metadata; coingeckoId falls back to the canonical entry (same asset).
+  if (token) return { ...toMetadata(token), coingeckoId: token.extensions?.coingeckoId ?? entry.canonical.extensions?.coingeckoId };
 
-  // Token has varying metadata across chains; use canonical (first seen) values
-  return { symbol: entry.canonical.symbol, decimals: entry.canonical.decimals, coingeckoId: entry.canonical.coingeckoId };
+  return toMetadata(entry.canonical);
 }
 
 // ─── Native token metadata ───────────────────────────────────────────────────
