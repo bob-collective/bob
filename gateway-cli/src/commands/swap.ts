@@ -228,12 +228,18 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
   // The BTC payout tx the order itself reports having broadcast (offramp only).
   let pendingBtcPaymentTxId: string | undefined;
 
-  while (Date.now() < deadline) {
+  for (;;) {
+    // ONE clock read per iteration. The loop guard and the per-attempt timeout are derived
+    // from the same value, so the remaining window cannot turn negative between them — a
+    // negative delay would make AbortSignal.timeout throw RangeError synchronously, outside
+    // the try below, and report a swap whose funds are already committed as failed.
+    const remainingMs = deadline - Date.now();
+    if (remainingMs <= 0) break;
+    const attemptTimeoutMs = Math.min(GET_ORDER_TIMEOUT_MS, remainingMs);
+
     // The try wraps ONLY the read: everything below it interprets a status we did
     // successfully read, and a bug there must surface, not be retried as a read error.
     let order: Awaited<ReturnType<typeof sdk.getOrder>> | undefined;
-    // Never let a single read outlive the caller's --timeout.
-    const attemptTimeoutMs = Math.min(GET_ORDER_TIMEOUT_MS, deadline - Date.now());
     const signal = AbortSignal.timeout(attemptTimeoutMs);
     try {
       log.progress(`  Waiting for confirmation... (${Math.round((Date.now() - startMs) / 1000)}s elapsed)`);

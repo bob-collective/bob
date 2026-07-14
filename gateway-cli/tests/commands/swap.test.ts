@@ -351,6 +351,33 @@ describe("handleSwap", () => {
       vi.useRealTimers();
     });
 
+    it("survives the clock crossing the deadline mid-iteration (no RangeError)", async () => {
+      // The loop guard and the per-attempt timeout must not read the clock separately: a
+      // stall between the two reads makes the remaining window negative, and
+      // AbortSignal.timeout(negative) throws RangeError *synchronously* — outside the read's
+      // try — so a swap whose source funds are already committed exits 1 as a hard failure.
+      // Real timers here: we drive Date.now ourselves to place the stall deterministically.
+      const nowSpy = vi.spyOn(Date, "now");
+      try {
+        let call = 0;
+        nowSpy.mockImplementation(() => {
+          call++;
+          if (call === 1) return 1_000;   // startMs   → deadline = 2_000 (timeout: 1s)
+          if (call === 2) return 1_500;   // loop guard: still inside the window
+          return 999_999;                 // stalled — every later read is past the deadline
+        });
+        mockGetOrder.mockResolvedValue({ id: "order-456", status: { inProgress: {} } });
+
+        const { handleSwap } = await import("../../src/commands/swap.js");
+        const result = await handleSwap({ ...baseOpts, timeout: 1 }, silentLogger);
+
+        // Exits cleanly as in-flight rather than throwing RangeError.
+        expect(result.type).toBe("inFlight");
+      } finally {
+        nowSpy.mockRestore();
+      }
+    });
+
     it("a transient gateway 5xx while polling does not fail an already-settling swap", async () => {
       // Incident (staging order cbf7296e-340a-438a-981c-75980fafc40c): get-order
       // returned "bungee api error: status=504", yet the source tx was confirmed and
