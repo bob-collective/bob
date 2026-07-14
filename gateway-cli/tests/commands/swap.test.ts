@@ -314,6 +314,25 @@ describe("handleSwap", () => {
     expect(caught.message).toMatch(/do NOT re-run/i);
   });
 
+  it("names the EVM owner, not the BTC sender, in the recovery hint on a BTC onramp", async () => {
+    // `gateway-cli orders` rejects BTC addresses outright, and orders are indexed by the
+    // EVM-side owner. Naming the BTC sender leaves the operator unable to check whether an
+    // order exists — exactly the moment they are tempted to re-run, and double-send.
+    const { deriveAddress, resolveRecipient } = await import("../../src/chains/index.js");
+    vi.mocked(deriveAddress).mockResolvedValue("bc1qsender");
+    vi.mocked(resolveRecipient).mockResolvedValue("0xEvmOwner");
+    mockExecuteQuote.mockImplementation(async ({ callback }: any) => {
+      callback?.({ step: 1, type: "sign_bitcoin_transaction", totalSteps: 1 });
+      throw new Error("ECONNRESET");
+    });
+
+    const { handleSwap } = await import("../../src/commands/swap.js");
+    const caught = await handleSwap({ ...baseOpts, retry: true }, silentLogger).catch(e => e);
+
+    expect(caught.message).toContain("gateway-cli orders 0xEvmOwner");
+    expect(caught.message).not.toContain("bc1qsender");
+  });
+
   it("does NOT retry after an ERC20 approve was signed (conservative: approve is a broadcast tx too)", async () => {
     // An approve alone is not a double-send, but re-entering the closure while it is
     // still pending races its own nonce — and the next step would broadcast the funds.

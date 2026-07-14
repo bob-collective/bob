@@ -204,8 +204,10 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
     if (err instanceof PointOfNoReturnError) {
       throw new SwapError(
         `Swap aborted after the wallet was asked to sign (step: ${err.reason}). ` +
-        `Funds may already have been sent — do NOT re-run this swap or you may send twice. ` +
-        `Check for an existing order from ${senderAddress ?? "your wallet"} with \`gateway-cli orders\` first. ` +
+        `A transaction may already have been broadcast — do NOT re-run this swap or you may send twice. ` +
+        `(The signature was requested but we never learned whether it reached the chain; a failure during ` +
+        `transaction preparation may mean nothing was sent.) ` +
+        `Confirm with \`gateway-cli orders ${ownerAddress}\` before re-running. ` +
         `Underlying error: ${err.originalError.message}`,
         {
           srcAsset: { symbol: srcAsset.symbol, chain: srcAsset.chain },
