@@ -245,37 +245,32 @@ export async function parseAmount(
   throw new Error(`Invalid amount "${raw}". ${AMOUNT_HELP}`);
 }
 
-// ─── Combined asset + amount resolution ──────────────────────────────────────
+// ─── Amount resolution against an already-resolved asset ─────────────────────
 
-/**
- * Combined result of resolving swap inputs: source/destination assets and atomic amount.
- */
-export interface ResolvedInputs {
-  srcAsset: ResolvedAsset;
-  dstAsset: ResolvedAsset;
+/** A source amount resolved to atomic units, with a human-readable rendering. */
+export interface ResolvedAmount {
   atomicUnits: string;
   display: string;
 }
 
 /**
- * Resolve all swap inputs (source, destination, amount) into structured data.
- * Handles asset parsing, amount conversion, and "ALL" balance lookup.
- * @param src - Source asset string (e.g., "BTC", "USDC:base")
- * @param dst - Destination asset string
+ * Resolve the source amount for an ALREADY-RESOLVED source asset, including the
+ * `ALL` balance lookup.
+ *
+ * It takes a {@link ResolvedAsset} rather than the raw `--src` string on purpose:
+ * the caller has already resolved the source (that is what tells it whether a key
+ * is even needed), and re-parsing it here would be a second, divergable definition
+ * of the same thing.
+ *
+ * @param srcAsset - The resolved source asset
  * @param amount - Amount string (e.g., "0.05BTC", "100USD", "ALL")
- * @param routes - Available routes for token lookup
- * @param opts - Optional sender address and fee token/reserve for balance calculations
+ * @param opts - Sender address (required by `ALL`) and fee token/reserve for gas reservation
  */
-export async function resolveSwapInputs(
-  src: string,
-  dst: string,
+export async function resolveAmount(
+  srcAsset: ResolvedAsset,
   amount: string,
-  routes: RouteInfo[],
   opts?: { senderAddress?: string; feeToken?: string; feeReserve?: string },
-): Promise<ResolvedInputs> {
-  const tokenIndex = buildTokenIndex(routes);
-  const srcAsset = parseAssetChain(src, routes, tokenIndex);
-  const dstAsset = parseAssetChain(dst, routes, tokenIndex);
+): Promise<ResolvedAmount> {
   const parsed = await parseAmount(amount, srcAsset.symbol, srcAsset.decimals, srcAsset.coingeckoId);
 
   if (parsed.type === "all") {
@@ -299,9 +294,11 @@ export async function resolveSwapInputs(
     if (BigInt(allSpendable) === 0n) {
       throw new Error(`No ${srcAsset.symbol} balance found for ${opts.senderAddress}`);
     }
-    const display = `${formatUnits(BigInt(allSpendable), srcAsset.decimals)} ${srcAsset.symbol} (all spendable)`;
-    return { srcAsset, dstAsset, atomicUnits: allSpendable, display };
+    return {
+      atomicUnits: allSpendable,
+      display: `${formatUnits(BigInt(allSpendable), srcAsset.decimals)} ${srcAsset.symbol} (all spendable)`,
+    };
   }
 
-  return { srcAsset, dstAsset, atomicUnits: parsed.atomicUnits, display: parsed.display };
+  return { atomicUnits: parsed.atomicUnits, display: parsed.display };
 }

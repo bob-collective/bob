@@ -89,7 +89,7 @@ program
     const mode = modeOf(opts);
     const parsed = quoteSchema.parse(opts);
     const { handleQuote } = await import("./commands/quote.js");
-    const result = await handleQuote({ ...parsed, sender: parsed.sender, ownerAddress: parsed.owner });
+    const result = await handleQuote(parsed);
     render(result.quote, mode, () => formatConfirmation(result.confirmation));
   }));
 
@@ -118,7 +118,7 @@ program
 
     const log = createLogger(mode);
     const { handleSwap } = await import("./commands/swap.js");
-    const result = await handleSwap({ ...parsed, sender: parsed.sender, owner: parsed.owner }, log);
+    const result = await handleSwap(parsed, log);
 
     render("data" in result ? result.data : result, mode);
   }));

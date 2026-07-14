@@ -65,17 +65,26 @@ vi.mock("../../src/util/route-provider.js", () => ({
   getRoutes: vi.fn(async () => mockRoutes),
 }));
 
-vi.mock("../../src/util/input-resolver.js", () => ({
-  resolveSwapInputs: vi.fn().mockResolvedValue({
-    srcAsset: { chain: "bitcoin", address: "BTC", symbol: "BTC", decimals: 8 },
-    dstAsset: { chain: "base", address: "0xUSDC", symbol: "USDC", decimals: 6 },
-    atomicUnits: "5000000",
-    display: "0.05 BTC",
-  }),
-  humanToAtomic: vi.fn((human: string, decimals: number) => "0"),
-  buildTokenIndex: vi.fn(() => ({ byChainAndSymbol: new Map(), byChainAndAddress: new Map() })),
-  parseAssetChain: vi.fn((asset: string) => ({ chain: "bitcoin", address: "BTC", symbol: "BTC", decimals: 8 })),
-}));
+// `parseAssetChain` must answer per-asset: the source and the destination are resolved
+// through the SAME resolver, and a mock that returned one fixed asset for both would
+// make every swap look like a BTC→BTC swap.
+vi.mock("../../src/util/input-resolver.js", () => {
+  const assets: Record<string, unknown> = {
+    "BTC": { chain: "bitcoin", address: "BTC", symbol: "BTC", decimals: 8 },
+    "USDC:base": { chain: "base", address: "0xUSDC", symbol: "USDC", decimals: 6 },
+    "USDT:ethereum": { chain: "ethereum", address: "0xUSDT", symbol: "USDT", decimals: 6 },
+  };
+  return {
+    humanToAtomic: vi.fn(() => "0"),
+    buildTokenIndex: vi.fn(() => ({ byChainAndSymbol: new Map(), byChainAndAddress: new Map() })),
+    parseAssetChain: vi.fn((asset: string) => {
+      const resolved = assets[asset];
+      if (!resolved) throw new Error(`test fixture: no asset for "${asset}"`);
+      return resolved;
+    }),
+    resolveAmount: vi.fn().mockResolvedValue({ atomicUnits: "5000000", display: "0.05 BTC" }),
+  };
+});
 
 vi.mock("../../src/util/price-oracle.js", () => ({
   fetchPrice: vi.fn().mockResolvedValue({ priceUsd: 100000, source: "mock" }),
@@ -90,7 +99,7 @@ vi.mock("../../src/chains/index.js", () => ({
     onramp: { orderId, bitcoinTxHex: txId },
   })),
   resolvePrivateKey: vi.fn((chain: string, privateKey?: string) => privateKey),
-  resolveRecipient: vi.fn().mockResolvedValue("bc1qtest"),
+  resolveRecipient: vi.fn().mockResolvedValue("0xEvmRecipient"),
 }));
 
 vi.mock("@gobob/bob-sdk", () => ({
@@ -274,20 +283,8 @@ describe("handleSwap", () => {
     // the thrown error must carry the settlement tx hash + chainId so downstream
     // alerting can fetch the receipt and detect out-of-gas — without these the
     // failure is undiagnosable.
-    const { resolveSwapInputs, parseAssetChain } = await import("../../src/util/input-resolver.js");
-    // srcFamily is derived from parseAssetChain(opts.src) → drives variant.
-    // Make src EVM so variant resolves to "tokenSwap" (not onramp).
-    vi.mocked(parseAssetChain).mockReturnValueOnce({ chain: "ethereum", address: "0xUSDT", symbol: "USDT", decimals: 6 } as any);
-    vi.mocked(resolveSwapInputs).mockResolvedValueOnce({
-      srcAsset: { chain: "ethereum", address: "0xUSDT", symbol: "USDT", decimals: 6 },
-      dstAsset: { chain: "base", address: "0xUSDC", symbol: "USDC", decimals: 6 },
-      atomicUnits: "50000000",
-      display: "50 USDT",
-    } as any);
-    // EVM src means the signing-key path runs: getChainFamily("ethereum") → "evm".
-    const { getChainFamily, resolveSigner, deriveAddress, resolveRecipient } = await import("../../src/chains/index.js");
-    vi.mocked(getChainFamily).mockImplementation((chain: string) => chain === "bitcoin" ? "bitcoin" : "evm");
-    // EVM signed path uses { walletClient, publicClient }; pending-nonce check
+    const { resolveSigner, deriveAddress, resolveRecipient } = await import("../../src/chains/index.js");
+    // EVM signed path uses { walletClient, publicClient }; the pending-nonce check
     // calls publicClient.getTransactionCount (latest >= pending → settled).
     const publicClient = { getTransactionCount: vi.fn().mockResolvedValue(0) } as any;
     vi.mocked(resolveSigner).mockResolvedValue({ address: "0xSender", walletClient: {} as any, publicClient } as any);
@@ -301,15 +298,10 @@ describe("handleSwap", () => {
     const { handleSwap } = await import("../../src/commands/swap.js");
     const { SwapError } = await import("../../src/errors.js");
 
-    let caught: any;
-    try {
-      await handleSwap(
-        { ...baseOpts, src: "USDT:ethereum", dst: "USDC:base", privateKey: "0xevmkey" },
-        silentLogger,
-      );
-    } catch (e) {
-      caught = e;
-    }
+    const caught: any = await handleSwap(
+      { ...baseOpts, src: "USDT:ethereum", dst: "USDC:base", privateKey: "0xevmkey" },
+      silentLogger,
+    ).catch(e => e);
 
     expect(caught).toBeInstanceOf(SwapError);
     // Message preserved so existing categorization still matches as a fallback.
@@ -321,5 +313,4 @@ describe("handleSwap", () => {
     expect(caught.context.srcAsset).toEqual({ symbol: "USDT", chain: "ethereum" });
     expect(caught.context.dstAsset).toEqual({ symbol: "USDC", chain: "base" });
   });
-
 });
