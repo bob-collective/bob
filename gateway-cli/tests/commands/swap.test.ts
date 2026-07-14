@@ -330,6 +330,25 @@ describe("handleSwap", () => {
     expect(caught.message).toContain("approve");
   });
 
+  it("reports the FURTHEST step reached, not the first, when several steps fired", async () => {
+    // An EVM ERC20 swap fires approve → send_transaction. If the error names the first
+    // step, an operator reads "only the approve went out" and concludes it is safe to
+    // re-run — while the funds tx is already on-chain. That misreading is the exact
+    // double-send this fix exists to prevent, so the furthest step must win.
+    mockExecuteQuote.mockImplementation(async ({ callback }: any) => {
+      callback?.({ step: 1, type: "approve", totalSteps: 2 });
+      callback?.({ step: 2, type: "send_transaction", totalSteps: 2 });
+      throw new Error("registerTx failed: 503 Service Unavailable");
+    });
+
+    const { handleSwap } = await import("../../src/commands/swap.js");
+    const caught = await handleSwap({ ...baseOpts, retry: true }, silentLogger).catch(e => e);
+
+    expect(mockExecuteQuote).toHaveBeenCalledTimes(1);
+    expect(caught.message).toContain("send_transaction");
+    expect(caught.message).not.toContain("step: approve");
+  });
+
   it("DOES still retry a transient error raised BEFORE anything was broadcast", async () => {
     // The other half of the invariant: the fix must not disable retries wholesale.
     // Nothing has been signed yet here, so re-quoting is free of side effects.

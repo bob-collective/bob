@@ -35,7 +35,14 @@ export class SwapError extends Error {
 export interface RetryGuard {
   /**
    * Latch. From this call onward the current operation will NOT be retried,
-   * however transient the subsequent error looks. Idempotent; the first reason wins.
+   * however transient the subsequent error looks.
+   *
+   * Safe to call repeatedly as the operation progresses: the latch itself is
+   * monotonic (once armed it never disarms), and the LAST reason wins, so the
+   * error reports the *furthest* irreversible step reached — not the first.
+   * Reporting the first would understate how far the operation got (e.g. naming
+   * an ERC20 `approve` when the funds tx had in fact already been broadcast),
+   * which is precisely the misreading that leads someone to re-run and double-send.
    */
   pointOfNoReturn(reason: string): void;
 }
@@ -81,7 +88,7 @@ export async function withRetry<T>(
   return pRetry(
     async () => {
       let crossed: string | undefined;
-      const guard: RetryGuard = { pointOfNoReturn: (reason) => { crossed ??= reason; } };
+      const guard: RetryGuard = { pointOfNoReturn: (reason) => { crossed = reason; } };
       try {
         return await fn(guard);
       } catch (e) {
