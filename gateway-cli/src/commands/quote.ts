@@ -1,7 +1,6 @@
 import { getInnerQuoteV3 } from "../util/quote.js";
 import { getRoutes } from "../util/route-provider.js";
-import { resolveSwapInputs, humanToAtomic } from "../util/input-resolver.js";
-import { fetchPrice } from "../util/price-oracle.js";
+import { resolveSwapInputs } from "../util/input-resolver.js";
 import { MempoolClient } from "@gobob/bob-sdk";
 import { loadConfig, getSdk } from "../config.js";
 import { resolveRecipient, deriveAddress, getChainFamily, resolvePrivateKey } from "../chains/index.js";
@@ -16,7 +15,6 @@ export interface QuoteOptions {
   sender?: string;
   ownerAddress?: string;
   slippage?: number;
-  gasRefillUsd?: number;
   btcFeeRate?: number;
   feeToken?: string;
   feeReserve?: string;
@@ -78,10 +76,6 @@ export async function handleQuote(opts: QuoteOptions): Promise<QuoteResult> {
     }
   }
 
-  const gasRefillWei = opts.gasRefillUsd
-    ? humanToAtomic((opts.gasRefillUsd / (await fetchPrice("ETH")).priceUsd).toFixed(18), 18)
-    : undefined;
-
   // ownerAddress (required by V3) is the EVM-side address controlling the order.
   // Use the explicit --owner override when given; otherwise derive the EVM-side
   // address: recipient for onramp (BTC→EVM), sender for offramp/tokenSwap.
@@ -97,7 +91,6 @@ export async function handleQuote(opts: QuoteOptions): Promise<QuoteResult> {
     ownerAddress,
     amount: atomicUnits,
     maxSlippage: slippageBps,
-    gasRefill: gasRefillWei ? BigInt(gasRefillWei) : undefined,
   });
   const outputAmount = getInnerQuoteV3(quote).outputAmount.amount;
 
@@ -110,7 +103,6 @@ export async function handleQuote(opts: QuoteOptions): Promise<QuoteResult> {
       dstChain: dstAsset.chain,
       slippageBps,
       feeRateSatPerVbyte: feeRate,
-      gasRefillUsd: opts.gasRefillUsd ? String(opts.gasRefillUsd) : undefined,
     },
     confirmation: {
       srcAmount: atomicUnits,
@@ -122,7 +114,6 @@ export async function handleQuote(opts: QuoteOptions): Promise<QuoteResult> {
       feeRateSatPerVbyte: feeRate,
       slippageBps,
       recipient: recipient,
-      gasRefillUsd: opts.gasRefillUsd ? String(opts.gasRefillUsd) : undefined,
     },
   };
 }
