@@ -145,6 +145,7 @@ All config via environment variables. No config files.
 | `BITCOIN_PRIVATE_KEY` | BTC private key (WIF or hex) |
 | `EVM_PRIVATE_KEY` | EVM private key (hex) |
 | `GATEWAY_API_URL` | Gateway API base URL (default: production) |
+| `GATEWAY_API_KEY` | Gateway API key, sent as a bearer token (default: built-in shared key; must be exactly 32 chars) |
 | `BTC_FEE_RATE` | Bitcoin fee rate in sat/vbyte (default: mempool fastest) |
 | `EVM_RPC_URL_<CHAIN>` | Custom RPC URL per chain (e.g. `EVM_RPC_URL_ETHEREUM`) |
 

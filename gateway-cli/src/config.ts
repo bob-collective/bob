@@ -4,12 +4,22 @@ import { GatewaySDK, type V3Api } from "@gobob/bob-sdk";
 export const BTC_DECIMALS = 8;
 
 /**
+ * Gateway API key used when none is provided via `GATEWAY_API_KEY`.
+ *
+ * Not a secret: this key only attributes backend volume to the CLI, so it
+ * intentionally ships to every user. Grants no privileges and needs no rotation.
+ */
+export const DEFAULT_GATEWAY_API_KEY = "7dc206b3ed294ba1be0349e5535ad36c";
+
+/**
  * Application configuration loaded from environment variables.
  * All values are optional except timeoutMs and slippageBps which have defaults.
  */
 export interface Config {
   /** Gateway API base URL (default: production endpoint). */
   apiUrl?: string;
+  /** Gateway API key sent as a bearer token (default: {@link DEFAULT_GATEWAY_API_KEY}). */
+  apiKey: string;
   /** Bitcoin private key in WIF or hex format. */
   bitcoinPrivateKey?: string;
   /** EVM private key in hex format. */
@@ -33,6 +43,7 @@ export function loadConfig(): Config {
   const feeRate = process.env.BTC_FEE_RATE ? parseInt(process.env.BTC_FEE_RATE, 10) : undefined;
   _config = {
     apiUrl: process.env.GATEWAY_API_URL,
+    apiKey: process.env.GATEWAY_API_KEY || DEFAULT_GATEWAY_API_KEY,
     bitcoinPrivateKey: process.env.BITCOIN_PRIVATE_KEY,
     evmPrivateKey: process.env.EVM_PRIVATE_KEY,
     timeoutMs: 1_800_000,
@@ -46,13 +57,14 @@ let _sdk: InstanceType<typeof GatewaySDK> | null = null;
 
 /**
  * Get or create Gateway SDK instance.
- * Uses configured API URL or defaults to production.
+ * Uses configured API URL or defaults to production, and authenticates with the
+ * configured API key (bearer token).
  * Cached after first call for performance.
  */
 export function getSdk(): InstanceType<typeof GatewaySDK> {
   if (!_sdk) {
-    const { apiUrl } = loadConfig();
-    _sdk = apiUrl ? new GatewaySDK({ basePath: apiUrl }) : new GatewaySDK();
+    const { apiUrl, apiKey } = loadConfig();
+    _sdk = new GatewaySDK({ ...(apiUrl ? { basePath: apiUrl } : {}), apiKey });
   }
   return _sdk;
 }
