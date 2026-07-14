@@ -4,6 +4,8 @@ import { type WalletClient, type PublicClient } from "viem";
 import { withRetry, SwapError, PointOfNoReturnError } from "../errors.js";
 import { getRoutes } from "../util/route-provider.js";
 import { resolveSwapContext, type SwapContext, type SwapContextOptions } from "../util/swap-context.js";
+import { watchOrder } from "../util/order-watcher.js";
+import { sleep } from "../util/sleep.js";
 import { loadConfig, getSdk, getApi } from "../config.js";
 import { resolveSigner } from "../chains/index.js";
 import { CHAIN_IDS } from "../chains/evm.js";
@@ -26,55 +28,9 @@ export type SwapResult =
   | { type: "mempoolPending"; data: SwapMempoolPendingJson }
   | { type: "inFlight"; data: SwapInFlightJson };
 
-/** Timings for the post-submission poll loop. Overridable so tests can drive it fast. */
-export interface PollTimings {
-  /** Wait between two ordinary in-progress polls. */
-  pollIntervalMs: number;
-  /** Ceiling for the exponential backoff applied after consecutive read failures. */
-  maxBackoffMs: number;
-  /** Budget for a SINGLE `getOrder` read, enforced by aborting the request. */
-  getOrderTimeoutMs: number;
-}
-
-const DEFAULT_POLL_TIMINGS: PollTimings = {
-  pollIntervalMs: 15_000,
-  maxBackoffMs: 60_000,
-  getOrderTimeoutMs: 30_000,
-};
-
-/** V2 order status is a discriminated object union: {success} | {refunded} | {failed} | {inProgress}. */
-const hasKey = <K extends string>(s: unknown, k: K): s is Record<K, unknown> =>
-  typeof s === "object" && s !== null && k in s;
-
-/**
- * Sleep that resolves early — never rejects — when `signal` aborts.
- *
- * The poll loop's backoff must not outlive the overall timeout, and the way to
- * express that is to hang the sleep off the same signal that bounds everything
- * else. The alternative, clamping the delay against a computed remaining window,
- * is clock arithmetic — and clock arithmetic is what a hand-maintained deadline turns
- * into a negative delay when two of its reads disagree.
- */
-function sleep(ms: number, signal: AbortSignal): Promise<void> {
-  return new Promise<void>(resolve => {
-    if (signal.aborted) return resolve();
-    const done = () => {
-      clearTimeout(timer);
-      signal.removeEventListener("abort", done);
-      resolve();
-    };
-    const timer = setTimeout(done, ms);
-    signal.addEventListener("abort", done, { once: true });
-  });
-}
-
 // ─── Handler ─────────────────────────────────────────────────────────────────
 
-export async function handleSwap(
-  opts: SwapOptions,
-  log: Logger,
-  timings: PollTimings = DEFAULT_POLL_TIMINGS,
-): Promise<SwapResult> {
+export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapResult> {
   const config = loadConfig();
   const sdk = getSdk();
   const retries = opts.retry ? 5 : 0;
@@ -216,137 +172,81 @@ export async function handleSwap(
     };
   }
 
-  // ── Poll ────────────────────────────────────────────────────────────────────
+  // ── Observe the order's state machine ───────────────────────────────────────
   //
-  // The source funds are committed on-chain from here on, so the ONLY authority on
-  // whether the swap failed is the order status itself. Failing to *read* that status
-  // (gateway 5xx, Cloudflare 403, connection reset, DNS blip) says nothing about the
-  // swap and must never be reported as a swap failure — the order settles regardless
-  // of whether we can see it. Read errors are therefore always retried, with backoff,
-  // until the overall timeout aborts; an order that has still not settled by then exits
-  // in the non-failure "in flight" state below, carrying orderId + source txId.
-  //
-  // The timeout is expressed ONCE, as a signal. There is no deadline variable, no
-  // clock arithmetic and nothing to clamp: the loop is driven by abort state, each read
-  // is bounded by its own budget ANDed with the overall one, and the backoff sleep ends
-  // early when the overall signal fires. `startedAt` exists only to report elapsedMs —
-  // it never gates a branch.
-  const overall = AbortSignal.timeout(timeoutMs);
+  // The swap is now an async process the GATEWAY owns; all that is left for this
+  // command is to wait for its terminal state and say what happened. The waiting —
+  // the loop, the backoff, the per-read abort budget, the read failures that must
+  // never be mistaken for swap failures — is the watcher's job, not ours. The whole
+  // budget is expressed ONCE, as a signal handed to it; no deadline, no clock
+  // arithmetic. `startedAt` is measurement only: it is reported, never obeyed.
   const startedAt = Date.now();
+  const outcome = await watchOrder(orderId, AbortSignal.timeout(timeoutMs), {
+    getOrder: (id, init) => sdk.getOrder(id, init),
+    log,
+  });
+  const elapsedMs = Date.now() - startedAt;
 
-  let readFailures = 0;
-  let lastReadError: string | undefined;
-  /** The BTC payout tx the ORDER itself reports having broadcast (offramp only). */
-  let payoutTxId: string | undefined;
+  switch (outcome.kind) {
+    // ── The order settled ────────────────────────────────────────────────────
+    case "settled": {
+      const outAmt = outcome.order.dstInfo?.amount ?? "?";
+      const slipBps = outputAmount && BigInt(outputAmount) !== 0n && outcome.order.dstInfo?.amount
+        ? Number(10000n - BigInt(outcome.order.dstInfo.amount) * 10000n / BigInt(outputAmount))
+        : 0;
 
-  while (!overall.aborted) {
-    let order: Awaited<ReturnType<typeof sdk.getOrder>> | undefined;
-    // Bound this single read by its own budget as well as the overall one. Passing the
-    // signal to the SDK genuinely cancels the request (it spreads initOverrides into
-    // fetch), unlike racing a timer, which would leak a socket per attempt.
-    const perAttempt = AbortSignal.timeout(timings.getOrderTimeoutMs);
-    const readSignal = AbortSignal.any([overall, perAttempt]);
-    try {
-      log.progress(`  Waiting for confirmation... (${Math.round((Date.now() - startedAt) / 1000)}s elapsed)`);
-      order = await sdk.getOrder(orderId, { signal: readSignal });
-      readFailures = 0;
-      lastReadError = undefined;
-    } catch (err) {
-      // The overall timeout firing mid-read is not a read failure — it is the loop
-      // ending. Leave the last genuine read error (if any) intact and fall through.
-      if (overall.aborted && !perAttempt.aborted) break;
-      // Anything else — including this read's own abort — is just a failed read: it
-      // says nothing about the swap, so it feeds the backoff and never becomes terminal.
-      readFailures++;
-      lastReadError = perAttempt.aborted
-        ? `reading order status timed out after ${timings.getOrderTimeoutMs}ms`
-        : err instanceof Error ? err.message : String(err);
-      log.warn(`could not read status of order ${orderId} (attempt ${readFailures}, retrying): ${lastReadError}`);
+      log.progress(`✓ Confirmed — ${outAmt} ${dstAsset.symbol} delivered to ${recipient}`);
+      return {
+        type: "confirmed",
+        data: { orderId, status: "confirmed", srcAmount: atomicUnits, srcAsset: srcAsset.symbol, dstAmount: outAmt, dstAsset: dstAsset.symbol, dstChain: dstAsset.chain, quotedDstAmount: outputAmount, actualSlippageBps: slipBps, txId, elapsedMs },
+      };
     }
 
-    if (order) {
-      if (hasKey(order.status, "success")) {
-        const elapsedMs = Date.now() - startedAt;
-        const outAmt = order.dstInfo?.amount ?? "?";
-        const slipBps = outputAmount && BigInt(outputAmount) !== 0n && order.dstInfo?.amount
-          ? Number(10000n - BigInt(order.dstInfo.amount) * 10000n / BigInt(outputAmount))
-          : 0;
+    // ── The order declared failure — the one and only terminal failure signal ──
+    // Carry the on-chain settlement tx hash + route so the --json serializer surfaces
+    // them (downstream alerting fetches the receipt to detect out-of-gas). Message
+    // unchanged so existing categorization still matches. Only offramp/tokenSwap have
+    // an EVM settlement tx; onramp settles on BTC.
+    case "failed":
+      throw new SwapError(`Order ${orderId} failed: ${JSON.stringify(outcome.order.status)}`, {
+        orderId,
+        ...(variant !== "onramp" && {
+          txId,
+          txParams: { to: orderData.tx?.to, from: senderAddress, chainId: CHAIN_IDS[evmChain], chainName: evmChain },
+          srcAsset: { symbol: srcAsset.symbol, chain: srcAsset.chain },
+          dstAsset: { symbol: dstAsset.symbol, chain: dstAsset.chain },
+        }),
+      });
 
-        log.progress(`✓ Confirmed — ${outAmt} ${dstAsset.symbol} delivered to ${recipient}`);
+    // ── No terminal status within the budget → in flight, NOT a failure ───────
+    case "inFlight": {
+      // The order told us it had broadcast a BTC payout: that txid is this order's
+      // payout, reported by the order and never inferred from the destination address.
+      if (outcome.payoutTxId) {
+        log.progress(`~ BTC payout broadcast, not yet confirmed: ${outcome.payoutTxId}`);
         return {
-          type: "confirmed",
-          data: { orderId, status: "confirmed", srcAmount: atomicUnits, srcAsset: srcAsset.symbol, dstAmount: outAmt, dstAsset: dstAsset.symbol, dstChain: dstAsset.chain, quotedDstAmount: outputAmount, actualSlippageBps: slipBps, txId, elapsedMs },
+          type: "mempoolPending",
+          data: { orderId, status: "mempool_pending", srcAmount: atomicUnits, srcAsset: srcAsset.symbol, dstAsset: dstAsset.symbol, dstChain: dstAsset.chain, mempoolTxId: outcome.payoutTxId },
         };
       }
 
-      if (hasKey(order.status, "refunded") || hasKey(order.status, "failed")) {
-        // The order itself declares failure — the one and only terminal signal.
-        // Carry the on-chain settlement tx hash + route so the --json serializer
-        // surfaces them (downstream alerting fetches the receipt to detect
-        // out-of-gas). Message unchanged so existing categorization still matches.
-        // Only offramp/tokenSwap have an EVM settlement tx; onramp settles on BTC.
-        throw new SwapError(`Order ${orderId} failed: ${JSON.stringify(order.status)}`, {
-          orderId,
-          ...(variant !== "onramp" && {
-            txId,
-            txParams: { to: orderData.tx?.to, from: senderAddress, chainId: CHAIN_IDS[evmChain], chainName: evmChain },
-            srcAsset: { symbol: srcAsset.symbol, chain: srcAsset.chain },
-            dstAsset: { symbol: dstAsset.symbol, chain: dstAsset.chain },
-          }),
-        });
-      }
-
-      // inProgress → keep polling, but remember the BTC payout if the order has one.
-      // `pendingBtcPayment` is the order's own record of the tx the gateway broadcast:
-      // null until it broadcasts, then carrying the exact txid. It is the only sound way
-      // to name THIS order's payout — the recipient address cannot identify it, since one
-      // address is reused across orders and parallel offramps to it overlap in the mempool.
-      const inProgress = hasKey(order.status, "inProgress")
-        ? order.status.inProgress as { pendingBtcPayment?: { txid?: string } | null } | undefined
-        : undefined;
-      if (inProgress?.pendingBtcPayment?.txid) {
-        payoutTxId = inProgress.pendingBtcPayment.txid;
-      }
+      // Otherwise we have no tx we can honestly attribute to this order — including when
+      // every read failed. An order id that can be followed up beats a confidently wrong txid.
+      log.progress(
+        `~ Still in flight after ${Math.round(elapsedMs / 1000)}s — order ${orderId} has not settled yet.\n` +
+        `  The source funds are committed (tx ${txId}). This is not a failure.\n` +
+        `  Follow it up with: gateway-cli status ${orderId}`,
+      );
+      return {
+        type: "inFlight",
+        data: {
+          orderId, status: "in_flight", srcAmount: atomicUnits, srcAsset: srcAsset.symbol,
+          dstAsset: dstAsset.symbol, dstChain: dstAsset.chain, txId, elapsedMs,
+          ...(outcome.lastError && { lastError: outcome.lastError }),
+        },
+      };
     }
-
-    // Back off on consecutive read failures so we don't hammer a struggling API; an
-    // ordinary in-progress poll just waits the fixed interval. The sleep ends as soon
-    // as the overall signal fires, so it cannot overrun the timeout.
-    const delay = readFailures > 0
-      ? Math.min(timings.pollIntervalMs * 2 ** (readFailures - 1), timings.maxBackoffMs)
-      : timings.pollIntervalMs;
-    await sleep(delay, overall);
   }
-
-  // ── Timed out without a terminal status → in flight, NOT a failure ──────────
-
-  const elapsedMs = Date.now() - startedAt;
-
-  // If the order reported a BTC payout while we were polling, that txid is this order's
-  // payout — reported by the order, not inferred from the destination address.
-  if (payoutTxId) {
-    log.progress(`~ BTC payout broadcast, not yet confirmed: ${payoutTxId}`);
-    return {
-      type: "mempoolPending",
-      data: { orderId, status: "mempool_pending", srcAmount: atomicUnits, srcAsset: srcAsset.symbol, dstAsset: dstAsset.symbol, dstChain: dstAsset.chain, mempoolTxId: payoutTxId },
-    };
-  }
-
-  // Otherwise we have no tx we can honestly attribute to this order — including when
-  // every read failed. An order id that can be followed up beats a confidently wrong txid.
-  log.progress(
-    `~ Still in flight after ${Math.round(elapsedMs / 1000)}s — order ${orderId} has not settled yet.\n` +
-    `  The source funds are committed (tx ${txId}). This is not a failure.\n` +
-    `  Follow it up with: gateway-cli status ${orderId}`,
-  );
-  return {
-    type: "inFlight",
-    data: {
-      orderId, status: "in_flight", srcAmount: atomicUnits, srcAsset: srcAsset.symbol,
-      dstAsset: dstAsset.symbol, dstChain: dstAsset.chain, txId, elapsedMs,
-      ...(lastReadError && { lastError: lastReadError }),
-    },
-  };
 }
 
 // ─── Point-of-no-return reporting ────────────────────────────────────────────
