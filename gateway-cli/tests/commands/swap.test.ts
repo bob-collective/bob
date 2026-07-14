@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import type { Logger } from "../../src/output.js";
 import type { RouteInfo } from "@gobob/bob-sdk";
 import type { PollTimings } from "../../src/commands/swap.js";
@@ -341,6 +341,125 @@ describe("handleSwap", () => {
     expect(caught.context.dstAsset).toEqual({ symbol: "USDC", chain: "base" });
   });
 
+  // ─── C1 / A4 — never retry a swap once the wallet has been asked to sign ────
+  //
+  // `executeQuote` is not idempotent: createOrder → sign + BROADCAST → registerTx.
+  // Re-running it after the broadcast sends the user's funds a SECOND time. The SDK
+  // fires its step callback immediately before it asks the wallet to sign, which is
+  // the signal these tests rely on. Reachable via `--retry` only (gateway-bot CI does
+  // not pass it), but `--retry` defaults to on for anyone running the CLI by hand.
+
+  it("does NOT retry executeQuote when a transient error is thrown AFTER the source tx was broadcast", async () => {
+    // Reproduced from the real incident: the solver returned 504 *after* the source funds
+    // had already left the wallet. "504 Gateway Timeout" matches /timeout/i in TRANSIENT,
+    // so the closure was re-entered → a second quote, a second order, a second broadcast.
+    // Six broadcasts (1 + retries: 5) from one 504.
+    mockExecuteQuote.mockImplementation(async ({ callback }: any) => {
+      callback?.({ step: 1, type: "send_transaction", totalSteps: 1 });
+      throw new Error("bungee api error: status=504 Gateway Timeout");
+    });
+
+    const { handleSwap } = await import("../../src/commands/swap.js");
+    const { SwapError } = await import("../../src/errors.js");
+
+    const caught: any = await handleSwap({ ...baseOpts, retry: true }, silentLogger).catch(e => e);
+
+    // The funds-safety invariant: one broadcast, one attempt. Never two.
+    expect(mockExecuteQuote).toHaveBeenCalledTimes(1);
+
+    expect(caught).toBeInstanceOf(SwapError);
+    // The operator must not be told "it failed, try again" while funds may be in flight.
+    expect(caught.message).toMatch(/do NOT re-run/i);
+    expect(caught.message).toContain("send_transaction");
+    // Original error text preserved as a substring so gateway-bot's categorization still matches.
+    expect(caught.message).toContain("504 Gateway Timeout");
+  });
+
+  it("does NOT retry after a BTC signature was requested, even on a transient error", async () => {
+    mockExecuteQuote.mockImplementation(async ({ callback }: any) => {
+      callback?.({ step: 1, type: "sign_bitcoin_transaction", totalSteps: 1 });
+      throw new Error("ECONNRESET");
+    });
+
+    const { handleSwap } = await import("../../src/commands/swap.js");
+    const caught: any = await handleSwap({ ...baseOpts, retry: true }, silentLogger).catch(e => e);
+
+    expect(mockExecuteQuote).toHaveBeenCalledTimes(1);
+    expect(caught.message).toMatch(/do NOT re-run/i);
+  });
+
+  it("does NOT retry after an ERC20 approve was signed (approve is a broadcast tx too)", async () => {
+    // An approve alone is not a double-send, but re-entering the closure while it is still
+    // pending races its own nonce — and the next step would broadcast the funds. The line
+    // is drawn at the FIRST wallet interaction of any kind.
+    mockExecuteQuote.mockImplementation(async ({ callback }: any) => {
+      callback?.({ step: 1, type: "approve", totalSteps: 2 });
+      throw new Error("rate limit exceeded");
+    });
+
+    const { handleSwap } = await import("../../src/commands/swap.js");
+    const caught: any = await handleSwap({ ...baseOpts, retry: true }, silentLogger).catch(e => e);
+
+    expect(mockExecuteQuote).toHaveBeenCalledTimes(1);
+    expect(caught.message).toContain("approve");
+  });
+
+  it("reports the FURTHEST step reached, not the first, when several steps fired", async () => {
+    // An EVM ERC20 swap fires approve → send_transaction. If the error names the first
+    // step, an operator reads "only the approve went out" and concludes it is safe to
+    // re-run — while the funds tx is already on-chain. That misreading is the exact
+    // double-send this fix exists to prevent, so the furthest step must win.
+    mockExecuteQuote.mockImplementation(async ({ callback }: any) => {
+      callback?.({ step: 1, type: "approve", totalSteps: 2 });
+      callback?.({ step: 2, type: "send_transaction", totalSteps: 2 });
+      throw new Error("registerTx failed: 503 Service Unavailable");
+    });
+
+    const { handleSwap } = await import("../../src/commands/swap.js");
+    const caught: any = await handleSwap({ ...baseOpts, retry: true }, silentLogger).catch(e => e);
+
+    expect(mockExecuteQuote).toHaveBeenCalledTimes(1);
+    expect(caught.message).toContain("send_transaction");
+    expect(caught.message).not.toContain("step: approve");
+  });
+
+  it("DOES still retry a transient error raised BEFORE anything was broadcast", async () => {
+    // The other half of the invariant: the fix must not disable retries wholesale.
+    // Nothing has been signed yet here, so re-quoting is free of side effects.
+    let quoteCalls = 0;
+    mockGetQuote.mockImplementation(async () => {
+      if (++quoteCalls === 1) throw new Error("429 Too Many Requests");
+      return onrampQuote;
+    });
+
+    const { handleSwap } = await import("../../src/commands/swap.js");
+    const result = await handleSwap({ ...baseOpts, retry: true }, silentLogger);
+
+    expect(result.type).toBe("confirmed");
+    expect(quoteCalls).toBe(2);
+    expect(mockExecuteQuote).toHaveBeenCalledTimes(1);
+  });
+
+  it("names the EVM owner, not the BTC sender, in the recovery hint on a BTC onramp", async () => {
+    // A4: `gateway-cli orders` rejects BTC addresses outright ("BTC address lookups are not
+    // supported"), and orders are indexed by the EVM-side owner anyway. Naming the BTC
+    // sender leaves the operator unable to check whether an order exists — at exactly the
+    // moment they are tempted to re-run, and double-send.
+    const { deriveAddress, resolveRecipient } = await import("../../src/chains/index.js");
+    vi.mocked(deriveAddress).mockResolvedValue("bc1qsender");
+    vi.mocked(resolveRecipient).mockResolvedValue("0xEvmOwner");
+    mockExecuteQuote.mockImplementation(async ({ callback }: any) => {
+      callback?.({ step: 1, type: "sign_bitcoin_transaction", totalSteps: 1 });
+      throw new Error("ECONNRESET");
+    });
+
+    const { handleSwap } = await import("../../src/commands/swap.js");
+    const caught: any = await handleSwap({ ...baseOpts, retry: true }, silentLogger).catch(e => e);
+
+    expect(caught.message).toContain("gateway-cli orders 0xEvmOwner");
+    expect(caught.message).not.toContain("bc1qsender");
+  });
+
   // ─── B1/B2/B3 — polling never reports a committed swap as failed ────────────
   //
   // Once executeQuote returns, the source funds are committed on-chain. The order status
@@ -460,9 +579,9 @@ describe("handleSwap", () => {
         let call = 0;
         nowSpy.mockImplementation(() => {
           call++;
-          if (call === 1) return 1_000;
-          if (call === 2) return 1_500;
-          return 999_999_999; // stalled: every later read is "past" any deadline
+          if (call === 1) return 1_000;  // startedAt
+          if (call === 2) return 1_100;  // still inside any plausible window
+          return 999_999_999;            // stalled: every later read is "past" any deadline
         });
         mockGetOrder.mockResolvedValue({ id: "order-456", status: { inProgress: {} } });
 

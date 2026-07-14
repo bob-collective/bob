@@ -1,9 +1,9 @@
-import type { BitcoinSigner, GatewayCreateOrderV3 } from "@gobob/bob-sdk";
+import type { BitcoinSigner, ExecuteQuoteStep, GatewayCreateOrderV3 } from "@gobob/bob-sdk";
 import { getInnerQuoteV3 } from "../util/quote.js";
 import { type WalletClient, type PublicClient } from "viem";
-import { withRetry, SwapError } from "../errors.js";
+import { withRetry, SwapError, PointOfNoReturnError } from "../errors.js";
 import { getRoutes } from "../util/route-provider.js";
-import { resolveSwapContext, type SwapContextOptions } from "../util/swap-context.js";
+import { resolveSwapContext, type SwapContext, type SwapContextOptions } from "../util/swap-context.js";
 import { loadConfig, getSdk, getApi } from "../config.js";
 import { resolveSigner } from "../chains/index.js";
 import { CHAIN_IDS } from "../chains/evm.js";
@@ -89,7 +89,7 @@ export async function handleSwap(
     signing: !opts.unsigned,
     senderAddress: true,
   });
-  const { srcAsset, dstAsset, srcFamily, dstFamily, variant, evmChain, senderAddress, recipient, atomicUnits } = ctx;
+  const { srcAsset, dstAsset, srcFamily, dstFamily, variant, evmChain, senderAddress, recipient, ownerAddress, atomicUnits } = ctx;
 
   // UX-8: BTC onramp --unsigned requires a sender address to construct the PSBT
   if (opts.unsigned && srcFamily === "bitcoin" && !senderAddress) {
@@ -104,7 +104,7 @@ export async function handleSwap(
 
   const signer = opts.unsigned ? null : await resolveSigner(srcFamily === "bitcoin" ? "bitcoin" : evmChain, ctx.key!);
 
-  // ── Quote + execute (retryable) ─────────────────────────────────────────────
+  // ── Quote + execute (retryable up to the point of no return) ────────────────
 
   const TRANSIENT = [/TRM screening/i, /429/, /Too Many Requests/i, /rate limit/i, /not yet propagated/i, /BTC propagation/i, /timeout/i, /ECONNRESET/, /ETIMEDOUT/];
   const isTransient = (e: unknown) => TRANSIENT.some(p => p.test(e instanceof Error ? e.message : String(e)));
@@ -139,6 +139,7 @@ export async function handleSwap(
 
   // --unsigned has no public SDK path: executeQuote always signs.
   // Use the V3 API directly to fetch the order with its PSBT (BTC) or unsigned tx (EVM).
+  // Nothing here touches a wallet, so it is freely retryable.
   if (opts.unsigned) {
     const order: GatewayCreateOrderV3 = await withRetry(async () => {
       const quote = await sdk.getQuote(ctx.quoteParams);
@@ -156,21 +157,45 @@ export async function handleSwap(
     return { type: "unsigned", orderId: orderData.orderId, txInfo: orderData.tx };
   }
 
-  // Signed flows go through executeQuote.
-  // executeQuote handles createOrder + sign + registerTx in one call.
-  // For BTC paths the SDK doesn't access walletClient/publicClient; cast to satisfy types.
-  const { order, tx, outputAmount } = await withRetry(async () => {
-    const quote = await sdk.getQuote(ctx.quoteParams);
-    // For BTC paths walletClient/publicClient are unused inside the SDK; the
-    // SDK's type forces them to be present, so we widen via `any` to satisfy it.
-    const result = await sdk.executeQuote({
-      quote,
-      walletClient: evmClients?.walletClient as any,
-      publicClient: evmClients?.publicClient as any,
-      btcSigner,
-    });
-    return { ...result, outputAmount: getInnerQuoteV3(quote).outputAmount.amount };
-  }, { retries, isTransient });
+  // ── Point of no return ─────────────────────────────────────────────────────
+  // `executeQuote` is NOT idempotent. Internally it runs:
+  //   createOrder → (ERC20 reset/approve) → SIGN + BROADCAST the source tx → registerTx
+  // Only that prefix is safe to re-run. If it throws *after* the wallet has been asked
+  // to sign — a `registerTx` 5xx, a solver's "504 Gateway Timeout", a dropped socket,
+  // i.e. exactly the errors `isTransient` matches — then retrying the closure fetches a
+  // fresh quote, creates a SECOND order and broadcasts a SECOND transaction. The user's
+  // funds leave the wallet twice.
+  //
+  // The SDK fires an ExecuteQuoteStep immediately BEFORE every wallet interaction
+  // (ResetApproval / Approve / SendTransaction / SignBitcoinTransaction), so the first
+  // step of ANY kind is the last instant at which re-running is still safe. We latch on
+  // all of them rather than only the two that move the funds: an approve is itself a
+  // signed, broadcast tx, and re-entering the closure while it is still pending races
+  // its own nonce. Over-latching costs at most one lost retry; under-latching costs the
+  // funds.
+  let executed;
+  try {
+    executed = await withRetry(async (guard) => {
+      const quote = await sdk.getQuote(ctx.quoteParams);
+      // For BTC paths walletClient/publicClient are unused inside the SDK; the
+      // SDK's type forces them to be present, so we widen via `any` to satisfy it.
+      const result = await sdk.executeQuote({
+        quote,
+        walletClient: evmClients?.walletClient as any,
+        publicClient: evmClients?.publicClient as any,
+        btcSigner,
+        callback: (step: ExecuteQuoteStep) => guard.pointOfNoReturn(step.type),
+      });
+      return { ...result, outputAmount: getInnerQuoteV3(quote).outputAmount.amount };
+    }, { retries, isTransient });
+  } catch (err) {
+    // Failed past the point of no return: a tx may be on-chain, but we never got the
+    // order id back, so there is nothing to poll and nothing to reconcile automatically.
+    // Fail loudly and tell the operator not to do the one thing that would double-send.
+    if (err instanceof PointOfNoReturnError) throw pointOfNoReturnError(err, ctx);
+    throw err;
+  }
+  const { order, tx, outputAmount } = executed;
 
   const orderData = (order as any)[variant];
   if (!orderData?.orderId) {
@@ -322,4 +347,38 @@ export async function handleSwap(
       ...(lastReadError && { lastError: lastReadError }),
     },
   };
+}
+
+// ─── Point-of-no-return reporting ────────────────────────────────────────────
+
+/**
+ * Turn a {@link PointOfNoReturnError} into the loud, terminal {@link SwapError} an
+ * operator sees. It must not assert that funds *were* sent — the latch arms when the
+ * wallet is asked to sign, which is before viem prepares the transaction, so a
+ * transient RPC failure during gas estimation or nonce fetch also lands here and may
+ * mean nothing was broadcast at all. That over-warning is deliberate and stated: it
+ * costs one manual check, whereas under-warning costs the funds. (SDK follow-up to
+ * narrow the window: bob-collective/bob#1122.)
+ *
+ * The reconciliation step it points at uses `ownerAddress` — the EVM address orders are
+ * indexed by. Naming the sender would print a `bc1q…` address on an onramp, and
+ * `gateway-cli orders` rejects BTC addresses outright, leaving the operator with no way
+ * to check — at exactly the moment they are tempted to re-run and double-send.
+ */
+function pointOfNoReturnError(err: PointOfNoReturnError, ctx: SwapContext): SwapError {
+  return new SwapError(
+    `Swap aborted after the wallet was asked to sign (step: ${err.reason}). ` +
+    `A transaction may already have been broadcast — do NOT re-run this swap or you may send twice. ` +
+    `(The signature was requested but we never learned whether it reached the chain; a failure during ` +
+    `transaction preparation may mean nothing was sent.) ` +
+    `Confirm with \`gateway-cli orders ${ctx.ownerAddress}\` before re-running. ` +
+    `Underlying error: ${err.originalError.message}`,
+    {
+      srcAsset: { symbol: ctx.srcAsset.symbol, chain: ctx.srcAsset.chain },
+      dstAsset: { symbol: ctx.dstAsset.symbol, chain: ctx.dstAsset.chain },
+      ...(ctx.variant !== "onramp" && {
+        txParams: { from: ctx.senderAddress, chainId: CHAIN_IDS[ctx.evmChain], chainName: ctx.evmChain },
+      }),
+    },
+  );
 }
