@@ -1,4 +1,3 @@
-import { MempoolClient } from "@gobob/bob-sdk";
 import type { BitcoinSigner, GetQuoteParams, GatewayCreateOrderV3 } from "@gobob/bob-sdk";
 import { getInnerQuoteV3 } from "../util/quote.js";
 import { type WalletClient, type PublicClient } from "viem";
@@ -211,6 +210,11 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
 
   const POLL_INTERVAL_MS = 15_000;
   const MAX_BACKOFF_MS = 60_000;
+  // Per-attempt read budget. Without it the loop's deadline is unenforceable: a stalled
+  // connection (server accepts, never responds) leaves `await getOrder` open forever and
+  // `Date.now() < deadline` is never re-evaluated. Aborting the request cancels it for
+  // real — unlike racing a timer, which leaves the socket dangling per attempt.
+  const GET_ORDER_TIMEOUT_MS = 30_000;
   const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
 
   const startMs = Date.now();
@@ -221,19 +225,28 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
 
   let readFailures = 0;
   let lastReadError: string | undefined;
+  // The BTC payout tx the order itself reports having broadcast (offramp only).
+  let pendingBtcPaymentTxId: string | undefined;
 
   while (Date.now() < deadline) {
     // The try wraps ONLY the read: everything below it interprets a status we did
     // successfully read, and a bug there must surface, not be retried as a read error.
     let order: Awaited<ReturnType<typeof sdk.getOrder>> | undefined;
+    // Never let a single read outlive the caller's --timeout.
+    const attemptTimeoutMs = Math.min(GET_ORDER_TIMEOUT_MS, deadline - Date.now());
+    const signal = AbortSignal.timeout(attemptTimeoutMs);
     try {
       log.progress(`  Waiting for confirmation... (${Math.round((Date.now() - startMs) / 1000)}s elapsed)`);
-      order = await sdk.getOrder(orderId);
+      order = await sdk.getOrder(orderId, { signal });
       readFailures = 0;
       lastReadError = undefined;
     } catch (err) {
+      // An aborted read is just another failed read: it says nothing about the swap,
+      // so it feeds the same backoff and never becomes a terminal failure.
       readFailures++;
-      lastReadError = err instanceof Error ? err.message : String(err);
+      lastReadError = signal.aborted
+        ? `reading order status timed out after ${Math.round(attemptTimeoutMs / 1000)}s`
+        : err instanceof Error ? err.message : String(err);
       log.warn(`could not read status of order ${orderId} (attempt ${readFailures}, retrying): ${lastReadError}`);
     }
 
@@ -268,7 +281,18 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
           }),
         });
       }
-      // inProgress → keep polling.
+
+      // inProgress → keep polling, but remember the BTC payout if the order has one.
+      // `pendingBtcPayment` is the order's own record of the tx the gateway broadcast:
+      // null until it broadcasts, then carrying the exact txid. It is the only sound
+      // way to name this order's payout — the recipient address cannot identify it,
+      // since one address is reused across orders and parallel offramps to it overlap.
+      const inProgress = hasKey(order.status, "inProgress")
+        ? order.status.inProgress as { pendingBtcPayment?: { txid?: string } | null } | undefined
+        : undefined;
+      if (inProgress?.pendingBtcPayment?.txid) {
+        pendingBtcPaymentTxId = inProgress.pendingBtcPayment.txid;
+      }
     }
 
     // Back off on consecutive read failures so we don't hammer a struggling API;
@@ -284,20 +308,16 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
 
   // ── Timed out without a terminal status → in flight, NOT a failure ──────────
 
-  if (getChainFamily(dstAsset.chain) === "bitcoin") {
-    log.progress(`Poll timeout reached. Checking mempool for pending delivery...`);
-    const pendingTxs = await new MempoolClient().getAddressMempoolTxs(recipient).catch(mempoolErr => {
-      log.warn(`could not check mempool: ${mempoolErr instanceof Error ? mempoolErr.message : String(mempoolErr)}`);
-      return [];
-    });
-    const mempoolTxId = pendingTxs.find(tx => !tx.status.confirmed)?.txid;
-    if (mempoolTxId) {
-      log.progress(`~ BTC tx found in mempool (unconfirmed): ${mempoolTxId}`);
-      return {
-        type: "mempoolPending",
-        data: { orderId, status: "mempool_pending", srcAmount: atomicUnits, srcAsset: srcAsset.symbol, dstAsset: dstAsset.symbol, dstChain: dstAsset.chain, mempoolTxId },
-      };
-    }
+  // If the order reported a BTC payout while we were polling, that txid is this order's
+  // payout — reported by the order, not inferred. If it never did (including when every
+  // read failed), we have no tx we can honestly attribute to this order, so we report
+  // none: an in-flight order id beats a confidently wrong txid.
+  if (pendingBtcPaymentTxId) {
+    log.progress(`~ BTC payout broadcast, not yet confirmed: ${pendingBtcPaymentTxId}`);
+    return {
+      type: "mempoolPending",
+      data: { orderId, status: "mempool_pending", srcAmount: atomicUnits, srcAsset: srcAsset.symbol, dstAsset: dstAsset.symbol, dstChain: dstAsset.chain, mempoolTxId: pendingBtcPaymentTxId },
+    };
   }
 
   const elapsedMs = Date.now() - startMs;
