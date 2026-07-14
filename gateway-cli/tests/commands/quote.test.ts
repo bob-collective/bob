@@ -52,10 +52,11 @@ vi.mock("../../src/chains/evm.js", () => ({
 // caused by second-guessing it. Mocking it would only re-test a mock.
 
 vi.mock("../../src/chains/index.js", () => ({
+  validateAddressFamily: vi.fn(),
   getChainFamily: vi.fn((chain: string) => chain === "bitcoin" ? "bitcoin" : "evm"),
-  deriveAddress: vi.fn().mockResolvedValue("0xDerived"),
+  deriveAddress: vi.fn().mockResolvedValue("0xAF91558Ba2B1994530c9cfCcbda5AE9cD2b456bb"),
   resolvePrivateKey: vi.fn(() => undefined),
-  resolveRecipient: vi.fn().mockResolvedValue("0xDerived"),
+  resolveRecipient: vi.fn().mockResolvedValue("0xAF91558Ba2B1994530c9cfCcbda5AE9cD2b456bb"),
 }));
 
 // ─── Fixtures ────────────────────────────────────────────────────────────────
@@ -96,7 +97,7 @@ describe("handleQuote", () => {
     mockGetRecommendedFees.mockResolvedValueOnce({ fastestFee: 25 });
 
     const result = await handleQuote({
-      src: "BTC", dst: "USDC:base", amount: "5000000", recipient: "0xRecipient",
+      src: "BTC", dst: "USDC:base", amount: "5000000", recipient: "0x1111111111111111111111111111111111111111",
     });
 
     expect(mockGetRecommendedFees).toHaveBeenCalledOnce();
@@ -107,7 +108,7 @@ describe("handleQuote", () => {
     mockGetQuote.mockResolvedValueOnce(sdkQuote);
 
     const result = await handleQuote({
-      src: "BTC", dst: "USDC:base", amount: "5000000", recipient: "0xRecipient",
+      src: "BTC", dst: "USDC:base", amount: "5000000", recipient: "0x1111111111111111111111111111111111111111",
       btcFeeRate: 15,
     });
 
@@ -178,7 +179,7 @@ describe("handleQuote", () => {
       mockGetQuote.mockResolvedValueOnce(sdkQuote);
 
       await handleQuote({
-        src, dst: "USDC:base", amount: "5000000", recipient: "0xRecipient", btcFeeRate: 15,
+        src, dst: "USDC:base", amount: "5000000", recipient: "0x1111111111111111111111111111111111111111", btcFeeRate: 15,
       });
 
       expect(resolvePrivateKey).not.toHaveBeenCalled();

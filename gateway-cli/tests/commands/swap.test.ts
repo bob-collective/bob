@@ -103,6 +103,7 @@ vi.mock("../../src/util/price-oracle.js", () => ({
 }));
 
 vi.mock("../../src/chains/index.js", () => ({
+  validateAddressFamily: vi.fn(),
   getChainFamily: vi.fn((chain: string) => chain === "bitcoin" ? "bitcoin" : "evm"),
   deriveAddress: vi.fn().mockResolvedValue("bc1qtest"),
   resolveSigner: vi.fn().mockResolvedValue({ address: "bc1qtest", signer: mockBtcSigner }),
@@ -111,7 +112,7 @@ vi.mock("../../src/chains/index.js", () => ({
     onramp: { orderId, bitcoinTxHex: txId },
   })),
   resolvePrivateKey: vi.fn((chain: string, privateKey?: string) => privateKey),
-  resolveRecipient: vi.fn().mockResolvedValue("0xEvmRecipient"),
+  resolveRecipient: vi.fn().mockResolvedValue("0x4444444444444444444444444444444444444444"),
 }));
 
 vi.mock("@gobob/bob-sdk", () => ({
@@ -177,7 +178,7 @@ const baseOpts = {
   src: "BTC",
   dst: "USDC:base",
   amount: "5000000",
-  recipient: "0xABC",
+  recipient: "0x1111111111111111111111111111111111111111",
   unsigned: false,
   wait: true,
   retry: true,
@@ -188,8 +189,8 @@ const baseOpts = {
 async function setupOfframp() {
   const { resolveSigner, deriveAddress, resolveRecipient } = await import("../../src/chains/index.js");
   const publicClient = { getTransactionCount: vi.fn().mockResolvedValue(0) } as any;
-  vi.mocked(resolveSigner).mockResolvedValue({ address: "0xSender", walletClient: {} as any, publicClient } as any);
-  vi.mocked(deriveAddress).mockResolvedValue("0xSender");
+  vi.mocked(resolveSigner).mockResolvedValue({ address: "0x2222222222222222222222222222222222222222", walletClient: {} as any, publicClient } as any);
+  vi.mocked(deriveAddress).mockResolvedValue("0x2222222222222222222222222222222222222222");
   vi.mocked(resolveRecipient).mockResolvedValue("bc1qshared");
 
   mockExecuteQuote.mockResolvedValue({
@@ -345,9 +346,9 @@ describe("handleSwap", () => {
     // EVM signed path uses { walletClient, publicClient }; the pending-nonce check
     // calls publicClient.getTransactionCount (latest >= pending → settled).
     const publicClient = { getTransactionCount: vi.fn().mockResolvedValue(0) } as any;
-    vi.mocked(resolveSigner).mockResolvedValue({ address: "0xSender", walletClient: {} as any, publicClient } as any);
-    vi.mocked(deriveAddress).mockResolvedValue("0xSender");
-    vi.mocked(resolveRecipient).mockResolvedValue("0xRecipient");
+    vi.mocked(resolveSigner).mockResolvedValue({ address: "0x2222222222222222222222222222222222222222", walletClient: {} as any, publicClient } as any);
+    vi.mocked(deriveAddress).mockResolvedValue("0x2222222222222222222222222222222222222222");
+    vi.mocked(resolveRecipient).mockResolvedValue("0x1111111111111111111111111111111111111111");
 
     const tokenSwapOrder = { tokenSwap: { orderId: "order-789", tx: { to: "0xGatewayContract" } } };
     mockExecuteQuote.mockResolvedValue({ order: tokenSwapOrder, tx: "0xsettlementhash" });
@@ -478,7 +479,7 @@ describe("handleSwap", () => {
     // moment they are tempted to re-run, and double-send.
     const { deriveAddress, resolveRecipient } = await import("../../src/chains/index.js");
     vi.mocked(deriveAddress).mockResolvedValue("bc1qsender");
-    vi.mocked(resolveRecipient).mockResolvedValue("0xEvmOwner");
+    vi.mocked(resolveRecipient).mockResolvedValue("0x3333333333333333333333333333333333333333");
     mockExecuteQuote.mockImplementation(async ({ callback }: any) => {
       callback?.({ step: 1, type: "sign_bitcoin_transaction", totalSteps: 1 });
       throw new Error("ECONNRESET");
@@ -487,7 +488,7 @@ describe("handleSwap", () => {
     const { handleSwap } = await import("../../src/commands/swap.js");
     const caught: any = await handleSwap({ ...baseOpts, retry: true }, silentLogger).catch(e => e);
 
-    expect(caught.message).toContain("gateway-cli orders 0xEvmOwner");
+    expect(caught.message).toContain("gateway-cli orders 0x3333333333333333333333333333333333333333");
     expect(caught.message).not.toContain("bc1qsender");
   });
 

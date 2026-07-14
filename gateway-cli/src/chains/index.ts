@@ -28,11 +28,11 @@ export function getChainFamily(chain: string): ChainFamily {
  * Validate that a recipient address matches the asset's chain family.
  * @throws Error if a BTC address is used for an EVM chain or vice-versa.
  */
-export function validateRecipient(chain: string, to: string): void {
+export function validateAddressFamily(chain: string, address: string, flag = '--to'): void {
   if (getChainFamily(chain) === 'bitcoin') {
-    if (!isValidBtcAddress(to)) throw new Error(`--to "${to}" is not a valid Bitcoin address.`);
+    if (!isValidBtcAddress(address)) throw new Error(`${flag} "${address}" is not a valid Bitcoin address.`);
   } else {
-    if (!isAddress(to, { strict: false })) throw new Error(`--to "${to}" is not a valid EVM address.`);
+    if (!isAddress(address, { strict: false })) throw new Error(`${flag} "${address}" is not a valid EVM address.`);
   }
 }
 

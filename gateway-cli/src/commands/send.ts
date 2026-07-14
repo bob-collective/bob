@@ -4,7 +4,7 @@ import { parseAmount } from "../util/input-resolver.js";
 import { resolveSendAsset } from "../util/asset-resolver.js";
 import { loadConfig } from "../config.js";
 import {
-  validateRecipient, getChainFamily, resolvePrivateKey, deriveAddress, resolveSigner,
+  validateAddressFamily, getChainFamily, resolvePrivateKey, deriveAddress, resolveSigner,
   type BtcSigner, type EvmSigner,
 } from "../chains/index.js";
 import { sendEvm, buildUnsignedEvmTx, nativeSweepAmount, getEvmBalances, CHAIN_IDS } from "../chains/evm.js";
@@ -53,17 +53,17 @@ export async function handleSend(opts: SendOptions, log: Logger): Promise<SendRe
   const asset = await resolveSendAsset(opts.asset);
   const family = getChainFamily(asset.chain);
 
-  validateRecipient(asset.chain, opts.to);
+  validateAddressFamily(asset.chain, opts.to, "--to");
 
   const key = resolvePrivateKey(asset.chain, opts.privateKey, config);
   // The key-derived address wins; otherwise --from supplies the sender for the keyless
   // unsigned path. A source address only needs to be valid for the asset's chain family
-  // (validateRecipient checks exactly that), so reuse it here for --from.
+  // (validateAddressFamily checks exactly that), so reuse it here for --from.
   let senderAddress: string | undefined;
   if (key) {
     senderAddress = await deriveAddress(asset.chain, key);
   } else if (opts.from) {
-    validateRecipient(asset.chain, opts.from);
+    validateAddressFamily(asset.chain, opts.from, "--from");
     senderAddress = opts.from;
   }
 

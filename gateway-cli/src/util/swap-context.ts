@@ -1,6 +1,7 @@
+import { isAddress } from "viem";
 import type { GetQuoteParams, RouteInfo } from "@gobob/bob-sdk";
 import type { ChainFamily } from "../chains/index.js";
-import { deriveAddress, getChainFamily, resolvePrivateKey, resolveRecipient } from "../chains/index.js";
+import { deriveAddress, getChainFamily, resolvePrivateKey, resolveRecipient, validateAddressFamily } from "../chains/index.js";
 import { buildTokenIndex, parseAssetChain, resolveAmount, type ResolvedAsset } from "./input-resolver.js";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -84,10 +85,12 @@ export interface SwapContext {
 /**
  * The ONE definition of `ownerAddress`: the EVM-side address that controls the order.
  *
- * It can never be a Bitcoin address, by construction:
- *  - an explicit `--owner` is validated as an EVM address by the CLI schema;
- *  - on a BTC-source swap the destination is an EVM chain, so the recipient is EVM;
- *  - on an EVM-source swap it is the sender.
+ * It can never be a Bitcoin address — and this function *enforces* that rather than
+ * assuming it. Which flag supplies the value depends on the direction (the recipient on
+ * a BTC-source onramp, the sender on an EVM-source swap), and neither `--recipient` nor
+ * `--sender` can be pinned to a family by the CLI schema: on a BTC onramp a Bitcoin
+ * `--sender` is correct (it builds the PSBT). So the family is only knowable here, where
+ * the source chain is known — which makes this the only place the invariant can hold.
  *
  * The recipient is NOT a fallback for an EVM-source swap: on an offramp it is a
  * Bitcoin address, and the API rejects the quote outright with
@@ -102,15 +105,33 @@ export function resolveOwnerAddress(opts: {
   senderAddress?: string;
   recipient: string;
 }): string {
-  if (opts.explicit) return opts.explicit;
-  if (opts.srcFamily === "bitcoin" && opts.dstFamily === "evm") return opts.recipient;
-  if (opts.srcFamily === "evm" && opts.senderAddress) return opts.senderAddress;
-  throw new Error(
-    `Could not determine the EVM owner address for this swap.\n` +
-    `  The order is controlled by an EVM address — on an EVM-source swap the sender, and it\n` +
-    `  cannot fall back to the recipient (on an offramp the recipient is a Bitcoin address).\n` +
-    `  Set EVM_PRIVATE_KEY, or pass --sender <evm-address> or --owner <evm-address>.`,
-  );
+  const picked =
+    opts.explicit ? { owner: opts.explicit, from: "--owner" } :
+    opts.srcFamily === "bitcoin" && opts.dstFamily === "evm" ? { owner: opts.recipient, from: "--recipient" } :
+    opts.srcFamily === "evm" && opts.senderAddress ? { owner: opts.senderAddress, from: "--sender" } :
+    undefined;
+
+  if (!picked) {
+    throw new Error(
+      `Could not determine the EVM owner address for this swap.\n` +
+      `  The order is controlled by an EVM address — on an EVM-source swap the sender, and it\n` +
+      `  cannot fall back to the recipient (on an offramp the recipient is a Bitcoin address).\n` +
+      `  Set EVM_PRIVATE_KEY, or pass --sender <evm-address> or --owner <evm-address>.`,
+    );
+  }
+
+  // Verify, don't assume. The value reaching here can come straight from a user-supplied
+  // flag that no schema could have family-checked, so the guarantee this function makes is
+  // only real if it is checked. Otherwise a Bitcoin `--sender`/`--recipient` sails through
+  // into `ownerAddress` and the gateway rejects it remotely instead of us failing locally.
+  if (!isAddress(picked.owner, { strict: false })) {
+    throw new Error(
+      `The order's owner must be an EVM address, but ${picked.from} supplied "${picked.owner}".\n` +
+      `  The order is controlled by an EVM address, whatever the direction of the swap.\n` +
+      `  Pass an EVM address, or set --owner <evm-address> explicitly.`,
+    );
+  }
+  return picked.owner;
 }
 
 // ─── Context ─────────────────────────────────────────────────────────────────
@@ -195,6 +216,11 @@ export async function resolveSwapContext(
   });
 
   const recipient = await resolveRecipient(dstAsset.chain, opts.recipient, config);
+  // An explicit --recipient is taken verbatim, so check it belongs to the destination's
+  // family. Without this a Bitcoin --recipient on an EVM destination reaches the gateway as
+  // `toUserAddress` (and, on an onramp, as `ownerAddress`) and comes back as a remote 400
+  // instead of a local error naming the flag. `send` already validates this way.
+  validateAddressFamily(dstAsset.chain, recipient, "--recipient");
 
   const ownerAddress = resolveOwnerAddress({
     explicit: opts.owner, srcFamily, dstFamily, senderAddress, recipient,
