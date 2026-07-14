@@ -27,26 +27,42 @@ vi.mock("@gobob/bob-sdk", async (importOriginal) => {
   };
 });
 
+const USDC_BASE = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
+const USDT_ETH = "0xdAC17F958D2ee523a2206206994597C13D831ec7";
+
 vi.mock("../../src/util/route-provider.js", () => ({
   getRoutes: vi.fn().mockResolvedValue([
-    {
-      srcChain: "bitcoin",
-      dstChain: "base",
-      srcToken: "BTC",
-      dstToken: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-    },
+    { srcChain: "bitcoin", dstChain: "base", srcToken: "BTC", dstToken: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" },
+    // offramp route, so the EVM-source cases resolve through the real resolver
+    { srcChain: "ethereum", dstChain: "bitcoin", srcToken: "0xdAC17F958D2ee523a2206206994597C13D831ec7", dstToken: "BTC" },
   ]),
 }));
 
-vi.mock("../../src/util/input-resolver.js", () => ({
-  resolveChain: vi.fn((c: string) => c.toLowerCase()),
-  resolveSwapInputs: vi.fn().mockResolvedValue({
-    srcAsset: { chain: "bitcoin", address: "BTC", symbol: "BTC", decimals: 8 },
-    dstAsset: { chain: "base", address: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", symbol: "USDC", decimals: 6 },
-    atomicUnits: "5000000",
-    display: "0.05 BTC",
+vi.mock("../../src/chains/evm.js", () => ({
+  CHAIN_IDS: { ethereum: 1, base: 8453 } as Record<string, number>,
+  getTokenMetadata: vi.fn((address: string, chain: string) => {
+    if (chain === "bitcoin" || address === "BTC") return { symbol: "BTC", decimals: 8 };
+    if (address.toLowerCase() === "0xdac17f958d2ee523a2206206994597c13d831ec7") return { symbol: "USDT", decimals: 6 };
+    return { symbol: "USDC", decimals: 6 };
   }),
+  getEvmBalances: vi.fn(),
 }));
+
+// Use the REAL parseAssetChain/buildTokenIndex: they are the resolver whose verdict
+// handleQuote must defer to, so mocking them would only re-test a mock. Only
+// resolveSwapInputs (which reads balances / prices) is stubbed.
+vi.mock("../../src/util/input-resolver.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../src/util/input-resolver.js")>();
+  return {
+    ...actual,
+    resolveSwapInputs: vi.fn().mockResolvedValue({
+      srcAsset: { chain: "bitcoin", address: "BTC", symbol: "BTC", decimals: 8 },
+      dstAsset: { chain: "base", address: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", symbol: "USDC", decimals: 6 },
+      atomicUnits: "5000000",
+      display: "0.05 BTC",
+    }),
+  };
+});
 
 vi.mock("../../src/chains/index.js", () => ({
   getChainFamily: vi.fn((chain: string) => chain === "bitcoin" ? "bitcoin" : "evm"),
@@ -165,5 +181,20 @@ describe("handleQuote", () => {
       expect(mockGetQuote).toHaveBeenCalledWith(expect.objectContaining({ fromUserAddress: undefined }));
     },
   );
+
+  it("reports the invalid asset, not a key error, when the source has no chain qualifier", async () => {
+    // A bare symbol is not resolvable without a chain. The resolver must reject it *before*
+    // any key is touched — otherwise a malformed EVM key masks the real problem with a
+    // misleading 'Failed to derive sender address' diagnostic.
+    const { resolvePrivateKey, deriveAddress } = await import("../../src/chains/index.js");
+    vi.mocked(resolvePrivateKey).mockReturnValueOnce("0xmalformed");
+    vi.mocked(deriveAddress).mockRejectedValueOnce(new Error("invalid private key"));
+
+    await expect(
+      handleQuote({ src: "USDT", dst: "BTC", amount: "5000000", recipient: "bc1qrecipient" }),
+    ).rejects.toThrow(/chain required/);
+
+    expect(deriveAddress).not.toHaveBeenCalled();
+  });
 
 });
