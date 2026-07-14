@@ -1,6 +1,6 @@
 import { getInnerQuoteV3, resolveOwnerAddress } from "../util/quote.js";
 import { getRoutes } from "../util/route-provider.js";
-import { resolveSwapInputs, humanToAtomic } from "../util/input-resolver.js";
+import { resolveSwapInputs, humanToAtomic, resolveChain } from "../util/input-resolver.js";
 import { fetchPrice } from "../util/price-oracle.js";
 import { MempoolClient } from "@gobob/bob-sdk";
 import { loadConfig, getSdk } from "../config.js";
@@ -47,8 +47,10 @@ export async function handleQuote(opts: QuoteOptions): Promise<QuoteResult> {
   //   - an EVM source needs it as the ownerAddress (the EVM-side owner of the order).
   // Don't derive eagerly — a malformed EVM key shouldn't break a BTC→EVM quote,
   // which needs neither.
+  // Normalize like parseAssetChain/resolveChain do (case-insensitive, alias-aware),
+  // so a bitcoin source is never misread as EVM and made to derive an EVM key.
   const srcRaw = opts.src.includes(":") ? opts.src.split(":")[1] : opts.src;
-  const srcFamily = getChainFamily(srcRaw === "BTC" || srcRaw === "btc" ? "bitcoin" : srcRaw);
+  const srcFamily = getChainFamily(srcRaw.toUpperCase() === "BTC" ? "bitcoin" : resolveChain(srcRaw));
   let senderAddress = opts.sender;
   if (!senderAddress && (srcFamily === "evm" || opts.amount.toUpperCase() === "ALL")) {
     const key = resolvePrivateKey(srcFamily === "bitcoin" ? "bitcoin" : "evm", undefined, config);

@@ -39,6 +39,7 @@ vi.mock("../../src/util/route-provider.js", () => ({
 }));
 
 vi.mock("../../src/util/input-resolver.js", () => ({
+  resolveChain: vi.fn((c: string) => c.toLowerCase()),
   resolveSwapInputs: vi.fn().mockResolvedValue({
     srcAsset: { chain: "bitcoin", address: "BTC", symbol: "BTC", decimals: 8 },
     dstAsset: { chain: "base", address: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", symbol: "USDC", decimals: 6 },
@@ -146,15 +147,23 @@ describe("handleQuote", () => {
     expect(mockGetQuote).not.toHaveBeenCalled();
   });
 
-  it("does not require an EVM key for a BTC onramp quote (lazy derivation preserved)", async () => {
-    const { resolvePrivateKey } = await import("../../src/chains/index.js");
-    mockGetQuote.mockResolvedValueOnce(sdkQuote);
+  // A bitcoin source needs no EVM key, so it must never derive one — not even when
+  // spelled in a case the asset resolver accepts ("Btc", "BTC:Bitcoin"). Reading the
+  // source family case-sensitively would classify those as EVM, derive EVM_PRIVATE_KEY,
+  // and send an EVM address as the onramp's fromUserAddress.
+  it.each(["BTC", "Btc", "BTC:Bitcoin"])(
+    "does not derive an EVM key for a BTC onramp quote (src: %s)",
+    async (src) => {
+      const { resolvePrivateKey } = await import("../../src/chains/index.js");
+      mockGetQuote.mockResolvedValueOnce(sdkQuote);
 
-    await handleQuote({
-      src: "BTC", dst: "USDC:base", amount: "5000000", recipient: "0xRecipient", btcFeeRate: 15,
-    });
+      await handleQuote({
+        src, dst: "USDC:base", amount: "5000000", recipient: "0xRecipient", btcFeeRate: 15,
+      });
 
-    expect(resolvePrivateKey).not.toHaveBeenCalled();
-  });
+      expect(resolvePrivateKey).not.toHaveBeenCalled();
+      expect(mockGetQuote).toHaveBeenCalledWith(expect.objectContaining({ fromUserAddress: undefined }));
+    },
+  );
 
 });
