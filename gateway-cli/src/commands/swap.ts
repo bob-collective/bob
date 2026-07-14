@@ -1,6 +1,6 @@
 import { MempoolClient } from "@gobob/bob-sdk";
 import type { BitcoinSigner, GetQuoteParams, GatewayCreateOrderV3 } from "@gobob/bob-sdk";
-import { getInnerQuoteV3 } from "../util/quote.js";
+import { getInnerQuoteV3, resolveOwnerAddress } from "../util/quote.js";
 import { type WalletClient, type PublicClient } from "viem";
 import { withRetry, SwapError } from "../errors.js";
 import { getRoutes } from "../util/route-provider.js";
@@ -98,7 +98,12 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
     ? humanToAtomic((opts.gasRefillUsd / (await fetchPrice("ETH")).priceUsd).toFixed(18), 18)
     : undefined;
 
-  const ownerAddress = opts.owner ?? (srcFamily === "bitcoin" ? recipient : (senderAddress ?? recipient));
+  const ownerAddress = resolveOwnerAddress({
+    explicit: opts.owner,
+    srcChain: srcAsset.chain,
+    senderAddress,
+    recipient,
+  });
 
   const quoteParams: GetQuoteParams = {
     fromChain: srcAsset.chain,

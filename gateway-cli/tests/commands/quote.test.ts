@@ -64,6 +64,29 @@ const sdkQuote = {
   },
 };
 
+const offrampSdkQuote = {
+  offramp: {
+    inputAmount: { amount: "47000000" },
+    outputAmount: { amount: "74489" },
+  },
+};
+
+const BTC_RECIPIENT = "bc1q4xdatls497ea76fmuefu9we4ld4yu2vy8hedne";
+const EVM_SENDER = "0xAF91558Ba2B1994530c9cfCcbda5AE9cD2b456bb";
+
+/** Point the mocked resolvers at an EVM→BTC offramp (USDT@ethereum → BTC). */
+async function mockOfframpInputs() {
+  const { resolveSwapInputs } = await import("../../src/util/input-resolver.js");
+  const { resolveRecipient } = await import("../../src/chains/index.js");
+  vi.mocked(resolveSwapInputs).mockResolvedValueOnce({
+    srcAsset: { chain: "ethereum", address: "0xdAC17F958D2ee523a2206206994597C13D831ec7", symbol: "USDT", decimals: 6 },
+    dstAsset: { chain: "bitcoin", address: "BTC", symbol: "BTC", decimals: 8 },
+    atomicUnits: "47000000",
+    display: "47 USDT",
+  } as any);
+  vi.mocked(resolveRecipient).mockResolvedValueOnce(BTC_RECIPIENT);
+}
+
 describe("handleQuote", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -91,6 +114,47 @@ describe("handleQuote", () => {
 
     expect(mockGetRecommendedFees).not.toHaveBeenCalled();
     expect(result.quote.feeRateSatPerVbyte).toBe(15);
+  });
+
+  // Regression: ownerAddress is the EVM-side address controlling the order — the
+  // sender on an offramp. Deriving the sender only for `--amount ALL` left it
+  // undefined here, so ownerAddress fell back to the (Bitcoin) recipient and the
+  // API rejected every offramp quote with
+  // "INVALID_REQUEST: Expected an EVM address but found a Bitcoin address".
+  it("sends the EVM sender as ownerAddress on an offramp quote with a fixed amount", async () => {
+    const { resolvePrivateKey, deriveAddress } = await import("../../src/chains/index.js");
+    await mockOfframpInputs();
+    vi.mocked(resolvePrivateKey).mockReturnValueOnce("0xevmkey");
+    vi.mocked(deriveAddress).mockResolvedValueOnce(EVM_SENDER);
+    mockGetQuote.mockResolvedValueOnce(offrampSdkQuote);
+
+    await handleQuote({ src: "USDT:ethereum", dst: "BTC", amount: "47000000" });
+
+    expect(mockGetQuote).toHaveBeenCalledWith(
+      expect.objectContaining({ ownerAddress: EVM_SENDER, toUserAddress: BTC_RECIPIENT }),
+    );
+  });
+
+  it("fails with an actionable error rather than quoting an offramp with no EVM sender", async () => {
+    const { resolvePrivateKey } = await import("../../src/chains/index.js");
+    await mockOfframpInputs();
+    vi.mocked(resolvePrivateKey).mockReturnValueOnce(undefined);
+
+    await expect(
+      handleQuote({ src: "USDT:ethereum", dst: "BTC", amount: "47000000" }),
+    ).rejects.toThrow(/EVM owner address/);
+    expect(mockGetQuote).not.toHaveBeenCalled();
+  });
+
+  it("does not require an EVM key for a BTC onramp quote (lazy derivation preserved)", async () => {
+    const { resolvePrivateKey } = await import("../../src/chains/index.js");
+    mockGetQuote.mockResolvedValueOnce(sdkQuote);
+
+    await handleQuote({
+      src: "BTC", dst: "USDC:base", amount: "5000000", recipient: "0xRecipient", btcFeeRate: 15,
+    });
+
+    expect(resolvePrivateKey).not.toHaveBeenCalled();
   });
 
 });

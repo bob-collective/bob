@@ -1,4 +1,4 @@
-import { getInnerQuoteV3 } from "../util/quote.js";
+import { getInnerQuoteV3, resolveOwnerAddress } from "../util/quote.js";
 import { getRoutes } from "../util/route-provider.js";
 import { resolveSwapInputs, humanToAtomic } from "../util/input-resolver.js";
 import { fetchPrice } from "../util/price-oracle.js";
@@ -42,12 +42,15 @@ export async function handleQuote(opts: QuoteOptions): Promise<QuoteResult> {
 
   const routes = await getRoutes();
 
-  // Derive sender from env keys only when needed (--amount ALL requires it).
-  // Don't derive eagerly — a malformed key shouldn't break ordinary quotes.
+  // Derive sender from env keys only when needed:
+  //   - `--amount ALL` needs it to read the source balance;
+  //   - an EVM source needs it as the ownerAddress (the EVM-side owner of the order).
+  // Don't derive eagerly — a malformed EVM key shouldn't break a BTC→EVM quote,
+  // which needs neither.
+  const srcRaw = opts.src.includes(":") ? opts.src.split(":")[1] : opts.src;
+  const srcFamily = getChainFamily(srcRaw === "BTC" || srcRaw === "btc" ? "bitcoin" : srcRaw);
   let senderAddress = opts.sender;
-  if (!senderAddress && opts.amount.toUpperCase() === "ALL") {
-    const srcRaw = opts.src.includes(":") ? opts.src.split(":")[1] : opts.src;
-    const srcFamily = getChainFamily(srcRaw === "BTC" || srcRaw === "btc" ? "bitcoin" : srcRaw);
+  if (!senderAddress && (srcFamily === "evm" || opts.amount.toUpperCase() === "ALL")) {
     const key = resolvePrivateKey(srcFamily === "bitcoin" ? "bitcoin" : "evm", undefined, config);
     if (key) {
       try {
@@ -82,10 +85,12 @@ export async function handleQuote(opts: QuoteOptions): Promise<QuoteResult> {
     ? humanToAtomic((opts.gasRefillUsd / (await fetchPrice("ETH")).priceUsd).toFixed(18), 18)
     : undefined;
 
-  // ownerAddress (required by V3) is the EVM-side address controlling the order.
-  // Use the explicit --owner override when given; otherwise derive the EVM-side
-  // address: recipient for onramp (BTC→EVM), sender for offramp/tokenSwap.
-  const ownerAddress = opts.ownerAddress ?? (srcAsset.chain === "bitcoin" ? recipient : (senderAddress ?? recipient));
+  const ownerAddress = resolveOwnerAddress({
+    explicit: opts.ownerAddress,
+    srcChain: srcAsset.chain,
+    senderAddress,
+    recipient,
+  });
 
   const quote = await sdk.getQuote({
     fromChain: srcAsset.chain,
