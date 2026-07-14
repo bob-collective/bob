@@ -48,11 +48,13 @@ export async function handleQuote(opts: QuoteOptions): Promise<QuoteResult> {
 
   // Derive sender from env keys only when needed:
   //   - `--amount ALL` needs it to read the source balance;
-  //   - an EVM source needs it as the ownerAddress (the EVM-side owner of the order).
-  // Don't derive eagerly — a malformed EVM key shouldn't break a BTC→EVM quote,
-  // which needs neither.
+  //   - an EVM source needs it as the ownerAddress — but only when `--owner` did not
+  //     already supply one, since resolveOwnerAddress prefers the explicit value.
+  // Don't derive eagerly — a malformed EVM key must not break a quote that needs no key.
+  const needsSenderAsOwner = srcFamily === "evm" && !opts.ownerAddress;
+  const needsSenderForBalance = opts.amount.toUpperCase() === "ALL";
   let senderAddress = opts.sender;
-  if (!senderAddress && (srcFamily === "evm" || opts.amount.toUpperCase() === "ALL")) {
+  if (!senderAddress && (needsSenderAsOwner || needsSenderForBalance)) {
     const key = resolvePrivateKey(srcFamily === "bitcoin" ? "bitcoin" : "evm", undefined, config);
     if (key) {
       try {

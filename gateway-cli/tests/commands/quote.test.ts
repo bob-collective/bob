@@ -182,6 +182,24 @@ describe("handleQuote", () => {
     },
   );
 
+  it("does not touch the EVM key when --owner already supplies the owner", async () => {
+    // resolveOwnerAddress prefers the explicit --owner, so the derived sender is unused on
+    // this path. Deriving anyway makes a malformed EVM_PRIVATE_KEY break a quote that needs
+    // no key at all — the very thing the lazy derivation exists to avoid.
+    const { resolvePrivateKey, deriveAddress } = await import("../../src/chains/index.js");
+    await mockOfframpInputs();
+    vi.mocked(resolvePrivateKey).mockReturnValueOnce("0xmalformed");
+    vi.mocked(deriveAddress).mockRejectedValueOnce(new Error("invalid private key"));
+    mockGetQuote.mockResolvedValueOnce(offrampSdkQuote);
+
+    await handleQuote({
+      src: "USDT:ethereum", dst: "BTC", amount: "47000000", ownerAddress: EVM_SENDER,
+    });
+
+    expect(deriveAddress).not.toHaveBeenCalled();
+    expect(mockGetQuote).toHaveBeenCalledWith(expect.objectContaining({ ownerAddress: EVM_SENDER }));
+  });
+
   it("reports the invalid asset, not a key error, when the source has no chain qualifier", async () => {
     // A bare symbol is not resolvable without a chain. The resolver must reject it *before*
     // any key is touched — otherwise a malformed EVM key masks the real problem with a
