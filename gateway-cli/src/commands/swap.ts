@@ -1,8 +1,8 @@
 import { MempoolClient } from "@gobob/bob-sdk";
-import type { BitcoinSigner, GetQuoteParams, GatewayCreateOrderV3 } from "@gobob/bob-sdk";
+import type { BitcoinSigner, GetQuoteParams, GatewayCreateOrderV3, ExecuteQuoteStep } from "@gobob/bob-sdk";
 import { getInnerQuoteV3 } from "../util/quote.js";
 import { type WalletClient, type PublicClient } from "viem";
-import { withRetry, SwapError } from "../errors.js";
+import { withRetry, SwapError, PointOfNoReturnError } from "../errors.js";
 import { getRoutes } from "../util/route-provider.js";
 import { resolveSwapInputs, parseAssetChain, buildTokenIndex } from "../util/input-resolver.js";
 import { loadConfig, getSdk, getApi } from "../config.js";
@@ -165,18 +165,60 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
   // Signed flows go through executeQuote.
   // executeQuote handles createOrder + sign + registerTx in one call.
   // For BTC paths the SDK doesn't access walletClient/publicClient; cast to satisfy types.
-  const { order, tx, outputAmount } = await withRetry(async () => {
-    const quote = await sdk.getQuote(quoteParams);
-    // For BTC paths walletClient/publicClient are unused inside the SDK; the
-    // SDK's type forces them to be present, so we widen via `any` to satisfy it.
-    const result = await sdk.executeQuote({
-      quote,
-      walletClient: evmClients?.walletClient as any,
-      publicClient: evmClients?.publicClient as any,
-      btcSigner,
-    });
-    return { ...result, outputAmount: getInnerQuoteV3(quote).outputAmount.amount };
-  }, { retries, isTransient });
+  //
+  // ── Point of no return ─────────────────────────────────────────────────────
+  // `executeQuote` is NOT idempotent. Internally it runs:
+  //   createOrder → (ERC20 reset/approve) → SIGN + BROADCAST the source tx → registerTx
+  // Only that prefix is safe to re-run. If it throws *after* the wallet has been
+  // asked to sign — a `registerTx` 5xx, a solver's "504 Gateway Timeout", a dropped
+  // socket, i.e. exactly the errors `isTransient` matches — then retrying the closure
+  // fetches a fresh quote, creates a SECOND order and broadcasts a SECOND transaction.
+  // The user's funds leave the wallet twice.
+  //
+  // The SDK emits an ExecuteQuoteStep immediately BEFORE every wallet interaction
+  // (ResetApproval / Approve / SendTransaction / SignBitcoinTransaction — see
+  // sdk/src/gateway/client.ts), so the first step of *any* kind is the last instant at
+  // which re-running is still safe. We latch on all of them rather than only the two
+  // that move the funds: an approve is itself a signed, broadcast tx, and re-entering
+  // the closure while it is still pending races its own nonce. Over-latching costs at
+  // most one lost retry of an already-committed swap; under-latching costs the funds.
+  let executed;
+  try {
+    executed = await withRetry(async (guard) => {
+      const quote = await sdk.getQuote(quoteParams);
+      // For BTC paths walletClient/publicClient are unused inside the SDK; the
+      // SDK's type forces them to be present, so we widen via `any` to satisfy it.
+      const result = await sdk.executeQuote({
+        quote,
+        walletClient: evmClients?.walletClient as any,
+        publicClient: evmClients?.publicClient as any,
+        btcSigner,
+        callback: (step: ExecuteQuoteStep) => guard.pointOfNoReturn(step.type),
+      });
+      return { ...result, outputAmount: getInnerQuoteV3(quote).outputAmount.amount };
+    }, { retries, isTransient });
+  } catch (err) {
+    // Failed past the point of no return: a tx may be on-chain but we never got the
+    // order id back, so there is nothing to poll and nothing to reconcile automatically.
+    // Fail loudly and tell the operator not to do the one thing that would double-send.
+    if (err instanceof PointOfNoReturnError) {
+      throw new SwapError(
+        `Swap aborted after the wallet was asked to sign (step: ${err.reason}). ` +
+        `Funds may already have been sent — do NOT re-run this swap or you may send twice. ` +
+        `Check for an existing order from ${senderAddress ?? "your wallet"} with \`gateway-cli orders\` first. ` +
+        `Underlying error: ${err.originalError.message}`,
+        {
+          srcAsset: { symbol: srcAsset.symbol, chain: srcAsset.chain },
+          dstAsset: { symbol: dstAsset.symbol, chain: dstAsset.chain },
+          ...(variant !== "onramp" && {
+            txParams: { from: senderAddress, chainId: CHAIN_IDS[evmChain], chainName: evmChain },
+          }),
+        },
+      );
+    }
+    throw err;
+  }
+  const { order, tx, outputAmount } = executed;
 
   const orderData = (order as any)[variant];
   if (!orderData?.orderId) {

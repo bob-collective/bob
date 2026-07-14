@@ -269,6 +269,84 @@ describe("handleSwap", () => {
     expect(mockExecuteQuote).toHaveBeenCalledTimes(1);
   });
 
+  // ─── Point of no return: never retry a swap once the source tx is broadcast ──
+  //
+  // `executeQuote` is not idempotent: createOrder → sign + BROADCAST → registerTx.
+  // Re-running it after the broadcast sends the user's funds a SECOND time. The SDK
+  // fires its step callback immediately before it asks the wallet to sign, which is
+  // the signal these tests rely on.
+
+  it("does NOT retry executeQuote when a transient error is thrown AFTER the source tx was broadcast", async () => {
+    // Exactly the real staging incident: the solver returned 504 *after* the source
+    // funds had already left the wallet. "504 Gateway Timeout" matches /timeout/i in
+    // TRANSIENT, so before the fix --retry re-ran the closure → second broadcast.
+    mockExecuteQuote.mockImplementation(async ({ callback }: any) => {
+      callback?.({ step: 1, type: "send_transaction", totalSteps: 1 });
+      throw new Error("bungee api error: status=504 Gateway Timeout");
+    });
+
+    const { handleSwap } = await import("../../src/commands/swap.js");
+    const { SwapError } = await import("../../src/errors.js");
+
+    const caught = await handleSwap({ ...baseOpts, retry: true }, silentLogger).catch(e => e);
+
+    // The funds-safety invariant: one broadcast, one attempt. Never two.
+    expect(mockExecuteQuote).toHaveBeenCalledTimes(1);
+
+    expect(caught).toBeInstanceOf(SwapError);
+    // The operator must not be told "it failed, try again" while funds are in flight.
+    expect(caught.message).toMatch(/do NOT re-run/i);
+    expect(caught.message).toContain("send_transaction");
+    // Original error text is preserved so downstream categorization still matches.
+    expect(caught.message).toContain("504 Gateway Timeout");
+  });
+
+  it("does NOT retry after a BTC signature was requested, even on a transient error", async () => {
+    mockExecuteQuote.mockImplementation(async ({ callback }: any) => {
+      callback?.({ step: 1, type: "sign_bitcoin_transaction", totalSteps: 1 });
+      throw new Error("ECONNRESET");
+    });
+
+    const { handleSwap } = await import("../../src/commands/swap.js");
+    const caught = await handleSwap({ ...baseOpts, retry: true }, silentLogger).catch(e => e);
+
+    expect(mockExecuteQuote).toHaveBeenCalledTimes(1);
+    expect(caught.message).toMatch(/do NOT re-run/i);
+  });
+
+  it("does NOT retry after an ERC20 approve was signed (conservative: approve is a broadcast tx too)", async () => {
+    // An approve alone is not a double-send, but re-entering the closure while it is
+    // still pending races its own nonce — and the next step would broadcast the funds.
+    // The line is drawn at the FIRST wallet interaction of any kind.
+    mockExecuteQuote.mockImplementation(async ({ callback }: any) => {
+      callback?.({ step: 1, type: "approve", totalSteps: 2 });
+      throw new Error("rate limit exceeded");
+    });
+
+    const { handleSwap } = await import("../../src/commands/swap.js");
+    const caught = await handleSwap({ ...baseOpts, retry: true }, silentLogger).catch(e => e);
+
+    expect(mockExecuteQuote).toHaveBeenCalledTimes(1);
+    expect(caught.message).toContain("approve");
+  });
+
+  it("DOES still retry a transient error raised BEFORE anything was broadcast", async () => {
+    // The other half of the invariant: the fix must not disable retries wholesale.
+    // Nothing has been signed yet here, so re-quoting is free of side effects.
+    let quoteCalls = 0;
+    mockGetQuote.mockImplementation(async () => {
+      if (++quoteCalls === 1) throw new Error("429 Too Many Requests");
+      return onrampQuote;
+    });
+
+    const { handleSwap } = await import("../../src/commands/swap.js");
+    const result = await handleSwap({ ...baseOpts, retry: true }, silentLogger);
+
+    expect(result.type).toBe("confirmed");
+    expect(quoteCalls).toBe(2);
+    expect(mockExecuteQuote).toHaveBeenCalledTimes(1);
+  });
+
   it("tokenSwap order-failed error carries txId + txParams.chainId for receipt lookup", async () => {
     // An EVM→EVM tokenSwap settles via an on-chain tx. When the order fails,
     // the thrown error must carry the settlement tx hash + chainId so downstream
