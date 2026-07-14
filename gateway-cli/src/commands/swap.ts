@@ -223,17 +223,26 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
   let lastReadError: string | undefined;
 
   while (Date.now() < deadline) {
+    // The try wraps ONLY the read: everything below it interprets a status we did
+    // successfully read, and a bug there must surface, not be retried as a read error.
+    let order: Awaited<ReturnType<typeof sdk.getOrder>> | undefined;
     try {
       log.progress(`  Waiting for confirmation... (${Math.round((Date.now() - startMs) / 1000)}s elapsed)`);
-      const o = await sdk.getOrder(orderId);
+      order = await sdk.getOrder(orderId);
       readFailures = 0;
       lastReadError = undefined;
+    } catch (err) {
+      readFailures++;
+      lastReadError = err instanceof Error ? err.message : String(err);
+      log.warn(`could not read status of order ${orderId} (attempt ${readFailures}, retrying): ${lastReadError}`);
+    }
 
-      if (hasKey(o.status, "success")) {
+    if (order) {
+      if (hasKey(order.status, "success")) {
         const elapsedMs = Date.now() - startMs;
-        const outAmt = o.dstInfo?.amount ?? "?";
-        const slipBps = outputAmount && BigInt(outputAmount) !== 0n && o.dstInfo?.amount
-          ? Number(10000n - BigInt(o.dstInfo.amount) * 10000n / BigInt(outputAmount))
+        const outAmt = order.dstInfo?.amount ?? "?";
+        const slipBps = outputAmount && BigInt(outputAmount) !== 0n && order.dstInfo?.amount
+          ? Number(10000n - BigInt(order.dstInfo.amount) * 10000n / BigInt(outputAmount))
           : 0;
 
         log.progress(`✓ Confirmed — ${outAmt} ${dstAsset.symbol} delivered to ${recipient}`);
@@ -243,13 +252,13 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
         };
       }
 
-      if (hasKey(o.status, "refunded") || hasKey(o.status, "failed")) {
+      if (hasKey(order.status, "refunded") || hasKey(order.status, "failed")) {
         // The order itself declares failure — the one and only terminal signal.
         // Carry the on-chain settlement tx hash + route so the --json serializer
         // surfaces them (downstream alerting fetches the receipt to detect
         // out-of-gas). Message unchanged so existing categorization still matches.
         // Only offramp/tokenSwap have an EVM settlement tx; onramp settles on BTC.
-        throw new SwapError(`Order ${orderId} failed: ${JSON.stringify(o.status)}`, {
+        throw new SwapError(`Order ${orderId} failed: ${JSON.stringify(order.status)}`, {
           orderId,
           ...(variant !== "onramp" && {
             txId,
@@ -260,11 +269,6 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
         });
       }
       // inProgress → keep polling.
-    } catch (err) {
-      if (err instanceof SwapError) throw err; // terminal: the order says it failed
-      readFailures++;
-      lastReadError = err instanceof Error ? err.message : String(err);
-      log.warn(`could not read status of order ${orderId} (attempt ${readFailures}, retrying): ${lastReadError}`);
     }
 
     // Back off on consecutive read failures so we don't hammer a struggling API;
