@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { Logger } from "../../src/output.js";
 import type { RouteInfo } from "@gobob/bob-sdk";
+import type { PollTimings } from "../../src/commands/swap.js";
 
 // ─── Mock fixtures ────────────────────────────────────────────────────────────
 
@@ -161,6 +162,15 @@ vi.mock("p-retry", () => ({
 
 const silentLogger: Logger = { progress: () => {}, warn: () => {} };
 
+/**
+ * Poll timings compressed so the loop's REAL machinery — AbortSignal.timeout,
+ * AbortSignal.any, the abortable sleep, the SDK's request cancellation — runs
+ * unmocked and still finishes in milliseconds. Fake timers cannot drive
+ * AbortSignal.timeout (it is not backed by the global timer), and faking the loop's
+ * clock is exactly the thing these tests exist to prove the loop no longer depends on.
+ */
+const FAST: PollTimings = { pollIntervalMs: 10, maxBackoffMs: 40, getOrderTimeoutMs: 50 };
+
 const baseOpts = {
   src: "BTC",
   dst: "USDC:base",
@@ -171,6 +181,22 @@ const baseOpts = {
   retry: true,
   privateKey: "cTestPrivateKey",
 };
+
+/** USDT@ethereum → BTC offramp paying the ONE BTC address gateway-bot reuses for every swap. */
+async function setupOfframp() {
+  const { resolveSigner, deriveAddress, resolveRecipient } = await import("../../src/chains/index.js");
+  const publicClient = { getTransactionCount: vi.fn().mockResolvedValue(0) } as any;
+  vi.mocked(resolveSigner).mockResolvedValue({ address: "0xSender", walletClient: {} as any, publicClient } as any);
+  vi.mocked(deriveAddress).mockResolvedValue("0xSender");
+  vi.mocked(resolveRecipient).mockResolvedValue("bc1qshared");
+
+  mockExecuteQuote.mockResolvedValue({
+    order: { offramp: { orderId: "order-btc-1", tx: { to: "0xGateway" } } },
+    tx: "0xsettlementhash",
+  });
+
+  return { ...baseOpts, src: "USDT:ethereum", dst: "BTC", privateKey: "0xevmkey" };
+}
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
@@ -202,7 +228,8 @@ describe("handleSwap", () => {
 
     expect(mockGetQuote).toHaveBeenCalledOnce();
     expect(mockExecuteQuote).toHaveBeenCalledOnce();
-    expect(mockGetOrder).toHaveBeenCalledWith("order-456");
+    // Every read carries an abort signal, so no single read can outlive --timeout.
+    expect(mockGetOrder).toHaveBeenCalledWith("order-456", { signal: expect.any(AbortSignal) });
   });
 
   it("--no-wait returns submitted without polling", async () => {
@@ -312,5 +339,198 @@ describe("handleSwap", () => {
     expect(caught.context.txParams.to).toBe("0xGatewayContract");
     expect(caught.context.srcAsset).toEqual({ symbol: "USDT", chain: "ethereum" });
     expect(caught.context.dstAsset).toEqual({ symbol: "USDC", chain: "base" });
+  });
+
+  // ─── B1/B2/B3 — polling never reports a committed swap as failed ────────────
+  //
+  // Once executeQuote returns, the source funds are committed on-chain. The order status
+  // is then the ONLY authority on whether the swap failed: an error while *reading* that
+  // status says nothing about the swap. Reporting those reads as terminal failures
+  // produced false "swap failed" alarms on swaps that had already succeeded — and, via
+  // gateway-bot, false critical GitHub issues.
+
+  describe("polling never reports a committed swap as failed", () => {
+    it("a transient gateway 5xx while polling does not fail an already-settling swap", async () => {
+      // Incident (staging order cbf7296e-340a-438a-981c-75980fafc40c): get-order returned
+      // "bungee api error: status=504", yet the swap SUCCEEDED — 74,130 sats confirmed on
+      // Bitcoin in tx 48abaaf1…, block 957986. The CLI exited 1 and gateway-bot opened a
+      // false critical issue for a swap that worked.
+      mockGetOrder
+        .mockRejectedValueOnce(new Error("bungee api error: status=504 Gateway Timeout, message=error code: 504\n"))
+        .mockResolvedValue(confirmedOrder);
+
+      const { handleSwap } = await import("../../src/commands/swap.js");
+      const result = await handleSwap({ ...baseOpts, timeout: 2 }, silentLogger, FAST);
+
+      expect(result.type).toBe("confirmed");
+      expect(mockGetOrder).toHaveBeenCalledTimes(2);
+    });
+
+    it("a generic fetch failure while polling reports in_flight, not failure", async () => {
+      // Incident (staging order a9a49f67-a2de-429f-bb44-2f32034a6f22): the SDK runtime threw
+      // its generic FetchError (underlying cause: a local Cloudflare 403) on every get-order.
+      // 44.6 USDC had already left the wallet; the order was `inProgress` and later settled
+      // fine. The CLI must not call that a failure — and must hand back the orderId + source
+      // tx so the in-flight funds can be followed up.
+      mockGetOrder.mockRejectedValue(
+        new Error("The request failed and the interceptors did not return an alternative response"),
+      );
+
+      const { handleSwap } = await import("../../src/commands/swap.js");
+      const result = await handleSwap({ ...baseOpts, timeout: 0.3 }, silentLogger, FAST);
+
+      expect(result.type).toBe("inFlight");
+      if (result.type !== "inFlight") return;
+      expect(result.data.status).toBe("in_flight");
+      expect(result.data.orderId).toBe("order-456");
+      expect(result.data.txId).toBe("signed-tx-hex-abc");
+      expect(result.data.lastError).toContain("interceptors did not return");
+      // Retried rather than bailing out on the first read error.
+      expect(mockGetOrder.mock.calls.length).toBeGreaterThan(1);
+    });
+
+    it("an order still inProgress at --timeout reports in_flight, not failure", async () => {
+      // Previously the poll loop exhausted its retries and threw its internal "pending"
+      // sentinel, which surfaced as {"error":{"message":"pending"}} with exit 1 — a terminal
+      // failure for a swap that was simply still settling.
+      mockGetOrder.mockResolvedValue({ id: "order-456", status: { inProgress: {} } });
+
+      const { handleSwap } = await import("../../src/commands/swap.js");
+      const result = await handleSwap({ ...baseOpts, timeout: 0.3 }, silentLogger, FAST);
+
+      expect(result.type).toBe("inFlight");
+      if (result.type !== "inFlight") return;
+      expect(result.data.orderId).toBe("order-456");
+      expect(result.data.txId).toBe("signed-tx-hex-abc");
+      // The status was readable throughout — nothing to report as a read error.
+      expect(result.data.lastError).toBeUndefined();
+      expect(mockGetOrder.mock.calls.length).toBeGreaterThan(1);
+    });
+
+    it("retrying read errors does not mask a genuine order failure", async () => {
+      // The order status stays the ONE authority on failure: surviving a transient read
+      // error must not make us swallow the `failed` status that follows it.
+      mockGetOrder
+        .mockRejectedValueOnce(new Error("bungee api error: status=504 Gateway Timeout"))
+        .mockResolvedValue({ id: "order-456", status: { failed: {} } });
+
+      const { handleSwap } = await import("../../src/commands/swap.js");
+      const { SwapError } = await import("../../src/errors.js");
+
+      await expect(
+        handleSwap({ ...baseOpts, timeout: 2 }, silentLogger, FAST),
+      ).rejects.toThrow(SwapError);
+    });
+
+    it("a stalled getOrder read is aborted, so the loop still ends at --timeout", async () => {
+      // B2: a stalled TCP connection — the server accepts the request and never answers. Like
+      // undici, the mock settles ONLY when its AbortSignal fires. Without a per-attempt signal
+      // the await never returns and --timeout is unenforceable; racing a timer instead would
+      // leak the socket. The read must be genuinely cancelled.
+      mockGetOrder.mockImplementation((_id: string, init?: { signal?: AbortSignal }) =>
+        new Promise((_resolve, reject) => {
+          init?.signal?.addEventListener("abort", () => reject(init.signal!.reason));
+        }),
+      );
+
+      const { handleSwap } = await import("../../src/commands/swap.js");
+      const startedAt = Date.now();
+      const result = await handleSwap({ ...baseOpts, timeout: 0.3 }, silentLogger, FAST);
+      const elapsedMs = Date.now() - startedAt;
+
+      // Bounded by --timeout, and the unreadable status is in_flight — never a failure.
+      expect(result.type).toBe("inFlight");
+      expect(elapsedMs).toBeLessThan(3_000);
+      expect(mockGetOrder).toHaveBeenCalledWith("order-456", { signal: expect.any(AbortSignal) });
+      if (result.type !== "inFlight") return;
+      expect(result.data.lastError).toContain("timed out");
+    }, 10_000);
+
+    it("survives a clock that jumps past the deadline mid-iteration (no RangeError)", async () => {
+      // B3: the first attempt at B2 kept a `deadline` and derived the per-attempt budget from
+      // `deadline - Date.now()`, reading the clock separately from the loop guard. A stall
+      // between the two reads makes the window negative, and AbortSignal.timeout(negative)
+      // throws RangeError *synchronously* — outside the read's try — so a swap whose funds are
+      // already committed exits 1 as a hard failure. That is B1 reintroduced through the clock.
+      //
+      // There is no clock arithmetic left to break: the loop is driven by abort state alone, so
+      // it must survive a clock that lies. Date.now() may now only be *reported*, never obeyed.
+      const nowSpy = vi.spyOn(Date, "now");
+      try {
+        let call = 0;
+        nowSpy.mockImplementation(() => {
+          call++;
+          if (call === 1) return 1_000;
+          if (call === 2) return 1_500;
+          return 999_999_999; // stalled: every later read is "past" any deadline
+        });
+        mockGetOrder.mockResolvedValue({ id: "order-456", status: { inProgress: {} } });
+
+        const { handleSwap } = await import("../../src/commands/swap.js");
+        const result = await handleSwap({ ...baseOpts, timeout: 0.3 }, silentLogger, FAST);
+
+        // Exits cleanly as in-flight rather than throwing RangeError — or "pending".
+        expect(result.type).toBe("inFlight");
+      } finally {
+        nowSpy.mockRestore();
+      }
+    });
+  });
+
+  // ─── B4 — the BTC payout on timeout comes from the order, never from the address ──
+  //
+  // The only sound source for this order's payout tx is the order's own
+  // `pendingBtcPayment`. Scanning the recipient address for an unconfirmed tx is not
+  // correlation: gateway-bot reuses ONE BTC address for every swap and runs offramp legs
+  // in parallel, so several of its own payouts to that address are unconfirmed at once.
+
+  describe("BTC payout on timeout is taken from the order, never guessed from the address", () => {
+    /** A concurrent leg's payout to the same reused address, unconfirmed right now. */
+    const OTHER_LEGS_TX = { txid: "9c1d0b7e00000000000000000000000000000000000000000000000000000000", status: { confirmed: false } };
+    const OUR_PAYOUT_TXID = "48abaaf1000000000000000000000000000000000000000000000000000000ff";
+
+    it("reports the txid the order says it broadcast, not the first unconfirmed tx to the address", async () => {
+      const opts = await setupOfframp();
+
+      // The order tells us exactly which tx it broadcast for THIS order.
+      mockGetOrder.mockResolvedValue({
+        id: "order-btc-1",
+        status: { inProgress: { pendingBtcPayment: { txid: OUR_PAYOUT_TXID, amount: "74130" } } },
+      });
+      // Meanwhile another leg's payout to the same address is also unconfirmed. An address
+      // scan would pick this one and report someone else's tx as our payout.
+      mockGetAddressMempoolTxs.mockResolvedValue([OTHER_LEGS_TX]);
+
+      const { handleSwap } = await import("../../src/commands/swap.js");
+      const result = await handleSwap({ ...opts, timeout: 0.3 }, silentLogger, FAST);
+
+      expect(result.type).toBe("mempoolPending");
+      if (result.type !== "mempoolPending") return;
+      expect(result.data.mempoolTxId).toBe(OUR_PAYOUT_TXID);
+      expect(result.data.orderId).toBe("order-btc-1");
+      // The address heuristic is gone, not merely gated.
+      expect(mockGetAddressMempoolTxs).not.toHaveBeenCalled();
+    });
+
+    it("reports in_flight with no txid when no status was ever read", async () => {
+      const opts = await setupOfframp();
+
+      // Every read failed, so we know nothing about a payout — including whether one exists.
+      mockGetOrder.mockRejectedValue(
+        new Error("The request failed and the interceptors did not return an alternative response"),
+      );
+      mockGetAddressMempoolTxs.mockResolvedValue([OTHER_LEGS_TX]);
+
+      const { handleSwap } = await import("../../src/commands/swap.js");
+      const result = await handleSwap({ ...opts, timeout: 0.3 }, silentLogger, FAST);
+
+      // An order id that can be followed up beats a confident, wrong txid.
+      expect(result.type).toBe("inFlight");
+      if (result.type !== "inFlight") return;
+      expect(result.data.orderId).toBe("order-btc-1");
+      expect(result.data.txId).toBe("0xsettlementhash");
+      expect(result.data).not.toHaveProperty("mempoolTxId");
+      expect(mockGetAddressMempoolTxs).not.toHaveBeenCalled();
+    });
   });
 });
