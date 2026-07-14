@@ -1,7 +1,6 @@
 import { getInnerQuoteV3, resolveOwnerAddress } from "../util/quote.js";
 import { getRoutes } from "../util/route-provider.js";
-import { resolveSwapInputs, humanToAtomic, resolveChain } from "../util/input-resolver.js";
-import { fetchPrice } from "../util/price-oracle.js";
+import { resolveSwapInputs, parseAssetChain, buildTokenIndex } from "../util/input-resolver.js";
 import { MempoolClient } from "@gobob/bob-sdk";
 import { loadConfig, getSdk } from "../config.js";
 import { resolveRecipient, deriveAddress, getChainFamily, resolvePrivateKey } from "../chains/index.js";
@@ -16,7 +15,6 @@ export interface QuoteOptions {
   sender?: string;
   ownerAddress?: string;
   slippage?: number;
-  gasRefillUsd?: number;
   btcFeeRate?: number;
   feeToken?: string;
   feeReserve?: string;
@@ -42,15 +40,17 @@ export async function handleQuote(opts: QuoteOptions): Promise<QuoteResult> {
 
   const routes = await getRoutes();
 
+  // Resolve the source through the authoritative resolver (as `swap` does) rather than
+  // re-parsing `opts.src` here: an ad-hoc parser silently disagrees with parseAssetChain on
+  // case, aliases and bare symbols, and would touch a key before the asset is even validated.
+  const tokenIndex = buildTokenIndex(routes);
+  const srcFamily = getChainFamily(parseAssetChain(opts.src, routes, tokenIndex).chain);
+
   // Derive sender from env keys only when needed:
   //   - `--amount ALL` needs it to read the source balance;
   //   - an EVM source needs it as the ownerAddress (the EVM-side owner of the order).
   // Don't derive eagerly — a malformed EVM key shouldn't break a BTC→EVM quote,
   // which needs neither.
-  // Normalize like parseAssetChain/resolveChain do (case-insensitive, alias-aware),
-  // so a bitcoin source is never misread as EVM and made to derive an EVM key.
-  const srcRaw = opts.src.includes(":") ? opts.src.split(":")[1] : opts.src;
-  const srcFamily = getChainFamily(srcRaw.toUpperCase() === "BTC" ? "bitcoin" : resolveChain(srcRaw));
   let senderAddress = opts.sender;
   if (!senderAddress && (srcFamily === "evm" || opts.amount.toUpperCase() === "ALL")) {
     const key = resolvePrivateKey(srcFamily === "bitcoin" ? "bitcoin" : "evm", undefined, config);
@@ -83,10 +83,6 @@ export async function handleQuote(opts: QuoteOptions): Promise<QuoteResult> {
     }
   }
 
-  const gasRefillWei = opts.gasRefillUsd
-    ? humanToAtomic((opts.gasRefillUsd / (await fetchPrice("ETH")).priceUsd).toFixed(18), 18)
-    : undefined;
-
   const ownerAddress = resolveOwnerAddress({
     explicit: opts.ownerAddress,
     srcChain: srcAsset.chain,
@@ -104,7 +100,6 @@ export async function handleQuote(opts: QuoteOptions): Promise<QuoteResult> {
     ownerAddress,
     amount: atomicUnits,
     maxSlippage: slippageBps,
-    gasRefill: gasRefillWei ? BigInt(gasRefillWei) : undefined,
   });
   const outputAmount = getInnerQuoteV3(quote).outputAmount.amount;
 
@@ -117,7 +112,6 @@ export async function handleQuote(opts: QuoteOptions): Promise<QuoteResult> {
       dstChain: dstAsset.chain,
       slippageBps,
       feeRateSatPerVbyte: feeRate,
-      gasRefillUsd: opts.gasRefillUsd ? String(opts.gasRefillUsd) : undefined,
     },
     confirmation: {
       srcAmount: atomicUnits,
@@ -129,7 +123,6 @@ export async function handleQuote(opts: QuoteOptions): Promise<QuoteResult> {
       feeRateSatPerVbyte: feeRate,
       slippageBps,
       recipient: recipient,
-      gasRefillUsd: opts.gasRefillUsd ? String(opts.gasRefillUsd) : undefined,
     },
   };
 }

@@ -4,8 +4,7 @@ import { getInnerQuoteV3, resolveOwnerAddress } from "../util/quote.js";
 import { type WalletClient, type PublicClient } from "viem";
 import { withRetry, SwapError } from "../errors.js";
 import { getRoutes } from "../util/route-provider.js";
-import { resolveSwapInputs, humanToAtomic, parseAssetChain, buildTokenIndex } from "../util/input-resolver.js";
-import { fetchPrice } from "../util/price-oracle.js";
+import { resolveSwapInputs, parseAssetChain, buildTokenIndex } from "../util/input-resolver.js";
 import { loadConfig, getSdk, getApi } from "../config.js";
 import { deriveAddress, resolveSigner, getChainFamily, resolvePrivateKey, resolveRecipient } from "../chains/index.js";
 import { CHAIN_IDS } from "../chains/evm.js";
@@ -21,7 +20,6 @@ export interface SwapOptions {
   sender?: string;
   owner?: string;
   slippage?: number;
-  gasRefillUsd?: number;
   btcFeeRate?: number;
   feeToken?: string;
   feeReserve?: string;
@@ -93,11 +91,6 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
   const evmChain = getChainFamily(srcAsset.chain) === "bitcoin" ? dstAsset.chain : srcAsset.chain;
   const signer = opts.unsigned ? null : await resolveSigner(getChainFamily(srcAsset.chain) === "bitcoin" ? "bitcoin" : evmChain, key!);
 
-  // Gas refill
-  const gasRefillWei = opts.gasRefillUsd
-    ? humanToAtomic((opts.gasRefillUsd / (await fetchPrice("ETH")).priceUsd).toFixed(18), 18)
-    : undefined;
-
   const ownerAddress = resolveOwnerAddress({
     explicit: opts.owner,
     srcChain: srcAsset.chain,
@@ -115,7 +108,6 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
     ownerAddress,
     amount: atomicUnits,
     maxSlippage: slippageBps,
-    gasRefill: gasRefillWei ? BigInt(gasRefillWei) : undefined,
   };
 
   // ── Quote + execute (retryable) ─────────────────────────────────────────────

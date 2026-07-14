@@ -4,19 +4,6 @@ import { isAddress } from "viem";
 // ─── Reusable field schemas ─────────────────────────────────────────────────
 
 /**
- * Schema for positive decimal numbers (e.g., gas refill USD amount).
- * Transforms string input to number, validates > 0.
- */
-const positiveNumber = z.string().transform((v, ctx) => {
-  const n = parseFloat(v);
-  if (isNaN(n) || n <= 0) {
-    ctx.addIssue({ code: "custom", message: `invalid number "${v}" — must be a positive number`, input: v });
-    return z.NEVER;
-  }
-  return n;
-});
-
-/**
  * Schema for positive integers (e.g., slippage BPS, timeout seconds).
  * Transforms string input to number, validates > 0 and whole number.
  */
@@ -43,7 +30,6 @@ export const quoteSchema = z.object({
   sender: z.string().optional(),
   owner: z.string().refine(v => isAddress(v, { strict: false }), { message: "must be a valid EVM address" }).optional(),
   slippage: positiveInt.optional(),
-  gasRefillUsd: positiveNumber.optional(),
   btcFeeRate: positiveInt.optional(),
   feeToken: z.string().refine(v => isAddress(v, { strict: false }), { message: "must be a valid EVM address" }).optional(),
   feeReserve: z.string().refine(v => /^\d+$/.test(v), { message: "must be a non-negative integer (no scientific notation)" }).optional(),

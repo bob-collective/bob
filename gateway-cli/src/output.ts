@@ -87,8 +87,6 @@ export interface QuoteJson {
   slippageBps: number;
   feeRateSatPerVbyte?: number;
   gasEstimateEth?: string;
-  gasRefillEth?: string;
-  gasRefillUsd?: string;
 }
 
 /** Chain information for routes display. */
@@ -142,7 +140,6 @@ export interface ConfirmationData {
   feeNetwork?: string;
   feeRateSatPerVbyte?: number;
   gasEstimateEth?: string;
-  gasRefillUsd?: string;
   slippageBps: number;
   recipient: string;
 }
@@ -229,7 +226,6 @@ export function formatConfirmation(data: ConfirmationData): string {
     lines.push(`  Fee rate   ${data.feeRateSatPerVbyte} sat/vbyte`);
   if (data.gasEstimateEth)
     lines.push(`  Gas (est)  ~${data.gasEstimateEth} ETH`);
-  if (data.gasRefillUsd) lines.push(`  Gas refill $${data.gasRefillUsd} ETH sent to recipient`);
   lines.push(`  Slippage   ${(data.slippageBps / 100).toFixed(1)}% max  (${data.slippageBps} bps)`);
   lines.push(`  Recipient  ${data.recipient}`);
   return lines.join("\n");

@@ -159,7 +159,6 @@ All config via environment variables. No config files.
 --recipient <address>    Recipient address (optional if destination wallet key is set)
 --sender <address>       Sender address (optional)
 --slippage <bps>         Slippage tolerance in basis points (default: 300)
---gas-refill-usd <usd>   ETH gas refill on destination
 --btc-fee-rate <sat>     Bitcoin fee rate override
 --fee-token <address>    ERC20 token for gas payment (paymaster)
 --fee-reserve <amount>   Amount of fee token to reserve for gas
