@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import type { Logger } from "../../src/output.js";
 import type { RouteInfo } from "@gobob/bob-sdk";
 
@@ -322,4 +322,111 @@ describe("handleSwap", () => {
     expect(caught.context.dstAsset).toEqual({ symbol: "USDC", chain: "base" });
   });
 
+  // ─── Post-submission polling ───────────────────────────────────────────────
+  //
+  // Once executeQuote returns, the source funds are committed on-chain. The order
+  // status is then the ONLY authority on whether the swap failed: an error while
+  // *reading* that status says nothing about the swap. Reporting those reads as
+  // terminal failures produced false "swap failed" alarms on swaps that had already
+  // succeeded (or were still settling) — see the two incidents cited below.
+
+  describe("polling never reports a committed swap as failed", () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    /** Drive the poll loop's backoff sleeps under fake timers until it settles. */
+    async function drivePoll<T>(promise: Promise<T>): Promise<T> {
+      let settled = false;
+      const tracked = promise.then(
+        (v) => { settled = true; return v; },
+        (e) => { settled = true; throw e; },
+      );
+      tracked.catch(() => {}); // the assertion below owns the rejection
+      for (let i = 0; !settled && i < 200; i++) {
+        await vi.advanceTimersByTimeAsync(15_000);
+      }
+      if (!settled) throw new Error("poll loop did not settle — it is not bounded by --timeout");
+      return tracked;
+    }
+
+    it("a transient gateway 5xx while polling does not fail an already-settling swap", async () => {
+      // Incident (staging order cbf7296e-340a-438a-981c-75980fafc40c): get-order
+      // returned "bungee api error: status=504", yet the source tx was confirmed and
+      // the BTC payout was broadcast — the order reached `success`. The CLI exited 1
+      // and gateway-bot opened a false critical issue for a swap that worked.
+      vi.useFakeTimers();
+      mockGetOrder
+        .mockRejectedValueOnce(new Error("bungee api error: status=504 Gateway Timeout, message=error code: 504\n"))
+        .mockResolvedValue(confirmedOrder);
+
+      const { handleSwap } = await import("../../src/commands/swap.js");
+      const result = await drivePoll(handleSwap({ ...baseOpts, timeout: 120 }, silentLogger));
+
+      expect(result.type).toBe("confirmed");
+      expect(mockGetOrder).toHaveBeenCalledTimes(2);
+    });
+
+    it("a generic fetch failure while polling reports in_flight, not failure", async () => {
+      // Incident (staging order a9a49f67-a2de-429f-bb44-2f32034a6f22): the SDK runtime
+      // threw its generic FetchError (underlying cause: a local Cloudflare 403) on every
+      // get-order. 44.6 USDC had already left the wallet and the order was `inProgress`.
+      // The CLI must not call that a failure, and must hand back the orderId + source tx
+      // so the in-flight funds can be followed up.
+      vi.useFakeTimers();
+      mockGetOrder.mockRejectedValue(
+        new Error("The request failed and the interceptors did not return an alternative response"),
+      );
+
+      const { handleSwap } = await import("../../src/commands/swap.js");
+      const result = await drivePoll(handleSwap({ ...baseOpts, timeout: 120 }, silentLogger));
+
+      expect(result.type).toBe("inFlight");
+      if (result.type !== "inFlight") return;
+      expect(result.data.status).toBe("in_flight");
+      expect(result.data.orderId).toBe("order-456");
+      expect(result.data.txId).toBe("signed-tx-hex-abc");
+      expect(result.data.lastError).toContain("interceptors did not return");
+      // Retried rather than bailing out on the first read error.
+      expect(mockGetOrder.mock.calls.length).toBeGreaterThan(1);
+    });
+
+    it("an order still inProgress at --timeout reports in_flight, not failure", async () => {
+      // Previously the poll loop exhausted its retries and threw its internal "pending"
+      // sentinel, which surfaced as {"error":{"message":"pending"}} with exit 1 — a
+      // terminal failure for a swap that was simply still settling.
+      vi.useFakeTimers();
+      mockGetOrder.mockResolvedValue({
+        id: "order-456",
+        status: { inProgress: { pending_btc_payment: {} } },
+      });
+
+      const { handleSwap } = await import("../../src/commands/swap.js");
+      const result = await drivePoll(handleSwap({ ...baseOpts, timeout: 60 }, silentLogger));
+
+      expect(result.type).toBe("inFlight");
+      if (result.type !== "inFlight") return;
+      expect(result.data.orderId).toBe("order-456");
+      expect(result.data.txId).toBe("signed-tx-hex-abc");
+      // The status was readable throughout — nothing to report as a read error.
+      expect(result.data.lastError).toBeUndefined();
+      expect(mockGetOrder.mock.calls.length).toBeGreaterThan(1);
+    });
+
+    it("retrying read errors does not mask a genuine order failure", async () => {
+      // The order status stays the one authority on failure: surviving a transient read
+      // error must not make us swallow the `failed` status that follows it.
+      vi.useFakeTimers();
+      mockGetOrder
+        .mockRejectedValueOnce(new Error("bungee api error: status=504 Gateway Timeout"))
+        .mockResolvedValue({ id: "order-456", status: { failed: {} } });
+
+      const { handleSwap } = await import("../../src/commands/swap.js");
+      const { SwapError } = await import("../../src/errors.js");
+
+      await expect(
+        drivePoll(handleSwap({ ...baseOpts, timeout: 120 }, silentLogger)),
+      ).rejects.toThrow(SwapError);
+    });
+  });
 });

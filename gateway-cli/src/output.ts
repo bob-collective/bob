@@ -64,6 +64,27 @@ export interface SwapSubmittedJson {
   txId: string;
 }
 
+/**
+ * Swap submitted, source funds committed, but the order had not reached a terminal
+ * status before --timeout expired — either because it is still settling, or because
+ * the order status could not be read (gateway 5xx/403, network failure).
+ *
+ * This is NOT a failure: the order is in flight. `orderId` + `txId` are carried so an
+ * operator (or gateway-bot) can follow it up with `gateway-cli status <orderId>`.
+ */
+export interface SwapInFlightJson {
+  orderId: string;
+  status: "in_flight";
+  srcAmount: string;
+  srcAsset: string;
+  dstAsset: string;
+  dstChain: string;
+  txId: string;
+  elapsedMs: number;
+  /** Last error seen while reading the order status, when the poll ended on a read failure. */
+  lastError?: string;
+}
+
 /** Swap pending in mempool (unconfirmed Bitcoin transaction). */
 export interface SwapMempoolPendingJson {
   orderId: string;

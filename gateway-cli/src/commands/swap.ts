@@ -8,7 +8,7 @@ import { resolveSwapInputs, parseAssetChain, buildTokenIndex } from "../util/inp
 import { loadConfig, getSdk, getApi } from "../config.js";
 import { deriveAddress, resolveSigner, getChainFamily, resolvePrivateKey, resolveRecipient } from "../chains/index.js";
 import { CHAIN_IDS } from "../chains/evm.js";
-import type { Logger, SwapSuccessJson, SwapSubmittedJson, SwapMempoolPendingJson } from "../output.js";
+import type { Logger, SwapSuccessJson, SwapSubmittedJson, SwapMempoolPendingJson, SwapInFlightJson } from "../output.js";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -34,7 +34,8 @@ export type SwapResult =
   | { type: "unsigned"; orderId: string; psbtBase64?: string; txInfo?: any }
   | { type: "submitted"; data: SwapSubmittedJson }
   | { type: "confirmed"; data: SwapSuccessJson }
-  | { type: "mempoolPending"; data: SwapMempoolPendingJson };
+  | { type: "mempoolPending"; data: SwapMempoolPendingJson }
+  | { type: "inFlight"; data: SwapInFlightJson };
 
 // ─── Handler ─────────────────────────────────────────────────────────────────
 
@@ -198,18 +199,52 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
   }
 
   // ── Poll ────────────────────────────────────────────────────────────────────
+  //
+  // The source funds are committed on-chain from here on, so the ONLY authority on
+  // whether the swap failed is the order status itself. Failing to *read* that status
+  // (gateway 5xx, Cloudflare 403, connection reset, DNS blip) tells us nothing about
+  // the swap and must never be reported as a swap failure — the order is settling
+  // regardless of whether we can see it. Read errors are therefore always retried,
+  // with backoff, until the caller's --timeout is exhausted; if the order still has
+  // not settled by then we exit in the non-failure "in flight" state below, carrying
+  // the orderId + source txId so the order can be followed up.
+
+  const POLL_INTERVAL_MS = 15_000;
+  const MAX_BACKOFF_MS = 60_000;
+  const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
 
   const startMs = Date.now();
+  const deadline = startMs + timeoutMs;
   // V2 status is a discriminated object union: {success} | {refunded} | {failed} | {inProgress}.
   const hasKey = <K extends string>(s: unknown, k: K): s is Record<K, unknown> =>
     typeof s === "object" && s !== null && k in s;
 
-  try {
-    const finalOrder = await withRetry(async () => {
+  let readFailures = 0;
+  let lastReadError: string | undefined;
+
+  while (Date.now() < deadline) {
+    try {
       log.progress(`  Waiting for confirmation... (${Math.round((Date.now() - startMs) / 1000)}s elapsed)`);
       const o = await sdk.getOrder(orderId);
-      if (hasKey(o.status, "success")) return o;
+      readFailures = 0;
+      lastReadError = undefined;
+
+      if (hasKey(o.status, "success")) {
+        const elapsedMs = Date.now() - startMs;
+        const outAmt = o.dstInfo?.amount ?? "?";
+        const slipBps = outputAmount && BigInt(outputAmount) !== 0n && o.dstInfo?.amount
+          ? Number(10000n - BigInt(o.dstInfo.amount) * 10000n / BigInt(outputAmount))
+          : 0;
+
+        log.progress(`✓ Confirmed — ${outAmt} ${dstAsset.symbol} delivered to ${recipient}`);
+        return {
+          type: "confirmed",
+          data: { orderId, status: "confirmed", srcAmount: atomicUnits, srcAsset: srcAsset.symbol, dstAmount: outAmt, dstAsset: dstAsset.symbol, dstChain: dstAsset.chain, quotedDstAmount: outputAmount, actualSlippageBps: slipBps, txId, elapsedMs },
+        };
+      }
+
       if (hasKey(o.status, "refunded") || hasKey(o.status, "failed")) {
+        // The order itself declares failure — the one and only terminal signal.
         // Carry the on-chain settlement tx hash + route so the --json serializer
         // surfaces them (downstream alerting fetches the receipt to detect
         // out-of-gas). Message unchanged so existing categorization still matches.
@@ -224,36 +259,55 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
           }),
         });
       }
-      throw new Error("pending");
-    }, { retries: Math.ceil(timeoutMs / 15_000), isTransient: (e) => e instanceof Error && e.message === "pending", minTimeout: 15_000, maxTimeout: 15_000 });
-
-    const elapsedMs = Date.now() - startMs;
-    const outAmt = finalOrder.dstInfo?.amount ?? "?";
-    const slipBps = outputAmount && BigInt(outputAmount) !== 0n && finalOrder.dstInfo?.amount
-      ? Number(10000n - BigInt(finalOrder.dstInfo.amount) * 10000n / BigInt(outputAmount))
-      : 0;
-
-    log.progress(`✓ Confirmed — ${outAmt} ${dstAsset.symbol} delivered to ${recipient}`);
-    return {
-      type: "confirmed",
-      data: { orderId, status: "confirmed", srcAmount: atomicUnits, srcAsset: srcAsset.symbol, dstAmount: outAmt, dstAsset: dstAsset.symbol, dstChain: dstAsset.chain, quotedDstAmount: outputAmount, actualSlippageBps: slipBps, txId, elapsedMs },
-    };
-  } catch (err) {
-    if (getChainFamily(dstAsset.chain) === "bitcoin" && err instanceof Error && err.message === "pending") {
-      log.progress(`Poll timeout reached. Checking mempool for pending delivery...`);
-      const pendingTxs = await new MempoolClient().getAddressMempoolTxs(recipient).catch(mempoolErr => {
-        log.warn(`could not check mempool: ${mempoolErr instanceof Error ? mempoolErr.message : String(mempoolErr)}`);
-        return [];
-      });
-      const mempoolTxId = pendingTxs.find(tx => !tx.status.confirmed)?.txid;
-      if (mempoolTxId) {
-        log.progress(`~ BTC tx found in mempool (unconfirmed): ${mempoolTxId}`);
-        return {
-          type: "mempoolPending",
-          data: { orderId, status: "mempool_pending", srcAmount: atomicUnits, srcAsset: srcAsset.symbol, dstAsset: dstAsset.symbol, dstChain: dstAsset.chain, mempoolTxId },
-        };
-      }
+      // inProgress → keep polling.
+    } catch (err) {
+      if (err instanceof SwapError) throw err; // terminal: the order says it failed
+      readFailures++;
+      lastReadError = err instanceof Error ? err.message : String(err);
+      log.warn(`could not read status of order ${orderId} (attempt ${readFailures}, retrying): ${lastReadError}`);
     }
-    throw err;
+
+    // Back off on consecutive read failures so we don't hammer a struggling API;
+    // a normal in-progress poll just waits the fixed interval. Never sleep past
+    // the caller's deadline.
+    const delay = readFailures > 0
+      ? Math.min(POLL_INTERVAL_MS * 2 ** (readFailures - 1), MAX_BACKOFF_MS)
+      : POLL_INTERVAL_MS;
+    const remaining = deadline - Date.now();
+    if (remaining <= 0) break;
+    await sleep(Math.min(delay, remaining));
   }
+
+  // ── Timed out without a terminal status → in flight, NOT a failure ──────────
+
+  if (getChainFamily(dstAsset.chain) === "bitcoin") {
+    log.progress(`Poll timeout reached. Checking mempool for pending delivery...`);
+    const pendingTxs = await new MempoolClient().getAddressMempoolTxs(recipient).catch(mempoolErr => {
+      log.warn(`could not check mempool: ${mempoolErr instanceof Error ? mempoolErr.message : String(mempoolErr)}`);
+      return [];
+    });
+    const mempoolTxId = pendingTxs.find(tx => !tx.status.confirmed)?.txid;
+    if (mempoolTxId) {
+      log.progress(`~ BTC tx found in mempool (unconfirmed): ${mempoolTxId}`);
+      return {
+        type: "mempoolPending",
+        data: { orderId, status: "mempool_pending", srcAmount: atomicUnits, srcAsset: srcAsset.symbol, dstAsset: dstAsset.symbol, dstChain: dstAsset.chain, mempoolTxId },
+      };
+    }
+  }
+
+  const elapsedMs = Date.now() - startMs;
+  log.progress(
+    `~ Still in flight after ${Math.round(elapsedMs / 1000)}s — order ${orderId} has not settled yet.\n` +
+    `  The source funds are committed (tx ${txId}). This is not a failure.\n` +
+    `  Follow it up with: gateway-cli status ${orderId}`,
+  );
+  return {
+    type: "inFlight",
+    data: {
+      orderId, status: "in_flight", srcAmount: atomicUnits, srcAsset: srcAsset.symbol,
+      dstAsset: dstAsset.symbol, dstChain: dstAsset.chain, txId, elapsedMs,
+      ...(lastReadError && { lastError: lastReadError }),
+    },
+  };
 }
