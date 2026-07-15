@@ -1,23 +1,13 @@
 import { getInnerQuoteV3 } from "../util/quote.js";
 import { getRoutes } from "../util/route-provider.js";
-import { resolveSwapInputs } from "../util/input-resolver.js";
+import { resolveSwapContext, type SwapContextOptions } from "../util/swap-context.js";
 import { MempoolClient } from "@gobob/bob-sdk";
 import { loadConfig, getSdk } from "../config.js";
-import { resolveRecipient, deriveAddress, getChainFamily, resolvePrivateKey } from "../chains/index.js";
 import type { QuoteJson, ConfirmationData } from "../output.js";
 
 /** Quote command options. */
-export interface QuoteOptions {
-  src: string;
-  dst: string;
-  amount: string;
-  recipient?: string;
-  sender?: string;
-  ownerAddress?: string;
-  slippage?: number;
+export interface QuoteOptions extends SwapContextOptions {
   btcFeeRate?: number;
-  feeToken?: string;
-  feeReserve?: string;
 }
 
 /** Quote command result with quote data and confirmation display. */
@@ -28,47 +18,29 @@ export interface QuoteResult {
 
 /**
  * Handle the quote command: fetch a swap quote without executing.
- * Resolves asset inputs, recipient, and fee rate, then requests quote from Gateway.
- * 
+ *
+ * The swap is resolved through the SAME {@link resolveSwapContext} that `swap` uses,
+ * so the two cannot disagree about the source chain, the sender or the owner — every
+ * such disagreement in the past was a bug, most recently an offramp quote sending the
+ * Bitcoin recipient as `ownerAddress` and being rejected by the API every time.
+ *
+ * A quote signs nothing, so it declares no need for a key: one is touched only if the
+ * owner or an `--amount ALL` balance genuinely depends on it.
+ *
  * @param opts - Quote options including source, destination, amount
  * @returns Quote data and confirmation display info
  */
 export async function handleQuote(opts: QuoteOptions): Promise<QuoteResult> {
   const config = loadConfig();
   const sdk = getSdk();
-  const slippageBps = opts.slippage ?? config.slippageBps;
 
   const routes = await getRoutes();
-
-  // Derive sender from env keys only when needed (--amount ALL requires it).
-  // Don't derive eagerly — a malformed key shouldn't break ordinary quotes.
-  let senderAddress = opts.sender;
-  if (!senderAddress && opts.amount.toUpperCase() === "ALL") {
-    const srcRaw = opts.src.includes(":") ? opts.src.split(":")[1] : opts.src;
-    const srcFamily = getChainFamily(srcRaw === "BTC" || srcRaw === "btc" ? "bitcoin" : srcRaw);
-    const key = resolvePrivateKey(srcFamily === "bitcoin" ? "bitcoin" : "evm", undefined, config);
-    if (key) {
-      try {
-        senderAddress = await deriveAddress(srcFamily === "bitcoin" ? "bitcoin" : "evm", key);
-      } catch (err) {
-        const envVar = srcFamily === "bitcoin" ? "BITCOIN_PRIVATE_KEY" : "EVM_PRIVATE_KEY";
-        throw new Error(`Failed to derive sender address from ${envVar}: ${err instanceof Error ? err.message : String(err)}\n  Use --sender <address> to provide the address directly.`);
-      }
-    }
-  }
-
-  const { srcAsset, dstAsset, atomicUnits, display } = await resolveSwapInputs(
-    opts.src, opts.dst, opts.amount, routes,
-    { senderAddress, feeToken: opts.feeToken, feeReserve: opts.feeReserve },
-  );
-
-  // ── Resolve recipient ────────────────────────────────────────────────────
-  const recipient = await resolveRecipient(dstAsset.chain, opts.recipient, config);
+  const ctx = await resolveSwapContext(opts, routes, config, { signing: false, senderAddress: false });
 
   // Fee rate is informational only — the Gateway backend determines the actual fee.
   // We show the current mempool rate so users know what to expect.
   let feeRate: number | undefined;
-  if (srcAsset.chain === "bitcoin") {
+  if (ctx.srcFamily === "bitcoin") {
     feeRate = opts.btcFeeRate ?? config.btcFeeRate;
     if (feeRate == null) {
       const fees = await new MempoolClient().getRecommendedFees();
@@ -76,44 +48,29 @@ export async function handleQuote(opts: QuoteOptions): Promise<QuoteResult> {
     }
   }
 
-  // ownerAddress (required by V3) is the EVM-side address controlling the order.
-  // Use the explicit --owner override when given; otherwise derive the EVM-side
-  // address: recipient for onramp (BTC→EVM), sender for offramp/tokenSwap.
-  const ownerAddress = opts.ownerAddress ?? (srcAsset.chain === "bitcoin" ? recipient : (senderAddress ?? recipient));
-
-  const quote = await sdk.getQuote({
-    fromChain: srcAsset.chain,
-    toChain: dstAsset.chain,
-    fromToken: srcAsset.address,
-    toToken: dstAsset.address,
-    toUserAddress: recipient,
-    fromUserAddress: senderAddress,
-    ownerAddress,
-    amount: atomicUnits,
-    maxSlippage: slippageBps,
-  });
+  const quote = await sdk.getQuote(ctx.quoteParams);
   const outputAmount = getInnerQuoteV3(quote).outputAmount.amount;
 
   return {
     quote: {
-      srcAmount: atomicUnits,
-      srcAsset: srcAsset.symbol,
+      srcAmount: ctx.atomicUnits,
+      srcAsset: ctx.srcAsset.symbol,
       dstAmount: outputAmount,
-      dstAsset: dstAsset.symbol,
-      dstChain: dstAsset.chain,
-      slippageBps,
+      dstAsset: ctx.dstAsset.symbol,
+      dstChain: ctx.dstAsset.chain,
+      slippageBps: ctx.slippageBps,
       feeRateSatPerVbyte: feeRate,
     },
     confirmation: {
-      srcAmount: atomicUnits,
-      srcAsset: srcAsset.symbol,
-      srcDisplay: display,
+      srcAmount: ctx.atomicUnits,
+      srcAsset: ctx.srcAsset.symbol,
+      srcDisplay: ctx.display,
       dstAmount: outputAmount,
-      dstAsset: dstAsset.symbol,
-      dstChain: dstAsset.chain,
+      dstAsset: ctx.dstAsset.symbol,
+      dstChain: ctx.dstAsset.chain,
       feeRateSatPerVbyte: feeRate,
-      slippageBps,
-      recipient: recipient,
+      slippageBps: ctx.slippageBps,
+      recipient: ctx.recipient,
     },
   };
 }

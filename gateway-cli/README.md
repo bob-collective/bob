@@ -177,8 +177,8 @@ All config via environment variables. No config files.
 --private-key <key>      Signing key (or use env vars)
 --unsigned               Output unsigned PSBT/tx without signing
 --no-wait                Exit after submitting without polling
---no-retry               Fail immediately on transient errors
---timeout <seconds>      Polling timeout (default: 1800)
+--no-retry               Fail immediately on transient errors (retry is on by default)
+--timeout <seconds>      Polling timeout (default: 1800, max: 86400)
 ```
 
 ### Send only
@@ -226,6 +226,17 @@ git push origin cli-v0.3.0-rc0
 
 ## Error handling
 
-- **Transient errors** (rate limits, timeouts): automatically retried on quote and registration steps. Use `--no-retry` to disable.
+- **Transient errors** (rate limits, timeouts): automatically retried, but only *before* the
+  wallet is asked to sign. Retrying is enabled by default; use `--no-retry` to disable.
+- **Point of no return**: once the wallet has been asked to sign, the swap is never retried,
+  however transient the error looks — re-running `executeQuote` would broadcast a second
+  transaction and send the funds twice. Such a failure is reported as terminal, tells you not
+  to re-run, and points at `gateway-cli orders <owner-address>` to check whether an order exists.
 - **Registration failure**: if a signed tx fails to register, the error includes the order ID and a recovery command: `gateway-cli register <order-id> <txid>`.
+- **Status read failures while polling**: a swap's funds are committed once it is submitted, so
+  the order status is the only authority on whether it failed. Errors while *reading* that status
+  (gateway 5xx, network failures) are retried until `--timeout`, never reported as swap failures.
+- **`--timeout` reached without a terminal status**: reported as `in_flight` (exit 0), carrying
+  the order id and source txid — the swap is still settling, not failed. Follow it up with
+  `gateway-cli status <order-id>`.
 - **Balance errors**: per-chain failures show "N/A" instead of failing the entire command.

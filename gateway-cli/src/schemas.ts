@@ -44,7 +44,11 @@ export const swapSchema = quoteSchema.and(z.object({
   privateKey: z.string().optional(),
   wait: z.boolean().default(true),
   unsigned: z.boolean().default(false),
-  timeout: positiveInt.pipe(z.number().min(1, "timeout must be >= 1")).optional(),
+  // Capped at 24h. The poll timeout becomes an `AbortSignal.timeout(timeoutMs)` created
+  // AFTER the source tx is broadcast, and `AbortSignal.timeout` throws `RangeError`
+  // synchronously above 2^32-1 ms — which would report an already-committed swap as a
+  // hard failure. Reject the impossible value at the boundary instead.
+  timeout: positiveInt.pipe(z.number().min(1, "timeout must be >= 1").max(86_400, "timeout must be <= 86400 (24h)")).optional(),
   retry: z.boolean().default(true),
 }));
 
