@@ -1,64 +1,64 @@
 {
-    "name": "@gobob/bob-sdk",
-    "version": "5.8.1",
-    "main": "dist/index.js",
-    "types": "dist/index.d.ts",
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/bob-collective/bob.git"
-    },
-    "scripts": {
-        "test": "vitest run test/*.ts",
-        "deploy-relay": "ts-node src/scripts/relay-genesis.ts",
-        "update-relay": "ts-node src/scripts/relay-retarget.ts",
-        "build": "tsc -p tsconfig.json",
-        "lint": "eslint .",
-        "format": "prettier --write examples src test",
-        "format:check": "prettier --check examples src test",
-        "codegen": "rm -rf ./src/gateway/generated-client && npx @openapitools/openapi-generator-cli generate --skip-validate-spec -g typescript-fetch -i $OPEN_API_SPEC_URL -o ./src/gateway/generated-client --global-property=apiDocs=false,modelDocs=false"
-    },
-    "files": [
-        "dist/**/*",
-        "!**/*.spec.*",
-        "CHANGELOG.md",
-        "LICENSE",
-        "README.md"
-    ],
-    "devDependencies": {
-        "@gobob/tokenlist": "github:bob-collective/tokenlist#223e98d85d857ce316fe3a8c3814ed00ddd66556",
-        "@openapitools/openapi-generator-cli": "^2.30.2",
-        "@scure/bip32": "^2.0.1",
-        "@types/node": "^24.3.0",
-        "@types/yargs": "^17.0.35",
-        "@typescript-eslint/eslint-plugin": "^8.54.0",
-        "@typescript-eslint/parser": "^8.57.1",
-        "ecpair": "^2.1.0",
-        "eslint": "^10.1.0",
-        "eslint-config-prettier": "^10.1.8",
-        "eslint-plugin-prettier": "^5.5.5",
-        "mocha": "^11.7.5",
-        "nock": "^14.0.11",
-        "prettier": "^3.8.1",
-        "tiny-secp256k1": "^2.2.4",
-        "ts-node": "^10.0.0",
-        "tsx": "^4.20.6",
-        "typescript": "^5.7.3",
-        "vitest": "^3.2.4",
-        "yargs": "^18.0.0"
-    },
-    "dependencies": {
-        "@bitcoinerlab/secp256k1": "^1.2.0",
-        "@eslint/eslintrc": "^3.3.5",
-        "@eslint/js": "^10.0.1",
-        "@gobob/sats-wagmi": "^0.3.23",
-        "@magiceden-oss/runestone-lib": "^1.0.2",
-        "@scure/base": "^1.2.4",
-        "@scure/btc-signer": "^1.6.0",
-        "bip39": "^3.1.0",
-        "bitcoin-address-validation": "^3.0.0",
-        "bitcoinjs-lib": "^6.1.7",
-        "global": "^4.4.0",
-        "globals": "^17.4.0",
-        "viem": "2.49.0"
-    }
+  "name": "@gobob/bob-sdk",
+  "version": "5.9.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bob-collective/bob.git"
+  },
+  "scripts": {
+    "test": "vitest run test/*.ts",
+    "deploy-relay": "ts-node src/scripts/relay-genesis.ts",
+    "update-relay": "ts-node src/scripts/relay-retarget.ts",
+    "build": "tsc -p tsconfig.json",
+    "lint": "eslint .",
+    "format": "prettier --write examples src test",
+    "format:check": "prettier --check examples src test",
+    "codegen": "rm -rf ./src/gateway/generated-client && npx @openapitools/openapi-generator-cli generate --skip-validate-spec -g typescript-fetch -i $OPEN_API_SPEC_URL -o ./src/gateway/generated-client --global-property=apiDocs=false,modelDocs=false"
+  },
+  "files": [
+    "dist/**/*",
+    "!**/*.spec.*",
+    "CHANGELOG.md",
+    "LICENSE",
+    "README.md"
+  ],
+  "devDependencies": {
+    "@gobob/tokenlist": "github:bob-collective/tokenlist#223e98d85d857ce316fe3a8c3814ed00ddd66556",
+    "@openapitools/openapi-generator-cli": "^2.30.2",
+    "@scure/bip32": "^2.0.1",
+    "@types/node": "^24.3.0",
+    "@types/yargs": "^17.0.35",
+    "@typescript-eslint/eslint-plugin": "^8.54.0",
+    "@typescript-eslint/parser": "^8.57.1",
+    "ecpair": "^2.1.0",
+    "eslint": "^10.1.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.5",
+    "mocha": "^11.7.5",
+    "nock": "^14.0.11",
+    "prettier": "^3.8.1",
+    "tiny-secp256k1": "^2.2.4",
+    "ts-node": "^10.0.0",
+    "tsx": "^4.20.6",
+    "typescript": "^5.7.3",
+    "vitest": "^3.2.4",
+    "yargs": "^18.0.0"
+  },
+  "dependencies": {
+    "@bitcoinerlab/secp256k1": "^1.2.0",
+    "@eslint/eslintrc": "^3.3.5",
+    "@eslint/js": "^10.0.1",
+    "@gobob/sats-wagmi": "^0.3.23",
+    "@magiceden-oss/runestone-lib": "^1.0.2",
+    "@scure/base": "^1.2.4",
+    "@scure/btc-signer": "^1.6.0",
+    "bip39": "^3.1.0",
+    "bitcoin-address-validation": "^3.0.0",
+    "bitcoinjs-lib": "^6.1.7",
+    "global": "^4.4.0",
+    "globals": "^17.4.0",
+    "viem": "2.49.0"
+  }
 }
