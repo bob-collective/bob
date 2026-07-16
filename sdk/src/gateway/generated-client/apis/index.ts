@@ -9,4 +9,4 @@ export * from './V3Api';
 // breaks `tsc`. This explicit re-export wins over the star exports and picks V2's copy (the
 // two are structurally identical). Delete this line the next time `pnpm codegen` regenerates
 // the client from the current spec.
-export type { GetMaxSpendableV2Request } from './V2Api';
+export type { type GetMaxSpendableV2Request as GetMaxSpendableV3Request } from './V2Api';
