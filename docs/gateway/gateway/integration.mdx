@@ -64,9 +64,16 @@ const gatewaySDKStaging = new GatewaySDK({ basePath: STAGING_GATEWAY_BASE_URL })
 
 ### Authentication
 
-Gateway API keys are **optional**. All V3 endpoints are reachable without authentication; an API key unlocks higher rate limits and access to partner features.
+API keys are **optional** — the API is reachable without authentication. A key unlocks:
 
-To request a key, contact the BOB team. Once you have one, pass it in the options object:
+- **Analytics dashboard** — your orders, volume, and affiliate earnings
+- **Higher rate limits** than keyless usage
+
+<Card title="Partner Onboarding" icon="rocket" href="/gateway/onboarding">
+  Get an API key and go live — full flow and contact details
+</Card>
+
+Once you have a key, pass it in the options object:
 
 ```typescript
 import { GatewaySDK } from '@gobob/bob-sdk';
@@ -333,6 +340,22 @@ orders.forEach(order => {
 });
 ```
 
+### Link users to the Gateway Explorer
+
+If you don't want to build your own tracking UI, every order has a public
+status page on the Gateway Explorer that you can link users to directly:
+
+```text
+https://gateway-explorer.gobob.xyz/order/<ORDER_ID>
+```
+
+Example: [gateway-explorer.gobob.xyz/order/71a070e7-...](https://gateway-explorer.gobob.xyz/order/71a070e7-7ff5-45c9-8f60-135894ebed11)
+
+Use the order ID returned when the order is created. The page shows live
+status, amounts, and transaction hashes for both sides of the swap — useful
+as a "track your swap" link in confirmation screens, order history, or
+notification emails.
+
 ### Paginating through all orders
 
 `nextCursor` is `null`/absent once you've reached the last page:
@@ -497,6 +520,18 @@ GET /v3/get-quote?...&affiliates=0xPartnerA:50,0xPartnerB:25
 ```
 
 URL-encode the comma if your client doesn't allow raw commas in query strings.
+
+### Track your orders and earnings
+
+With an API key you get a partner dashboard on the Gateway Explorer:
+
+```text
+https://gateway-explorer.gobob.xyz/affiliate/<API_KEY>
+```
+
+It shows your integration's orders, volume, and — if you charge affiliate
+fees — your accumulated earnings. For ecosystem-wide activity, see the public
+[Dune dashboard](https://dune.com/bob_collective/gateway).
 
 ## Next Steps
 

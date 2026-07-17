@@ -31,12 +31,19 @@
           {
             "group": "Integration",
             "pages": [
+              "gateway/onboarding",
               "gateway/integration",
               "gateway/migration",
               "gateway/agents",
               "gateway/strategies",
               "gateway/wallets",
               "gateway/faq"
+            ]
+          },
+          {
+            "group": "API Reference",
+            "pages": [
+              "api-reference/overview"
             ]
           }
         ]

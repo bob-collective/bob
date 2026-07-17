@@ -1,22 +1,22 @@
 ---
 title: "Fees"
-description: "How Gateway fees work — protocol fees, solver spread, affiliate fees, and gas"
+description: "How Gateway fees work — quote-first pricing, protocol fees, affiliate fees, and gas"
 icon: "money-check-dollar"
 ---
 
-## Overview
+## How fees work
 
-Every Gateway quote is fully costed before the user signs anything. The `getQuote` response breaks each fee out individually so you can show the user exactly what they're paying — in V2 every fee line also carries an optional `usd` value for display.
+Gateway pricing is **quote-first**: every fee is computed per swap and returned in full in the `getQuote` response *before the user signs anything*. The quote you're shown is the quote that gets used to create the order, so the rate is the user's guaranteed minimum — no hidden costs and no surprises at settlement. In V2 every fee line also carries an optional `usd` value for display.
 
-A Gateway swap has four kinds of fees.
+A quote reflects four components.
 
 ## Protocol fee
 
 Fees applied by the protocol for processing and routing swaps. Today these are set to merely cover routing and gas costs, with **0 markup**. In the future, the BOB DAO may vote to activate a fee markup; collected revenue would then go to the BOB DAO treasury.
 
-## Solver spread
+## Solver pricing
 
-Solvers compete to fill each order and quote a spread — typically a few basis points (around 1–20 bps depending on the route and the solver). Gateway automatically selects the best quote for every swap, so the user always gets the most competitive price available.
+Orders are filled by solvers quoting against live market prices. Gateway selects the best available quote for the route, and the rate the user sees is the guaranteed minimum they'll receive.
 
 ## Affiliate fees
 
@@ -34,11 +34,25 @@ For the SDK and raw-API code — single recipient, multi-recipient splits, readi
 
 ## Gas costs
 
-The gas cost of the **destination** chain is included in the swap processing fees and estimated upfront, so users don't need to hold the destination gas token (for BTC-to-X swaps, users don't need ETH on BOB). The gas cost of the **source** chain — the chain where the swap is initiated — is handled out-of-protocol by the wallet.
+The gas cost of the **destination** chain is included in the swap processing fees and estimated upfront, so users don't need to hold the destination gas token (e.g. for BTC-to-Ethereum swaps, users don't need ETH on Ethereum). The gas cost of the **source** chain — the chain where the swap is initiated — is handled out-of-protocol by the wallet.
+
+## Worked example
+
+Illustrative example — actual values vary per quote. A user swaps **$100 of BTC to USDT on Ethereum** through your app, and you charge a **50 bps** affiliate fee:
+
+| Line | Amount |
+|---|---|
+| Protocol fee | $0.00 |
+| Solver pricing | priced into the quoted rate |
+| Destination gas (estimated upfront, varies with network conditions) | ~$0.50 |
+| Your affiliate fee (50 bps) | $0.50 → paid to your address in USDT on Ethereum |
+| **User receives** | **≈ $99.00 of USDT** |
+
+Every line is returned in the `getQuote` response before the user signs anything, so you can display the exact breakdown. The user pays no gas on the destination chain out of pocket — it's deducted from the swap, so they don't need ETH to receive USDT on Ethereum.
 
 ## Seeing fees in the quote
 
-All fees are returned on the quote so you can display them before the user commits:
+Don't estimate — read the exact costs off the quote. Each fee line in `feeBreakdown` carries the amount and an optional USD value:
 
 ```typescript
 const quote = await gatewaySDK.getQuote({ /* ... */ });
@@ -52,6 +66,10 @@ if ('onramp' in quote) {
   }
 }
 ```
+
+<Tip>
+Show this breakdown in your UI and the user sees exactly what they pay, per swap, from the same source of truth Gateway settles against.
+</Tip>
 
 ## Next Steps
 

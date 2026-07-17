@@ -1,0 +1,67 @@
+---
+title: "Partner Onboarding"
+description: "Everything you need to go live as a BOB Gateway partner"
+icon: "rocket"
+---
+
+## Welcome to BOB Gateway
+
+BOB Gateway is the fastest way to add native BTC swaps to your app, wallet, or
+aggregator: one integration via our API, no swap infrastructure to build or
+maintain. We handle routing, liquidity, and settlement; your users get
+best-in-market rates.
+
+## Onboarding as an API partner
+
+You integrate via our self-serve API. We recommend requesting an **API key** —
+it gives you two perks:
+
+- **Analytics dashboard** — monitor volume, orders, and affiliate earnings
+- **Higher rate limits** than keyless usage
+
+## Onboarding steps
+
+1. **Build.** The [docs](/gateway/integration) have everything you need for
+   the API and SDK.
+2. **Get your API key (recommended).** Contact a BOB team member or email
+   [gateway@gobob.xyz](mailto:gateway@gobob.xyz) with your project name and
+   the purpose of the key.
+3. **Go live.** Add your key, run a test swap end-to-end, done.
+4. **Track performance.** Open your dashboard at
+   `https://gateway-explorer.gobob.xyz/affiliate/<your-api-key>` — volume,
+   orders, and affiliate earnings if you charge a fee. Ecosystem-wide stats:
+   [Dune](https://dune.com/bob_collective/gateway).
+
+## Where to find what
+
+| You want to… | Go here |
+|---|---|
+| Understand the architecture | [Deep dive](/gateway/technical) |
+| Integrate step-by-step | [Integration guide](/gateway/integration) |
+| See supported chains, routes, assets | [Supported routes](/gateway/supported-routes) |
+| API references | [API reference](/api-reference/overview) |
+| Add Bitcoin wallet support | [Wallets](/gateway/wallets) |
+| Understand fees | [Fees](/gateway/fees) |
+| Build 1-click DeFi flows | [Strategies](/gateway/strategies) |
+| Know what happens if a swap can't complete | [Refunds](/gateway/refunds) |
+
+## FAQ
+
+**Do I need an API key to use the API?**
+No — the API is self-serve. A key is recommended: without one you won't have
+your analytics dashboard, and you'll be on lower rate limits.
+
+**How do affiliate fees work?**
+You set them per quote: an EVM payout address and a rate in bps. The fee is
+added to the swap and paid automatically on settlement — in USDT on Ethereum,
+regardless of the swap's chains. See [Fees](/gateway/fees).
+
+**What does it cost to integrate?**
+Nothing — there's no integration fee.
+
+## Contact
+
+| Need | Reach out |
+|---|---|
+| Partnership contact | [gateway@gobob.xyz](mailto:gateway@gobob.xyz) |
+| Technical / integration support | [BOB Discord](https://discord.gg/gobob) |
