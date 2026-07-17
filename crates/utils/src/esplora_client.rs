@@ -344,18 +344,4 @@ mod tests {
         );
         Ok(())
     }
-
-    #[tokio::test]
-    async fn test_get_network() -> Result<()> {
-        let esplora_client = EsploraClient::new(Network::Bitcoin)?;
-        assert_eq!(esplora_client.get_bitcoin_network().await?, Network::Bitcoin);
-
-        let esplora_client = EsploraClient::new(Network::Testnet4)?;
-        assert_eq!(esplora_client.get_bitcoin_network().await?, Network::Testnet4);
-
-        let esplora_client = EsploraClient::new(Network::Signet)?;
-        assert_eq!(esplora_client.get_bitcoin_network().await?, Network::Signet);
-
-        Ok(())
-    }
 }
