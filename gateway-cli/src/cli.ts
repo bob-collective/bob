@@ -1,8 +1,9 @@
 import { Command } from "commander";
 import { ZodError } from "zod/v4";
 import { isAddress } from "viem";
-import { type OutputMode, createLogger, render, formatJson, formatConfirmation, formatChains, formatTokens, formatRoutes, formatBalance } from "./output.js";
-import { quoteSchema, swapSchema } from "./schemas.js";
+import { type OutputMode, createLogger, render, formatJson, formatConfirmation, formatChains, formatTokens, formatRoutes, formatBalance, formatSend } from "./output.js";
+import { quoteSchema, swapSchema, sendSchema } from "./schemas.js";
+import { SwapError } from "./errors.js";
 import { version } from '../package.json';
 
 function modeOf(opts: { json?: boolean }): OutputMode {
@@ -25,31 +26,21 @@ function withErrorHandling(fn: (...args: any[]) => Promise<void>) {
       const msg = errorMessage(err);
       if (mode === "json") {
         const errJson: any = { error: { message: msg } };
-        if (err instanceof Error) {
-          if ("orderId" in err) errJson.error.orderId = (err as any).orderId;
-          if ("txId" in err) errJson.error.txId = (err as any).txId;
-          if ("txParams" in err) errJson.error.txParams = (err as any).txParams;
-          if ("srcAsset" in err) errJson.error.srcAsset = (err as any).srcAsset;
-          if ("dstAsset" in err) errJson.error.dstAsset = (err as any).dstAsset;
-          if ("functionSelector" in err) errJson.error.functionSelector = (err as any).functionSelector;
-          if ("revertData" in err) errJson.error.revertData = (err as any).revertData;
+        if (err instanceof SwapError) {
+          for (const [k, v] of Object.entries(err.context)) {
+            if (v !== undefined) errJson.error[k] = v;
+          }
         }
         console.log(JSON.stringify(errJson, null, 2));
       } else {
         console.error(msg);
-        if (err instanceof Error) {
-          if ("orderId" in err) console.error(`Order:    ${(err as any).orderId}`);
-          if ("txParams" in err) {
-            const tp = (err as any).txParams;
-            console.error(`Contract: ${tp.to} (${tp.chainName})`);
-          }
-          if ("srcAsset" in err && "dstAsset" in err) {
-            const s = (err as any).srcAsset;
-            const d = (err as any).dstAsset;
-            console.error(`Route:    ${s.symbol}:${s.chain} → ${d.symbol}:${d.chain}`);
-          }
-          if ("functionSelector" in err && (err as any).functionSelector) console.error(`Selector: ${(err as any).functionSelector}`);
-          if ("revertData" in err && (err as any).revertData) console.error(`Revert:   ${(err as any).revertData}`);
+        if (err instanceof SwapError) {
+          const c = err.context;
+          if (c.orderId) console.error(`Order:    ${c.orderId}`);
+          if (c.txParams) console.error(`Contract: ${c.txParams.to} (${c.txParams.chainName})`);
+          if (c.srcAsset && c.dstAsset) console.error(`Route:    ${c.srcAsset.symbol}:${c.srcAsset.chain} → ${c.dstAsset.symbol}:${c.dstAsset.chain}`);
+          if (c.functionSelector) console.error(`Selector: ${c.functionSelector}`);
+          if (c.revertData) console.error(`Revert:   ${c.revertData}`);
         }
       }
       process.exitCode = 1;
@@ -88,8 +79,8 @@ program
   .requiredOption("--amount <value>", "Amount: 0.05BTC, 100USDC, 100USD, 5000000 (atomic), ALL")
   .option("--recipient <address>", "Recipient address")
   .option("--sender <address>", "Sender address")
+  .option("--owner <address>", "Order owner EVM address")
   .option("--slippage <bps>", "Slippage in basis points")
-  .option("--gas-refill-usd <usd>", "Request ETH gas refill on destination (USD amount)")
   .option("--btc-fee-rate <sat/vbyte>", "Bitcoin fee rate (default: mempool.space next-block)")
   .option("--fee-token <address>", "ERC20 token used to pay gas (paymaster)")
   .option("--fee-reserve <amount>", "Amount of fee token to reserve for gas, in atomic units (e.g. wei)")
@@ -98,7 +89,7 @@ program
     const mode = modeOf(opts);
     const parsed = quoteSchema.parse(opts);
     const { handleQuote } = await import("./commands/quote.js");
-    const result = await handleQuote({ ...parsed, sender: parsed.sender });
+    const result = await handleQuote(parsed);
     render(result.quote, mode, () => formatConfirmation(result.confirmation));
   }));
 
@@ -110,8 +101,8 @@ program
   .requiredOption("--amount <value>", "Amount: 0.05BTC, 100USDC, 100USD, 5000000 (atomic), ALL")
   .option("--recipient <address>", "Recipient address")
   .option("--sender <address>", "Sender address")
+  .option("--owner <address>", "Order owner EVM address")
   .option("--slippage <bps>", "Slippage in basis points")
-  .option("--gas-refill-usd <usd>", "Request ETH gas refill on destination (USD amount)")
   .option("--btc-fee-rate <sat/vbyte>", "Bitcoin fee rate (default: mempool.space)")
   .option("--fee-token <address>", "ERC20 token used to pay gas (paymaster)")
   .option("--fee-reserve <amount>", "Amount of fee token to reserve for gas, in atomic units (e.g. wei)")
@@ -127,9 +118,31 @@ program
 
     const log = createLogger(mode);
     const { handleSwap } = await import("./commands/swap.js");
-    const result = await handleSwap({ ...parsed, sender: parsed.sender }, log);
+    const result = await handleSwap(parsed, log);
 
     render("data" in result ? result.data : result, mode);
+  }));
+
+program
+  .command("send")
+  .description("Send BTC or an EVM token directly to an address (no Gateway)")
+  .requiredOption("--asset <asset[:chain]>", "Asset to send (e.g. BTC, ETH:base, USDC:arbitrum, 0xToken:base)")
+  .requiredOption("--amount <value>", "Amount: 0.01BTC, 100USDC, 100USD, 5000000 (atomic), ALL")
+  .requiredOption("--to <address>", "Recipient address (BTC or EVM, must match the asset chain)")
+  .option("--from <address>", "Sender address for --unsigned without a key (BTC PSBT or EVM tx, must match the asset chain)")
+  .option("--private-key <key>", "Private key (WIF for BTC, hex for EVM). WARNING: visible in process listings — prefer env vars")
+  .option("--btc-fee-rate <sat/vbyte>", "Bitcoin fee rate (default: Esplora estimate)")
+  .option("--unsigned", "Output unsigned tx (EVM) or PSBT (BTC) without broadcasting", false)
+  .option("--no-wait", "Broadcast without waiting for confirmation")
+  .option("--timeout <seconds>", "Confirmation wait timeout in seconds", "1800")
+  .option("--json", "Output as JSON", false)
+  .action(withErrorHandling(async (opts) => {
+    const mode = modeOf(opts);
+    const parsed = sendSchema.parse(opts);
+    const log = createLogger(mode);
+    const { handleSend } = await import("./commands/send.js");
+    const result = await handleSend(parsed, log);
+    render(result.data, mode, formatSend);
   }));
 
 program
@@ -158,6 +171,7 @@ program
   .option("--fee-token <address>", "ERC20 token used to pay gas (paymaster)")
   .option("--fee-reserve <amount>", "Amount of fee token to reserve for gas, in atomic units (e.g. wei)")
   .option("--non-zero", "Only show chains with non-zero balances", false)
+  .option("--usd", "Annotate each asset with its USD price and value", false)
   .option("--json", "Output as JSON", false)
   .action(withErrorHandling(async (addresses, opts) => {
     if (opts.feeToken != null && !isAddress(opts.feeToken, { strict: false })) {
@@ -168,7 +182,7 @@ program
     }
     const chains = opts.chain?.flatMap((c: string) => c.split(",").map((s: string) => s.trim())).filter(Boolean);
     const { handleBalance } = await import("./commands/balance.js");
-    render(await handleBalance(addresses, { chain: chains, feeToken: opts.feeToken, feeReserve: opts.feeReserve, nonZero: opts.nonZero }), modeOf(opts), formatBalance);
+    render(await handleBalance(addresses, { chain: chains, feeToken: opts.feeToken, feeReserve: opts.feeReserve, nonZero: opts.nonZero, usd: opts.usd }), modeOf(opts), formatBalance);
   }));
 
 program

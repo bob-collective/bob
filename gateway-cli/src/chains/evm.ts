@@ -1,4 +1,4 @@
-import { createPublicClient, createWalletClient, http, erc20Abi, isAddressEqual, isHex, type WalletClient, type PublicClient, type Hex, type Chain } from 'viem';
+import { createPublicClient, createWalletClient, http, erc20Abi, isAddress, isAddressEqual, isHex, encodeFunctionData, type WalletClient, type PublicClient, type Hex, type Chain } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { supportedChainsMapping, getChainConfig } from '@gobob/bob-sdk';
 import tokenlistJson from '@gobob/tokenlist/tokenlist.json';
@@ -11,7 +11,13 @@ import { BTC_DECIMALS } from '../config.js';
  * Groups tokens by address (case-insensitive) and tracks whether metadata
  * is uniform across all chains or varies by chain.
  */
-type TokenEntry = { address: string; symbol: string; decimals: number; chainId: number };
+type TokenEntry = {
+  address: string;
+  symbol: string;
+  decimals: number;
+  chainId: number;
+  extensions?: { coingeckoId?: string };
+};
 
 interface AddressEntry {
   canonical: TokenEntry;
@@ -25,7 +31,7 @@ for (const t of tokenlistJson.tokens as TokenEntry[]) {
   const existing = tokenIndex.get(key);
   if (existing) {
     existing.byChainId.set(t.chainId, t);
-    if (existing.uniform && (t.symbol !== existing.canonical.symbol || t.decimals !== existing.canonical.decimals)) {
+    if (existing.uniform && (t.symbol !== existing.canonical.symbol || t.decimals !== existing.canonical.decimals || t.extensions?.coingeckoId !== existing.canonical.extensions?.coingeckoId)) {
       existing.uniform = false;
     }
   } else {
@@ -45,7 +51,7 @@ export const CHAIN_IDS: Record<string, number> = Object.fromEntries(
 /** Resolve token metadata from the tokenlist. For BTC, returns { symbol: "BTC", decimals: 8 }.
  *  Throws on unknown tokens by default (safe for amount calculations).
  *  Pass { throwOnUnknown: false } for display paths where best-effort metadata is acceptable. */
-export function getTokenMetadata(address: string, chain: string, opts?: { throwOnUnknown?: boolean }): { symbol: string; decimals: number } {
+export function getTokenMetadata(address: string, chain: string, opts?: { throwOnUnknown?: boolean }): { symbol: string; decimals: number; coingeckoId?: string } {
   if (chain === 'bitcoin' || address === 'BTC') {
     return { symbol: 'BTC', decimals: BTC_DECIMALS };
   }
@@ -63,16 +69,19 @@ export function getTokenMetadata(address: string, chain: string, opts?: { throwO
     throw new Error(`Unknown token ${address} on chain "${chain}" — cannot determine decimals. Use a known token symbol or verify the address.`);
   }
 
-  if (entry.uniform) {
-    return { symbol: entry.canonical.symbol, decimals: entry.canonical.decimals };
-  }
+  // coingeckoId lives under `extensions` and identifies the underlying asset.
+  const toMetadata = (t: TokenEntry) => ({ symbol: t.symbol, decimals: t.decimals, coingeckoId: t.extensions?.coingeckoId });
+
+  if (entry.uniform) return toMetadata(entry.canonical);
 
   const chainId = CHAIN_IDS[chain];
   const token = chainId !== undefined ? entry.byChainId.get(chainId) : undefined;
-  if (token) return { symbol: token.symbol, decimals: token.decimals };
+  // Use the chain-specific entry as-is — never borrow another entry's coingeckoId,
+  // so a price is only ever resolved against this exact token.
+  if (token) return toMetadata(token);
 
-  // Token has varying metadata across chains; use canonical (first seen) values
-  return { symbol: entry.canonical.symbol, decimals: entry.canonical.decimals };
+  // No chain-specific entry: fall back to the canonical entry as a whole (self-consistent).
+  return toMetadata(entry.canonical);
 }
 
 // ─── Native token metadata ───────────────────────────────────────────────────
@@ -129,7 +138,12 @@ const ZERO_ADDR = "0x0000000000000000000000000000000000000000" as `0x${string}`;
  * Native tokens have no contract address (represented by zero address or undefined).
  */
 function isNativeToken(tokenAddress?: string): boolean {
-  return !tokenAddress || isAddressEqual(tokenAddress as `0x${string}`, ZERO_ADDR);
+  if (!tokenAddress) return true;
+  // Non-EVM addresses (e.g. Tron base58 tokens from Tron routes) are never the
+  // EVM native token. Guard here — isAddressEqual throws on non-EVM input, which
+  // would otherwise abort the whole swap instead of skipping the foreign route.
+  if (!isAddress(tokenAddress, { strict: false })) return false;
+  return isAddressEqual(tokenAddress as `0x${string}`, ZERO_ADDR);
 }
 
 /**
@@ -281,4 +295,45 @@ export async function resolveEvmSigner(
     walletClient: createWalletClient({ account, chain: viemChain, transport }),
     publicClient: createPublicClient({ chain: viemChain, transport }),
   };
+}
+
+// ─── Send (direct transfer) ───────────────────────────────────────────────────
+
+import type { ResolvedAsset } from '../util/input-resolver.js';
+import type { EvmSigner } from './index.js';
+
+/** Default gas units for a simple value/ERC20 transfer when sweeping native balance. */
+const TRANSFER_GAS_LIMIT = 21_000n;
+
+/** Spendable native amount for a sweep: balance minus the exact gas cost of one transfer. */
+export function nativeSweepAmount(balance: bigint, maxFeePerGas: bigint, gasLimit: bigint = TRANSFER_GAS_LIMIT): bigint {
+  const cost = gasLimit * maxFeePerGas;
+  return balance > cost ? balance - cost : 0n;
+}
+
+/** Build unsigned EVM tx params for native or ERC20 transfer (for --unsigned output). */
+export function buildUnsignedEvmTx(asset: ResolvedAsset, to: string, amount: bigint, from: string, chainId: number) {
+  if (isNativeToken(asset.address)) {
+    return { from, to, value: amount.toString(), data: "0x", chainId };
+  }
+  const data = encodeFunctionData({ abi: erc20Abi, functionName: "transfer", args: [to as `0x${string}`, amount] });
+  return { from, to: asset.address, value: "0", data, chainId };
+}
+
+/** Execute a direct EVM transfer (native or ERC20). Returns the tx hash. */
+export async function sendEvm(signer: EvmSigner, asset: ResolvedAsset, to: string, amount: bigint): Promise<Hex> {
+  const { walletClient } = signer;
+  const account = walletClient.account!;
+  const chain = walletClient.chain!;
+  if (isNativeToken(asset.address)) {
+    return walletClient.sendTransaction({ account, chain, to: to as `0x${string}`, value: amount });
+  }
+  return walletClient.writeContract({
+    account,
+    chain,
+    address: asset.address as `0x${string}`,
+    abi: erc20Abi,
+    functionName: "transfer",
+    args: [to as `0x${string}`, amount],
+  });
 }

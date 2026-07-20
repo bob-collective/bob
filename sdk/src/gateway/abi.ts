@@ -45,6 +45,8 @@ export const compoundV2CTokenAbi = parseAbi([
 
 export const aaveV2AtokenAbi = parseAbi(['function UNDERLYING_ASSET_ADDRESS() external view returns (address)']);
 
+export const oftApprovalRequiredAbi = parseAbi(['function approvalRequired() view returns (bool)']);
+
 export const USDTApproveAbi = [
     {
         type: 'function',

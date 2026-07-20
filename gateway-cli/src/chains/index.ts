@@ -1,4 +1,6 @@
-import type { RegisterTxV2 } from '@gobob/bob-sdk';
+import type { RegisterTxV3 } from '@gobob/bob-sdk';
+import { isValidBtcAddress } from '@gobob/bob-sdk';
+import { isAddress } from 'viem';
 import { getSdk } from '../config.js';
 import { getRoutes, getUniqueChains, getTokensForChain } from '../util/route-provider.js';
 import { getBtcBalance, deriveBtcAddress, resolveBtcSigner } from './bitcoin.js';
@@ -20,6 +22,18 @@ export type ChainFamily = 'bitcoin' | 'evm';
 export function getChainFamily(chain: string): ChainFamily {
   if (chain === 'bitcoin') return 'bitcoin';
   return 'evm';
+}
+
+/**
+ * Validate that a recipient address matches the asset's chain family.
+ * @throws Error if a BTC address is used for an EVM chain or vice-versa.
+ */
+export function validateAddressFamily(chain: string, address: string, flag = '--to'): void {
+  if (getChainFamily(chain) === 'bitcoin') {
+    if (!isValidBtcAddress(address)) throw new Error(`${flag} "${address}" is not a valid Bitcoin address.`);
+  } else {
+    if (!isAddress(address, { strict: false })) throw new Error(`${flag} "${address}" is not a valid EVM address.`);
+  }
 }
 
 // ─── Chain balances ─────────────────────────────────────────────────────────
@@ -152,14 +166,14 @@ export function buildRegisterPayload(
   dstChain: string,
   orderId: string,
   txId: string,
-): RegisterTxV2 {
+): RegisterTxV3 {
   if (getChainFamily(srcChain) === 'bitcoin') {
     return { onramp: { orderId, bitcoinTxHex: txId } };
   }
   if (getChainFamily(dstChain) === 'bitcoin') {
-    return { offramp: { orderId, evmTxhash: txId } };
+    return { offramp: { orderId, srcChain, srcTxHash: txId } };
   }
-  return { tokenSwap: { orderId, evmTxhash: txId } };
+  return { tokenSwap: { orderId, srcChain, srcTxHash: txId } };
 }
 
 // Re-export for direct access
@@ -168,4 +182,5 @@ export {
   getEvmBalances,
   deriveEvmAddress,
   resolveEvmSigner,
+  getTokenMetadata,
 } from './evm.js';

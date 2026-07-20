@@ -322,7 +322,7 @@ describe('UTXO Tests', () => {
         ];
 
         const amounts = [undefined, 2000, 3000];
-        const feeRates = [undefined, 10];
+        const feeRates = [4, 10];
 
         // EVM address for OP return
         const opReturn = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2';
@@ -696,5 +696,55 @@ describe('UTXO Tests', () => {
 
         expect(allowedUtxos).toEqual([utxos[0], utxos[1]]);
         expect((global.fetch as Mock).mock.calls.length).toEqual(16);
+    });
+
+    describe('utxoSelectionStrategy', () => {
+        // A confirmed, immutable mainnet tx funding a single P2WPKH output (vout 0) for `fundedAddress`.
+        // The raw tx never changes, so this fixture is stable without hitting the network.
+        const fundedAddress = 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq';
+        const toAddress = 'bc1qafk4yhqvj4wep57m62dgrmutldusqde8adh20d';
+        const utxo: UTXO = {
+            txid: '69bd1bd1fb0ec441d8fe8d18284895d8eaa23a49c10560d71e29652c4184f0e6',
+            vout: 0,
+            value: 116937,
+            confirmed: true,
+        };
+        const txHex =
+            '0200000000010155baf31aba2997e696c86a2745aba743927738d491707c0ffbd1be72eef6dbc30100000000fdffffff02c9c8010000000000160014e8df018c7e326cc253faac7e46cdc51e68542c421704000000000000160014577cec4ef756989d4fd911eddab37128111913230248304502210085eb93a41834d1266610d16ed37eb44c8f3f8b350780c369a791a3ac16e7c05c02205872c733cc8cb58d6b5b64f78710f361245d65dd7cdd31051ca8e3119fc9f8bc012103ef4329d763463fd98232a6ce5724868a84b8b6dda7002bcb54a87ea24ee44b9300000000';
+        const feeRate = 5;
+
+        beforeEach(() => {
+            // Mock only the network boundary: one confirmed, cardinal UTXO + its funding tx.
+            vi.spyOn(EsploraClient.prototype, 'getAddressUtxos').mockResolvedValue([utxo]);
+            vi.spyOn(EsploraClient.prototype, 'getTransactionHex').mockResolvedValue(txHex);
+            vi.spyOn(OrdinalsClient.prototype, 'getOutputsFromAddress').mockResolvedValue([
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-expect-error partial mock: only `outpoint` is read by getSafeUtxos
+                { outpoint: OutPoint.toString(utxo) },
+            ]);
+            // Canned selection result so the assertion does not depend on real coin selection succeeding.
+            (selectUTXO as Mock).mockReturnValue({ tx: { toPSBT: () => Uint8Array.from([0]) }, fee: 1000n });
+        });
+
+        it('createBitcoinPsbt forwards the requested strategy to selectUTXO', async () => {
+            await createBitcoinPsbt(fundedAddress, toAddress, 1000, undefined, undefined, feeRate, 3, false, 'all');
+
+            const [, , strategy] = (selectUTXO as Mock).mock.lastCall!;
+            expect(strategy).toBe('all');
+        });
+
+        it('createBitcoinPsbt defaults to the "default" strategy', async () => {
+            await createBitcoinPsbt(fundedAddress, toAddress, 1000, undefined, undefined, feeRate);
+
+            const [, , strategy] = (selectUTXO as Mock).mock.lastCall!;
+            expect(strategy).toBe('default');
+        });
+
+        it('estimateTxFee forwards the requested strategy to selectUTXO, overriding the amount-based default', async () => {
+            await estimateTxFee(fundedAddress, 1000, undefined, undefined, feeRate, 3, false, 'all');
+
+            const [, , strategy] = (selectUTXO as Mock).mock.lastCall!;
+            expect(strategy).toBe('all');
+        });
     });
 });

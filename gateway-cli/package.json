@@ -1,6 +1,6 @@
 {
   "name": "@gobob/gateway-cli",
-  "version": "0.1.7",
+  "version": "0.4.0",
   "description": "CLI for bridging Bitcoin to/from EVM chains via BOB Gateway",
   "repository": {
     "type": "git",
@@ -20,11 +20,11 @@
     "cli:dev": "tsx bin/gateway-cli.ts"
   },
   "dependencies": {
-    "@gobob/bob-sdk": "^5.5.3",
-    "@gobob/tokenlist": "github:bob-collective/tokenlist#5ee721890cb91657f640440a05698c357a080c87",
+    "@gobob/bob-sdk": "^5.9.0",
+    "@gobob/tokenlist": "github:bob-collective/tokenlist#5765810a897f2663f098939806d9f4285b9e8027",
     "commander": "^13.1.0",
     "p-retry": "^7.1.1",
-    "viem": "^2.31.3",
+    "viem": "2.49.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {

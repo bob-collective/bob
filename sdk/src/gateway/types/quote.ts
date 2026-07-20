@@ -42,12 +42,14 @@ export interface GatewayQuoteParams {
     affiliates?: Affiliate[];
 
     // NOTE: the following are new fields added by us
-    /** @description Amount of ETH to get to pay for fees */
-    gasRefill?: bigint;
+    /** @description Bitcoin address to receive refunds if the order fails */
+    refundAddress?: string;
     /** @description Strategy address target */
     strategyAddress?: string;
     /** @description Cross chain message - strategy data */
     strategyMessage?: Hex;
+    /** @description Owner address */
+    ownerAddress: string;
 }
 
 export type GetQuoteParams = Optional<GatewayQuoteParams, 'fromUserAddress'>;

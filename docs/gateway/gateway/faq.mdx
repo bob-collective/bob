@@ -6,78 +6,53 @@ icon: "circle-question"
 
 ## Frequently Asked Questions
 
-<AccordionGroup>
-
-<Accordion icon="gas-pump" title="Who pays the gas fees?">
+### Who pays the gas fees?
 The Relayer estimates gas costs upfront and deducts them from the transaction. Users don't need ETH on BOB to use Gateway.
-</Accordion>
 
-<Accordion icon="triangle-exclamation" title="What happens if my DeFi action fails?">
-Gateway automatically falls back to sending the wrapped BTC directly to the user's EVM address. Always test thoroughly to avoid fallbacks.
-</Accordion>
+### What happens if my DeFi action fails?
+Gateway falls back to sending wrapped BTC directly to the user's EVM address, so the user still receives value. Always test thoroughly to avoid fallbacks. See [Refunds](/gateway/refunds) for details.
 
-<Accordion icon="wallet" title="Do I need Bitcoin wallet support?">
+### Do I need Bitcoin wallet support?
 Yes, your frontend needs Bitcoin wallet integration. See the [wallet guide](/gateway/wallets) for implementation details.
-</Accordion>
 
-<Accordion icon="link-simple" title="Can I chain multiple protocols?">
+### Can I chain multiple protocols?
 Yes! Custom strategies can interact with multiple protocols in sequence. For example: stake WBTC → get staked BTC → deposit in lending → send receipt tokens to user.
-</Accordion>
 
-<Accordion icon="shield-check" title="Security considerations?">
+### Security considerations?
 - Use SafeERC20 for token transfers
 - Consider reentrancy protection
 - Ensure proper access controls
 - Test thoroughly on testnet
-</Accordion>
 
-<Accordion icon="money-bill" title="How does affiliate fee monetization work?">
-You can earn fees on every transaction which is linked to your affiliate ID. The fee is deducted from the user's input amount and sent directly to you.
-</Accordion>
+### How does affiliate fee monetization work?
+You earn a configurable basis-point fee on every swap linked to your affiliate address, paid out in USDT on Ethereum. See [Fees](/gateway/fees) for the model and the [affiliate integration guide](/gateway/integration#monetization-affiliate-fees) for code.
 
-<Accordion icon="clock" title="How long do transactions take?">
+### How long do transactions take?
 Transaction time varies based on:
 - Bitcoin network confirmation time (typically 10-60 minutes)
 - Destination chain (cross-chain transactions take longer)
 - Current network congestion
 
 The quote response includes an `estimatedTimeInSecs` field with the expected duration.
-</Accordion>
 
-<Accordion icon="arrows-rotate" title="What happens if Bitcoin fees spike after I submit?">
-For offramp transactions, you can bump the transaction fee to speed up confirmation if Bitcoin network fees increase.
-</Accordion>
+### What happens if Bitcoin fees spike after I submit?
+For X-to-BTC transactions, the Bitcoin payout can be bumped to speed up confirmation if network fees increase. See [Refunds](/gateway/refunds).
 
-<Accordion icon="xmark" title="Can I cancel a transaction?">
-For offramp transactions, you can unlock an order if it gets stuck. This is irreversible - once unlocked, the order cannot be resumed.
-</Accordion>
+### Can I cancel a transaction?
+For X-to-BTC orders, you can reclaim locked funds if an order gets stuck. This is irreversible — once unlocked, the order cannot be resumed. See [Refunds](/gateway/refunds).
 
-<Accordion icon="code-branch" title="What chains are supported?">
-Gateway supports:
-- **Bitcoin** → BOB (mainnet)
-- **Bitcoin** → Ethereum, Base, Arbitrum, Optimism (via LayerZero)
-- **BOB** → Bitcoin (offramp)
+### What chains are supported?
+Gateway supports Bitcoin and a growing set of EVM and non-EVM chains. See [Supported Routes](/gateway/supported-routes) for the current, live list.
 
-Check `getRoutes()` for the complete list of available routes.
-</Accordion>
-
-<Accordion icon="shield-halved" title="Is Gateway audited?">
+### Is Gateway audited?
 Yes, BOB Gateway has been audited by Pashov and Common Prefix. The protocol uses atomic cross-chain swaps verified by an on-chain Bitcoin Light Client, making it trustless between users and market makers.
 
 View audit reports: [docs.gobob.xyz/docs/reference/audits](https://docs.gobob.xyz/docs/reference/audits#bob-gateway)
-</Accordion>
 
-<Accordion icon="money-check-dollar" title="What are the fees?">
-Fees include:
-- **Protocol fees**: Fees applied by the protocol for processing and routing the swaps. Currently fees are set to merely cover routing and gas costs, with 0 markup. In the future, the BOB DAO may vote to activate a fee markup. Then, collected revenues will go to the BOB DAO treasury.
-- **Solver spread**: Solvers compete to offer the best quotes, typically charging a spread of a few basis points (1-20bps on average depending on the route and Solver). BOB Gateway automatically picks the best quote for each swap.
-- **Broker fees**: Most wallets and web apps apply a "convenience" fee for processing swaps. These are deducted from the swapped amount, on-chain by the protocol smart contracts.
-- **Gas costs**: The gas costs of the destination chain are included in the swap processing fees. The gas costs of the source chain (the chain where the swap was initiated) are handled out-of-protocol by the wallet.
+### What are the fees?
+A Gateway swap has a protocol fee, a solver spread, optional affiliate fees, and destination gas — all shown transparently in the quote response. See [Fees](/gateway/fees) for the full breakdown.
 
-All fees are shown transparently in the quote response.
-</Accordion>
-
-<Accordion icon="ban" title="Are any regions blocked from using Gateway?">
+### Are any regions blocked from using Gateway?
 Yes. For compliance reasons, BOB Gateway is unavailable to users connecting from the following jurisdictions:
 
 **Blocked countries** (ISO 3166-1 alpha-2):
@@ -89,15 +64,11 @@ Afghanistan (AF), Albania (AL), Bangladesh (BD), Belarus (BY), Cambodia (KH), Ce
 - **Ukraine** — Crimea (`UA-43`), Donetsk Oblast (`UA-14`), Luhansk Oblast (`UA-09`), Kherson Oblast (`UA-65`), Zaporizhzhia Oblast (`UA-23`).
 
 If you operate an integration that serves users in these locations, you are responsible for enforcing the same restrictions in your frontend. The list is subject to change as the applicable sanctions and regulatory regimes evolve.
-</Accordion>
 
-<Accordion icon="life-ring" title="Where can I get help?">
+### Where can I get help?
 - **Discord**: Join our community at [discord.gg/gobob](https://discord.gg/gobob)
 - **GitHub**: Report issues at [github.com/bob-collective/bob](https://github.com/bob-collective/bob)
 - **Documentation**: Browse guides at [docs.gobob.xyz](https://docs.gobob.xyz)
-</Accordion>
-
-</AccordionGroup>
 
 ## Still Have Questions?
 

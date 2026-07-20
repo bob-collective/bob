@@ -1,0 +1,81 @@
+---
+title: "Refunds"
+description: "How Gateway refunds work when a swap can't be completed"
+icon: "arrow-rotate-left"
+---
+
+## Overview
+
+Gateway is non-custodial. Swaps are atomic and secured by an on-chain Bitcoin Light Client, so a solver can never take a user's funds without delivering the other side of the swap. If a swap can't be completed, the user gets their funds back. BTC-to-X refunds are processed by BOB automatically; the only case requiring user action — an X-to-BTC order where the Bitcoin payout never happened — is a very rare edge case.
+
+Users can always check their order — including refund status — on the [Gateway Explorer](/gateway/integration#link-users-to-the-gateway-explorer) order page, so you don't need to build refund status UI.
+
+## What happens at a glance
+
+| Scenario | What the user receives | Who acts |
+|---|---|---|
+| BTC to X: swap can't fill at quoted terms | USDT on Ethereum | BOB, automatic |
+| BTC to X: DeFi action fails | Wrapped BTC to their EVM address | BOB, automatic |
+| X to BTC: payout delayed | BTC (gateway bumps the fee) | BOB, automatic |
+| X to BTC: payout can't complete (very rare) | Their locked wrapped BTC back | User withdraws — self-serve in BOB Gateway UI, or via `refundTx` for integrators |
+
+## BTC to X refunds
+
+There are two cases where a BTC-to-X swap returns funds instead of the expected output:
+
+1. **The swap can't fill at the quoted terms.** While waiting for the Bitcoin transaction to confirm, prices can drift until the destination route no longer accepts the submitted amount. When this happens, Gateway refunds the user **in USDT on Ethereum**, automatically — no action needed from the user or the integrator.
+
+2. **A DeFi action fails.** When a swap includes a strategy or DeFi action — staking, lending, a multicall — and that on-chain action reverts, Gateway falls back to delivering wrapped BTC directly to the user's EVM address rather than failing the whole swap. The user still receives value; they just receive wrapped BTC instead of the intended position.
+
+<Tip>
+Always test strategies thoroughly on testnet. A fallback means the user received wrapped BTC rather than the position they intended to open.
+</Tip>
+
+## X to BTC refunds
+
+X-to-BTC refunds are a very rare edge case: the token swap settles before the Bitcoin payout is made, so a refund only comes into play if the payout never happens (for example, a solver going offline). Often a slow payout isn't a refund case at all — it just needs a Bitcoin fee bump, which the gateway handles internally.
+
+If the payout genuinely can't complete, the user's locked wrapped BTC becomes reclaimable. A security delay applies before funds can be withdrawn — this ensures a Bitcoin payment that was already made can't be refunded twice. After the delay:
+
+**For users on the BOB Gateway UI** — the order appears in the activity section (sidebar) with a withdraw option. One click, sign the transaction, funds returned. No integrator involvement needed.
+
+**For integrators** — your users' orders expose the same reclaim as a `refundTx` in the order status (see below). You can submit it on the user's behalf, surface a withdraw button in your own UI, or simply direct users to the BOB Gateway app where they can self-serve.
+
+<Warning>
+Reclaiming is irreversible. Once an order is refunded/unlocked, it cannot be resumed.
+</Warning>
+
+<Note>
+Because users cannot currently submit Bitcoin proofs themselves, an order may be temporarily "stuck" if the relayer is offline. Funds remain safe and become reclaimable — they cannot be taken by the relayer or a solver.
+</Note>
+
+## Do integrators need to build refund handling?
+
+Mostly no. BTC-to-X refunds are fully automatic, and for the rare X-to-BTC case, users can self-serve in the BOB Gateway UI — or you can handle it via `refundTx`. Optionally, surface refund status in your app using the API fields below — for example to show "refunded" in an order history.
+
+## Refund status in the API
+
+A completed refund shows up as the `refunded` order status, which lists the `refundedTokens` actually returned (each with `chain`, `token`, `amount`, and the settlement `txHash`). While an order is still in progress or has failed, a `refundTx` may be available to trigger the reclaim:
+
+- `status.inProgress.refundTx` — refund available on an in-progress order
+- `status.failed.refundTx` — refund available on a failed order
+- `status.refunded.refundedTokens` — the completed refund
+
+## Issuing a refund manually
+
+When a `refundTx` is present, it can be submitted as a normal EVM transaction to reclaim the locked assets. Step-by-step code:
+
+<Card title="Refund stuck orders" icon="unlock" href="/gateway/integration#x-to-btc-order-features" horizontal>
+  Detect a refundable order and submit its refundTx
+</Card>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Fees" icon="money-check-dollar" href="/gateway/fees">
+    The full Gateway fee breakdown
+  </Card>
+  <Card title="Deep Dive" icon="lightbulb" href="/gateway/technical">
+    How verification and settlement work end to end
+  </Card>
+</CardGroup>

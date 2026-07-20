@@ -36,6 +36,7 @@ const mockExecuteQuote = vi.fn();
 const mockCreateOrder = vi.fn();
 const mockSignAllInputs = vi.fn();
 const mockGetAddressMempoolTxs = vi.fn();
+const mockWatchOrder = vi.fn();
 
 const mockBtcSigner = {
   signAllInputs: mockSignAllInputs,
@@ -57,7 +58,7 @@ vi.mock("../../src/config.js", () => ({
     getOrder: mockGetOrder,
     executeQuote: mockExecuteQuote,
   })),
-  getApi: vi.fn(() => ({ createOrderV2: mockCreateOrder })),
+  getApi: vi.fn(() => ({ createOrderV3: mockCreateOrder })),
   BTC_DECIMALS: 8,
 }));
 
@@ -65,23 +66,44 @@ vi.mock("../../src/util/route-provider.js", () => ({
   getRoutes: vi.fn(async () => mockRoutes),
 }));
 
-vi.mock("../../src/util/input-resolver.js", () => ({
-  resolveSwapInputs: vi.fn().mockResolvedValue({
-    srcAsset: { chain: "bitcoin", address: "BTC", symbol: "BTC", decimals: 8 },
-    dstAsset: { chain: "base", address: "0xUSDC", symbol: "USDC", decimals: 6 },
-    atomicUnits: "5000000",
-    display: "0.05 BTC",
-  }),
-  humanToAtomic: vi.fn((human: string, decimals: number) => "0"),
-  buildTokenIndex: vi.fn(() => ({ byChainAndSymbol: new Map(), byChainAndAddress: new Map() })),
-  parseAssetChain: vi.fn((asset: string) => ({ chain: "bitcoin", address: "BTC", symbol: "BTC", decimals: 8 })),
+// The order's state machine belongs to the gateway, and observing it is the watcher's
+// job — tested for real, against real AbortSignals and a real backoff, in
+// tests/util/order-watcher.test.ts. What `handleSwap` owns is the MAPPING from the
+// outcome the watcher reports to what the CLI says: settled → confirmed, failed →
+// SwapError, in-flight-with-a-payout → mempool_pending, in-flight-without → in_flight.
+// So the watcher is mocked here and the mapping is what these tests assert. No timers,
+// no timings, no fake clocks — the command has no clock of its own to fake.
+vi.mock("../../src/util/order-watcher.js", () => ({
+  watchOrder: (...args: unknown[]) => mockWatchOrder(...args),
 }));
+
+// `parseAssetChain` must answer per-asset: the source and the destination are resolved
+// through the SAME resolver, and a mock that returned one fixed asset for both would
+// make every swap look like a BTC→BTC swap.
+vi.mock("../../src/util/input-resolver.js", () => {
+  const assets: Record<string, unknown> = {
+    "BTC": { chain: "bitcoin", address: "BTC", symbol: "BTC", decimals: 8 },
+    "USDC:base": { chain: "base", address: "0xUSDC", symbol: "USDC", decimals: 6 },
+    "USDT:ethereum": { chain: "ethereum", address: "0xUSDT", symbol: "USDT", decimals: 6 },
+  };
+  return {
+    humanToAtomic: vi.fn(() => "0"),
+    buildTokenIndex: vi.fn(() => ({ byChainAndSymbol: new Map(), byChainAndAddress: new Map() })),
+    parseAssetChain: vi.fn((asset: string) => {
+      const resolved = assets[asset];
+      if (!resolved) throw new Error(`test fixture: no asset for "${asset}"`);
+      return resolved;
+    }),
+    resolveAmount: vi.fn().mockResolvedValue({ atomicUnits: "5000000", display: "0.05 BTC" }),
+  };
+});
 
 vi.mock("../../src/util/price-oracle.js", () => ({
   fetchPrice: vi.fn().mockResolvedValue({ priceUsd: 100000, source: "mock" }),
 }));
 
 vi.mock("../../src/chains/index.js", () => ({
+  validateAddressFamily: vi.fn(),
   getChainFamily: vi.fn((chain: string) => chain === "bitcoin" ? "bitcoin" : "evm"),
   deriveAddress: vi.fn().mockResolvedValue("bc1qtest"),
   resolveSigner: vi.fn().mockResolvedValue({ address: "bc1qtest", signer: mockBtcSigner }),
@@ -90,7 +112,7 @@ vi.mock("../../src/chains/index.js", () => ({
     onramp: { orderId, bitcoinTxHex: txId },
   })),
   resolvePrivateKey: vi.fn((chain: string, privateKey?: string) => privateKey),
-  resolveRecipient: vi.fn().mockResolvedValue("bc1qtest"),
+  resolveRecipient: vi.fn().mockResolvedValue("0x4444444444444444444444444444444444444444"),
 }));
 
 vi.mock("@gobob/bob-sdk", () => ({
@@ -133,12 +155,17 @@ vi.mock("p-retry", () => ({
     }
     throw lastError;
   }),
+  // Mirrors real p-retry: when constructed from an Error, that Error becomes
+  // `originalError` (preserving any fields attached to it); from a string, it
+  // wraps a fresh Error. p-retry throws `originalError`, so fields survive only
+  // when attached to the Error passed in.
   AbortError: class AbortError extends Error {
     readonly name = "AbortError";
-    readonly originalError?: Error;
-    constructor(msg: string) {
-      super(msg);
+    readonly originalError: Error;
+    constructor(message: string | Error) {
+      super(typeof message === "string" ? message : message.message);
       this.name = "AbortError";
+      this.originalError = typeof message === "string" ? new Error(message) : message;
     }
   },
 }));
@@ -151,12 +178,28 @@ const baseOpts = {
   src: "BTC",
   dst: "USDC:base",
   amount: "5000000",
-  recipient: "0xABC",
+  recipient: "0x1111111111111111111111111111111111111111",
   unsigned: false,
   wait: true,
   retry: true,
   privateKey: "cTestPrivateKey",
 };
+
+/** USDT@ethereum → BTC offramp paying the ONE BTC address gateway-bot reuses for every swap. */
+async function setupOfframp() {
+  const { resolveSigner, deriveAddress, resolveRecipient } = await import("../../src/chains/index.js");
+  const publicClient = { getTransactionCount: vi.fn().mockResolvedValue(0) } as any;
+  vi.mocked(resolveSigner).mockResolvedValue({ address: "0x2222222222222222222222222222222222222222", walletClient: {} as any, publicClient } as any);
+  vi.mocked(deriveAddress).mockResolvedValue("0x2222222222222222222222222222222222222222");
+  vi.mocked(resolveRecipient).mockResolvedValue("bc1qshared");
+
+  mockExecuteQuote.mockResolvedValue({
+    order: { offramp: { orderId: "order-btc-1", tx: { to: "0xGateway" } } },
+    tx: "0xsettlementhash",
+  });
+
+  return { ...baseOpts, src: "USDT:ethereum", dst: "BTC", privateKey: "0xevmkey" };
+}
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
@@ -170,9 +213,10 @@ describe("handleSwap", () => {
     mockSignAllInputs.mockResolvedValue("signed-tx-hex-abc");
     mockGetOrder.mockResolvedValue(confirmedOrder);
     mockGetAddressMempoolTxs.mockResolvedValue([]);
+    mockWatchOrder.mockResolvedValue({ kind: "settled", order: confirmedOrder });
   });
 
-  it("full onramp BTC flow: quote → executeQuote → poll → confirmed", async () => {
+  it("full onramp BTC flow: quote → executeQuote → watch → confirmed", async () => {
     const { handleSwap } = await import("../../src/commands/swap.js");
     const result = await handleSwap(baseOpts, silentLogger);
 
@@ -188,10 +232,38 @@ describe("handleSwap", () => {
 
     expect(mockGetQuote).toHaveBeenCalledOnce();
     expect(mockExecuteQuote).toHaveBeenCalledOnce();
-    expect(mockGetOrder).toHaveBeenCalledWith("order-456");
   });
 
-  it("--no-wait returns submitted without polling", async () => {
+  it("hands the watcher the order id and ONE signal carrying the whole --timeout budget", async () => {
+    // The command's entire contribution to the wait: name the order, and express the
+    // budget once, as a signal. There is no deadline to keep, nothing to clamp, and no
+    // timings to pass — those are the watcher's own.
+    const { handleSwap } = await import("../../src/commands/swap.js");
+    await handleSwap(baseOpts, silentLogger);
+
+    expect(mockWatchOrder).toHaveBeenCalledWith(
+      "order-456",
+      expect.any(AbortSignal),
+      expect.objectContaining({ getOrder: expect.any(Function), log: silentLogger }),
+    );
+    const signal: AbortSignal = mockWatchOrder.mock.calls[0][1];
+    expect(signal.aborted).toBe(false);
+  });
+
+  it("wires the watcher's getOrder to the SDK", async () => {
+    // Mocking the watcher would otherwise hide a dead wire: assert the dependency the
+    // command hands it actually reaches the SDK, signal and all.
+    const { handleSwap } = await import("../../src/commands/swap.js");
+    await handleSwap(baseOpts, silentLogger);
+
+    const deps = mockWatchOrder.mock.calls[0][2];
+    const signal = AbortSignal.timeout(1000);
+    await deps.getOrder("order-456", { signal });
+
+    expect(mockGetOrder).toHaveBeenCalledWith("order-456", { signal });
+  });
+
+  it("--no-wait returns submitted without watching the order", async () => {
     const { handleSwap } = await import("../../src/commands/swap.js");
     const result = await handleSwap({ ...baseOpts, wait: false }, silentLogger);
 
@@ -202,6 +274,7 @@ describe("handleSwap", () => {
     expect(result.data.status).toBe("submitted");
     expect(result.data.txId).toBe("signed-tx-hex-abc");
 
+    expect(mockWatchOrder).not.toHaveBeenCalled();
     expect(mockGetOrder).not.toHaveBeenCalled();
   });
 
@@ -264,4 +337,291 @@ describe("handleSwap", () => {
     expect(mockExecuteQuote).toHaveBeenCalledTimes(1);
   });
 
+  it("tokenSwap order-failed error carries txId + txParams.chainId for receipt lookup", async () => {
+    // An EVM→EVM tokenSwap settles via an on-chain tx. When the order fails,
+    // the thrown error must carry the settlement tx hash + chainId so downstream
+    // alerting can fetch the receipt and detect out-of-gas — without these the
+    // failure is undiagnosable.
+    const { resolveSigner, deriveAddress, resolveRecipient } = await import("../../src/chains/index.js");
+    // EVM signed path uses { walletClient, publicClient }; the pending-nonce check
+    // calls publicClient.getTransactionCount (latest >= pending → settled).
+    const publicClient = { getTransactionCount: vi.fn().mockResolvedValue(0) } as any;
+    vi.mocked(resolveSigner).mockResolvedValue({ address: "0x2222222222222222222222222222222222222222", walletClient: {} as any, publicClient } as any);
+    vi.mocked(deriveAddress).mockResolvedValue("0x2222222222222222222222222222222222222222");
+    vi.mocked(resolveRecipient).mockResolvedValue("0x1111111111111111111111111111111111111111");
+
+    const tokenSwapOrder = { tokenSwap: { orderId: "order-789", tx: { to: "0xGatewayContract" } } };
+    mockExecuteQuote.mockResolvedValue({ order: tokenSwapOrder, tx: "0xsettlementhash" });
+    mockWatchOrder.mockResolvedValue({ kind: "failed", order: { id: "order-789", status: { failed: {} } } });
+
+    const { handleSwap } = await import("../../src/commands/swap.js");
+    const { SwapError } = await import("../../src/errors.js");
+
+    const caught: any = await handleSwap(
+      { ...baseOpts, src: "USDT:ethereum", dst: "USDC:base", privateKey: "0xevmkey" },
+      silentLogger,
+    ).catch(e => e);
+
+    expect(caught).toBeInstanceOf(SwapError);
+    // Message preserved so existing categorization still matches as a fallback.
+    expect(caught.message).toContain("order-789 failed");
+    expect(caught.context.orderId).toBe("order-789");
+    expect(caught.context.txId).toBe("0xsettlementhash");
+    expect(caught.context.txParams.chainId).toBe(1); // ethereum
+    expect(caught.context.txParams.to).toBe("0xGatewayContract");
+    expect(caught.context.srcAsset).toEqual({ symbol: "USDT", chain: "ethereum" });
+    expect(caught.context.dstAsset).toEqual({ symbol: "USDC", chain: "base" });
+  });
+
+  // ─── C1 / A4 — never retry a swap once the wallet has been asked to sign ────
+  //
+  // `executeQuote` is not idempotent: createOrder → sign + BROADCAST → registerTx.
+  // Re-running it after the broadcast sends the user's funds a SECOND time. The SDK
+  // fires its step callback immediately before it asks the wallet to sign, which is
+  // the signal these tests rely on. Reachable via `--retry` only (gateway-bot CI does
+  // not pass it), but `--retry` defaults to on for anyone running the CLI by hand.
+
+  it("does NOT retry executeQuote when a transient error is thrown AFTER the source tx was broadcast", async () => {
+    // Reproduced from the real incident: the solver returned 504 *after* the source funds
+    // had already left the wallet. "504 Gateway Timeout" matches /timeout/i in TRANSIENT,
+    // so the closure was re-entered → a second quote, a second order, a second broadcast.
+    // Six broadcasts (1 + retries: 5) from one 504.
+    mockExecuteQuote.mockImplementation(async ({ callback }: any) => {
+      callback?.({ step: 1, type: "send_transaction", totalSteps: 1 });
+      throw new Error("bungee api error: status=504 Gateway Timeout");
+    });
+
+    const { handleSwap } = await import("../../src/commands/swap.js");
+    const { SwapError } = await import("../../src/errors.js");
+
+    const caught: any = await handleSwap({ ...baseOpts, retry: true }, silentLogger).catch(e => e);
+
+    // The funds-safety invariant: one broadcast, one attempt. Never two.
+    expect(mockExecuteQuote).toHaveBeenCalledTimes(1);
+
+    expect(caught).toBeInstanceOf(SwapError);
+    // The operator must not be told "it failed, try again" while funds may be in flight.
+    expect(caught.message).toMatch(/do NOT re-run/i);
+    expect(caught.message).toContain("send_transaction");
+    // Original error text preserved as a substring so gateway-bot's categorization still matches.
+    expect(caught.message).toContain("504 Gateway Timeout");
+  });
+
+  it("does NOT retry after a BTC signature was requested, even on a transient error", async () => {
+    mockExecuteQuote.mockImplementation(async ({ callback }: any) => {
+      callback?.({ step: 1, type: "sign_bitcoin_transaction", totalSteps: 1 });
+      throw new Error("ECONNRESET");
+    });
+
+    const { handleSwap } = await import("../../src/commands/swap.js");
+    const caught: any = await handleSwap({ ...baseOpts, retry: true }, silentLogger).catch(e => e);
+
+    expect(mockExecuteQuote).toHaveBeenCalledTimes(1);
+    expect(caught.message).toMatch(/do NOT re-run/i);
+  });
+
+  it("does NOT retry after an ERC20 approve was signed (approve is a broadcast tx too)", async () => {
+    // An approve alone is not a double-send, but re-entering the closure while it is still
+    // pending races its own nonce — and the next step would broadcast the funds. The line
+    // is drawn at the FIRST wallet interaction of any kind.
+    mockExecuteQuote.mockImplementation(async ({ callback }: any) => {
+      callback?.({ step: 1, type: "approve", totalSteps: 2 });
+      throw new Error("rate limit exceeded");
+    });
+
+    const { handleSwap } = await import("../../src/commands/swap.js");
+    const caught: any = await handleSwap({ ...baseOpts, retry: true }, silentLogger).catch(e => e);
+
+    expect(mockExecuteQuote).toHaveBeenCalledTimes(1);
+    expect(caught.message).toContain("approve");
+  });
+
+  it("reports the FURTHEST step reached, not the first, when several steps fired", async () => {
+    // An EVM ERC20 swap fires approve → send_transaction. If the error names the first
+    // step, an operator reads "only the approve went out" and concludes it is safe to
+    // re-run — while the funds tx is already on-chain. That misreading is the exact
+    // double-send this fix exists to prevent, so the furthest step must win.
+    mockExecuteQuote.mockImplementation(async ({ callback }: any) => {
+      callback?.({ step: 1, type: "approve", totalSteps: 2 });
+      callback?.({ step: 2, type: "send_transaction", totalSteps: 2 });
+      throw new Error("registerTx failed: 503 Service Unavailable");
+    });
+
+    const { handleSwap } = await import("../../src/commands/swap.js");
+    const caught: any = await handleSwap({ ...baseOpts, retry: true }, silentLogger).catch(e => e);
+
+    expect(mockExecuteQuote).toHaveBeenCalledTimes(1);
+    expect(caught.message).toContain("send_transaction");
+    expect(caught.message).not.toContain("step: approve");
+  });
+
+  it("DOES still retry a transient error raised BEFORE anything was broadcast", async () => {
+    // The other half of the invariant: the fix must not disable retries wholesale.
+    // Nothing has been signed yet here, so re-quoting is free of side effects.
+    let quoteCalls = 0;
+    mockGetQuote.mockImplementation(async () => {
+      if (++quoteCalls === 1) throw new Error("429 Too Many Requests");
+      return onrampQuote;
+    });
+
+    const { handleSwap } = await import("../../src/commands/swap.js");
+    const result = await handleSwap({ ...baseOpts, retry: true }, silentLogger);
+
+    expect(result.type).toBe("confirmed");
+    expect(quoteCalls).toBe(2);
+    expect(mockExecuteQuote).toHaveBeenCalledTimes(1);
+  });
+
+  it("names the EVM owner, not the BTC sender, in the recovery hint on a BTC onramp", async () => {
+    // A4: `gateway-cli orders` rejects BTC addresses outright ("BTC address lookups are not
+    // supported"), and orders are indexed by the EVM-side owner anyway. Naming the BTC
+    // sender leaves the operator unable to check whether an order exists — at exactly the
+    // moment they are tempted to re-run, and double-send.
+    const { deriveAddress, resolveRecipient } = await import("../../src/chains/index.js");
+    vi.mocked(deriveAddress).mockResolvedValue("bc1qsender");
+    vi.mocked(resolveRecipient).mockResolvedValue("0x3333333333333333333333333333333333333333");
+    mockExecuteQuote.mockImplementation(async ({ callback }: any) => {
+      callback?.({ step: 1, type: "sign_bitcoin_transaction", totalSteps: 1 });
+      throw new Error("ECONNRESET");
+    });
+
+    const { handleSwap } = await import("../../src/commands/swap.js");
+    const caught: any = await handleSwap({ ...baseOpts, retry: true }, silentLogger).catch(e => e);
+
+    expect(caught.message).toContain("gateway-cli orders 0x3333333333333333333333333333333333333333");
+    expect(caught.message).not.toContain("bc1qsender");
+  });
+
+  // ─── B1/B2/B3/B4 — mapping the order's outcome onto what the CLI says ───────
+  //
+  // Once executeQuote returns, the source funds are committed on-chain. The order status
+  // is then the ONLY authority on whether the swap failed: an error while *reading* that
+  // status says nothing about the swap. Reporting those reads as terminal failures
+  // produced false "swap failed" alarms on swaps that had already succeeded — and, via
+  // gateway-bot, false critical GitHub issues.
+  //
+  // That the watcher never confuses the two is proven against the real machinery in
+  // tests/util/order-watcher.test.ts. What is proven HERE is that the command believes
+  // it: a non-terminal outcome must come out as a non-failure, whatever went wrong
+  // behind it, and the order's `failed` must come out as a hard SwapError.
+
+  describe("outcome → result mapping", () => {
+    /** A concurrent leg's payout to the same reused BTC address, unconfirmed right now. */
+    const OTHER_LEGS_TX = { txid: "9c1d0b7e00000000000000000000000000000000000000000000000000000000", status: { confirmed: false } };
+    const OUR_PAYOUT_TXID = "48abaaf1000000000000000000000000000000000000000000000000000000ff";
+
+    it("settled → confirmed, with the delivered amount and the measured elapsed time", async () => {
+      mockWatchOrder.mockResolvedValue({ kind: "settled", order: confirmedOrder });
+
+      const { handleSwap } = await import("../../src/commands/swap.js");
+      const result = await handleSwap(baseOpts, silentLogger);
+
+      expect(result.type).toBe("confirmed");
+      if (result.type !== "confirmed") return;
+      expect(result.data.dstAmount).toBe("4812300000");
+      expect(result.data.quotedDstAmount).toBe("4812300000");
+      expect(result.data.actualSlippageBps).toBe(0);
+      // Measurement only — reported, never obeyed.
+      expect(result.data.elapsedMs).toBeGreaterThanOrEqual(0);
+    });
+
+    it("failed → SwapError (the order's own verdict is the one terminal failure)", async () => {
+      mockWatchOrder.mockResolvedValue({ kind: "failed", order: { id: "order-456", status: { failed: {} } } });
+
+      const { handleSwap } = await import("../../src/commands/swap.js");
+      const { SwapError } = await import("../../src/errors.js");
+
+      await expect(handleSwap(baseOpts, silentLogger)).rejects.toThrow(SwapError);
+    });
+
+    it("refunded → SwapError, and the message carries the status for categorization", async () => {
+      mockWatchOrder.mockResolvedValue({ kind: "failed", order: { id: "order-456", status: { refunded: {} } } });
+
+      const { handleSwap } = await import("../../src/commands/swap.js");
+      const caught: any = await handleSwap(baseOpts, silentLogger).catch(e => e);
+
+      expect(caught.message).toContain("order-456 failed");
+      expect(caught.message).toContain("refunded");
+    });
+
+    it("inFlight after an unreadable status → in_flight, NOT a failure", async () => {
+      // Incident (staging order a9a49f67-a2de-429f-bb44-2f32034a6f22): every get-order threw
+      // the SDK's generic FetchError (underlying cause: a local Cloudflare 403). 44.6 USDC had
+      // already left the wallet; the order was `inProgress` and later settled fine. The CLI
+      // must not call that a failure — and must hand back the orderId + source tx so the
+      // in-flight funds can be followed up.
+      mockWatchOrder.mockResolvedValue({
+        kind: "inFlight",
+        lastError: "The request failed and the interceptors did not return an alternative response",
+      });
+
+      const { handleSwap } = await import("../../src/commands/swap.js");
+      const result = await handleSwap(baseOpts, silentLogger);
+
+      expect(result.type).toBe("inFlight");
+      if (result.type !== "inFlight") return;
+      expect(result.data.status).toBe("in_flight");
+      expect(result.data.orderId).toBe("order-456");
+      expect(result.data.txId).toBe("signed-tx-hex-abc");
+      expect(result.data.lastError).toContain("interceptors did not return");
+    });
+
+    it("inFlight with a readable, still-settling order → in_flight with no lastError", async () => {
+      // Previously this exhausted the poll loop's retries and threw its internal "pending"
+      // sentinel, surfacing as {"error":{"message":"pending"}} with exit 1 — a terminal
+      // failure for a swap that was simply still settling.
+      mockWatchOrder.mockResolvedValue({ kind: "inFlight" });
+
+      const { handleSwap } = await import("../../src/commands/swap.js");
+      const result = await handleSwap(baseOpts, silentLogger);
+
+      expect(result.type).toBe("inFlight");
+      if (result.type !== "inFlight") return;
+      expect(result.data.orderId).toBe("order-456");
+      expect(result.data.txId).toBe("signed-tx-hex-abc");
+      // The status was readable throughout — nothing to report as a read error.
+      expect(result.data.lastError).toBeUndefined();
+    });
+
+    it("inFlight + payout txid → mempool_pending, reporting the txid the ORDER broadcast", async () => {
+      // The only sound source for this order's payout tx is the order's own
+      // `pendingBtcPayment`, which the watcher carries out as `payoutTxId`. Scanning the
+      // recipient address for an unconfirmed tx is not correlation: gateway-bot reuses ONE
+      // BTC address for every swap and runs offramp legs in parallel, so several of its own
+      // payouts to that address are unconfirmed at once — an address scan would report a
+      // concurrent leg's tx as this order's payout.
+      const opts = await setupOfframp();
+      mockWatchOrder.mockResolvedValue({ kind: "inFlight", payoutTxId: OUR_PAYOUT_TXID });
+      mockGetAddressMempoolTxs.mockResolvedValue([OTHER_LEGS_TX]);
+
+      const { handleSwap } = await import("../../src/commands/swap.js");
+      const result = await handleSwap(opts, silentLogger);
+
+      expect(result.type).toBe("mempoolPending");
+      if (result.type !== "mempoolPending") return;
+      expect(result.data.mempoolTxId).toBe(OUR_PAYOUT_TXID);
+      expect(result.data.orderId).toBe("order-btc-1");
+      // The address heuristic is gone, not merely gated: nothing in the swap path scans
+      // the destination address, and the watcher is handed no mempool client at all.
+      expect(mockGetAddressMempoolTxs).not.toHaveBeenCalled();
+    });
+
+    it("inFlight with no payout txid → in_flight with no mempoolTxId, never a guessed one", async () => {
+      // No status was ever read, so we know nothing about a payout — including whether one
+      // exists. An order id that can be followed up beats a confident, wrong txid.
+      const opts = await setupOfframp();
+      mockWatchOrder.mockResolvedValue({ kind: "inFlight", lastError: "Cloudflare 403" });
+      mockGetAddressMempoolTxs.mockResolvedValue([OTHER_LEGS_TX]);
+
+      const { handleSwap } = await import("../../src/commands/swap.js");
+      const result = await handleSwap(opts, silentLogger);
+
+      expect(result.type).toBe("inFlight");
+      if (result.type !== "inFlight") return;
+      expect(result.data.orderId).toBe("order-btc-1");
+      expect(result.data.txId).toBe("0xsettlementhash");
+      expect(result.data).not.toHaveProperty("mempoolTxId");
+      expect(mockGetAddressMempoolTxs).not.toHaveBeenCalled();
+    });
+  });
 });

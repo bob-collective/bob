@@ -19,5 +19,5 @@ export async function handleRegister(opts: { orderId: string; txid: string }) {
     opts.txid,
   );
 
-  return getApi().registerTxV2({ registerTxV2: registerTx });
+  return getApi().registerTxV3({ registerTxV3: registerTx });
 }
