@@ -34,6 +34,7 @@ export * from './GatewayErrorDetailsV2OneOf1';
 export * from './GatewayErrorDetailsV3';
 export * from './GatewayErrorDetailsV3OneOf';
 export * from './GatewayErrorDetailsV3OneOf1';
+export * from './GatewayErrorDetailsV3OneOf2';
 export * from './GatewayErrorV2';
 export * from './GatewayErrorV3';
 export * from './GatewayLayerZeroQuote';

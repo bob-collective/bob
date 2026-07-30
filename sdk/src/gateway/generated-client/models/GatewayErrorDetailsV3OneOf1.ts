@@ -21,24 +21,17 @@ import { mapValues } from '../runtime';
 export interface GatewayErrorDetailsV3OneOf1 {
     /**
      * 
-     * @type {string}
+     * @type {Array<string>}
      * @memberof GatewayErrorDetailsV3OneOf1
      */
-    actual: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof GatewayErrorDetailsV3OneOf1
-     */
-    max: string;
+    addresses: Array<string>;
 }
 
 /**
  * Check if a given object implements the GatewayErrorDetailsV3OneOf1 interface.
  */
 export function instanceOfGatewayErrorDetailsV3OneOf1(value: object): value is GatewayErrorDetailsV3OneOf1 {
-    if (!('actual' in value) || value['actual'] === undefined) return false;
-    if (!('max' in value) || value['max'] === undefined) return false;
+    if (!('addresses' in value) || value['addresses'] === undefined) return false;
     return true;
 }
 
@@ -52,8 +45,7 @@ export function GatewayErrorDetailsV3OneOf1FromJSONTyped(json: any, ignoreDiscri
     }
     return {
         
-        'actual': json['actual'],
-        'max': json['max'],
+        'addresses': json['addresses'],
     };
 }
 
@@ -68,8 +60,7 @@ export function GatewayErrorDetailsV3OneOf1ToJSONTyped(value?: GatewayErrorDetai
 
     return {
         
-        'actual': value['actual'],
-        'max': value['max'],
+        'addresses': value['addresses'],
     };
 }
 
