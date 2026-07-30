@@ -954,8 +954,9 @@
         "tags": [
           "v3"
         ],
-        "summary": "Get the maximum spendable Bitcoin amount for the given address (v2).",
-        "operationId": "get_max_spendable_v2",
+        "summary": "Get the maximum spendable Bitcoin amount for the given address (v3).",
+        "description": "Behaviourally identical to v2; exists so the v3 API surface has its own\n`operationId` (`get_max_spendable_v3`) rather than sharing v2's, which would\ntag the same operation under both v2 and v3 and break generated clients.",
+        "operationId": "get_max_spendable_v3",
         "parameters": [
           {
             "name": "address",
@@ -1786,6 +1787,7 @@
           "BUNGEE_NO_ROUTE",
           "MISSING_OWNER_ADDRESS",
           "NON_COMPLIANT_ADDRESSES",
+          "SERVICE_UNAVAILABLE",
           "TOO_MANY_AFFILIATES"
         ]
       },

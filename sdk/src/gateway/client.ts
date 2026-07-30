@@ -654,7 +654,7 @@ export class GatewayApiClient {
      * @returns Promise resolving to the maximum spendable amount
      */
     async getMaxSpendable(address: string, initOverrides?: RequestInit): Promise<GatewayMaxSpendable> {
-        return this.api.getMaxSpendableV2({ address }, initOverrides);
+        return this.api.getMaxSpendableV3({ address }, initOverrides);
     }
 
     /**

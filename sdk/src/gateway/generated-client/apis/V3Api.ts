@@ -53,7 +53,7 @@ export interface CreateOrderV3Request {
     gatewayQuoteV3: GatewayQuoteV3;
 }
 
-export interface GetMaxSpendableV2Request {
+export interface GetMaxSpendableV3Request {
     address: string;
 }
 
@@ -132,13 +132,14 @@ export class V3Api extends runtime.BaseAPI {
     }
 
     /**
-     * Get the maximum spendable Bitcoin amount for the given address (v2).
+     * Behaviourally identical to v2; exists so the v3 API surface has its own `operationId` (`get_max_spendable_v3`) rather than sharing v2\'s, which would tag the same operation under both v2 and v3 and break generated clients.
+     * Get the maximum spendable Bitcoin amount for the given address (v3).
      */
-    async getMaxSpendableV2Raw(requestParameters: GetMaxSpendableV2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<GatewayMaxSpendable>> {
+    async getMaxSpendableV3Raw(requestParameters: GetMaxSpendableV3Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<GatewayMaxSpendable>> {
         if (requestParameters['address'] == null) {
             throw new runtime.RequiredError(
                 'address',
-                'Required parameter "address" was null or undefined when calling getMaxSpendableV2().'
+                'Required parameter "address" was null or undefined when calling getMaxSpendableV3().'
             );
         }
 
@@ -169,10 +170,11 @@ export class V3Api extends runtime.BaseAPI {
     }
 
     /**
-     * Get the maximum spendable Bitcoin amount for the given address (v2).
+     * Behaviourally identical to v2; exists so the v3 API surface has its own `operationId` (`get_max_spendable_v3`) rather than sharing v2\'s, which would tag the same operation under both v2 and v3 and break generated clients.
+     * Get the maximum spendable Bitcoin amount for the given address (v3).
      */
-    async getMaxSpendableV2(requestParameters: GetMaxSpendableV2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<GatewayMaxSpendable> {
-        const response = await this.getMaxSpendableV2Raw(requestParameters, initOverrides);
+    async getMaxSpendableV3(requestParameters: GetMaxSpendableV3Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<GatewayMaxSpendable> {
+        const response = await this.getMaxSpendableV3Raw(requestParameters, initOverrides);
         return await response.value();
     }
 
