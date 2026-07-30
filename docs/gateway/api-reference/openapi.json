@@ -1785,6 +1785,7 @@
         "description": "New error codes for V3.",
         "enum": [
           "BUNGEE_NO_ROUTE",
+          "MAX_SLIPPAGE_EXCEEDED",
           "MISSING_OWNER_ADDRESS",
           "NON_COMPLIANT_ADDRESSES",
           "SERVICE_UNAVAILABLE",
@@ -2074,6 +2075,21 @@
       },
       "GatewayErrorDetailsV3": {
         "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "suggested_bps",
+              "max_bps"
+            ],
+            "properties": {
+              "max_bps": {
+                "type": "string"
+              },
+              "suggested_bps": {
+                "type": "string"
+              }
+            }
+          },
           {
             "type": "object",
             "required": [

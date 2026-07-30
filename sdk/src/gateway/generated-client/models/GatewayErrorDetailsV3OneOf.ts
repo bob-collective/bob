@@ -21,17 +21,24 @@ import { mapValues } from '../runtime';
 export interface GatewayErrorDetailsV3OneOf {
     /**
      * 
-     * @type {Array<string>}
+     * @type {string}
      * @memberof GatewayErrorDetailsV3OneOf
      */
-    addresses: Array<string>;
+    maxBps: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof GatewayErrorDetailsV3OneOf
+     */
+    suggestedBps: string;
 }
 
 /**
  * Check if a given object implements the GatewayErrorDetailsV3OneOf interface.
  */
 export function instanceOfGatewayErrorDetailsV3OneOf(value: object): value is GatewayErrorDetailsV3OneOf {
-    if (!('addresses' in value) || value['addresses'] === undefined) return false;
+    if (!('maxBps' in value) || value['maxBps'] === undefined) return false;
+    if (!('suggestedBps' in value) || value['suggestedBps'] === undefined) return false;
     return true;
 }
 
@@ -45,7 +52,8 @@ export function GatewayErrorDetailsV3OneOfFromJSONTyped(json: any, ignoreDiscrim
     }
     return {
         
-        'addresses': json['addresses'],
+        'maxBps': json['max_bps'],
+        'suggestedBps': json['suggested_bps'],
     };
 }
 
@@ -60,7 +68,8 @@ export function GatewayErrorDetailsV3OneOfToJSONTyped(value?: GatewayErrorDetail
 
     return {
         
-        'addresses': value['addresses'],
+        'max_bps': value['maxBps'],
+        'suggested_bps': value['suggestedBps'],
     };
 }
 
