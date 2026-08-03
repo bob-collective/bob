@@ -24,3 +24,7 @@ Follow [Conduit's guide](https://docs.conduit.xyz/guides/run-a-node/op-stack-nod
 
 - [BOB Mainnet](https://drpc.org/chainlist/bob?utm_source=docs&utm_medium=bob)
 - [BOB Sepolia](https://drpc.org/chainlist/bob?utm_source=docs&utm_medium=bob#bob-testnet) (Testnet)
+
+---
+
+For live latency comparisons across these providers, see [OpenChainBench](https://openchainbench.com/benchmarks/bob-rpc) — an open benchmark that continuously measures free public RPC endpoints for BOB.
