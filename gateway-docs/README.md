@@ -3,9 +3,9 @@
 The Gateway developer docs — the `/gateway/*` and `/api-reference/*` sections of
 docs.gobob.xyz. Built with [Fumadocs](https://fumadocs.dev) on Next.js.
 
-This replaces the previous Mintlify-hosted site. The main docs.gobob.xyz site is
-still the Docusaurus app in `docs/`, which proxies these two path prefixes here
-via its `vercel.json` rewrites.
+docs.gobob.xyz itself is the Docusaurus app in `docs/`; it proxies those two
+path prefixes to this app's deployment via its `vercel.json` rewrites. This
+replaced the previous Mintlify-hosted site.
 
 ## Develop
 
@@ -22,40 +22,35 @@ pnpm dev          # http://localhost:3000
 |------|---------|
 | `content/docs/gateway/` | The hand-written guides |
 | `content/docs/api-reference/` | `overview.mdx`, plus `v1/` `v2/` `v3/` generated from the spec |
+| `openapi.json` | The Gateway API spec |
 | `src/components/` | MDX component overrides and the live routes table |
 | `src/lib/source.ts` | Content source and page tree |
-| `scripts/` | Generation and migration scripts |
 
 Sidebar order and grouping come from the `meta.json` files. `v1/` and `v2/` are
 built and reachable by URL but deliberately left out of
 `content/docs/api-reference/meta.json`, so they stay out of the sidebar.
 
+`content/docs/gateway/supported-routes.mdx` renders a live table of routes
+fetched from the Gateway API at runtime; the component behind it is
+`src/components/supported-routes.tsx`.
+
 ## API reference
 
-Generated from `docs/gateway/api-reference/openapi.json` — which is owned by the
-backend and refreshed by the `openapi-docs-sync` workflow. Do not edit the spec
-here.
+Generated from `openapi.json`, which is owned by the backend — refresh it with
+`make openapi` from the repo root rather than editing it by hand. Changes to it
+on master trigger the `openapi-docs-sync` workflow.
 
 ```shell
-pnpm openapi      # regenerate; runs automatically on dev/build
+pnpm openapi      # regenerate the reference pages; runs automatically on dev/build
 ```
 
-The generated `v1/` `v2/` `v3/` directories are gitignored.
+The generated `v1/` `v2/` `v3/` directories are gitignored, and are cleared
+before each run so a renamed or removed operation cannot leave a stale page
+behind.
 
-## Migrating content from Mintlify
+## Deployment
 
-`scripts/migrate-from-mintlify.mjs` ports `docs/gateway/**/*.mdx` into
-`content/docs/`, mapping Mintlify components onto their fumadocs equivalents. It
-is re-runnable, so it can pick up any late edits to the Mintlify source before
-cutover:
-
-```shell
-pnpm migrate:mintlify
-```
-
-`gateway/supported-routes.mdx` is skipped — Mintlify allowed inline React with
-hooks in MDX, so that page's route table was extracted to
-`src/components/supported-routes.tsx` and is maintained by hand.
-
-Once Mintlify is switched off, delete the script and `docs/gateway/`, and edit
-`content/docs/` directly.
+Deployed as its own Vercel project with the root directory set to
+`gateway-docs`. Both prefixes are proxied from the Docusaurus project's
+`docs/vercel.json`, along with `/_next/*` and `/api/search` — without those two
+the site would 404 on its own assets and search.

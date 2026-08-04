@@ -25,7 +25,7 @@ const root = path.join(here, '..');
 // one machine's layout and break the Vercel build.
 process.chdir(root);
 
-const SPEC = '../docs/gateway/api-reference/openapi.json';
+const SPEC = './openapi.json';
 const OUT = path.join(root, 'content', 'docs', 'api-reference');
 
 // generateFiles only writes -- it never deletes. Without this, an operation that

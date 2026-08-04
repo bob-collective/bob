@@ -8,5 +8,5 @@ import { createOpenAPI } from 'fumadocs-openapi/server';
  * ID and bakes it into every generated page, so the two have to agree.
  */
 export const openapi = createOpenAPI({
-  input: ['../docs/gateway/api-reference/openapi.json'],
+  input: ['./openapi.json'],
 });

@@ -6,7 +6,6 @@
     "build": "node scripts/generate-openapi-pages.mjs && next build",
     "dev": "node scripts/generate-openapi-pages.mjs && next dev",
     "openapi": "node scripts/generate-openapi-pages.mjs",
-    "migrate:mintlify": "node scripts/migrate-from-mintlify.mjs",
     "start": "next start",
     "types:check": "next typegen && tsc --noEmit",
     "lint": "eslint"

@@ -30,7 +30,7 @@ name: "OpenAPI Docs Sync"
     branches:
     - master
     paths:
-    - docs/gateway/api-reference/openapi.json
+    - gateway-docs/openapi.json
 
 permissions: {}
 

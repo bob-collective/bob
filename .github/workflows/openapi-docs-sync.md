@@ -5,7 +5,7 @@ on:
     branches:
       - master
     paths:
-      - docs/gateway/api-reference/openapi.json
+      - gateway-docs/openapi.json
 engine: claude
 permissions: read-all
 tools:
@@ -25,11 +25,11 @@ You are a repository-aware coding agent working in this repository.
 
 ## Mission
 
-When this workflow is triggered by a push to master that includes changes to docs/gateway/api-reference/openapi.json, review the OpenAPI spec diff and create a focused documentation update pull request if documentation changes are needed.
+When this workflow is triggered by a push to master that includes changes to gateway-docs/openapi.json, review the OpenAPI spec diff and create a focused documentation update pull request if documentation changes are needed.
 
 ## Required Process
 
-1. Confirm the changed file list for this push and verify docs/gateway/api-reference/openapi.json is included.
+1. Confirm the changed file list for this push and verify gateway-docs/openapi.json is included.
 2. Compute and inspect the spec diff for this push (prefer the push range: github.event.before..github.sha).
 3. Determine what changed semantically in the API surface (endpoints, params, request/response shapes, error codes, behavior notes, examples).
 4. Find and update relevant documentation files so docs remain accurate and consistent with the spec.
