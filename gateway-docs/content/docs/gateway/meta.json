@@ -1,0 +1,22 @@
+{
+  "title": "Gateway",
+  "icon": "Waypoints",
+  "root": true,
+  "pages": [
+    "---Overview---",
+    "overview",
+    "technical",
+    "supported-routes",
+    "---Concepts---",
+    "fees",
+    "refunds",
+    "---Integration---",
+    "onboarding",
+    "integration",
+    "migration",
+    "agents",
+    "strategies",
+    "wallets",
+    "faq"
+  ]
+}

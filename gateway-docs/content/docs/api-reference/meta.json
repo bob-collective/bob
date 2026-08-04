@@ -1,0 +1,17 @@
+{
+  "title": "API Reference",
+  "icon": "Braces",
+  "root": true,
+  "pages": [
+    "---Getting Started---",
+    "overview",
+    "---API reference---",
+    "v3/get_routes_v3",
+    "v3/get_quote_v3",
+    "v3/create_order_v3",
+    "v3/register_tx_v3",
+    "v3/get_order_v3",
+    "v3/get_orders_v3",
+    "v3/get_max_spendable_v3"
+  ]
+}
