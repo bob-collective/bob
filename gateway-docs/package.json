@@ -19,6 +19,7 @@
     "fumadocs-ui": "npm:@fumadocs/base-ui@16.14.0",
     "json-schema-typed": "^8.0.2",
     "lucide-react": "^1.27.0",
+    "mermaid": "^11.16.1",
     "next": "16.2.12",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
