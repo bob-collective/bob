@@ -14,9 +14,6 @@ Gateway falls back to sending wrapped BTC directly to the user's EVM address, so
 ### Do I need Bitcoin wallet support?
 Yes, your frontend needs Bitcoin wallet integration. See the [wallet guide](/gateway/wallets) for implementation details.
 
-### Can I chain multiple protocols?
-Yes! Custom strategies can interact with multiple protocols in sequence. For example: stake WBTC → get staked BTC → deposit in lending → send receipt tokens to user.
-
 ### Security considerations?
 - Use SafeERC20 for token transfers
 - Consider reentrancy protection
