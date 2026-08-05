@@ -51,6 +51,32 @@ View audit reports: [docs.gobob.xyz/docs/reference/audits](https://docs.gobob.xy
 ### What are the fees?
 A Gateway swap has a protocol fee, a solver spread, optional affiliate fees, and destination gas — all shown transparently in the quote response. See [Fees](/gateway/fees) for the full breakdown.
 
+### What slippage tolerance should I use?
+Slippage protects against price movement between the quote and settlement — not against the quoted price itself. On BTC-input flows the exposure window is the wait for the first Bitcoin confirmation, which is why these tiers are set by an asset's volatility rather than by pool depth.
+
+| Asset class | Covers | Recommended |
+| --- | --- | --- |
+| Stablecoins and fiat-pegged tokens | Same-peg and cross-peg stable routes, including non-USD pegs | **0.5%–1%** |
+| Major liquid assets | Large-cap native gas assets, wrapped and bridged Bitcoin, precious-metal tokens | **2%–3%** |
+| Exotic and thin-liquidity assets | Bridged synthetic representations, commodity tokens on secondary chains, anything newly listed | **5%** |
+
+**Cross-chain token-to-token swaps take a flat 1%**, regardless of tier. That is an aggregator floor — even the most liquid stable pair cannot go below it. Going above 1% does not widen the executed window; it only avoids rejection.
+
+Where each range comes from:
+
+- **Stablecoins** — enforced route floors are 0%–0.5%, and 99th-percentile adverse drift over the confirmation window stays under 0.2%. Use the 1% end above roughly $10k, or for thinner pegs.
+- **Major liquid assets** — two independent constraints land in the same place: route floors of 0.5%–2.5%, and 99th-percentile adverse drift of 1.3%–2.3% over an hour. 2% suits the deepest markets; use 3% for higher-volatility assets and for wrapped-Bitcoin variants on non-primary chains, which carry a 2.5% floor of their own.
+- **Exotic assets** — provider auto-slippage resolves to 2.5%–5% here and scales up with order size, so lower settings are rejected outright at size.
+
+Three things worth knowing before you hard-code a value:
+
+<Callout>
+0.5% is the documented floor, but some route classes enforce more. When a request falls below a route's floor, the error carries the required value — retry with that rather than guessing upward.
+</Callout>
+
+- **On aggregator-routed flows the value is a ceiling, not a target.** Gateway never requests a slippage figure from those providers; they choose their own, and the quote is rejected if it exceeds what you asked for.
+- **Same-chain token swaps always execute at 0.15%**, whatever you request. The tier guidance above does not apply to them, and the quote returns the effective value.
+
 ### Are any regions blocked from using Gateway?
 Yes. For compliance reasons, BOB Gateway is unavailable to users connecting from the following jurisdictions:
 
