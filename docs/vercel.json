@@ -10,6 +10,14 @@
   ],
   "rewrites": [
     {
+      "source": "/gateway/sitemap.xml",
+      "destination": "https://bob-gateway-docs.vercel.app/sitemap.xml"
+    },
+    {
+      "source": "/gateway/robots.txt",
+      "destination": "https://bob-gateway-docs.vercel.app/robots.txt"
+    },
+    {
       "source": "/gateway/llms.txt",
       "destination": "https://bob-gateway-docs.vercel.app/llms.txt"
     },
