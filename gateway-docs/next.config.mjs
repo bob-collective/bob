@@ -18,6 +18,9 @@ const config = {
       { source: '/', destination: '/gateway/overview', permanent: false },
       { source: '/gateway', destination: '/gateway/overview', permanent: false },
       { source: '/api-reference', destination: '/api-reference/overview', permanent: false },
+      // /gateway/strategies was published under Mintlify and has been removed;
+      // send existing links and bookmarks to the integration guide.
+      { source: '/gateway/strategies', destination: '/gateway/integration', permanent: true },
     ];
   },
 };
