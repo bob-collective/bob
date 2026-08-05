@@ -6,6 +6,7 @@ import { Step, Steps } from 'fumadocs-ui/components/steps';
 import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
 import { resolveIcon } from './icons';
 import { SupportedRoutes } from './supported-routes';
+import { Mermaid } from './mermaid';
 import type { MDXComponents } from 'mdx/types';
 import type { ComponentProps } from 'react';
 
@@ -35,6 +36,7 @@ export function getMDXComponents(components?: MDXComponents) {
     Tabs,
     Tab,
     SupportedRoutes,
+    Mermaid,
     ...components,
   } satisfies MDXComponents;
 }
