@@ -1,0 +1,87 @@
+---
+title: "FAQ"
+description: "Questions about BOB Gateway"
+icon: CircleQuestionMark
+---
+## Frequently Asked Questions
+
+### Who pays the gas fees?
+The Relayer estimates gas costs upfront and deducts them from the transaction. Users don't need ETH on BOB to use Gateway.
+
+### What happens if my DeFi action fails?
+Gateway falls back to sending wrapped BTC directly to the user's EVM address, so the user still receives value. Always test thoroughly to avoid fallbacks. See [Refunds](/gateway/refunds) for details.
+
+### Do I need Bitcoin wallet support?
+Yes, your frontend needs Bitcoin wallet integration. See the [wallet guide](/gateway/wallets) for implementation details.
+
+### Can I chain multiple protocols?
+Yes! Custom strategies can interact with multiple protocols in sequence. For example: stake WBTC → get staked BTC → deposit in lending → send receipt tokens to user.
+
+### Security considerations?
+- Use SafeERC20 for token transfers
+- Consider reentrancy protection
+- Ensure proper access controls
+- Test thoroughly on testnet
+
+### How does affiliate fee monetization work?
+You earn a configurable basis-point fee on every swap linked to your affiliate address, paid out in USDT on Ethereum. See [Fees](/gateway/fees) for the model and the [affiliate integration guide](/gateway/integration#monetization-affiliate-fees) for code.
+
+### How long do transactions take?
+Transaction time varies based on:
+- Bitcoin network confirmation time (typically 10-60 minutes)
+- Destination chain (cross-chain transactions take longer)
+- Current network congestion
+
+The quote response includes an `estimatedTimeInSecs` field with the expected duration.
+
+### What happens if Bitcoin fees spike after I submit?
+For X-to-BTC transactions, the Bitcoin payout can be bumped to speed up confirmation if network fees increase. See [Refunds](/gateway/refunds).
+
+### Can I cancel a transaction?
+For X-to-BTC orders, you can reclaim locked funds if an order gets stuck. This is irreversible — once unlocked, the order cannot be resumed. See [Refunds](/gateway/refunds).
+
+### What chains are supported?
+Gateway supports Bitcoin and a growing set of EVM and non-EVM chains. See [Supported Routes](/gateway/supported-routes) for the current, live list.
+
+### Is Gateway audited?
+Yes, BOB Gateway has been audited by Pashov and Common Prefix. The protocol uses atomic cross-chain swaps verified by an on-chain Bitcoin Light Client, making it trustless between users and market makers.
+
+View audit reports: [docs.gobob.xyz/docs/reference/audits](https://docs.gobob.xyz/docs/reference/audits#bob-gateway)
+
+### What are the fees?
+A Gateway swap has a protocol fee, a solver spread, optional affiliate fees, and destination gas — all shown transparently in the quote response. See [Fees](/gateway/fees) for the full breakdown.
+
+### Are any regions blocked from using Gateway?
+Yes. For compliance reasons, BOB Gateway is unavailable to users connecting from the following jurisdictions:
+
+**Blocked countries** (ISO 3166-1 alpha-2):
+
+Afghanistan (AF), Albania (AL), Bangladesh (BD), Belarus (BY), Cambodia (KH), Central African Republic (CF), China (CN), Cuba (CU), Democratic Republic of the Congo (CD), Guinea (GN), Haiti (HT), Iran (IR), Iraq (IQ), Lebanon (LB), Libya (LY), Mali (ML), Myanmar (MM), Nicaragua (NI), North Korea (KP), Pakistan (PK), Russia (RU), Rwanda (RW), Somalia (SO), South Sudan (SS), Sudan (SD), Syria (SY), Tanzania (TZ), Uganda (UG), United Kingdom (GB), United States (US), Venezuela (VE), Yemen (YE), Zimbabwe (ZW).
+
+**Blocked regions within otherwise-allowed countries** (ISO 3166-2):
+
+- **Ukraine** — Crimea (`UA-43`), Donetsk Oblast (`UA-14`), Luhansk Oblast (`UA-09`), Kherson Oblast (`UA-65`), Zaporizhzhia Oblast (`UA-23`).
+
+If you operate an integration that serves users in these locations, you are responsible for enforcing the same restrictions in your frontend. The list is subject to change as the applicable sanctions and regulatory regimes evolve.
+
+### Where can I get help?
+- **Discord**: Join our community at [discord.gg/gobob](https://discord.gg/gobob)
+- **GitHub**: Report issues at [github.com/bob-collective/bob](https://github.com/bob-collective/bob)
+- **Documentation**: Browse guides at [docs.gobob.xyz](https://docs.gobob.xyz)
+
+## Still Have Questions?
+
+<Cards>
+  <Card title="Discord Community" icon="discord" href="https://discord.gg/gobob">
+    Get help from the BOB team and community
+  </Card>
+  <Card title="GitHub Issues" icon="github" href="https://github.com/bob-collective/bob/issues">
+    Report bugs or request features
+  </Card>
+  <Card title="Integration Guide" icon="code" href="/gateway/integration">
+    Step-by-step integration instructions
+  </Card>
+  <Card title="API Reference" icon="book" href="/api-reference/overview">
+    Complete API documentation
+  </Card>
+</Cards>

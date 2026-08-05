@@ -10,52 +10,52 @@
   ],
   "rewrites": [
     {
-      "source": "/_mintlify/:path*",
-      "destination": "https://distributedcrafts.mintlify.app/_mintlify/:path*"
-    },
-    {
-      "source": "/api/request",
-      "destination": "https://distributedcrafts.mintlify.app/_mintlify/api/request"
-    },
-    {
-      "source": "/api-reference",
-      "destination": "https://distributedcrafts.mintlify.app/api-reference"
-    },
-    {
-      "source": "/api-reference/:path*",
-      "destination": "https://distributedcrafts.mintlify.app/api-reference/:path*"
-    },
-    {
-      "source": "/gateway",
-      "destination": "https://distributedcrafts.mintlify.app/gateway"
-    },
-    {
-      "source": "/gateway/llms.txt",
-      "destination": "https://distributedcrafts.mintlify.app/llms.txt"
-    },
-    {
-      "source": "/gateway/llms-full.txt",
-      "destination": "https://distributedcrafts.mintlify.app/llms-full.txt"
-    },
-    {
       "source": "/gateway/sitemap.xml",
-      "destination": "https://distributedcrafts.mintlify.app/sitemap.xml"
+      "destination": "https://bob-gateway-docs.vercel.app/sitemap.xml"
     },
     {
       "source": "/gateway/robots.txt",
-      "destination": "https://distributedcrafts.mintlify.app/robots.txt"
+      "destination": "https://bob-gateway-docs.vercel.app/robots.txt"
     },
     {
-      "source": "/gateway/mcp",
-      "destination": "https://distributedcrafts.mintlify.app/mcp"
+      "source": "/gateway/llms.txt",
+      "destination": "https://bob-gateway-docs.vercel.app/llms.txt"
+    },
+    {
+      "source": "/gateway/llms-full.txt",
+      "destination": "https://bob-gateway-docs.vercel.app/llms-full.txt"
+    },
+    {
+      "source": "/gateway",
+      "destination": "https://bob-gateway-docs.vercel.app/gateway/overview"
     },
     {
       "source": "/gateway/:path*",
-      "destination": "https://distributedcrafts.mintlify.app/gateway/:path*"
+      "destination": "https://bob-gateway-docs.vercel.app/gateway/:path*"
     },
     {
-      "source": "/mintlify-assets/:path+",
-      "destination": "https://distributedcrafts.mintlify.app/mintlify-assets/:path+"
+      "source": "/api-reference",
+      "destination": "https://bob-gateway-docs.vercel.app/api-reference/overview"
+    },
+    {
+      "source": "/api-reference/:path*",
+      "destination": "https://bob-gateway-docs.vercel.app/api-reference/:path*"
+    },
+    {
+      "source": "/_next/:path*",
+      "destination": "https://bob-gateway-docs.vercel.app/_next/:path*"
+    },
+    {
+      "source": "/api/search",
+      "destination": "https://bob-gateway-docs.vercel.app/api/search"
+    },
+    {
+      "source": "/llms.mdx/:path*",
+      "destination": "https://bob-gateway-docs.vercel.app/llms.mdx/:path*"
+    },
+    {
+      "source": "/og/:path*",
+      "destination": "https://bob-gateway-docs.vercel.app/og/:path*"
     }
   ]
 }
