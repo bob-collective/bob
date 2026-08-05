@@ -11,10 +11,13 @@ const items = [
  * Rendered via the docs layout's `sidebar.footer` slot so these sit under the
  * page tree. Passing them as nav `links` instead puts them above it, which
  * buries the actual navigation.
+ *
+ * `order-first` lifts them above the icon/theme-switch bar, which fumadocs
+ * renders as the first child of the same flex-col footer wrapper.
  */
 export function SidebarLinks() {
   return (
-    <div className="flex flex-col">
+    <div className="order-first mb-2 flex flex-col">
       {items.map((item) => (
         <a
           key={item.url}
