@@ -13,7 +13,7 @@ export function baseOptions(): BaseLayoutProps {
         <>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/dark.svg"
+            src="/gateway/dark.svg"
             alt={appName}
             width={60}
             height={28}
@@ -21,7 +21,7 @@ export function baseOptions(): BaseLayoutProps {
           />
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/light.svg"
+            src="/gateway/light.svg"
             alt={appName}
             width={60}
             height={28}

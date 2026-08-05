@@ -47,3 +47,12 @@ await generateFiles({
 });
 
 console.log(`Generated API reference pages into ${path.relative(root, OUT)}`);
+
+// api-reference/overview.mdx links to the raw spec, and nothing else serves it
+// at that URL -- fumadocs only reads it at build time. Publish a copy so the
+// documented download link resolves both here and through the proxy.
+const PUBLIC_SPEC = path.join(root, 'public', 'api-reference', 'openapi.json');
+fs.mkdirSync(path.dirname(PUBLIC_SPEC), { recursive: true });
+fs.copyFileSync(path.join(root, SPEC), PUBLIC_SPEC);
+
+console.log(`Published the spec to ${path.relative(root, PUBLIC_SPEC)}`);

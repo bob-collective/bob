@@ -57,7 +57,7 @@ interface TokenListEntry {
   symbol: string;
 }
 
-const cap = (s: string) => CHAIN_LABELS[s] ?? s[0].toUpperCase() + s.slice(1);
+const cap = (s: string) => CHAIN_LABELS[s] ?? (s ? s[0].toUpperCase() + s.slice(1) : s);
 const truncate = (address: string) => `${address.slice(0, 6)}…${address.slice(-4)}`;
 
 /**
@@ -72,14 +72,17 @@ export function SupportedRoutes() {
   useEffect(() => {
     Promise.all([
       fetch(ROUTES_API)
-        .then((r) => r.json() as Promise<Route[]>)
+        .then((r) => (r.ok ? (r.json() as Promise<unknown>) : null))
         .catch(() => null),
       fetch(TOKENLIST_URL)
         .then((r) => r.json())
         .then((d) => (d.tokens ?? []) as TokenListEntry[])
         .catch(() => [] as TokenListEntry[]),
     ]).then(([routeData, tokens]) => {
-      if (!routeData) {
+      // A non-2xx status or a 200 carrying something other than an array (an
+      // error envelope, say) has to land on the fallback -- otherwise the
+      // iteration below throws during render, and there is no error boundary.
+      if (!Array.isArray(routeData)) {
         setError(true);
         return;
       }

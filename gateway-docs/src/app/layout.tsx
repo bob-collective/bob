@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   },
   description:
     'Developer documentation for BOB Gateway — native BTC swaps via a single SDK or API integration.',
-  icons: { icon: '/favicon.ico' },
+  icons: { icon: '/gateway/favicon.ico' },
 };
 
 export default function Layout({ children }: LayoutProps<'/'>) {

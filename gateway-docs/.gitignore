@@ -9,6 +9,9 @@
 /content/docs/api-reference/v2
 /content/docs/api-reference/v3
 
+# served copy of openapi.json, written by the same script
+/public/api-reference
+
 # test & build
 /coverage
 /.next/
