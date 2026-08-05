@@ -31,10 +31,9 @@ export function baseOptions(): BaseLayoutProps {
       ),
       url: '/gateway/overview',
     },
+    // Homepage / BOB Docs / Launch App are rendered by <SidebarLinks /> in the
+    // sidebar footer instead -- as nav links they land above the page tree.
     links: [
-      { text: 'Homepage', url: links.homepage, external: true },
-      { text: 'BOB Docs', url: links.bobDocs, external: true },
-      { type: 'button', text: 'Launch App', url: links.launchApp, external: true },
       {
         type: 'icon',
         label: 'Discord',
