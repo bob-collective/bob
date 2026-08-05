@@ -1,3 +1,9 @@
 User-agent: *
 Disallow:
 # Algolia-Crawler-Verif: 6861211C3ECA4619
+
+# This site is served by two apps: Docusaurus at the root, and the Gateway docs
+# under /gateway and /api-reference. Each emits its own sitemap, and crawlers
+# only read robots.txt from the origin root -- so both are listed here.
+Sitemap: https://docs.gobob.xyz/sitemap.xml
+Sitemap: https://docs.gobob.xyz/gateway/sitemap.xml
