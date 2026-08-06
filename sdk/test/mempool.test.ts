@@ -30,7 +30,8 @@ const MOCKS = {
         { txid: 'aaa', status: { confirmed: false } },
         { txid: 'bbb', status: { confirmed: true, block_height: 900_000 } },
     ],
-    addressTxsPageTwo: [{ txid: 'ccc', status: { confirmed: true, block_height: 899_000 } }],
+    addressChainTxs: [{ txid: 'bbb', status: { confirmed: true, block_height: 900_000 } }],
+    addressChainTxsPageTwo: [{ txid: 'ccc', status: { confirmed: true, block_height: 899_000 } }],
 };
 
 describe('Mempool Tests', () => {
@@ -71,10 +72,16 @@ describe('Mempool Tests', () => {
                     json: () => Promise.resolve(MOCKS.addressMempoolTxs),
                 } as Response);
             }
-            if (url.endsWith(`/address/${MOCKS.address}/txs?after_txid=${MOCKS.addressTxs[1].txid}`)) {
+            if (url.endsWith(`/address/${MOCKS.address}/txs/chain/${MOCKS.addressChainTxs[0].txid}`)) {
                 return Promise.resolve({
                     ok: true,
-                    json: () => Promise.resolve(MOCKS.addressTxsPageTwo),
+                    json: () => Promise.resolve(MOCKS.addressChainTxsPageTwo),
+                } as Response);
+            }
+            if (url.endsWith(`/address/${MOCKS.address}/txs/chain`)) {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve(MOCKS.addressChainTxs),
                 } as Response);
             }
             if (url.endsWith(`/address/${MOCKS.address}/txs`)) {
@@ -125,11 +132,22 @@ describe('Mempool Tests', () => {
         expect(all).not.toEqual(pending);
     });
 
-    it('should continue after a given txid when paging', async () => {
-        const firstPage = await client.getAddressTxs(MOCKS.address);
-        const nextPage = await client.getAddressTxs(MOCKS.address, firstPage[firstPage.length - 1].txid);
+    it('should page confirmed history by path segment, not query parameter', async () => {
+        const firstPage = await client.getAddressChainTxs(MOCKS.address);
+        const nextPage = await client.getAddressChainTxs(MOCKS.address, firstPage[firstPage.length - 1].txid);
 
-        expect(nextPage).toEqual(MOCKS.addressTxsPageTwo);
+        // A cursor appended as `?after_txid=` would fall through to the uncursored
+        // handler and return page one forever.
+        expect(firstPage).toEqual(MOCKS.addressChainTxs);
+        expect(nextPage).toEqual(MOCKS.addressChainTxsPageTwo);
+    });
+
+    it('should return only confirmed transactions when paging history', async () => {
+        const page = await client.getAddressChainTxs(MOCKS.address);
+
+        // getAddressTxs mixes in mempool entries, so its length cannot signal
+        // exhaustion. This page can, which is why the two are separate calls.
+        expect(page.every((tx) => tx.status.confirmed)).toBe(true);
     });
 
     it('should estimate tx timestamp', async () => {

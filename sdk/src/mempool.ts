@@ -99,7 +99,7 @@ export type BlockDetails = {
 };
 
 export class MempoolClient {
-    /** Confirmed transactions per page from {@link MempoolClient.getAddressTxs}. */
+    /** Confirmed transactions per page from {@link MempoolClient.getAddressChainTxs}. */
     static readonly ADDRESS_TXS_PAGE_SIZE = 25;
 
     private basePath: string;
@@ -272,24 +272,48 @@ export class MempoolClient {
     /**
      * Get transactions for a Bitcoin address, confirmed and unconfirmed alike.
      *
-     * Returns one page — up to 50 mempool transactions plus
-     * {@link MempoolClient.ADDRESS_TXS_PAGE_SIZE} confirmed ones, newest first.
-     * Pass the last txid you received to fetch the next page, and keep going
-     * until a page comes back shorter than the page size. Totalling values from
-     * a single call under-counts any longer history.
+     * Returns a single page: up to 50 mempool transactions plus the newest
+     * {@link MempoolClient.ADDRESS_TXS_PAGE_SIZE} confirmed ones. Because the
+     * two kinds share one array, its length says nothing about whether more
+     * confirmed history remains — use {@link getAddressChainTxs} to page that.
      *
      * @param {string} address - The Bitcoin address to check.
-     * @param {string} [afterTxid] - Continue after this txid, from a prior page.
-     * @returns {Promise<MempoolTxInfo[]>} One page of transactions, newest first.
+     * @returns {Promise<MempoolTxInfo[]>} Newest transactions, mempool included.
      *
      * @example
      * const mempoolClient = new MempoolClient();
-     * const firstPage = await mempoolClient.getAddressTxs('bc1q...');
+     * const txs = await mempoolClient.getAddressTxs('bc1q...');
      */
-    async getAddressTxs(address: string, afterTxid?: string): Promise<MempoolTxInfo[]> {
-        const query = afterTxid ? `?after_txid=${afterTxid}` : '';
+    async getAddressTxs(address: string): Promise<MempoolTxInfo[]> {
+        return this.getJson<MempoolTxInfo[]>(`${this.basePath}/address/${address}/txs`);
+    }
 
-        return this.getJson<MempoolTxInfo[]>(`${this.basePath}/address/${address}/txs${query}`);
+    /**
+     * Get confirmed transactions for a Bitcoin address, newest first.
+     *
+     * Returns {@link MempoolClient.ADDRESS_TXS_PAGE_SIZE} per page. Unlike
+     * {@link getAddressTxs} the page holds nothing but confirmed transactions,
+     * so a short page means the history is exhausted. Totalling received value
+     * from one call under-counts any address with a longer history.
+     *
+     * @param {string} address - The Bitcoin address to check.
+     * @param {string} [lastSeenTxid] - Continue after this txid, from a prior page.
+     * @returns {Promise<MempoolTxInfo[]>} One page of confirmed transactions.
+     *
+     * @example
+     * const mempoolClient = new MempoolClient();
+     * const txs: MempoolTxInfo[] = [];
+     * let page = await mempoolClient.getAddressChainTxs('bc1q...');
+     * while (page.length === MempoolClient.ADDRESS_TXS_PAGE_SIZE) {
+     *     txs.push(...page);
+     *     page = await mempoolClient.getAddressChainTxs('bc1q...', page[page.length - 1].txid);
+     * }
+     * txs.push(...page);
+     */
+    async getAddressChainTxs(address: string, lastSeenTxid?: string): Promise<MempoolTxInfo[]> {
+        const cursor = lastSeenTxid ? `/${lastSeenTxid}` : '';
+
+        return this.getJson<MempoolTxInfo[]>(`${this.basePath}/address/${address}/txs/chain${cursor}`);
     }
 
     /**
