@@ -266,6 +266,9 @@ export class MempoolClient {
         return this.getJson<MempoolTxInfo[]>(`${this.basePath}/address/${address}/txs/mempool`);
     }
 
+    /** Confirmed transactions returned per page by `/address/{address}/txs`. */
+    static readonly ADDRESS_TXS_PAGE_SIZE = 25;
+
     /**
      * Get transactions for a Bitcoin address, confirmed and unconfirmed alike.
      *
@@ -273,17 +276,34 @@ export class MempoolClient {
      * this survives a deposit address being swept — which is what makes it
      * usable for totalling what an address has received.
      *
-     * Returns the most recent transactions first, capped by the upstream API.
+     * **This is one page, not the full history.** The upstream API returns up
+     * to 50 mempool transactions plus the first
+     * {@link MempoolClient.ADDRESS_TXS_PAGE_SIZE} confirmed ones, newest first.
+     * A caller summing received value must page through the rest, or it will
+     * under-count an address whose history is longer — and, for the deposit
+     * case, report a full payment as underpaid.
+     *
+     * To exhaust the history, pass the last txid you received and keep going
+     * until a page returns fewer than the page size.
      *
      * @param {string} address - The Bitcoin address to check.
-     * @returns {Promise<MempoolTxInfo[]>} Array of transactions involving the address.
+     * @param {string} [afterTxid] - Continue after this txid, from a prior page.
+     * @returns {Promise<MempoolTxInfo[]>} One page of transactions, newest first.
      *
      * @example
      * const mempoolClient = new MempoolClient();
-     * const txs = await mempoolClient.getAddressTxs('bc1q...');
+     * const txs: MempoolTxInfo[] = [];
+     * let page = await mempoolClient.getAddressTxs('bc1q...');
+     * while (page.length > 0) {
+     *     txs.push(...page);
+     *     if (page.length < MempoolClient.ADDRESS_TXS_PAGE_SIZE) break;
+     *     page = await mempoolClient.getAddressTxs('bc1q...', page[page.length - 1].txid);
+     * }
      */
-    async getAddressTxs(address: string): Promise<MempoolTxInfo[]> {
-        return this.getJson<MempoolTxInfo[]>(`${this.basePath}/address/${address}/txs`);
+    async getAddressTxs(address: string, afterTxid?: string): Promise<MempoolTxInfo[]> {
+        const query = afterTxid ? `?after_txid=${afterTxid}` : '';
+
+        return this.getJson<MempoolTxInfo[]>(`${this.basePath}/address/${address}/txs${query}`);
     }
 
     /**

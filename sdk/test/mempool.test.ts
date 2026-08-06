@@ -30,6 +30,7 @@ const MOCKS = {
         { txid: 'aaa', status: { confirmed: false } },
         { txid: 'bbb', status: { confirmed: true, block_height: 900_000 } },
     ],
+    addressTxsPageTwo: [{ txid: 'ccc', status: { confirmed: true, block_height: 899_000 } }],
 };
 
 describe('Mempool Tests', () => {
@@ -68,6 +69,12 @@ describe('Mempool Tests', () => {
                 return Promise.resolve({
                     ok: true,
                     json: () => Promise.resolve(MOCKS.addressMempoolTxs),
+                } as Response);
+            }
+            if (url.endsWith(`/address/${MOCKS.address}/txs?after_txid=${MOCKS.addressTxs[1].txid}`)) {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve(MOCKS.addressTxsPageTwo),
                 } as Response);
             }
             if (url.endsWith(`/address/${MOCKS.address}/txs`)) {
@@ -113,6 +120,20 @@ describe('Mempool Tests', () => {
 
         expect(txs).toEqual(MOCKS.addressTxs);
         expect(txs.some((tx) => tx.status.confirmed)).toBe(true);
+    });
+
+    it('should continue after a given txid when paging', async () => {
+        const firstPage = await client.getAddressTxs(MOCKS.address);
+        const nextPage = await client.getAddressTxs(MOCKS.address, firstPage[firstPage.length - 1].txid);
+
+        // Without a cursor a caller only ever sees the first page, so a total of
+        // received value would silently under-count a longer history.
+        expect(nextPage).toEqual(MOCKS.addressTxsPageTwo);
+        expect(nextPage).not.toEqual(firstPage);
+    });
+
+    it('should expose the page size callers need to detect a truncated history', () => {
+        expect(MempoolClient.ADDRESS_TXS_PAGE_SIZE).toBe(25);
     });
 
     it('should read a different endpoint than the mempool-only address call', async () => {
