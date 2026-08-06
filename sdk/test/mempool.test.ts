@@ -26,10 +26,6 @@ const MOCKS = {
     },
     address: 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq',
     addressMempoolTxs: [{ txid: 'aaa', status: { confirmed: false } }],
-    addressTxs: [
-        { txid: 'aaa', status: { confirmed: false } },
-        { txid: 'bbb', status: { confirmed: true, block_height: 900_000 } },
-    ],
     addressChainTxs: [{ txid: 'bbb', status: { confirmed: true, block_height: 900_000 } }],
     addressChainTxsPageTwo: [{ txid: 'ccc', status: { confirmed: true, block_height: 899_000 } }],
 };
@@ -84,12 +80,6 @@ describe('Mempool Tests', () => {
                     json: () => Promise.resolve(MOCKS.addressChainTxs),
                 } as Response);
             }
-            if (url.endsWith(`/address/${MOCKS.address}/txs`)) {
-                return Promise.resolve({
-                    ok: true,
-                    json: () => Promise.resolve(MOCKS.addressTxs),
-                } as Response);
-            }
             return Promise.reject(new Error('Unexpected URL => ' + url));
         });
     });
@@ -122,16 +112,6 @@ describe('Mempool Tests', () => {
         expect(blockDetails).toEqual(MOCKS.blockDetails);
     });
 
-    it('should read a different endpoint than the mempool-only address call', async () => {
-        const all = await client.getAddressTxs(MOCKS.address);
-        const pending = await client.getAddressMempoolTxs(MOCKS.address);
-
-        // `/txs/mempool` is a suffix of `/txs`, so a loose URL match makes this
-        // method a silent duplicate of the other one.
-        expect(all).toEqual(MOCKS.addressTxs);
-        expect(all).not.toEqual(pending);
-    });
-
     it('should page confirmed history by path segment, not query parameter', async () => {
         const firstPage = await client.getAddressChainTxs(MOCKS.address);
         const nextPage = await client.getAddressChainTxs(MOCKS.address, firstPage[firstPage.length - 1].txid);
@@ -145,8 +125,8 @@ describe('Mempool Tests', () => {
     it('should return only confirmed transactions when paging history', async () => {
         const page = await client.getAddressChainTxs(MOCKS.address);
 
-        // getAddressTxs mixes in mempool entries, so its length cannot signal
-        // exhaustion. This page can, which is why the two are separate calls.
+        // Unconfirmed entries would break the stop condition: a page could stay
+        // at full length while confirmed history is already exhausted.
         expect(page.every((tx) => tx.status.confirmed)).toBe(true);
     });
 
