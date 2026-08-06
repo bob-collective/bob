@@ -20,9 +20,6 @@ importers:
       '@gobob/sats-wagmi':
         specifier: ^0.3.23
         version: 0.3.23(@tanstack/react-query@5.96.2(react@19.2.4))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.7.3)
-      '@magiceden-oss/runestone-lib':
-        specifier: ^1.0.2
-        version: 1.0.2
       '@scure/base':
         specifier: ^1.2.4
         version: 1.2.6
@@ -511,7 +508,7 @@ packages:
       react-dom: '>=18'
 
   '@gobob/tokenlist@https://codeload.github.com/bob-collective/tokenlist/tar.gz/223e98d85d857ce316fe3a8c3814ed00ddd66556':
-    resolution: {gitHosted: true, tarball: https://codeload.github.com/bob-collective/tokenlist/tar.gz/223e98d85d857ce316fe3a8c3814ed00ddd66556}
+    resolution: {gitHosted: true, integrity: sha512-Z1sVfcVNda+iYiJcSKC426oVoUFuzQptUn+r+gp2/cjbD4Xwd0cMi26I5Ty7+aYqsnJoJyHVvx0W/My6mgNmRg==, tarball: https://codeload.github.com/bob-collective/tokenlist/tar.gz/223e98d85d857ce316fe3a8c3814ed00ddd66556}
     version: 1.0.0
 
   '@humanfs/core@0.19.1':
@@ -1162,6 +1159,7 @@ packages:
   basic-ftp@5.2.0:
     resolution: {integrity: sha512-VoMINM2rqJwJgfdHq6RiUudKt2BV+FY5ZFezP/ypmwayk68+NzzAQy4XXLlqsGD4MCzq3DrmNFD/uUmBJuGoXw==}
     engines: {node: '>=10.0.0'}
+    deprecated: Security vulnerability fixed in 5.2.1, please upgrade
 
   bech32@2.0.0:
     resolution: {integrity: sha512-LcknSilhIGatDAsY1ak2I8VtGaHNhgMSYVxFrGLXv+xLHytaKZKcaUJJUE7qmBr7h33o5YQwP55pMI0xmkpJwg==}
