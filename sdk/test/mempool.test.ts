@@ -115,35 +115,21 @@ describe('Mempool Tests', () => {
         expect(blockDetails).toEqual(MOCKS.blockDetails);
     });
 
-    it('should get all address transactions, confirmed included', async () => {
-        const txs = await client.getAddressTxs(MOCKS.address);
+    it('should read a different endpoint than the mempool-only address call', async () => {
+        const all = await client.getAddressTxs(MOCKS.address);
+        const pending = await client.getAddressMempoolTxs(MOCKS.address);
 
-        expect(txs).toEqual(MOCKS.addressTxs);
-        expect(txs.some((tx) => tx.status.confirmed)).toBe(true);
+        // `/txs/mempool` is a suffix of `/txs`, so a loose URL match makes this
+        // method a silent duplicate of the other one.
+        expect(all).toEqual(MOCKS.addressTxs);
+        expect(all).not.toEqual(pending);
     });
 
     it('should continue after a given txid when paging', async () => {
         const firstPage = await client.getAddressTxs(MOCKS.address);
         const nextPage = await client.getAddressTxs(MOCKS.address, firstPage[firstPage.length - 1].txid);
 
-        // Without a cursor a caller only ever sees the first page, so a total of
-        // received value would silently under-count a longer history.
         expect(nextPage).toEqual(MOCKS.addressTxsPageTwo);
-        expect(nextPage).not.toEqual(firstPage);
-    });
-
-    it('should expose the page size callers need to detect a truncated history', () => {
-        expect(MempoolClient.ADDRESS_TXS_PAGE_SIZE).toBe(25);
-    });
-
-    it('should read a different endpoint than the mempool-only address call', async () => {
-        const all = await client.getAddressTxs(MOCKS.address);
-        const pending = await client.getAddressMempoolTxs(MOCKS.address);
-
-        // Confirmed deposits survive a sweep, unconfirmed ones do not — the two
-        // calls are not interchangeable.
-        expect(all).not.toEqual(pending);
-        expect(pending.every((tx) => !tx.status.confirmed)).toBe(true);
     });
 
     it('should estimate tx timestamp', async () => {

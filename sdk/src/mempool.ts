@@ -99,6 +99,9 @@ export type BlockDetails = {
 };
 
 export class MempoolClient {
+    /** Confirmed transactions per page from {@link MempoolClient.getAddressTxs}. */
+    static readonly ADDRESS_TXS_PAGE_SIZE = 25;
+
     private basePath: string;
 
     /**
@@ -266,25 +269,14 @@ export class MempoolClient {
         return this.getJson<MempoolTxInfo[]>(`${this.basePath}/address/${address}/txs/mempool`);
     }
 
-    /** Confirmed transactions returned per page by `/address/{address}/txs`. */
-    static readonly ADDRESS_TXS_PAGE_SIZE = 25;
-
     /**
      * Get transactions for a Bitcoin address, confirmed and unconfirmed alike.
      *
-     * Unlike {@link getAddressMempoolTxs}, spent outputs still appear here, so
-     * this survives a deposit address being swept — which is what makes it
-     * usable for totalling what an address has received.
-     *
-     * **This is one page, not the full history.** The upstream API returns up
-     * to 50 mempool transactions plus the first
+     * Returns one page — up to 50 mempool transactions plus
      * {@link MempoolClient.ADDRESS_TXS_PAGE_SIZE} confirmed ones, newest first.
-     * A caller summing received value must page through the rest, or it will
-     * under-count an address whose history is longer — and, for the deposit
-     * case, report a full payment as underpaid.
-     *
-     * To exhaust the history, pass the last txid you received and keep going
-     * until a page returns fewer than the page size.
+     * Pass the last txid you received to fetch the next page, and keep going
+     * until a page comes back shorter than the page size. Totalling values from
+     * a single call under-counts any longer history.
      *
      * @param {string} address - The Bitcoin address to check.
      * @param {string} [afterTxid] - Continue after this txid, from a prior page.
@@ -292,13 +284,7 @@ export class MempoolClient {
      *
      * @example
      * const mempoolClient = new MempoolClient();
-     * const txs: MempoolTxInfo[] = [];
-     * let page = await mempoolClient.getAddressTxs('bc1q...');
-     * while (page.length > 0) {
-     *     txs.push(...page);
-     *     if (page.length < MempoolClient.ADDRESS_TXS_PAGE_SIZE) break;
-     *     page = await mempoolClient.getAddressTxs('bc1q...', page[page.length - 1].txid);
-     * }
+     * const firstPage = await mempoolClient.getAddressTxs('bc1q...');
      */
     async getAddressTxs(address: string, afterTxid?: string): Promise<MempoolTxInfo[]> {
         const query = afterTxid ? `?after_txid=${afterTxid}` : '';
