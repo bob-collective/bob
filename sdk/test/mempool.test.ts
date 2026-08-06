@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, Mock, MockedFunction, vi } from 'vitest';
-import { MempoolClient } from '../src/mempool';
+import { confirmedReceived, MempoolClient, totalReceived } from '../src/mempool';
 
 const MOCKS = {
     fees: {
@@ -26,8 +26,24 @@ const MOCKS = {
     },
     address: 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq',
     addressMempoolTxs: [{ txid: 'aaa', status: { confirmed: false } }],
-    addressChainTxs: [{ txid: 'bbb', status: { confirmed: true, block_height: 900_000 } }],
-    addressChainTxsPageTwo: [{ txid: 'ccc', status: { confirmed: true, block_height: 899_000 } }],
+    addressInfo: {
+        address: 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq',
+        // Funded 50k confirmed of which 50k was later swept, plus 8k still pending.
+        chain_stats: {
+            tx_count: 2,
+            funded_txo_count: 1,
+            funded_txo_sum: 50_000,
+            spent_txo_count: 1,
+            spent_txo_sum: 50_000,
+        },
+        mempool_stats: {
+            tx_count: 1,
+            funded_txo_count: 1,
+            funded_txo_sum: 8_000,
+            spent_txo_count: 0,
+            spent_txo_sum: 0,
+        },
+    },
 };
 
 describe('Mempool Tests', () => {
@@ -68,16 +84,10 @@ describe('Mempool Tests', () => {
                     json: () => Promise.resolve(MOCKS.addressMempoolTxs),
                 } as Response);
             }
-            if (url.endsWith(`/address/${MOCKS.address}/txs/chain/${MOCKS.addressChainTxs[0].txid}`)) {
+            if (url.endsWith(`/address/${MOCKS.address}`)) {
                 return Promise.resolve({
                     ok: true,
-                    json: () => Promise.resolve(MOCKS.addressChainTxsPageTwo),
-                } as Response);
-            }
-            if (url.endsWith(`/address/${MOCKS.address}/txs/chain`)) {
-                return Promise.resolve({
-                    ok: true,
-                    json: () => Promise.resolve(MOCKS.addressChainTxs),
+                    json: () => Promise.resolve(MOCKS.addressInfo),
                 } as Response);
             }
             return Promise.reject(new Error('Unexpected URL => ' + url));
@@ -112,22 +122,25 @@ describe('Mempool Tests', () => {
         expect(blockDetails).toEqual(MOCKS.blockDetails);
     });
 
-    it('should page confirmed history by path segment, not query parameter', async () => {
-        const firstPage = await client.getAddressChainTxs(MOCKS.address);
-        const nextPage = await client.getAddressChainTxs(MOCKS.address, firstPage[firstPage.length - 1].txid);
+    it('should get address info', async () => {
+        const info = await client.getAddressInfo(MOCKS.address);
 
-        // A cursor appended as `?after_txid=` would fall through to the uncursored
-        // handler and return page one forever.
-        expect(firstPage).toEqual(MOCKS.addressChainTxs);
-        expect(nextPage).toEqual(MOCKS.addressChainTxsPageTwo);
+        expect(info).toEqual(MOCKS.addressInfo);
     });
 
-    it('should return only confirmed transactions when paging history', async () => {
-        const page = await client.getAddressChainTxs(MOCKS.address);
+    it('should count funding an address has received, confirmed and pending', async () => {
+        const info = await client.getAddressInfo(MOCKS.address);
 
-        // Unconfirmed entries would break the stop condition: a page could stay
-        // at full length while confirmed history is already exhausted.
-        expect(page.every((tx) => tx.status.confirmed)).toBe(true);
+        // Must match the Gateway solver's `total_received`, which decides whether
+        // a deposit is sufficient. The fixture has 50k confirmed and since spent,
+        // so a balance would read 8k and call a paid deposit underpaid.
+        expect(totalReceived(info)).toBe(58_000);
+    });
+
+    it('should count confirmed funding alone', async () => {
+        const info = await client.getAddressInfo(MOCKS.address);
+
+        expect(confirmedReceived(info)).toBe(50_000);
     });
 
     it('should estimate tx timestamp', async () => {

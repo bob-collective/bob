@@ -98,10 +98,32 @@ export type BlockDetails = {
     difficulty: number;
 };
 
-export class MempoolClient {
-    /** Confirmed transactions per page from {@link MempoolClient.getAddressChainTxs}. */
-    static readonly ADDRESS_TXS_PAGE_SIZE = 25;
+export type AddressStats = {
+    tx_count: number;
+    funded_txo_count: number;
+    /** Total ever received, ignoring anything since spent. */
+    funded_txo_sum: number;
+    spent_txo_count: number;
+    spent_txo_sum: number;
+};
 
+export type AddressDetails = {
+    address: string;
+    chain_stats: AddressStats;
+    mempool_stats: AddressStats;
+};
+
+/** Confirmed funding received by an address. Survives the outputs being spent. */
+export function confirmedReceived(info: AddressDetails): number {
+    return info.chain_stats.funded_txo_sum;
+}
+
+/** Funding received by an address, confirmed and unconfirmed. */
+export function totalReceived(info: AddressDetails): number {
+    return confirmedReceived(info) + info.mempool_stats.funded_txo_sum;
+}
+
+export class MempoolClient {
     private basePath: string;
 
     /**
@@ -270,31 +292,17 @@ export class MempoolClient {
     }
 
     /**
-     * Get confirmed transactions for a Bitcoin address, newest first.
-     *
-     * Returns {@link MempoolClient.ADDRESS_TXS_PAGE_SIZE} per page, confirmed
-     * transactions only, so a short page means the history is exhausted.
-     * Totalling received value from one call under-counts any address with a
-     * longer history. Pair with {@link getAddressMempoolTxs} for a full picture.
+     * Get funding and spending totals for a Bitcoin address.
      *
      * @param {string} address - The Bitcoin address to check.
-     * @param {string} [lastSeenTxid] - Continue after this txid, from a prior page.
-     * @returns {Promise<MempoolTxInfo[]>} One page of confirmed transactions.
+     * @returns {Promise<AddressDetails>} Confirmed and mempool statistics.
      *
      * @example
      * const mempoolClient = new MempoolClient();
-     * const txs: MempoolTxInfo[] = [];
-     * let page = await mempoolClient.getAddressChainTxs('bc1q...');
-     * while (page.length === MempoolClient.ADDRESS_TXS_PAGE_SIZE) {
-     *     txs.push(...page);
-     *     page = await mempoolClient.getAddressChainTxs('bc1q...', page[page.length - 1].txid);
-     * }
-     * txs.push(...page);
+     * const received = totalReceived(await mempoolClient.getAddressInfo('bc1q...'));
      */
-    async getAddressChainTxs(address: string, lastSeenTxid?: string): Promise<MempoolTxInfo[]> {
-        const cursor = lastSeenTxid ? `/${lastSeenTxid}` : '';
-
-        return this.getJson<MempoolTxInfo[]>(`${this.basePath}/address/${address}/txs/chain${cursor}`);
+    async getAddressInfo(address: string): Promise<AddressDetails> {
+        return this.getJson<AddressDetails>(`${this.basePath}/address/${address}`);
     }
 
     /**
