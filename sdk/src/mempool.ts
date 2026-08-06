@@ -267,6 +267,26 @@ export class MempoolClient {
     }
 
     /**
+     * Get transactions for a Bitcoin address, confirmed and unconfirmed alike.
+     *
+     * Unlike {@link getAddressMempoolTxs}, spent outputs still appear here, so
+     * this survives a deposit address being swept — which is what makes it
+     * usable for totalling what an address has received.
+     *
+     * Returns the most recent transactions first, capped by the upstream API.
+     *
+     * @param {string} address - The Bitcoin address to check.
+     * @returns {Promise<MempoolTxInfo[]>} Array of transactions involving the address.
+     *
+     * @example
+     * const mempoolClient = new MempoolClient();
+     * const txs = await mempoolClient.getAddressTxs('bc1q...');
+     */
+    async getAddressTxs(address: string): Promise<MempoolTxInfo[]> {
+        return this.getJson<MempoolTxInfo[]>(`${this.basePath}/address/${address}/txs`);
+    }
+
+    /**
      * @ignore
      */
     private async getJson<T>(url: string): Promise<T> {

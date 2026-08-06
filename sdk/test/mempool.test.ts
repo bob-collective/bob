@@ -24,6 +24,12 @@ const MOCKS = {
             confirmed: false,
         },
     },
+    address: 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq',
+    addressMempoolTxs: [{ txid: 'aaa', status: { confirmed: false } }],
+    addressTxs: [
+        { txid: 'aaa', status: { confirmed: false } },
+        { txid: 'bbb', status: { confirmed: true, block_height: 900_000 } },
+    ],
 };
 
 describe('Mempool Tests', () => {
@@ -56,6 +62,20 @@ describe('Mempool Tests', () => {
                     json: () => Promise.resolve(MOCKS.txInfo),
                 } as Response);
             }
+            // The mempool-only route is a suffix of the full one, so it has to
+            // be matched first or every address call resolves to the same list.
+            if (url.endsWith(`/address/${MOCKS.address}/txs/mempool`)) {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve(MOCKS.addressMempoolTxs),
+                } as Response);
+            }
+            if (url.endsWith(`/address/${MOCKS.address}/txs`)) {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve(MOCKS.addressTxs),
+                } as Response);
+            }
             return Promise.reject(new Error('Unexpected URL => ' + url));
         });
     });
@@ -86,6 +106,23 @@ describe('Mempool Tests', () => {
         const blockDetails = await client.getBlock(MOCKS.tipBlockHash);
 
         expect(blockDetails).toEqual(MOCKS.blockDetails);
+    });
+
+    it('should get all address transactions, confirmed included', async () => {
+        const txs = await client.getAddressTxs(MOCKS.address);
+
+        expect(txs).toEqual(MOCKS.addressTxs);
+        expect(txs.some((tx) => tx.status.confirmed)).toBe(true);
+    });
+
+    it('should read a different endpoint than the mempool-only address call', async () => {
+        const all = await client.getAddressTxs(MOCKS.address);
+        const pending = await client.getAddressMempoolTxs(MOCKS.address);
+
+        // Confirmed deposits survive a sweep, unconfirmed ones do not — the two
+        // calls are not interchangeable.
+        expect(all).not.toEqual(pending);
+        expect(pending.every((tx) => !tx.status.confirmed)).toBe(true);
     });
 
     it('should estimate tx timestamp', async () => {
