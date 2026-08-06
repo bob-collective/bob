@@ -118,7 +118,13 @@ export function confirmedReceived(info: AddressDetails): number {
     return info.chain_stats.funded_txo_sum;
 }
 
-/** Funding received by an address, confirmed and unconfirmed. */
+/**
+ * Funding received by an address, confirmed and unconfirmed.
+ *
+ * The unconfirmed part is provisional — those outputs can be replaced or evicted
+ * and never confirm, so this figure can go down. Gate anything irreversible on
+ * {@link confirmedReceived} instead.
+ */
 export function totalReceived(info: AddressDetails): number {
     return confirmedReceived(info) + info.mempool_stats.funded_txo_sum;
 }
