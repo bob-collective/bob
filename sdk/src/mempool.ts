@@ -113,20 +113,15 @@ export type AddressDetails = {
     mempool_stats: AddressStats;
 };
 
-/** Confirmed funding received by an address. Survives the outputs being spent. */
-export function confirmedReceived(info: AddressDetails): number {
-    return info.chain_stats.funded_txo_sum;
-}
-
 /**
  * Funding received by an address, confirmed and unconfirmed.
  *
- * The unconfirmed part is provisional — those outputs can be replaced or evicted
- * and never confirm, so this figure can go down. Gate anything irreversible on
- * {@link confirmedReceived} instead.
+ * Received, not balance — spent outputs are never subtracted, so this survives the
+ * address being swept, where `getBalance` would read zero. The unconfirmed part can
+ * still be replaced or evicted, so gate anything irreversible on `chain_stats` alone.
  */
 export function totalReceived(info: AddressDetails): number {
-    return confirmedReceived(info) + info.mempool_stats.funded_txo_sum;
+    return info.chain_stats.funded_txo_sum + info.mempool_stats.funded_txo_sum;
 }
 
 export class MempoolClient {

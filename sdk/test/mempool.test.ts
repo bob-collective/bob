@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, Mock, MockedFunction, vi } from 'vitest';
-import { confirmedReceived, MempoolClient, totalReceived } from '../src/mempool';
+import { MempoolClient, totalReceived } from '../src/mempool';
 
 const MOCKS = {
     fees: {
@@ -135,12 +135,6 @@ describe('Mempool Tests', () => {
         // a deposit is sufficient. The fixture has 50k confirmed and since spent,
         // so a balance would read 8k and call a paid deposit underpaid.
         expect(totalReceived(info)).toBe(58_000);
-    });
-
-    it('should count confirmed funding alone', async () => {
-        const info = await client.getAddressInfo(MOCKS.address);
-
-        expect(confirmedReceived(info)).toBe(50_000);
     });
 
     it('should estimate tx timestamp', async () => {
