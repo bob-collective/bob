@@ -20,8 +20,7 @@ export class ReownWalletAdapter implements BitcoinSigner {
     }
 
     async signAllInputs(psbtHex: string): Promise<string> {
-        const psbtBytes = hex.decode(psbtHex);
-        const unsignedTx = Transaction.fromPSBT(psbtBytes);
+        const unsignedTx = Transaction.fromPSBT(hex.decode(psbtHex));
 
         // Determine how many inputs to sign
         const inputLength = unsignedTx.inputsLength;
@@ -29,12 +28,12 @@ export class ReownWalletAdapter implements BitcoinSigner {
 
         // Use Reown's signPSBT method
         const result = await this.walletProvider.signPSBT({
-            psbt: base64.encode(psbtBytes),
+            psbt: base64.encode(unsignedTx.toPSBT()),
             broadcast: false,
             signInputs: inputsToSign.map((input) => ({ index: input, address: this.userAddress, sighashTypes: [0] })),
         });
 
-        // Finalize and return hex. Some wallets return an already finalized PSBT.
+        // Finalize and return hex
         const signedTx = Transaction.fromPSBT(base64.decode(result.psbt));
         if (!signedTx.isFinal) {
             signedTx.finalize();
