@@ -1,0 +1,34 @@
+# deps
+/node_modules
+
+# generated content
+.source
+
+# API reference pages, regenerated from the OpenAPI spec on every build
+/content/docs/api-reference/v1
+/content/docs/api-reference/v2
+/content/docs/api-reference/v3
+
+# served copy of openapi.json, written by the same script
+/public/api-reference
+
+# test & build
+/coverage
+/.next/
+/out/
+/build
+*.tsbuildinfo
+
+# misc
+.DS_Store
+*.pem
+/.pnp
+.pnp.js
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# others
+.env*.local
+.vercel
+next-env.d.ts

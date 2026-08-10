@@ -10,6 +10,7 @@ import {
     GatewayErrorDetailsOneOf5,
     GatewayErrorDetailsOneOf6,
     GatewayErrorDetailsV2OneOf,
+    GatewayErrorDetailsV3OneOf,
 } from '../generated-client';
 import type { GatewayError as GatewayErrorInterface } from '../generated-client/models/GatewayError';
 import { instanceOfGatewayError } from '../generated-client/models/GatewayError';
@@ -51,6 +52,9 @@ export type InsufficientSolverBalanceDetails = GatewayErrorDetailsV2OneOf;
 /** Details for {@link GatewayErrorCode.QuoteAmountTooLow} */
 export type QuoteAmountTooLowDetails = GatewayErrorDetailsOneOf6;
 
+/** Details for {@link GatewayErrorCode.QuoteAmountTooLow} */
+export type MaxSlippageExceededDetails = GatewayErrorDetailsV3OneOf;
+
 // ─── Code → details type mapping ─────────────────────────────────────────────
 
 /**
@@ -69,6 +73,7 @@ export type GatewayErrorDetailsMap = {
     [GatewayErrorCodeV2.AffiliateFeesNotSupportedForRoute]: AffiliateFeesNotSupportedForRouteDetails;
     [GatewayErrorCode.ExceededLimit]: ExceededLimitDetails;
     [GatewayErrorCode.QuoteAmountTooLow]: QuoteAmountTooLowDetails;
+    [GatewayErrorCodeV3.MaxSlippageExceeded]: MaxSlippageExceededDetails;
 };
 
 /**
@@ -280,6 +285,12 @@ function parseDetails<C extends GatewayErrorCode | GatewayErrorCodeV2 | GatewayE
                 minimum: String(raw?.minimum ?? ''),
                 actual: String(raw?.actual ?? ''),
             } satisfies QuoteAmountTooLowDetails as DetailsFor<C>;
+
+        case GatewayErrorCodeV3.MaxSlippageExceeded:
+            return {
+                maxBps: String(raw?.maxBps ?? ''),
+                suggestedBps: String(raw?.suggestedBps ?? ''),
+            } satisfies MaxSlippageExceededDetails as DetailsFor<C>;
 
         // Codes with no details in Rust (details field absent or unit variant → {}):
         //   InsufficientSolverBalance, InsufficientConfirmedFunds,

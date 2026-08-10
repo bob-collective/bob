@@ -1,0 +1,30 @@
+@import 'tailwindcss';
+@import 'fumadocs-ui/css/neutral.css';
+@import 'fumadocs-ui/css/preset.css';
+@import 'fumadocs-openapi/css/preset.css';
+
+/*
+ * BOB brand palette, carried over from the Mintlify docs.json
+ * (primary #f25d00, light #ff9500, dark #d95300). Dark mode uses the lighter
+ * orange so it keeps contrast against the near-black background.
+ */
+:root {
+  --color-fd-primary: #f25d00;
+  --color-fd-primary-foreground: #ffffff;
+  --color-fd-ring: #f25d00;
+}
+
+.dark {
+  --color-fd-primary: #ff9500;
+  --color-fd-primary-foreground: #141414;
+  --color-fd-ring: #ff9500;
+}
+
+html {
+  scrollbar-gutter: stable;
+}
+
+html > body[data-scroll-locked] {
+  margin-right: 0px !important;
+  --removed-body-scroll-bar-size: 0px !important;
+}

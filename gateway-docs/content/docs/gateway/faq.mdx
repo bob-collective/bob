@@ -1,0 +1,114 @@
+---
+title: "FAQ"
+description: "Questions about BOB Gateway"
+icon: CircleQuestionMark
+---
+## Frequently Asked Questions
+
+### Who pays the gas fees?
+The Relayer estimates gas costs upfront and deducts them from the transaction. Users don't need ETH on BOB to use Gateway.
+
+### What happens if my DeFi action fails?
+Gateway falls back to sending wrapped BTC directly to the user's EVM address, so the user still receives value. Always test thoroughly to avoid fallbacks. See [Refunds](/gateway/refunds) for details.
+
+### Do I need Bitcoin wallet support?
+Yes, your frontend needs Bitcoin wallet integration. See the [wallet guide](/gateway/wallets) for implementation details.
+
+### Security considerations?
+- Use SafeERC20 for token transfers
+- Consider reentrancy protection
+- Ensure proper access controls
+- Test thoroughly on testnet
+
+### How does affiliate fee monetization work?
+You earn a configurable basis-point fee on every swap linked to your affiliate address, paid out in USDT on Ethereum. See [Fees](/gateway/fees) for the model and the [affiliate integration guide](/gateway/integration#monetization-affiliate-fees) for code.
+
+### How long do transactions take?
+Transaction time varies based on:
+- Bitcoin network confirmation time (typically 10-60 minutes)
+- Destination chain (cross-chain transactions take longer)
+- Current network congestion
+
+The quote response includes an `estimatedTimeInSecs` field with the expected duration.
+
+### What happens if Bitcoin fees spike after I submit?
+For X-to-BTC transactions, the Bitcoin payout can be bumped to speed up confirmation if network fees increase. See [Refunds](/gateway/refunds).
+
+### Can I cancel a transaction?
+For X-to-BTC orders, you can reclaim locked funds if an order gets stuck. This is irreversible — once unlocked, the order cannot be resumed. See [Refunds](/gateway/refunds).
+
+### What chains are supported?
+Gateway supports Bitcoin and a growing set of EVM and non-EVM chains. See [Supported Routes](/gateway/supported-routes) for the current, live list.
+
+### Is Gateway audited?
+Yes, BOB Gateway has been audited by Pashov and Common Prefix. The protocol uses atomic cross-chain swaps verified by an on-chain Bitcoin Light Client, making it trustless between users and market makers.
+
+View audit reports: [docs.gobob.xyz/docs/reference/audits](https://docs.gobob.xyz/docs/reference/audits#bob-gateway)
+
+### What are the fees?
+A Gateway swap has a protocol fee, a solver spread, optional affiliate fees, and destination gas — all shown transparently in the quote response. See [Fees](/gateway/fees) for the full breakdown.
+
+### What slippage tolerance should I use?
+Slippage is how much price movement you're willing to accept between getting a quote and the swap actually settling. It doesn't change the price you're quoted — it decides how far the market can move against you before the swap is called off.
+
+For Bitcoin swaps that window is longer than you might expect, because it runs until your first Bitcoin confirmation. That's why these tiers follow how *volatile* an asset is rather than how deep its liquidity is.
+
+Start here:
+
+| If you're swapping | Use |
+| --- | --- |
+| Stablecoins or other pegged tokens, including ones not pegged to the dollar | **0.5%–1%** |
+| Big, liquid assets — native gas tokens, wrapped or bridged Bitcoin, tokenised gold | **2%–3%** |
+| Thin or exotic markets — bridged synthetics, commodity tokens on smaller chains, anything newly listed | **5%** |
+
+Swapping a token on one chain for a token on another? Use **1%**, whatever the assets are. That's a floor the aggregators impose, and even a USDC-to-USDT swap can't go under it. Asking for more than 1% won't get you a better price — it just stops your request being turned down.
+
+Where those numbers come from:
+
+- **Stablecoins barely move.** Over the confirmation window, 99 times out of 100 the price drifts by less than 0.2%. Lean toward 1% if you're swapping more than about $10k, or if the peg is thinly traded.
+- **Liquid assets move more** — 99 times out of 100, somewhere between 1.3% and 2.3% over an hour. 2% is comfortable for the deepest markets. Go to 3% for punchier assets, and for wrapped Bitcoin on a chain that isn't its primary one, which has its own 2.5% minimum. Routes in this tier won't accept less than 0.5%, and some want as much as 2.5%.
+- **Thin markets are unpredictable enough** that our liquidity providers set slippage themselves. They land between 2.5% and 5%, and it climbs with order size — so if you ask for less, bigger orders simply get turned down.
+
+A few things that catch people out:
+
+<Callout>
+0.5% is the lowest figure we document, but some routes insist on more. If your request comes in under a route's minimum, the error tells you the value it wants — send that back, rather than guessing your way upward.
+</Callout>
+
+- **When an aggregator handles the route, your number is a limit rather than a request.** We never tell those providers what slippage to use; they pick their own, and we throw the quote away if it's worse than what you asked for.
+- **Token swaps that stay on one chain always settle at 0.15%**, no matter what you send us. None of the guidance above applies to them, and the quote will tell you the figure actually used.
+
+### Are any regions blocked from using Gateway?
+Yes. For compliance reasons, BOB Gateway is unavailable to users connecting from the following jurisdictions:
+
+**Blocked countries** (ISO 3166-1 alpha-2):
+
+Afghanistan (AF), Albania (AL), Bangladesh (BD), Belarus (BY), Cambodia (KH), Central African Republic (CF), China (CN), Cuba (CU), Democratic Republic of the Congo (CD), Guinea (GN), Haiti (HT), Iran (IR), Iraq (IQ), Lebanon (LB), Libya (LY), Mali (ML), Myanmar (MM), Nicaragua (NI), North Korea (KP), Pakistan (PK), Russia (RU), Rwanda (RW), Somalia (SO), South Sudan (SS), Sudan (SD), Syria (SY), Tanzania (TZ), Uganda (UG), United Kingdom (GB), United States (US), Venezuela (VE), Yemen (YE), Zimbabwe (ZW).
+
+**Blocked regions within otherwise-allowed countries** (ISO 3166-2):
+
+- **Ukraine** — Crimea (`UA-43`), Donetsk Oblast (`UA-14`), Luhansk Oblast (`UA-09`), Kherson Oblast (`UA-65`), Zaporizhzhia Oblast (`UA-23`).
+
+If you operate an integration that serves users in these locations, you are responsible for enforcing the same restrictions in your frontend. The list is subject to change as the applicable sanctions and regulatory regimes evolve.
+
+### Where can I get help?
+- **Discord**: Join our community at [discord.gg/gobob](https://discord.gg/gobob)
+- **GitHub**: Report issues at [github.com/bob-collective/bob](https://github.com/bob-collective/bob)
+- **Documentation**: Browse guides at [docs.gobob.xyz](https://docs.gobob.xyz)
+
+## Still Have Questions?
+
+<Cards>
+  <Card title="Discord Community" icon="discord" href="https://discord.gg/gobob">
+    Get help from the BOB team and community
+  </Card>
+  <Card title="GitHub Issues" icon="github" href="https://github.com/bob-collective/bob/issues">
+    Report bugs or request features
+  </Card>
+  <Card title="Integration Guide" icon="code" href="/gateway/integration">
+    Step-by-step integration instructions
+  </Card>
+  <Card title="API Reference" icon="book" href="/api-reference/overview">
+    Complete API documentation
+  </Card>
+</Cards>

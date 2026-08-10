@@ -8,7 +8,7 @@ hide_table_of_contents: true
 Technological advantage stems from persistent and rigorous research.
 Founded by ex-Imperial College London PhDs, we are dedicated to contribute to cutting-edge research in the areas of blockchain interoperability, security, and crypto-economics.
 
-Our team members have co-authored over 30 scientific publications in collaboration with leading universities and research centres around the globe, resulting in more than 1,000 citations.
+Our team members have co-authored over 30 scientific publications in collaboration with leading universities and research centres around the globe, resulting in [more than 2,000 citations listed on Google Scholar.](https://scholar.google.com/citations?hl=en&view_op=list_works&gmla=AO4B3jsobW91R2bWnJ4tthznk0ojoeJ4xLcAxOMcHjNASc-U9ZeiLZOlweTgn7vqEyEDGUbqC1soFtVyhP70hUfSlcuLK6lZeLY&user=uitsMYYAAAAJ)
 
 ## Latest Research Papers
 

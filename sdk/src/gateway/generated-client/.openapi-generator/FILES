@@ -38,6 +38,7 @@ models/GatewayErrorDetailsV2OneOf1.ts
 models/GatewayErrorDetailsV3.ts
 models/GatewayErrorDetailsV3OneOf.ts
 models/GatewayErrorDetailsV3OneOf1.ts
+models/GatewayErrorDetailsV3OneOf2.ts
 models/GatewayErrorV2.ts
 models/GatewayErrorV3.ts
 models/GatewayLayerZeroQuote.ts

@@ -64,6 +64,28 @@ export interface SwapSubmittedJson {
   txId: string;
 }
 
+/**
+ * Swap submitted, source funds committed, but the order had not reached a terminal
+ * status before `--timeout` expired — either because it is still settling, or because
+ * its status could not be read (gateway 5xx/403, network failure).
+ *
+ * This is NOT a failure: the order is in flight. `orderId` + `txId` are carried so an
+ * operator (or gateway-bot) can follow it up with `gateway-cli status <orderId>`.
+ * Additive: it does not change any existing shape.
+ */
+export interface SwapInFlightJson {
+  orderId: string;
+  status: "in_flight";
+  srcAmount: string;
+  srcAsset: string;
+  dstAsset: string;
+  dstChain: string;
+  txId: string;
+  elapsedMs: number;
+  /** Last error seen while reading the order status, when the poll ended on a read failure. */
+  lastError?: string;
+}
+
 /** Swap pending in mempool (unconfirmed Bitcoin transaction). */
 export interface SwapMempoolPendingJson {
   orderId: string;
@@ -87,8 +109,6 @@ export interface QuoteJson {
   slippageBps: number;
   feeRateSatPerVbyte?: number;
   gasEstimateEth?: string;
-  gasRefillEth?: string;
-  gasRefillUsd?: string;
 }
 
 /** Chain information for routes display. */
@@ -123,8 +143,10 @@ export interface BalanceJson {
     balance?: string;
     allSpendable?: string;
     maxSpendable?: string;
-    native?: { symbol: string; balance: string; allSpendable?: string };
-    tokens?: Array<{ symbol: string; address: string; balance: string; allSpendable?: string }>;
+    priceUsd?: number;
+    usdValue?: number;
+    native?: { symbol: string; balance: string; allSpendable?: string; priceUsd?: number; usdValue?: number };
+    tokens?: Array<{ symbol: string; address: string; balance: string; allSpendable?: string; priceUsd?: number; usdValue?: number }>;
     error?: boolean;
   };
 }
@@ -140,7 +162,6 @@ export interface ConfirmationData {
   feeNetwork?: string;
   feeRateSatPerVbyte?: number;
   gasEstimateEth?: string;
-  gasRefillUsd?: string;
   slippageBps: number;
   recipient: string;
 }
@@ -227,7 +248,6 @@ export function formatConfirmation(data: ConfirmationData): string {
     lines.push(`  Fee rate   ${data.feeRateSatPerVbyte} sat/vbyte`);
   if (data.gasEstimateEth)
     lines.push(`  Gas (est)  ~${data.gasEstimateEth} ETH`);
-  if (data.gasRefillUsd) lines.push(`  Gas refill $${data.gasRefillUsd} ETH sent to recipient`);
   lines.push(`  Slippage   ${(data.slippageBps / 100).toFixed(1)}% max  (${data.slippageBps} bps)`);
   lines.push(`  Recipient  ${data.recipient}`);
   return lines.join("\n");
@@ -245,17 +265,18 @@ export function formatBalance(result: BalanceJson): string {
       lines.push(`  N/A (RPC unreachable)`);
       continue;
     }
-    if (data.balance !== undefined) lines.push(`  Balance:       ${data.balance} BTC`);
+    const usd = (v?: number) => v !== undefined ? `  ($${v.toFixed(2)})` : '';
+    if (data.balance !== undefined) lines.push(`  Balance:       ${data.balance} BTC${usd(data.usdValue)}`);
     if (data.allSpendable !== undefined) lines.push(`  All spendable: ${data.allSpendable} BTC`);
     if (data.maxSpendable !== undefined && data.allSpendable === undefined) lines.push(`  Max spendable: ${data.maxSpendable} BTC`);
     if (data.native) {
       const allSuffix = data.native.allSpendable ? ` (all: ${data.native.allSpendable})` : '';
-      lines.push(`  ${data.native.symbol}: ${data.native.balance}${allSuffix}`);
+      lines.push(`  ${data.native.symbol}: ${data.native.balance}${allSuffix}${usd(data.native.usdValue)}`);
     }
     if (data.tokens) {
       for (const t of data.tokens) {
         const allSuffix = t.allSpendable ? ` (all: ${t.allSpendable})` : '';
-        lines.push(`  ${t.symbol}: ${t.balance}${allSuffix}`);
+        lines.push(`  ${t.symbol}: ${t.balance}${allSuffix}${usd(t.usdValue)}`);
       }
     }
   }

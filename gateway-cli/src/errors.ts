@@ -27,24 +27,77 @@ export class SwapError extends Error {
 }
 
 /**
+ * Handle given to a retryable operation so it can declare that it has crossed a
+ * *point of no return* — an irreversible side effect (a wallet signature, a
+ * broadcast) that makes re-running the whole operation unsafe, no matter what
+ * error follows.
+ */
+export interface RetryGuard {
+  /**
+   * Latch. From this call onward the current operation will NOT be retried,
+   * however transient the subsequent error looks.
+   *
+   * Safe to call repeatedly as the operation progresses: the latch is monotonic
+   * (once armed it never disarms) and the LAST reason wins, so the error reports
+   * the *furthest* irreversible step reached — not the first. Reporting the first
+   * would understate how far the operation got (e.g. naming an ERC20 `approve`
+   * when the funds tx had in fact already been broadcast), which is precisely the
+   * misreading that leads someone to re-run and double-send.
+   */
+  pointOfNoReturn(reason: string): void;
+}
+
+/**
+ * Thrown by {@link withRetry} when an operation failed *after* it declared a
+ * {@link RetryGuard.pointOfNoReturn}. Its existence tells the caller "this failed
+ * with side effects possibly already committed" — a different, louder outcome than
+ * a clean failure, which must never be papered over as plain retry exhaustion.
+ */
+export class PointOfNoReturnError extends Error {
+  constructor(
+    /** The failure that actually occurred, after the irreversible step. */
+    readonly originalError: Error,
+    /** The furthest irreversible step reached when it failed. */
+    readonly reason: string,
+  ) {
+    super(originalError.message);
+    this.name = "PointOfNoReturnError";
+  }
+}
+
+/**
  * Retry `fn` while it throws a transient error; stop immediately on anything else.
+ *
+ * `fn` receives a {@link RetryGuard}. Once `fn` trips the guard, the attempt is
+ * never retried — the guard **dominates `isTransient`**, because no amount of
+ * "this error looks transient" can make it safe to re-run an operation that has
+ * already asked a wallet to sign. The latch is created, and consulted, *inside*
+ * this function: a caller can arm it but cannot forget to wire it into the retry
+ * decision, which makes "retried past an irreversible step" an unrepresentable
+ * state rather than merely an unlikely one.
  *
  * p-retry's `AbortError` is an internal detail here, never exposed to callers: it
  * always wraps the ORIGINAL Error, so a {@link SwapError}'s `context` survives
  * p-retry's `throw originalError`. Callers throw domain errors (e.g. `SwapError`
- * for terminal, a transient sentinel to keep retrying) and never touch AbortError.
+ * for terminal) and never touch AbortError.
  */
 export async function withRetry<T>(
-  fn: () => Promise<T>,
+  fn: (guard: RetryGuard) => Promise<T>,
   opts: { retries: number; isTransient: (e: unknown) => boolean; minTimeout?: number; maxTimeout?: number },
 ): Promise<T> {
   return pRetry(
     async () => {
+      let crossed: string | undefined;
+      const guard: RetryGuard = { pointOfNoReturn: (reason) => { crossed = reason; } };
       try {
-        return await fn();
+        return await fn(guard);
       } catch (e) {
+        const err = e instanceof Error ? e : new Error(String(e));
+        // Checked BEFORE isTransient, deliberately: past the point of no return the
+        // only safe move is to stop and tell the operator what was already done.
+        if (crossed !== undefined) throw new AbortError(new PointOfNoReturnError(err, crossed));
         if (opts.isTransient(e)) throw e; // retryable → let p-retry retry
-        throw new AbortError(e instanceof Error ? e : new Error(String(e))); // terminal → stop, preserve the Error (+ context)
+        throw new AbortError(err); // terminal → stop, preserve the Error (+ context)
       }
     },
     { retries: opts.retries, minTimeout: opts.minTimeout, maxTimeout: opts.maxTimeout, factor: 1 },

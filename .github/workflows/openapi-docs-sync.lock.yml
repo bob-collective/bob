@@ -22,7 +22,7 @@
 #
 # Review merged OpenAPI spec changes and open a PR with relevant docs updates.
 #
-# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"6317a60aa4497d3d3c1fb756f42f8e792ea776ba149bacd47e0a754c147d857b","compiler_version":"v0.62.4","strict":true,"agent_id":"claude"}
+# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"7617f26a540ec3603955dc66a14818742179c59ccd40a21a691defc59eb1ff00","compiler_version":"v0.62.4","strict":true,"agent_id":"claude"}
 
 name: "OpenAPI Docs Sync"
 "on":
@@ -30,7 +30,7 @@ name: "OpenAPI Docs Sync"
     branches:
     - master
     paths:
-    - docs/gateway/api-reference/openapi.json
+    - gateway-docs/openapi.json
 
 permissions: {}
 
