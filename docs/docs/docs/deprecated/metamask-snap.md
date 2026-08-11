@@ -16,8 +16,6 @@ Use MetaMask to:
 - Receive Bitcoin
 - Cache the extended public key
 - Sign Bitcoin transactions
-- Inscribe Ordinals (text and images) including BRC20s
-- Send inscriptions (including BRC20s)
 
 :::tip
 

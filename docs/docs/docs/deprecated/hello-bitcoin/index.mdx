@@ -31,7 +31,7 @@ Solidity and a toolchain are sufficient to get you started deploying contracts o
 
 ### Overview of the contract
 
-- The contract allows swapping between BTC->USDT and Ordinal->USDT using the BTC relay on testnet without requiring the BTC or ordinals to be bridged to BOB.
+- The contract allows swapping between BTC->USDT using the BTC relay on testnet without requiring the BTC to be bridged to BOB.
 - The contract integrates the [BTC relay](https://github.com/bob-collective/bob/blob/master/contracts/src/relay/LightRelay.sol) to enable trustless communication between the Bitcoin blockchain and BOB Sepolia (Testnet).
 
 ### Objectives
@@ -165,12 +165,6 @@ contract HelloBitcoin {
     mapping(uint256 => BtcSellOrder) public btcSellOrders;
 
     /**
-     * @dev Mapping to store ordinal sell orders for swapping BTC to USDT (or other ERC20) based on their unique identifiers.
-     * Each ordinal sell order is associated with a unique ID, and the order details are stored in the OrdinalSellOrder struct.
-     */
-    mapping(uint256 => OrdinalSellOrder) public ordinalSellOrders;
-
-    /**
      * @dev The address of the ERC-20 contract. You can use this variable for any ERC-20 token,
      * not just USDT (Tether). Make sure to set this to the appropriate ERC-20 contract address.
      */
@@ -184,13 +178,6 @@ contract HelloBitcoin {
     uint256 nextBtcOrderId;
 
     /**
-     * @dev Counter for generating unique identifiers for ordinal sell orders.
-     * The `nextOrdinalOrderId` is incremented each time a new ordinal sell order is created,
-     * ensuring that each ordinal order has a unique identifier.
-     */
-    uint256 nextOrdinalOrderId;
-
-    /**
      * @dev Struct representing a BTC to USDT swap order.
      */
     struct BtcSellOrder {
@@ -199,26 +186,6 @@ contract HelloBitcoin {
         address btcSeller; // Address of the seller initiating the order.
         BitcoinAddress btcBuyer; // Bitcoin address of the buyer (initialized with an empty scriptPubKey).
         bool isOrderAccepted; // Flag indicating whether the order has been accepted.
-    }
-
-    /**
-     * @dev Struct representing an ordinal sell order for swapping Ordinal to USDT.
-     */
-    struct OrdinalSellOrder {
-        OrdinalId ordinalID; // Unique identifier for the ordinal sell order.
-        uint256 buyAmount; // Amount of USDT (or other ERC20) to be bought in the order.
-        BitcoinTx.UTXO utxo; // UTXO associated with the BTC to USDT swap order.
-        address ordinalSeller; // Address of the seller initiating the ordinal order.
-        BitcoinAddress ordinalBuyer; // Bitcoin address of the buyer (initialized with an empty scriptPubKey).
-        bool isOrderAccepted; // Flag indicating whether the ordinal order has been accepted.
-    }
-
-    /**
-     * @dev Struct representing a unique identifier for an ordinal sell order.
-     */
-    struct OrdinalId {
-        bytes32 txId; // Transaction ID associated with the ordinal order.
-        uint32 index; // Index associated with the ordinal order.
     }
 
     /**
@@ -231,10 +198,6 @@ contract HelloBitcoin {
     event btcSellOrderSuccessfullyPlaced(uint256 indexed orderId, uint256 sellAmountBtc, uint256 buyAmount);
     event btcSellOrderBtcSellOrderAccepted(uint256 indexed id, BitcoinAddress bitcoinAddress);
     event btcSuccessfullySendtoDestination(uint256 id);
-
-    event ordinalSellOrderSuccessfullyPlaced(uint256 indexed id, OrdinalId ordinalID, uint256 buyAmount);
-    event ordinalSellOrderBtcSellOrderAccepted(uint256 indexed id, BitcoinAddress bitcoinAddress);
-    event ordinalSuccessfullySendtoDestination(uint256 id);
 
     IRelay internal relay;
     TestLightRelay internal testLightRelay;
@@ -357,116 +320,6 @@ contract HelloBitcoin {
     }
 
     /**
-     * @notice Places an ordinal sell order in the contract.
-     * @dev Emits an `ordinalSellOrderSuccessfullyPlaced` event upon successful placement.
-     * @param ordinalID The unique identifier for the ordinal.
-     * @param utxo Information about the Bitcoin UTXO associated with the ordinal.
-     * @param buyAmount The amount to be received in exchange for the ordinal.
-     * @dev Requirements:
-     *   - `buyAmount` must be greater than 0.
-     * @dev Effects:
-     *   - Creates a new ordinal sell order with the provided details.
-     */
-    function placeOrdinalSellOrder(OrdinalId calldata ordinalID, BitcoinTx.UTXO calldata utxo, uint256 buyAmount)
-        public
-    {
-        require(buyAmount > 0, "Buying amount should be greater than 0");
-
-        uint256 id = nextOrdinalOrderId++;
-
-        ordinalSellOrders[id] = OrdinalSellOrder({
-            ordinalID: ordinalID,
-            buyAmount: buyAmount,
-            utxo: utxo,
-            ordinalSeller: msg.sender,
-            isOrderAccepted: false,
-            ordinalBuyer: BitcoinAddress({scriptPubKey: new bytes(0)})
-        });
-
-        emit ordinalSellOrderSuccessfullyPlaced(id, ordinalID, buyAmount);
-    }
-
-    /**
-     * @notice Accepts an ordinal sell order, providing the Bitcoin address for the buyer.
-     * @dev Transfers the corresponding currency from the buyer to the contract and updates the order details.
-     * @param id The unique identifier of the ordinal sell order.
-     * @param bitcoinAddress The Bitcoin address of the buyer to receive the ordinal.
-     * @dev Requirements:
-     *   - The specified order must not have been accepted previously.
-     *   - The buyer must transfer the required currency amount to this contract.
-     * @dev Effects:
-     *   - "Locks" the selling token by transferring it to the contract.
-     *   - Updates the ordinal sell order with the buyer's Bitcoin address and marks the order as accepted.
-     * @dev Emits an `ordinalSellOrderBtcSellOrderAccepted` event upon successful acceptance.
-     */
-    function acceptOrdinalSellOrder(uint256 id, BitcoinAddress calldata bitcoinAddress) public {
-        OrdinalSellOrder storage placedOrder = ordinalSellOrders[id];
-        require(placedOrder.isOrderAccepted == false, "Order already accepted");
-
-        // "lock" sell token by transferring to contract
-        IERC20(usdtContractAddress).safeTransferFrom(msg.sender, address(this), placedOrder.buyAmount);
-
-        placedOrder.ordinalBuyer = bitcoinAddress;
-        placedOrder.isOrderAccepted = true;
-
-        emit ordinalSellOrderBtcSellOrderAccepted(id, bitcoinAddress);
-    }
-
-    /**
-     * @notice Completes an ordinal sell order by validating and processing the provided Bitcoin transaction proof.
-     * @dev This function is intended to be called by the original seller.
-     * @param id The unique identifier of the ordinal sell order.
-     * @param transaction Information about the Bitcoin transaction.
-     * @param proof Proof associated with the Bitcoin transaction.
-     * @dev Requirements:
-     *   - The specified order must have been previously accepted.
-     *   - The caller must be the original seller of the ordinal.
-     *   - The Bitcoin transaction proof must be valid.
-     *   - The BTC transaction input must spend the specified UTXO associated with the ordinal sell order.
-     *   - The BTC transaction output must be to the buyer's address.
-     * @dev Effects:
-     *   - Sets the relay difficulty based on the Bitcoin headers in the proof.
-     *   - Validates the BTC transaction proof using the relay.
-     *   - Ensures that the BTC transaction input spends the specified UTXO.
-     *   - Checks the BTC transaction output to the buyer's address.
-     *   - Transfers the locked USDT amount to the original seller.
-     *   - Removes the ordinal sell order from storage after successful processing.
-     * @dev Emits an `ordinalSuccessfullySendtoDestination` event upon successful completion.
-     */
-    function completeOrdinalSellOrder(uint256 id, BitcoinTx.Info calldata transaction, BitcoinTx.Proof calldata proof)
-        public
-    {
-        OrdinalSellOrder storage acceptedOrder = ordinalSellOrders[id];
-
-        // Ensure that the order has been accepted and the caller is the original seller
-        require(acceptedOrder.isOrderAccepted == true, "Order must be accepted");
-        require(acceptedOrder.ordinalSeller == msg.sender, "Only the original seller can provide proof");
-
-        // Set the relay difficulty based on the Bitcoin headers in the proof
-        testLightRelay.setDifficultyFromHeaders(proof.bitcoinHeaders);
-
-        // Validate the BTC transaction proof using the relay, in production a higher than 1 block confirmation should be used
-        BitcoinTx.validateProof(relay, 1, transaction, proof);
-
-        // Ensure that the BTC transaction input spends the specified UTXO associated with the ordinal sell order
-        BitcoinTx.ensureTxInputSpendsUtxo(transaction.inputVector, acceptedOrder.utxo);
-
-        // Check if the BTC transaction output is to the buyer's address
-        _checkBitcoinTxOutput(0, acceptedOrder.ordinalBuyer, transaction);
-
-        // ToDo: Check that the correct satoshis are being spent to the buyer's address if needed
-
-        // Transfer the locked USDT to the original seller
-        IERC20(usdtContractAddress).safeTransfer(acceptedOrder.ordinalSeller, acceptedOrder.buyAmount);
-
-        // Remove the ordinal sell order from storage as it has been successfully processed
-        delete ordinalSellOrders[id];
-
-        // Emit an event to indicate the successful completion of the ordinal sell order
-        emit ordinalSuccessfullySendtoDestination(id);
-    }
-
-    /**
      * Checks output script pubkey (recipient address) and amount.
      * Reverts if transaction amount is lower or bitcoin address is not found.
      *
@@ -504,7 +357,7 @@ import "@bob-collective/bob/relay/LightRelay.sol";
 
 /**
 * @title HelloBitcoin
-* @dev contract allows swapping between BTC->USDT and Ordinal->USDT using the BTC relay on testnet.
+* @dev contract allows swapping between BTC->USDT using the BTC relay on testnet.
 * @custom:dev-run-script ./scripts/deploy_relay.ts
 */
 contract TestLightRelay is LightRelay {
