@@ -35,7 +35,9 @@ export class ReownWalletAdapter implements BitcoinSigner {
 
         // Finalize and return hex
         const signedTx = Transaction.fromPSBT(base64.decode(result.psbt));
-        signedTx.finalize();
+        if (!signedTx.isFinal) {
+            signedTx.finalize();
+        }
         return signedTx.hex;
     }
 }
