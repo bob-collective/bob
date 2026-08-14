@@ -409,9 +409,14 @@ export class GatewayApiClient {
                 await publicClient.waitForTransactionReceipt({ hash: approveTxHash, retryCount: RETRY_COUNT });
             }
 
-            callback?.({ step: totalSteps, type: ExecuteQuoteStepType.SendTransaction, totalSteps });
             const offrampData = order.offramp.tx.data as Hex;
             const offrampValue = BigInt(order.offramp.tx.value || 0);
+            // Estimate before announcing the step. `SendTransaction` means "the wallet is
+            // about to be asked to sign", and callers latch on it to mark the operation
+            // unsafe to re-run. Gas estimation touches no wallet, yet it is the call here
+            // most likely to fail (it reverts on stale RPC state, e.g. an approve that has
+            // just landed but is not visible yet), so announcing first reports a failure
+            // that signed nothing as one that may already have broadcast.
             const offrampGas =
                 walletClient.account.type === 'local'
                     ? await estimateGasWithBuffer(publicClient, walletClient.account, {
@@ -421,6 +426,7 @@ export class GatewayApiClient {
                       })
                     : undefined;
 
+            callback?.({ step: totalSteps, type: ExecuteQuoteStepType.SendTransaction, totalSteps });
             const transactionHash = await walletClient.sendTransaction({
                 account: signerAccount(walletClient),
                 data: offrampData,
@@ -555,10 +561,10 @@ export class GatewayApiClient {
                 }
             }
 
-            callback?.({ step: totalSteps, type: ExecuteQuoteStepType.SendTransaction, totalSteps });
             const tokenSwapTo = order.tokenSwap.tx.to as Address;
             const tokenSwapData = order.tokenSwap.tx.data as Hex;
             const tokenSwapValue = BigInt(order.tokenSwap.tx.value || 0);
+            // Estimate before announcing the step - see the offramp path above.
             const tokenSwapGas =
                 walletClient.account.type === 'local'
                     ? await estimateGasWithBuffer(publicClient, walletClient.account, {
@@ -568,6 +574,7 @@ export class GatewayApiClient {
                       })
                     : undefined;
 
+            callback?.({ step: totalSteps, type: ExecuteQuoteStepType.SendTransaction, totalSteps });
             const transactionHash = await walletClient.sendTransaction({
                 account: signerAccount(walletClient),
                 data: tokenSwapData,
