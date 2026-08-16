@@ -8,7 +8,7 @@ import { watchOrder } from "../util/order-watcher.js";
 import { sleep } from "../util/sleep.js";
 import { loadConfig, getSdk, getApi } from "../config.js";
 import { resolveSigner } from "../chains/index.js";
-import { CHAIN_IDS } from "../chains/evm.js";
+import { CHAIN_IDS, getErc20Allowance, isNativeToken } from "../chains/evm.js";
 import type { Logger, SwapSuccessJson, SwapSubmittedJson, SwapMempoolPendingJson, SwapInFlightJson } from "../output.js";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -110,6 +110,32 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
       if (!psbtHex) throw new Error("Gateway did not return a PSBT for this onramp order.");
       return { type: "unsigned", orderId: orderData.orderId, psbtBase64: Buffer.from(psbtHex, "hex").toString("base64") };
     }
+
+    // EVM offramp / tokenSwap: the returned calldata targets a Gateway contract that
+    // pulls the source ERC20 from the caller via `transferFrom`. The signed path lets
+    // the SDK issue the approval for you; an --unsigned caller must approve the spender
+    // (tx.to) themselves first. Without it the very first transfer reverts — and because
+    // legacy tokens like WBTC revert with empty returndata, the broadcast tx fails with a
+    // bare `execution reverted` (0x) that is easily mistaken for a gas/RPC problem (#1100).
+    // Warn (don't block: the caller may approve in a separate/batched tx) when the current
+    // allowance is short. A read failure must not sink the primary deliverable — the calldata.
+    const spender = orderData.tx?.to;
+    if (spender && senderAddress && !isNativeToken(srcAsset.address)) {
+      try {
+        const allowance = await getErc20Allowance(evmChain, srcAsset.address, senderAddress, spender);
+        if (allowance < BigInt(atomicUnits)) {
+          log.warn(
+            `Insufficient ${srcAsset.symbol} allowance for the Gateway contract — this transaction will revert if broadcast as-is.\n` +
+            `  Current allowance: ${allowance} (need ${atomicUnits}, atomic units)\n` +
+            `  Approve first, e.g.: ${srcAsset.address}.approve(${spender}, ${atomicUnits}) from ${senderAddress}\n` +
+            `  (Legacy tokens such as WBTC revert with empty data when allowance is short, which looks like a gas/RPC error.)`,
+          );
+        }
+      } catch (e) {
+        log.warn(`Could not verify ${srcAsset.symbol} allowance for the Gateway contract (${e instanceof Error ? e.message : String(e)}). Ensure ${spender} is approved to spend ${atomicUnits} before broadcasting.`);
+      }
+    }
+
     return { type: "unsigned", orderId: orderData.orderId, txInfo: orderData.tx };
   }
 
