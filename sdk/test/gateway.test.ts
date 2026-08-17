@@ -2,6 +2,8 @@ import nock from 'nock';
 import {
     Account,
     Address,
+    ContractFunctionExecutionError,
+    erc20Abi,
     maxUint256,
     PublicClient,
     Transport,
@@ -34,6 +36,7 @@ import {
     instanceOfGatewayQuoteOneOf1,
     instanceOfGatewayQuoteV2OneOf2,
 } from '../src/gateway/generated-client';
+import * as gatewayUtils from '../src/gateway/utils';
 
 const WBTC_OFT_ADDRESS = '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c';
 const MOCK_SIGNED_QUOTE_DATA = 'signed-quote-data';
@@ -659,6 +662,7 @@ describe('Gateway Tests', () => {
         expect(error).toBeInstanceOf(ExecuteQuoteError);
         assert(error instanceof ExecuteQuoteError);
         expect(error.orderId).toBe(mockOrderId);
+        expect(error.message).toBe('Failed to get signed transaction');
         expect(error.cause).toBeInstanceOf(Error);
         assert(error.cause instanceof Error);
         expect(error.cause.message).toBe('Failed to get signed transaction');
@@ -814,6 +818,7 @@ describe('Gateway Tests', () => {
         assert(error instanceof ExecuteQuoteError);
         expect(error.orderId).toBe('offramp-order-throw-456');
         expect(error.cause).toBe(walletRejection);
+        expect(error.message).toBe('Failed to execute Gateway quote after order creation');
     });
 
     it('should approve WBTC on bob offramp', async () => {
@@ -1393,14 +1398,151 @@ describe('Gateway Tests', () => {
 
         const mockPublicClient = {} as PublicClient<Transport>;
 
-        await expect(
-            gatewaySDK.executeQuote({
+        const error = await gatewaySDK
+            .executeQuote({
                 quote: mockQuote,
                 walletClient: mockWalletClient,
                 publicClient: mockPublicClient,
                 btcSigner: mockBtcSigner,
             })
-        ).rejects.toThrow('btcSigner must implement either sendBitcoin or signAllInputs method');
+            .catch((thrown: unknown) => thrown);
+
+        expect(error).toBeInstanceOf(ExecuteQuoteError);
+        assert(error instanceof ExecuteQuoteError);
+        expect(error.orderId).toBe(mockOrderId);
+        expect(error.message).toBe('btcSigner must implement either sendBitcoin or signAllInputs method');
+    });
+
+    it('should attach orderId to the thrown error when the onramp psbtHex is missing', async () => {
+        const gatewaySDK = new GatewaySDK();
+
+        const mockQuote: GatewayQuoteOneOf = {
+            onramp: {
+                dstChain: 'bob',
+                dstToken: WBTC_OFT_ADDRESS,
+                executionFees: { address: zeroAddress, amount: '10', chain: 'bob' },
+                feeBreakdown: {
+                    protocolFee: { address: zeroAddress, amount: '5', chain: 'bob' },
+                    affiliateFee: { address: zeroAddress, amount: '2', chain: 'bob' },
+                    executionFee: { address: zeroAddress, amount: '1', chain: 'bob' },
+                    layerzeroFee: { address: zeroAddress, amount: '1', chain: 'bob' },
+                    solverFee: { address: zeroAddress, amount: '1', chain: 'bob' },
+                },
+                fees: { address: zeroAddress, amount: '3', chain: 'bob' },
+                inputAmount: { address: zeroAddress, amount: '1000', chain: 'bob' },
+                outputAmount: { address: zeroAddress, amount: '990', chain: 'bob' },
+                recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+                sender: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+                signedQuoteData: MOCK_SIGNED_QUOTE_DATA,
+                slippage: '0',
+                token: '0x0000000000000000000000000000000000000000',
+            },
+        };
+
+        const mockOrderId = 'order-no-psbt';
+
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
+            .post('/v3/create-order')
+            .reply(200, {
+                onramp: {
+                    order_id: mockOrderId,
+                    address: 'tb1qw508d6qejxtdg4y5r3zarvary0c5xw7kxpjzsx',
+                    op_return_data: '',
+                },
+            });
+
+        const mockBtcSigner: BitcoinSigner = {
+            signAllInputs: async () => 'should-not-be-called',
+        };
+
+        const mockWalletClient: WalletClient<Transport, ViemChain, Account> = {
+            account: { address: '0x1234567890123456789012345678901234567890' as Address },
+        } as WalletClient<Transport, ViemChain, Account>;
+
+        const mockPublicClient = {} as PublicClient<Transport>;
+
+        const error = await gatewaySDK
+            .executeQuote({
+                quote: mockQuote,
+                walletClient: mockWalletClient,
+                publicClient: mockPublicClient,
+                btcSigner: mockBtcSigner,
+            })
+            .catch((thrown: unknown) => thrown);
+
+        expect(error).toBeInstanceOf(ExecuteQuoteError);
+        assert(error instanceof ExecuteQuoteError);
+        expect(error.orderId).toBe(mockOrderId);
+        expect(error.message).toBe('PSBT not available: sender address is required when using signAllInputs');
+    });
+
+    it('should attach orderId to the thrown error when onramp registerTxV3 fails', async () => {
+        const gatewaySDK = new GatewaySDK();
+
+        const mockQuote: GatewayQuoteOneOf = {
+            onramp: {
+                dstChain: 'bob',
+                dstToken: WBTC_OFT_ADDRESS,
+                executionFees: { address: zeroAddress, amount: '10', chain: 'bob' },
+                feeBreakdown: {
+                    protocolFee: { address: zeroAddress, amount: '5', chain: 'bob' },
+                    affiliateFee: { address: zeroAddress, amount: '2', chain: 'bob' },
+                    executionFee: { address: zeroAddress, amount: '1', chain: 'bob' },
+                    layerzeroFee: { address: zeroAddress, amount: '1', chain: 'bob' },
+                    solverFee: { address: zeroAddress, amount: '1', chain: 'bob' },
+                },
+                fees: { address: zeroAddress, amount: '3', chain: 'bob' },
+                inputAmount: { address: zeroAddress, amount: '1000', chain: 'bob' },
+                outputAmount: { address: zeroAddress, amount: '990', chain: 'bob' },
+                recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+                sender: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+                signedQuoteData: MOCK_SIGNED_QUOTE_DATA,
+                slippage: '0',
+                token: '0x0000000000000000000000000000000000000000',
+            },
+        };
+
+        const mockOrderId = 'order-registertx-fail';
+        const mockPsbt = 'cHNidP8BAH0CAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAzwAAAAA=';
+        const signedTx = '02000000010000000000000000000000000000000000000000000000000000000000000000';
+
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
+            .post('/v3/create-order')
+            .reply(200, {
+                onramp: {
+                    order_id: mockOrderId,
+                    psbt_hex: mockPsbt,
+                    address: 'tb1qw508d6qejxtdg4y5r3zarvary0c5xw7kxpjzsx',
+                    op_return_data: '',
+                },
+            });
+
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
+            .patch('/v3/register-tx')
+            .reply(500, { error: 'registerTx exploded' });
+
+        const mockBtcSigner: BitcoinSigner = {
+            signAllInputs: async () => signedTx,
+        };
+
+        const mockWalletClient: WalletClient<Transport, ViemChain, Account> = {
+            account: { address: '0x1234567890123456789012345678901234567890' as Address },
+        } as WalletClient<Transport, ViemChain, Account>;
+
+        const mockPublicClient = {} as PublicClient<Transport>;
+
+        const error = await gatewaySDK
+            .executeQuote({
+                quote: mockQuote,
+                walletClient: mockWalletClient,
+                publicClient: mockPublicClient,
+                btcSigner: mockBtcSigner,
+            })
+            .catch((thrown: unknown) => thrown);
+
+        expect(error).toBeInstanceOf(ExecuteQuoteError);
+        assert(error instanceof ExecuteQuoteError);
+        expect(error.orderId).toBe(mockOrderId);
     });
 
     it('should get error', async () => {
@@ -1625,9 +1767,76 @@ describe('Gateway Tests', () => {
         expect(error).toBeInstanceOf(ExecuteQuoteError);
         assert(error instanceof ExecuteQuoteError);
         expect(error.orderId).toBe('tokenswap-order-throw-789');
+        expect(error.message).toBe('User rejected the transaction');
         expect(error.cause).toBeInstanceOf(Error);
         assert(error.cause instanceof Error);
         expect(error.cause.message).toBe('User rejected the transaction');
+    });
+
+    it('preserves the tokenSwap insufficient-funds message at the top level of the thrown error', async () => {
+        const mockedQuote: GatewayQuoteV2OneOf2 = {
+            tokenSwap: {
+                dstChain: 'bob',
+                estimatedTimeInSecs: 60,
+                fees: { amount: '0', address: WBTC_OFT_ADDRESS, chain: 'bob' },
+                inputAmount: {
+                    amount: '100000',
+                    address: '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599',
+                    chain: 'ethereum',
+                },
+                outputAmount: { amount: '100000', address: WBTC_OFT_ADDRESS, chain: 'bob' },
+                recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+                slippage: 100,
+                srcChain: 'ethereum',
+                txTo: WBTC_OFT_ADDRESS,
+            },
+        };
+
+        const gatewaySDK = new GatewaySDK();
+
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
+            .post('/v3/create-order')
+            .reply(200, {
+                tokenSwap: {
+                    order_id: 'tokenswap-gas-funds-order',
+                    tx: { to: WBTC_OFT_ADDRESS, data: '0xabcdef', value: '0' },
+                },
+            });
+
+        const contractError = new ContractFunctionExecutionError(new Error('execution reverted'), {
+            abi: erc20Abi,
+            functionName: 'approve',
+            args: [WBTC_OFT_ADDRESS, 100000n],
+        });
+
+        const mockWalletClient = {
+            account: { address: '0x1234567890123456789012345678901234567890' as Address },
+            sendTransaction: vi.fn(),
+        } as unknown as WalletClient<Transport, ViemChain, Account>;
+
+        const mockPublicClient = {
+            readContract: mockOftReadContract({ approvalRequired: true, allowance: 0n }),
+            simulateContract: vi.fn().mockRejectedValue(contractError),
+            waitForTransactionReceipt: vi.fn().mockResolvedValue({}),
+        } as unknown as PublicClient<Transport>;
+
+        const error = await gatewaySDK
+            .executeQuote({
+                quote: mockedQuote,
+                walletClient: mockWalletClient,
+                publicClient: mockPublicClient,
+            })
+            .catch((thrown: unknown) => thrown);
+
+        expect(error).toBeInstanceOf(ExecuteQuoteError);
+        assert(error instanceof ExecuteQuoteError);
+        expect(error.orderId).toBe('tokenswap-gas-funds-order');
+        expect(error.message).toBe(
+            'Insufficient native funds for source and destination gas fees, please add more native funds to your account'
+        );
+        expect(error.cause).toBeInstanceOf(Error);
+        assert(error.cause instanceof Error);
+        expect(error.cause.cause).toBe(contractError);
     });
 
     it('should skip approval when allowance is sufficient for layerzero swap', async () => {
@@ -2045,6 +2254,62 @@ describe('Gateway Tests', () => {
             totalSteps: 1,
             orderId: 'offramp-order-cb-456',
         });
+    });
+
+    it('propagates a callback throw as-is, without attaching orderId', async () => {
+        const gatewaySDK = new GatewaySDK();
+        const mockQuote: GatewayQuoteV3OneOf = {
+            offramp: {
+                txTo: '0x1234567890123456789012345678901234567890',
+                recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+                slippage: 300,
+                srcChain: 'bob',
+                feeBreakdown: {
+                    protocolFee: { address: zeroAddress, amount: '5', chain: 'bob' },
+                    affiliateFee: { address: zeroAddress, amount: '2', chain: 'bob' },
+                    inclusionFee: { address: zeroAddress, amount: '1', chain: 'bob' },
+                    solverFee: { address: zeroAddress, amount: '1', chain: 'bob' },
+                    fastestFeeRate: '6',
+                },
+                inputAmount: { address: zeroAddress, amount: '1000', chain: 'bob' },
+                outputAmount: { address: zeroAddress, amount: '990', chain: 'bob' },
+                tokenAddress: WBTC_OFT_ADDRESS,
+                ownerAddress: '0xabcd1234abcd1234abcd1234abcd1234abcd1234',
+                totalFeeUsd: '3',
+            },
+        };
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
+            .post('/v3/create-order')
+            .reply(200, {
+                offramp: {
+                    order_id: 'offramp-order-cb-throw',
+                    tx: { to: '0x1234567890123456789012345678901234567890', data: '0xabcdef', value: '0' },
+                },
+            });
+
+        const callbackError = new Error('callback exploded');
+        const callback = vi.fn(() => {
+            throw callbackError;
+        });
+
+        const error = await gatewaySDK
+            .executeQuote({
+                quote: mockQuote,
+                walletClient: {
+                    account: { address: '0xabcd1234abcd1234abcd1234abcd1234abcd1234' as Address },
+                    sendTransaction: async () => '0xtxhash' as `0x${string}`,
+                } as unknown as WalletClient<Transport, ViemChain, Account>,
+                publicClient: {
+                    readContract: mockOftReadContract({ approvalRequired: true, allowance: maxUint256 }),
+                    multicall: vi.fn().mockResolvedValue([maxUint256]),
+                    waitForTransactionReceipt: vi.fn().mockResolvedValue({}),
+                } as unknown as PublicClient<Transport>,
+                callback,
+            })
+            .catch((thrown: unknown) => thrown);
+
+        expect(error).toBe(callbackError);
+        expect(error).not.toBeInstanceOf(ExecuteQuoteError);
     });
 
     it('should call callback for offramp with approval (2 steps)', async () => {
@@ -2558,6 +2823,46 @@ describe('Gateway Tests', () => {
             expect(sendTransactionMock.mock.calls[0][0]).not.toHaveProperty('gas');
         });
 
+        it('attaches orderId when estimateGasWithBuffer itself rejects', async () => {
+            const gatewaySDK = new GatewaySDK();
+            mockCreateOrder();
+
+            // estimateGasWithBuffer always swallows eth_estimateGas failures internally (see
+            // sdk/src/gateway/utils/gas.ts), so a rejection can only be observed at this call
+            // site by replacing the function itself, not by rejecting the underlying estimateGas.
+            const gasError = new Error('gas estimation blew up');
+            const estimateGasWithBufferSpy = vi
+                .spyOn(gatewayUtils, 'estimateGasWithBuffer')
+                .mockRejectedValueOnce(gasError);
+
+            const mockWalletClient = {
+                account: localAccount,
+                writeContract: vi.fn(),
+                sendTransaction: vi.fn(),
+            } as unknown as WalletClient<Transport, ViemChain, Account>;
+
+            const mockPublicClient = {
+                readContract: mockOftReadContract({ approvalRequired: false }),
+                multicall: vi.fn().mockResolvedValue([0n]),
+                waitForTransactionReceipt: vi.fn().mockResolvedValue({}),
+            } as unknown as PublicClient<Transport>;
+
+            const error = await gatewaySDK
+                .executeQuote({
+                    quote: offrampQuote(),
+                    walletClient: mockWalletClient,
+                    publicClient: mockPublicClient,
+                })
+                .catch((thrown: unknown) => thrown);
+
+            estimateGasWithBufferSpy.mockRestore();
+
+            expect(error).toBeInstanceOf(ExecuteQuoteError);
+            assert(error instanceof ExecuteQuoteError);
+            expect(error.orderId).toBe('offramp-gas-1');
+            expect(error.cause).toBe(gasError);
+        });
+
         it('does NOT estimate or set gas for a json-rpc (browser-wallet) offramp send', async () => {
             const gatewaySDK = new GatewaySDK();
             mockCreateOrder();
@@ -2659,6 +2964,7 @@ describe('Gateway Tests', () => {
             expect(error.name).toBe('ExecuteQuoteError');
             expect(error.orderId).toBe('order-abc');
             expect(error.cause).toBe(original);
+            expect(error.message).toBe('boom');
         });
 
         it('does not throw when constructed from a frozen Error', () => {
@@ -2666,6 +2972,7 @@ describe('Gateway Tests', () => {
 
             expect(() => new ExecuteQuoteError('order-frozen', frozen)).not.toThrow();
             expect(new ExecuteQuoteError('order-frozen', frozen).cause).toBe(frozen);
+            expect(new ExecuteQuoteError('order-frozen', frozen).message).toBe('frozen');
         });
 
         it('does not throw when constructed from a non-Error plain object', () => {
@@ -2673,6 +2980,37 @@ describe('Gateway Tests', () => {
 
             expect(() => new ExecuteQuoteError('order-rpc', rpcRejection)).not.toThrow();
             expect(new ExecuteQuoteError('order-rpc', rpcRejection).cause).toBe(rpcRejection);
+        });
+
+        it('falls back to the generic message for a non-Error cause', () => {
+            const rpcRejection = { code: 4001, message: 'User rejected the transaction' };
+            const error = new ExecuteQuoteError('order-rpc', rpcRejection);
+
+            expect(error.message).toBe('Failed to execute Gateway quote after order creation');
+        });
+
+        it('falls back to the generic message when the cause has an empty message', () => {
+            const error = new ExecuteQuoteError('order-empty', new Error(''));
+
+            expect(error.message).toBe('Failed to execute Gateway quote after order creation');
+        });
+
+        it('does not throw and falls back to the generic message when cause.message is a hostile getter', () => {
+            const hostile = new Error('will be shadowed');
+            Object.defineProperty(hostile, 'message', {
+                get() {
+                    throw new Error('evil getter');
+                },
+            });
+
+            let error: ExecuteQuoteError | undefined;
+            expect(() => {
+                error = new ExecuteQuoteError('order-hostile', hostile);
+            }).not.toThrow();
+
+            expect(error).toBeInstanceOf(ExecuteQuoteError);
+            expect(error?.message).toBe('Failed to execute Gateway quote after order creation');
+            expect(error?.cause).toBe(hostile);
         });
     });
 });
