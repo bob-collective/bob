@@ -13,6 +13,7 @@ import { privateKeyToAccount } from 'viem/accounts';
 import { afterEach, assert, describe, expect, it, vi } from 'vitest';
 import {
     BitcoinSigner,
+    ExecuteQuoteError,
     ExecuteQuoteStep,
     ExecuteQuoteStepType,
     GatewayError,
@@ -646,14 +647,17 @@ describe('Gateway Tests', () => {
 
         const mockPublicClient = {} as PublicClient<Transport>;
 
-        await expect(
-            gatewaySDK.executeQuote({
-                quote: mockQuote,
-                walletClient: mockWalletClient,
-                publicClient: mockPublicClient,
-                btcSigner: mockBtcSigner,
-            })
-        ).rejects.toThrow('Failed to get signed transaction');
+        const executeQuotePromise = gatewaySDK.executeQuote({
+            quote: mockQuote,
+            walletClient: mockWalletClient,
+            publicClient: mockPublicClient,
+            btcSigner: mockBtcSigner,
+        });
+
+        await expect(executeQuotePromise).rejects.toThrow('Failed to get signed transaction');
+        await expect(executeQuotePromise).rejects.toMatchObject({
+            orderId: mockOrderId,
+        } satisfies Partial<ExecuteQuoteError>);
     });
 
     it('should execute offramp quote with token approval', async () => {
@@ -742,6 +746,64 @@ describe('Gateway Tests', () => {
         expect(result.order).toEqual(
             expect.objectContaining({ offramp: expect.objectContaining({ orderId: 'offramp-order-123' }) })
         );
+    });
+
+    it('should attach orderId to the thrown error when the offramp send transaction fails', async () => {
+        const gatewaySDK = new GatewaySDK();
+
+        const mockQuote: GatewayQuoteV3OneOf = {
+            offramp: {
+                txTo: '0x1234567890123456789012345678901234567890',
+                recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+                slippage: 300,
+                srcChain: 'bob',
+                feeBreakdown: {
+                    protocolFee: { address: zeroAddress, amount: '5', chain: 'bob' },
+                    affiliateFee: { address: zeroAddress, amount: '2', chain: 'bob' },
+                    inclusionFee: { address: zeroAddress, amount: '1', chain: 'bob' },
+                    solverFee: { address: zeroAddress, amount: '1', chain: 'bob' },
+                    fastestFeeRate: '6',
+                },
+                inputAmount: { address: zeroAddress, amount: '1000', chain: 'bob' },
+                outputAmount: { address: zeroAddress, amount: '990', chain: 'bob' },
+                tokenAddress: WBTC_OFT_ADDRESS,
+                ownerAddress: '0xabcd1234abcd1234abcd1234abcd1234abcd1234',
+                totalFeeUsd: '3',
+            },
+        };
+
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
+            .post('/v3/create-order')
+            .reply(200, {
+                offramp: {
+                    order_id: 'offramp-order-throw-456',
+                    tx: { to: '0x1234567890123456789012345678901234567890', data: '0xabcdef', value: '0' },
+                },
+            });
+
+        const mockWalletClient = {
+            account: { address: '0xabcd1234abcd1234abcd1234abcd1234abcd1234' as Address },
+            sendTransaction: async () => {
+                throw new Error('User rejected the transaction');
+            },
+        } as unknown as WalletClient<Transport, ViemChain, Account>;
+
+        const mockPublicClient = {
+            readContract: mockOftReadContract({ approvalRequired: true, allowance: maxUint256 }),
+            multicall: vi.fn().mockResolvedValue([maxUint256]),
+            waitForTransactionReceipt: vi.fn().mockResolvedValue({}),
+        } as unknown as PublicClient<Transport>;
+
+        const executeQuotePromise = gatewaySDK.executeQuote({
+            quote: mockQuote,
+            walletClient: mockWalletClient,
+            publicClient: mockPublicClient,
+        });
+
+        await expect(executeQuotePromise).rejects.toThrow('User rejected the transaction');
+        await expect(executeQuotePromise).rejects.toMatchObject({
+            orderId: 'offramp-order-throw-456',
+        } satisfies Partial<ExecuteQuoteError>);
     });
 
     it('should approve WBTC on bob offramp', async () => {
@@ -1500,6 +1562,60 @@ describe('Gateway Tests', () => {
         expect(waitForTransactionReceipt).toHaveBeenCalledTimes(2);
     });
 
+    it('should attach orderId to the thrown error when the tokenSwap send transaction fails', async () => {
+        const mockedQuote: GatewayQuoteV2OneOf2 = {
+            tokenSwap: {
+                dstChain: 'bob',
+                estimatedTimeInSecs: 60,
+                fees: { amount: '0', address: WBTC_OFT_ADDRESS, chain: 'bob' },
+                inputAmount: {
+                    amount: '100000',
+                    address: '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599',
+                    chain: 'ethereum',
+                },
+                outputAmount: { amount: '100000', address: WBTC_OFT_ADDRESS, chain: 'bob' },
+                recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+                slippage: 100,
+                srcChain: 'ethereum',
+                txTo: WBTC_OFT_ADDRESS,
+            },
+        };
+
+        const gatewaySDK = new GatewaySDK();
+
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
+            .post('/v3/create-order')
+            .reply(200, {
+                tokenSwap: {
+                    order_id: 'tokenswap-order-throw-789',
+                    tx: { to: WBTC_OFT_ADDRESS, data: '0xabcdef', value: '0' },
+                },
+            });
+
+        const mockWalletClient = {
+            account: { address: '0x1234567890123456789012345678901234567890' as Address },
+            sendTransaction: async () => {
+                throw new Error('User rejected the transaction');
+            },
+        } as unknown as WalletClient<Transport, ViemChain, Account>;
+
+        const mockPublicClient = {
+            readContract: mockOftReadContract({ approvalRequired: true, allowance: 100000n }),
+            waitForTransactionReceipt: vi.fn().mockResolvedValue({}),
+        } as unknown as PublicClient<Transport>;
+
+        const executeQuotePromise = gatewaySDK.executeQuote({
+            quote: mockedQuote,
+            walletClient: mockWalletClient,
+            publicClient: mockPublicClient,
+        });
+
+        await expect(executeQuotePromise).rejects.toThrow('User rejected the transaction');
+        await expect(executeQuotePromise).rejects.toMatchObject({
+            orderId: 'tokenswap-order-throw-789',
+        } satisfies Partial<ExecuteQuoteError>);
+    });
+
     it('should skip approval when allowance is sufficient for layerzero swap', async () => {
         const mockedQuote: GatewayQuoteV2OneOf2 = {
             tokenSwap: {
@@ -1809,6 +1925,7 @@ describe('Gateway Tests', () => {
             step: 1,
             type: ExecuteQuoteStepType.SignBitcoinTransaction,
             totalSteps: 1,
+            orderId: 'order-123',
         });
     });
 
@@ -1912,6 +2029,7 @@ describe('Gateway Tests', () => {
             step: 1,
             type: ExecuteQuoteStepType.SendTransaction,
             totalSteps: 1,
+            orderId: 'offramp-order-cb-456',
         });
     });
 
@@ -1965,11 +2083,17 @@ describe('Gateway Tests', () => {
         });
 
         expect(callback).toHaveBeenCalledTimes(2);
-        expect(callback.mock.calls[0][0]).toEqual({ step: 1, type: ExecuteQuoteStepType.Approve, totalSteps: 2 });
+        expect(callback.mock.calls[0][0]).toEqual({
+            step: 1,
+            type: ExecuteQuoteStepType.Approve,
+            totalSteps: 2,
+            orderId: 'offramp-order-cb-789',
+        });
         expect(callback.mock.calls[1][0]).toEqual({
             step: 2,
             type: ExecuteQuoteStepType.SendTransaction,
             totalSteps: 2,
+            orderId: 'offramp-order-cb-789',
         });
     });
 
@@ -2023,12 +2147,23 @@ describe('Gateway Tests', () => {
         });
 
         expect(callback).toHaveBeenCalledTimes(3);
-        expect(callback.mock.calls[0][0]).toEqual({ step: 1, type: ExecuteQuoteStepType.ResetApproval, totalSteps: 3 });
-        expect(callback.mock.calls[1][0]).toEqual({ step: 2, type: ExecuteQuoteStepType.Approve, totalSteps: 3 });
+        expect(callback.mock.calls[0][0]).toEqual({
+            step: 1,
+            type: ExecuteQuoteStepType.ResetApproval,
+            totalSteps: 3,
+            orderId: 'offramp-usdt-cb-order',
+        });
+        expect(callback.mock.calls[1][0]).toEqual({
+            step: 2,
+            type: ExecuteQuoteStepType.Approve,
+            totalSteps: 3,
+            orderId: 'offramp-usdt-cb-order',
+        });
         expect(callback.mock.calls[2][0]).toEqual({
             step: 3,
             type: ExecuteQuoteStepType.SendTransaction,
             totalSteps: 3,
+            orderId: 'offramp-usdt-cb-order',
         });
     });
 
@@ -2080,6 +2215,7 @@ describe('Gateway Tests', () => {
             step: 1,
             type: ExecuteQuoteStepType.SendTransaction,
             totalSteps: 1,
+            orderId: 'lz-cb-no-approval',
         });
     });
 
@@ -2129,11 +2265,17 @@ describe('Gateway Tests', () => {
         });
 
         expect(callback).toHaveBeenCalledTimes(2);
-        expect(callback.mock.calls[0][0]).toEqual({ step: 1, type: ExecuteQuoteStepType.Approve, totalSteps: 2 });
+        expect(callback.mock.calls[0][0]).toEqual({
+            step: 1,
+            type: ExecuteQuoteStepType.Approve,
+            totalSteps: 2,
+            orderId: 'lz-cb-approval',
+        });
         expect(callback.mock.calls[1][0]).toEqual({
             step: 2,
             type: ExecuteQuoteStepType.SendTransaction,
             totalSteps: 2,
+            orderId: 'lz-cb-approval',
         });
     });
 

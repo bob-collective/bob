@@ -37,6 +37,7 @@ import {
 import type { GatewayError as GatewayErrorInterface } from './generated-client/models/GatewayError';
 import {
     type BitcoinSigner,
+    type ExecuteQuoteError,
     type ExecuteQuoteStep,
     ExecuteQuoteStepType,
     type GetQuoteParams,
@@ -45,6 +46,16 @@ import {
 import { estimateGasWithBuffer, formatBtc, isValidTronAddress, tronAddressToHex } from './utils';
 
 const RETRY_COUNT = 8; // Number of times to retry fetching transaction receipt after sending a transaction
+
+/**
+ * Tags an error thrown after order creation with the Gateway `orderId`, mutating it in
+ * place so its identity, message, and stack are preserved for existing callers.
+ */
+function attachOrderId(error: unknown, orderId: string): void {
+    if (error instanceof Error) {
+        (error as ExecuteQuoteError).orderId = orderId;
+    }
+}
 
 /**
  * Resolve the `account` to pass to viem write/simulate/send calls.
@@ -273,50 +284,67 @@ export class GatewayApiClient {
                 return { order };
             }
 
-            let bitcoinTxHex: string;
-            if (btcSigner.sendBitcoin) {
-                callback?.({ step: 1, type: ExecuteQuoteStepType.SignBitcoinTransaction, totalSteps: 1 });
-                bitcoinTxHex = await btcSigner.sendBitcoin({
-                    from: quote.onramp.sender,
-                    to: order.onramp.address,
-                    value: formatBtc(BigInt(quote.onramp.inputAmount.amount)),
-                    opReturn: order.onramp.opReturnData || undefined,
-                    // isSignet: this.isSignet,
-                });
-            } else if (btcSigner.signAllInputs) {
-                if (!order.onramp.psbtHex) {
-                    throw new Error('PSBT not available: sender address is required when using signAllInputs');
+            const orderId = order.onramp.orderId;
+
+            try {
+                let bitcoinTxHex: string;
+                if (btcSigner.sendBitcoin) {
+                    callback?.({
+                        step: 1,
+                        type: ExecuteQuoteStepType.SignBitcoinTransaction,
+                        totalSteps: 1,
+                        orderId,
+                    });
+                    bitcoinTxHex = await btcSigner.sendBitcoin({
+                        from: quote.onramp.sender,
+                        to: order.onramp.address,
+                        value: formatBtc(BigInt(quote.onramp.inputAmount.amount)),
+                        opReturn: order.onramp.opReturnData || undefined,
+                        // isSignet: this.isSignet,
+                    });
+                } else if (btcSigner.signAllInputs) {
+                    if (!order.onramp.psbtHex) {
+                        throw new Error('PSBT not available: sender address is required when using signAllInputs');
+                    }
+                    callback?.({
+                        step: 1,
+                        type: ExecuteQuoteStepType.SignBitcoinTransaction,
+                        totalSteps: 1,
+                        orderId,
+                    });
+                    bitcoinTxHex = await btcSigner.signAllInputs(order.onramp.psbtHex);
+                } else {
+                    throw new Error('btcSigner must implement either sendBitcoin or signAllInputs method');
                 }
-                callback?.({ step: 1, type: ExecuteQuoteStepType.SignBitcoinTransaction, totalSteps: 1 });
-                bitcoinTxHex = await btcSigner.signAllInputs(order.onramp.psbtHex);
-            } else {
-                throw new Error('btcSigner must implement either sendBitcoin or signAllInputs method');
-            }
 
-            // bitcoinTxOrId = stripHexPrefix(bitcoinTxOrId);
-            if (!bitcoinTxHex) throw new Error('Failed to get signed transaction');
+                // bitcoinTxOrId = stripHexPrefix(bitcoinTxOrId);
+                if (!bitcoinTxHex) throw new Error('Failed to get signed transaction');
 
-            const tx = await this.api.registerTxV3(
-                {
-                    registerTxV3: {
-                        onramp: {
-                            orderId: order.onramp.orderId,
-                            bitcoinTxHex: bitcoinTxHex,
+                const tx = await this.api.registerTxV3(
+                    {
+                        registerTxV3: {
+                            onramp: {
+                                orderId: order.onramp.orderId,
+                                bitcoinTxHex: bitcoinTxHex,
+                            },
                         },
                     },
-                },
-                initOverrides
-            );
+                    initOverrides
+                );
 
-            if (typeof tx === 'string') {
-                return { order, tx };
+                if (typeof tx === 'string') {
+                    return { order, tx };
+                }
+
+                if (!instanceOfRegisterTxOneOf(tx)) {
+                    throw new Error('Invalid registerTx response type');
+                }
+
+                return { order, tx: tx.onramp.txid };
+            } catch (error) {
+                attachOrderId(error, orderId);
+                throw error;
             }
-
-            if (!instanceOfRegisterTxOneOf(tx)) {
-                throw new Error('Invalid registerTx response type');
-            }
-
-            return { order, tx: tx.onramp.txid };
         } else if (instanceOfGatewayQuoteV3OneOf(quote)) {
             if (!walletClient.account) {
                 throw new Error(`walletClient is required for offramp order`);
@@ -333,123 +361,130 @@ export class GatewayApiClient {
                 throw new Error('Invalid order type returned from API');
             }
 
-            const spenderAddress = order.offramp.tx.to as Address;
-
-            let allowance = maxUint256;
-            let requiresApproval = false;
-
-            const requiresApprove =
-                (isValidTronAddress(tokenAddress) &&
-                    !isAddressEqual(tronAddressToHex(tokenAddress) as Address, zeroAddress)) ||
-                (isAddress(tokenAddress) && !isAddressEqual(tokenAddress, zeroAddress));
-
-            // Some receiver contracts (eg certain OFTs) do not require approvals, we check that here
-            if (requiresApprove) {
-                requiresApproval = await publicClient
-                    .readContract({
-                        address: spenderAddress,
-                        abi: oftApprovalRequiredAbi,
-                        functionName: 'approvalRequired',
-                    })
-                    .then((required) => Boolean(required))
-                    .catch(() => true);
-
-                if (requiresApproval) {
-                    // If the OFT requires approval, we check the allowance already set
-                    allowance = await publicClient.readContract({
-                        address: tokenAddress as Address,
-                        abi: erc20Abi,
-                        functionName: 'allowance',
-                        args: [accountAddress, spenderAddress],
-                    });
-                }
-            }
-
-            const needsApproval = requiresApproval && requiredAmount > allowance && requiresApprove;
-            // Only for USDT on Ethereum, we need to reset the allowance to 0 before approving again because of a quirk in their implementation
-            const needsReset =
-                needsApproval &&
-                isAddress(tokenAddress) &&
-                isAddressEqual(tokenAddress, ETHEREUM_USDT_ADDRESS) &&
-                allowance !== 0n;
-
-            const totalSteps = needsReset ? 3 : needsApproval ? 2 : 1;
-
-            if (needsApproval) {
-                // To change the USDT approval, first set the allowance to 0 (approve(_spender, 0))
-                // to avoid the ERC20 race condition:
-                // https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
-                if (needsReset) {
-                    const { request: resetRequest } = await publicClient.simulateContract({
-                        account: signerAccount(walletClient),
-                        address: tokenAddress,
-                        abi: USDTApproveAbi,
-                        functionName: 'approve',
-                        args: [spenderAddress, 0n],
-                    });
-                    callback?.({ step: 1, type: ExecuteQuoteStepType.ResetApproval, totalSteps });
-                    const resetTxHash = await walletClient.writeContract(resetRequest);
-                    await publicClient.waitForTransactionReceipt({ hash: resetTxHash, retryCount: RETRY_COUNT });
-                }
-
-                const { request } = await publicClient.simulateContract({
-                    account: signerAccount(walletClient),
-                    address: tokenAddress as Address,
-                    abi:
-                        isAddress(tokenAddress as Address) &&
-                        isAddressEqual(tokenAddress as Address, ETHEREUM_USDT_ADDRESS)
-                            ? USDTApproveAbi
-                            : erc20Abi,
-                    functionName: 'approve',
-                    args: [spenderAddress, requiredAmount],
-                });
-
-                callback?.({ step: needsReset ? 2 : 1, type: ExecuteQuoteStepType.Approve, totalSteps });
-                const approveTxHash = await walletClient.writeContract(request);
-                await publicClient.waitForTransactionReceipt({ hash: approveTxHash, retryCount: RETRY_COUNT });
-            }
-
-            callback?.({ step: totalSteps, type: ExecuteQuoteStepType.SendTransaction, totalSteps });
-            const offrampData = order.offramp.tx.data as Hex;
-            const offrampValue = BigInt(order.offramp.tx.value || 0);
-            const offrampGas =
-                walletClient.account.type === 'local'
-                    ? await estimateGasWithBuffer(publicClient, walletClient.account, {
-                          to: spenderAddress,
-                          data: offrampData,
-                          value: offrampValue,
-                      })
-                    : undefined;
-
-            const transactionHash = await walletClient.sendTransaction({
-                account: signerAccount(walletClient),
-                data: offrampData,
-                to: spenderAddress,
-                value: offrampValue,
-                ...(offrampGas !== undefined && { gas: offrampGas }),
-            });
-
-            await publicClient?.waitForTransactionReceipt({ hash: transactionHash, retryCount: RETRY_COUNT });
+            const orderId = order.offramp.orderId;
 
             try {
-                await this.api.registerTxV3(
-                    {
-                        registerTxV3: {
-                            offramp: {
-                                srcTxHash: transactionHash,
-                                orderId: order.offramp.orderId,
-                                srcChain: quote.offramp.srcChain,
+                const spenderAddress = order.offramp.tx.to as Address;
+
+                let allowance = maxUint256;
+                let requiresApproval = false;
+
+                const requiresApprove =
+                    (isValidTronAddress(tokenAddress) &&
+                        !isAddressEqual(tronAddressToHex(tokenAddress) as Address, zeroAddress)) ||
+                    (isAddress(tokenAddress) && !isAddressEqual(tokenAddress, zeroAddress));
+
+                // Some receiver contracts (eg certain OFTs) do not require approvals, we check that here
+                if (requiresApprove) {
+                    requiresApproval = await publicClient
+                        .readContract({
+                            address: spenderAddress,
+                            abi: oftApprovalRequiredAbi,
+                            functionName: 'approvalRequired',
+                        })
+                        .then((required) => Boolean(required))
+                        .catch(() => true);
+
+                    if (requiresApproval) {
+                        // If the OFT requires approval, we check the allowance already set
+                        allowance = await publicClient.readContract({
+                            address: tokenAddress as Address,
+                            abi: erc20Abi,
+                            functionName: 'allowance',
+                            args: [accountAddress, spenderAddress],
+                        });
+                    }
+                }
+
+                const needsApproval = requiresApproval && requiredAmount > allowance && requiresApprove;
+                // Only for USDT on Ethereum, we need to reset the allowance to 0 before approving again because of a quirk in their implementation
+                const needsReset =
+                    needsApproval &&
+                    isAddress(tokenAddress) &&
+                    isAddressEqual(tokenAddress, ETHEREUM_USDT_ADDRESS) &&
+                    allowance !== 0n;
+
+                const totalSteps = needsReset ? 3 : needsApproval ? 2 : 1;
+
+                if (needsApproval) {
+                    // To change the USDT approval, first set the allowance to 0 (approve(_spender, 0))
+                    // to avoid the ERC20 race condition:
+                    // https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
+                    if (needsReset) {
+                        const { request: resetRequest } = await publicClient.simulateContract({
+                            account: signerAccount(walletClient),
+                            address: tokenAddress,
+                            abi: USDTApproveAbi,
+                            functionName: 'approve',
+                            args: [spenderAddress, 0n],
+                        });
+                        callback?.({ step: 1, type: ExecuteQuoteStepType.ResetApproval, totalSteps, orderId });
+                        const resetTxHash = await walletClient.writeContract(resetRequest);
+                        await publicClient.waitForTransactionReceipt({ hash: resetTxHash, retryCount: RETRY_COUNT });
+                    }
+
+                    const { request } = await publicClient.simulateContract({
+                        account: signerAccount(walletClient),
+                        address: tokenAddress as Address,
+                        abi:
+                            isAddress(tokenAddress as Address) &&
+                            isAddressEqual(tokenAddress as Address, ETHEREUM_USDT_ADDRESS)
+                                ? USDTApproveAbi
+                                : erc20Abi,
+                        functionName: 'approve',
+                        args: [spenderAddress, requiredAmount],
+                    });
+
+                    callback?.({ step: needsReset ? 2 : 1, type: ExecuteQuoteStepType.Approve, totalSteps, orderId });
+                    const approveTxHash = await walletClient.writeContract(request);
+                    await publicClient.waitForTransactionReceipt({ hash: approveTxHash, retryCount: RETRY_COUNT });
+                }
+
+                callback?.({ step: totalSteps, type: ExecuteQuoteStepType.SendTransaction, totalSteps, orderId });
+                const offrampData = order.offramp.tx.data as Hex;
+                const offrampValue = BigInt(order.offramp.tx.value || 0);
+                const offrampGas =
+                    walletClient.account.type === 'local'
+                        ? await estimateGasWithBuffer(publicClient, walletClient.account, {
+                              to: spenderAddress,
+                              data: offrampData,
+                              value: offrampValue,
+                          })
+                        : undefined;
+
+                const transactionHash = await walletClient.sendTransaction({
+                    account: signerAccount(walletClient),
+                    data: offrampData,
+                    to: spenderAddress,
+                    value: offrampValue,
+                    ...(offrampGas !== undefined && { gas: offrampGas }),
+                });
+
+                await publicClient?.waitForTransactionReceipt({ hash: transactionHash, retryCount: RETRY_COUNT });
+
+                try {
+                    await this.api.registerTxV3(
+                        {
+                            registerTxV3: {
+                                offramp: {
+                                    srcTxHash: transactionHash,
+                                    orderId: order.offramp.orderId,
+                                    srcChain: quote.offramp.srcChain,
+                                },
                             },
                         },
-                    },
-                    initOverrides
-                );
-            } catch {
-                // Best-effort: the on-chain tx already succeeded, so return the result
-                // even if registration fails. The order can be reconciled later.
-            }
+                        initOverrides
+                    );
+                } catch {
+                    // Best-effort: the on-chain tx already succeeded, so return the result
+                    // even if registration fails. The order can be reconciled later.
+                }
 
-            return { order, tx: transactionHash };
+                return { order, tx: transactionHash };
+            } catch (error) {
+                attachOrderId(error, orderId);
+                throw error;
+            }
         } else if (instanceOfGatewayQuoteV2OneOf2(quote)) {
             const tokenAddress = quote.tokenSwap.inputAmount.address;
             const requiredAmount = BigInt(quote.tokenSwap.inputAmount.amount);
@@ -507,96 +542,111 @@ export class GatewayApiClient {
                 throw new Error('Invalid order type returned from API');
             }
 
-            if (needsApproval) {
-                // ERC20 token
-                try {
-                    // To change the USDT approval, first set the allowance to 0 (approve(_spender, 0))
-                    // to avoid the ERC20 race condition:
-                    // https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
-                    if (needsReset) {
-                        const { request: resetRequest } = await publicClient.simulateContract({
-                            account: signerAccount(walletClient),
-                            address: tokenAddress as Address,
-                            abi: USDTApproveAbi,
-                            functionName: 'approve',
-                            args: [receiver, 0n],
-                        });
-                        callback?.({ step: 1, type: ExecuteQuoteStepType.ResetApproval, totalSteps });
-                        const resetTxHash = await walletClient.writeContract(resetRequest);
-                        await publicClient.waitForTransactionReceipt({ hash: resetTxHash, retryCount: RETRY_COUNT });
-                    }
-
-                    const { request } = await publicClient.simulateContract({
-                        account: signerAccount(walletClient),
-                        address: tokenAddress as Address,
-                        abi:
-                            isAddress(tokenAddress) && isAddressEqual(tokenAddress, ETHEREUM_USDT_ADDRESS)
-                                ? USDTApproveAbi
-                                : erc20Abi,
-                        functionName: 'approve',
-                        args: [receiver, requiredAmount],
-                    });
-
-                    callback?.({ step: needsReset ? 2 : 1, type: ExecuteQuoteStepType.Approve, totalSteps });
-                    const txHash = await walletClient.writeContract(request);
-
-                    await publicClient.waitForTransactionReceipt({ hash: txHash, retryCount: RETRY_COUNT });
-                } catch (error) {
-                    if (error instanceof ContractFunctionExecutionError) {
-                        // https://github.com/wevm/viem/blob/3aa882692d2c4af3f5e9cc152099e07cde28e551/src/actions/public/simulateContract.test.ts#L711
-                        // throw new error
-                        throw new Error(
-                            'Insufficient native funds for source and destination gas fees, please add more native funds to your account',
-                            { cause: error }
-                        );
-                    }
-
-                    throw error;
-                }
-            }
-
-            callback?.({ step: totalSteps, type: ExecuteQuoteStepType.SendTransaction, totalSteps });
-            const tokenSwapTo = order.tokenSwap.tx.to as Address;
-            const tokenSwapData = order.tokenSwap.tx.data as Hex;
-            const tokenSwapValue = BigInt(order.tokenSwap.tx.value || 0);
-            const tokenSwapGas =
-                walletClient.account.type === 'local'
-                    ? await estimateGasWithBuffer(publicClient, walletClient.account, {
-                          to: tokenSwapTo,
-                          data: tokenSwapData,
-                          value: tokenSwapValue,
-                      })
-                    : undefined;
-
-            const transactionHash = await walletClient.sendTransaction({
-                account: signerAccount(walletClient),
-                data: tokenSwapData,
-                to: tokenSwapTo,
-                value: tokenSwapValue,
-                ...(tokenSwapGas !== undefined && { gas: tokenSwapGas }),
-            });
-
-            await publicClient.waitForTransactionReceipt({ hash: transactionHash, retryCount: RETRY_COUNT });
+            const orderId = order.tokenSwap.orderId;
 
             try {
-                await this.api.registerTxV3(
-                    {
-                        registerTxV3: {
-                            tokenSwap: {
-                                srcTxHash: transactionHash,
-                                orderId: order.tokenSwap.orderId,
-                                srcChain: quote.tokenSwap.srcChain,
+                if (needsApproval) {
+                    // ERC20 token
+                    try {
+                        // To change the USDT approval, first set the allowance to 0 (approve(_spender, 0))
+                        // to avoid the ERC20 race condition:
+                        // https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
+                        if (needsReset) {
+                            const { request: resetRequest } = await publicClient.simulateContract({
+                                account: signerAccount(walletClient),
+                                address: tokenAddress as Address,
+                                abi: USDTApproveAbi,
+                                functionName: 'approve',
+                                args: [receiver, 0n],
+                            });
+                            callback?.({ step: 1, type: ExecuteQuoteStepType.ResetApproval, totalSteps, orderId });
+                            const resetTxHash = await walletClient.writeContract(resetRequest);
+                            await publicClient.waitForTransactionReceipt({
+                                hash: resetTxHash,
+                                retryCount: RETRY_COUNT,
+                            });
+                        }
+
+                        const { request } = await publicClient.simulateContract({
+                            account: signerAccount(walletClient),
+                            address: tokenAddress as Address,
+                            abi:
+                                isAddress(tokenAddress) && isAddressEqual(tokenAddress, ETHEREUM_USDT_ADDRESS)
+                                    ? USDTApproveAbi
+                                    : erc20Abi,
+                            functionName: 'approve',
+                            args: [receiver, requiredAmount],
+                        });
+
+                        callback?.({
+                            step: needsReset ? 2 : 1,
+                            type: ExecuteQuoteStepType.Approve,
+                            totalSteps,
+                            orderId,
+                        });
+                        const txHash = await walletClient.writeContract(request);
+
+                        await publicClient.waitForTransactionReceipt({ hash: txHash, retryCount: RETRY_COUNT });
+                    } catch (error) {
+                        if (error instanceof ContractFunctionExecutionError) {
+                            // https://github.com/wevm/viem/blob/3aa882692d2c4af3f5e9cc152099e07cde28e551/src/actions/public/simulateContract.test.ts#L711
+                            // throw new error
+                            throw new Error(
+                                'Insufficient native funds for source and destination gas fees, please add more native funds to your account',
+                                { cause: error }
+                            );
+                        }
+
+                        throw error;
+                    }
+                }
+
+                callback?.({ step: totalSteps, type: ExecuteQuoteStepType.SendTransaction, totalSteps, orderId });
+                const tokenSwapTo = order.tokenSwap.tx.to as Address;
+                const tokenSwapData = order.tokenSwap.tx.data as Hex;
+                const tokenSwapValue = BigInt(order.tokenSwap.tx.value || 0);
+                const tokenSwapGas =
+                    walletClient.account.type === 'local'
+                        ? await estimateGasWithBuffer(publicClient, walletClient.account, {
+                              to: tokenSwapTo,
+                              data: tokenSwapData,
+                              value: tokenSwapValue,
+                          })
+                        : undefined;
+
+                const transactionHash = await walletClient.sendTransaction({
+                    account: signerAccount(walletClient),
+                    data: tokenSwapData,
+                    to: tokenSwapTo,
+                    value: tokenSwapValue,
+                    ...(tokenSwapGas !== undefined && { gas: tokenSwapGas }),
+                });
+
+                await publicClient.waitForTransactionReceipt({ hash: transactionHash, retryCount: RETRY_COUNT });
+
+                try {
+                    await this.api.registerTxV3(
+                        {
+                            registerTxV3: {
+                                tokenSwap: {
+                                    srcTxHash: transactionHash,
+                                    orderId: order.tokenSwap.orderId,
+                                    srcChain: quote.tokenSwap.srcChain,
+                                },
                             },
                         },
-                    },
-                    initOverrides
-                );
-            } catch {
-                // Best-effort: the on-chain tx already succeeded, so return the result
-                // even if registration fails. The order can be reconciled later.
-            }
+                        initOverrides
+                    );
+                } catch {
+                    // Best-effort: the on-chain tx already succeeded, so return the result
+                    // even if registration fails. The order can be reconciled later.
+                }
 
-            return { order, tx: transactionHash };
+                return { order, tx: transactionHash };
+            } catch (error) {
+                attachOrderId(error, orderId);
+                throw error;
+            }
         }
 
         throw new Error('Invalid quote type');

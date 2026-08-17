@@ -17,7 +17,14 @@ export {
     type UnableToCoverFeesDetails,
 } from './error/gateway-error';
 export * from './generated-client';
-export { BitcoinSigner, ExecuteQuoteStep, ExecuteQuoteStepType, GatewayQuoteParams, GetQuoteParams } from './types';
+export {
+    BitcoinSigner,
+    ExecuteQuoteError,
+    ExecuteQuoteStep,
+    ExecuteQuoteStepType,
+    GatewayQuoteParams,
+    GetQuoteParams,
+} from './types';
 export {
     formatBtc,
     getChainConfig,
