@@ -647,17 +647,21 @@ describe('Gateway Tests', () => {
 
         const mockPublicClient = {} as PublicClient<Transport>;
 
-        const executeQuotePromise = gatewaySDK.executeQuote({
-            quote: mockQuote,
-            walletClient: mockWalletClient,
-            publicClient: mockPublicClient,
-            btcSigner: mockBtcSigner,
-        });
+        const error = await gatewaySDK
+            .executeQuote({
+                quote: mockQuote,
+                walletClient: mockWalletClient,
+                publicClient: mockPublicClient,
+                btcSigner: mockBtcSigner,
+            })
+            .catch((thrown: unknown) => thrown);
 
-        await expect(executeQuotePromise).rejects.toThrow('Failed to get signed transaction');
-        await expect(executeQuotePromise).rejects.toMatchObject({
-            orderId: mockOrderId,
-        } satisfies Partial<ExecuteQuoteError>);
+        expect(error).toBeInstanceOf(ExecuteQuoteError);
+        assert(error instanceof ExecuteQuoteError);
+        expect(error.orderId).toBe(mockOrderId);
+        expect(error.cause).toBeInstanceOf(Error);
+        assert(error.cause instanceof Error);
+        expect(error.cause.message).toBe('Failed to get signed transaction');
     });
 
     it('should execute offramp quote with token approval', async () => {
@@ -781,10 +785,14 @@ describe('Gateway Tests', () => {
                 },
             });
 
+        // Plain RPC-style rejection (no Error instance), as commonly thrown by wallet
+        // adapters (e.g. OKX, Reown/AppKit) on user rejection.
+        const walletRejection = { code: 4001, message: 'User rejected the transaction' };
+
         const mockWalletClient = {
             account: { address: '0xabcd1234abcd1234abcd1234abcd1234abcd1234' as Address },
             sendTransaction: async () => {
-                throw new Error('User rejected the transaction');
+                throw walletRejection;
             },
         } as unknown as WalletClient<Transport, ViemChain, Account>;
 
@@ -794,16 +802,18 @@ describe('Gateway Tests', () => {
             waitForTransactionReceipt: vi.fn().mockResolvedValue({}),
         } as unknown as PublicClient<Transport>;
 
-        const executeQuotePromise = gatewaySDK.executeQuote({
-            quote: mockQuote,
-            walletClient: mockWalletClient,
-            publicClient: mockPublicClient,
-        });
+        const error = await gatewaySDK
+            .executeQuote({
+                quote: mockQuote,
+                walletClient: mockWalletClient,
+                publicClient: mockPublicClient,
+            })
+            .catch((thrown: unknown) => thrown);
 
-        await expect(executeQuotePromise).rejects.toThrow('User rejected the transaction');
-        await expect(executeQuotePromise).rejects.toMatchObject({
-            orderId: 'offramp-order-throw-456',
-        } satisfies Partial<ExecuteQuoteError>);
+        expect(error).toBeInstanceOf(ExecuteQuoteError);
+        assert(error instanceof ExecuteQuoteError);
+        expect(error.orderId).toBe('offramp-order-throw-456');
+        expect(error.cause).toBe(walletRejection);
     });
 
     it('should approve WBTC on bob offramp', async () => {
@@ -1604,16 +1614,20 @@ describe('Gateway Tests', () => {
             waitForTransactionReceipt: vi.fn().mockResolvedValue({}),
         } as unknown as PublicClient<Transport>;
 
-        const executeQuotePromise = gatewaySDK.executeQuote({
-            quote: mockedQuote,
-            walletClient: mockWalletClient,
-            publicClient: mockPublicClient,
-        });
+        const error = await gatewaySDK
+            .executeQuote({
+                quote: mockedQuote,
+                walletClient: mockWalletClient,
+                publicClient: mockPublicClient,
+            })
+            .catch((thrown: unknown) => thrown);
 
-        await expect(executeQuotePromise).rejects.toThrow('User rejected the transaction');
-        await expect(executeQuotePromise).rejects.toMatchObject({
-            orderId: 'tokenswap-order-throw-789',
-        } satisfies Partial<ExecuteQuoteError>);
+        expect(error).toBeInstanceOf(ExecuteQuoteError);
+        assert(error instanceof ExecuteQuoteError);
+        expect(error.orderId).toBe('tokenswap-order-throw-789');
+        expect(error.cause).toBeInstanceOf(Error);
+        assert(error.cause instanceof Error);
+        expect(error.cause.message).toBe('User rejected the transaction');
     });
 
     it('should skip approval when allowance is sufficient for layerzero swap', async () => {
@@ -2632,6 +2646,33 @@ describe('Gateway Tests', () => {
                 expect.objectContaining({ to: tokenSwapTo, data: '0xabcdef', value: 0n })
             );
             expect(sendTransactionMock).toHaveBeenCalledWith(expect.objectContaining({ gas: 1_374_362n }));
+        });
+    });
+
+    describe('ExecuteQuoteError', () => {
+        it('is a real class instance carrying orderId and the original error as cause', () => {
+            const original = new Error('boom');
+            const error = new ExecuteQuoteError('order-abc', original);
+
+            expect(error).toBeInstanceOf(Error);
+            expect(error).toBeInstanceOf(ExecuteQuoteError);
+            expect(error.name).toBe('ExecuteQuoteError');
+            expect(error.orderId).toBe('order-abc');
+            expect(error.cause).toBe(original);
+        });
+
+        it('does not throw when constructed from a frozen Error', () => {
+            const frozen = Object.freeze(new Error('frozen'));
+
+            expect(() => new ExecuteQuoteError('order-frozen', frozen)).not.toThrow();
+            expect(new ExecuteQuoteError('order-frozen', frozen).cause).toBe(frozen);
+        });
+
+        it('does not throw when constructed from a non-Error plain object', () => {
+            const rpcRejection = { code: 4001, message: 'User rejected the transaction' };
+
+            expect(() => new ExecuteQuoteError('order-rpc', rpcRejection)).not.toThrow();
+            expect(new ExecuteQuoteError('order-rpc', rpcRejection).cause).toBe(rpcRejection);
         });
     });
 });

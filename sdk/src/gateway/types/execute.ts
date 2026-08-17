@@ -17,11 +17,18 @@ export interface ExecuteQuoteStep {
 }
 
 /**
- * Error thrown by {@link GatewayApiClient.executeQuote} once order creation has succeeded.
- * Carries the Gateway `orderId` so failures during signing, approval, or send can be
- * cross-referenced against the order record, without altering the original error's
- * identity, message, or stack.
+ * Error thrown by {@link GatewayApiClient.executeQuote} when a signing, approval, or send
+ * operation fails after order creation has succeeded. Carries the Gateway `orderId` so the
+ * failure can be cross-referenced against the order record. The original error is preserved
+ * as `cause` rather than folded into `message`, since a hostile/custom `message` getter on
+ * the original error could itself throw during construction.
  */
-export interface ExecuteQuoteError extends Error {
-    orderId?: string;
+export class ExecuteQuoteError extends Error {
+    readonly orderId: string;
+
+    constructor(orderId: string, cause: unknown) {
+        super('Failed to execute Gateway quote after order creation', { cause });
+        this.name = 'ExecuteQuoteError';
+        this.orderId = orderId;
+    }
 }
