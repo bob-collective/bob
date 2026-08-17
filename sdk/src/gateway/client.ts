@@ -47,13 +47,8 @@ import { estimateGasWithBuffer, formatBtc, isValidTronAddress, tronAddressToHex 
 
 const RETRY_COUNT = 8; // Number of times to retry fetching transaction receipt after sending a transaction
 
-/**
- * Runs a single post-order-creation operation (a signer call, an on-chain write, a
- * registration call, ...) and rethrows any failure as an {@link ExecuteQuoteError} carrying
- * the Gateway `orderId`, so it can be cross-referenced against the order record regardless
- * of whether the underlying rejection was an `Error` (wallet SDKs) or a plain object (some
- * wallet RPC rejections, e.g. `{ code, message }`).
- */
+// Rethrows any failure as ExecuteQuoteError(orderId) — handles plain-object wallet RPC
+// rejections (e.g. `{ code, message }`), not just Error instances.
 async function withOrderId<T>(orderId: string, operation: () => Promise<T>): Promise<T> {
     try {
         return await operation();
