@@ -48,8 +48,8 @@ import { estimateGasWithBuffer, formatBtc, isValidTronAddress, tronAddressToHex 
 
 const RETRY_COUNT = 8; // Number of times to retry fetching transaction receipt after sending a transaction
 
-// Called from the catch block of a single fallible operation — never as a closure runner
-// around multiple statements — so each failure stays attributable to the call that produced it.
+// Call from the catch block of a single fallible operation, not as a closure runner —
+// keeps each failure attributable to the call that produced it.
 function withOrderId(orderId: string, error: unknown): ExecuteQuoteError {
     if (error instanceof ExecuteQuoteError && error.orderId === orderId) {
         return error;
@@ -58,9 +58,7 @@ function withOrderId(orderId: string, error: unknown): ExecuteQuoteError {
     return new ExecuteQuoteError(orderId, error);
 }
 
-// viem's simulateContract/writeContract can throw ContractFunctionExecutionError for reasons
-// other than a revert (e.g. insufficient native gas funds), where the low-level message is
-// unhelpful; translate that case into the funds message this flow has always surfaced.
+// viem throws ContractFunctionExecutionError for insufficient gas funds too, not just reverts.
 // https://github.com/wevm/viem/blob/3aa882692d2c4af3f5e9cc152099e07cde28e551/src/actions/public/simulateContract.test.ts#L711
 function translateApprovalError(error: unknown): unknown {
     if (error instanceof ContractFunctionExecutionError) {
