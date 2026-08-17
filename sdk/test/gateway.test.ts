@@ -1517,9 +1517,7 @@ describe('Gateway Tests', () => {
                 },
             });
 
-        nock(`${MAINNET_GATEWAY_BASE_URL}`)
-            .patch('/v3/register-tx')
-            .reply(500, { error: 'registerTx exploded' });
+        nock(`${MAINNET_GATEWAY_BASE_URL}`).patch('/v3/register-tx').reply(500, { error: 'registerTx exploded' });
 
         const mockBtcSigner: BitcoinSigner = {
             signAllInputs: async () => signedTx,
