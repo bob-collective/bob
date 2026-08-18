@@ -2,8 +2,10 @@ import nock from 'nock';
 import {
     Account,
     Address,
+    CallExecutionError,
     ContractFunctionExecutionError,
     erc20Abi,
+    InsufficientFundsError,
     maxUint256,
     PublicClient,
     Transport,
@@ -49,6 +51,29 @@ function mockOftReadContract({ approvalRequired, allowance = 0n }: { approvalReq
 
         return Promise.resolve(allowance);
     });
+}
+
+function createApprovalContractError(cause: Error, spender: Address, amount: bigint) {
+    return new ContractFunctionExecutionError(cause, {
+        abi: erc20Abi,
+        functionName: 'approve',
+        args: [spender, amount],
+    });
+}
+
+// Mirrors viem's own nesting for a real insufficient-funds failure (see getCallError.js /
+// getNodeError.js): ContractFunctionExecutionError -> CallExecutionError -> InsufficientFundsError.
+function createInsufficientFundsApprovalError(spender: Address, amount: bigint) {
+    const insufficientFundsError = new InsufficientFundsError({
+        cause: new Error('insufficient funds for gas * price + value'),
+    });
+    const callExecutionError = new CallExecutionError(insufficientFundsError, {});
+
+    return createApprovalContractError(callExecutionError, spender, amount);
+}
+
+function createRevertApprovalError(spender: Address, amount: bigint) {
+    return createApprovalContractError(new Error('execution reverted'), spender, amount);
 }
 
 afterEach(() => {
@@ -912,6 +937,139 @@ describe('Gateway Tests', () => {
         expect(simulateContractMock).toHaveBeenCalledTimes(1);
         expect(simulateContractMock.mock.calls[0][0].args).toEqual([spenderAddress, 1000n]);
         expect(mockWalletClient.writeContract).toHaveBeenCalledTimes(1);
+    });
+
+    it('attaches orderId and translates an offramp approval failure caused by insufficient funds', async () => {
+        const gatewaySDK = new GatewaySDK();
+
+        const mockQuote: GatewayQuoteV3OneOf = {
+            offramp: {
+                srcChain: 'bob',
+                feeBreakdown: {
+                    protocolFee: { address: zeroAddress, amount: '5', chain: 'bob' },
+                    affiliateFee: { address: zeroAddress, amount: '2', chain: 'bob' },
+                    solverFee: { address: zeroAddress, amount: '1', chain: 'bob' },
+                    inclusionFee: { address: zeroAddress, amount: '1', chain: 'bob' },
+                    fastestFeeRate: '6',
+                },
+                inputAmount: { address: zeroAddress, amount: '1000', chain: 'bob' },
+                outputAmount: { address: zeroAddress, amount: '990', chain: 'bob' },
+                tokenAddress: WBTC_OFT_ADDRESS,
+                ownerAddress: '0xabcd1234abcd1234abcd1234abcd1234abcd1234',
+                recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+                slippage: 0,
+                totalFeeUsd: '3',
+                txTo: zeroAddress,
+            },
+        };
+
+        const spenderAddress: Address = '0x1234567890123456789012345678901234567890';
+
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
+            .post('/v3/create-order')
+            .reply(200, {
+                offramp: {
+                    order_id: 'offramp-gas-funds-order',
+                    tx: { type: 'evm', chain: 'bob', to: spenderAddress, data: '0xabcdef', value: '0' },
+                },
+            });
+
+        const contractError = createInsufficientFundsApprovalError(spenderAddress, 1000n);
+
+        const mockWalletClient = {
+            account: { address: '0xabcd1234abcd1234abcd1234abcd1234abcd1234' as Address },
+            writeContract: vi.fn(),
+            sendTransaction: vi.fn(),
+        } as unknown as WalletClient<Transport, ViemChain, Account>;
+
+        const mockPublicClient = {
+            readContract: mockOftReadContract({ approvalRequired: true }),
+            simulateContract: vi.fn().mockRejectedValue(contractError),
+            waitForTransactionReceipt: vi.fn().mockResolvedValue({}),
+        } as unknown as PublicClient<Transport>;
+
+        const error = await gatewaySDK
+            .executeQuote({
+                quote: mockQuote,
+                walletClient: mockWalletClient,
+                publicClient: mockPublicClient,
+            })
+            .catch((thrown: unknown) => thrown);
+
+        expect(error).toBeInstanceOf(ExecuteQuoteError);
+        assert(error instanceof ExecuteQuoteError);
+        expect(error.orderId).toBe('offramp-gas-funds-order');
+        expect(error.message).toBe(
+            'Insufficient native funds for source and destination gas fees, please add more native funds to your account'
+        );
+        expect(error.cause).toBeInstanceOf(Error);
+        assert(error.cause instanceof Error);
+        expect(error.cause.cause).toBe(contractError);
+    });
+
+    it('does not translate a plain offramp approval revert into the insufficient-funds message', async () => {
+        const gatewaySDK = new GatewaySDK();
+
+        const mockQuote: GatewayQuoteV3OneOf = {
+            offramp: {
+                srcChain: 'bob',
+                feeBreakdown: {
+                    protocolFee: { address: zeroAddress, amount: '5', chain: 'bob' },
+                    affiliateFee: { address: zeroAddress, amount: '2', chain: 'bob' },
+                    solverFee: { address: zeroAddress, amount: '1', chain: 'bob' },
+                    inclusionFee: { address: zeroAddress, amount: '1', chain: 'bob' },
+                    fastestFeeRate: '6',
+                },
+                inputAmount: { address: zeroAddress, amount: '1000', chain: 'bob' },
+                outputAmount: { address: zeroAddress, amount: '990', chain: 'bob' },
+                tokenAddress: WBTC_OFT_ADDRESS,
+                ownerAddress: '0xabcd1234abcd1234abcd1234abcd1234abcd1234',
+                recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+                slippage: 0,
+                totalFeeUsd: '3',
+                txTo: zeroAddress,
+            },
+        };
+
+        const spenderAddress: Address = '0x1234567890123456789012345678901234567890';
+
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
+            .post('/v3/create-order')
+            .reply(200, {
+                offramp: {
+                    order_id: 'offramp-revert-order',
+                    tx: { type: 'evm', chain: 'bob', to: spenderAddress, data: '0xabcdef', value: '0' },
+                },
+            });
+
+        const contractError = createRevertApprovalError(spenderAddress, 1000n);
+
+        const mockWalletClient = {
+            account: { address: '0xabcd1234abcd1234abcd1234abcd1234abcd1234' as Address },
+            writeContract: vi.fn(),
+            sendTransaction: vi.fn(),
+        } as unknown as WalletClient<Transport, ViemChain, Account>;
+
+        const mockPublicClient = {
+            readContract: mockOftReadContract({ approvalRequired: true }),
+            simulateContract: vi.fn().mockRejectedValue(contractError),
+            waitForTransactionReceipt: vi.fn().mockResolvedValue({}),
+        } as unknown as PublicClient<Transport>;
+
+        const error = await gatewaySDK
+            .executeQuote({
+                quote: mockQuote,
+                walletClient: mockWalletClient,
+                publicClient: mockPublicClient,
+            })
+            .catch((thrown: unknown) => thrown);
+
+        expect(error).toBeInstanceOf(ExecuteQuoteError);
+        assert(error instanceof ExecuteQuoteError);
+        expect(error.orderId).toBe('offramp-revert-order');
+        expect(error.message).not.toContain('Insufficient native funds');
+        expect(error.message).toBe(contractError.message);
+        expect(error.cause).toBe(contractError);
     });
 
     it('passes the local account object (not its address) to sendTransaction on offramp', async () => {
@@ -1801,11 +1959,7 @@ describe('Gateway Tests', () => {
                 },
             });
 
-        const contractError = new ContractFunctionExecutionError(new Error('execution reverted'), {
-            abi: erc20Abi,
-            functionName: 'approve',
-            args: [WBTC_OFT_ADDRESS, 100000n],
-        });
+        const contractError = createInsufficientFundsApprovalError(WBTC_OFT_ADDRESS, 100000n);
 
         const mockWalletClient = {
             account: { address: '0x1234567890123456789012345678901234567890' as Address },
@@ -1835,6 +1989,65 @@ describe('Gateway Tests', () => {
         expect(error.cause).toBeInstanceOf(Error);
         assert(error.cause instanceof Error);
         expect(error.cause.cause).toBe(contractError);
+    });
+
+    it('does not translate a plain tokenSwap approval revert into the insufficient-funds message', async () => {
+        const mockedQuote: GatewayQuoteV2OneOf2 = {
+            tokenSwap: {
+                dstChain: 'bob',
+                estimatedTimeInSecs: 60,
+                fees: { amount: '0', address: WBTC_OFT_ADDRESS, chain: 'bob' },
+                inputAmount: {
+                    amount: '100000',
+                    address: '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599',
+                    chain: 'ethereum',
+                },
+                outputAmount: { amount: '100000', address: WBTC_OFT_ADDRESS, chain: 'bob' },
+                recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+                slippage: 100,
+                srcChain: 'ethereum',
+                txTo: WBTC_OFT_ADDRESS,
+            },
+        };
+
+        const gatewaySDK = new GatewaySDK();
+
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
+            .post('/v3/create-order')
+            .reply(200, {
+                tokenSwap: {
+                    order_id: 'tokenswap-revert-order',
+                    tx: { to: WBTC_OFT_ADDRESS, data: '0xabcdef', value: '0' },
+                },
+            });
+
+        const contractError = createRevertApprovalError(WBTC_OFT_ADDRESS, 100000n);
+
+        const mockWalletClient = {
+            account: { address: '0x1234567890123456789012345678901234567890' as Address },
+            sendTransaction: vi.fn(),
+        } as unknown as WalletClient<Transport, ViemChain, Account>;
+
+        const mockPublicClient = {
+            readContract: mockOftReadContract({ approvalRequired: true, allowance: 0n }),
+            simulateContract: vi.fn().mockRejectedValue(contractError),
+            waitForTransactionReceipt: vi.fn().mockResolvedValue({}),
+        } as unknown as PublicClient<Transport>;
+
+        const error = await gatewaySDK
+            .executeQuote({
+                quote: mockedQuote,
+                walletClient: mockWalletClient,
+                publicClient: mockPublicClient,
+            })
+            .catch((thrown: unknown) => thrown);
+
+        expect(error).toBeInstanceOf(ExecuteQuoteError);
+        assert(error instanceof ExecuteQuoteError);
+        expect(error.orderId).toBe('tokenswap-revert-order');
+        expect(error.message).not.toContain('Insufficient native funds');
+        expect(error.message).toBe(contractError.message);
+        expect(error.cause).toBe(contractError);
     });
 
     it('should skip approval when allowance is sufficient for layerzero swap', async () => {

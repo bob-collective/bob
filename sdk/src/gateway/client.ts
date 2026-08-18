@@ -4,6 +4,7 @@ import {
     ContractFunctionExecutionError,
     erc20Abi,
     Hex,
+    InsufficientFundsError,
     isAddress,
     isAddressEqual,
     maxUint256,
@@ -58,10 +59,14 @@ function withOrderId(orderId: string, error: unknown): ExecuteQuoteError {
     return new ExecuteQuoteError(orderId, error);
 }
 
-// viem throws ContractFunctionExecutionError for insufficient gas funds too, not just reverts.
-// https://github.com/wevm/viem/blob/3aa882692d2c4af3f5e9cc152099e07cde28e551/src/actions/public/simulateContract.test.ts#L711
+// ContractFunctionExecutionError wraps any contract-call failure (reverts, ABI/decode
+// failures, node errors, insufficient funds, ...), so only translate when InsufficientFundsError
+// is actually in the cause chain — otherwise genuine reverts get mislabeled as a funds issue.
 function translateApprovalError(error: unknown): unknown {
-    if (error instanceof ContractFunctionExecutionError) {
+    if (
+        error instanceof ContractFunctionExecutionError &&
+        error.walk((cause) => cause instanceof InsufficientFundsError)
+    ) {
         return new Error(
             'Insufficient native funds for source and destination gas fees, please add more native funds to your account',
             { cause: error }
@@ -460,7 +465,7 @@ export class GatewayApiClient {
                         const resetTxHash = await walletClient.writeContract(resetRequest);
                         await publicClient.waitForTransactionReceipt({ hash: resetTxHash, retryCount: RETRY_COUNT });
                     } catch (error) {
-                        throw withOrderId(orderId, error);
+                        throw withOrderId(orderId, translateApprovalError(error));
                     }
                 }
 
@@ -480,7 +485,7 @@ export class GatewayApiClient {
                     const approveTxHash = await walletClient.writeContract(request);
                     await publicClient.waitForTransactionReceipt({ hash: approveTxHash, retryCount: RETRY_COUNT });
                 } catch (error) {
-                    throw withOrderId(orderId, error);
+                    throw withOrderId(orderId, translateApprovalError(error));
                 }
             }
 
