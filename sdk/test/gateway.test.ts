@@ -1071,6 +1071,69 @@ describe('Gateway Tests', () => {
         expect(error.cause).toBe(contractError);
     });
 
+    it('does not fire the offramp Approve step callback when simulateContract fails', async () => {
+        const gatewaySDK = new GatewaySDK();
+
+        const mockQuote: GatewayQuoteV3OneOf = {
+            offramp: {
+                srcChain: 'bob',
+                feeBreakdown: {
+                    protocolFee: { address: zeroAddress, amount: '5', chain: 'bob' },
+                    affiliateFee: { address: zeroAddress, amount: '2', chain: 'bob' },
+                    solverFee: { address: zeroAddress, amount: '1', chain: 'bob' },
+                    inclusionFee: { address: zeroAddress, amount: '1', chain: 'bob' },
+                    fastestFeeRate: '6',
+                },
+                inputAmount: { address: zeroAddress, amount: '1000', chain: 'bob' },
+                outputAmount: { address: zeroAddress, amount: '990', chain: 'bob' },
+                tokenAddress: WBTC_OFT_ADDRESS,
+                ownerAddress: '0xabcd1234abcd1234abcd1234abcd1234abcd1234',
+                recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+                slippage: 0,
+                totalFeeUsd: '3',
+                txTo: zeroAddress,
+            },
+        };
+
+        const spenderAddress: Address = '0x1234567890123456789012345678901234567890';
+
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
+            .post('/v3/create-order')
+            .reply(200, {
+                offramp: {
+                    order_id: 'offramp-simulate-fail-order',
+                    tx: { type: 'evm', chain: 'bob', to: spenderAddress, data: '0xabcdef', value: '0' },
+                },
+            });
+
+        const contractError = createRevertApprovalError(spenderAddress, 1000n);
+        const callback = vi.fn();
+
+        const mockWalletClient = {
+            account: { address: '0xabcd1234abcd1234abcd1234abcd1234abcd1234' as Address },
+            writeContract: vi.fn(),
+            sendTransaction: vi.fn(),
+        } as unknown as WalletClient<Transport, ViemChain, Account>;
+
+        const mockPublicClient = {
+            readContract: mockOftReadContract({ approvalRequired: true }),
+            simulateContract: vi.fn().mockRejectedValue(contractError),
+            waitForTransactionReceipt: vi.fn().mockResolvedValue({}),
+        } as unknown as PublicClient<Transport>;
+
+        await gatewaySDK
+            .executeQuote({
+                quote: mockQuote,
+                walletClient: mockWalletClient,
+                publicClient: mockPublicClient,
+                callback,
+            })
+            .catch((thrown: unknown) => thrown);
+
+        expect(callback).not.toHaveBeenCalled();
+        expect(mockWalletClient.writeContract).not.toHaveBeenCalled();
+    });
+
     it('passes the local account object (not its address) to sendTransaction on offramp', async () => {
         // Regression (bob #1075): the offramp send was changed from
         //   account: walletClient.account  ->  account: walletClient.account.address
@@ -2047,6 +2110,64 @@ describe('Gateway Tests', () => {
         expect(error.message).not.toContain('Insufficient native funds');
         expect(error.message).toBe(contractError.message);
         expect(error.cause).toBe(contractError);
+    });
+
+    it('does not fire the tokenSwap Approve step callback when simulateContract fails', async () => {
+        const mockedQuote: GatewayQuoteV2OneOf2 = {
+            tokenSwap: {
+                dstChain: 'bob',
+                estimatedTimeInSecs: 60,
+                fees: { amount: '0', address: WBTC_OFT_ADDRESS, chain: 'bob' },
+                inputAmount: {
+                    amount: '100000',
+                    address: '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599',
+                    chain: 'ethereum',
+                },
+                outputAmount: { amount: '100000', address: WBTC_OFT_ADDRESS, chain: 'bob' },
+                recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+                slippage: 100,
+                srcChain: 'ethereum',
+                txTo: WBTC_OFT_ADDRESS,
+            },
+        };
+
+        const gatewaySDK = new GatewaySDK();
+
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
+            .post('/v3/create-order')
+            .reply(200, {
+                tokenSwap: {
+                    order_id: 'tokenswap-simulate-fail-order',
+                    tx: { to: WBTC_OFT_ADDRESS, data: '0xabcdef', value: '0' },
+                },
+            });
+
+        const contractError = createRevertApprovalError(WBTC_OFT_ADDRESS, 100000n);
+        const callback = vi.fn();
+
+        const mockWalletClient = {
+            account: { address: '0x1234567890123456789012345678901234567890' as Address },
+            writeContract: vi.fn(),
+            sendTransaction: vi.fn(),
+        } as unknown as WalletClient<Transport, ViemChain, Account>;
+
+        const mockPublicClient = {
+            readContract: mockOftReadContract({ approvalRequired: true, allowance: 0n }),
+            simulateContract: vi.fn().mockRejectedValue(contractError),
+            waitForTransactionReceipt: vi.fn().mockResolvedValue({}),
+        } as unknown as PublicClient<Transport>;
+
+        await gatewaySDK
+            .executeQuote({
+                quote: mockedQuote,
+                walletClient: mockWalletClient,
+                publicClient: mockPublicClient,
+                callback,
+            })
+            .catch((thrown: unknown) => thrown);
+
+        expect(callback).not.toHaveBeenCalled();
+        expect(mockWalletClient.writeContract).not.toHaveBeenCalled();
     });
 
     it('should skip approval when allowance is sufficient for layerzero swap', async () => {

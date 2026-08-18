@@ -75,6 +75,17 @@ function translateApprovalError(error: unknown): unknown {
     return error;
 }
 
+// Extracts `.request` via a generic parameter so the exact overload-resolved type from
+// each simulateContract call site survives across this try/catch, instead of the widened
+// union `Awaited<ReturnType<typeof simulateContract>>` would produce.
+async function simulateApproval<T>(orderId: string, simulate: () => Promise<{ request: T }>): Promise<T> {
+    try {
+        return (await simulate()).request;
+    } catch (error) {
+        throw withOrderId(orderId, translateApprovalError(error));
+    }
+}
+
 /**
  * Resolve the `account` to pass to viem write/simulate/send calls.
  *
@@ -452,15 +463,19 @@ export class GatewayApiClient {
                 // to avoid the ERC20 race condition:
                 // https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
                 if (needsReset) {
-                    callback?.({ step: 1, type: ExecuteQuoteStepType.ResetApproval, totalSteps, orderId });
-                    try {
-                        const { request: resetRequest } = await publicClient.simulateContract({
+                    const resetRequest = await simulateApproval(orderId, () =>
+                        publicClient.simulateContract({
                             account: signerAccount(walletClient),
                             address: tokenAddress,
                             abi: USDTApproveAbi,
                             functionName: 'approve',
                             args: [spenderAddress, 0n],
-                        });
+                        })
+                    );
+
+                    callback?.({ step: 1, type: ExecuteQuoteStepType.ResetApproval, totalSteps, orderId });
+
+                    try {
                         const resetTxHash = await walletClient.writeContract(resetRequest);
                         await publicClient.waitForTransactionReceipt({ hash: resetTxHash, retryCount: RETRY_COUNT });
                     } catch (error) {
@@ -468,9 +483,8 @@ export class GatewayApiClient {
                     }
                 }
 
-                callback?.({ step: needsReset ? 2 : 1, type: ExecuteQuoteStepType.Approve, totalSteps, orderId });
-                try {
-                    const { request } = await publicClient.simulateContract({
+                const approveRequest = await simulateApproval(orderId, () =>
+                    publicClient.simulateContract({
                         account: signerAccount(walletClient),
                         address: tokenAddress as Address,
                         abi:
@@ -480,8 +494,13 @@ export class GatewayApiClient {
                                 : erc20Abi,
                         functionName: 'approve',
                         args: [spenderAddress, requiredAmount],
-                    });
-                    const approveTxHash = await walletClient.writeContract(request);
+                    })
+                );
+
+                callback?.({ step: needsReset ? 2 : 1, type: ExecuteQuoteStepType.Approve, totalSteps, orderId });
+
+                try {
+                    const approveTxHash = await walletClient.writeContract(approveRequest);
                     await publicClient.waitForTransactionReceipt({ hash: approveTxHash, retryCount: RETRY_COUNT });
                 } catch (error) {
                     throw withOrderId(orderId, translateApprovalError(error));
@@ -606,15 +625,19 @@ export class GatewayApiClient {
                 // to avoid the ERC20 race condition:
                 // https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
                 if (needsReset) {
-                    callback?.({ step: 1, type: ExecuteQuoteStepType.ResetApproval, totalSteps, orderId });
-                    try {
-                        const { request: resetRequest } = await publicClient.simulateContract({
+                    const resetRequest = await simulateApproval(orderId, () =>
+                        publicClient.simulateContract({
                             account: signerAccount(walletClient),
                             address: tokenAddress as Address,
                             abi: USDTApproveAbi,
                             functionName: 'approve',
                             args: [receiver, 0n],
-                        });
+                        })
+                    );
+
+                    callback?.({ step: 1, type: ExecuteQuoteStepType.ResetApproval, totalSteps, orderId });
+
+                    try {
                         const resetTxHash = await walletClient.writeContract(resetRequest);
                         await publicClient.waitForTransactionReceipt({
                             hash: resetTxHash,
@@ -625,14 +648,8 @@ export class GatewayApiClient {
                     }
                 }
 
-                callback?.({
-                    step: needsReset ? 2 : 1,
-                    type: ExecuteQuoteStepType.Approve,
-                    totalSteps,
-                    orderId,
-                });
-                try {
-                    const { request } = await publicClient.simulateContract({
+                const approveRequest = await simulateApproval(orderId, () =>
+                    publicClient.simulateContract({
                         account: signerAccount(walletClient),
                         address: tokenAddress as Address,
                         abi:
@@ -641,8 +658,18 @@ export class GatewayApiClient {
                                 : erc20Abi,
                         functionName: 'approve',
                         args: [receiver, requiredAmount],
-                    });
-                    const txHash = await walletClient.writeContract(request);
+                    })
+                );
+
+                callback?.({
+                    step: needsReset ? 2 : 1,
+                    type: ExecuteQuoteStepType.Approve,
+                    totalSteps,
+                    orderId,
+                });
+
+                try {
+                    const txHash = await walletClient.writeContract(approveRequest);
 
                     await publicClient.waitForTransactionReceipt({ hash: txHash, retryCount: RETRY_COUNT });
                 } catch (error) {
