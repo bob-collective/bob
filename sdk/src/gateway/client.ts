@@ -59,9 +59,8 @@ function withOrderId(orderId: string, error: unknown): ExecuteQuoteError {
     return new ExecuteQuoteError(orderId, error);
 }
 
-// ContractFunctionExecutionError wraps any contract-call failure (reverts, ABI/decode
-// failures, node errors, insufficient funds, ...), so only translate when InsufficientFundsError
-// is actually in the cause chain — otherwise genuine reverts get mislabeled as a funds issue.
+// ContractFunctionExecutionError also wraps plain reverts, so only translate when
+// InsufficientFundsError is actually in the cause chain.
 function translateApprovalError(error: unknown): unknown {
     if (
         error instanceof ContractFunctionExecutionError &&

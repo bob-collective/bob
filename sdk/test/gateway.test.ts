@@ -61,8 +61,7 @@ function createApprovalContractError(cause: Error, spender: Address, amount: big
     });
 }
 
-// Mirrors viem's own nesting for a real insufficient-funds failure (see getCallError.js /
-// getNodeError.js): ContractFunctionExecutionError -> CallExecutionError -> InsufficientFundsError.
+// Mirrors viem's own error nesting for a real insufficient-funds failure.
 function createInsufficientFundsApprovalError(spender: Address, amount: bigint) {
     const insufficientFundsError = new InsufficientFundsError({
         cause: new Error('insufficient funds for gas * price + value'),
