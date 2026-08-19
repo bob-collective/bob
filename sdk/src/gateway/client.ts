@@ -75,9 +75,8 @@ function translateApprovalError(error: unknown): unknown {
     return error;
 }
 
-// Extracts `.request` via a generic parameter so the exact overload-resolved type from
-// each simulateContract call site survives across this try/catch, instead of the widened
-// union `Awaited<ReturnType<typeof simulateContract>>` would produce.
+// Generic `T` preserves the exact overload-resolved `request` type per call site,
+// instead of the widened union a shared non-generic type would produce.
 async function simulateApproval<T>(orderId: string, simulate: () => Promise<{ request: T }>): Promise<T> {
     try {
         return (await simulate()).request;
