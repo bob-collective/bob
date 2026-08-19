@@ -316,7 +316,6 @@ export class GatewayApiClient {
 
             let bitcoinTxHex: string;
             if (btcSigner.sendBitcoin) {
-                const sendBitcoin = btcSigner.sendBitcoin.bind(btcSigner);
                 callback?.({
                     step: 1,
                     type: ExecuteQuoteStepType.SignBitcoinTransaction,
@@ -324,7 +323,7 @@ export class GatewayApiClient {
                     orderId,
                 });
                 try {
-                    bitcoinTxHex = await sendBitcoin({
+                    bitcoinTxHex = await btcSigner.sendBitcoin({
                         from: quote.onramp.sender,
                         to: order.onramp.address,
                         value: formatBtc(BigInt(quote.onramp.inputAmount.amount)),
@@ -342,7 +341,6 @@ export class GatewayApiClient {
                         new Error('PSBT not available: sender address is required when using signAllInputs')
                     );
                 }
-                const signAllInputs = btcSigner.signAllInputs.bind(btcSigner);
                 const psbtHex = order.onramp.psbtHex;
                 callback?.({
                     step: 1,
@@ -351,7 +349,7 @@ export class GatewayApiClient {
                     orderId,
                 });
                 try {
-                    bitcoinTxHex = await signAllInputs(psbtHex);
+                    bitcoinTxHex = await btcSigner.signAllInputs(psbtHex);
                     if (!bitcoinTxHex) throw new Error('Failed to get signed transaction');
                 } catch (error) {
                     throw withOrderId(orderId, error);
@@ -509,23 +507,18 @@ export class GatewayApiClient {
             callback?.({ step: totalSteps, type: ExecuteQuoteStepType.SendTransaction, totalSteps, orderId });
             const offrampData = order.offramp.tx.data as Hex;
 
-            let offrampGas: bigint | undefined;
-            if (walletClient.account.type === 'local') {
-                try {
-                    const offrampValue = BigInt(order.offramp.tx.value || 0);
-                    offrampGas = await estimateGasWithBuffer(publicClient, walletClient.account, {
-                        to: spenderAddress,
-                        data: offrampData,
-                        value: offrampValue,
-                    });
-                } catch (error) {
-                    throw withOrderId(orderId, error);
-                }
-            }
-
             let transactionHash: string;
             try {
                 const offrampValue = BigInt(order.offramp.tx.value || 0);
+                const offrampGas =
+                    walletClient.account.type === 'local'
+                        ? await estimateGasWithBuffer(publicClient, walletClient.account, {
+                              to: spenderAddress,
+                              data: offrampData,
+                              value: offrampValue,
+                          })
+                        : undefined;
+
                 const hash = await walletClient.sendTransaction({
                     account: signerAccount(walletClient),
                     data: offrampData,
@@ -680,23 +673,18 @@ export class GatewayApiClient {
             const tokenSwapTo = order.tokenSwap.tx.to as Address;
             const tokenSwapData = order.tokenSwap.tx.data as Hex;
 
-            let tokenSwapGas: bigint | undefined;
-            if (walletClient.account.type === 'local') {
-                try {
-                    const tokenSwapValue = BigInt(order.tokenSwap.tx.value || 0);
-                    tokenSwapGas = await estimateGasWithBuffer(publicClient, walletClient.account, {
-                        to: tokenSwapTo,
-                        data: tokenSwapData,
-                        value: tokenSwapValue,
-                    });
-                } catch (error) {
-                    throw withOrderId(orderId, error);
-                }
-            }
-
             let transactionHash: string;
             try {
                 const tokenSwapValue = BigInt(order.tokenSwap.tx.value || 0);
+                const tokenSwapGas =
+                    walletClient.account.type === 'local'
+                        ? await estimateGasWithBuffer(publicClient, walletClient.account, {
+                              to: tokenSwapTo,
+                              data: tokenSwapData,
+                              value: tokenSwapValue,
+                          })
+                        : undefined;
+
                 const hash = await walletClient.sendTransaction({
                     account: signerAccount(walletClient),
                     data: tokenSwapData,
