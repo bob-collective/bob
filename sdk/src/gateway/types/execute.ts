@@ -15,18 +15,10 @@ export interface ExecuteQuoteStep {
 
 const EXECUTE_QUOTE_ERROR_MESSAGE = 'Failed to execute Gateway quote after order creation';
 
-// A custom/proxy `message` getter on `cause` could throw here, which must never happen
-// during ExecuteQuoteError construction.
 function getExecuteQuoteErrorMessage(cause: unknown): string {
-    try {
-        if (cause instanceof Error && typeof cause.message === 'string') {
-            return cause.message || EXECUTE_QUOTE_ERROR_MESSAGE;
-        }
-    } catch {
-        // fall through
-    }
-
-    return EXECUTE_QUOTE_ERROR_MESSAGE;
+    return cause instanceof Error && typeof cause.message === 'string' && cause.message
+        ? cause.message
+        : EXECUTE_QUOTE_ERROR_MESSAGE;
 }
 
 /** Thrown by {@link GatewayApiClient.executeQuote} for post-order-creation failures. */

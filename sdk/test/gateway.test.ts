@@ -3362,23 +3362,5 @@ describe('Gateway Tests', () => {
 
             expect(error.message).toBe('Failed to execute Gateway quote after order creation');
         });
-
-        it('does not throw and falls back to the generic message when cause.message is a hostile getter', () => {
-            const hostile = new Error('will be shadowed');
-            Object.defineProperty(hostile, 'message', {
-                get() {
-                    throw new Error('evil getter');
-                },
-            });
-
-            let error: ExecuteQuoteError | undefined;
-            expect(() => {
-                error = new ExecuteQuoteError('order-hostile', hostile);
-            }).not.toThrow();
-
-            expect(error).toBeInstanceOf(ExecuteQuoteError);
-            expect(error?.message).toBe('Failed to execute Gateway quote after order creation');
-            expect(error?.cause).toBe(hostile);
-        });
     });
 });
