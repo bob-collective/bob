@@ -52,10 +52,6 @@ const RETRY_COUNT = 8; // Number of times to retry fetching transaction receipt 
 // Call from the catch block of a single fallible operation, not as a closure runner —
 // keeps each failure attributable to the call that produced it.
 function withOrderId(orderId: string, error: unknown): ExecuteQuoteError {
-    if (error instanceof ExecuteQuoteError && error.orderId === orderId) {
-        return error;
-    }
-
     return new ExecuteQuoteError(orderId, error);
 }
 
