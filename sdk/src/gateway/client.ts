@@ -317,7 +317,7 @@ export class GatewayApiClient {
 
             let bitcoinTxHex: string;
             if (btcSigner.sendBitcoin) {
-                const sendBitcoin = btcSigner.sendBitcoin;
+                const sendBitcoin = btcSigner.sendBitcoin.bind(btcSigner);
                 callback?.({
                     step: 1,
                     type: ExecuteQuoteStepType.SignBitcoinTransaction,
@@ -343,7 +343,7 @@ export class GatewayApiClient {
                         new Error('PSBT not available: sender address is required when using signAllInputs')
                     );
                 }
-                const signAllInputs = btcSigner.signAllInputs;
+                const signAllInputs = btcSigner.signAllInputs.bind(btcSigner);
                 const psbtHex = order.onramp.psbtHex;
                 callback?.({
                     step: 1,

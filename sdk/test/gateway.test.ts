@@ -488,6 +488,156 @@ describe('Gateway Tests', () => {
         });
     });
 
+    it('should call signAllInputs with the correct `this` on a class-based btcSigner', async () => {
+        const gatewaySDK = new GatewaySDK();
+
+        const mockQuote: GatewayQuoteOneOf = {
+            onramp: {
+                dstChain: 'bob',
+                dstToken: WBTC_OFT_ADDRESS,
+                executionFees: { address: zeroAddress, amount: '10', chain: 'bob' },
+                feeBreakdown: {
+                    protocolFee: { address: zeroAddress, amount: '5', chain: 'bob' },
+                    affiliateFee: { address: zeroAddress, amount: '2', chain: 'bob' },
+                    executionFee: { address: zeroAddress, amount: '1', chain: 'bob' },
+                    layerzeroFee: { address: zeroAddress, amount: '1', chain: 'bob' },
+                    solverFee: { address: zeroAddress, amount: '1', chain: 'bob' },
+                },
+                fees: { address: zeroAddress, amount: '3', chain: 'bob' },
+                inputAmount: { address: zeroAddress, amount: '1000', chain: 'bob' },
+                outputAmount: { address: zeroAddress, amount: '990', chain: 'bob' },
+                recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+                sender: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+                signedQuoteData: MOCK_SIGNED_QUOTE_DATA,
+                slippage: '0',
+                token: '0x0000000000000000000000000000000000000000',
+            },
+        };
+
+        const mockPsbt = 'cHNidP8BAH0CAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAzwAAAAA=';
+        const signedTx = '02000000010000000000000000000000000000000000000000000000000000000000000000';
+
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
+            .post('/v3/create-order')
+            .reply(200, {
+                onramp: {
+                    order_id: 'order-class-signer',
+                    psbt_hex: mockPsbt,
+                    address: 'tb1qw508d6qejxtdg4y5r3zarvary0c5xw7kxpjzsx',
+                    op_return_data: '',
+                },
+            });
+
+        nock(`${MAINNET_GATEWAY_BASE_URL}`).patch('/v3/register-tx').reply(200, JSON.stringify('tx-hash-class'));
+
+        // A real class relying on `this` catches unbound-method extraction bugs that an
+        // arrow-function object literal mock (which never touches `this`) would miss.
+        class ClassBasedSigner implements BitcoinSigner {
+            walletProvider = { signed: false };
+
+            async signAllInputs(psbtHex: string): Promise<string> {
+                this.walletProvider.signed = true;
+
+                return psbtHex ? signedTx : '';
+            }
+        }
+
+        const mockBtcSigner = new ClassBasedSigner();
+
+        const mockWalletClient: WalletClient<Transport, ViemChain, Account> = {
+            account: { address: '0x1234567890123456789012345678901234567890' as Address },
+        } as WalletClient<Transport, ViemChain, Account>;
+
+        const mockPublicClient = {} as PublicClient<Transport>;
+
+        const result = await gatewaySDK.executeQuote({
+            quote: mockQuote,
+            walletClient: mockWalletClient,
+            publicClient: mockPublicClient,
+            btcSigner: mockBtcSigner,
+        });
+
+        expect(mockBtcSigner.walletProvider.signed).toBe(true);
+        expect(result).toEqual({
+            order: expect.objectContaining({ onramp: expect.objectContaining({ orderId: 'order-class-signer' }) }),
+            tx: 'tx-hash-class',
+        });
+    });
+
+    it('should call sendBitcoin with the correct `this` on a class-based btcSigner', async () => {
+        const gatewaySDK = new GatewaySDK();
+
+        const mockQuote: GatewayQuoteOneOf = {
+            onramp: {
+                dstChain: 'bob',
+                dstToken: WBTC_OFT_ADDRESS,
+                executionFees: { address: zeroAddress, amount: '10', chain: 'bob' },
+                feeBreakdown: {
+                    protocolFee: { address: zeroAddress, amount: '5', chain: 'bob' },
+                    affiliateFee: { address: zeroAddress, amount: '2', chain: 'bob' },
+                    executionFee: { address: zeroAddress, amount: '1', chain: 'bob' },
+                    layerzeroFee: { address: zeroAddress, amount: '1', chain: 'bob' },
+                    solverFee: { address: zeroAddress, amount: '1', chain: 'bob' },
+                },
+                fees: { address: zeroAddress, amount: '3', chain: 'bob' },
+                inputAmount: { address: zeroAddress, amount: '1000', chain: 'bob' },
+                outputAmount: { address: zeroAddress, amount: '990', chain: 'bob' },
+                recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+                sender: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+                signedQuoteData: MOCK_SIGNED_QUOTE_DATA,
+                slippage: '0',
+                token: '0x0000000000000000000000000000000000000000',
+            },
+        };
+
+        const signedTx = '02000000010000000000000000000000000000000000000000000000000000000000000000';
+
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
+            .post('/v3/create-order')
+            .reply(200, {
+                onramp: {
+                    order_id: 'order-sendbitcoin-signer',
+                    address: 'tb1qw508d6qejxtdg4y5r3zarvary0c5xw7kxpjzsx',
+                    op_return_data: '',
+                },
+            });
+
+        nock(`${MAINNET_GATEWAY_BASE_URL}`).patch('/v3/register-tx').reply(200, JSON.stringify('tx-hash-sendbitcoin'));
+
+        class ClassBasedSigner implements BitcoinSigner {
+            walletProvider = { sent: false };
+
+            async sendBitcoin(): Promise<string> {
+                this.walletProvider.sent = true;
+
+                return signedTx;
+            }
+        }
+
+        const mockBtcSigner = new ClassBasedSigner();
+
+        const mockWalletClient: WalletClient<Transport, ViemChain, Account> = {
+            account: { address: '0x1234567890123456789012345678901234567890' as Address },
+        } as WalletClient<Transport, ViemChain, Account>;
+
+        const mockPublicClient = {} as PublicClient<Transport>;
+
+        const result = await gatewaySDK.executeQuote({
+            quote: mockQuote,
+            walletClient: mockWalletClient,
+            publicClient: mockPublicClient,
+            btcSigner: mockBtcSigner,
+        });
+
+        expect(mockBtcSigner.walletProvider.sent).toBe(true);
+        expect(result).toEqual({
+            order: expect.objectContaining({
+                onramp: expect.objectContaining({ orderId: 'order-sendbitcoin-signer' }),
+            }),
+            tx: 'tx-hash-sendbitcoin',
+        });
+    });
+
     it('should execute walletless onramp without btcSigner', async () => {
         const gatewaySDK = new GatewaySDK();
 
