@@ -49,12 +49,6 @@ import { estimateGasWithBuffer, formatBtc, isValidTronAddress, tronAddressToHex 
 
 const RETRY_COUNT = 8; // Number of times to retry fetching transaction receipt after sending a transaction
 
-// Call from the catch block of a single fallible operation, not as a closure runner —
-// keeps each failure attributable to the call that produced it.
-function withOrderId(orderId: string, error: unknown): ExecuteQuoteError {
-    return new ExecuteQuoteError(orderId, error);
-}
-
 // ContractFunctionExecutionError also wraps plain reverts, so only translate when
 // InsufficientFundsError is actually in the cause chain.
 function translateApprovalError(error: unknown): unknown {
@@ -77,7 +71,7 @@ async function simulateApproval<T>(orderId: string, simulate: () => Promise<{ re
     try {
         return (await simulate()).request;
     } catch (error) {
-        throw withOrderId(orderId, translateApprovalError(error));
+        throw new ExecuteQuoteError(orderId, translateApprovalError(error));
     }
 }
 
@@ -328,11 +322,11 @@ export class GatewayApiClient {
                     });
                     if (!bitcoinTxHex) throw new Error('Failed to get signed transaction');
                 } catch (error) {
-                    throw withOrderId(orderId, error);
+                    throw new ExecuteQuoteError(orderId, error);
                 }
             } else if (btcSigner.signAllInputs) {
                 if (!order.onramp.psbtHex) {
-                    throw withOrderId(
+                    throw new ExecuteQuoteError(
                         orderId,
                         new Error('PSBT not available: sender address is required when using signAllInputs')
                     );
@@ -348,10 +342,10 @@ export class GatewayApiClient {
                     bitcoinTxHex = await btcSigner.signAllInputs(psbtHex);
                     if (!bitcoinTxHex) throw new Error('Failed to get signed transaction');
                 } catch (error) {
-                    throw withOrderId(orderId, error);
+                    throw new ExecuteQuoteError(orderId, error);
                 }
             } else {
-                throw withOrderId(
+                throw new ExecuteQuoteError(
                     orderId,
                     new Error('btcSigner must implement either sendBitcoin or signAllInputs method')
                 );
@@ -379,7 +373,7 @@ export class GatewayApiClient {
                     tx = response;
                 }
             } catch (error) {
-                throw withOrderId(orderId, error);
+                throw new ExecuteQuoteError(orderId, error);
             }
 
             if (typeof tx === 'string') {
@@ -436,7 +430,7 @@ export class GatewayApiClient {
                             args: [accountAddress, spenderAddress],
                         });
                     } catch (error) {
-                        throw withOrderId(orderId, error);
+                        throw new ExecuteQuoteError(orderId, error);
                     }
                 }
             }
@@ -472,7 +466,7 @@ export class GatewayApiClient {
                         const resetTxHash = await walletClient.writeContract(resetRequest);
                         await publicClient.waitForTransactionReceipt({ hash: resetTxHash, retryCount: RETRY_COUNT });
                     } catch (error) {
-                        throw withOrderId(orderId, translateApprovalError(error));
+                        throw new ExecuteQuoteError(orderId, translateApprovalError(error));
                     }
                 }
 
@@ -496,7 +490,7 @@ export class GatewayApiClient {
                     const approveTxHash = await walletClient.writeContract(approveRequest);
                     await publicClient.waitForTransactionReceipt({ hash: approveTxHash, retryCount: RETRY_COUNT });
                 } catch (error) {
-                    throw withOrderId(orderId, translateApprovalError(error));
+                    throw new ExecuteQuoteError(orderId, translateApprovalError(error));
                 }
             }
 
@@ -527,7 +521,7 @@ export class GatewayApiClient {
 
                 transactionHash = hash;
             } catch (error) {
-                throw withOrderId(orderId, error);
+                throw new ExecuteQuoteError(orderId, error);
             }
 
             try {
@@ -632,7 +626,7 @@ export class GatewayApiClient {
                             retryCount: RETRY_COUNT,
                         });
                     } catch (error) {
-                        throw withOrderId(orderId, translateApprovalError(error));
+                        throw new ExecuteQuoteError(orderId, translateApprovalError(error));
                     }
                 }
 
@@ -661,7 +655,7 @@ export class GatewayApiClient {
 
                     await publicClient.waitForTransactionReceipt({ hash: txHash, retryCount: RETRY_COUNT });
                 } catch (error) {
-                    throw withOrderId(orderId, translateApprovalError(error));
+                    throw new ExecuteQuoteError(orderId, translateApprovalError(error));
                 }
             }
 
@@ -693,7 +687,7 @@ export class GatewayApiClient {
 
                 transactionHash = hash;
             } catch (error) {
-                throw withOrderId(orderId, error);
+                throw new ExecuteQuoteError(orderId, error);
             }
 
             try {
