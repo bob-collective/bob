@@ -13,28 +13,30 @@ Users can always check their order — including refund status — on the [Gatew
 
 | Scenario | What the user receives | Who acts |
 |---|---|---|
-| BTC to X: swap can't fill at quoted terms | USDT on Ethereum | BOB, automatic |
-| BTC to X: DeFi action fails | Wrapped BTC to their EVM address | BOB, automatic |
+| BTC to X: swap can't fill at quoted terms | BTC to their refund address, or USDT on Ethereum | BOB, automatic |
+| BTC to X: destination swap or bridge can't land | BTC to their refund address, or USDT on Ethereum | BOB, automatic |
 | X to BTC: payout delayed | BTC (gateway bumps the fee) | BOB, automatic |
-| X to BTC: payout can't complete (very rare) | Their locked wrapped BTC back | User withdraws — self-serve in BOB Gateway UI, or via `refundTx` for integrators |
+| X to BTC: payout can't complete (very rare) | Their locked USDT back | User withdraws — self-serve in BOB Gateway UI, or via `refundTx` for integrators |
 
 ## BTC to X refunds
 
 There are two cases where a BTC-to-X swap returns funds instead of the expected output:
 
-1. **The swap can't fill at the quoted terms.** While waiting for the Bitcoin transaction to confirm, prices can drift until the destination route no longer accepts the submitted amount. When this happens, Gateway refunds the user **in USDT on Ethereum**, automatically — no action needed from the user or the integrator.
+1. **The swap can't fill at the quoted terms.** While waiting for the Bitcoin transaction to confirm, prices can drift until the destination route no longer accepts the submitted amount.
 
-2. **A DeFi action fails.** When a swap includes a strategy or DeFi action — staking, lending, a multicall — and that on-chain action reverts, Gateway falls back to delivering wrapped BTC directly to the user's EVM address rather than failing the whole swap. The user still receives value; they just receive wrapped BTC instead of the intended position.
+2. **The destination swap or bridge can't land.** When a route swaps or bridges onwards through a third-party provider, that on-chain call can revert. The payout and the onward call are one atomic transaction, so the whole release reverts with it and the user is never left holding a partial result.
 
-<Callout type="idea">
-Always test strategies thoroughly on testnet. A fallback means the user received wrapped BTC rather than the position they intended to open.
+Both cases resolve the same way, automatically, with no action needed from the user or the integrator. The solver simulates the destination call before releasing, re-quotes, and retries with backoff for about an hour. If the release still can't land, Gateway settles the order as a refund: **BTC back to the Bitcoin `refundAddress`** when the order was created with one, and otherwise **USDT on Ethereum** to the order owner.
+
+<Callout>
+Pass a `refundAddress` when you request a quote if you want failed BTC-to-X swaps returned in BTC rather than USDT on Ethereum.
 </Callout>
 
 ## X to BTC refunds
 
 X-to-BTC refunds are a very rare edge case: the token swap settles before the Bitcoin payout is made, so a refund only comes into play if the payout never happens (for example, a solver going offline). Often a slow payout isn't a refund case at all — it just needs a Bitcoin fee bump, which the gateway handles internally.
 
-If the payout genuinely can't complete, the user's locked wrapped BTC becomes reclaimable. A security delay applies before funds can be withdrawn — this ensures a Bitcoin payment that was already made can't be refunded twice. After the delay:
+If the payout genuinely can't complete, the USDT escrowed when the order was created becomes reclaimable. A security delay applies before funds can be withdrawn — this ensures a Bitcoin payment that was already made can't be refunded twice. After the delay:
 
 **For users on the BOB Gateway UI** — the order appears in the activity section (sidebar) with a withdraw option. One click, sign the transaction, funds returned. No integrator involvement needed.
 

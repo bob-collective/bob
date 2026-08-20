@@ -1,158 +1,192 @@
 ---
 title: "Deep Dive"
-description: "Technical overview of BOB Gateway's architecture and cross-chain verification"
+description: "How BOB Gateway settles native BTC swaps — solver inventory, atomic release, and SPV-verified payouts"
 icon: Lightbulb
 ---
 ## Overview
 
-BOB Gateway is an intent-based bridge that enables Bitcoin users to access DeFi protocols with a single Bitcoin transaction. The protocol coordinates peer-to-peer swaps between users and Solvers secured by an on-chain Bitcoin Light Client.
+BOB Gateway is an intents protocol for native BTC swaps. A user states what they want — BTC for a token, or a token for BTC — and a solver fills it from its own inventory. The solver holds BTC in a Bitcoin wallet and **USDT on Ethereum as the reserve asset**; every other token and chain is reached by swapping or bridging that USDT through third-party providers (Velora, Bungee, LayerZero OFT).
 
-## BTC to X (Bitcoin → BOB)
+Two things follow from that design, and they shape everything below:
+
+- **Nothing is pooled or locked in a vault.** The solver's own EOA is the custodian of the USDT, and its own Bitcoin wallet holds the BTC. Gateway's contracts never hold funds between transactions, except for the X-to-BTC escrow described below.
+- **The two directions have different settlement mechanics.** X-to-BTC releases escrowed USDT only against an SPV proof verified by an on-chain Bitcoin Light Client. BTC-to-X settles on Bitcoin confirmations, with an automatic refund if the payout can't be delivered.
+
+<Callout>
+Custom strategies (`strategyTarget` / `strategyMessage`) and gas refills were removed. The API rejects them on every version — see [Migration](/gateway/migration).
+</Callout>
+
+## BTC to X
 
 <Steps>
-  <Step>
-
-### Liquidity
-
-    Solvers hold wrapped Bitcoin on BOB or destination chain.
-  </Step>
-  
   <Step>
 
 ### Quote
 
-    User requests to swap BTC for wrapped BTC or execute a DeFi action (stake, lend, swap). The API provides quotes with routing information, fees, and expected outputs.
+    Your app calls `get-quote`. The solver prices the route against live markets and returns the guaranteed minimum output, an `estimatedTimeInSecs`, and a full `feeBreakdown` — solver pricing, protocol fee, affiliate fees, the destination gas priced in USDT (`executionFee`), and any bridge fee. The quote is signed by the API and valid for one minute; that signature travels back in `create-order`, so an order can only be created on terms Gateway actually issued.
   </Step>
-  
+
   <Step>
 
-### Order Creation
+### Order creation
 
-    User creates an order with the Relayer to reserve liquidity. The Relayer provides transaction details including the Solver's Bitcoin address and order parameters.
+    `create-order` returns an `orderId` and a **unique Bitcoin deposit address belonging to the solver's wallet**. If you passed the user's `sender` address, the response also carries a ready-to-sign PSBT (`psbtHex`) with coin selection already done.
   </Step>
-  
+
   <Step>
 
-### Bitcoin Transaction
+### Bitcoin payment
 
-    User sends BTC to the given Bitcoin address. The order details are tracked by the Relayer using the transaction ID (txid).
+    The user signs and broadcasts one Bitcoin transaction. Your app reports it with `register-tx`, which links the transaction to the order. Nothing on the destination chain has happened yet — the user has spent only their BTC and the Bitcoin miner fee.
   </Step>
-  
+
   <Step>
 
-### Trustless Verification
+### Screening and simulation
 
-    The Relayer verifies the Bitcoin transaction:
-    - The transaction exists in a Bitcoin block
-    - The block meets the required proof-of-work difficulty
-    - The transaction was sent to the correct Solver address with the correct amount
+    Before anything is released, the deposit's UTXO sources and the payout recipients are screened with TRM Labs (up to 3 hops), and the destination call is pre-executed in a simulator so a route that would revert is caught before funds move.
   </Step>
-  
+
   <Step>
 
-### Intent Execution
+### Atomic release
 
-    After verification, Gateway releases the Solver's wrapped Bitcoin to execute the user's intent:
-    - **Direct transfer**: Sends wrapped BTC to user's address
-    - **Staking**: Converts to BTC LST/LRT and sends to user
-    - **Custom strategy**: Executes smart contract logic
-    
-    Output tokens are sent to the user's address on the destination chain.
+    Once the deposit is confirmed — cross-checked across independent Bitcoin explorer sources so a single API can't fake it — the solver sends **one** Ethereum transaction calling `releaseFundsAndCallStrategy` on `GatewayOnrampV8`:
+
+    - USDT is pulled from the solver's EOA with `safeTransferFrom`
+    - for an Ethereum destination it goes straight to the recipient; otherwise it's handed to a Gateway strategy contract that swaps or bridges onwards (a multicall wrapping Velora or Bungee, or a LayerZero OFT send)
+    - the destination gas is withheld from the fill (`tokenWithheldForGasAmount`) to reimburse the solver, so the user never needs the destination gas token
+    - affiliate and protocol fees are paid in the same transaction when the destination is Ethereum, and in a follow-up `payFees` call otherwise
+
+    The whole release is all-or-nothing. The contract even reverts if the strategy fails to consume the payout it was handed, so tokens can't be stranded mid-flow.
+  </Step>
+
+  <Step>
+
+### If it can't land
+
+    A release that fails — prices drifted past the quoted minimum, the onward swap reverts — is re-quoted and retried with backoff for about an hour, then settled as a refund: BTC to the order's `refundAddress` if one was given, otherwise USDT to the order owner on Ethereum. See [Refunds](/gateway/refunds).
   </Step>
 </Steps>
 
-### Architecture Diagram
+<Callout type="warn">
+This direction is not SPV-verified: the user's BTC lands in the solver's own wallet, and the solver then releases USDT. What protects the user is the signed quote and the automatic refund path — not an on-chain proof. The on-chain Bitcoin Light Client secures the other direction, where the solver is the one who must prove it paid.
+</Callout>
 
-The BTC-to-X process involves trustless coordination between Bitcoin, the Relayer, and BOB:
+### Architecture diagram
 
 ```mermaid
 sequenceDiagram
     participant User
+    participant API as Gateway API
     participant Bitcoin
-    participant Relayer
-    participant LightClient
-    participant Gateway
     participant Solver
+    participant Onramp as GatewayOnrampV8
+    participant Strategy as Strategy / bridge
 
-    Solver->>Gateway: Lock wrapped BTC
-    User->>Relayer: Request quote
-    Relayer->>User: Return quote
-    User->>Relayer: Create order
-    User->>Bitcoin: Send BTC to Solver address
-    Bitcoin->>Solver: BTC received
-    Relayer->>LightClient: Submit Merkle proof
-    LightClient->>LightClient: Verify proof
-    LightClient->>Gateway: Grant withdrawal permission
-    Gateway->>User: Execute intent & send tokens
+    User->>API: get-quote
+    API->>User: signed quote (1 min validity)
+    User->>API: create-order
+    API->>User: orderId + deposit address (+ PSBT)
+    User->>Bitcoin: broadcast BTC deposit
+    User->>API: register-tx
+    Solver->>Bitcoin: watch deposit until confirmed
+    Solver->>Solver: TRM screening + simulate destination call
+    Solver->>Onramp: releaseFundsAndCallStrategy
+    Onramp->>Strategy: handleGatewayMessage (non-Ethereum destinations)
+    Strategy->>User: output token on destination chain
 ```
 
-## X to BTC (BOB → Bitcoin)
+## X to BTC
 
 <Steps>
   <Step>
 
-### Registration
+### Quote and order creation
 
-    Solvers register their address and fund it with native Bitcoin (BTC) to fulfill X-to-BTC orders.
+    `get-quote` returns the minimum sats the user will receive, plus the solver fee, the Bitcoin miner fee for the payout (`inclusionFee`), and protocol and affiliate fees. `create-order` returns an EVM transaction that calls `createOrder` on `GatewayOfframpRegistryV6`, **escrowing the user's USDT in the contract** together with their Bitcoin output script, the minimum sat output, the affiliate fee list, and a creation deadline.
+
+    Users starting from a different chain or token don't create the order themselves: their token is swapped and bridged to USDT on Ethereum through a third-party provider, and the arriving message is executed by a Gateway composer contract that creates the order on their behalf.
   </Step>
-  
+
   <Step>
 
-### User Creates Order
+### Bitcoin payout
 
-    User locks wrapped Bitcoin in the `OfframpRegistry` smart contract and specifies their Bitcoin address for receiving BTC.
+    The solver waits until the order creation is reorg-safe, screens the destination address, then sends BTC to the user's script with an `OP_RETURN` output committing to `keccak256(orderId, registryAddress)` — that's what ties an on-chain Bitcoin payment to this specific order and this specific registry.
+
+    The payout txid is persisted before broadcast, so a crash degrades to "recorded but maybe unsent" rather than "sent but forgotten". The solver also refuses to pay within a 12-hour safety margin of the order's refund deadline, where the user could reclaim their USDT before the proof lands.
   </Step>
-  
+
   <Step>
 
-### Solver Accepts & Fulfills
+### SPV-verified settlement
 
-    Solvers monitors open orders, accepts those that meets their fee threshold and broadcasts a Bitcoin transaction to the user's specified address.
+    After confirmation, the solver submits the proof to `finalizeOfframpOrder`: the Bitcoin transaction, its Merkle proof, the coinbase transaction and its proof, and a chain of block headers. The `LightRelay` light client checks the headers' accumulated proof-of-work against the registry's on-chain `txProofDifficultyFactor`, and the registry then verifies that the paid output is at least `satOutputMinimum` and that the `OP_RETURN` hash matches the order.
+
+    Only then does the escrow move: protocol fee, affiliate fees, and the remainder to the solver. A `spentTxHashes` mapping means one Bitcoin transaction can never settle two orders.
   </Step>
-  
+
   <Step>
 
-### Proof & Settlement
+### Self-serve refund
 
-    After Bitcoin confirmation, the Relayer submits a Merkle proof of the Bitcoin transaction to the `OfframpRegistry`. The contract verifies the proof and transfers the user's locked wrapped Bitcoin to the Solver as reimbursement.
-  </Step>
-  
-  <Step>
-
-### Fallback Options
-
-    If the order isn't fulfilled within a reasonable time:
-    - User can bump transaction fees to incentivize Solvers
-    - User can unlock their funds after a claim delay period
+    The order owner can call `refundOrder` once the on-chain `refundDelay` has passed (configurable between 12 hours and 7 days), returning the full escrowed amount. This is the user's unilateral exit — it needs no solver and no relayer.
   </Step>
 </Steps>
 
-### Architecture Diagram
+<Callout>
+This is where the trustlessness lives: the solver cannot touch the escrowed USDT without proving on-chain that it paid the user's Bitcoin address, and the user can always walk away with their funds after the refund delay.
+</Callout>
+
+### Architecture diagram
 
 ```mermaid
 sequenceDiagram
     participant User
-    participant OfframpRegistry
+    participant Registry as GatewayOfframpRegistryV6
     participant Solver
     participant Bitcoin
-    participant Relayer
-    participant LightClient
+    participant LightRelay
 
-    Solver->>Solver: Fund Solver with BTC
-    User->>OfframpRegistry: Lock wrapped BTC
-    Solver->>Solver: Monitor orders
-    Solver->>Bitcoin: Send BTC + OP_RETURN
+    User->>Registry: createOrder (escrow USDT, BTC script, min sats)
+    Solver->>Registry: read order once reorg-safe
+    Solver->>Bitcoin: send BTC + OP_RETURN commitment
     Bitcoin->>User: BTC received
-    Solver->>Relayer: Notify completion
-    Relayer->>LightClient: Submit Merkle proof
-    LightClient->>LightClient: Verify proof
-    LightClient->>OfframpRegistry: Confirm transaction
-    OfframpRegistry->>Solver: Release wrapped BTC
+    Solver->>Registry: finalizeOfframpOrder (tx + Merkle + headers)
+    Registry->>LightRelay: validate proof-of-work and Merkle proof
+    LightRelay->>Registry: proof accepted
+    Registry->>Solver: release escrow (minus protocol + affiliate fees)
+    Note over User,Registry: If no payout: user calls refundOrder after refundDelay
 ```
 
 <Callout type="warn">
-Users' funds cannot be stolen by the relayer, but orders may be "stuck" if the relayer is offline since users cannot currently submit proofs themselves.
+Users cannot currently submit Bitcoin proofs themselves, so an order can sit unsettled if proof submission stalls. Funds stay safe either way — the escrow can only be released against a valid proof, and it becomes reclaimable by the owner after the refund delay.
 </Callout>
+
+## Controls
+
+Every order passes a fixed set of controls before funds move, in both directions:
+
+| Control | What it does |
+|---|---|
+| Address screening | TRM Labs, up to 3 hops, on every inbound and outbound flow — BTC senders, USDT recipients, Bitcoin payout addresses, affiliate recipients |
+| Simulation | The destination call is pre-executed in a sandbox and every address that touches funds inside it is screened |
+| Rate limiting | Volume-based, per-account and global |
+| Geo-IP blocking | Restricted jurisdictions are refused — see the [FAQ](/gateway/faq) for the current list |
+| Circuit breaker | The solver can be shut down at the infrastructure level on anomaly detection |
+
+## Contracts
+
+| Contract | Role |
+|---|---|
+| `GatewayOnrampV8` | Releases the solver's USDT for a BTC deposit, directly or through a strategy, and settles fees |
+| `GatewayOfframpRegistryV6` | Escrows USDT, verifies the Bitcoin payout proof, releases to the solver, and handles owner refunds |
+| `LightRelay` | On-chain Bitcoin light client — validates block headers and their accumulated proof-of-work |
+| Strategy contracts | Gateway-owned multicall and LayerZero targets that swap or bridge the payout onwards |
+| Composer contracts | Execute an inbound bridge message to create an X-to-BTC order for users arriving from another chain |
+
+Both Gateway contracts have been audited by Pashov and Common Prefix — see the [audit reports](https://docs.gobob.xyz/docs/reference/audits#bob-gateway).
 
 ## Next Steps
 
@@ -160,10 +194,13 @@ Users' funds cannot be stolen by the relayer, but orders may be "stuck" if the r
   <Card title="Integration Guide" icon="code" href="/gateway/integration">
     Start integrating Gateway into your app
   </Card>
+  <Card title="Refunds" icon="arrow-rotate-left" href="/gateway/refunds">
+    What happens when a swap can't be completed
+  </Card>
+  <Card title="Fees" icon="money-check-dollar" href="/gateway/fees">
+    The full fee breakdown, quote-first
+  </Card>
   <Card title="API Reference" icon="book" href="/api-reference/overview">
     Explore the complete API
-  </Card>
-  <Card title="Technical Docs" icon="file-lines" href="https://docs.gobob.xyz/docs/gateway/overview">
-    Read the full technical documentation
   </Card>
 </Cards>

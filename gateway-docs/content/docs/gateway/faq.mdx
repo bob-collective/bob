@@ -5,11 +5,12 @@ icon: CircleQuestionMark
 ---
 ## Frequently Asked Questions
 
-### Who pays the gas fees?
-The Relayer estimates gas costs upfront and deducts them from the transaction. Users don't need ETH on BOB to use Gateway.
+### What happens if my swap fails?
+No user is ever left with funds spent and nothing delivered.
 
-### What happens if my DeFi action fails?
-Gateway falls back to sending wrapped BTC directly to the user's EVM address, so the user still receives value. Always test thoroughly to avoid fallbacks. See [Refunds](/gateway/refunds) for details.
+On a BTC-to-X swap, the destination payout is one atomic transaction, so there is no partial fill to unwind. If it can't land at the quoted terms — prices drifted while the Bitcoin deposit confirmed, or the destination swap or bridge won't go through — the solver re-quotes and retries with backoff for about an hour, then settles the order as a refund: BTC back to the Bitcoin `refundAddress` if the order was created with one, otherwise USDT to the order owner on Ethereum.
+
+On an X-to-BTC swap, the user's USDT stays escrowed in the offramp contract until an SPV proof of the Bitcoin payout is verified on-chain. If the payout never happens, the escrow becomes reclaimable after a security delay — users can self-serve in the BOB Gateway UI, or you can submit the `refundTx` from the order status on their behalf. See [Refunds](/gateway/refunds) for details.
 
 ### Do I need Bitcoin wallet support?
 Yes, your frontend needs Bitcoin wallet integration. See the [wallet guide](/gateway/wallets) for implementation details.
