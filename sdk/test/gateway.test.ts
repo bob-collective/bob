@@ -835,7 +835,7 @@ describe('Gateway Tests', () => {
         expect(error).toBeInstanceOf(ExecuteQuoteError);
         assert(error instanceof ExecuteQuoteError);
         expect(error.orderId).toBe(mockOrderId);
-        expect(error.message).toBe('Failed to get signed transaction');
+        expect(error.message).toBe('Failed to execute Gateway quote after order creation');
         expect(error.cause).toBeInstanceOf(Error);
         assert(error.cause instanceof Error);
         expect(error.cause.message).toBe('Failed to get signed transaction');
@@ -1284,8 +1284,7 @@ describe('Gateway Tests', () => {
         expect(error).toBeInstanceOf(ExecuteQuoteError);
         assert(error instanceof ExecuteQuoteError);
         expect(error.orderId).toBe('offramp-revert-order');
-        expect(error.message).not.toContain('Insufficient native funds');
-        expect(error.message).toBe(contractError.message);
+        expect(error.message).toBe('Failed to execute Gateway quote after order creation');
         expect(error.cause).toBe(contractError);
         expect(callback).not.toHaveBeenCalled();
         expect(mockWalletClient.writeContract).not.toHaveBeenCalled();
@@ -2142,7 +2141,7 @@ describe('Gateway Tests', () => {
         expect(error).toBeInstanceOf(ExecuteQuoteError);
         assert(error instanceof ExecuteQuoteError);
         expect(error.orderId).toBe('tokenswap-order-throw-789');
-        expect(error.message).toBe('User rejected the transaction');
+        expect(error.message).toBe('Failed to execute Gateway quote after order creation');
         expect(error.cause).toBeInstanceOf(Error);
         assert(error.cause instanceof Error);
         expect(error.cause.message).toBe('User rejected the transaction');
@@ -2265,8 +2264,7 @@ describe('Gateway Tests', () => {
         expect(error).toBeInstanceOf(ExecuteQuoteError);
         assert(error instanceof ExecuteQuoteError);
         expect(error.orderId).toBe('tokenswap-revert-order');
-        expect(error.message).not.toContain('Insufficient native funds');
-        expect(error.message).toBe(contractError.message);
+        expect(error.message).toBe('Failed to execute Gateway quote after order creation');
         expect(error.cause).toBe(contractError);
         expect(callback).not.toHaveBeenCalled();
         expect(mockWalletClient.writeContract).not.toHaveBeenCalled();
@@ -3397,35 +3395,24 @@ describe('Gateway Tests', () => {
             expect(error.name).toBe('ExecuteQuoteError');
             expect(error.orderId).toBe('order-abc');
             expect(error.cause).toBe(original);
-            expect(error.message).toBe('boom');
+            expect(error.message).toBe('Failed to execute Gateway quote after order creation');
         });
 
-        it('does not throw when constructed from a frozen Error', () => {
+        it('never forwards cause.message onto its own message, regardless of cause shape', () => {
             const frozen = Object.freeze(new Error('frozen'));
+            const rpcRejection = { code: 4001, message: 'User rejected the transaction' };
 
             expect(() => new ExecuteQuoteError('order-frozen', { cause: frozen })).not.toThrow();
             expect(new ExecuteQuoteError('order-frozen', { cause: frozen }).cause).toBe(frozen);
-            expect(new ExecuteQuoteError('order-frozen', { cause: frozen }).message).toBe('frozen');
-        });
-
-        it('does not throw when constructed from a non-Error plain object', () => {
-            const rpcRejection = { code: 4001, message: 'User rejected the transaction' };
+            expect(new ExecuteQuoteError('order-frozen', { cause: frozen }).message).toBe(
+                'Failed to execute Gateway quote after order creation'
+            );
 
             expect(() => new ExecuteQuoteError('order-rpc', { cause: rpcRejection })).not.toThrow();
             expect(new ExecuteQuoteError('order-rpc', { cause: rpcRejection }).cause).toBe(rpcRejection);
-        });
-
-        it('falls back to the generic message for a non-Error cause', () => {
-            const rpcRejection = { code: 4001, message: 'User rejected the transaction' };
-            const error = new ExecuteQuoteError('order-rpc', { cause: rpcRejection });
-
-            expect(error.message).toBe('Failed to execute Gateway quote after order creation');
-        });
-
-        it('falls back to the generic message when the cause has an empty message', () => {
-            const error = new ExecuteQuoteError('order-empty', { cause: new Error('') });
-
-            expect(error.message).toBe('Failed to execute Gateway quote after order creation');
+            expect(new ExecuteQuoteError('order-rpc', { cause: rpcRejection }).message).toBe(
+                'Failed to execute Gateway quote after order creation'
+            );
         });
 
         it('uses an explicit message and omits cause for validation-only failures', () => {
