@@ -1150,9 +1150,7 @@ describe('Gateway Tests', () => {
         expect(error.message).toBe(
             'Insufficient native funds for source and destination gas fees, please add more native funds to your account'
         );
-        expect(error.cause).toBeInstanceOf(Error);
-        assert(error.cause instanceof Error);
-        expect(error.cause.cause).toBe(contractError);
+        expect(error.cause).toBe(contractError);
     });
 
     it('does not translate a plain offramp approval revert into the insufficient-funds message', async () => {
@@ -2138,9 +2136,7 @@ describe('Gateway Tests', () => {
         expect(error.message).toBe(
             'Insufficient native funds for source and destination gas fees, please add more native funds to your account'
         );
-        expect(error.cause).toBeInstanceOf(Error);
-        assert(error.cause instanceof Error);
-        expect(error.cause.cause).toBe(contractError);
+        expect(error.cause).toBe(contractError);
     });
 
     it('does not translate a plain tokenSwap approval revert into the insufficient-funds message', async () => {

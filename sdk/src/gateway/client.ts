@@ -49,20 +49,20 @@ import { estimateGasWithBuffer, formatBtc, isValidTronAddress, tronAddressToHex 
 
 const RETRY_COUNT = 8; // Number of times to retry fetching transaction receipt after sending a transaction
 
+const INSUFFICIENT_FUNDS_MESSAGE =
+    'Insufficient native funds for source and destination gas fees, please add more native funds to your account';
+
 // ContractFunctionExecutionError also wraps plain reverts, so only translate when
 // InsufficientFundsError is actually in the cause chain.
-function translateApprovalError(error: unknown): unknown {
+function getApprovalErrorMessage(error: unknown): string | undefined {
     if (
         error instanceof ContractFunctionExecutionError &&
         error.walk((cause) => cause instanceof InsufficientFundsError)
     ) {
-        return new Error(
-            'Insufficient native funds for source and destination gas fees, please add more native funds to your account',
-            { cause: error }
-        );
+        return INSUFFICIENT_FUNDS_MESSAGE;
     }
 
-    return error;
+    return undefined;
 }
 
 // Generic `T` preserves the exact overload-resolved `request` type per call site,
@@ -71,7 +71,7 @@ async function simulateApproval<T>(orderId: string, simulate: () => Promise<{ re
     try {
         return (await simulate()).request;
     } catch (error) {
-        throw new ExecuteQuoteError(orderId, { cause: translateApprovalError(error) });
+        throw new ExecuteQuoteError(orderId, { cause: error, message: getApprovalErrorMessage(error) });
     }
 }
 
@@ -464,7 +464,7 @@ export class GatewayApiClient {
                         const resetTxHash = await walletClient.writeContract(resetRequest);
                         await publicClient.waitForTransactionReceipt({ hash: resetTxHash, retryCount: RETRY_COUNT });
                     } catch (error) {
-                        throw new ExecuteQuoteError(orderId, { cause: translateApprovalError(error) });
+                        throw new ExecuteQuoteError(orderId, { cause: error, message: getApprovalErrorMessage(error) });
                     }
                 }
 
@@ -488,7 +488,7 @@ export class GatewayApiClient {
                     const approveTxHash = await walletClient.writeContract(approveRequest);
                     await publicClient.waitForTransactionReceipt({ hash: approveTxHash, retryCount: RETRY_COUNT });
                 } catch (error) {
-                    throw new ExecuteQuoteError(orderId, { cause: translateApprovalError(error) });
+                    throw new ExecuteQuoteError(orderId, { cause: error, message: getApprovalErrorMessage(error) });
                 }
             }
 
@@ -624,7 +624,7 @@ export class GatewayApiClient {
                             retryCount: RETRY_COUNT,
                         });
                     } catch (error) {
-                        throw new ExecuteQuoteError(orderId, { cause: translateApprovalError(error) });
+                        throw new ExecuteQuoteError(orderId, { cause: error, message: getApprovalErrorMessage(error) });
                     }
                 }
 
@@ -653,7 +653,7 @@ export class GatewayApiClient {
 
                     await publicClient.waitForTransactionReceipt({ hash: txHash, retryCount: RETRY_COUNT });
                 } catch (error) {
-                    throw new ExecuteQuoteError(orderId, { cause: translateApprovalError(error) });
+                    throw new ExecuteQuoteError(orderId, { cause: error, message: getApprovalErrorMessage(error) });
                 }
             }
 
