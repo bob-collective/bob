@@ -1153,6 +1153,75 @@ describe('Gateway Tests', () => {
         expect(error.cause).toBe(contractError);
     });
 
+    it('attaches orderId and translates an offramp approval failure caused by insufficient funds at the write stage', async () => {
+        const gatewaySDK = new GatewaySDK();
+
+        const mockQuote: GatewayQuoteV3OneOf = {
+            offramp: {
+                srcChain: 'bob',
+                feeBreakdown: {
+                    protocolFee: { address: zeroAddress, amount: '5', chain: 'bob' },
+                    affiliateFee: { address: zeroAddress, amount: '2', chain: 'bob' },
+                    solverFee: { address: zeroAddress, amount: '1', chain: 'bob' },
+                    inclusionFee: { address: zeroAddress, amount: '1', chain: 'bob' },
+                    fastestFeeRate: '6',
+                },
+                inputAmount: { address: zeroAddress, amount: '1000', chain: 'bob' },
+                outputAmount: { address: zeroAddress, amount: '990', chain: 'bob' },
+                tokenAddress: WBTC_OFT_ADDRESS,
+                ownerAddress: '0xabcd1234abcd1234abcd1234abcd1234abcd1234',
+                recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+                slippage: 0,
+                totalFeeUsd: '3',
+                txTo: zeroAddress,
+            },
+        };
+
+        const spenderAddress: Address = '0x1234567890123456789012345678901234567890';
+
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
+            .post('/v3/create-order')
+            .reply(200, {
+                offramp: {
+                    order_id: 'offramp-write-stage-gas-funds-order',
+                    tx: { type: 'evm', chain: 'bob', to: spenderAddress, data: '0xabcdef', value: '0' },
+                },
+            });
+
+        // simulateContract succeeds -- the failure happens on the actual write, after
+        // the request was already simulated (viem's writeContract wraps sendTransaction
+        // failures via getContractError, which can still produce ContractFunctionExecutionError).
+        const contractError = createInsufficientFundsApprovalError(spenderAddress, 1000n);
+
+        const mockWalletClient = {
+            account: { address: '0xabcd1234abcd1234abcd1234abcd1234abcd1234' as Address },
+            writeContract: vi.fn().mockRejectedValue(contractError),
+            sendTransaction: vi.fn(),
+        } as unknown as WalletClient<Transport, ViemChain, Account>;
+
+        const mockPublicClient = {
+            readContract: mockOftReadContract({ approvalRequired: true }),
+            simulateContract: vi.fn().mockResolvedValue({ request: {} }),
+            waitForTransactionReceipt: vi.fn().mockResolvedValue({}),
+        } as unknown as PublicClient<Transport>;
+
+        const error = await gatewaySDK
+            .executeQuote({
+                quote: mockQuote,
+                walletClient: mockWalletClient,
+                publicClient: mockPublicClient,
+            })
+            .catch((thrown: unknown) => thrown);
+
+        expect(error).toBeInstanceOf(ExecuteQuoteError);
+        assert(error instanceof ExecuteQuoteError);
+        expect(error.orderId).toBe('offramp-write-stage-gas-funds-order');
+        expect(error.message).toBe(
+            'Insufficient native funds for source and destination gas fees, please add more native funds to your account'
+        );
+        expect(error.cause).toBe(contractError);
+    });
+
     it('does not translate a plain offramp approval revert into the insufficient-funds message', async () => {
         const gatewaySDK = new GatewaySDK();
 
