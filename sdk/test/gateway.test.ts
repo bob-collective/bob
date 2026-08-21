@@ -3325,7 +3325,7 @@ describe('Gateway Tests', () => {
     describe('ExecuteQuoteError', () => {
         it('is a real class instance carrying orderId and the original error as cause', () => {
             const original = new Error('boom');
-            const error = new ExecuteQuoteError('order-abc', original);
+            const error = new ExecuteQuoteError('order-abc', { cause: original });
 
             expect(error).toBeInstanceOf(Error);
             expect(error).toBeInstanceOf(ExecuteQuoteError);
@@ -3338,29 +3338,36 @@ describe('Gateway Tests', () => {
         it('does not throw when constructed from a frozen Error', () => {
             const frozen = Object.freeze(new Error('frozen'));
 
-            expect(() => new ExecuteQuoteError('order-frozen', frozen)).not.toThrow();
-            expect(new ExecuteQuoteError('order-frozen', frozen).cause).toBe(frozen);
-            expect(new ExecuteQuoteError('order-frozen', frozen).message).toBe('frozen');
+            expect(() => new ExecuteQuoteError('order-frozen', { cause: frozen })).not.toThrow();
+            expect(new ExecuteQuoteError('order-frozen', { cause: frozen }).cause).toBe(frozen);
+            expect(new ExecuteQuoteError('order-frozen', { cause: frozen }).message).toBe('frozen');
         });
 
         it('does not throw when constructed from a non-Error plain object', () => {
             const rpcRejection = { code: 4001, message: 'User rejected the transaction' };
 
-            expect(() => new ExecuteQuoteError('order-rpc', rpcRejection)).not.toThrow();
-            expect(new ExecuteQuoteError('order-rpc', rpcRejection).cause).toBe(rpcRejection);
+            expect(() => new ExecuteQuoteError('order-rpc', { cause: rpcRejection })).not.toThrow();
+            expect(new ExecuteQuoteError('order-rpc', { cause: rpcRejection }).cause).toBe(rpcRejection);
         });
 
         it('falls back to the generic message for a non-Error cause', () => {
             const rpcRejection = { code: 4001, message: 'User rejected the transaction' };
-            const error = new ExecuteQuoteError('order-rpc', rpcRejection);
+            const error = new ExecuteQuoteError('order-rpc', { cause: rpcRejection });
 
             expect(error.message).toBe('Failed to execute Gateway quote after order creation');
         });
 
         it('falls back to the generic message when the cause has an empty message', () => {
-            const error = new ExecuteQuoteError('order-empty', new Error(''));
+            const error = new ExecuteQuoteError('order-empty', { cause: new Error('') });
 
             expect(error.message).toBe('Failed to execute Gateway quote after order creation');
+        });
+
+        it('uses an explicit message and omits cause for validation-only failures', () => {
+            const error = new ExecuteQuoteError('order-validation', { message: 'btcSigner missing' });
+
+            expect(error.message).toBe('btcSigner missing');
+            expect(Object.hasOwn(error, 'cause')).toBe(false);
         });
     });
 });
