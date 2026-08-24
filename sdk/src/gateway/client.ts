@@ -72,11 +72,7 @@ async function simulateApproval<T>(orderId: string, simulate: () => Promise<{ re
     try {
         return (await simulate()).request;
     } catch (error) {
-        throw new ExecuteQuoteError(
-            { cause: error },
-            orderId,
-            getApprovalErrorMessage(error) ?? EXECUTE_QUOTE_ERROR_MESSAGE
-        );
+        throw new ExecuteQuoteError(orderId, getApprovalErrorMessage(error), { cause: error });
     }
 }
 
@@ -326,12 +322,11 @@ export class GatewayApiClient {
                         // isSignet: this.isSignet,
                     });
                 } catch (error) {
-                    throw new ExecuteQuoteError({ cause: error }, orderId, EXECUTE_QUOTE_ERROR_MESSAGE);
+                    throw new ExecuteQuoteError(orderId, EXECUTE_QUOTE_ERROR_MESSAGE, { cause: error });
                 }
             } else if (btcSigner.signAllInputs) {
                 if (!order.onramp.psbtHex) {
                     throw new ExecuteQuoteError(
-                        {},
                         orderId,
                         'PSBT not available: sender address is required when using signAllInputs'
                     );
@@ -346,11 +341,10 @@ export class GatewayApiClient {
                 try {
                     bitcoinTxHex = await btcSigner.signAllInputs(psbtHex);
                 } catch (error) {
-                    throw new ExecuteQuoteError({ cause: error }, orderId, EXECUTE_QUOTE_ERROR_MESSAGE);
+                    throw new ExecuteQuoteError(orderId, EXECUTE_QUOTE_ERROR_MESSAGE, { cause: error });
                 }
             } else {
                 throw new ExecuteQuoteError(
-                    {},
                     orderId,
                     'btcSigner must implement either sendBitcoin or signAllInputs method'
                 );
@@ -378,7 +372,7 @@ export class GatewayApiClient {
                     tx = response;
                 }
             } catch (error) {
-                throw new ExecuteQuoteError({ cause: error }, orderId, EXECUTE_QUOTE_ERROR_MESSAGE);
+                throw new ExecuteQuoteError(orderId, EXECUTE_QUOTE_ERROR_MESSAGE, { cause: error });
             }
 
             if (typeof tx === 'string') {
@@ -435,7 +429,7 @@ export class GatewayApiClient {
                             args: [accountAddress, spenderAddress],
                         });
                     } catch (error) {
-                        throw new ExecuteQuoteError({ cause: error }, orderId, EXECUTE_QUOTE_ERROR_MESSAGE);
+                        throw new ExecuteQuoteError(orderId, EXECUTE_QUOTE_ERROR_MESSAGE, { cause: error });
                     }
                 }
             }
@@ -471,11 +465,7 @@ export class GatewayApiClient {
                         const resetTxHash = await walletClient.writeContract(resetRequest);
                         await publicClient.waitForTransactionReceipt({ hash: resetTxHash, retryCount: RETRY_COUNT });
                     } catch (error) {
-                        throw new ExecuteQuoteError(
-                            { cause: error },
-                            orderId,
-                            getApprovalErrorMessage(error) ?? EXECUTE_QUOTE_ERROR_MESSAGE
-                        );
+                        throw new ExecuteQuoteError(orderId, getApprovalErrorMessage(error), { cause: error });
                     }
                 }
 
@@ -499,11 +489,7 @@ export class GatewayApiClient {
                     const approveTxHash = await walletClient.writeContract(approveRequest);
                     await publicClient.waitForTransactionReceipt({ hash: approveTxHash, retryCount: RETRY_COUNT });
                 } catch (error) {
-                    throw new ExecuteQuoteError(
-                        { cause: error },
-                        orderId,
-                        getApprovalErrorMessage(error) ?? EXECUTE_QUOTE_ERROR_MESSAGE
-                    );
+                    throw new ExecuteQuoteError(orderId, getApprovalErrorMessage(error), { cause: error });
                 }
             }
 
@@ -534,7 +520,7 @@ export class GatewayApiClient {
 
                 transactionHash = hash;
             } catch (error) {
-                throw new ExecuteQuoteError({ cause: error }, orderId, EXECUTE_QUOTE_ERROR_MESSAGE);
+                throw new ExecuteQuoteError(orderId, EXECUTE_QUOTE_ERROR_MESSAGE, { cause: error });
             }
 
             try {
@@ -639,11 +625,7 @@ export class GatewayApiClient {
                             retryCount: RETRY_COUNT,
                         });
                     } catch (error) {
-                        throw new ExecuteQuoteError(
-                            { cause: error },
-                            orderId,
-                            getApprovalErrorMessage(error) ?? EXECUTE_QUOTE_ERROR_MESSAGE
-                        );
+                        throw new ExecuteQuoteError(orderId, getApprovalErrorMessage(error), { cause: error });
                     }
                 }
 
@@ -672,11 +654,7 @@ export class GatewayApiClient {
 
                     await publicClient.waitForTransactionReceipt({ hash: txHash, retryCount: RETRY_COUNT });
                 } catch (error) {
-                    throw new ExecuteQuoteError(
-                        { cause: error },
-                        orderId,
-                        getApprovalErrorMessage(error) ?? EXECUTE_QUOTE_ERROR_MESSAGE
-                    );
+                    throw new ExecuteQuoteError(orderId, getApprovalErrorMessage(error), { cause: error });
                 }
             }
 
@@ -708,7 +686,7 @@ export class GatewayApiClient {
 
                 transactionHash = hash;
             } catch (error) {
-                throw new ExecuteQuoteError({ cause: error }, orderId, EXECUTE_QUOTE_ERROR_MESSAGE);
+                throw new ExecuteQuoteError(orderId, EXECUTE_QUOTE_ERROR_MESSAGE, { cause: error });
             }
 
             try {

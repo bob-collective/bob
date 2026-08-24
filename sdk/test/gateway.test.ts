@@ -3389,11 +3389,7 @@ describe('Gateway Tests', () => {
     describe('ExecuteQuoteError', () => {
         it('is a real class instance carrying orderId and the original error as cause', () => {
             const original = new Error('boom');
-            const error = new ExecuteQuoteError(
-                { cause: original },
-                'order-abc',
-                'Failed to execute Gateway quote after order creation'
-            );
+            const error = new ExecuteQuoteError('order-abc', undefined, { cause: original });
 
             expect(error).toBeInstanceOf(Error);
             expect(error).toBeInstanceOf(ExecuteQuoteError);
@@ -3409,17 +3405,17 @@ describe('Gateway Tests', () => {
 
             const message = 'Failed to execute Gateway quote after order creation';
 
-            expect(() => new ExecuteQuoteError({ cause: frozen }, 'order-frozen', message)).not.toThrow();
-            expect(new ExecuteQuoteError({ cause: frozen }, 'order-frozen', message).cause).toBe(frozen);
-            expect(new ExecuteQuoteError({ cause: frozen }, 'order-frozen', message).message).toBe(message);
+            expect(() => new ExecuteQuoteError('order-frozen', message, { cause: frozen })).not.toThrow();
+            expect(new ExecuteQuoteError('order-frozen', message, { cause: frozen }).cause).toBe(frozen);
+            expect(new ExecuteQuoteError('order-frozen', message, { cause: frozen }).message).toBe(message);
 
-            expect(() => new ExecuteQuoteError({ cause: rpcRejection }, 'order-rpc', message)).not.toThrow();
-            expect(new ExecuteQuoteError({ cause: rpcRejection }, 'order-rpc', message).cause).toBe(rpcRejection);
-            expect(new ExecuteQuoteError({ cause: rpcRejection }, 'order-rpc', message).message).toBe(message);
+            expect(() => new ExecuteQuoteError('order-rpc', message, { cause: rpcRejection })).not.toThrow();
+            expect(new ExecuteQuoteError('order-rpc', message, { cause: rpcRejection }).cause).toBe(rpcRejection);
+            expect(new ExecuteQuoteError('order-rpc', message, { cause: rpcRejection }).message).toBe(message);
         });
 
         it('uses an explicit message and omits cause for validation-only failures', () => {
-            const error = new ExecuteQuoteError({}, 'order-validation', 'btcSigner missing');
+            const error = new ExecuteQuoteError('order-validation', 'btcSigner missing');
 
             expect(error.message).toBe('btcSigner missing');
             expect(error.orderId).toBe('order-validation');

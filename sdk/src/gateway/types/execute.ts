@@ -17,9 +17,13 @@ export interface ExecuteQuoteStep {
 export class ExecuteQuoteError extends Error {
     readonly orderId: string;
 
-    public readonly name = 'ExecuteQuoteError';
+    readonly name = 'ExecuteQuoteError';
 
-    constructor(options: ErrorOptions, orderId: string, message: string) {
+    constructor(
+        orderId: string,
+        message = 'Failed to execute Gateway quote after order creation',
+        options?: ErrorOptions
+    ) {
         super(message, options);
         this.orderId = orderId;
     }
