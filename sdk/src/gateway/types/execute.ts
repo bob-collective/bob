@@ -17,9 +17,10 @@ export interface ExecuteQuoteStep {
 export class ExecuteQuoteError extends Error {
     readonly orderId: string;
 
+    public readonly name = 'ExecuteQuoteError';
+
     constructor(message: string, orderId: string, options: ErrorOptions) {
         super(message, options);
-        this.name = 'ExecuteQuoteError';
         this.orderId = orderId;
     }
 }
