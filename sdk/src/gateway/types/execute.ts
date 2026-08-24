@@ -19,7 +19,7 @@ export class ExecuteQuoteError extends Error {
 
     public readonly name = 'ExecuteQuoteError';
 
-    constructor(message: string, orderId: string, options: ErrorOptions) {
+    constructor(options: ErrorOptions, orderId: string, message: string) {
         super(message, options);
         this.orderId = orderId;
     }
