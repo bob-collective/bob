@@ -51,6 +51,7 @@ const RETRY_COUNT = 8; // Number of times to retry fetching transaction receipt 
 
 const INSUFFICIENT_FUNDS_MESSAGE =
     'Insufficient native funds for source and destination gas fees, please add more native funds to your account';
+const EXECUTE_QUOTE_ERROR_MESSAGE = 'Failed to execute Gateway quote after order creation';
 
 // ContractFunctionExecutionError also wraps plain reverts, so only translate when
 // InsufficientFundsError is actually in the cause chain.
@@ -71,7 +72,9 @@ async function simulateApproval<T>(orderId: string, simulate: () => Promise<{ re
     try {
         return (await simulate()).request;
     } catch (error) {
-        throw new ExecuteQuoteError(orderId, { cause: error, message: getApprovalErrorMessage(error) });
+        throw new ExecuteQuoteError(getApprovalErrorMessage(error) ?? EXECUTE_QUOTE_ERROR_MESSAGE, orderId, {
+            cause: error,
+        });
     }
 }
 
@@ -320,15 +323,16 @@ export class GatewayApiClient {
                         opReturn: order.onramp.opReturnData || undefined,
                         // isSignet: this.isSignet,
                     });
-                    if (!bitcoinTxHex) throw new Error('Failed to get signed transaction');
                 } catch (error) {
-                    throw new ExecuteQuoteError(orderId, { cause: error });
+                    throw new ExecuteQuoteError(EXECUTE_QUOTE_ERROR_MESSAGE, orderId, { cause: error });
                 }
             } else if (btcSigner.signAllInputs) {
                 if (!order.onramp.psbtHex) {
-                    throw new ExecuteQuoteError(orderId, {
-                        message: 'PSBT not available: sender address is required when using signAllInputs',
-                    });
+                    throw new ExecuteQuoteError(
+                        'PSBT not available: sender address is required when using signAllInputs',
+                        orderId,
+                        {}
+                    );
                 }
                 const psbtHex = order.onramp.psbtHex;
                 callback?.({
@@ -339,14 +343,15 @@ export class GatewayApiClient {
                 });
                 try {
                     bitcoinTxHex = await btcSigner.signAllInputs(psbtHex);
-                    if (!bitcoinTxHex) throw new Error('Failed to get signed transaction');
                 } catch (error) {
-                    throw new ExecuteQuoteError(orderId, { cause: error });
+                    throw new ExecuteQuoteError(EXECUTE_QUOTE_ERROR_MESSAGE, orderId, { cause: error });
                 }
             } else {
-                throw new ExecuteQuoteError(orderId, {
-                    message: 'btcSigner must implement either sendBitcoin or signAllInputs method',
-                });
+                throw new ExecuteQuoteError(
+                    'btcSigner must implement either sendBitcoin or signAllInputs method',
+                    orderId,
+                    {}
+                );
             }
 
             let tx: RegisterTxSuccess;
@@ -371,7 +376,7 @@ export class GatewayApiClient {
                     tx = response;
                 }
             } catch (error) {
-                throw new ExecuteQuoteError(orderId, { cause: error });
+                throw new ExecuteQuoteError(EXECUTE_QUOTE_ERROR_MESSAGE, orderId, { cause: error });
             }
 
             if (typeof tx === 'string') {
@@ -428,7 +433,7 @@ export class GatewayApiClient {
                             args: [accountAddress, spenderAddress],
                         });
                     } catch (error) {
-                        throw new ExecuteQuoteError(orderId, { cause: error });
+                        throw new ExecuteQuoteError(EXECUTE_QUOTE_ERROR_MESSAGE, orderId, { cause: error });
                     }
                 }
             }
@@ -464,7 +469,11 @@ export class GatewayApiClient {
                         const resetTxHash = await walletClient.writeContract(resetRequest);
                         await publicClient.waitForTransactionReceipt({ hash: resetTxHash, retryCount: RETRY_COUNT });
                     } catch (error) {
-                        throw new ExecuteQuoteError(orderId, { cause: error, message: getApprovalErrorMessage(error) });
+                        throw new ExecuteQuoteError(
+                            getApprovalErrorMessage(error) ?? EXECUTE_QUOTE_ERROR_MESSAGE,
+                            orderId,
+                            { cause: error }
+                        );
                     }
                 }
 
@@ -488,7 +497,11 @@ export class GatewayApiClient {
                     const approveTxHash = await walletClient.writeContract(approveRequest);
                     await publicClient.waitForTransactionReceipt({ hash: approveTxHash, retryCount: RETRY_COUNT });
                 } catch (error) {
-                    throw new ExecuteQuoteError(orderId, { cause: error, message: getApprovalErrorMessage(error) });
+                    throw new ExecuteQuoteError(
+                        getApprovalErrorMessage(error) ?? EXECUTE_QUOTE_ERROR_MESSAGE,
+                        orderId,
+                        { cause: error }
+                    );
                 }
             }
 
@@ -519,7 +532,7 @@ export class GatewayApiClient {
 
                 transactionHash = hash;
             } catch (error) {
-                throw new ExecuteQuoteError(orderId, { cause: error });
+                throw new ExecuteQuoteError(EXECUTE_QUOTE_ERROR_MESSAGE, orderId, { cause: error });
             }
 
             try {
@@ -624,7 +637,11 @@ export class GatewayApiClient {
                             retryCount: RETRY_COUNT,
                         });
                     } catch (error) {
-                        throw new ExecuteQuoteError(orderId, { cause: error, message: getApprovalErrorMessage(error) });
+                        throw new ExecuteQuoteError(
+                            getApprovalErrorMessage(error) ?? EXECUTE_QUOTE_ERROR_MESSAGE,
+                            orderId,
+                            { cause: error }
+                        );
                     }
                 }
 
@@ -653,7 +670,11 @@ export class GatewayApiClient {
 
                     await publicClient.waitForTransactionReceipt({ hash: txHash, retryCount: RETRY_COUNT });
                 } catch (error) {
-                    throw new ExecuteQuoteError(orderId, { cause: error, message: getApprovalErrorMessage(error) });
+                    throw new ExecuteQuoteError(
+                        getApprovalErrorMessage(error) ?? EXECUTE_QUOTE_ERROR_MESSAGE,
+                        orderId,
+                        { cause: error }
+                    );
                 }
             }
 
@@ -685,7 +706,7 @@ export class GatewayApiClient {
 
                 transactionHash = hash;
             } catch (error) {
-                throw new ExecuteQuoteError(orderId, { cause: error });
+                throw new ExecuteQuoteError(EXECUTE_QUOTE_ERROR_MESSAGE, orderId, { cause: error });
             }
 
             try {

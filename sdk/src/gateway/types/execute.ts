@@ -13,18 +13,12 @@ export interface ExecuteQuoteStep {
     orderId?: string;
 }
 
-const EXECUTE_QUOTE_ERROR_MESSAGE = 'Failed to execute Gateway quote after order creation';
-
-type ExecuteQuoteErrorOptions = { message: string } | { cause: unknown; message?: string };
-
 /** Thrown by {@link GatewayApiClient.executeQuote} after order creation; `cause`, when present, is the exact caught value. */
 export class ExecuteQuoteError extends Error {
     readonly orderId: string;
 
-    constructor(orderId: string, options: ExecuteQuoteErrorOptions) {
-        const cause = 'cause' in options ? options.cause : undefined;
-
-        super(options.message ?? EXECUTE_QUOTE_ERROR_MESSAGE, 'cause' in options ? { cause } : undefined);
+    constructor(message: string, orderId: string, options: ErrorOptions) {
+        super(message, options);
         this.name = 'ExecuteQuoteError';
         this.orderId = orderId;
     }

@@ -737,7 +737,7 @@ describe('Gateway Tests', () => {
         expect(registerTxScope.isDone()).toBe(false);
     });
 
-    it('should throw error when btcSigner returns empty transaction', async () => {
+    it('should register an empty transaction returned by btcSigner', async () => {
         const gatewaySDK = new GatewaySDK();
 
         const mockQuote: GatewayQuoteOneOf = {
@@ -813,6 +813,12 @@ describe('Gateway Tests', () => {
                 },
             });
 
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
+            .patch('/v3/register-tx', {
+                onramp: { bitcoin_tx_hex: '', order_id: mockOrderId },
+            })
+            .reply(200, JSON.stringify('tx-hash-empty'));
+
         const mockBtcSigner: BitcoinSigner = {
             signAllInputs: async () => '',
         };
@@ -823,22 +829,17 @@ describe('Gateway Tests', () => {
 
         const mockPublicClient = {} as PublicClient<Transport>;
 
-        const error = await gatewaySDK
-            .executeQuote({
-                quote: mockQuote,
-                walletClient: mockWalletClient,
-                publicClient: mockPublicClient,
-                btcSigner: mockBtcSigner,
-            })
-            .catch((thrown: unknown) => thrown);
+        const result = await gatewaySDK.executeQuote({
+            quote: mockQuote,
+            walletClient: mockWalletClient,
+            publicClient: mockPublicClient,
+            btcSigner: mockBtcSigner,
+        });
 
-        expect(error).toBeInstanceOf(ExecuteQuoteError);
-        assert(error instanceof ExecuteQuoteError);
-        expect(error.orderId).toBe(mockOrderId);
-        expect(error.message).toBe('Failed to execute Gateway quote after order creation');
-        expect(error.cause).toBeInstanceOf(Error);
-        assert(error.cause instanceof Error);
-        expect(error.cause.message).toBe('Failed to get signed transaction');
+        expect(result).toEqual({
+            order: expect.objectContaining({ onramp: expect.objectContaining({ orderId: mockOrderId }) }),
+            tx: 'tx-hash-empty',
+        });
     });
 
     it('should execute offramp quote with token approval', async () => {
@@ -3388,7 +3389,9 @@ describe('Gateway Tests', () => {
     describe('ExecuteQuoteError', () => {
         it('is a real class instance carrying orderId and the original error as cause', () => {
             const original = new Error('boom');
-            const error = new ExecuteQuoteError('order-abc', { cause: original });
+            const error = new ExecuteQuoteError('Failed to execute Gateway quote after order creation', 'order-abc', {
+                cause: original,
+            });
 
             expect(error).toBeInstanceOf(Error);
             expect(error).toBeInstanceOf(ExecuteQuoteError);
@@ -3402,23 +3405,22 @@ describe('Gateway Tests', () => {
             const frozen = Object.freeze(new Error('frozen'));
             const rpcRejection = { code: 4001, message: 'User rejected the transaction' };
 
-            expect(() => new ExecuteQuoteError('order-frozen', { cause: frozen })).not.toThrow();
-            expect(new ExecuteQuoteError('order-frozen', { cause: frozen }).cause).toBe(frozen);
-            expect(new ExecuteQuoteError('order-frozen', { cause: frozen }).message).toBe(
-                'Failed to execute Gateway quote after order creation'
-            );
+            const message = 'Failed to execute Gateway quote after order creation';
 
-            expect(() => new ExecuteQuoteError('order-rpc', { cause: rpcRejection })).not.toThrow();
-            expect(new ExecuteQuoteError('order-rpc', { cause: rpcRejection }).cause).toBe(rpcRejection);
-            expect(new ExecuteQuoteError('order-rpc', { cause: rpcRejection }).message).toBe(
-                'Failed to execute Gateway quote after order creation'
-            );
+            expect(() => new ExecuteQuoteError(message, 'order-frozen', { cause: frozen })).not.toThrow();
+            expect(new ExecuteQuoteError(message, 'order-frozen', { cause: frozen }).cause).toBe(frozen);
+            expect(new ExecuteQuoteError(message, 'order-frozen', { cause: frozen }).message).toBe(message);
+
+            expect(() => new ExecuteQuoteError(message, 'order-rpc', { cause: rpcRejection })).not.toThrow();
+            expect(new ExecuteQuoteError(message, 'order-rpc', { cause: rpcRejection }).cause).toBe(rpcRejection);
+            expect(new ExecuteQuoteError(message, 'order-rpc', { cause: rpcRejection }).message).toBe(message);
         });
 
         it('uses an explicit message and omits cause for validation-only failures', () => {
-            const error = new ExecuteQuoteError('order-validation', { message: 'btcSigner missing' });
+            const error = new ExecuteQuoteError('btcSigner missing', 'order-validation', {});
 
             expect(error.message).toBe('btcSigner missing');
+            expect(error.orderId).toBe('order-validation');
             expect(Object.hasOwn(error, 'cause')).toBe(false);
         });
     });
