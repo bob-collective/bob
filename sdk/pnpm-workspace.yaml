@@ -1,3 +1,8 @@
 minimumReleaseAge: 7200
 minimumReleaseAgeExclude:
 - '@gobob/*'
+overrides:
+  '@metamask/utils>uuid': 11.1.1
+  'ethers>ws': 8.21.0
+  'mocha>diff': 8.0.3
+  'mocha>serialize-javascript': 7.1.0

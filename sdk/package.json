@@ -24,18 +24,6 @@
         "LICENSE",
         "README.md"
     ],
-    "overrides": {
-        "@metamask/utils": {
-            "uuid": "11.1.1"
-        },
-        "ethers": {
-            "ws": "8.21.0"
-        },
-        "mocha": {
-            "diff": "8.0.3",
-            "serialize-javascript": "7.1.0"
-        }
-    },
     "devDependencies": {
         "@gobob/tokenlist": "github:bob-collective/tokenlist#223e98d85d857ce316fe3a8c3814ed00ddd66556",
         "@openapitools/openapi-generator-cli": "^2.41.0",
