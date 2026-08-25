@@ -24,6 +24,15 @@
         "LICENSE",
         "README.md"
     ],
+    "overrides": {
+        "@metamask/utils": {
+            "uuid": "11.1.1"
+        },
+        "mocha": {
+            "diff": "8.0.3",
+            "serialize-javascript": "7.1.0"
+        }
+    },
     "devDependencies": {
         "@gobob/tokenlist": "github:bob-collective/tokenlist#223e98d85d857ce316fe3a8c3814ed00ddd66556",
         "@openapitools/openapi-generator-cli": "^2.30.2",
@@ -59,6 +68,6 @@
         "bitcoinjs-lib": "^6.1.7",
         "global": "^4.4.0",
         "globals": "^17.4.0",
-        "viem": "2.49.0"
+        "viem": "2.55.19"
     }
 }
