@@ -6,6 +6,7 @@ on:
       - master
     paths:
       - "sdk/package.json"
+      - "sdk/package-lock.json"
       - "sdk/pnpm-lock.yaml"
       - ".github/workflows/sdk-audit.yml"
   push:
@@ -13,6 +14,7 @@ on:
       - master
     paths:
       - "sdk/package.json"
+      - "sdk/package-lock.json"
       - "sdk/pnpm-lock.yaml"
       - ".github/workflows/sdk-audit.yml"
   schedule:
@@ -37,5 +39,7 @@ jobs:
       - uses: pnpm/action-setup@v4
         with:
           version: 10
-      - name: Audit dependencies
+      - name: Audit dependencies with pnpm
         run: pnpm audit
+      - name: Audit dependencies with npm
+        run: npm audit
