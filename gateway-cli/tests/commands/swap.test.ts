@@ -234,6 +234,28 @@ describe("handleSwap", () => {
     expect(mockExecuteQuote).toHaveBeenCalledOnce();
   });
 
+  it("forwards --refund-address to getQuote", async () => {
+    const { handleSwap } = await import("../../src/commands/swap.js");
+    await handleSwap({ ...baseOpts, refundAddress: "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq" }, silentLogger);
+
+    expect(mockGetQuote).toHaveBeenCalledWith(
+      expect.objectContaining({ refundAddress: "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq" }),
+    );
+  });
+
+  it("rejects --refund-address for an EVM source before getQuote", async () => {
+    const { handleSwap } = await import("../../src/commands/swap.js");
+
+    await expect(handleSwap({
+      ...baseOpts,
+      src: "USDT:ethereum",
+      dst: "BTC",
+      owner: "0x2222222222222222222222222222222222222222",
+      refundAddress: "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq",
+    }, silentLogger)).rejects.toThrow(/only be specified.*source chain is Bitcoin/);
+    expect(mockGetQuote).not.toHaveBeenCalled();
+  });
+
   it("hands the watcher the order id and ONE signal carrying the whole --timeout budget", async () => {
     // The command's entire contribution to the wait: name the order, and express the
     // budget once, as a signal. There is no deadline to keep, nothing to clamp, and no

@@ -41,6 +41,7 @@ export const quoteSchema = z.object({
  * Extends quoteSchema with additional swap-specific fields.
  */
 export const swapSchema = quoteSchema.and(z.object({
+  refundAddress: z.string().optional(),
   privateKey: z.string().optional(),
   wait: z.boolean().default(true),
   unsigned: z.boolean().default(false),
