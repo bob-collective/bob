@@ -1,0 +1,69 @@
+---
+title: How to use Gateway
+description: Swap between native Bitcoin, stablecoins, wrapped Bitcoin and tokenised gold in a single transaction.
+icon: BookOpen
+---
+
+Gateway swaps between native Bitcoin, stablecoins, wrapped Bitcoin, tokenised gold and more across multiple chains — in a single transaction. Powered by Bitcoin intents, built by BOB.
+
+This tutorial walks through each flow end to end. Pick the one that matches what you're holding.
+
+<Cards>
+  <Card
+    title="Swap tokens for native Bitcoin"
+    href="/gateway/tutorial/evm-to-btc"
+    description="You hold USDT, USDC or another supported token and want BTC."
+  />
+  <Card
+    title="Swap native Bitcoin for tokens"
+    href="/gateway/tutorial/btc-to-evm"
+    description="You hold BTC — in a wallet, on an exchange, or on a hardware device."
+  />
+  <Card
+    title="Swap between EVM chains"
+    href="/gateway/tutorial/evm-to-evm"
+    description="Move USDT, USDC, ETH and other tokens across chains."
+  />
+</Cards>
+
+## What you can swap
+
+Routes are added regularly. This table is live — it reflects what the Gateway API is quoting right now, so it is always current.
+
+<SupportedRoutes />
+
+## Wallets
+
+**On the EVM side**, Gateway supports 500+ wallets through [Reown AppKit](https://reown.com/appkit), including MetaMask, OKX, Rabby, Coinbase Wallet and Binance Web3 Wallet.
+
+**On the Bitcoin side**, all the major wallets are supported — Xverse, Unisat, OKX, Leather, Bitget, Binance Web3 Wallet and Phantom among them. Every standard Bitcoin address type is accepted: Legacy, SegWit, Native SegWit and Taproot.
+
+You don't always need a Bitcoin wallet connection. Where BTC is the asset you receive, pasting an address is enough — including a hardware wallet address or an exchange deposit address. Where BTC is the asset you spend, you can either connect a wallet or pay by sending to an address Gateway gives you.
+
+## How long it takes
+
+Bitcoin block confirmations set the pace. Most orders involving BTC complete in around 10 minutes, though this varies with Bitcoin block times. Swaps between EVM chains usually settle within a couple of minutes.
+
+## Need help with an order?
+
+The **Need help?** menu in the app links straight to Discord, the FAQ and these docs.
+
+<video src="/gateway/tutorial/need-help.mp4" controls muted loop playsInline />
+
+To reach the team, join the [BOB Discord](https://discord.gg/gobob) and open a ticket. Have your Order ID ready — it's the fastest way for support to find your order.
+
+<Callout type="warn" title="Never share your seed phrase or private keys">
+BOB support will never ask for them. Our team will never DM you first, send you links to click, or ask you to sign a transaction. Look for the blue verified tick.
+</Callout>
+
+![Opening a support ticket in the BOB Discord](/gateway/tutorial/discord-ticket.png)
+
+For what happens when a swap doesn't complete, see [Refunds](/gateway/refunds).
+
+## Swapping at size?
+
+The **BOB Inner Circle** is our white-glove programme for Bitcoin's most active swappers: a direct line to the BOB team, additional support, and early access to new routes. Places are strictly limited.
+
+Apply at [vip.gobob.xyz](https://vip.gobob.xyz/).
+
+![Join the BOB Inner Circle at vip.gobob.xyz](/gateway/tutorial/inner-circle.png)

@@ -1,0 +1,5 @@
+{
+  "title": "Tutorial",
+  "icon": "BookOpen",
+  "pages": ["index", "evm-to-btc", "btc-to-evm", "evm-to-evm"]
+}
