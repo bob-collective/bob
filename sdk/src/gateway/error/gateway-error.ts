@@ -86,10 +86,7 @@ export type DetailsFor<C extends GatewayErrorCode | GatewayErrorCodeV2 | Gateway
 type AnyGatewayErrorCode = GatewayErrorCode | GatewayErrorCodeV2 | GatewayErrorCodeV3;
 
 type ParseDetailsArgs = {
-    [C in AnyGatewayErrorCode]: [
-        code: C,
-        raw: (C extends keyof GatewayErrorDetailsMap ? GatewayErrorDetailsMap[C] : Record<string, never>) | null,
-    ];
+    [C in AnyGatewayErrorCode]: { code: C; raw: DetailsFor<C> | null };
 }[AnyGatewayErrorCode];
 
 // ─── Class ───────────────────────────────────────────────────────────────────
@@ -182,7 +179,7 @@ export class GatewayError<
         const raw =
             body.details != null && typeof body.details === 'object' ? (body.details as Record<string, unknown>) : null;
 
-        return new GatewayError(code, message, parseDetails(...([code, raw] as ParseDetailsArgs))) as AnyGatewayError;
+        return new GatewayError(code, message, parseDetails({ code, raw } as ParseDetailsArgs)) as AnyGatewayError;
     }
 
     static fromText(message: string, options?: ErrorOptions): GatewayError<(typeof GatewayErrorCode)['InternalError']> {
@@ -226,7 +223,7 @@ export function isGatewayError(err: unknown): err is AnyGatewayError {
 // Reads detail fields using generated-client property names.
 // Each case corresponds to a GatewayErrorDetails enum variant in error.rs.
 
-function parseDetails(...[code, raw]: ParseDetailsArgs): GatewayErrorDetailsMap[keyof GatewayErrorDetailsMap] | null {
+function parseDetails({ code, raw }: ParseDetailsArgs): DetailsFor<AnyGatewayErrorCode> {
     switch (code) {
         // Rust: GatewayErrorDetails::InsufficientAmount { expected, actual }
         case GatewayErrorCode.InsufficientAmount:
