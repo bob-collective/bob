@@ -24,21 +24,21 @@ export interface GatewayErrorDetailsV3OneOf {
      * @type {string}
      * @memberof GatewayErrorDetailsV3OneOf
      */
-    maxBps: string;
+    requestedBps: string;
     /**
      * 
      * @type {string}
      * @memberof GatewayErrorDetailsV3OneOf
      */
-    suggestedBps: string;
+    requiredBps: string;
 }
 
 /**
  * Check if a given object implements the GatewayErrorDetailsV3OneOf interface.
  */
 export function instanceOfGatewayErrorDetailsV3OneOf(value: object): value is GatewayErrorDetailsV3OneOf {
-    if (!('maxBps' in value) || value['maxBps'] === undefined) return false;
-    if (!('suggestedBps' in value) || value['suggestedBps'] === undefined) return false;
+    if (!('requestedBps' in value) || value['requestedBps'] === undefined) return false;
+    if (!('requiredBps' in value) || value['requiredBps'] === undefined) return false;
     return true;
 }
 
@@ -52,8 +52,8 @@ export function GatewayErrorDetailsV3OneOfFromJSONTyped(json: any, ignoreDiscrim
     }
     return {
         
-        'maxBps': json['max_bps'],
-        'suggestedBps': json['suggested_bps'],
+        'requestedBps': json['requested_bps'],
+        'requiredBps': json['required_bps'],
     };
 }
 
@@ -68,8 +68,8 @@ export function GatewayErrorDetailsV3OneOfToJSONTyped(value?: GatewayErrorDetail
 
     return {
         
-        'max_bps': value['maxBps'],
-        'suggested_bps': value['suggestedBps'],
+        'requested_bps': value['requestedBps'],
+        'required_bps': value['requiredBps'],
     };
 }
 
