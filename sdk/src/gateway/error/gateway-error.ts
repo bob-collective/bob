@@ -11,6 +11,8 @@ import {
     GatewayErrorDetailsOneOf6,
     GatewayErrorDetailsV2OneOf,
     GatewayErrorDetailsV3OneOf,
+    GatewayErrorDetailsV3OneOf1,
+    GatewayErrorDetailsV3OneOf2,
 } from '../generated-client';
 import type { GatewayError as GatewayErrorInterface } from '../generated-client/models/GatewayError';
 import { instanceOfGatewayError } from '../generated-client/models/GatewayError';
@@ -55,6 +57,12 @@ export type QuoteAmountTooLowDetails = GatewayErrorDetailsOneOf6;
 /** Details for {@link GatewayErrorCode.SlippageTooLow} */
 export type SlippageTooLowDetails = GatewayErrorDetailsV3OneOf;
 
+/** Details for {@link GatewayErrorCodeV3.NonCompliantAddresses} */
+export type NonCompliantAddressesDetails = GatewayErrorDetailsV3OneOf1;
+
+/** Details for {@link GatewayErrorCodeV3.TooManyAffiliates} */
+export type TooManyAffiliatesDetails = GatewayErrorDetailsV3OneOf2;
+
 // ─── Code → details type mapping ─────────────────────────────────────────────
 
 /**
@@ -74,6 +82,8 @@ export type GatewayErrorDetailsMap = {
     [GatewayErrorCode.ExceededLimit]: ExceededLimitDetails;
     [GatewayErrorCode.QuoteAmountTooLow]: QuoteAmountTooLowDetails;
     [GatewayErrorCode.SlippageTooLow]: SlippageTooLowDetails;
+    [GatewayErrorCodeV3.NonCompliantAddresses]: NonCompliantAddressesDetails;
+    [GatewayErrorCodeV3.TooManyAffiliates]: TooManyAffiliatesDetails;
 };
 
 /**
@@ -121,7 +131,10 @@ type ParseDetailsArgs = {
  * ```
  */
 export class GatewayError<
-    C extends GatewayErrorCode | GatewayErrorCodeV2 = GatewayErrorCode | GatewayErrorCodeV2,
+    C extends GatewayErrorCode | GatewayErrorCodeV2 | GatewayErrorCodeV3 =
+        | GatewayErrorCode
+        | GatewayErrorCodeV2
+        | GatewayErrorCodeV3,
 > extends Error {
     /** Stable error code, safe to switch/match on. */
     readonly code: C;
@@ -174,7 +187,7 @@ export class GatewayError<
             return GatewayError.fromText(message);
         }
 
-        const code = body.code as GatewayErrorCode;
+        const code = body.code as AnyGatewayErrorCode;
         const message = body.error as string;
         const raw =
             body.details != null && typeof body.details === 'object' ? (body.details as Record<string, unknown>) : null;
@@ -195,7 +208,8 @@ export class GatewayError<
  */
 export type AnyGatewayError =
     | { [C in GatewayErrorCode]: GatewayError<C> }[GatewayErrorCode]
-    | { [C2 in GatewayErrorCodeV2]: GatewayError<C2> }[GatewayErrorCodeV2];
+    | { [C2 in GatewayErrorCodeV2]: GatewayError<C2> }[GatewayErrorCodeV2]
+    | { [C3 in GatewayErrorCodeV3]: GatewayError<C3> }[GatewayErrorCodeV3];
 
 /**
  * Type guard that narrows `err` to {@link AnyGatewayError}.
@@ -291,6 +305,17 @@ function parseDetails({ code, raw }: ParseDetailsArgs): DetailsFor<AnyGatewayErr
                 requestedBps: String(raw?.requestedBps),
                 requiredBps: String(raw?.requiredBps),
             } satisfies SlippageTooLowDetails;
+
+        case GatewayErrorCodeV3.NonCompliantAddresses:
+            return {
+                addresses: raw?.addresses || [],
+            } satisfies NonCompliantAddressesDetails;
+
+        case GatewayErrorCodeV3.TooManyAffiliates:
+            return {
+                max: String(raw?.max),
+                actual: String(raw?.actual),
+            } satisfies TooManyAffiliatesDetails;
 
         // Codes with no details in Rust (details field absent or unit variant → {}):
         //   InsufficientConfirmedFunds, PerAccountLimitExceeded, GlobalLimitExceeded,
