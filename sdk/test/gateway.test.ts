@@ -26,6 +26,7 @@ import {
     isGatewayError,
 } from '../src/gateway';
 import { ETHEREUM_USDT_ADDRESS, MAINNET_GATEWAY_BASE_URL } from '../src/gateway/client';
+import { GatewayErrorCodeV2 } from '../src/gateway/error/gateway-error';
 import {
     GatewayOrderInfo,
     GatewayQuoteOneOf,
@@ -1963,6 +1964,44 @@ describe('Gateway Tests', () => {
         });
     });
 
+    it('should parse SlippageTooLow gateway errors with typed details', () => {
+        const error = GatewayError.fromResponse({
+            code: GatewayErrorCode.SlippageTooLow,
+            error: 'Slippage too low',
+            details: {
+                requestedBps: '100',
+                requiredBps: '200',
+            },
+        });
+
+        expect(error.code).toBe(GatewayErrorCode.SlippageTooLow);
+        expect(error.details).toEqual({
+            requestedBps: '100',
+            requiredBps: '200',
+        });
+    });
+
+    it('should parse AffiliateFeesNotSupportedForRoute gateway errors with typed details', () => {
+        const error = GatewayError.fromResponse({
+            code: GatewayErrorCodeV2.AffiliateFeesNotSupportedForRoute,
+            error: 'Affiliate fees not supported for route',
+            details: {
+                srcChain: 'ethereum',
+                srcToken: '0x1',
+                dstChain: 'bob',
+                dstToken: '0x2',
+            },
+        });
+
+        expect(error.code).toBe(GatewayErrorCodeV2.AffiliateFeesNotSupportedForRoute);
+        expect(error.details).toEqual({
+            srcChain: 'ethereum',
+            srcToken: '0x1',
+            dstChain: 'bob',
+            dstToken: '0x2',
+        });
+    });
+
     it('should parse gateway errors without structured details as null', () => {
         const codesWithoutDetails = [
             GatewayErrorCode.InsufficientConfirmedFunds,
@@ -1971,7 +2010,6 @@ describe('Gateway Tests', () => {
             GatewayErrorCode.InvalidRequest,
             GatewayErrorCode.InvalidOrderArgs,
             GatewayErrorCode.InvalidAffiliateFee,
-            GatewayErrorCode.SlippageTooLow,
             GatewayErrorCode.SlippageTooHigh,
             GatewayErrorCode.DisabledChain,
             GatewayErrorCode.InvalidDestinationChainId,
