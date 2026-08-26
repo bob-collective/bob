@@ -240,8 +240,8 @@ function parseDetails<C extends GatewayErrorCode | GatewayErrorCodeV2 | GatewayE
         // Rust: GatewayErrorDetails::UnableToCoverFees { total_fees, available_amount }
         case GatewayErrorCode.UnableToCoverFees:
             return {
-                totalFees: String(raw?.total_fees ?? ''),
-                availableAmount: String(raw?.available_amount ?? ''),
+                totalFees: String(raw?.totalFees ?? ''),
+                availableAmount: String(raw?.availableAmount ?? ''),
             } satisfies UnableToCoverFeesDetails as DetailsFor<C>;
 
         // Rust: GatewayErrorDetails::SimulationFailed { tenderly_url }
@@ -249,16 +249,16 @@ function parseDetails<C extends GatewayErrorCode | GatewayErrorCodeV2 | GatewayE
         case GatewayErrorCode.SimulationFailed:
         case GatewayErrorCode.GasEstimateFailed:
             return {
-                tenderlyUrl: typeof raw?.tenderly_url === 'string' ? raw?.tenderly_url : null,
+                tenderlyUrl: typeof raw?.tenderlyUrl === 'string' ? raw?.tenderlyUrl : null,
             } satisfies SimulationFailedDetails as DetailsFor<C>;
 
         // Rust: GatewayErrorDetails::NoRoute { src_chain, src_token, dst_chain, dst_token }
         case GatewayErrorCode.NoRoute:
             return {
-                srcChain: String(raw?.src_chain ?? ''),
-                srcToken: String(raw?.src_token ?? ''),
-                dstChain: String(raw?.dst_chain ?? ''),
-                dstToken: String(raw?.dst_token ?? ''),
+                srcChain: String(raw?.srcChain ?? ''),
+                srcToken: String(raw?.srcToken ?? ''),
+                dstChain: String(raw?.dstChain ?? ''),
+                dstToken: String(raw?.dstToken ?? ''),
             } satisfies NoRouteDetails as DetailsFor<C>;
 
         // Rust: GatewayErrorDetailsV2::InsufficientSolverBalance { limit, token, chain_id },
@@ -266,7 +266,7 @@ function parseDetails<C extends GatewayErrorCode | GatewayErrorCodeV2 | GatewayE
             return {
                 limit: String(raw?.limit ?? ''),
                 token: String(raw?.token ?? ''),
-                chainId: String(raw?.chain_id ?? ''),
+                chainId: String(raw?.chainId ?? ''),
             } satisfies InsufficientSolverBalanceDetails as DetailsFor<C>;
 
         // Rust: GatewayErrorDetails::ExceededLimit { limit }
