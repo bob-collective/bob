@@ -10,6 +10,7 @@ import {
     GatewayErrorDetailsOneOf5,
     GatewayErrorDetailsOneOf6,
     GatewayErrorDetailsV2OneOf,
+    GatewayErrorDetailsV3OneOf,
 } from '../generated-client';
 import type { GatewayError as GatewayErrorInterface } from '../generated-client/models/GatewayError';
 import { instanceOfGatewayError } from '../generated-client/models/GatewayError';
@@ -51,6 +52,9 @@ export type InsufficientSolverBalanceDetails = GatewayErrorDetailsV2OneOf;
 /** Details for {@link GatewayErrorCode.QuoteAmountTooLow} */
 export type QuoteAmountTooLowDetails = GatewayErrorDetailsOneOf6;
 
+/** Details for {@link GatewayErrorCode.SlippageTooLow} */
+export type SlippageTooLowDetails = GatewayErrorDetailsV3OneOf;
+
 // ─── Code → details type mapping ─────────────────────────────────────────────
 
 /**
@@ -69,6 +73,7 @@ export type GatewayErrorDetailsMap = {
     [GatewayErrorCodeV2.AffiliateFeesNotSupportedForRoute]: AffiliateFeesNotSupportedForRouteDetails;
     [GatewayErrorCode.ExceededLimit]: ExceededLimitDetails;
     [GatewayErrorCode.QuoteAmountTooLow]: QuoteAmountTooLowDetails;
+    [GatewayErrorCode.SlippageTooLow]: SlippageTooLowDetails;
 };
 
 /**
@@ -110,10 +115,7 @@ export type DetailsFor<C extends GatewayErrorCode | GatewayErrorCodeV2 | Gateway
  * ```
  */
 export class GatewayError<
-    C extends GatewayErrorCode | GatewayErrorCodeV2 | GatewayErrorCodeV3 =
-        | GatewayErrorCode
-        | GatewayErrorCodeV2
-        | GatewayErrorCodeV3,
+    C extends GatewayErrorCode | GatewayErrorCodeV2 = GatewayErrorCode | GatewayErrorCodeV2,
 > extends Error {
     /** Stable error code, safe to switch/match on. */
     readonly code: C;
@@ -187,8 +189,7 @@ export class GatewayError<
  */
 export type AnyGatewayError =
     | { [C in GatewayErrorCode]: GatewayError<C> }[GatewayErrorCode]
-    | { [C2 in GatewayErrorCodeV2]: GatewayError<C2> }[GatewayErrorCodeV2]
-    | { [C3 in GatewayErrorCodeV3]: GatewayError<C3> }[GatewayErrorCodeV3];
+    | { [C2 in GatewayErrorCodeV2]: GatewayError<C2> }[GatewayErrorCodeV2];
 
 /**
  * Type guard that narrows `err` to {@link AnyGatewayError}.
@@ -280,6 +281,12 @@ function parseDetails<C extends GatewayErrorCode | GatewayErrorCodeV2 | GatewayE
                 minimum: String(raw?.minimum ?? ''),
                 actual: String(raw?.actual ?? ''),
             } satisfies QuoteAmountTooLowDetails as DetailsFor<C>;
+
+        case GatewayErrorCode.SlippageTooLow:
+            return {
+                requestedBps: String(raw?.requestedBps),
+                requiredBps: String(raw?.requiredBps),
+            } satisfies SlippageTooLowDetails as DetailsFor<C>;
 
         // Codes with no details in Rust (details field absent or unit variant → {}):
         //   InsufficientSolverBalance, InsufficientConfirmedFunds,
