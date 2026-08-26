@@ -83,6 +83,15 @@ export type GatewayErrorDetailsMap = {
 export type DetailsFor<C extends GatewayErrorCode | GatewayErrorCodeV2 | GatewayErrorCodeV3> =
     C extends keyof GatewayErrorDetailsMap ? GatewayErrorDetailsMap[C] : null;
 
+type AnyGatewayErrorCode = GatewayErrorCode | GatewayErrorCodeV2 | GatewayErrorCodeV3;
+
+type ParseDetailsArgs = {
+    [C in AnyGatewayErrorCode]: [
+        code: C,
+        raw: (C extends keyof GatewayErrorDetailsMap ? GatewayErrorDetailsMap[C] : Record<string, never>) | null,
+    ];
+}[AnyGatewayErrorCode];
+
 // ─── Class ───────────────────────────────────────────────────────────────────
 
 /**
@@ -173,7 +182,7 @@ export class GatewayError<
         const raw =
             body.details != null && typeof body.details === 'object' ? (body.details as Record<string, unknown>) : null;
 
-        return new GatewayError(code, message, parseDetails(code, raw)) as AnyGatewayError;
+        return new GatewayError(code, message, parseDetails(...([code, raw] as ParseDetailsArgs))) as AnyGatewayError;
     }
 
     static fromText(message: string, options?: ErrorOptions): GatewayError<(typeof GatewayErrorCode)['InternalError']> {
@@ -214,13 +223,10 @@ export function isGatewayError(err: unknown): err is AnyGatewayError {
 }
 
 // ─── Code-aware detail parser ─────────────────────────────────────────────────
-// Reads raw snake_case JSON fields directly, matching Rust serde output.
+// Reads detail fields using generated-client property names.
 // Each case corresponds to a GatewayErrorDetails enum variant in error.rs.
 
-function parseDetails<C extends GatewayErrorCode | GatewayErrorCodeV2 | GatewayErrorCodeV3>(
-    code: C,
-    raw: Record<string, unknown> | null
-): DetailsFor<C> {
+function parseDetails(...[code, raw]: ParseDetailsArgs): GatewayErrorDetailsMap[keyof GatewayErrorDetailsMap] | null {
     switch (code) {
         // Rust: GatewayErrorDetails::InsufficientAmount { expected, actual }
         case GatewayErrorCode.InsufficientAmount:
@@ -228,21 +234,21 @@ function parseDetails<C extends GatewayErrorCode | GatewayErrorCodeV2 | GatewayE
             return {
                 expected: String(raw?.expected ?? ''),
                 actual: String(raw?.actual ?? ''),
-            } satisfies InsufficientAmountDetails as DetailsFor<C>;
+            } satisfies InsufficientAmountDetails;
 
         // Rust: GatewayErrorDetails::InsufficientSwapAmount { required, available }
         case GatewayErrorCode.InsufficientSwapAmount:
             return {
                 required: String(raw?.required ?? ''),
                 available: String(raw?.available ?? ''),
-            } satisfies InsufficientSwapAmountDetails as DetailsFor<C>;
+            } satisfies InsufficientSwapAmountDetails;
 
         // Rust: GatewayErrorDetails::UnableToCoverFees { total_fees, available_amount }
         case GatewayErrorCode.UnableToCoverFees:
             return {
                 totalFees: String(raw?.totalFees ?? ''),
                 availableAmount: String(raw?.availableAmount ?? ''),
-            } satisfies UnableToCoverFeesDetails as DetailsFor<C>;
+            } satisfies UnableToCoverFeesDetails;
 
         // Rust: GatewayErrorDetails::SimulationFailed { tenderly_url }
         // GasEstimateFailed also uses this shape (TenderlyError::GasEstimateFailed)
@@ -250,16 +256,17 @@ function parseDetails<C extends GatewayErrorCode | GatewayErrorCodeV2 | GatewayE
         case GatewayErrorCode.GasEstimateFailed:
             return {
                 tenderlyUrl: typeof raw?.tenderlyUrl === 'string' ? raw?.tenderlyUrl : null,
-            } satisfies SimulationFailedDetails as DetailsFor<C>;
+            } satisfies SimulationFailedDetails;
 
         // Rust: GatewayErrorDetails::NoRoute { src_chain, src_token, dst_chain, dst_token }
         case GatewayErrorCode.NoRoute:
+        case GatewayErrorCodeV2.AffiliateFeesNotSupportedForRoute:
             return {
                 srcChain: String(raw?.srcChain ?? ''),
                 srcToken: String(raw?.srcToken ?? ''),
                 dstChain: String(raw?.dstChain ?? ''),
                 dstToken: String(raw?.dstToken ?? ''),
-            } satisfies NoRouteDetails as DetailsFor<C>;
+            } satisfies NoRouteDetails;
 
         // Rust: GatewayErrorDetailsV2::InsufficientSolverBalance { limit, token, chain_id },
         case GatewayErrorCode.InsufficientSolverBalance:
@@ -267,33 +274,32 @@ function parseDetails<C extends GatewayErrorCode | GatewayErrorCodeV2 | GatewayE
                 limit: String(raw?.limit ?? ''),
                 token: String(raw?.token ?? ''),
                 chainId: String(raw?.chainId ?? ''),
-            } satisfies InsufficientSolverBalanceDetails as DetailsFor<C>;
+            } satisfies InsufficientSolverBalanceDetails;
 
         // Rust: GatewayErrorDetails::ExceededLimit { limit }
         case GatewayErrorCode.ExceededLimit:
             return {
                 limit: String(raw?.limit ?? ''),
-            } satisfies ExceededLimitDetails as DetailsFor<C>;
+            } satisfies ExceededLimitDetails;
 
         // Rust: GatewayErrorDetails::QuoteAmountTooLow { minimum, actual }
         case GatewayErrorCode.QuoteAmountTooLow:
             return {
                 minimum: String(raw?.minimum ?? ''),
                 actual: String(raw?.actual ?? ''),
-            } satisfies QuoteAmountTooLowDetails as DetailsFor<C>;
+            } satisfies QuoteAmountTooLowDetails;
 
         case GatewayErrorCode.SlippageTooLow:
             return {
                 requestedBps: String(raw?.requestedBps),
                 requiredBps: String(raw?.requiredBps),
-            } satisfies SlippageTooLowDetails as DetailsFor<C>;
+            } satisfies SlippageTooLowDetails;
 
         // Codes with no details in Rust (details field absent or unit variant → {}):
-        //   InsufficientSolverBalance, InsufficientConfirmedFunds,
-        //   PerAccountLimitExceeded, GlobalLimitExceeded, InvalidRequest, InvalidOrderArgs,
-        //   InvalidAffiliateFee, SlippageTooLow, SlippageTooHigh, DisabledChain,
+        //   InsufficientConfirmedFunds, PerAccountLimitExceeded, GlobalLimitExceeded,
+        //   InvalidRequest, InvalidOrderArgs, InvalidAffiliateFee, SlippageTooHigh, DisabledChain,
         //   InvalidDestinationChainId, OrderNotFound, OrderExpired, DuplicateOrder, InternalError
         default:
-            return null as DetailsFor<C>;
+            return null;
     }
 }
