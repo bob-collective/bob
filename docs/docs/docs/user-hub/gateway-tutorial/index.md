@@ -1,36 +1,22 @@
 ---
+sidebar_position: 1
 title: How to use Gateway
 description: Swap between native Bitcoin, stablecoins, wrapped Bitcoin and tokenised gold in a single transaction.
-icon: BookOpen
 ---
+
+# How to use Gateway
 
 Gateway swaps between native Bitcoin, stablecoins, wrapped Bitcoin, tokenised gold and more across multiple chains — in a single transaction. Powered by Bitcoin intents, built by BOB.
 
 This tutorial walks through each flow end to end. Pick the one that matches what you're holding.
 
-<Cards>
-  <Card
-    title="Swap tokens for native Bitcoin"
-    href="/gateway/tutorial/evm-to-btc"
-    description="You hold USDT, USDC or another supported token and want BTC."
-  />
-  <Card
-    title="Swap native Bitcoin for tokens"
-    href="/gateway/tutorial/btc-to-evm"
-    description="You hold BTC — in a wallet, on an exchange, or on a hardware device."
-  />
-  <Card
-    title="Swap between EVM chains"
-    href="/gateway/tutorial/evm-to-evm"
-    description="Move USDT, USDC, ETH and other tokens across chains."
-  />
-</Cards>
+- **[Swap tokens for native Bitcoin](./evm-to-btc/)** — you hold USDT, USDC or another supported token and want BTC.
+- **[Swap native Bitcoin for tokens](./btc-to-evm/)** — you hold BTC, in a wallet, on an exchange, or on a hardware device.
+- **[Swap between EVM chains](./evm-to-evm/)** — move USDT, USDC, ETH and other tokens across chains.
 
 ## What you can swap
 
-Routes are added regularly. This table is live — it reflects what the Gateway API is quoting right now, so it is always current.
-
-<SupportedRoutes />
+Routes are added regularly. For the live list of chains and assets Gateway supports right now, see [Supported routes](https://docs.gobob.xyz/gateway/supported-routes).
 
 ## Wallets
 
@@ -48,17 +34,17 @@ Bitcoin block confirmations set the pace. Most orders involving BTC complete in 
 
 The **Need help?** menu in the app links straight to Discord, the FAQ and these docs.
 
-<video src="/gateway/tutorial/need-help.mp4" controls muted loop playsInline />
+<video src="/user-hub/tutorial/need-help.mp4" controls muted loop playsInline />
 
 To reach the team, join the [BOB Discord](https://discord.gg/gobob) and open a ticket. Have your Order ID ready — it's the fastest way for support to find your order.
 
-<Callout type="warn" title="Never share your seed phrase or private keys">
+:::warning Never share your seed phrase or private keys
 BOB support will never ask for them. Our team will never DM you first, send you links to click, or ask you to sign a transaction. Look for the blue verified tick.
-</Callout>
+:::
 
-![Opening a support ticket in the BOB Discord](/gateway/tutorial/discord-ticket.png)
+![Opening a support ticket in the BOB Discord](/user-hub/tutorial/discord-ticket.png)
 
-For what happens when a swap doesn't complete, see [Refunds](/gateway/refunds).
+For what happens when a swap doesn't complete, see [Refunds](https://docs.gobob.xyz/gateway/refunds).
 
 ## Swapping at size?
 
@@ -66,4 +52,4 @@ The **BOB Inner Circle** is our white-glove programme for Bitcoin's most active 
 
 Apply at [vip.gobob.xyz](https://vip.gobob.xyz/).
 
-![Join the BOB Inner Circle at vip.gobob.xyz](/gateway/tutorial/inner-circle.png)
+![Join the BOB Inner Circle at vip.gobob.xyz](/user-hub/tutorial/inner-circle.png)
