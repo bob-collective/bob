@@ -141,11 +141,7 @@ sequenceDiagram
 </Steps>
 
 <Callout>
-This is where the SPV guarantee lives: the solver cannot touch the escrowed USDT without proving on-chain that it paid the user's Bitcoin address. Escrowed funds have exactly two exits — to the solver against a valid proof, or back to the user via `refundOrder` — so no party can divert them elsewhere.
-</Callout>
-
-<Callout type="warn">
-The refund is no longer a user-side exit. Registry V6 and earlier let the order owner call `refundOrder` themselves; V7 gates it on the contract owner, so recovering a stuck order depends on BOB acting after the refund delay. The escrow still cannot be paid to anyone but the user or a solver that proved it paid.
+This is where the SPV guarantee lives: the solver cannot touch the escrowed USDT without proving on-chain that it paid the user's Bitcoin address. Escrowed funds have exactly two exits — to the solver against a valid proof, or back to the user via `refundOrder` — so the owner key controls when a refund settles, not where it goes.
 </Callout>
 
 ### Architecture diagram

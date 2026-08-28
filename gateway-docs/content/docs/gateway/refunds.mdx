@@ -47,15 +47,15 @@ A handful of cases can't be settled automatically and are held for manual handli
 
 X-to-BTC refunds are a very rare edge case. The user's USDT is escrowed in the offramp registry when the order is created, and the token side settles before the Bitcoin payout is made — so a refund only comes into play if the payout never happens (for example, a solver going offline). Often a slow payout isn't a refund case at all — it just needs a Bitcoin fee bump, which Gateway handles internally.
 
-The escrow can leave the contract in exactly two ways:
+The escrow has only two possible destinations, and the contract fixes both: the user, or a solver that has proven on-chain that it already paid the user.
 
 1. **The solver proves it paid.** `finalizeOfframpOrder` releases the escrow only against an SPV proof of the Bitcoin payout, verified on-chain by the Bitcoin Light Client. See the [Deep Dive](/gateway/technical#x-to-btc).
-2. **Gateway refunds the order.** After the on-chain `refundDelay` has elapsed, the registry owner can call `refundOrder` to return the full escrowed amount to the user. The delay is configurable on-chain between 12 hours and 7 days, and exists so a Bitcoin payment that was already made can't be refunded on top of it.
+2. **Gateway refunds the order.** Once the on-chain `refundDelay` has elapsed, `refundOrder` returns the full escrowed amount to the user. The delay is configurable on-chain between 12 hours and 7 days, and exists so a Bitcoin payment that was already made can't be refunded on top of it.
 
-Nothing else can move those funds — in particular, neither a solver nor the relayer can take them.
+No other party can move those funds, and there is no route that pays them anywhere else — the registry owner controls the timing of a refund, not its destination.
 
-<Callout type="warn">
-As of offramp registry V7, `refundOrder` is owner-only: **users and integrators cannot trigger an X-to-BTC refund themselves.** Earlier registry versions let the order owner call it directly, and the API used to hand out a `refundTx` for that purpose; both are gone. If an X-to-BTC order looks stuck, contact us on [Discord](https://discord.gg/gobob) rather than trying to submit a refund.
+<Callout>
+`refundOrder` is owner-only, so users and integrators don't trigger X-to-BTC refunds themselves. If an order looks stuck, contact us on [Discord](https://discord.gg/gobob).
 </Callout>
 
 <Callout>
