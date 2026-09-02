@@ -91,7 +91,8 @@ export interface GatewayOnrampQuoteV2 {
      */
     fees: GatewayTokenAmountV2;
     /**
-     * Optional gas refill amount
+     * Deprecated: gas refill is no longer supported. Always `null`. Kept for
+     * V2 wire compatibility; removed in V3.
      * @type {string}
      * @memberof GatewayOnrampQuoteV2
      */

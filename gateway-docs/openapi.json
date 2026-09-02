@@ -1236,7 +1236,7 @@
           {
             "name": "refundAddress",
             "in": "query",
-            "description": "Optional refund bitcoin address to be used in a bitcoin onramp request.",
+            "description": "Optional refund bitcoin address to be used in a bitcoin onramp request.\nMust be valid on Bitcoin mainnet. Ignored for non-onramp routes.",
             "required": false,
             "schema": {
               "type": "string"
@@ -1431,7 +1431,7 @@
                       "string",
                       "null"
                     ],
-                    "description": "Hex-encoded Bitcoin PSBT (only present when sender address was provided)"
+                    "description": "Hex-encoded Bitcoin PSBT (only present when sender address was provided).\n\nCoin selection does NOT detect or exclude ordinals, inscriptions, or runes. If the\nsender address holds such assets, the PSBT may spend those UTXOs as ordinary sats.\nCallers holding ordinal-bearing UTXOs should fund the order from a separate address."
                   }
                 }
               }
@@ -1528,7 +1528,7 @@
                       "string",
                       "null"
                     ],
-                    "description": "Hex-encoded Bitcoin PSBT (only present when sender address was provided)"
+                    "description": "Hex-encoded Bitcoin PSBT (only present when sender address was provided).\n\nCoin selection does NOT detect or exclude ordinals, inscriptions, or runes. If the\nsender address holds such assets, the PSBT may spend those UTXOs as ordinary sats.\nCallers holding ordinal-bearing UTXOs should fund the order from a separate address."
                   }
                 }
               }
@@ -1625,7 +1625,7 @@
                       "string",
                       "null"
                     ],
-                    "description": "Hex-encoded Bitcoin PSBT (only present when sender address was provided)"
+                    "description": "Hex-encoded Bitcoin PSBT (only present when sender address was provided).\n\nCoin selection does NOT detect or exclude ordinals, inscriptions, or runes. If the\nsender address holds such assets, the PSBT may spend those UTXOs as ordinary sats.\nCallers holding ordinal-bearing UTXOs should fund the order from a separate address."
                   }
                 }
               }
@@ -1785,7 +1785,6 @@
         "description": "New error codes for V3.",
         "enum": [
           "BUNGEE_NO_ROUTE",
-          "MAX_SLIPPAGE_EXCEEDED",
           "MISSING_OWNER_ADDRESS",
           "NON_COMPLIANT_ADDRESSES",
           "SERVICE_UNAVAILABLE",
@@ -2078,14 +2077,14 @@
           {
             "type": "object",
             "required": [
-              "suggested_bps",
-              "max_bps"
+              "required_bps",
+              "requested_bps"
             ],
             "properties": {
-              "max_bps": {
+              "requested_bps": {
                 "type": "string"
               },
-              "suggested_bps": {
+              "required_bps": {
                 "type": "string"
               }
             }
@@ -2813,7 +2812,7 @@
               "string",
               "null"
             ],
-            "description": "Optional gas refill amount"
+            "description": "Deprecated: gas refill is no longer supported. Always `null`. Kept for\nV1 wire compatibility; removed in V3."
           },
           "inputAmount": {
             "$ref": "#/components/schemas/GatewayTokenAmount",
@@ -2925,7 +2924,7 @@
               "string",
               "null"
             ],
-            "description": "Optional gas refill amount"
+            "description": "Deprecated: gas refill is no longer supported. Always `null`. Kept for\nV2 wire compatibility; removed in V3."
           },
           "inputAmount": {
             "$ref": "#/components/schemas/GatewayTokenAmountV2",
@@ -3644,7 +3643,7 @@
       },
       "GatewayTokenSwapQuoteV3": {
         "type": "object",
-        "description": "V3 token-swap quote: the V2 shape plus a resolved `affiliate`. The quote *is*\nthe create-order body, so carrying the affiliate here is what stops it being\ndropped on the round-trip — the aggregator (Bungee/Velora) charges it on the\nsource chain. Mirrors how onramp/offramp embed affiliates in their quotes.",
+        "description": "V3 token-swap quote: the V2 shape plus a resolved `affiliate` and\n`ownerAddress`. The quote *is* the create-order body, so both must round-trip\n— the aggregator charges the affiliate on the source chain, and Bungee\nrefunds `ownerAddress` on a source-chain failure.",
         "required": [
           "srcChain",
           "dstChain",
@@ -3685,6 +3684,13 @@
           },
           "outputAmount": {
             "$ref": "#/components/schemas/GatewayTokenAmountV2"
+          },
+          "ownerAddress": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "V3 EVM owner / source-chain refund address (`0x…`). Echoed so create-order\nnames the same Bungee refund target as get-quote. Absent on quotes produced\nbefore this field existed; create-order then refunds the sender."
           },
           "priceImpact": {
             "type": [

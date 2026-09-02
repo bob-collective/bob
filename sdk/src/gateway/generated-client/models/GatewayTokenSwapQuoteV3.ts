@@ -29,10 +29,10 @@ import {
 } from './GatewayTokenAmountV2';
 
 /**
- * V3 token-swap quote: the V2 shape plus a resolved `affiliate`. The quote *is*
- * the create-order body, so carrying the affiliate here is what stops it being
- * dropped on the round-trip — the aggregator (Bungee/Velora) charges it on the
- * source chain. Mirrors how onramp/offramp embed affiliates in their quotes.
+ * V3 token-swap quote: the V2 shape plus a resolved `affiliate` and
+ * `ownerAddress`. The quote *is* the create-order body, so both must round-trip
+ * — the aggregator charges the affiliate on the source chain, and Bungee
+ * refunds `ownerAddress` on a source-chain failure.
  * @export
  * @interface GatewayTokenSwapQuoteV3
  */
@@ -73,6 +73,14 @@ export interface GatewayTokenSwapQuoteV3 {
      * @memberof GatewayTokenSwapQuoteV3
      */
     outputAmount: GatewayTokenAmountV2;
+    /**
+     * V3 EVM owner / source-chain refund address (`0x…`). Echoed so create-order
+     * names the same Bungee refund target as get-quote. Absent on quotes produced
+     * before this field existed; create-order then refunds the sender.
+     * @type {string}
+     * @memberof GatewayTokenSwapQuoteV3
+     */
+    ownerAddress?: string | null;
     /**
      * Price impact as a fraction, e.g. `"-0.05"` means 5% loss. Absent if no price feed is
      * available.
@@ -151,6 +159,7 @@ export function GatewayTokenSwapQuoteV3FromJSONTyped(json: any, ignoreDiscrimina
         'fees': GatewayTokenAmountV2FromJSON(json['fees']),
         'inputAmount': GatewayTokenAmountV2FromJSON(json['inputAmount']),
         'outputAmount': GatewayTokenAmountV2FromJSON(json['outputAmount']),
+        'ownerAddress': json['ownerAddress'] == null ? undefined : json['ownerAddress'],
         'priceImpact': json['priceImpact'] == null ? undefined : json['priceImpact'],
         'priceImpactUsd': json['priceImpactUsd'] == null ? undefined : json['priceImpactUsd'],
         'recipient': json['recipient'],
@@ -178,6 +187,7 @@ export function GatewayTokenSwapQuoteV3ToJSONTyped(value?: GatewayTokenSwapQuote
         'fees': GatewayTokenAmountV2ToJSON(value['fees']),
         'inputAmount': GatewayTokenAmountV2ToJSON(value['inputAmount']),
         'outputAmount': GatewayTokenAmountV2ToJSON(value['outputAmount']),
+        'ownerAddress': value['ownerAddress'],
         'priceImpact': value['priceImpact'],
         'priceImpactUsd': value['priceImpactUsd'],
         'recipient': value['recipient'],

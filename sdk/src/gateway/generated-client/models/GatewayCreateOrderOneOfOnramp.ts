@@ -38,7 +38,11 @@ export interface GatewayCreateOrderOneOfOnramp {
      */
     orderId: string;
     /**
-     * Hex-encoded Bitcoin PSBT (only present when sender address was provided)
+     * Hex-encoded Bitcoin PSBT (only present when sender address was provided).
+     * 
+     * Coin selection does NOT detect or exclude ordinals, inscriptions, or runes. If the
+     * sender address holds such assets, the PSBT may spend those UTXOs as ordinary sats.
+     * Callers holding ordinal-bearing UTXOs should fund the order from a separate address.
      * @type {string}
      * @memberof GatewayCreateOrderOneOfOnramp
      */
