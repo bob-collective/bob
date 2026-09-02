@@ -178,7 +178,7 @@ export class MempoolClient {
      *   .catch(error => console.error('Failed to fetch transaction info:', error));
      */
     async getTxInfo(txid: string): Promise<MempoolTxInfo> {
-        return this.getJson<MempoolTxInfo>(`${this.basePath}/v1/tx/${txid}`);
+        return this.getJson<MempoolTxInfo>(`${this.basePath}/tx/${txid}`);
     }
 
     /**

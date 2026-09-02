@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, Mock, MockedFunction, vi } from 'vitest';
-import { MempoolClient } from '../src/mempool';
+import { MAINNET_MEMPOOL_BASE_PATH, MempoolClient } from '../src/mempool';
 
 const MOCKS = {
     fees: {
@@ -30,9 +30,9 @@ describe('Mempool Tests', () => {
     const client = new MempoolClient();
 
     beforeEach(() => {
-        // Mock the fetch API only for URLs including /fees/recommended
+        // Mock the fetch API only for known endpoints
         global.fetch = vi.fn((url) => {
-            if (url.includes('/fees/recommended')) {
+            if (url === `${MAINNET_MEMPOOL_BASE_PATH}/v1/fees/recommended`) {
                 return Promise.resolve({
                     ok: true,
                     json: () => Promise.resolve(MOCKS.fees.recommended),
@@ -50,7 +50,7 @@ describe('Mempool Tests', () => {
                     json: () => Promise.resolve(MOCKS.blockDetails),
                 } as Response);
             }
-            if (url.includes(`/v1/tx/${MOCKS.txInfo.txid}`)) {
+            if (url === `${MAINNET_MEMPOOL_BASE_PATH}/tx/${MOCKS.txInfo.txid}`) {
                 return Promise.resolve({
                     ok: true,
                     json: () => Promise.resolve(MOCKS.txInfo),
@@ -151,7 +151,7 @@ describe('Mempool Tests', () => {
 
         global.fetch = vi.fn((url) => {
             for (let data of mockData) {
-                if (url.includes(`/v1/tx/${data.txid}`)) {
+                if (url === `${MAINNET_MEMPOOL_BASE_PATH}/tx/${data.txid}`) {
                     return Promise.resolve({
                         ok: true,
                         json: () => Promise.resolve({ ...MOCKS.txInfo, ...data, timestamp: undefined }),
