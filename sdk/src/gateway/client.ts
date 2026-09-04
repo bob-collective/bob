@@ -137,8 +137,7 @@ export interface AllWalletClientParams extends EvmWalletClientParams {
  * the BTC payment externally.
  */
 export type ExecuteQuoteResult =
-    | { order: GatewayCreateOrderV2; tx: string }
-    | { order: GatewayCreateOrderOneOf; tx?: undefined };
+    { order: GatewayCreateOrderV2; tx: string } | { order: GatewayCreateOrderOneOf; tx?: undefined };
 
 /**
  * Gateway REST HTTP API client.
