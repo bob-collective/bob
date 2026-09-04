@@ -114,44 +114,6 @@ export API_URL=http://localhost:3000/ # or https://blockstream.info/api/ if you 
 npm run dev-server
 ```
 
-### Ord
-
-If you are working with ordinals on a deeper level or in a local environment with Bitcoin regtest, this is a useful tool.
-
-- Indexer, block-explorer and wallet
-- Uses Bitcoin Core for signing and indexing
-- Provides JSON-API
-
-The good:
-
-- Shows ordinals and inscriptions
-- Can be run locally
-
-The bad:
-
-- Slow to index mainnet
-
-Get started: https://docs.ordinals.com/
-
-### UniSat
-
-If you are working with ordinals or BRC20 tokens on Bitcoin testnet or mainnet, the hosted service is easier to use than using `ord`.
-
-- Hosted service
-- Provides REST API
-
-The good:
-
-- BRC20 indexing
-- Swagger supports code-gen
-- Additional APIs (inscription, swap, marketplace)
-
-The bad:
-
-- Only mainnet and testnet (hosted)
-
-Get started: https://docs.unisat.io/dev/unisat-developer-service
-
 ## More Tools
 
 ### BOB SDK

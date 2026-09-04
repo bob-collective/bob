@@ -23,7 +23,6 @@ sdk/src/
 │   └── utils/                 # Chain resolution, BTC formatting
 ├── esplora.ts                 # Bitcoin block explorer client
 ├── mempool.ts                 # Mempool fee estimation
-├── ordinals/                  # Ordinals support
 └── wallet/                    # Wallet utilities
 ```
 

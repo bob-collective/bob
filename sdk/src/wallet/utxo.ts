@@ -1,11 +1,7 @@
-import * as bitcoin from 'bitcoinjs-lib';
 import { Transaction, Script, selectUTXO, TEST_NETWORK, NETWORK, p2wpkh, p2sh, p2tr } from '@scure/btc-signer';
 import { hex, base64 } from '@scure/base';
 import { AddressType, getAddressInfo as getAddressInfoRaw, Network, AddressInfo } from 'bitcoin-address-validation';
 import { EsploraClient, UTXO } from '../esplora';
-import { OrdinalsClient, OutPoint, OutputJson } from '../ordinal-api';
-import { parseInscriptions } from '../inscription';
-import { parseRunestone } from '../runes';
 
 export type BitcoinNetworkName = Exclude<Network, 'regtest'>;
 
@@ -25,101 +21,21 @@ export const getAddressInfo = (address: string, isSignet: boolean): AddressInfo 
 
 type Output = { address: string; amount: bigint } | { script: Uint8Array; amount: bigint };
 
-const isCardinalOutput = (output: OutputJson) =>
-    output.inscriptions.length === 0 && Object.keys(output.runes).length === 0;
-
-const isCardinalTx = async (
-    outpoint: OutPoint,
-    cardinalOutputsSet: Set<string>,
-    esploraClient: EsploraClient,
-    ordinalsClient: OrdinalsClient
-): Promise<boolean> => {
-    const [txHex, transaction] = await Promise.all([
-        esploraClient.getTransactionHex(outpoint.txid),
-        esploraClient.getTransaction(outpoint.txid),
-    ]);
-    const tx = bitcoin.Transaction.fromHex(txHex);
-
-    const inscriptions = parseInscriptions(tx);
-    const rune = parseRunestone(tx);
-
-    if (rune || inscriptions.length > 0) return false;
-
-    // if confirmed check if it's included in cardinal set
-    if (transaction.status.confirmed) return cardinalOutputsSet.has(OutPoint.toString(outpoint));
-
-    const outputs = await ordinalsClient.getOutputsFromOutPoints(transaction.vin.map(OutPoint.toString));
-
-    const results = await Promise.all(
-        transaction.vin.map(async (vin, index) => {
-            if (cardinalOutputsSet.has(OutPoint.toString(vin))) return true;
-
-            const output = outputs[index];
-
-            if (output.indexed) {
-                return isCardinalOutput(output);
-            } else {
-                return isCardinalTx(vin, cardinalOutputsSet, esploraClient, ordinalsClient);
-            }
-        })
-    );
-    return results.every((result) => result === true);
-};
-
-/**
- * @ignore
- */
-export const findSafeUtxos = async (
-    utxos: UTXO[],
-    cardinalOutputsSet: Set<string>,
-    esploraClient: EsploraClient,
-    ordinalsClient: OrdinalsClient
-): Promise<UTXO[]> => {
-    const results = await Promise.all(
-        utxos.map(async (utxo) => {
-            // the utxo is confirmed and a known cardinal
-            if (cardinalOutputsSet.has(OutPoint.toString(utxo))) return true;
-
-            // the utxo is unconfirmed (not indexed by Ord)
-            return isCardinalTx(utxo, cardinalOutputsSet, esploraClient, ordinalsClient);
-        })
-    );
-
-    return utxos.filter((_, index) => results[index]);
-};
-
-const getSafeUtxos = async (
-    address: string,
-    esploraClient: EsploraClient,
-    ordinalsClient: OrdinalsClient
-): Promise<UTXO[]> => {
-    const [utxos, cardinalOutputs] = await Promise.all([
-        // all utxos including unconfirmed txs
-        esploraClient.getAddressUtxos(address),
-        // cardinal = return UTXOs not containing inscriptions or runes
-        ordinalsClient.getOutputsFromAddress(address, 'cardinal'),
-    ]);
-
-    const cardinalOutputsSet = new Set(cardinalOutputs.map((output) => output.outpoint));
-
-    return findSafeUtxos(utxos, cardinalOutputsSet, esploraClient, ordinalsClient);
-};
-
 const collectPossibleInputs = async (fromAddress: string, publicKey?: string, isSignet: boolean = false) => {
     const addressInfo = getAddressInfo(fromAddress, isSignet);
 
     const esploraClient = new EsploraClient(addressInfo.network);
-    const ordinalsClient = new OrdinalsClient(addressInfo.network);
 
-    const safeUtxos = await getSafeUtxos(fromAddress, esploraClient, ordinalsClient);
+    // all utxos including unconfirmed txs
+    const utxos = await esploraClient.getAddressUtxos(fromAddress);
 
-    if (safeUtxos.length === 0) {
+    if (utxos.length === 0) {
         throw new Error('No confirmed UTXOs');
     }
 
     // To construct the spending transaction and estimate the fee, we need the transactions for the UTXOs
     return Promise.all(
-        safeUtxos.map(async (utxo) => {
+        utxos.map(async (utxo) => {
             const hex = await esploraClient.getTransactionHex(utxo.txid);
             const transaction = Transaction.fromRaw(Buffer.from(hex, 'hex'), { allowUnknownOutputs: true });
             const input = getInputFromUtxoAndTx(
@@ -161,7 +77,7 @@ export interface Input {
  * @param confirmationTarget The number of blocks to include this tx (for fee estimation).
  * @param isSignet True if using Bitcoin Signet.
  * @param utxoSelectionStrategy UTXO selection strategy. `'default'` selects a subset (may leave change);
- *   `'all'` spends every safe UTXO (used for full-balance sweeps so the tx matches an `'all'` fee estimate).
+ *   `'all'` spends every UTXO (used for full-balance sweeps so the tx matches an `'all'` fee estimate).
  * @returns {Promise<string>} The Base64 encoded PSBT.
  *
  * @example
@@ -324,7 +240,7 @@ export function getInputFromUtxoAndTx(
 /**
  * Estimate the Bitcoin network fee (in satoshis) to spend from `fromAddress`.
  *
- * Used for direct (non-Gateway) sends. With `amount` omitted, all safe UTXOs are
+ * Used for direct (non-Gateway) sends. With `amount` omitted, all UTXOs are
  * selected (a full-balance sweep estimate); otherwise the fee is estimated for the
  * given `amount`. Pass `utxoSelectionStrategy` to force a strategy regardless of `amount`
  * (e.g. `'all'` to match a sweep built with `createBitcoinPsbt(..., 'all')`).
@@ -445,8 +361,6 @@ export async function estimateTxFee(
  * const balance = await getBalance(address);
  * console.log(balance);
  * ```
- *
- * @dev UTXOs that contain inscriptions or runes will not be used to calculate balance.
  */
 export async function getBalance(address?: string, isSignet: boolean = false) {
     if (!address) {
@@ -456,13 +370,12 @@ export async function getBalance(address?: string, isSignet: boolean = false) {
     const addressInfo = getAddressInfo(address, isSignet);
 
     const esploraClient = new EsploraClient(addressInfo.network);
-    const ordinalsClient = new OrdinalsClient(addressInfo.network);
 
-    const safeUtxos = await getSafeUtxos(address, esploraClient, ordinalsClient);
+    const utxos = await esploraClient.getAddressUtxos(address);
 
-    const total = safeUtxos.reduce((acc, utxo) => acc + utxo.value, 0);
+    const total = utxos.reduce((acc, utxo) => acc + utxo.value, 0);
 
-    const confirmed = safeUtxos.reduce((acc, utxo) => {
+    const confirmed = utxos.reduce((acc, utxo) => {
         if (utxo.confirmed) {
             return acc + utxo.value;
         }
