@@ -356,14 +356,9 @@ orders.forEach(order => {
       const { txid, amount } = order.status.inProgress.pendingBtcPayment;
       console.log(`Pending BTC payout: ${amount} sats (txid: ${txid})`);
     }
-    if (order.status.inProgress.refundTx) {
-      console.log('Refund transaction available');
-    }
+    // Note: `refundTx` is always null — Gateway settles refunds itself
   } else if ('failed' in order.status) {
     console.log('Status: failed');
-    if (order.status.failed.refundTx) {
-      console.log('Refund transaction available');
-    }
   } else if ('success' in order.status) {
     console.log('Status: success');
     // Settled token transfers (with on-chain txHash, and V3 `usd`) are on the status payload
@@ -445,36 +440,25 @@ Gateway no longer exposes a `bumpFeeTx` EVM transaction — it manages fee bumps
 
 </Accordion>
 
-<Accordion icon="unlock" title="Refund Stuck Orders">
+<Accordion icon="unlock" title="Show Refunded Orders">
 
-If an order gets stuck or needs to be cancelled, the order will include a `refundTx` to unlock the locked assets:
+Gateway settles every refund itself, in both directions — there is no refund transaction for you or your users to submit. What you can do is surface the outcome, which arrives as the `refunded` status:
 
 ```typescript
 const { orders } = await gatewaySDK.getOrders({ userAddress: userEvmAddress });
 
-// Find order with refund transaction available
-const orderNeedingRefund = orders.find(order =>
-  ('inProgress' in order.status && order.status.inProgress.refundTx)
-  || ('failed' in order.status && order.status.failed.refundTx)
-);
+for (const order of orders) {
+  if (!('refunded' in order.status)) continue;
 
-if (orderNeedingRefund) {
-  const refundTx = 'failed' in orderNeedingRefund.status
-    ? orderNeedingRefund.status.failed.refundTx!
-    : (orderNeedingRefund.status as { inProgress: { refundTx: any } }).inProgress.refundTx!;
-  // Submit the refund transaction
-  const hash = await walletClient.sendTransaction({
-    to: refundTx.to,
-    data: refundTx.data,
-    value: refundTx.value,
-  });
-
-  await publicClient.waitForTransactionReceipt({ hash });
+  for (const t of order.status.refunded.refundedTokens) {
+    // A BTC refund reports `chain: 'bitcoin'` and a Bitcoin txid in `txHash`
+    console.log(`Refunded ${t.amount} ${t.token} on ${t.chain} (tx ${t.txHash})`);
+  }
 }
 ```
 
 <Callout type="warn">
-This action is irreversible. Once refunded, the order cannot be resumed.
+`status.inProgress.refundTx` and `status.failed.refundTx` are **always `null`** — the fields are retained only so the response shape is unchanged for existing integrators. X-to-BTC refunds are owner-operated on the offramp registry and cannot be triggered by a user or an integrator. See [Refunds](/gateway/refunds).
 </Callout>
 
 </Accordion>

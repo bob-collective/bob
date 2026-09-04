@@ -68,7 +68,8 @@ passed), `tx` is absent — complete the BTC payment externally using
 
 `getOrders` order objects carry status detail: `inProgress`, `failed`, `success`,
 `refunded` (with token-settlement info), plus `pendingBtcPayment` (`{ txid, amount }`)
-for in-flight X→BTC orders and `refundTx` for stuck ones.
+for in-flight X→BTC orders. `refundTx` is always `null` — the gateway settles refunds
+itself, and the field is retained only to keep the response shape stable.
 
 ## Wallet clients (`walletClient` / `publicClient`)
 

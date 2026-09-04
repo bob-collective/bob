@@ -5,11 +5,12 @@ icon: CircleQuestionMark
 ---
 ## Frequently Asked Questions
 
-### Who pays the gas fees?
-The Relayer estimates gas costs upfront and deducts them from the transaction. Users don't need ETH on BOB to use Gateway.
+### What happens if my swap fails?
+No user is ever left with funds spent and nothing delivered.
 
-### What happens if my DeFi action fails?
-Gateway falls back to sending wrapped BTC directly to the user's EVM address, so the user still receives value. Always test thoroughly to avoid fallbacks. See [Refunds](/gateway/refunds) for details.
+On a BTC-to-X swap, the destination payout is one atomic transaction, so there is no partial fill to unwind. If it can't land at the quoted terms — prices drifted while the Bitcoin deposit confirmed, or the destination swap or bridge won't go through — the solver re-quotes and retries with backoff for about an hour, then settles the order as a refund: BTC back to the Bitcoin `refundAddress` if the order was created with one, otherwise USDT to the order owner on Ethereum.
+
+On an X-to-BTC swap, the user's USDT stays escrowed in the offramp registry until an SPV proof of the Bitcoin payout is verified on-chain. If the payout never happens, Gateway refunds the escrow to the user once the on-chain refund delay has elapsed. Either way the funds can only go to the user or to a solver that proved it paid them. See [Refunds](/gateway/refunds) for details.
 
 ### Do I need Bitcoin wallet support?
 Yes, your frontend needs Bitcoin wallet integration. See the [wallet guide](/gateway/wallets) for implementation details.
@@ -35,7 +36,7 @@ The quote response includes an `estimatedTimeInSecs` field with the expected dur
 For X-to-BTC transactions, the Bitcoin payout can be bumped to speed up confirmation if network fees increase. See [Refunds](/gateway/refunds).
 
 ### Can I cancel a transaction?
-For X-to-BTC orders, you can reclaim locked funds if an order gets stuck. This is irreversible — once unlocked, the order cannot be resumed. See [Refunds](/gateway/refunds).
+No. Once an order is created it either settles or is refunded — there is no cancel, and neither users nor integrators can trigger a refund themselves. Gateway settles refunds in both directions automatically; for X-to-BTC orders that happens after the escrow's on-chain refund delay. See [Refunds](/gateway/refunds).
 
 ### What chains are supported?
 Gateway supports Bitcoin and a growing set of EVM and non-EVM chains. See [Supported Routes](/gateway/supported-routes) for the current, live list.

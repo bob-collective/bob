@@ -1,0 +1,45 @@
+name: SDK Dependency Audit
+
+on:
+  pull_request:
+    branches:
+      - master
+    paths:
+      - "sdk/package.json"
+      - "sdk/package-lock.json"
+      - "sdk/pnpm-lock.yaml"
+      - ".github/workflows/sdk-audit.yml"
+  push:
+    branches:
+      - master
+    paths:
+      - "sdk/package.json"
+      - "sdk/package-lock.json"
+      - "sdk/pnpm-lock.yaml"
+      - ".github/workflows/sdk-audit.yml"
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  npm-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: sdk
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - name: Audit dependencies with pnpm
+        run: pnpm audit
+      - name: Audit dependencies with npm
+        run: npm audit
