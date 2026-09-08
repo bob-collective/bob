@@ -522,24 +522,6 @@ export class GatewayApiClient {
                 throw new ExecuteQuoteError(orderId, EXECUTE_QUOTE_ERROR_MESSAGE, { cause: error });
             }
 
-            try {
-                await this.api.registerTxV3(
-                    {
-                        registerTxV3: {
-                            offramp: {
-                                srcTxHash: transactionHash,
-                                orderId: order.offramp.orderId,
-                                srcChain: quote.offramp.srcChain,
-                            },
-                        },
-                    },
-                    initOverrides
-                );
-            } catch {
-                // Best-effort: the on-chain tx already succeeded, so return the result
-                // even if registration fails. The order can be reconciled later.
-            }
-
             return { order, tx: transactionHash };
         } else if (instanceOfGatewayQuoteV2OneOf2(quote)) {
             const tokenAddress = quote.tokenSwap.inputAmount.address;
@@ -686,26 +668,6 @@ export class GatewayApiClient {
                 transactionHash = hash;
             } catch (error) {
                 throw new ExecuteQuoteError(orderId, EXECUTE_QUOTE_ERROR_MESSAGE, { cause: error });
-            }
-
-            if (quote.tokenSwap.srcChain === 'bitcoin') {
-                try {
-                    await this.api.registerTxV3(
-                        {
-                            registerTxV3: {
-                                tokenSwap: {
-                                    srcTxHash: transactionHash,
-                                    orderId: order.tokenSwap.orderId,
-                                    srcChain: quote.tokenSwap.srcChain,
-                                },
-                            },
-                        },
-                        initOverrides
-                    );
-                } catch {
-                    // Best-effort: the on-chain tx already succeeded, so return the result
-                    // even if registration fails. The order can be reconciled later.
-                }
             }
 
             return { order, tx: transactionHash };
