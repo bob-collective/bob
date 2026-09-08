@@ -41,5 +41,3 @@ jobs:
           version: 10
       - name: Audit dependencies with pnpm
         run: pnpm audit
-      - name: Audit dependencies with npm
-        run: npm audit

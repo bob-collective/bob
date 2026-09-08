@@ -688,22 +688,24 @@ export class GatewayApiClient {
                 throw new ExecuteQuoteError(orderId, EXECUTE_QUOTE_ERROR_MESSAGE, { cause: error });
             }
 
-            try {
-                await this.api.registerTxV3(
-                    {
-                        registerTxV3: {
-                            tokenSwap: {
-                                srcTxHash: transactionHash,
-                                orderId: order.tokenSwap.orderId,
-                                srcChain: quote.tokenSwap.srcChain,
+            if (quote.tokenSwap.srcChain === 'bitcoin') {
+                try {
+                    await this.api.registerTxV3(
+                        {
+                            registerTxV3: {
+                                tokenSwap: {
+                                    srcTxHash: transactionHash,
+                                    orderId: order.tokenSwap.orderId,
+                                    srcChain: quote.tokenSwap.srcChain,
+                                },
                             },
                         },
-                    },
-                    initOverrides
-                );
-            } catch {
-                // Best-effort: the on-chain tx already succeeded, so return the result
-                // even if registration fails. The order can be reconciled later.
+                        initOverrides
+                    );
+                } catch {
+                    // Best-effort: the on-chain tx already succeeded, so return the result
+                    // even if registration fails. The order can be reconciled later.
+                }
             }
 
             return { order, tx: transactionHash };
