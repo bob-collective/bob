@@ -27,8 +27,8 @@ Follow [Conduit's guide](https://docs.conduit.xyz/guides/run-a-node/op-stack-nod
 
 ## BoltRPC
 
-[BoltRPC](https://boltrpc.io/?utm_source=docs&utm_medium=bob) is a multi-chain RPC provider operated by [Matrixed.Link](https://matrixed.link). BOB Mainnet is served over HTTPS and WebSocket with debug methods. Operations are ISO/IEC 27001:2022 certified.
+[BoltRPC](https://boltrpc.io/networks/bob) is a multi-chain RPC provider operated by [Matrixed.Link](https://matrixed.link). BOB Mainnet is served over HTTPS and WebSocket with debug methods. Operations are ISO/IEC 27001:2022 certified.
 
 **Supported Networks**
 
-- [BOB Mainnet](https://boltrpc.io/networks/bob?utm_source=docs&utm_medium=bob)
+- [BOB Mainnet](https://boltrpc.io/networks/bob)
