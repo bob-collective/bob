@@ -115,12 +115,14 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
 
   // ── Point of no return ─────────────────────────────────────────────────────
   // `executeQuote` is NOT idempotent. Internally it runs:
-  //   createOrder → (ERC20 reset/approve) → SIGN + BROADCAST the source tx → registerTx
-  // Only that prefix is safe to re-run. If it throws *after* the wallet has been asked
-  // to sign — a `registerTx` 5xx, a solver's "504 Gateway Timeout", a dropped socket,
-  // i.e. exactly the errors `isTransient` matches — then retrying the closure fetches a
-  // fresh quote, creates a SECOND order and broadcasts a SECOND transaction. The user's
-  // funds leave the wallet twice.
+  //   onramp:  createOrder → SIGN the PSBT → registerTx (registration IS the broadcast)
+  //   EVM src: createOrder → (ERC20 reset/approve) → SIGN + BROADCAST (no registerTx
+  //            since bob-sdk 5.14.1 — the gateway sees those txs on-chain)
+  // Only the prefix up to the first signature is safe to re-run. If it throws *after* the
+  // wallet has been asked to sign — an onramp registerTx 5xx, a solver's "504 Gateway
+  // Timeout", a dropped socket, i.e. exactly the errors `isTransient` matches — then
+  // retrying the closure fetches a fresh quote, creates a SECOND order and broadcasts a
+  // SECOND transaction. The user's funds leave the wallet twice.
   //
   // The SDK fires an ExecuteQuoteStep immediately BEFORE every wallet interaction
   // (ResetApproval / Approve / SendTransaction / SignBitcoinTransaction), so the first

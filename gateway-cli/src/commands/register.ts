@@ -2,11 +2,12 @@ import { getSdk, getApi } from "../config.js";
 import { buildRegisterPayload } from "../chains/index.js";
 
 /**
- * Handle the register command: manually register a transaction for an order.
- * Used for recovery when automatic registration fails.
- * 
- * @param opts - Order ID and transaction ID to register
- * @returns Registration result from Gateway API
+ * Register a Bitcoin transaction for an onramp order — recovery when the SDK's
+ * automatic registration fails. EVM-source orders are rejected before the request
+ * goes out: a no-op call would report success on an order nothing had reconciled.
+ *
+ * @param opts - Order ID and the raw signed Bitcoin transaction (hex) or its txid
+ * @throws Error if the order does not originate on Bitcoin
  */
 export async function handleRegister(opts: { orderId: string; txid: string }) {
   const sdk = getSdk();
@@ -14,7 +15,6 @@ export async function handleRegister(opts: { orderId: string; txid: string }) {
 
   const registerTx = buildRegisterPayload(
     order.srcInfo.chain,
-    order.dstInfo.chain,
     opts.orderId,
     opts.txid,
   );

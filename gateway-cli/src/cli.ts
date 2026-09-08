@@ -186,8 +186,8 @@ program
   }));
 
 program
-  .command("register <order-id> <txid>")
-  .description("Register a tx for an existing order (recovery)")
+  .command("register <order-id> <bitcoin-tx>")
+  .description("Register a Bitcoin tx (raw hex or txid) for an existing onramp order (recovery)")
   .option("--json", "Output as JSON", false)
   .action(withErrorHandling(async (orderId, txid, opts) => {
     const { handleRegister } = await import("./commands/register.js");

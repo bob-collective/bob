@@ -158,22 +158,29 @@ export async function resolveRecipient(
 // ─── Registration payload ───────────────────────────────────────────────────
 
 /**
- * Build a registration payload for linking a transaction to an order.
- * Format depends on swap type: onramp (BTC→EVM), offramp (EVM→BTC), or tokenSwap (EVM→EVM).
+ * Build a registration payload for an onramp order.
+ *
+ * Only Bitcoin-originated orders are registered; bob-sdk 5.14.1 dropped registerTx for
+ * offramp/tokenSwap because the gateway sees EVM-source txs on-chain.
+ *
+ * @param tx - Raw signed Bitcoin transaction (hex) or its txid.
+ * @throws Error if the order does not originate on Bitcoin.
  */
 export function buildRegisterPayload(
   srcChain: string,
-  dstChain: string,
   orderId: string,
-  txId: string,
+  tx: string,
 ): RegisterTxV3 {
-  if (getChainFamily(srcChain) === 'bitcoin') {
-    return { onramp: { orderId, bitcoinTxHex: txId } };
+  if (getChainFamily(srcChain) !== 'bitcoin') {
+    throw new Error(
+      `Order ${orderId} originates on ${srcChain}, not Bitcoin — there is nothing to register.\n`
+      + `  The gateway detects EVM-source transactions on-chain; only Bitcoin onramp orders need registering.`,
+    );
   }
-  if (getChainFamily(dstChain) === 'bitcoin') {
-    return { offramp: { orderId, srcChain, srcTxHash: txId } };
-  }
-  return { tokenSwap: { orderId, srcChain, srcTxHash: txId } };
+  // 64 hex chars is a txid; anything longer is the serialized tx. Wrong field → 4xx.
+  return /^[0-9a-fA-F]{64}$/.test(tx)
+    ? { onramp: { orderId, bitcoinTxid: tx } }
+    : { onramp: { orderId, bitcoinTxHex: tx } };
 }
 
 // Re-export for direct access
