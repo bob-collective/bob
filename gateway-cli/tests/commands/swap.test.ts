@@ -108,8 +108,8 @@ vi.mock("../../src/chains/index.js", () => ({
   deriveAddress: vi.fn().mockResolvedValue("bc1qtest"),
   resolveSigner: vi.fn().mockResolvedValue({ address: "bc1qtest", signer: mockBtcSigner }),
   getTokenBalance: vi.fn().mockResolvedValue({ total: "5000000", allSpendable: "4900000" }),
-  buildRegisterPayload: vi.fn((_src: string, _dst: string, orderId: string, txId: string) => ({
-    onramp: { orderId, bitcoinTxHex: txId },
+  buildRegisterPayload: vi.fn((_src: string, orderId: string, txId: string) => ({
+    onramp: { orderId, bitcoinTxid: txId },
   })),
   resolvePrivateKey: vi.fn((chain: string, privateKey?: string) => privateKey),
   resolveRecipient: vi.fn().mockResolvedValue("0x4444444444444444444444444444444444444444"),
@@ -375,7 +375,8 @@ describe("handleSwap", () => {
 
   // ─── C1 / A4 — never retry a swap once the wallet has been asked to sign ────
   //
-  // `executeQuote` is not idempotent: createOrder → sign + BROADCAST → registerTx.
+  // `executeQuote` is not idempotent: createOrder → sign + BROADCAST (the onramp's
+  // registerTx, or the EVM send — bob-sdk 5.14.1 registers nothing after it).
   // Re-running it after the broadcast sends the user's funds a SECOND time. The SDK
   // fires its step callback immediately before it asks the wallet to sign, which is
   // the signal these tests rely on. Reachable via `--retry` only (gateway-bot CI does
@@ -444,7 +445,7 @@ describe("handleSwap", () => {
     mockExecuteQuote.mockImplementation(async ({ callback }: any) => {
       callback?.({ step: 1, type: "approve", totalSteps: 2 });
       callback?.({ step: 2, type: "send_transaction", totalSteps: 2 });
-      throw new Error("registerTx failed: 503 Service Unavailable");
+      throw new Error("waiting for transaction receipt failed: 503 Service Unavailable");
     });
 
     const { handleSwap } = await import("../../src/commands/swap.js");
