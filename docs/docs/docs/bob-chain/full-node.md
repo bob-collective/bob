@@ -13,7 +13,7 @@ To stay updated on node upgrades and announcements, join our [Telegram channel](
 
 ## Requirements
 
-As of April 2026 we recommend you have at least the following hardware configuration to run a node:
+As of September 2026 we recommend you have at least the following hardware configuration to run a node:
 
 - at least 8 GB RAM
 - an SSD, preferably NVME drive with at least 100 GB free
@@ -22,6 +22,12 @@ Software stack:
 
 - [Docker](https://docs.docker.com/engine/install/)
 - [Docker Compose](https://docs.docker.com/compose/install/)
+
+:::warning
+BOB Mainnet activates the **Karst hard fork** (OP Contracts v7.0.0) at **Wed Sep 23 2026 16:00:01 UTC** (timestamp `1790179201`). The fork is consensus-breaking: every node must run `op-node` **v1.19.3** or later and a Karst-capable `op-reth` (**v2.3.0** or later), with the Karst override enabled, **before** the activation time. `op-geth` has reached end of support and cannot be used for Karst — an `op-reth` execution client is required.
+
+The upgrade also includes EIPs that affect gas pricing and may be relevant to application and smart contract developers — see the [breaking changes in Optimism Upgrade 19](https://docs.optimism.io/notices/archive/upgrade-19#breaking-changes).
+:::
 
 ## Configuration
 
@@ -43,39 +49,66 @@ openssl rand -hex 32 > /opt/op-reth/jwt.hex
 
 ### 3. Download the BOB genesis file
 
-The built-in `bob` chain spec in `op-reth` does not yet include the Jovian hardfork timestamp. You must download the genesis file from Conduit and pass it to op-reth via `--chain`.
+The built-in `bob` chain spec in `op-reth` does not yet include the Karst hardfork timestamp. You must download the genesis file from Conduit and pass it to op-reth via `--chain`.
 
 ```sh
 curl -o /opt/op-reth/genesis.json \
   https://api.conduit.xyz/file/v1/optimism/genesis/bob-mainnet-0
 ```
 
-Verify the genesis file includes the Jovian fork time:
+Verify the genesis file includes the Jovian and Karst fork times:
 
 ```sh
-jq '.config.jovianTime' /opt/op-reth/genesis.json
-# Expected: 1773325801
+jq '.config | {jovianTime, karstTime}' /opt/op-reth/genesis.json
+# Expected:
+# {
+#   "jovianTime": 1773325801,
+#   "karstTime": 1790179201
+# }
 ```
 
-### 4. Create the op-node environment file
+### 4. Configure a trusted execution-layer peer for op-reth
+
+op-node v1.19.1 removed the consensus-layer request/response sync client. If your node stops or falls behind, it catches up through the execution layer: op-reth fetches the missing range from a trusted EL peer. Conduit publishes one for BOB Mainnet:
+
+```sh
+curl -sf https://api.conduit.xyz/public/network/elPeers/bob-mainnet-0
+```
+
+Write the returned enode to `/opt/op-reth/reth.toml`:
+
+```toml title="/opt/op-reth/reth.toml"
+[peers]
+trusted_nodes = [
+  "enode://5186f8355abafe7bd900259ffe4c913c1d5e94faa53410018aab26fae911849dc87a9604dd0d849255adae1bc554d51958a122bb6631a8954540b61c33319522@35.252.247.209:30303",
+]
+```
+
+Without this peer, a node that falls behind can only re-derive the gap from L1, which is slow. The peer retains a rolling window of recent blocks — it closes gaps, it does not bootstrap a node from genesis, so start fresh nodes from a snapshot (available from Conduit on request).
+
+### 5. Create the op-node environment file
 
 Ensure you have an Ethereum L1 full node RPC available and set `OP_NODE_L1_ETH_RPC` and `OP_NODE_L1_BEACON` to the respective RPC endpoints.
+
+`OP_NODE_P2P_STATIC` is the node's only consensus-layer connectivity: external nodes do not use P2P discovery, so the bootnode settings found in older guides are obsolete as of op-node v1.19.1. Fetch the current static peer from Conduit's API and update it if it changes:
+
+```sh
+curl -sf https://api.conduit.xyz/public/network/staticPeers/bob-mainnet-0
+```
 
 ```sh title="op-node.env"
 OP_NODE_L1_ETH_RPC=.....
 OP_NODE_L1_BEACON=......
 OP_NODE_L1_TRUST_RPC=true
 OP_NODE_LOG_LEVEL=WARN
-OP_NODE_P2P_BOOTNODES=enode://09acd29625beb40604b12b1c2194d6d5eb290aee03e0149675201ed717ce226c506671f46fcd440ce6f5e62dc4e059ffe88bcd931f2febcd22520ae7b9d00b5e@34.83.120.192:9222?discport=30301,enode://d25ce99435982b04d60c4b41ba256b84b888626db7bee45a9419382300fbe907359ae5ef250346785bff8d3b9d07cd3e017a27e2ee3cfda3bcbb0ba762ac9674@bootnode.conduit.xyz:0?discport=30301,enode://2d4e7e9d48f4dd4efe9342706dd1b0024681bd4c3300d021f86fc75eab7865d4e0cbec6fbc883f011cfd6a57423e7e2f6e104baad2b744c3cafaec6bc7dc92c1@34.65.43.171:0?discport=30305,enode://9d7a3efefe442351217e73b3a593bcb8efffb55b4807699972145324eab5e6b382152f8d24f6301baebbfb5ecd4127bd3faab2842c04cd432bdf50ba092f6645@34.65.109.126:0?discport=30305
-OP_NODE_P2P_STATIC=/ip4/34.83.120.192/tcp/9222/p2p/16Uiu2HAkv5SVdeF4hFqJyCATwT87S3PZmutm8akrgwfcdFeqNxWw
-OP_NODE_P2P_SYNC_ONLYREQTOSTATIC=true
+OP_NODE_P2P_STATIC=/ip4/35.252.247.209/tcp/9222/p2p/16Uiu2HAm1cWcrbn5RGL1tnQojsJp9z1VRDqPtJy26m26qUBr5Kx8
 OP_NODE_L2_ENGINE_RPC=http://localhost:9551
 OP_NODE_L2_ENGINE_KIND=reth
 OP_NODE_L2_ENGINE_AUTH=/reth/jwt.hex
 OP_NODE_NETWORK=bob-mainnet
 OP_NODE_SYNCMODE=execution-layer
-OP_NODE_SYNCMODE_REQ_RESP=true
 OP_NODE_OVERRIDE_JOVIAN=1773325801
+OP_NODE_OVERRIDE_KARST=1790179201
 OP_NODE_ROLLUP_LOAD_PROTOCOL_VERSIONS=true
 OP_NODE_RPC_ENABLE_ADMIN=true
 OP_NODE_SAFEDB_PATH=/data
@@ -83,15 +116,16 @@ OP_NODE_METRICS_ENABLED=true
 OP_NODE_METRICS_ADDR=127.0.0.1
 ```
 
-### 5. Create the Docker Compose file
+### 6. Create the Docker Compose file
 
 ```yml title="docker-compose.yml"
 services:
   op-reth:
-    image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-reth:v2.1.0-rc.1
+    image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-reth:v2.4.2
     command:
       - node
       - --chain=/data/genesis.json
+      - --config=/data/reth.toml
       - --full
       - --storage.v2
       - --datadir=/data
@@ -111,7 +145,7 @@ services:
     restart: unless-stopped
 
   op-node:
-    image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node:v1.16.12
+    image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node:v1.19.5
     command:
       - op-node
     env_file: op-node.env
@@ -125,7 +159,7 @@ services:
         condition: service_started
 ```
 
-### 6. Start the node
+### 7. Start the node
 
 ```sh
 docker compose up -d
@@ -143,7 +177,7 @@ curl -s -X POST http://localhost:8545 \
 
 While syncing, `eth_syncing` returns a status object with per-stage block checkpoints (Headers → Bodies → Execution). Once all stages are complete, it returns `false` and `eth_blockNumber` will reflect the live chain head.
 
-Expected sync time from scratch is several hours depending on hardware and network.
+Expected sync time from scratch is several hours depending on hardware and network. If you would rather not sync from genesis, Conduit can provide a recent op-reth snapshot on request.
 
 ## Rollup Configuration and Genesis
 
@@ -152,6 +186,12 @@ The genesis and rollup configuration files for BOB Mainnet are available from Co
 - [Genesis](https://api.conduit.xyz/file/v1/optimism/genesis/bob-mainnet-0)
 - [Rollup Configuration](https://api.conduit.xyz/file/v1/optimism/rollup/bob-mainnet-0)
 - [Contracts](https://api.conduit.xyz/file/getOptimismContractsJSON?network=036d1667-e469-424e-9db9-5b09cf4d460d&organization=610ec5c5-8b4c-444a-b2b4-a94c1835defe)
+- [Static CL peer](https://api.conduit.xyz/public/network/staticPeers/bob-mainnet-0)
+- [EL peer](https://api.conduit.xyz/public/network/elPeers/bob-mainnet-0)
+
+:::warning
+The published `contracts.json` is republished after the Karst activation in a new format aligned with `op-contracts/v7.0.0` and `OPCMv2`. If you rely on the currently published copy, treat its addresses as potentially stale, and re-download the file after activation — updating any hardcoded addresses and parsing logic that assumes the old structure.
+:::
 
 ## BOB Sepolia (Testnet)
 
