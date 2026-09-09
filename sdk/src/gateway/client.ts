@@ -482,9 +482,6 @@ export class GatewayApiClient {
                                 ? USDTApproveAbi
                                 : erc20Abi,
                         functionName: 'approve',
-                        // Infinite approval so later orders skip this step. The spender is the
-                        // AllowanceHolder, which only ever grants a transient allowance keyed to
-                        // the `exec` caller, so it cannot move funds outside the user's own tx.
                         args: [spenderAddress, maxUint256],
                     })
                 );
@@ -629,9 +626,6 @@ export class GatewayApiClient {
                                 ? USDTApproveAbi
                                 : erc20Abi,
                         functionName: 'approve',
-                        // Infinite approval so later orders skip this step. The spender is the
-                        // AllowanceHolder, which only ever grants a transient allowance keyed to
-                        // the `exec` caller, so it cannot move funds outside the user's own tx.
                         args: [receiver, maxUint256],
                     })
                 );
