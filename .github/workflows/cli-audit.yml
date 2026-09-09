@@ -1,0 +1,43 @@
+name: CLI Dependency Audit
+
+on:
+  pull_request:
+    branches:
+      - master
+    paths:
+      - "gateway-cli/package.json"
+      - "gateway-cli/pnpm-lock.yaml"
+      - "gateway-cli/pnpm-workspace.yaml"
+      - ".github/workflows/cli-audit.yml"
+  push:
+    branches:
+      - master
+    paths:
+      - "gateway-cli/package.json"
+      - "gateway-cli/pnpm-lock.yaml"
+      - "gateway-cli/pnpm-workspace.yaml"
+      - ".github/workflows/cli-audit.yml"
+  schedule:
+    - cron: "30 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  npm-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: gateway-cli
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - name: Audit dependencies with pnpm
+        run: pnpm audit

@@ -28,14 +28,23 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "tsx": "^4.19.4",
+    "tsx": "^4.23.12",
     "typescript": "^5.9.3",
-    "vitest": "^3.2.4"
+    "vite": "^7.3.6",
+    "vitest": "^4.1.11"
   },
   "pnpm": {
     "overrides": {
       "bitcoin-address-validation": "^3.0.0",
-      "base58-js": "^2.0.0"
+      "base58-js": "^2.0.0",
+      "postcss": "^8.5.23",
+      "nanoid": "^3.3.18",
+      "picomatch": "^4.0.4",
+      "esbuild": "^0.28.1",
+      "js-yaml": "^4.3.2",
+      "minimatch>brace-expansion": "^1.1.18",
+      "ws": "^8.21.0",
+      "@metamask/utils>uuid": "^11.1.1"
     }
   }
 }

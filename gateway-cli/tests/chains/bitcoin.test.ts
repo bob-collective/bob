@@ -8,9 +8,9 @@ const mockSignAllInputs = vi.fn();
 const mockGetP2WPKHAddress = vi.fn();
 
 vi.mock("@gobob/bob-sdk", () => ({
-  EsploraClient: vi.fn(() => ({
-    getBalance: mockGetBalance,
-  })),
+  EsploraClient: vi.fn(function () {
+    return { getBalance: mockGetBalance };
+  }),
   ScureBitcoinSigner: {
     fromKey: vi.fn(() => ({
       signAllInputs: mockSignAllInputs,
