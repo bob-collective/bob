@@ -163,7 +163,10 @@ offramp order` if `walletClient.account` is missing.
   needs inside it.
 - **Approvals reuse the ERC-20 `approve` / `allowance` ABI** (and the USDT
   zero-then-set reset). Map these to the TRC-20 equivalents so amounts and the
-  spender (`order.offramp.tx.to`) line up.
+  spender (`order.offramp.tx.to`) line up. The approval is for `maxUint256`, so
+  subsequent orders skip the approve step; the spender is always the
+  AllowanceHolder, which grants only a transient allowance scoped to the `exec`
+  caller.
 - **`waitForTransactionReceipt` must actually block** until the tx is mined and
   honor `retryCount` (the SDK uses `RETRY_COUNT = 8`); resolving early breaks the
   approve → send ordering.
