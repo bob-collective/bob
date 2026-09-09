@@ -40,9 +40,14 @@ import {
     instanceOfGatewayQuoteV2OneOf2,
 } from '../src/gateway/generated-client';
 import * as gatewayUtils from '../src/gateway/utils';
+import { assertAllowanceHolderSpender } from '../src/gateway/allowance-holder';
 
 const WBTC_OFT_ADDRESS = '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c';
 const MOCK_SIGNED_QUOTE_DATA = 'signed-quote-data';
+
+// The only spenders `executeQuote` will approve; see `src/gateway/allowance-holder.ts`.
+const BOB_ALLOWANCE_HOLDER: Address = '0x8fd545b348e84deb145f0179a00c671f0b9519c3';
+const ETHEREUM_ALLOWANCE_HOLDER: Address = '0x0000000000001fF3684f28c67538d4D072C22734';
 
 function mockOftReadContract({ approvalRequired, allowance = 0n }: { approvalRequired: boolean; allowance?: bigint }) {
     return vi.fn().mockImplementation(({ functionName }: { functionName: string }) => {
@@ -897,7 +902,9 @@ describe('Gateway Tests', () => {
                 offramp: {
                     order_id: 'offramp-order-123',
                     tx: {
-                        to: '0x1234567890123456789012345678901234567890',
+                        type: 'evm',
+                        chain: 'bob',
+                        to: BOB_ALLOWANCE_HOLDER,
                         data: '0xabcdef',
                         value: '0',
                     },
@@ -1044,7 +1051,7 @@ describe('Gateway Tests', () => {
             },
         };
 
-        const spenderAddress = '0x1234567890123456789012345678901234567890';
+        const spenderAddress = BOB_ALLOWANCE_HOLDER;
 
         nock(`${MAINNET_GATEWAY_BASE_URL}`)
             .post('/v3/create-order')
@@ -1085,8 +1092,85 @@ describe('Gateway Tests', () => {
 
         expect(result.tx).toBe('0xtxhash');
         expect(simulateContractMock).toHaveBeenCalledTimes(1);
-        expect(simulateContractMock.mock.calls[0][0].args).toEqual([spenderAddress, 1000n]);
+        expect(simulateContractMock.mock.calls[0][0].args).toEqual([spenderAddress, maxUint256]);
         expect(mockWalletClient.writeContract).toHaveBeenCalledTimes(1);
+    });
+
+    // The approval is unbounded, so a `tx.to` that is not the chain's AllowanceHolder must
+    // never reach `approve` — otherwise a bad API response drains the whole token balance.
+    it('refuses to approve an offramp spender that is not the chain AllowanceHolder', async () => {
+        const gatewaySDK = new GatewaySDK();
+
+        const mockQuote: GatewayQuoteV3OneOf = {
+            offramp: {
+                srcChain: 'bob',
+                feeBreakdown: {
+                    protocolFee: { address: zeroAddress, amount: '5', chain: 'bob' },
+                    affiliateFee: { address: zeroAddress, amount: '2', chain: 'bob' },
+                    solverFee: { address: zeroAddress, amount: '1', chain: 'bob' },
+                    inclusionFee: { address: zeroAddress, amount: '1', chain: 'bob' },
+                    fastestFeeRate: '6',
+                },
+                inputAmount: { address: zeroAddress, amount: '1000', chain: 'bob' },
+                outputAmount: { address: zeroAddress, amount: '990', chain: 'bob' },
+                tokenAddress: WBTC_OFT_ADDRESS,
+                ownerAddress: '0xabcd1234abcd1234abcd1234abcd1234abcd1234',
+                recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+                slippage: 0,
+                totalFeeUsd: '3',
+                txTo: zeroAddress,
+            },
+        };
+
+        const attacker: Address = '0x00000000000000000000000000000000deadbeef';
+
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
+            .post('/v3/create-order')
+            .reply(200, {
+                offramp: {
+                    order_id: 'offramp-hostile-spender',
+                    tx: { type: 'evm', chain: 'bob', to: attacker, data: '0xabcdef', value: '0' },
+                },
+            });
+
+        const mockWalletClient = {
+            account: { address: '0xabcd1234abcd1234abcd1234abcd1234abcd1234' as Address },
+            writeContract: vi.fn(),
+            sendTransaction: vi.fn(),
+        } as unknown as WalletClient<Transport, ViemChain, Account>;
+
+        const simulateContractMock = vi.fn().mockResolvedValue({ request: {} });
+        const mockPublicClient = {
+            readContract: mockOftReadContract({ approvalRequired: true }),
+            multicall: vi.fn().mockResolvedValue([0n]),
+            simulateContract: simulateContractMock,
+            waitForTransactionReceipt: vi.fn().mockResolvedValue({}),
+        } as unknown as PublicClient<Transport>;
+
+        const error = await gatewaySDK
+            .executeQuote({ quote: mockQuote, walletClient: mockWalletClient, publicClient: mockPublicClient })
+            .catch((thrown: unknown) => thrown);
+
+        expect(error).toBeInstanceOf(ExecuteQuoteError);
+        assert(error instanceof ExecuteQuoteError);
+        expect(error.orderId).toBe('offramp-hostile-spender');
+        expect(error.message).toContain(BOB_ALLOWANCE_HOLDER);
+        // Neither the approval nor the order transaction may be broadcast.
+        expect(simulateContractMock).not.toHaveBeenCalled();
+        expect(mockWalletClient.writeContract).not.toHaveBeenCalled();
+        expect(mockWalletClient.sendTransaction).not.toHaveBeenCalled();
+    });
+
+    it('refuses to approve on a chain with no known AllowanceHolder', () => {
+        expect(() => assertAllowanceHolderSpender('sonic', BOB_ALLOWANCE_HOLDER, 'order-1')).toThrow(
+            /no known AllowanceHolder for chain "sonic"/
+        );
+    });
+
+    it('accepts a Tron AllowanceHolder given in base58', () => {
+        expect(() =>
+            assertAllowanceHolderSpender('tron', 'TAfbit1ENsRmtZbPQfYU3srURpfYuWYS7K', 'order-2')
+        ).not.toThrow();
     });
 
     it('attaches orderId and translates an offramp approval failure caused by insufficient funds', async () => {
@@ -1113,7 +1197,7 @@ describe('Gateway Tests', () => {
             },
         };
 
-        const spenderAddress: Address = '0x1234567890123456789012345678901234567890';
+        const spenderAddress: Address = BOB_ALLOWANCE_HOLDER;
 
         nock(`${MAINNET_GATEWAY_BASE_URL}`)
             .post('/v3/create-order')
@@ -1179,7 +1263,7 @@ describe('Gateway Tests', () => {
             },
         };
 
-        const spenderAddress: Address = '0x1234567890123456789012345678901234567890';
+        const spenderAddress: Address = BOB_ALLOWANCE_HOLDER;
 
         nock(`${MAINNET_GATEWAY_BASE_URL}`)
             .post('/v3/create-order')
@@ -1248,7 +1332,7 @@ describe('Gateway Tests', () => {
             },
         };
 
-        const spenderAddress: Address = '0x1234567890123456789012345678901234567890';
+        const spenderAddress: Address = BOB_ALLOWANCE_HOLDER;
 
         nock(`${MAINNET_GATEWAY_BASE_URL}`)
             .post('/v3/create-order')
@@ -1326,7 +1410,7 @@ describe('Gateway Tests', () => {
             },
         };
 
-        const spenderAddress = '0x1234567890123456789012345678901234567890';
+        const spenderAddress = BOB_ALLOWANCE_HOLDER;
 
         nock(`${MAINNET_GATEWAY_BASE_URL}`)
             .post('/v3/create-order')
@@ -1395,7 +1479,7 @@ describe('Gateway Tests', () => {
             },
         };
 
-        const spenderAddress = '0x1234567890123456789012345678901234567890';
+        const spenderAddress = BOB_ALLOWANCE_HOLDER;
 
         nock(`${MAINNET_GATEWAY_BASE_URL}`)
             .post('/v3/create-order')
@@ -1479,7 +1563,7 @@ describe('Gateway Tests', () => {
             },
         };
 
-        const spenderAddress = '0x1234567890123456789012345678901234567890';
+        const spenderAddress = ETHEREUM_ALLOWANCE_HOLDER;
 
         nock(`${MAINNET_GATEWAY_BASE_URL}`)
             .post('/v3/create-order')
@@ -1521,7 +1605,7 @@ describe('Gateway Tests', () => {
         expect(result.tx).toBe('0xtxhash');
         expect(simulateContractMock).toHaveBeenCalledTimes(2);
         expect(simulateContractMock.mock.calls[0][0].args).toEqual([spenderAddress, 0n]);
-        expect(simulateContractMock.mock.calls[1][0].args).toEqual([spenderAddress, 1000n]);
+        expect(simulateContractMock.mock.calls[1][0].args).toEqual([spenderAddress, maxUint256]);
         expect(mockWalletClient.writeContract).toHaveBeenCalledTimes(2);
     });
 
@@ -2071,7 +2155,7 @@ describe('Gateway Tests', () => {
                 recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
                 slippage: 100,
                 srcChain: 'ethereum',
-                txTo: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
+                txTo: ETHEREUM_ALLOWANCE_HOLDER,
             },
         };
 
@@ -2089,7 +2173,7 @@ describe('Gateway Tests', () => {
                 tokenSwap: {
                     order_id: 'layerzero-order-123',
                     tx: {
-                        to: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
+                        to: ETHEREUM_ALLOWANCE_HOLDER,
                         data: '0xabcdef',
                         value: '0',
                     },
@@ -2201,7 +2285,7 @@ describe('Gateway Tests', () => {
                 recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
                 slippage: 100,
                 srcChain: 'ethereum',
-                txTo: WBTC_OFT_ADDRESS,
+                txTo: ETHEREUM_ALLOWANCE_HOLDER,
             },
         };
 
@@ -2212,11 +2296,11 @@ describe('Gateway Tests', () => {
             .reply(200, {
                 tokenSwap: {
                     order_id: 'tokenswap-gas-funds-order',
-                    tx: { to: WBTC_OFT_ADDRESS, data: '0xabcdef', value: '0' },
+                    tx: { to: ETHEREUM_ALLOWANCE_HOLDER, data: '0xabcdef', value: '0' },
                 },
             });
 
-        const contractError = createInsufficientFundsApprovalError(WBTC_OFT_ADDRESS, 100000n);
+        const contractError = createInsufficientFundsApprovalError(ETHEREUM_ALLOWANCE_HOLDER, 100000n);
 
         const mockWalletClient = {
             account: { address: '0x1234567890123456789012345678901234567890' as Address },
@@ -2261,7 +2345,7 @@ describe('Gateway Tests', () => {
                 recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
                 slippage: 100,
                 srcChain: 'ethereum',
-                txTo: WBTC_OFT_ADDRESS,
+                txTo: ETHEREUM_ALLOWANCE_HOLDER,
             },
         };
 
@@ -2272,11 +2356,11 @@ describe('Gateway Tests', () => {
             .reply(200, {
                 tokenSwap: {
                     order_id: 'tokenswap-revert-order',
-                    tx: { to: WBTC_OFT_ADDRESS, data: '0xabcdef', value: '0' },
+                    tx: { to: ETHEREUM_ALLOWANCE_HOLDER, data: '0xabcdef', value: '0' },
                 },
             });
 
-        const contractError = createRevertApprovalError(WBTC_OFT_ADDRESS, 100000n);
+        const contractError = createRevertApprovalError(ETHEREUM_ALLOWANCE_HOLDER, 100000n);
         const callback = vi.fn();
 
         const mockWalletClient = {
@@ -2809,7 +2893,7 @@ describe('Gateway Tests', () => {
             .reply(200, {
                 offramp: {
                     order_id: 'offramp-order-cb-789',
-                    tx: { to: '0x1234567890123456789012345678901234567890', data: '0xabcdef', value: '0' },
+                    tx: { type: 'evm', chain: 'bob', to: BOB_ALLOWANCE_HOLDER, data: '0xabcdef', value: '0' },
                 },
             });
         nock(`${MAINNET_GATEWAY_BASE_URL}`).patch('/v3/register-tx').reply(200, JSON.stringify('ok'));
@@ -2873,7 +2957,13 @@ describe('Gateway Tests', () => {
             .reply(200, {
                 offramp: {
                     order_id: 'offramp-usdt-cb-order',
-                    tx: { to: '0x1234567890123456789012345678901234567890', data: '0xabcdef', value: '0' },
+                    tx: {
+                        type: 'evm',
+                        chain: 'ethereum',
+                        to: ETHEREUM_ALLOWANCE_HOLDER,
+                        data: '0xabcdef',
+                        value: '0',
+                    },
                 },
             });
         nock(`${MAINNET_GATEWAY_BASE_URL}`).patch('/v3/register-tx').reply(200, JSON.stringify('ok'));
@@ -2984,7 +3074,7 @@ describe('Gateway Tests', () => {
                 recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
                 slippage: 100,
                 srcChain: 'ethereum',
-                txTo: WBTC_OFT_ADDRESS,
+                txTo: ETHEREUM_ALLOWANCE_HOLDER,
             },
         };
         nock(`${MAINNET_GATEWAY_BASE_URL}`)
@@ -2992,7 +3082,7 @@ describe('Gateway Tests', () => {
             .reply(200, {
                 tokenSwap: {
                     order_id: 'lz-cb-approval',
-                    tx: { to: WBTC_OFT_ADDRESS, data: '0xabcdef', value: '0' },
+                    tx: { to: ETHEREUM_ALLOWANCE_HOLDER, data: '0xabcdef', value: '0' },
                 },
             });
         nock(`${MAINNET_GATEWAY_BASE_URL}`).patch('/v3/register-tx').reply(200, JSON.stringify('tx-hash'));

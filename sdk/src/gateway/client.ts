@@ -15,6 +15,7 @@ import {
     zeroAddress,
 } from 'viem';
 import { oftApprovalRequiredAbi, strategyCaller, USDTApproveAbi } from './abi';
+import { assertAllowanceHolderSpender } from './allowance-holder';
 import { GatewayError } from './error';
 import {
     Configuration,
@@ -444,6 +445,9 @@ export class GatewayApiClient {
             const totalSteps = needsReset ? 3 : needsApproval ? 2 : 1;
 
             if (needsApproval) {
+                // Verify that the spender is the AllowanceHolder for the source chain
+                assertAllowanceHolderSpender(quote.offramp.srcChain, spenderAddress, orderId);
+
                 // To change the USDT approval, first set the allowance to 0 (approve(_spender, 0))
                 // to avoid the ERC20 race condition:
                 // https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
@@ -478,7 +482,7 @@ export class GatewayApiClient {
                                 ? USDTApproveAbi
                                 : erc20Abi,
                         functionName: 'approve',
-                        args: [spenderAddress, requiredAmount],
+                        args: [spenderAddress, maxUint256],
                     })
                 );
 
@@ -583,6 +587,9 @@ export class GatewayApiClient {
             const orderId = order.tokenSwap.orderId;
 
             if (needsApproval) {
+                // Verify that the spender is the AllowanceHolder for the source chain
+                assertAllowanceHolderSpender(quote.tokenSwap.srcChain, receiver, orderId);
+
                 // To change the USDT approval, first set the allowance to 0 (approve(_spender, 0))
                 // to avoid the ERC20 race condition:
                 // https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
@@ -619,7 +626,7 @@ export class GatewayApiClient {
                                 ? USDTApproveAbi
                                 : erc20Abi,
                         functionName: 'approve',
-                        args: [receiver, requiredAmount],
+                        args: [receiver, maxUint256],
                     })
                 );
 
