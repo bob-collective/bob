@@ -25,6 +25,8 @@
         "README.md"
     ],
     "devDependencies": {
+        "@eslint/eslintrc": "^3.3.7",
+        "@eslint/js": "^10.0.1",
         "@gobob/tokenlist": "github:bob-collective/tokenlist#223e98d85d857ce316fe3a8c3814ed00ddd66556",
         "@openapitools/openapi-generator-cli": "^2.41.0",
         "@scure/bip32": "^2.0.1",
@@ -42,13 +44,11 @@
         "ts-node": "^10.0.0",
         "tsx": "^4.20.6",
         "typescript": "^5.7.3",
-        "vitest": "^3.2.7",
+        "vitest": "^4.1.11",
         "yargs": "^18.0.0"
     },
     "dependencies": {
         "@bitcoinerlab/secp256k1": "^1.2.0",
-        "@eslint/eslintrc": "^3.3.5",
-        "@eslint/js": "^10.0.1",
         "@gobob/sats-wagmi": "^0.3.23",
         "@scure/base": "^1.2.4",
         "@scure/btc-signer": "^1.6.0",

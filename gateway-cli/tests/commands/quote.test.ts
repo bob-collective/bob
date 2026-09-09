@@ -23,9 +23,9 @@ vi.mock("@gobob/bob-sdk", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@gobob/bob-sdk")>();
   return {
     ...actual,
-    MempoolClient: vi.fn(() => ({
-      getRecommendedFees: mockGetRecommendedFees,
-    })),
+    MempoolClient: vi.fn(function () {
+      return { getRecommendedFees: mockGetRecommendedFees };
+    }),
   };
 });
 
