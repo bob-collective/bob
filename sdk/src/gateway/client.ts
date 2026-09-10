@@ -23,8 +23,7 @@ import {
     type GatewayCreateOrderV2,
     type GatewayMaxSpendable,
     type GatewayOrderInfoV2,
-    type GatewayQuoteV3,
-    GatewayQuoteV4,
+    type GatewayQuoteV4,
     type GetOrdersV3Request,
     instanceOfGatewayCreateOrderOneOf,
     instanceOfGatewayCreateOrderOneOf1,
@@ -284,7 +283,7 @@ export class GatewayApiClient {
             btcSigner,
             callback,
         }: {
-            quote: GatewayQuoteV3;
+            quote: GatewayQuoteV4;
             callback?: (step: ExecuteQuoteStep) => void;
         } & AllWalletClientParams,
         initOverrides?: RequestInit

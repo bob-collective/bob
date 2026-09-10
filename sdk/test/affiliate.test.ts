@@ -70,7 +70,6 @@ describe('Gateway Multiple Affiliates', () => {
             toToken: ETHEREUM_USDT_ADDRESS,
             fromUserAddress: BTC_SENDER,
             toUserAddress: ADDR_A,
-            ownerAddress: ADDR_A,
             amount: 100_000,
             affiliates,
         });
@@ -130,7 +129,6 @@ describe('Gateway Multiple Affiliates', () => {
             toToken: BTC_TOKEN,
             fromUserAddress: ADDR_A,
             toUserAddress: BTC_SENDER,
-            ownerAddress: ADDR_A,
             amount: 100_000_000,
             affiliates,
         });
