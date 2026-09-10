@@ -21,8 +21,8 @@ importers:
   .:
     dependencies:
       '@gobob/bob-sdk':
-        specifier: ^5.14.1
-        version: 5.14.1(@tanstack/react-query@5.91.0(react@19.2.4))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)(zod@4.3.6)
+        specifier: ^5.14.2
+        version: 5.14.2(@tanstack/react-query@5.91.0(react@19.2.4))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)(zod@4.3.6)
       '@gobob/tokenlist':
         specifier: github:bob-collective/tokenlist#f307495b07ab7ff3d21d77e1917a8574e32d5468
         version: https://codeload.github.com/bob-collective/tokenlist/tar.gz/f307495b07ab7ff3d21d77e1917a8574e32d5468(typescript@5.9.3)(zod@4.3.6)
@@ -227,15 +227,6 @@ packages:
     resolution: {integrity: sha512-4IlJx0X0qftVsN5E+/vGujTRIFtwuLbNsVUe7TO6zYPDR1O6nFwvwhIKEKSrl6dZchmYBITazxKoUYOjdtjlRg==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
-  '@eslint/js@10.0.1':
-    resolution: {integrity: sha512-zeR9k5pd4gxjZ0abRoIaxdc7I3nDktoXZk2qOv9gCNWx3mVwEn32VRhyLaRsDiJjTs0xq/T8mfPtyuXu7GWBcA==}
-    engines: {node: ^20.19.0 || ^22.13.0 || >=24}
-    peerDependencies:
-      eslint: ^10.0.0
-    peerDependenciesMeta:
-      eslint:
-        optional: true
-
   '@eslint/js@9.39.4':
     resolution: {integrity: sha512-nE7DEIchvtiFTwBw4Lfbu59PG+kCofhjsKaCWzxTpt4lfRjRMqG6uMBzKXuEcyXhOHoUp9riAm7/aWYGhXZ9cw==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
@@ -259,8 +250,8 @@ packages:
   '@gobob/bob-sdk@3.1.7-alpha0':
     resolution: {integrity: sha512-1qdKAYEigbqNt9x/0jYKeeC/d0u1lh6GluHaBIxp2Pt6p2+4fUVFnDdtGo5pMcgft7Bvo8/tdmlFBTzb3BEc5g==}
 
-  '@gobob/bob-sdk@5.14.1':
-    resolution: {integrity: sha512-veMR2V2q7rdXP+onzLAav9+9nYDONa8e8Rm8O4H5JdR8cL0cEfP7ZmB9bWbAZiLCCFEZaOmCTzlhSX/C+8Ra7w==}
+  '@gobob/bob-sdk@5.14.2':
+    resolution: {integrity: sha512-QBG8C602kPcw+COgd9uIPcEHyxKJqIe82gN6lTDHYkBxc5HWNfqiAZZ4P9RKHhtUeZe40Gqv71KevmQ0TRTGEA==}
 
   '@gobob/sats-wagmi@0.3.23':
     resolution: {integrity: sha512-7YAcQXo20v/SKNBv4Jhv9SYJJ9fzXUSC1ntUKwR0hjdCV9Kj0ivIRmGKvZwb8fqwgNYEaL4R5PbrMWnvFNTRgQ==}
@@ -1406,8 +1397,6 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@eslint/js@10.0.1': {}
-
   '@eslint/js@9.39.4': {}
 
   '@ethereumjs/common@3.2.0':
@@ -1449,11 +1438,9 @@ snapshots:
       - utf-8-validate
       - zod
 
-  '@gobob/bob-sdk@5.14.1(@tanstack/react-query@5.91.0(react@19.2.4))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)(zod@4.3.6)':
+  '@gobob/bob-sdk@5.14.2(@tanstack/react-query@5.91.0(react@19.2.4))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)(zod@4.3.6)':
     dependencies:
       '@bitcoinerlab/secp256k1': 1.2.0
-      '@eslint/eslintrc': 3.3.5
-      '@eslint/js': 10.0.1
       '@gobob/sats-wagmi': 0.3.23(@tanstack/react-query@5.91.0(react@19.2.4))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)(zod@4.3.6)
       '@scure/base': 1.2.6
       '@scure/btc-signer': 1.8.1
@@ -1466,7 +1453,6 @@ snapshots:
     transitivePeerDependencies:
       - '@tanstack/react-query'
       - bufferutil
-      - eslint
       - react
       - react-dom
       - supports-color
