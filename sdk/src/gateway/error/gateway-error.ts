@@ -2,6 +2,7 @@ import {
     GatewayErrorCode,
     GatewayErrorCodeV2Variants as GatewayErrorCodeV2,
     GatewayErrorCodeV3Variants as GatewayErrorCodeV3,
+    GatewayErrorCodeV4Variants as GatewayErrorCodeV4,
     GatewayErrorDetailsOneOf,
     GatewayErrorDetailsOneOf1,
     GatewayErrorDetailsOneOf2,
@@ -17,7 +18,7 @@ import {
 import type { GatewayError as GatewayErrorInterface } from '../generated-client/models/GatewayError';
 import { instanceOfGatewayError } from '../generated-client/models/GatewayError';
 
-export { GatewayErrorCode, GatewayErrorCodeV2, GatewayErrorCodeV3 };
+export { GatewayErrorCode, GatewayErrorCodeV2, GatewayErrorCodeV3, GatewayErrorCodeV4 };
 
 // ─── Named detail interfaces (mirror the Rust GatewayErrorDetails enum) ──────
 
@@ -90,10 +91,10 @@ export type GatewayErrorDetailsMap = {
  * Resolves to the detail interface for a known code, or `null` for codes
  * that carry no structured details (e.g. `InternalError`, `InvalidRequest`).
  */
-export type DetailsFor<C extends GatewayErrorCode | GatewayErrorCodeV2 | GatewayErrorCodeV3> =
+export type DetailsFor<C extends GatewayErrorCode | GatewayErrorCodeV2 | GatewayErrorCodeV3 | GatewayErrorCodeV4> =
     C extends keyof GatewayErrorDetailsMap ? GatewayErrorDetailsMap[C] : null;
 
-type AnyGatewayErrorCode = GatewayErrorCode | GatewayErrorCodeV2 | GatewayErrorCodeV3;
+type AnyGatewayErrorCode = GatewayErrorCode | GatewayErrorCodeV2 | GatewayErrorCodeV3 | GatewayErrorCodeV4;
 
 type ParseDetailsArgs = {
     [C in AnyGatewayErrorCode]: { code: C; raw: DetailsFor<C> | null };
@@ -131,8 +132,8 @@ type ParseDetailsArgs = {
  * ```
  */
 export class GatewayError<
-    C extends GatewayErrorCode | GatewayErrorCodeV2 | GatewayErrorCodeV3 =
-        GatewayErrorCode | GatewayErrorCodeV2 | GatewayErrorCodeV3,
+    C extends GatewayErrorCode | GatewayErrorCodeV2 | GatewayErrorCodeV3 | GatewayErrorCodeV4 =
+        GatewayErrorCode | GatewayErrorCodeV2 | GatewayErrorCodeV3 | GatewayErrorCodeV4,
 > extends Error {
     /** Stable error code, safe to switch/match on. */
     readonly code: C;
@@ -207,7 +208,8 @@ export class GatewayError<
 export type AnyGatewayError =
     | { [C in GatewayErrorCode]: GatewayError<C> }[GatewayErrorCode]
     | { [C2 in GatewayErrorCodeV2]: GatewayError<C2> }[GatewayErrorCodeV2]
-    | { [C3 in GatewayErrorCodeV3]: GatewayError<C3> }[GatewayErrorCodeV3];
+    | { [C3 in GatewayErrorCodeV3]: GatewayError<C3> }[GatewayErrorCodeV3]
+    | { [C4 in GatewayErrorCodeV4]: GatewayError<C4> }[GatewayErrorCodeV4];
 
 /**
  * Type guard that narrows `err` to {@link AnyGatewayError}.
@@ -318,7 +320,8 @@ function parseDetails({ code, raw }: ParseDetailsArgs): DetailsFor<AnyGatewayErr
         // Codes with no details in Rust (details field absent or unit variant → {}):
         //   InsufficientConfirmedFunds, PerAccountLimitExceeded, GlobalLimitExceeded,
         //   InvalidRequest, InvalidOrderArgs, InvalidAffiliateFee, SlippageTooHigh, DisabledChain,
-        //   InvalidDestinationChainId, OrderNotFound, OrderExpired, DuplicateOrder, InternalError
+        //   InvalidDestinationChainId, OrderNotFound, OrderExpired, DuplicateOrder, InternalError,
+        //   MissingRefundAddress
         default:
             return null;
     }

@@ -22,9 +22,9 @@ import {
     type GatewayCreateOrderOneOf,
     type GatewayCreateOrderV2,
     type GatewayMaxSpendable,
-    type GatewayOrderInfoV2,
+    type GatewayOrderInfoV3,
     type GatewayQuoteV4,
-    type GetOrdersV3Request,
+    type GetOrdersV4Request,
     instanceOfGatewayCreateOrderOneOf,
     instanceOfGatewayCreateOrderOneOf1,
     instanceOfGatewayCreateOrderV2OneOf,
@@ -32,7 +32,7 @@ import {
     instanceOfGatewayQuoteV4OneOf,
     instanceOfGatewayQuoteV4OneOf1,
     instanceOfRegisterTxOneOf,
-    type PaginatedOrdersResponse,
+    type PaginatedOrdersResponseV3,
     type RegisterTxSuccess,
     type RouteInfo,
     V4Api,
@@ -745,9 +745,9 @@ export class GatewayApiClient {
      * @returns Promise resolving to array of typed orders
      */
     async getOrders(
-        requestParameters: GetOrdersV3Request,
+        requestParameters: GetOrdersV4Request,
         initOverrides?: RequestInit
-    ): Promise<PaginatedOrdersResponse> {
+    ): Promise<PaginatedOrdersResponseV3> {
         return this.api.getOrdersV4(requestParameters, initOverrides);
     }
 
@@ -758,7 +758,7 @@ export class GatewayApiClient {
      * @param initOverrides Optional request initialization overrides
      * @returns Promise resolving to the order information
      */
-    async getOrder(id: string, initOverrides?: RequestInit): Promise<GatewayOrderInfoV2> {
+    async getOrder(id: string, initOverrides?: RequestInit): Promise<GatewayOrderInfoV3> {
         return this.api.getOrderV4({ id }, initOverrides);
     }
 
