@@ -1,10 +1,10 @@
-import { vi, describe, it, assert, Mock, expect, beforeEach } from 'vitest';
-import { AddressType, getAddressInfo, Network } from 'bitcoin-address-validation';
-import { Address, NETWORK, OutScript, Script, Transaction, p2sh, p2wpkh, selectUTXO } from '@scure/btc-signer';
-import { hex, base64 } from '@scure/base';
-import { createBitcoinPsbt, getInputFromUtxoAndTx, estimateTxFee, Input, getBalance } from '../src/wallet/utxo';
+import { base64, hex } from '@scure/base';
+import { Address, NETWORK, OutScript, p2sh, p2wpkh, Script, selectUTXO, Transaction } from '@scure/btc-signer';
 import { TransactionOutput } from '@scure/btc-signer/psbt';
+import { AddressType, getAddressInfo, Network } from 'bitcoin-address-validation';
+import { assert, beforeEach, describe, expect, it, Mock, vi } from 'vitest';
 import { EsploraClient, UTXO } from '../src/esplora';
+import { createBitcoinPsbt, estimateTxFee, getBalance, getInputFromUtxoAndTx } from '../src/wallet/utxo';
 
 vi.mock(import('@scure/btc-signer'), async (importOriginal) => {
     const actual = await importOriginal();

@@ -1,5 +1,5 @@
 import { assert, describe, it } from 'vitest';
-import { EsploraClient, Transaction, Block } from '../src/esplora';
+import { Block, EsploraClient, Transaction } from '../src/esplora';
 
 describe('Esplora Tests', () => {
     it('should get block height', async () => {

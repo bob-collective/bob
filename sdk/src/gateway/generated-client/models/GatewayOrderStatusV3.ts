@@ -44,6 +44,10 @@ import {
 /**
  * @type GatewayOrderStatusV3
  * Gateway order status (v3) — mirrors v2 with USD-carrying transfer types.
+ * 
+ * For offramps, `Success` is reported once the BTC payout is broadcast (spendable from the
+ * mempool) and persisted once it confirms. It can briefly revert to `InProgress` if the payout
+ * is evicted from the mempool before confirmation; the solver never replaces the payout tx.
  * @export
  */
 export type GatewayOrderStatusV3 = GatewayOrderStatusOneOf1 | GatewayOrderStatusV3OneOf | GatewayOrderStatusV3OneOf1 | GatewayOrderStatusV3OneOf2;

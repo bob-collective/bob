@@ -22,20 +22,20 @@ import {
     type GatewayCreateOrderOneOf,
     type GatewayCreateOrderV2,
     type GatewayMaxSpendable,
-    type GatewayOrderInfoV2,
-    type GatewayQuoteV3,
-    type GetOrdersV3Request,
+    type GatewayOrderInfoV3,
+    type GatewayQuoteV4,
+    type GetOrdersV4Request,
     instanceOfGatewayCreateOrderOneOf,
     instanceOfGatewayCreateOrderOneOf1,
     instanceOfGatewayCreateOrderV2OneOf,
     instanceOfGatewayQuoteV2OneOf,
-    instanceOfGatewayQuoteV2OneOf2,
-    instanceOfGatewayQuoteV3OneOf,
+    instanceOfGatewayQuoteV4OneOf,
+    instanceOfGatewayQuoteV4OneOf1,
     instanceOfRegisterTxOneOf,
-    type PaginatedOrdersResponse,
+    type PaginatedOrdersResponseV3,
     type RegisterTxSuccess,
     type RouteInfo,
-    V3Api,
+    V4Api,
 } from './generated-client';
 import type { GatewayError as GatewayErrorInterface } from './generated-client/models/GatewayError';
 import {
@@ -178,7 +178,7 @@ export interface GatewaySDKOptions {
 }
 
 export class GatewayApiClient {
-    api: V3Api;
+    api: V4Api;
 
     /**
      * Creates a new Gateway API client instance.
@@ -203,7 +203,7 @@ export class GatewayApiClient {
             throw new Error('apiKey must be exactly 32 characters');
         }
 
-        this.api = new V3Api(
+        this.api = new V4Api(
             new Configuration({
                 basePath: basePath || MAINNET_GATEWAY_BASE_URL,
                 headers: apiKey ? { Authorization: `Bearer ${apiKey}` } : undefined,
@@ -245,8 +245,8 @@ export class GatewayApiClient {
      * @returns Promise resolving to quote details with either onrampQuote or offrampQuote populated
      * @throws {Error} If neither onramp nor offramp conditions are met
      */
-    async getQuote(params: GetQuoteParams, initOverrides?: RequestInit): Promise<GatewayQuoteV3> {
-        return this.api.getQuoteV3(
+    async getQuote(params: GetQuoteParams, initOverrides?: RequestInit): Promise<GatewayQuoteV4> {
+        return this.api.getQuoteV4(
             {
                 srcChain: params.fromChain.toString(), // TODO: don't use number
                 dstChain: params.toChain.toString(), // TODO: don't use number
@@ -258,7 +258,6 @@ export class GatewayApiClient {
                 dstToken: params.toToken.toString(),
                 amount: params.amount.toString(),
                 slippage: params.maxSlippage?.toString() || DEFAULT_MAX_SLIPPAGE_BPS,
-                ownerAddress: params.ownerAddress?.toString(),
                 refundAddress: params.refundAddress?.toString(),
                 affiliates: params.affiliates?.map((a) => `${a.address}:${a.bps}`).join(','),
             },
@@ -284,14 +283,14 @@ export class GatewayApiClient {
             btcSigner,
             callback,
         }: {
-            quote: GatewayQuoteV3;
+            quote: GatewayQuoteV4;
             callback?: (step: ExecuteQuoteStep) => void;
         } & AllWalletClientParams,
         initOverrides?: RequestInit
     ): Promise<ExecuteQuoteResult> {
         if (instanceOfGatewayQuoteV2OneOf(quote)) {
-            const order = await this.api.createOrderV3({
-                gatewayQuoteV3: { onramp: quote.onramp },
+            const order = await this.api.createOrderV4({
+                gatewayQuoteV4: { onramp: quote.onramp },
             });
 
             if (!instanceOfGatewayCreateOrderOneOf(order)) {
@@ -352,9 +351,9 @@ export class GatewayApiClient {
 
             let tx: RegisterTxSuccess;
             try {
-                const response = await this.api.registerTxV3(
+                const response = await this.api.registerTxV4(
                     {
-                        registerTxV3: {
+                        registerTxV4: {
                             onramp: {
                                 orderId: order.onramp.orderId,
                                 bitcoinTxHex: bitcoinTxHex,
@@ -380,7 +379,7 @@ export class GatewayApiClient {
             }
 
             return { order, tx: tx.onramp.txid };
-        } else if (instanceOfGatewayQuoteV3OneOf(quote)) {
+        } else if (instanceOfGatewayQuoteV4OneOf(quote)) {
             if (!walletClient.account) {
                 throw new Error(`walletClient is required for offramp order`);
             }
@@ -388,8 +387,8 @@ export class GatewayApiClient {
             const tokenAddress = quote.offramp.tokenAddress;
             const requiredAmount = BigInt(quote.offramp.inputAmount.amount);
 
-            const order = await this.api.createOrderV3({
-                gatewayQuoteV3: { offramp: quote.offramp },
+            const order = await this.api.createOrderV4({
+                gatewayQuoteV4: { offramp: quote.offramp },
             });
 
             if (!instanceOfGatewayCreateOrderOneOf1(order)) {
@@ -527,7 +526,7 @@ export class GatewayApiClient {
             }
 
             return { order, tx: transactionHash };
-        } else if (instanceOfGatewayQuoteV2OneOf2(quote)) {
+        } else if (instanceOfGatewayQuoteV4OneOf1(quote)) {
             const tokenAddress = quote.tokenSwap.inputAmount.address;
             const requiredAmount = BigInt(quote.tokenSwap.inputAmount.amount);
             const accountAddress = walletClient.account.address;
@@ -576,8 +575,8 @@ export class GatewayApiClient {
 
             const totalSteps = needsReset ? 3 : needsApproval ? 2 : 1;
 
-            const order = await this.api.createOrderV3({
-                gatewayQuoteV3: { tokenSwap: quote.tokenSwap },
+            const order = await this.api.createOrderV4({
+                gatewayQuoteV4: { tokenSwap: quote.tokenSwap },
             });
 
             if (!instanceOfGatewayCreateOrderV2OneOf(order)) {
@@ -735,7 +734,7 @@ export class GatewayApiClient {
      * @returns Promise resolving to the maximum spendable amount
      */
     async getMaxSpendable(address: string, initOverrides?: RequestInit): Promise<GatewayMaxSpendable> {
-        return this.api.getMaxSpendableV3({ address }, initOverrides);
+        return this.api.getMaxSpendableV4({ address }, initOverrides);
     }
 
     /**
@@ -746,10 +745,10 @@ export class GatewayApiClient {
      * @returns Promise resolving to array of typed orders
      */
     async getOrders(
-        requestParameters: GetOrdersV3Request,
+        requestParameters: GetOrdersV4Request,
         initOverrides?: RequestInit
-    ): Promise<PaginatedOrdersResponse> {
-        return this.api.getOrdersV3(requestParameters, initOverrides);
+    ): Promise<PaginatedOrdersResponseV3> {
+        return this.api.getOrdersV4(requestParameters, initOverrides);
     }
 
     /**
@@ -759,8 +758,8 @@ export class GatewayApiClient {
      * @param initOverrides Optional request initialization overrides
      * @returns Promise resolving to the order information
      */
-    async getOrder(id: string, initOverrides?: RequestInit): Promise<GatewayOrderInfoV2> {
-        return this.api.getOrderV3({ id }, initOverrides);
+    async getOrder(id: string, initOverrides?: RequestInit): Promise<GatewayOrderInfoV3> {
+        return this.api.getOrderV4({ id }, initOverrides);
     }
 
     /**
@@ -769,6 +768,6 @@ export class GatewayApiClient {
      * @returns Promise resolving to array of supported routes
      */
     async getRoutes(initOverrides?: RequestInit): Promise<Array<RouteInfo>> {
-        return this.api.getRoutesV3(initOverrides);
+        return this.api.getRoutesV4(initOverrides);
     }
 }

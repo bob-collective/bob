@@ -14,7 +14,8 @@
 
 import { mapValues } from '../runtime';
 /**
- * Pending BTC payment (v3) — adds `usd`.
+ * Pending BTC payment (v3) — adds `usd`. No longer populated: a broadcast BTC payout is
+ * reported as `Success` straight away.
  * @export
  * @interface PendingBtcPaymentV3
  */

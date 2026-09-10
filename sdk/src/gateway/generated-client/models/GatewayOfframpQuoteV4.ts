@@ -36,119 +36,118 @@ import {
 } from './ResolvedAffiliate';
 
 /**
- * V3 offramp quote: identical to V2 plus `owner_address`.
+ * V4 offramp quote with its source-chain refund address.
  * @export
- * @interface GatewayOfframpQuoteV3
+ * @interface GatewayOfframpQuoteV4
  */
-export interface GatewayOfframpQuoteV3 {
+export interface GatewayOfframpQuoteV4 {
     /**
      * Affiliate address (V1-compatible field; first entry from `affiliates`).
      * @type {string}
-     * @memberof GatewayOfframpQuoteV3
+     * @memberof GatewayOfframpQuoteV4
      */
-    affiliateAddress?: string | null;
+    affiliateAddress?: string;
     /**
      * Resolved affiliate recipients and computed fees (V2).
      * @type {Array<ResolvedAffiliate>}
-     * @memberof GatewayOfframpQuoteV3
+     * @memberof GatewayOfframpQuoteV4
      */
     affiliates?: Array<ResolvedAffiliate>;
     /**
-     * Estimated time in secs until the BTC payout is broadcast (spendable from the mempool)
+     * Estimated time in secs to complete the Order
      * @type {number}
-     * @memberof GatewayOfframpQuoteV3
+     * @memberof GatewayOfframpQuoteV4
      */
-    estimatedTimeInSecs?: number | null;
+    estimatedTimeInSecs?: number;
     /**
      * 
      * @type {GatewayOfframpFeeBreakdownV2}
-     * @memberof GatewayOfframpQuoteV3
+     * @memberof GatewayOfframpQuoteV4
      */
     feeBreakdown: GatewayOfframpFeeBreakdownV2;
     /**
      * 
      * @type {GatewayTokenAmountV2}
-     * @memberof GatewayOfframpQuoteV3
+     * @memberof GatewayOfframpQuoteV4
      */
     inputAmount: GatewayTokenAmountV2;
     /**
      * 
      * @type {GatewayTokenAmountV2}
-     * @memberof GatewayOfframpQuoteV3
+     * @memberof GatewayOfframpQuoteV4
      */
     outputAmount: GatewayTokenAmountV2;
-    /**
-     * Resolved EVM owner / refund-claimant for the on-chain order.
-     * @type {string}
-     * @memberof GatewayOfframpQuoteV3
-     */
-    ownerAddress: string;
     /**
      * Price impact as a fraction, e.g. `"-0.05"` means 5% loss. Absent if no price feed is
      * available.
      * @type {string}
-     * @memberof GatewayOfframpQuoteV3
+     * @memberof GatewayOfframpQuoteV4
      */
-    priceImpact?: string | null;
+    priceImpact?: string;
     /**
      * Price impact in USD, excluding execution fee. E.g. `"-1.00"` means $1 loss. Absent if no
      * price feed is available.
      * @type {string}
-     * @memberof GatewayOfframpQuoteV3
+     * @memberof GatewayOfframpQuoteV4
      */
-    priceImpactUsd?: string | null;
+    priceImpactUsd?: string;
     /**
      * 
      * @type {string}
-     * @memberof GatewayOfframpQuoteV3
+     * @memberof GatewayOfframpQuoteV4
      */
     recipient: string;
     /**
      * 
      * @type {string}
-     * @memberof GatewayOfframpQuoteV3
+     * @memberof GatewayOfframpQuoteV4
      */
-    sender?: string | null;
+    sender?: string;
     /**
      * 
      * @type {number}
-     * @memberof GatewayOfframpQuoteV3
+     * @memberof GatewayOfframpQuoteV4
      */
     slippage: number;
     /**
      * 
      * @type {string}
-     * @memberof GatewayOfframpQuoteV3
+     * @memberof GatewayOfframpQuoteV4
      */
     srcChain: string;
     /**
      * 
      * @type {string}
-     * @memberof GatewayOfframpQuoteV3
+     * @memberof GatewayOfframpQuoteV4
      */
     tokenAddress: string;
     /**
      * 
      * @type {string}
-     * @memberof GatewayOfframpQuoteV3
+     * @memberof GatewayOfframpQuoteV4
      */
     totalFeeUsd: string;
     /**
      * 
      * @type {string}
-     * @memberof GatewayOfframpQuoteV3
+     * @memberof GatewayOfframpQuoteV4
      */
     txTo: string;
+    /**
+     * Source-chain address used for refunds; required by create-order
+     * @type {string}
+     * @memberof GatewayOfframpQuoteV4
+     */
+    refundAddress?: string | null;
 }
 
 /**
- * Check if a given object implements the GatewayOfframpQuoteV3 interface.
+ * Check if a given object implements the GatewayOfframpQuoteV4 interface.
  */
-export function instanceOfGatewayOfframpQuoteV3(value: object): value is GatewayOfframpQuoteV3 {
+export function instanceOfGatewayOfframpQuoteV4(value: object): value is GatewayOfframpQuoteV4 {
     if (!('feeBreakdown' in value) || value['feeBreakdown'] === undefined) return false;
     if (!('inputAmount' in value) || value['inputAmount'] === undefined) return false;
     if (!('outputAmount' in value) || value['outputAmount'] === undefined) return false;
-    if (!('ownerAddress' in value) || value['ownerAddress'] === undefined) return false;
     if (!('recipient' in value) || value['recipient'] === undefined) return false;
     if (!('slippage' in value) || value['slippage'] === undefined) return false;
     if (!('srcChain' in value) || value['srcChain'] === undefined) return false;
@@ -158,11 +157,11 @@ export function instanceOfGatewayOfframpQuoteV3(value: object): value is Gateway
     return true;
 }
 
-export function GatewayOfframpQuoteV3FromJSON(json: any): GatewayOfframpQuoteV3 {
-    return GatewayOfframpQuoteV3FromJSONTyped(json, false);
+export function GatewayOfframpQuoteV4FromJSON(json: any): GatewayOfframpQuoteV4 {
+    return GatewayOfframpQuoteV4FromJSONTyped(json, false);
 }
 
-export function GatewayOfframpQuoteV3FromJSONTyped(json: any, ignoreDiscriminator: boolean): GatewayOfframpQuoteV3 {
+export function GatewayOfframpQuoteV4FromJSONTyped(json: any, ignoreDiscriminator: boolean): GatewayOfframpQuoteV4 {
     if (json == null) {
         return json;
     }
@@ -174,7 +173,6 @@ export function GatewayOfframpQuoteV3FromJSONTyped(json: any, ignoreDiscriminato
         'feeBreakdown': GatewayOfframpFeeBreakdownV2FromJSON(json['feeBreakdown']),
         'inputAmount': GatewayTokenAmountV2FromJSON(json['inputAmount']),
         'outputAmount': GatewayTokenAmountV2FromJSON(json['outputAmount']),
-        'ownerAddress': json['ownerAddress'],
         'priceImpact': json['priceImpact'] == null ? undefined : json['priceImpact'],
         'priceImpactUsd': json['priceImpactUsd'] == null ? undefined : json['priceImpactUsd'],
         'recipient': json['recipient'],
@@ -184,14 +182,15 @@ export function GatewayOfframpQuoteV3FromJSONTyped(json: any, ignoreDiscriminato
         'tokenAddress': json['tokenAddress'],
         'totalFeeUsd': json['totalFeeUsd'],
         'txTo': json['txTo'],
+        'refundAddress': json['refundAddress'] == null ? undefined : json['refundAddress'],
     };
 }
 
-export function GatewayOfframpQuoteV3ToJSON(json: any): GatewayOfframpQuoteV3 {
-    return GatewayOfframpQuoteV3ToJSONTyped(json, false);
+export function GatewayOfframpQuoteV4ToJSON(json: any): GatewayOfframpQuoteV4 {
+    return GatewayOfframpQuoteV4ToJSONTyped(json, false);
 }
 
-export function GatewayOfframpQuoteV3ToJSONTyped(value?: GatewayOfframpQuoteV3 | null, ignoreDiscriminator: boolean = false): any {
+export function GatewayOfframpQuoteV4ToJSONTyped(value?: GatewayOfframpQuoteV4 | null, ignoreDiscriminator: boolean = false): any {
     if (value == null) {
         return value;
     }
@@ -204,7 +203,6 @@ export function GatewayOfframpQuoteV3ToJSONTyped(value?: GatewayOfframpQuoteV3 |
         'feeBreakdown': GatewayOfframpFeeBreakdownV2ToJSON(value['feeBreakdown']),
         'inputAmount': GatewayTokenAmountV2ToJSON(value['inputAmount']),
         'outputAmount': GatewayTokenAmountV2ToJSON(value['outputAmount']),
-        'ownerAddress': value['ownerAddress'],
         'priceImpact': value['priceImpact'],
         'priceImpactUsd': value['priceImpactUsd'],
         'recipient': value['recipient'],
@@ -214,6 +212,7 @@ export function GatewayOfframpQuoteV3ToJSONTyped(value?: GatewayOfframpQuoteV3 |
         'tokenAddress': value['tokenAddress'],
         'totalFeeUsd': value['totalFeeUsd'],
         'txTo': value['txTo'],
+        'refundAddress': value['refundAddress'],
     };
 }
 

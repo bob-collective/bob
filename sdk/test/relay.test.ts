@@ -1,7 +1,7 @@
+import * as bitcoin from 'bitcoinjs-lib';
 import { assert, describe, it } from 'vitest';
 import { EsploraClient } from '../src/esplora';
 import { getBitcoinTxInfo, getBitcoinTxProof } from '../src/relay';
-import * as bitcoin from 'bitcoinjs-lib';
 import { encodeRawOutput } from '../src/utils';
 
 describe.skip('Relay Tests', () => {

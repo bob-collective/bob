@@ -34,7 +34,6 @@ export async function swapBtcForToken(evmAddress: Address) {
     const quote = await gatewaySDK.getQuote({
         fromChain: 'bitcoin',
         fromToken: '0x0000000000000000000000000000000000000000',
-        ownerAddress: '0x0000000000000000000000000000000000000000',
         fromUserAddress: 'bc1qafk4yhqvj4wep57m62dgrmutldusqde8adh20d',
         toChain: 'bob',
         toUserAddress: evmAddress,
@@ -54,7 +53,6 @@ export async function swapBtcForToken(evmAddress: Address) {
     const offrampQuote = await gatewaySDK.getQuote({
         fromChain: 'bob',
         fromToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
-        ownerAddress: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
         toChain: 'bitcoin',
         toUserAddress: 'bc1qafk4yhqvj4wep57m62dgrmutldusqde8adh20d',
         toToken: '0x0000000000000000000000000000000000000000',
@@ -130,7 +128,6 @@ export async function onrampAndDeposit(evmAddress: Address) {
         fromUserAddress: 'bc1qafk4yhqvj4wep57m62dgrmutldusqde8adh20d',
         toChain: 'bob',
         toUserAddress: evmAddress,
-        ownerAddress: evmAddress,
         toToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
         amount: parseBtc('0.1'), // BTC
         strategyMessage: generateMessageForMulticallHandler(

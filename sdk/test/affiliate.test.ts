@@ -59,7 +59,7 @@ describe('Gateway Multiple Affiliates', () => {
 
         const expectedWireAffiliates = `${ADDR_A}:25,${ADDR_B}:50`;
         nock(ETHEREUM_GATEWAY_BASE_URL)
-            .get('/v3/get-quote')
+            .get('/v4/get-quote')
             .query((q) => q.srcChain === 'bitcoin' && q.affiliates === expectedWireAffiliates)
             .reply(200, mockOnrampQuote);
 
@@ -70,7 +70,6 @@ describe('Gateway Multiple Affiliates', () => {
             toToken: ETHEREUM_USDT_ADDRESS,
             fromUserAddress: BTC_SENDER,
             toUserAddress: ADDR_A,
-            ownerAddress: ADDR_A,
             amount: 100_000,
             affiliates,
         });
@@ -119,7 +118,7 @@ describe('Gateway Multiple Affiliates', () => {
         };
 
         nock(ETHEREUM_GATEWAY_BASE_URL)
-            .get('/v3/get-quote')
+            .get('/v4/get-quote')
             .query((q) => q.dstChain === 'bitcoin')
             .reply(200, mockOfframpQuote);
 
@@ -130,7 +129,6 @@ describe('Gateway Multiple Affiliates', () => {
             toToken: BTC_TOKEN,
             fromUserAddress: ADDR_A,
             toUserAddress: BTC_SENDER,
-            ownerAddress: ADDR_A,
             amount: 100_000_000,
             affiliates,
         });
