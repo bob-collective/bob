@@ -25,6 +25,7 @@ import {
     GatewaySDK,
     isGatewayError,
 } from '../src/gateway';
+import { assertAllowanceHolderSpender } from '../src/gateway/allowance-holder';
 import { ETHEREUM_USDT_ADDRESS, MAINNET_GATEWAY_BASE_URL } from '../src/gateway/client';
 import { GatewayErrorCodeV2 } from '../src/gateway/error/gateway-error';
 import {
@@ -32,15 +33,13 @@ import {
     GatewayQuoteOneOf,
     GatewayQuoteOneOf1,
     GatewayQuoteV2OneOf,
-    GatewayQuoteV2OneOf1,
-    GatewayQuoteV4OneOf1,
     GatewayQuoteV4OneOf,
+    GatewayQuoteV4OneOf1,
     instanceOfGatewayQuoteOneOf,
     instanceOfGatewayQuoteOneOf1,
     instanceOfGatewayQuoteV4OneOf1,
 } from '../src/gateway/generated-client';
 import * as gatewayUtils from '../src/gateway/utils';
-import { assertAllowanceHolderSpender } from '../src/gateway/allowance-holder';
 
 const WBTC_OFT_ADDRESS = '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c';
 const MOCK_SIGNED_QUOTE_DATA = 'signed-quote-data';

@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, Mock, MockedFunction, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, Mock, vi } from 'vitest';
 import { MAINNET_MEMPOOL_BASE_PATH, MempoolClient } from '../src/mempool';
 
 const MOCKS = {
