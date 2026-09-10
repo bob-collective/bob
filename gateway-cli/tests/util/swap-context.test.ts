@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { resolveOwnerAddress } from "../../src/util/swap-context.js";
+import { resolveOwnerAddress, resolveRefundAddress } from "../../src/util/swap-context.js";
 
 const EVM = "0xAF91558Ba2B1994530c9cfCcbda5AE9cD2b456bb";
 const BTC = "bc1q4xdatls497ea76fmuefu9we4ld4yu2vy8hedne";
@@ -57,5 +57,23 @@ describe("resolveOwnerAddress", () => {
     expect(() => resolveOwnerAddress({
       srcFamily: "evm", dstFamily: "bitcoin", recipient: BTC,
     })).toThrow(/Could not determine the EVM owner address/);
+  });
+});
+
+describe("resolveRefundAddress", () => {
+  it("accepts a valid Bitcoin address for a Bitcoin source", () => {
+    expect(resolveRefundAddress(BTC, "bitcoin")).toBe(BTC);
+  });
+
+  it("rejects an invalid Bitcoin address for a Bitcoin source", () => {
+    expect(() => resolveRefundAddress("bc1qinvalid", "bitcoin")).toThrow(/valid Bitcoin address/);
+  });
+
+  it("rejects a refund address for an EVM source", () => {
+    expect(() => resolveRefundAddress(BTC, "ethereum")).toThrow(/only be specified.*source chain is Bitcoin/);
+  });
+
+  it("returns undefined for an EVM source when omitted", () => {
+    expect(resolveRefundAddress(undefined, "ethereum")).toBeUndefined();
   });
 });

@@ -20,3 +20,11 @@ describe("swapSchema --timeout", () => {
     expect(() => AbortSignal.timeout(86_400 * 1000)).not.toThrow();
   });
 });
+
+describe("swapSchema --refund-address", () => {
+  it("preserves refundAddress", () => {
+    expect(swapSchema.parse({ ...base, refundAddress: "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq" })).toMatchObject({
+      refundAddress: "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq",
+    });
+  });
+});

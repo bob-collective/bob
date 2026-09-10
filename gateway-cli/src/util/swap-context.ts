@@ -20,6 +20,7 @@ export interface SwapContextOptions {
   slippage?: number;
   feeToken?: string;
   feeReserve?: string;
+  refundAddress?: string;
   privateKey?: string;
 }
 
@@ -78,6 +79,16 @@ export interface SwapContext {
   key?: string;
   /** Quote parameters, identical for `quote` and `swap` by construction. */
   quoteParams: GetQuoteParams;
+}
+
+/** Validate and return a Bitcoin-source refund address. */
+export function resolveRefundAddress(refundAddress: string | undefined, fromChain: string): string | undefined {
+  if (refundAddress === undefined) return undefined;
+  if (getChainFamily(fromChain) !== "bitcoin") {
+    throw new Error("--refund-address may only be specified when the source chain is Bitcoin.");
+  }
+  validateAddressFamily(fromChain, refundAddress, "--refund-address");
+  return refundAddress;
 }
 
 // ─── Owner address ───────────────────────────────────────────────────────────
@@ -160,6 +171,7 @@ export async function resolveSwapContext(
 
   const srcFamily = getChainFamily(srcAsset.chain);
   const dstFamily = getChainFamily(dstAsset.chain);
+  const refundAddress = resolveRefundAddress(opts.refundAddress, srcAsset.chain);
   const variant: SwapVariant = srcFamily === "bitcoin" ? "onramp" : dstFamily === "bitcoin" ? "offramp" : "tokenSwap";
   const evmChain = srcFamily === "bitcoin" ? dstAsset.chain : srcAsset.chain;
 
@@ -239,6 +251,7 @@ export async function resolveSwapContext(
       toUserAddress: recipient,
       fromUserAddress: senderAddress,
       ownerAddress,
+      refundAddress,
       amount: atomicUnits,
       maxSlippage: slippageBps,
     },

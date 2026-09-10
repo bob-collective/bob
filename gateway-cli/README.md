@@ -176,6 +176,7 @@ All config via environment variables. No config files.
 
 ```
 --private-key <key>      Signing key (or use env vars)
+--refund-address <addr>  Valid Bitcoin refund address (Bitcoin source swaps only)
 --unsigned               Output unsigned PSBT/tx without signing
 --no-wait                Exit after submitting without polling
 --no-retry               Fail immediately on transient errors (retry is on by default)
