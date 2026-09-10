@@ -14,7 +14,7 @@
 
 import { mapValues } from '../runtime';
 /**
- * 
+ * No longer populated: a broadcast BTC payout is reported as `Success` straight away.
  * @export
  * @interface PendingBtcPayment
  */

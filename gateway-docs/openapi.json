@@ -2643,7 +2643,7 @@
               "null"
             ],
             "format": "int64",
-            "description": "Estimated time in secs to complete the Order",
+            "description": "Estimated time in secs until the BTC payout is broadcast (spendable from the mempool)",
             "minimum": 0
           },
           "feeBreakdown": {
@@ -3288,7 +3288,8 @@
               }
             }
           }
-        ]
+        ],
+        "description": "For offramps, `Success` is reported once the BTC payout is broadcast (spendable from the\nmempool) and persisted once it confirms. It can briefly revert to `InProgress` if the payout\nis evicted from the mempool before confirmation; the solver never replaces the payout tx."
       },
       "GatewayOrderStatusV3": {
         "oneOf": [
@@ -3393,7 +3394,7 @@
             }
           }
         ],
-        "description": "Gateway order status (v3) — mirrors v2 with USD-carrying transfer types."
+        "description": "Gateway order status (v3) — mirrors v2 with USD-carrying transfer types.\n\nFor offramps, `Success` is reported once the BTC payout is broadcast (spendable from the\nmempool) and persisted once it confirms. It can briefly revert to `InProgress` if the payout\nis evicted from the mempool before confirmation; the solver never replaces the payout tx."
       },
       "GatewayQuote": {
         "oneOf": [
@@ -3941,6 +3942,7 @@
       },
       "PendingBtcPayment": {
         "type": "object",
+        "description": "No longer populated: a broadcast BTC payout is reported as `Success` straight away.",
         "required": [
           "txid",
           "amount"
@@ -3956,7 +3958,7 @@
       },
       "PendingBtcPaymentV3": {
         "type": "object",
-        "description": "Pending BTC payment (v3) — adds `usd`.",
+        "description": "Pending BTC payment (v3) — adds `usd`. No longer populated: a broadcast BTC payout is\nreported as `Success` straight away.",
         "required": [
           "txid",
           "amount"
