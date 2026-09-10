@@ -36,7 +36,7 @@ import {
     type PaginatedOrdersResponse,
     type RegisterTxSuccess,
     type RouteInfo,
-    V4Api
+    V4Api,
 } from './generated-client';
 import type { GatewayError as GatewayErrorInterface } from './generated-client/models/GatewayError';
 import {
