@@ -1,0 +1,7 @@
+position: 7
+label: "🔁 BOB Gateway Tutorial"
+link:
+  type: generated-index
+  description: Swap between native Bitcoin, stablecoins, wrapped Bitcoin and tokenised gold in a single transaction.
+collapsible: true
+collapsed: false
