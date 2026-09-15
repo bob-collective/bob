@@ -24,14 +24,21 @@ export interface GatewayErrorDetailsV2OneOf1 {
      * @type {string}
      * @memberof GatewayErrorDetailsV2OneOf1
      */
-    message: string;
+    available: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof GatewayErrorDetailsV2OneOf1
+     */
+    required: string;
 }
 
 /**
  * Check if a given object implements the GatewayErrorDetailsV2OneOf1 interface.
  */
 export function instanceOfGatewayErrorDetailsV2OneOf1(value: object): value is GatewayErrorDetailsV2OneOf1 {
-    if (!('message' in value) || value['message'] === undefined) return false;
+    if (!('available' in value) || value['available'] === undefined) return false;
+    if (!('required' in value) || value['required'] === undefined) return false;
     return true;
 }
 
@@ -45,7 +52,8 @@ export function GatewayErrorDetailsV2OneOf1FromJSONTyped(json: any, ignoreDiscri
     }
     return {
         
-        'message': json['message'],
+        'available': json['available'],
+        'required': json['required'],
     };
 }
 
@@ -60,7 +68,8 @@ export function GatewayErrorDetailsV2OneOf1ToJSONTyped(value?: GatewayErrorDetai
 
     return {
         
-        'message': value['message'],
+        'available': value['available'],
+        'required': value['required'],
     };
 }
 

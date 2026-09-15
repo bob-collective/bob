@@ -13,13 +13,13 @@
  */
 
 import { mapValues } from '../runtime';
-import type { GatewayCreateOrderV3OneOfOfframp } from './GatewayCreateOrderV3OneOfOfframp';
+import type { GatewayCreateOrderV3OneOf1Offramp } from './GatewayCreateOrderV3OneOf1Offramp';
 import {
-    GatewayCreateOrderV3OneOfOfframpFromJSON,
-    GatewayCreateOrderV3OneOfOfframpFromJSONTyped,
-    GatewayCreateOrderV3OneOfOfframpToJSON,
-    GatewayCreateOrderV3OneOfOfframpToJSONTyped,
-} from './GatewayCreateOrderV3OneOfOfframp';
+    GatewayCreateOrderV3OneOf1OfframpFromJSON,
+    GatewayCreateOrderV3OneOf1OfframpFromJSONTyped,
+    GatewayCreateOrderV3OneOf1OfframpToJSON,
+    GatewayCreateOrderV3OneOf1OfframpToJSONTyped,
+} from './GatewayCreateOrderV3OneOf1Offramp';
 
 /**
  * 
@@ -29,17 +29,17 @@ import {
 export interface GatewayCreateOrderV3OneOf1 {
     /**
      * 
-     * @type {GatewayCreateOrderV3OneOfOfframp}
+     * @type {GatewayCreateOrderV3OneOf1Offramp}
      * @memberof GatewayCreateOrderV3OneOf1
      */
-    tokenSwap: GatewayCreateOrderV3OneOfOfframp;
+    offramp: GatewayCreateOrderV3OneOf1Offramp;
 }
 
 /**
  * Check if a given object implements the GatewayCreateOrderV3OneOf1 interface.
  */
 export function instanceOfGatewayCreateOrderV3OneOf1(value: object): value is GatewayCreateOrderV3OneOf1 {
-    if (!('tokenSwap' in value) || value['tokenSwap'] === undefined) return false;
+    if (!('offramp' in value) || value['offramp'] === undefined) return false;
     return true;
 }
 
@@ -53,7 +53,7 @@ export function GatewayCreateOrderV3OneOf1FromJSONTyped(json: any, ignoreDiscrim
     }
     return {
         
-        'tokenSwap': GatewayCreateOrderV3OneOfOfframpFromJSON(json['tokenSwap']),
+        'offramp': GatewayCreateOrderV3OneOf1OfframpFromJSON(json['offramp']),
     };
 }
 
@@ -68,7 +68,7 @@ export function GatewayCreateOrderV3OneOf1ToJSONTyped(value?: GatewayCreateOrder
 
     return {
         
-        'tokenSwap': GatewayCreateOrderV3OneOfOfframpToJSON(value['tokenSwap']),
+        'offramp': GatewayCreateOrderV3OneOf1OfframpToJSON(value['offramp']),
     };
 }
 

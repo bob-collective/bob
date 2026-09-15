@@ -3,57 +3,57 @@ import {
     GatewayErrorCodeV2Variants as GatewayErrorCodeV2,
     GatewayErrorCodeV3Variants as GatewayErrorCodeV3,
     GatewayErrorCodeV4Variants as GatewayErrorCodeV4,
-    GatewayErrorDetailsOneOf,
-    GatewayErrorDetailsOneOf1,
-    GatewayErrorDetailsOneOf2,
-    GatewayErrorDetailsOneOf3,
-    GatewayErrorDetailsOneOf4,
-    GatewayErrorDetailsOneOf5,
-    GatewayErrorDetailsOneOf6,
     GatewayErrorDetailsV2OneOf,
+    GatewayErrorDetailsV2OneOf1,
+    GatewayErrorDetailsV2OneOf2,
+    GatewayErrorDetailsV2OneOf3,
+    GatewayErrorDetailsV2OneOf4,
+    GatewayErrorDetailsV2OneOf5,
+    GatewayErrorDetailsV2OneOf6,
+    GatewayErrorDetailsV2OneOf7,
     GatewayErrorDetailsV3OneOf,
     GatewayErrorDetailsV3OneOf1,
     GatewayErrorDetailsV3OneOf2,
 } from '../generated-client';
-import type { GatewayError as GatewayErrorInterface } from '../generated-client/models/GatewayError';
-import { instanceOfGatewayError } from '../generated-client/models/GatewayError';
+import type { GatewayErrorV4 as GatewayErrorInterface } from '../generated-client/models/GatewayErrorV4';
+import { instanceOfGatewayErrorV4 } from '../generated-client/models/GatewayErrorV4';
 
 export { GatewayErrorCode, GatewayErrorCodeV2, GatewayErrorCodeV3, GatewayErrorCodeV4 };
 
 // ─── Named detail interfaces (mirror the Rust GatewayErrorDetails enum) ──────
 
 /** Details for {@link GatewayErrorCode.InsufficientAmount} */
-export type InsufficientAmountDetails = GatewayErrorDetailsOneOf;
+export type InsufficientAmountDetails = GatewayErrorDetailsV2OneOf;
 
 /** Details for {@link GatewayErrorCode.InsufficientPaymentAmount} */
-export type InsufficientPaymentAmountDetails = GatewayErrorDetailsOneOf;
+export type InsufficientPaymentAmountDetails = GatewayErrorDetailsV2OneOf;
 
 /** Details for {@link GatewayErrorCode.InsufficientSwapAmount} */
-export type InsufficientSwapAmountDetails = GatewayErrorDetailsOneOf1;
+export type InsufficientSwapAmountDetails = GatewayErrorDetailsV2OneOf1;
 
 /** Details for {@link GatewayErrorCode.UnableToCoverFees} */
-export type UnableToCoverFeesDetails = GatewayErrorDetailsOneOf2;
+export type UnableToCoverFeesDetails = GatewayErrorDetailsV2OneOf2;
 
 /** Details for {@link GatewayErrorCode.SimulationFailed} */
-export type SimulationFailedDetails = GatewayErrorDetailsOneOf3;
+export type SimulationFailedDetails = GatewayErrorDetailsV2OneOf3;
 
 /** Details for {@link GatewayErrorCode.GasEstimateFailed} */
-export type GasEstimateFailedDetails = GatewayErrorDetailsOneOf3;
+export type GasEstimateFailedDetails = GatewayErrorDetailsV2OneOf3;
 
 /** Details for {@link GatewayErrorCode.NoRoute} */
-export type NoRouteDetails = GatewayErrorDetailsOneOf4;
+export type NoRouteDetails = GatewayErrorDetailsV2OneOf4;
 
 /** Details for {@link GatewayErrorCodeV2.AffiliateFeesNotSupportedForRoute} */
-export type AffiliateFeesNotSupportedForRouteDetails = GatewayErrorDetailsOneOf4;
+export type AffiliateFeesNotSupportedForRouteDetails = GatewayErrorDetailsV2OneOf4;
 
 /** Details for {@link GatewayErrorCode.ExceededLimit} */
-export type ExceededLimitDetails = GatewayErrorDetailsOneOf5;
+export type ExceededLimitDetails = GatewayErrorDetailsV2OneOf5;
 
 /** Details for {@link GatewayErrorCodeV2.InsufficientSolverBalance} */
-export type InsufficientSolverBalanceDetails = GatewayErrorDetailsV2OneOf;
+export type InsufficientSolverBalanceDetails = GatewayErrorDetailsV2OneOf7;
 
 /** Details for {@link GatewayErrorCode.QuoteAmountTooLow} */
-export type QuoteAmountTooLowDetails = GatewayErrorDetailsOneOf6;
+export type QuoteAmountTooLowDetails = GatewayErrorDetailsV2OneOf6;
 
 /** Details for {@link GatewayErrorCode.SlippageTooLow} */
 export type SlippageTooLowDetails = GatewayErrorDetailsV3OneOf;
@@ -133,7 +133,10 @@ type ParseDetailsArgs = {
  */
 export class GatewayError<
     C extends GatewayErrorCode | GatewayErrorCodeV2 | GatewayErrorCodeV3 | GatewayErrorCodeV4 =
-        GatewayErrorCode | GatewayErrorCodeV2 | GatewayErrorCodeV3 | GatewayErrorCodeV4,
+        | GatewayErrorCode
+        | GatewayErrorCodeV2
+        | GatewayErrorCodeV3
+        | GatewayErrorCodeV4,
 > extends Error {
     /** Stable error code, safe to switch/match on. */
     readonly code: C;
@@ -176,7 +179,7 @@ export class GatewayError<
 
         const body = json as Record<string, unknown>;
 
-        if (!instanceOfGatewayError(body)) {
+        if (!instanceOfGatewayErrorV4(body)) {
             const message =
                 typeof body.error === 'string'
                     ? body.error

@@ -22,6 +22,7 @@ import {
     ExecuteQuoteStepType,
     GatewayError,
     GatewayErrorCode,
+    GatewayErrorCodeV4Variants,
     GatewaySDK,
     isGatewayError,
 } from '../src/gateway';
@@ -29,14 +30,11 @@ import { assertAllowanceHolderSpender } from '../src/gateway/allowance-holder';
 import { ETHEREUM_USDT_ADDRESS, MAINNET_GATEWAY_BASE_URL } from '../src/gateway/client';
 import { GatewayErrorCodeV2 } from '../src/gateway/error/gateway-error';
 import {
-    GatewayOrderInfo,
-    GatewayQuoteOneOf,
-    GatewayQuoteOneOf1,
-    GatewayQuoteV2OneOf,
+    GatewayQuoteV3OneOf,
     GatewayQuoteV4OneOf,
     GatewayQuoteV4OneOf1,
-    instanceOfGatewayQuoteOneOf,
-    instanceOfGatewayQuoteOneOf1,
+    instanceOfGatewayQuoteV3OneOf,
+    instanceOfGatewayQuoteV4OneOf,
     instanceOfGatewayQuoteV4OneOf1,
 } from '../src/gateway/generated-client';
 import * as gatewayUtils from '../src/gateway/utils';
@@ -88,7 +86,7 @@ describe('Gateway Tests', () => {
     it('should get quote', async () => {
         const gatewaySDK = new GatewaySDK();
 
-        const mockOnrampQuote: GatewayQuoteOneOf = {
+        const mockOnrampQuote: GatewayQuoteV3OneOf = {
             onramp: {
                 dstChain: 'bob',
                 dstToken: WBTC_OFT_ADDRESS,
@@ -147,7 +145,7 @@ describe('Gateway Tests', () => {
             },
         };
 
-        const mockOfframpQuote: GatewayQuoteOneOf1 = {
+        const mockOfframpQuote: GatewayQuoteV4OneOf = {
             offramp: {
                 txTo: '0x1234567890123456789012345678901234567890',
                 recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
@@ -246,7 +244,8 @@ describe('Gateway Tests', () => {
             amount: 1000,
         });
 
-        assert(instanceOfGatewayQuoteOneOf(result1));
+        assert(instanceOfGatewayQuoteV3OneOf(result1));
+        expect(gatewayUtils.getInnerQuote(result1)).toBe(result1.onramp);
 
         const result2 = await gatewaySDK.getQuote({
             fromChain: 'bob',
@@ -257,7 +256,8 @@ describe('Gateway Tests', () => {
             amount: 1000,
         });
 
-        assert(instanceOfGatewayQuoteOneOf1(result2));
+        assert(instanceOfGatewayQuoteV4OneOf(result2));
+        expect(gatewayUtils.getInnerQuote(result2)).toBe(result2.offramp);
 
         const result3 = await gatewaySDK.getQuote({
             fromChain: 'bsc',
@@ -270,6 +270,7 @@ describe('Gateway Tests', () => {
         });
 
         assert(instanceOfGatewayQuoteV4OneOf1(result3));
+        expect(gatewayUtils.getInnerQuote(result3)).toBe(result3.tokenSwap);
     });
 
     it('getQuote forwards refundAddress and affiliates as query params', async () => {
@@ -301,14 +302,18 @@ describe('Gateway Tests', () => {
     });
 
     it('should get orders', async () => {
-        const mockOrders: GatewayOrderInfo[] = [
+        const mockOrders = [
             {
                 id: 'order-1',
-                status: 'btc-confirmation',
+                status: {
+                    inProgress: {
+                        refund_tx: null,
+                        pending_btc_payment: { txid: 'payout-tx', amount: '1000', usd: '1.25' },
+                    },
+                },
                 dstInfo: {
                     chain: 'bob',
                     token: WBTC_OFT_ADDRESS,
-                    txHash: '0xabc123',
                     amount: '1000',
                 },
                 srcInfo: {
@@ -322,13 +327,12 @@ describe('Gateway Tests', () => {
             },
             {
                 id: 'order-2',
-                status: 'Accepted',
+                status: { failed: { refund_tx: null } },
                 timestamp: 1625247600,
                 estimatedTimeInSecs: 3600,
                 dstInfo: {
                     chain: 'bob',
                     token: WBTC_OFT_ADDRESS,
-                    txHash: '0xabc123',
                     amount: '1000',
                 },
                 srcInfo: {
@@ -344,7 +348,6 @@ describe('Gateway Tests', () => {
                 dstInfo: {
                     chain: 'bsc',
                     token: WBTC_OFT_ADDRESS,
-                    txHash: '0xlzabc123',
                     amount: '50',
                 },
                 srcInfo: {
@@ -354,16 +357,24 @@ describe('Gateway Tests', () => {
                     amount: '50',
                 },
                 timestamp: 1625247600,
-                status: 'destinationConfirmed',
+                status: { success: { received_tokens: [] } },
             },
         ];
 
-        nock(`${MAINNET_GATEWAY_BASE_URL}`).get(`/v4/get-orders/${zeroAddress}`).reply(200, { orders: mockOrders });
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
+            .get(`/v4/get-orders/${zeroAddress}`)
+            .reply(200, { orders: mockOrders, nextCursor: 'next-page' });
 
         const gatewaySDK = new GatewaySDK();
         const result = await gatewaySDK.getOrders({ userAddress: zeroAddress });
         expect(result).toBeDefined();
         assert(Array.isArray(result.orders));
+        expect(result.nextCursor).toBe('next-page');
+        expect(result.orders[0].status).toEqual({
+            inProgress: { refundTx: undefined, pendingBtcPayment: { txid: 'payout-tx', amount: '1000', usd: '1.25' } },
+        });
+        expect(result.orders[1].status).toEqual({ failed: { refundTx: undefined } });
+        expect(result.orders[2].status).toEqual({ success: { receivedTokens: [] } });
     });
 
     it('should get routes', async () => {
@@ -387,7 +398,7 @@ describe('Gateway Tests', () => {
     it('should execute onramp quote with btcSigner.signAllInputs', async () => {
         const gatewaySDK = new GatewaySDK();
 
-        const mockQuote: GatewayQuoteOneOf = {
+        const mockQuote: GatewayQuoteV3OneOf = {
             onramp: {
                 dstChain: 'bob',
                 dstToken: WBTC_OFT_ADDRESS,
@@ -492,7 +503,7 @@ describe('Gateway Tests', () => {
     it('should call signAllInputs with the correct `this` on a class-based btcSigner', async () => {
         const gatewaySDK = new GatewaySDK();
 
-        const mockQuote: GatewayQuoteOneOf = {
+        const mockQuote: GatewayQuoteV3OneOf = {
             onramp: {
                 dstChain: 'bob',
                 dstToken: WBTC_OFT_ADDRESS,
@@ -567,7 +578,7 @@ describe('Gateway Tests', () => {
     it('should call sendBitcoin with the correct `this` on a class-based btcSigner', async () => {
         const gatewaySDK = new GatewaySDK();
 
-        const mockQuote: GatewayQuoteOneOf = {
+        const mockQuote: GatewayQuoteV3OneOf = {
             onramp: {
                 dstChain: 'bob',
                 dstToken: WBTC_OFT_ADDRESS,
@@ -641,7 +652,7 @@ describe('Gateway Tests', () => {
     it('should execute walletless onramp without btcSigner', async () => {
         const gatewaySDK = new GatewaySDK();
 
-        const mockQuote: GatewayQuoteOneOf = {
+        const mockQuote: GatewayQuoteV3OneOf = {
             onramp: {
                 dstChain: 'bob',
                 dstToken: WBTC_OFT_ADDRESS,
@@ -741,7 +752,7 @@ describe('Gateway Tests', () => {
     it('should register an empty transaction returned by btcSigner', async () => {
         const gatewaySDK = new GatewaySDK();
 
-        const mockQuote: GatewayQuoteOneOf = {
+        const mockQuote: GatewayQuoteV3OneOf = {
             onramp: {
                 dstChain: 'bob',
                 dstToken: WBTC_OFT_ADDRESS,
@@ -1742,7 +1753,7 @@ describe('Gateway Tests', () => {
 
         const invalidQuote = {
             someInvalidField: 'invalid',
-        } as unknown as GatewayQuoteOneOf;
+        } as unknown as GatewayQuoteV3OneOf;
 
         const mockWalletClient = {
             account: { address: '0xabcd1234abcd1234abcd1234abcd1234abcd1234' as Address },
@@ -1762,7 +1773,7 @@ describe('Gateway Tests', () => {
     it('should throw error when btcSigner has neither method', async () => {
         const gatewaySDK = new GatewaySDK();
 
-        const mockQuote: GatewayQuoteOneOf = {
+        const mockQuote: GatewayQuoteV3OneOf = {
             onramp: {
                 dstChain: 'bob',
                 dstToken: WBTC_OFT_ADDRESS,
@@ -1861,7 +1872,7 @@ describe('Gateway Tests', () => {
     it('should attach orderId to the thrown error when the onramp psbtHex is missing', async () => {
         const gatewaySDK = new GatewaySDK();
 
-        const mockQuote: GatewayQuoteOneOf = {
+        const mockQuote: GatewayQuoteV3OneOf = {
             onramp: {
                 dstChain: 'bob',
                 dstToken: WBTC_OFT_ADDRESS,
@@ -1924,7 +1935,7 @@ describe('Gateway Tests', () => {
     it('should attach orderId to the thrown error when onramp registerTxV3 fails', async () => {
         const gatewaySDK = new GatewaySDK();
 
-        const mockQuote: GatewayQuoteOneOf = {
+        const mockQuote: GatewayQuoteV3OneOf = {
             onramp: {
                 dstChain: 'bob',
                 dstToken: WBTC_OFT_ADDRESS,
@@ -2630,7 +2641,7 @@ describe('Gateway Tests', () => {
 
     it('should call callback for onramp with btcSigner (1 step: sign BTC tx)', async () => {
         const gatewaySDK = new GatewaySDK();
-        const mockQuote: GatewayQuoteV2OneOf = {
+        const mockQuote: GatewayQuoteV3OneOf = {
             onramp: {
                 dstChain: 'bob',
                 dstToken: WBTC_OFT_ADDRESS,
@@ -2689,7 +2700,7 @@ describe('Gateway Tests', () => {
 
     it('should not call callback for walletless onramp (0 wallet calls)', async () => {
         const gatewaySDK = new GatewaySDK();
-        const mockQuote: GatewayQuoteV2OneOf = {
+        const mockQuote: GatewayQuoteV3OneOf = {
             onramp: {
                 dstChain: 'bob',
                 dstToken: WBTC_OFT_ADDRESS,
@@ -3095,11 +3106,21 @@ describe('Gateway Tests', () => {
         });
     });
 
+    it('preserves the V4 missing-refund-address error', () => {
+        const error = GatewayError.fromResponse({
+            code: 'MISSING_REFUND_ADDRESS',
+            error: 'A source-chain refund address is required',
+        });
+        expect(isGatewayError(error)).toBe(true);
+        expect(error.code).toBe(GatewayErrorCodeV4Variants.MissingRefundAddress);
+        expect(error.message).toBe('A source-chain refund address is required');
+    });
+
     it('should include Authorization header when apiKey is provided', async () => {
         const validApiKey = 'a'.repeat(32);
         const gatewaySDK = new GatewaySDK({ apiKey: validApiKey });
 
-        const mockOnrampQuote: GatewayQuoteOneOf = {
+        const mockOnrampQuote: GatewayQuoteV3OneOf = {
             onramp: {
                 dstChain: 'bob',
                 dstToken: WBTC_OFT_ADDRESS,
@@ -3175,13 +3196,13 @@ describe('Gateway Tests', () => {
         });
 
         expect(result).toBeDefined();
-        assert(instanceOfGatewayQuoteOneOf(result));
+        assert(instanceOfGatewayQuoteV3OneOf(result));
     });
 
     it('should not include Authorization header when apiKey is not provided', async () => {
         const gatewaySDK = new GatewaySDK();
 
-        const mockOnrampQuote: GatewayQuoteOneOf = {
+        const mockOnrampQuote: GatewayQuoteV3OneOf = {
             onramp: {
                 dstChain: 'bob',
                 dstToken: WBTC_OFT_ADDRESS,
@@ -3253,7 +3274,7 @@ describe('Gateway Tests', () => {
         });
 
         expect(result).toBeDefined();
-        assert(instanceOfGatewayQuoteOneOf(result));
+        assert(instanceOfGatewayQuoteV3OneOf(result));
     });
 
     describe('gas-limit buffer (#1088)', () => {

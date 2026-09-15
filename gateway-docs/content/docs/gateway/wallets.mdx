@@ -104,6 +104,7 @@ function GatewayComponent() {
       fromChain: 'bitcoin',
       fromToken: '0x0000000000000000000000000000000000000000',
       fromUserAddress: btcAddress,
+      refundAddress: btcAddress, // Bitcoin refund address required for V4 execution
       toChain: 'bob',
       toToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
       toUserAddress: evmAddress,
@@ -111,14 +112,14 @@ function GatewayComponent() {
     });
 
     // Execute with Reown adapter
-    const txId = await gatewaySDK.executeQuote({
+    const { order, tx } = await gatewaySDK.executeQuote({
       quote,
       walletClient,
       publicClient,
       btcSigner: new ReownWalletAdapter(walletProvider, btcAddress),
     });
     
-    console.log('Transaction:', txId);
+    console.log('Order:', order, 'Transaction:', tx);
   };
 
   return (
@@ -180,6 +181,7 @@ function GatewayComponent() {
       fromChain: 'bitcoin',
       fromToken: '0x0000000000000000000000000000000000000000',
       fromUserAddress: address,
+      refundAddress: address, // Bitcoin refund address required for V4 execution
       toChain: 'bob',
       toToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
       toUserAddress: evmAddress,
@@ -193,7 +195,7 @@ function GatewayComponent() {
       },
     };
 
-    const txId = await gatewaySDK.executeQuote({
+    const { order, tx } = await gatewaySDK.executeQuote({
       quote,
       walletClient,
       publicClient,
@@ -236,13 +238,14 @@ function GatewayComponent() {
       fromChain: 'bitcoin',
       fromToken: '0x0000000000000000000000000000000000000000',
       fromUserAddress: btcAddress,
+      refundAddress: btcAddress, // Bitcoin refund address required for V4 execution
       toChain: 'bob',
       toToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
       toUserAddress: evmAddress,
       amount: parseBtc("0.1"),
     });
 
-    const txId = await gatewaySDK.executeQuote({
+    const { order, tx } = await gatewaySDK.executeQuote({
       quote,
       walletClient,
       publicClient,
@@ -258,7 +261,7 @@ function GatewayComponent() {
 
 ## Custom Bitcoin Signer
 
-Implement the `BitcoinSigner` interface for any Bitcoin wallet:
+Implement the `BitcoinSigner` interface for any Bitcoin wallet. Return finalized raw transaction hex from either method, not a txid or PSBT. Gateway validates and broadcasts it through V4 `register-tx`. Prefer a signing-only wallet method; if the wallet broadcasts, retrieve the raw hex before returning (as the built-in OKX adapter does).
 
 ```typescript
 import { BitcoinSigner } from '@gobob/bob-sdk';
@@ -273,8 +276,8 @@ class CustomWalletAdapter implements BitcoinSigner {
     value: string; // BTC amount as string
     opReturn?: string; // OP_RETURN data
   }): Promise<string> {
-    // Use your wallet's API to create and broadcast transaction
-    const txHex = await this.wallet.sendBitcoin({
+    // Build and sign without broadcasting; return raw transaction hex
+    const txHex = await this.wallet.signBitcoin({
       to: params.to,
       amount: params.value,
       data: params.opReturn,
@@ -298,7 +301,7 @@ class CustomWalletAdapter implements BitcoinSigner {
 // Usage
 const btcSigner = new CustomWalletAdapter(yourWalletInstance);
 
-const txId = await gatewaySDK.executeQuote({
+const { order, tx } = await gatewaySDK.executeQuote({
   quote,
   walletClient,
   publicClient,
@@ -331,6 +334,7 @@ function GatewayComponent() {
       fromChain: 'bitcoin',
       fromToken: '0x0000000000000000000000000000000000000000',
       fromUserAddress: btcAddress,
+      refundAddress: btcAddress, // Bitcoin refund address required for V4 execution
       toChain: 'bob',
       toToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
       toUserAddress: evmAddress,
@@ -347,7 +351,7 @@ function GatewayComponent() {
       },
     };
 
-    const txId = await gatewaySDK.executeQuote({
+    const { order, tx } = await gatewaySDK.executeQuote({
       quote,
       walletClient,
       publicClient,
@@ -413,25 +417,16 @@ function GatewayComponent() {
 
 ## Testing
 
-Test your Bitcoin wallet integration on BOB Sepolia testnet:
+Use staging to test your integration against the available routes:
 
 ```typescript
-import { STAGING_GATEWAY_BASE_URL } from '@gobob/bob-sdk';
+import { GatewaySDK, STAGING_GATEWAY_BASE_URL } from '@gobob/bob-sdk';
 
 const gatewaySDK = new GatewaySDK({ basePath: STAGING_GATEWAY_BASE_URL });
-
-// Use Bitcoin testnet addresses (starting with tb1...)
-const quote = await gatewaySDK.getQuote({
-  fromChain: 'bitcoin-testnet',
-  fromToken: '0x0000000000000000000000000000000000000000', // BTC (zero address)
-  fromUserAddress: 'tb1q...', // Testnet address
-  // ... rest of params
-});
+const routes = await gatewaySDK.getRoutes();
 ```
 
-<Callout type="warn">
-Always test on testnet before deploying to mainnet. Use testnet BTC which has no real value.
-</Callout>
+Discover chains and tokens from `getRoutes()` before requesting a quote. Staging is an API environment; do not assume it uses Bitcoin testnet or BOB Sepolia. Use addresses and funds appropriate to the route's actual networks, and include a source-chain `refundAddress` before execution.
 
 ## Next Steps
 

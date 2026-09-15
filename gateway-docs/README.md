@@ -21,14 +21,14 @@ pnpm dev          # http://localhost:3000
 | Path | Purpose |
 |------|---------|
 | `content/docs/gateway/` | The hand-written guides |
-| `content/docs/api-reference/` | `overview.mdx`, plus `v1/` `v2/` `v3/` generated from the spec |
+| `content/docs/api-reference/` | `overview.mdx`, plus `v3/` `v4/` generated from the spec |
 | `openapi.json` | The Gateway API spec |
 | `src/components/` | MDX component overrides and the live routes table |
 | `src/lib/source.ts` | Content source and page tree |
 
-Sidebar order and grouping come from the `meta.json` files. `v1/` and `v2/` are
-built and reachable by URL but deliberately left out of
-`content/docs/api-reference/meta.json`, so they stay out of the sidebar.
+Sidebar order and grouping come from the `meta.json` files. The sidebar and
+sitemap target V4. V3 is built and reachable by URL for existing integrations.
+V1 and V2 have been removed from the spec and no longer generate pages.
 
 `content/docs/gateway/supported-routes.mdx` renders a live table of routes
 fetched from the Gateway API at runtime; the component behind it is
@@ -44,7 +44,7 @@ on master trigger the `openapi-docs-sync` workflow.
 pnpm openapi      # regenerate the reference pages; runs automatically on dev/build
 ```
 
-The generated `v1/` `v2/` `v3/` directories are gitignored, and are cleared
+The generated `v3/` `v4/` directories are gitignored, and are cleared
 before each run so a renamed or removed operation cannot leave a stale page
 behind.
 

@@ -19,25 +19,25 @@ import { assertAllowanceHolderSpender } from './allowance-holder';
 import { GatewayError } from './error';
 import {
     Configuration,
-    type GatewayCreateOrderOneOf,
-    type GatewayCreateOrderV2,
+    type GatewayCreateOrderV3,
+    type GatewayCreateOrderV3OneOf,
     type GatewayMaxSpendable,
     type GatewayOrderInfoV3,
     type GatewayQuoteV4,
     type GetOrdersV4Request,
-    instanceOfGatewayCreateOrderOneOf,
-    instanceOfGatewayCreateOrderOneOf1,
-    instanceOfGatewayCreateOrderV2OneOf,
-    instanceOfGatewayQuoteV2OneOf,
+    instanceOfGatewayCreateOrderV3OneOf,
+    instanceOfGatewayCreateOrderV3OneOf1,
+    instanceOfGatewayCreateOrderV3OneOf2,
+    instanceOfGatewayQuoteV3OneOf,
     instanceOfGatewayQuoteV4OneOf,
     instanceOfGatewayQuoteV4OneOf1,
-    instanceOfRegisterTxOneOf,
+    instanceOfRegisterTxSuccessOneOf,
     type PaginatedOrdersResponseV3,
     type RegisterTxSuccess,
     type RouteInfo,
     V4Api,
 } from './generated-client';
-import type { GatewayError as GatewayErrorInterface } from './generated-client/models/GatewayError';
+import type { GatewayErrorV4 as GatewayErrorInterface } from './generated-client/models/GatewayErrorV4';
 import {
     type BitcoinSigner,
     ExecuteQuoteError,
@@ -132,13 +132,14 @@ export interface AllWalletClientParams extends EvmWalletClientParams {
 /**
  * Result of executing a gateway quote.
  *
- * `tx` is the transaction hash/id (Bitcoin txid for onramp, EVM hash for offramp/LayerZero).
+ * `tx` is the transaction hash/id (Bitcoin txid for onramp, source-chain hash for offramp/tokenSwap).
  * It is absent only in the walletless onramp flow, where no `btcSigner` was provided.
  * In that case, use `order.onramp.address` and `order.onramp.orderId` to complete
  * the BTC payment externally.
  */
 export type ExecuteQuoteResult =
-    { order: GatewayCreateOrderV2; tx: string } | { order: GatewayCreateOrderOneOf; tx?: undefined };
+    | { order: GatewayCreateOrderV3; tx: string }
+    | { order: GatewayCreateOrderV3OneOf; tx?: undefined };
 
 /**
  * Gateway REST HTTP API client.
@@ -288,12 +289,12 @@ export class GatewayApiClient {
         } & AllWalletClientParams,
         initOverrides?: RequestInit
     ): Promise<ExecuteQuoteResult> {
-        if (instanceOfGatewayQuoteV2OneOf(quote)) {
+        if (instanceOfGatewayQuoteV3OneOf(quote)) {
             const order = await this.api.createOrderV4({
                 gatewayQuoteV4: { onramp: quote.onramp },
             });
 
-            if (!instanceOfGatewayCreateOrderOneOf(order)) {
+            if (!instanceOfGatewayCreateOrderV3OneOf(order)) {
                 throw new Error('Invalid order type returned from API');
             }
 
@@ -365,7 +366,7 @@ export class GatewayApiClient {
 
                 if (typeof response === 'string') {
                     tx = response;
-                } else if (!instanceOfRegisterTxOneOf(response)) {
+                } else if (!instanceOfRegisterTxSuccessOneOf(response)) {
                     throw new Error('Invalid registerTx response type');
                 } else {
                     tx = response;
@@ -391,11 +392,18 @@ export class GatewayApiClient {
                 gatewayQuoteV4: { offramp: quote.offramp },
             });
 
-            if (!instanceOfGatewayCreateOrderOneOf1(order)) {
+            if (!instanceOfGatewayCreateOrderV3OneOf1(order)) {
                 throw new Error('Invalid order type returned from API');
             }
 
             const orderId = order.offramp.orderId;
+
+            if (order.offramp.tx.type === 'solana') {
+                throw new ExecuteQuoteError(
+                    orderId,
+                    'Solana source transactions require a Solana signer; use the API directly'
+                );
+            }
 
             const spenderAddress = order.offramp.tx.to as Address;
 
@@ -579,11 +587,18 @@ export class GatewayApiClient {
                 gatewayQuoteV4: { tokenSwap: quote.tokenSwap },
             });
 
-            if (!instanceOfGatewayCreateOrderV2OneOf(order)) {
+            if (!instanceOfGatewayCreateOrderV3OneOf2(order)) {
                 throw new Error('Invalid order type returned from API');
             }
 
             const orderId = order.tokenSwap.orderId;
+
+            if (order.tokenSwap.tx.type === 'solana') {
+                throw new ExecuteQuoteError(
+                    orderId,
+                    'Solana source transactions require a Solana signer; use the API directly'
+                );
+            }
 
             if (needsApproval) {
                 // Verify that the spender is the AllowanceHolder for the source chain

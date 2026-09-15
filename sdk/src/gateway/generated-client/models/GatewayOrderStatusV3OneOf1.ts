@@ -13,13 +13,13 @@
  */
 
 import { mapValues } from '../runtime';
-import type { GatewayOrderStatusV3OneOf1Success } from './GatewayOrderStatusV3OneOf1Success';
+import type { GatewayOrderStatusV3OneOf1Failed } from './GatewayOrderStatusV3OneOf1Failed';
 import {
-    GatewayOrderStatusV3OneOf1SuccessFromJSON,
-    GatewayOrderStatusV3OneOf1SuccessFromJSONTyped,
-    GatewayOrderStatusV3OneOf1SuccessToJSON,
-    GatewayOrderStatusV3OneOf1SuccessToJSONTyped,
-} from './GatewayOrderStatusV3OneOf1Success';
+    GatewayOrderStatusV3OneOf1FailedFromJSON,
+    GatewayOrderStatusV3OneOf1FailedFromJSONTyped,
+    GatewayOrderStatusV3OneOf1FailedToJSON,
+    GatewayOrderStatusV3OneOf1FailedToJSONTyped,
+} from './GatewayOrderStatusV3OneOf1Failed';
 
 /**
  * 
@@ -29,17 +29,17 @@ import {
 export interface GatewayOrderStatusV3OneOf1 {
     /**
      * 
-     * @type {GatewayOrderStatusV3OneOf1Success}
+     * @type {GatewayOrderStatusV3OneOf1Failed}
      * @memberof GatewayOrderStatusV3OneOf1
      */
-    success: GatewayOrderStatusV3OneOf1Success;
+    failed: GatewayOrderStatusV3OneOf1Failed;
 }
 
 /**
  * Check if a given object implements the GatewayOrderStatusV3OneOf1 interface.
  */
 export function instanceOfGatewayOrderStatusV3OneOf1(value: object): value is GatewayOrderStatusV3OneOf1 {
-    if (!('success' in value) || value['success'] === undefined) return false;
+    if (!('failed' in value) || value['failed'] === undefined) return false;
     return true;
 }
 
@@ -53,7 +53,7 @@ export function GatewayOrderStatusV3OneOf1FromJSONTyped(json: any, ignoreDiscrim
     }
     return {
         
-        'success': GatewayOrderStatusV3OneOf1SuccessFromJSON(json['success']),
+        'failed': GatewayOrderStatusV3OneOf1FailedFromJSON(json['failed']),
     };
 }
 
@@ -68,7 +68,7 @@ export function GatewayOrderStatusV3OneOf1ToJSONTyped(value?: GatewayOrderStatus
 
     return {
         
-        'success': GatewayOrderStatusV3OneOf1SuccessToJSON(value['success']),
+        'failed': GatewayOrderStatusV3OneOf1FailedToJSON(value['failed']),
     };
 }
 

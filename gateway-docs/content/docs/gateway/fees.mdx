@@ -5,7 +5,7 @@ icon: Banknote
 ---
 ## How fees work
 
-Gateway pricing is **quote-first**: every fee is computed per swap and returned in full in the `getQuote` response *before the user signs anything*. The quote you're shown is the quote that gets used to create the order, so the rate is the user's guaranteed minimum — no hidden costs and no surprises at settlement. In V2 every fee line also carries an optional `usd` value for display.
+Gateway pricing is **quote-first**: every fee is computed per swap and returned in full in the `getQuote` response *before the user signs anything*. The quote you're shown is the quote that gets used to create the order, so the rate is the user's guaranteed minimum — no hidden costs and no surprises at settlement. Every fee line also carries an optional `usd` value for display.
 
 A quote reflects four components.
 
@@ -25,7 +25,7 @@ Affiliate fees are your revenue share: a basis-point cut of each swap, routed to
 **Affiliate fees are paid out in USDT on Ethereum as part of each swap** — regardless of which route the user swapped. One basis point (`1 bps`) is `0.01%`, so `50 bps` is `0.50%`.
 </Callout>
 
-You configure affiliate fees **per quote** — there's no upfront registration. Pass one or more `{ address, bps }` pairs when you request a quote, and the fee is deducted as part of the swap and paid to your address(es) on settlement. V2 supports splitting the fee across multiple recipients in a single quote — useful for revenue splits between an aggregator and an underlying integrator, referral programs, or multi-party agreements.
+You configure affiliate fees **per quote** — there's no upfront registration. Pass one or more `{ address, bps }` pairs when you request a quote, and the fee is deducted as part of the swap and paid to your address(es) on settlement. Onramp and offramp quotes support splitting the fee across multiple recipients in a single quote — useful for revenue splits between an aggregator and an underlying integrator, referral programs, or multi-party agreements.
 
 Routes that don't support affiliate fees return the error code `AFFILIATE_FEES_NOT_SUPPORTED_FOR_ROUTE`; handle it by retrying the quote without affiliates or surfacing the error to the user.
 

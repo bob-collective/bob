@@ -13,13 +13,13 @@
  */
 
 import { mapValues } from '../runtime';
-import type { RegisterTxV3OneOfOfframp } from './RegisterTxV3OneOfOfframp';
+import type { RegisterTxV3OneOfOnramp } from './RegisterTxV3OneOfOnramp';
 import {
-    RegisterTxV3OneOfOfframpFromJSON,
-    RegisterTxV3OneOfOfframpFromJSONTyped,
-    RegisterTxV3OneOfOfframpToJSON,
-    RegisterTxV3OneOfOfframpToJSONTyped,
-} from './RegisterTxV3OneOfOfframp';
+    RegisterTxV3OneOfOnrampFromJSON,
+    RegisterTxV3OneOfOnrampFromJSONTyped,
+    RegisterTxV3OneOfOnrampToJSON,
+    RegisterTxV3OneOfOnrampToJSONTyped,
+} from './RegisterTxV3OneOfOnramp';
 
 /**
  * 
@@ -29,17 +29,17 @@ import {
 export interface RegisterTxV3OneOf {
     /**
      * 
-     * @type {RegisterTxV3OneOfOfframp}
+     * @type {RegisterTxV3OneOfOnramp}
      * @memberof RegisterTxV3OneOf
      */
-    offramp: RegisterTxV3OneOfOfframp;
+    onramp: RegisterTxV3OneOfOnramp;
 }
 
 /**
  * Check if a given object implements the RegisterTxV3OneOf interface.
  */
 export function instanceOfRegisterTxV3OneOf(value: object): value is RegisterTxV3OneOf {
-    if (!('offramp' in value) || value['offramp'] === undefined) return false;
+    if (!('onramp' in value) || value['onramp'] === undefined) return false;
     return true;
 }
 
@@ -53,7 +53,7 @@ export function RegisterTxV3OneOfFromJSONTyped(json: any, ignoreDiscriminator: b
     }
     return {
         
-        'offramp': RegisterTxV3OneOfOfframpFromJSON(json['offramp']),
+        'onramp': RegisterTxV3OneOfOnrampFromJSON(json['onramp']),
     };
 }
 
@@ -68,7 +68,7 @@ export function RegisterTxV3OneOfToJSONTyped(value?: RegisterTxV3OneOf | null, i
 
     return {
         
-        'offramp': RegisterTxV3OneOfOfframpToJSON(value['offramp']),
+        'onramp': RegisterTxV3OneOfOnrampToJSON(value['onramp']),
     };
 }
 
