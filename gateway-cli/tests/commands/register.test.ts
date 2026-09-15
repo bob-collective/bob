@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const mockRegisterTxV3 = vi.fn().mockResolvedValue({ status: "ok" });
+const mockRegisterTxV4 = vi.fn().mockResolvedValue({ status: "ok" });
 const mockGetOrder = vi.fn();
 
 vi.mock("../../src/config.js", () => ({
   BTC_DECIMALS: 8,
   getSdk: vi.fn(() => ({ getOrder: mockGetOrder })),
-  getApi: vi.fn(() => ({ registerTxV3: mockRegisterTxV3 })),
+  getApi: vi.fn(() => ({ registerTxV4: mockRegisterTxV4 })),
 }));
 
 const TXID = "a".repeat(64);
@@ -19,17 +19,18 @@ const order = (srcChain: string, dstChain: string) => ({
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mockRegisterTxV3.mockResolvedValue({ status: "ok" });
+  mockRegisterTxV4.mockResolvedValue({ status: "ok" });
 });
 
-// `bitcoin_tx_hex` takes a full serialized tx, `bitcoin_txid` a txid — a txid in the
-// hex field is rejected server-side, so the two forms must land in different fields.
+// The v4 endpoint carries only `bitcoin_tx_hex` — v3's `bitcoin_txid` alternative is
+// gone. A txid must therefore be refused locally: the generated client drops unknown
+// fields, so sending one would reach the gateway as an absent tx and come back as an
+// opaque 4xx naming nothing the operator typed.
 describe("buildRegisterPayload", () => {
-  it("puts a 64-hex-char txid in bitcoinTxid", async () => {
+  it("refuses a 64-hex-char txid — v4 registers by raw hex only", async () => {
     const { buildRegisterPayload } = await import("../../src/chains/index.js");
-    expect(buildRegisterPayload("bitcoin", "order-1", TXID)).toEqual({
-      onramp: { orderId: "order-1", bitcoinTxid: TXID },
-    });
+    expect(() => buildRegisterPayload("bitcoin", "order-1", TXID)).toThrow(/txid/i);
+    expect(() => buildRegisterPayload("bitcoin", "order-1", TXID)).toThrow(/raw hex/i);
   });
 
   it("puts a serialized transaction in bitcoinTxHex", async () => {
@@ -55,12 +56,22 @@ describe("handleRegister", () => {
     mockGetOrder.mockResolvedValue(order("bitcoin", "base"));
 
     const { handleRegister } = await import("../../src/commands/register.js");
-    const result = await handleRegister({ orderId: "order-1", txid: TXID });
+    const result = await handleRegister({ orderId: "order-1", txid: RAW_TX });
 
-    expect(mockRegisterTxV3).toHaveBeenCalledWith({
-      registerTxV3: { onramp: { orderId: "order-1", bitcoinTxid: TXID } },
+    expect(mockRegisterTxV4).toHaveBeenCalledWith({
+      registerTxV4: { onramp: { orderId: "order-1", bitcoinTxHex: RAW_TX } },
     });
     expect(result).toEqual({ status: "ok" });
+  });
+
+  // The local refusal must also short-circuit the request, for the same reason the
+  // EVM-source refusal does: a dropped field would be reported as a successful register.
+  it("refuses a bare txid without calling the API", async () => {
+    mockGetOrder.mockResolvedValue(order("bitcoin", "base"));
+
+    const { handleRegister } = await import("../../src/commands/register.js");
+    await expect(handleRegister({ orderId: "order-1", txid: TXID })).rejects.toThrow(/raw hex/i);
+    expect(mockRegisterTxV4).not.toHaveBeenCalled();
   });
 
   // Must fail before the request: a no-op call would report success on a stuck order.
@@ -74,6 +85,6 @@ describe("handleRegister", () => {
     await expect(handleRegister({ orderId: "order-1", txid: TXID })).rejects.toThrow(
       /nothing to register/i,
     );
-    expect(mockRegisterTxV3).not.toHaveBeenCalled();
+    expect(mockRegisterTxV4).not.toHaveBeenCalled();
   });
 });

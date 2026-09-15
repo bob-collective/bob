@@ -1,4 +1,4 @@
-import type { GatewayOrderInfoV2 } from "@gobob/bob-sdk";
+import type { GatewayOrderInfoV3 } from "@gobob/bob-sdk";
 import type { Logger } from "../output.js";
 import { sleep } from "./sleep.js";
 
@@ -15,9 +15,9 @@ import { sleep } from "./sleep.js";
  */
 export type OrderOutcome =
   /** The order reached `success`. */
-  | { kind: "settled"; order: GatewayOrderInfoV2 }
+  | { kind: "settled"; order: GatewayOrderInfoV3 }
   /** The order itself declared `failed` or `refunded` — the one terminal failure signal. */
-  | { kind: "failed"; order: GatewayOrderInfoV2 }
+  | { kind: "failed"; order: GatewayOrderInfoV3 }
   /**
    * The budget ran out with no terminal status: the order is still settling, or its
    * status could not be read at all. Facts only — `payoutTxId` is set iff the order
@@ -48,11 +48,11 @@ export const DEFAULT_POLL_TIMINGS: PollTimings = {
  * client, so it *cannot* guess a payout tx from an address even if it wanted to.
  */
 export interface OrderWatcherDeps {
-  getOrder: (id: string, init?: RequestInit) => Promise<GatewayOrderInfoV2>;
+  getOrder: (id: string, init?: RequestInit) => Promise<GatewayOrderInfoV3>;
   log: Logger;
 }
 
-/** V2 order status is a discriminated object union: {success} | {refunded} | {failed} | {inProgress}. */
+/** V3 order status is a discriminated object union: {success} | {refunded} | {failed} | {inProgress}. */
 const hasKey = <K extends string>(s: unknown, k: K): s is Record<K, unknown> =>
   typeof s === "object" && s !== null && k in s;
 
@@ -100,7 +100,7 @@ export async function watchOrder(
   let payoutTxId: string | undefined;
 
   while (!signal.aborted) {
-    let order: GatewayOrderInfoV2 | undefined;
+    let order: GatewayOrderInfoV3 | undefined;
     // Bound this single read by its own budget as well as the caller's. Passing the
     // signal to the SDK genuinely cancels the request (it spreads initOverrides into
     // fetch), unlike racing a timer, which would leak a socket per attempt.

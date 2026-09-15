@@ -1,4 +1,4 @@
-import { getInnerQuoteV3 } from "../util/quote.js";
+import { getInnerQuoteV4 } from "../util/quote.js";
 import { getRoutes } from "../util/route-provider.js";
 import { resolveSwapContext, type SwapContextOptions } from "../util/swap-context.js";
 import { MempoolClient } from "@gobob/bob-sdk";
@@ -22,7 +22,7 @@ export interface QuoteResult {
  * The swap is resolved through the SAME {@link resolveSwapContext} that `swap` uses,
  * so the two cannot disagree about the source chain, the sender or the owner — every
  * such disagreement in the past was a bug, most recently an offramp quote sending the
- * Bitcoin recipient as `ownerAddress` and being rejected by the API every time.
+ * Bitcoin recipient as the order's EVM-side address and being rejected every time.
  *
  * A quote signs nothing, so it declares no need for a key: one is touched only if the
  * owner or an `--amount ALL` balance genuinely depends on it.
@@ -49,7 +49,7 @@ export async function handleQuote(opts: QuoteOptions): Promise<QuoteResult> {
   }
 
   const quote = await sdk.getQuote(ctx.quoteParams);
-  const outputAmount = getInnerQuoteV3(quote).outputAmount.amount;
+  const outputAmount = getInnerQuoteV4(quote).outputAmount.amount;
 
   return {
     quote: {

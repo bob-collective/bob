@@ -1,4 +1,4 @@
-import type { RegisterTxV3 } from '@gobob/bob-sdk';
+import type { RegisterTxV4 } from '@gobob/bob-sdk';
 import { isValidBtcAddress } from '@gobob/bob-sdk';
 import { isAddress } from 'viem';
 import { getSdk } from '../config.js';
@@ -163,24 +163,34 @@ export async function resolveRecipient(
  * Only Bitcoin-originated orders are registered; bob-sdk 5.14.1 dropped registerTx for
  * offramp/tokenSwap because the gateway sees EVM-source txs on-chain.
  *
- * @param tx - Raw signed Bitcoin transaction (hex) or its txid.
- * @throws Error if the order does not originate on Bitcoin.
+ * The V4 endpoint identifies the transaction by its raw hex and nothing else — v3's
+ * `bitcoin_txid` alternative is gone. A bare txid is therefore rejected here: the
+ * generated client would otherwise drop it on the floor and send an absent
+ * `bitcoin_tx_hex`, turning a locally-knowable mistake into an opaque remote 4xx.
+ *
+ * @param tx - Raw signed Bitcoin transaction (hex).
+ * @throws Error if the order does not originate on Bitcoin, or if `tx` is a txid.
  */
 export function buildRegisterPayload(
   srcChain: string,
   orderId: string,
   tx: string,
-): RegisterTxV3 {
+): RegisterTxV4 {
   if (getChainFamily(srcChain) !== 'bitcoin') {
     throw new Error(
       `Order ${orderId} originates on ${srcChain}, not Bitcoin — there is nothing to register.\n`
       + `  The gateway detects EVM-source transactions on-chain; only Bitcoin onramp orders need registering.`,
     );
   }
-  // 64 hex chars is a txid; anything longer is the serialized tx. Wrong field → 4xx.
-  return /^[0-9a-fA-F]{64}$/.test(tx)
-    ? { onramp: { orderId, bitcoinTxid: tx } }
-    : { onramp: { orderId, bitcoinTxHex: tx } };
+  // 64 hex chars is a txid; anything longer is the serialized tx.
+  if (/^[0-9a-fA-F]{64}$/.test(tx)) {
+    throw new Error(
+      `Order ${orderId}: the gateway registers a transaction by its raw hex, not its txid.\n`
+      + `  "${tx}" is a txid — the v4 API dropped the txid field, so there is nothing to send it in.\n`
+      + `  Pass the full signed transaction hex instead, e.g. \`bitcoin-cli getrawtransaction ${tx}\`.`,
+    );
+  }
+  return { onramp: { orderId, bitcoinTxHex: tx } };
 }
 
 // Re-export for direct access
