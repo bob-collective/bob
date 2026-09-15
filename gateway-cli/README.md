@@ -159,12 +159,19 @@ All config via environment variables. No config files.
 --amount <value>         Amount (see format table above)
 --recipient <address>    Recipient address (optional if destination wallet key is set)
 --sender <address>       Sender address (optional)
+--refund-address <addr>  Source-chain address a failed order refunds to (default: --sender)
 --slippage <bps>         Slippage tolerance in basis points (default: 300)
 --btc-fee-rate <sat>     Bitcoin fee rate override
 --fee-token <address>    ERC20 token for gas payment (paymaster)
 --fee-reserve <amount>   Amount of fee token to reserve for gas
 --json                   Output as JSON
 ```
+
+> **Note:** `--refund-address` belongs to the **source** chain — a Bitcoin address on a
+> BTC onramp, an EVM address on an offramp or token swap. The gateway does not infer one
+> (a quote asked for without it comes back with `refundAddress: null` even when a sender
+> was supplied, and creating the order then fails with `MISSING_REFUND_ADDRESS`), so the
+> CLI defaults it to the sender — the address the funds left.
 
 > **Note:** When `--recipient` is omitted, the CLI derives the recipient from the
 > destination chain's private key (`BITCOIN_PRIVATE_KEY` for BTC destinations,

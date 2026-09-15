@@ -17,6 +17,7 @@ export interface SwapContextOptions {
   recipient?: string;
   sender?: string;
   owner?: string;
+  refundAddress?: string;
   slippage?: number;
   feeToken?: string;
   feeReserve?: string;
@@ -73,6 +74,12 @@ export interface SwapContext {
    * {@link resolveOwnerAddress}.
    */
   ownerAddress: string;
+  /**
+   * Where a failed order pays back to, on the SOURCE chain — a Bitcoin address on an
+   * onramp, an EVM address otherwise. Undefined only when nothing supplied one and no
+   * sender was resolved. See {@link resolveRefundAddress}.
+   */
+  refundAddress?: string;
   /** Source amount in atomic units. */
   atomicUnits: string;
   /** Human-readable rendering of the source amount. */
@@ -135,6 +142,35 @@ export function resolveOwnerAddress(opts: {
     );
   }
   return picked.owner;
+}
+
+// ─── Refund address ──────────────────────────────────────────────────────────
+
+/**
+ * The SOURCE-chain address a failed order pays back to: a Bitcoin address on an
+ * onramp, an EVM address on an offramp or a token swap. It is the opposite side of
+ * {@link resolveOwnerAddress}, which is always EVM whatever the direction.
+ *
+ * The gateway neither infers it nor defaults it — a quote asked for without one comes
+ * back with `refundAddress: null`, even when a sender was supplied — and create-order
+ * then rejects the EVM-source variants with `MISSING_REFUND_ADDRESS`. So the default
+ * is made here, and it is the sender: the address the funds left is the only address
+ * "refund" can mean without being told.
+ *
+ * An explicit `--refund-address` is family-checked against the source chain, because
+ * the gateway's own answer to a mismatch is `INVALID_REQUEST: Conversion Error`, which
+ * names neither the flag nor the family that was wrong.
+ */
+export function resolveRefundAddress(opts: {
+  explicit?: string;
+  srcChain: string;
+  senderAddress?: string;
+}): string | undefined {
+  if (opts.explicit) {
+    validateAddressFamily(opts.srcChain, opts.explicit, "--refund-address");
+    return opts.explicit;
+  }
+  return opts.senderAddress;
 }
 
 // ─── Context ─────────────────────────────────────────────────────────────────
@@ -229,11 +265,15 @@ export async function resolveSwapContext(
     explicit: opts.owner, srcFamily, dstFamily, senderAddress, recipient,
   });
 
+  const refundAddress = resolveRefundAddress({
+    explicit: opts.refundAddress, srcChain: srcAsset.chain, senderAddress,
+  });
+
   const slippageBps = opts.slippage ?? config.slippageBps;
 
   return {
     srcAsset, dstAsset, srcFamily, dstFamily, variant, evmChain,
-    senderAddress, recipient, ownerAddress, atomicUnits, display, slippageBps, key,
+    senderAddress, recipient, ownerAddress, refundAddress, atomicUnits, display, slippageBps, key,
     quoteParams: {
       fromChain: srcAsset.chain,
       toChain: dstAsset.chain,
@@ -241,6 +281,7 @@ export async function resolveSwapContext(
       toToken: dstAsset.address,
       toUserAddress: recipient,
       fromUserAddress: senderAddress,
+      refundAddress,
       amount: atomicUnits,
       maxSlippage: slippageBps,
     },

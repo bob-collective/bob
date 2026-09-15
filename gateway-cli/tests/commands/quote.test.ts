@@ -212,4 +212,44 @@ describe("handleQuote", () => {
       expect.objectContaining({ toUserAddress: BTC_RECIPIENT, fromUserAddress: undefined }),
     );
   });
+
+  // ─── Refund address ────────────────────────────────────────────────────────
+  // The gateway defaults nothing: a quote asked for without a refund address comes back
+  // `refundAddress: null` even when a sender was sent, and create-order then rejects the
+  // EVM-source variants with MISSING_REFUND_ADDRESS. So the CLI must send one whenever it
+  // knows one. (The family check itself is tested against the real validator in
+  // tests/util/swap-context.test.ts — it is a no-op mock here.)
+
+  it("defaults the refund address to the resolved sender", async () => {
+    const { resolvePrivateKey, deriveAddress } = await import("../../src/chains/index.js");
+    await mockOfframpRecipient();
+    vi.mocked(resolvePrivateKey).mockReturnValueOnce("0xevmkey");
+    vi.mocked(deriveAddress).mockResolvedValueOnce(EVM_SENDER);
+    mockGetQuote.mockResolvedValueOnce(offrampSdkQuote);
+
+    await handleQuote({ src: "USDT:ethereum", dst: "BTC", amount: "47000000" });
+
+    expect(mockGetQuote).toHaveBeenCalledWith(
+      expect.objectContaining({ refundAddress: EVM_SENDER }),
+    );
+  });
+
+  it("prefers an explicit --refund-address, checked against the SOURCE chain", async () => {
+    const REFUND = "0x9999999999999999999999999999999999999999";
+    const { resolvePrivateKey, deriveAddress, validateAddressFamily } =
+      await import("../../src/chains/index.js");
+    await mockOfframpRecipient();
+    vi.mocked(resolvePrivateKey).mockReturnValueOnce("0xevmkey");
+    vi.mocked(deriveAddress).mockResolvedValueOnce(EVM_SENDER);
+    mockGetQuote.mockResolvedValueOnce(offrampSdkQuote);
+
+    await handleQuote({
+      src: "USDT:ethereum", dst: "BTC", amount: "47000000", refundAddress: REFUND,
+    });
+
+    expect(validateAddressFamily).toHaveBeenCalledWith("ethereum", REFUND, "--refund-address");
+    expect(mockGetQuote).toHaveBeenCalledWith(
+      expect.objectContaining({ refundAddress: REFUND }),
+    );
+  });
 });
