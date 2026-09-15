@@ -25,6 +25,7 @@ const ALLOWANCE_HOLDER_BY_CHAIN: Record<string, Address> = {
     hyperevm: ALLOWANCE_HOLDER_0X_CANONICAL,
     // Staging names the same chain (id 999) `hyperliquid`; accept both spellings.
     hyperliquid: ALLOWANCE_HOLDER_0X_CANONICAL,
+    robinhood: ALLOWANCE_HOLDER_0X_CANONICAL,
 };
 
 /** Normalize a spender the API returned, converting Tron base58 to its hex form. */
