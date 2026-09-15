@@ -1333,6 +1333,421 @@
           }
         }
       }
+    },
+    "/v4/create-order": {
+      "post": {
+        "tags": [
+          "v4"
+        ],
+        "summary": "Create a new gateway order (V4).",
+        "operationId": "create_order_v4",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GatewayQuoteV4"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created order",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayCreateOrderV3"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Create order error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayErrorV4"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v4/get-max-spendable/{address}": {
+      "get": {
+        "tags": [
+          "v4"
+        ],
+        "summary": "Get the maximum spendable Bitcoin amount for the given address (V4).",
+        "operationId": "get_max_spendable_v4",
+        "parameters": [
+          {
+            "name": "address",
+            "in": "path",
+            "description": "Bitcoin address to calculate the maximum spendable amount for",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Get the maximum spendable Bitcoin amount for the given address after accounting for estimated transaction fees",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayMaxSpendable"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Get max spendable error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayErrorV4"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "api_key": []
+          }
+        ]
+      }
+    },
+    "/v4/get-order/{id}": {
+      "get": {
+        "tags": [
+          "v4"
+        ],
+        "summary": "Get an order by ID (V4 — amounts carry USD).",
+        "operationId": "get_order_v4",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Order identifier: order_id, source Bitcoin txid, or source EVM tx hash",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Get order by order_id, source Bitcoin txid, or source EVM tx hash",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayOrderInfoV3"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid order ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayErrorV4"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Order not found"
+          }
+        },
+        "security": [
+          {
+            "api_key": []
+          }
+        ]
+      }
+    },
+    "/v4/get-orders/{user_address}": {
+      "get": {
+        "tags": [
+          "v4"
+        ],
+        "summary": "Get user orders (V4 — amounts carry USD).",
+        "operationId": "get_orders_v4",
+        "parameters": [
+          {
+            "name": "user_address",
+            "in": "path",
+            "description": "User address",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "description": "Cursor used to fetch the next page, obtained from the response's `next_cursor`.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Number of orders to request",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "style": "form"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Get orders",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedOrdersResponseV3"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid user address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayErrorV4"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "api_key": []
+          }
+        ]
+      }
+    },
+    "/v4/get-quote": {
+      "get": {
+        "tags": [
+          "v4"
+        ],
+        "summary": "Get a gateway quote (V4 — `refundAddress` is optional here, required by create-order).",
+        "operationId": "get_quote_v4",
+        "parameters": [
+          {
+            "name": "srcChain",
+            "in": "query",
+            "description": "Source chain",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "style": "form",
+            "example": "bitcoin"
+          },
+          {
+            "name": "dstChain",
+            "in": "query",
+            "description": "Destination chain",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "style": "form",
+            "example": "bob"
+          },
+          {
+            "name": "sender",
+            "in": "query",
+            "description": "Address sending the funds, encoded for the source chain",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "style": "form",
+            "example": "bc1qyhc4uslh46axl553pq3mjclrt7dcgmlzxv0ktx"
+          },
+          {
+            "name": "recipient",
+            "in": "query",
+            "description": "Address receiving the funds, encoded for the destination chain",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "style": "form",
+            "example": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+          },
+          {
+            "name": "srcToken",
+            "in": "query",
+            "description": "Source token address, encoded for the source chain",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "style": "form",
+            "example": "0x0000000000000000000000000000000000000000"
+          },
+          {
+            "name": "dstToken",
+            "in": "query",
+            "description": "Destination token address, encoded for the destination chain",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "style": "form",
+            "example": "0x0555E30da8f98308EdB960aa94C0Db47230d2B9c"
+          },
+          {
+            "name": "amount",
+            "in": "query",
+            "description": "Amount to swap (in smallest unit, e.g., sats or wei)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "style": "form",
+            "example": "100000"
+          },
+          {
+            "name": "slippage",
+            "in": "query",
+            "description": "Slippage tolerance (in basis points, e.g., 300 = 3%)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "style": "form",
+            "example": "300"
+          },
+          {
+            "name": "affiliates",
+            "in": "query",
+            "description": "Comma-separated list of `<address>:<bps>` pairs",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "style": "form",
+            "example": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266:50,0x70997970C51812dc3A010C7d01b50e0d17dc79C8:25"
+          },
+          {
+            "name": "refundAddress",
+            "in": "query",
+            "description": "Refund address, encoded for the source chain. Optional for a quote; create-order\nrejects a quote without one.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "style": "form",
+            "example": "bc1qyhc4uslh46axl553pq3mjclrt7dcgmlzxv0ktx"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Get a quote",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayQuoteV4"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Get a quote error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayErrorV4"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v4/get-routes": {
+      "get": {
+        "tags": [
+          "v4"
+        ],
+        "summary": "Get all supported routes (V4).",
+        "operationId": "get_routes_v4",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RouteInfo"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v4/register-tx": {
+      "patch": {
+        "tags": [
+          "v4"
+        ],
+        "summary": "Delegate on-chain submission of a signed onramp Bitcoin transaction to the gateway (V4).",
+        "description": "The gateway validates the transaction against the order, screens it, and broadcasts it, so\nthe user does not submit it themselves. Only the raw transaction is accepted (no txid), and\nonly for onramps: offramp and token-swap source transactions are indexed from the chain.",
+        "operationId": "register_tx_v4",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterTxV4"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegisterTxSuccess"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayErrorV4"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1731,6 +2146,7 @@
           "PER_ACCOUNT_LIMIT_EXCEEDED",
           "GLOBAL_LIMIT_EXCEEDED",
           "EXCEEDED_LIMIT",
+          "ROUTE_PRICE_IMPACT_TOO_HIGH",
           "INVALID_REQUEST",
           "INVALID_ORDER_ARGS",
           "INVALID_AFFILIATE_FEE",
@@ -1789,6 +2205,30 @@
           "NON_COMPLIANT_ADDRESSES",
           "SERVICE_UNAVAILABLE",
           "TOO_MANY_AFFILIATES"
+        ]
+      },
+      "GatewayErrorCodeV4": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/GatewayErrorCode"
+          },
+          {
+            "$ref": "#/components/schemas/GatewayErrorCodeV2Variants"
+          },
+          {
+            "$ref": "#/components/schemas/GatewayErrorCodeV3Variants"
+          },
+          {
+            "$ref": "#/components/schemas/GatewayErrorCodeV4Variants"
+          }
+        ],
+        "description": "Error codes for V4 API, including all V1–V3 codes plus new ones."
+      },
+      "GatewayErrorCodeV4Variants": {
+        "type": "string",
+        "description": "New error codes for V4.",
+        "enum": [
+          "MISSING_REFUND_ADDRESS"
         ]
       },
       "GatewayErrorDetails": {
@@ -2341,6 +2781,35 @@
           }
         }
       },
+      "GatewayErrorV4": {
+        "type": "object",
+        "description": "Structured error response for V4 API.",
+        "required": [
+          "code",
+          "error"
+        ],
+        "properties": {
+          "code": {
+            "$ref": "#/components/schemas/GatewayErrorCodeV4",
+            "description": "Stable error code for client parsing"
+          },
+          "details": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/GatewayErrorDetailsV3",
+                "description": "Optional structured details specific to the error type"
+              }
+            ]
+          },
+          "error": {
+            "type": "string",
+            "description": "Human-readable error message"
+          }
+        }
+      },
       "GatewayLayerZeroQuote": {
         "type": "object",
         "required": [
@@ -2700,6 +3169,26 @@
             "type": "string"
           }
         }
+      },
+      "GatewayOfframpQuoteV4": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GatewayOfframpQuoteV2"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "refundAddress": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Source-chain address used for refunds; required by create-order"
+              }
+            }
+          }
+        ],
+        "description": "V4 offramp quote with its source-chain refund address."
       },
       "GatewayOnrampFeeBreakdown": {
         "type": "object",
@@ -3510,6 +3999,44 @@
         ],
         "description": "V3 gateway quote — used for both the get-quote response and the create-order body.\n`ownerAddress` is embedded in each variant that carries an owner concept."
       },
+      "GatewayQuoteV4": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "onramp"
+            ],
+            "properties": {
+              "onramp": {
+                "$ref": "#/components/schemas/GatewayOnrampQuoteV2"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "offramp"
+            ],
+            "properties": {
+              "offramp": {
+                "$ref": "#/components/schemas/GatewayOfframpQuoteV4"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "tokenSwap"
+            ],
+            "properties": {
+              "tokenSwap": {
+                "$ref": "#/components/schemas/GatewayTokenSwapQuoteV4"
+              }
+            }
+          }
+        ],
+        "description": "Gateway quote response for V4."
+      },
       "GatewaySolanaTx": {
         "type": "object",
         "description": "Solana transaction returned on V3 create-order (offramp / token-swap).\n\n`transaction` is base64-encoded bincode serialization of an unsigned `VersionedTransaction`.\nClients must decode, sign, re-serialize, and broadcast — do not sign the base64 string directly.",
@@ -3728,6 +4255,36 @@
             "type": "string"
           }
         }
+      },
+      "GatewayTokenSwapQuoteV4": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GatewayTokenSwapQuoteV2"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "affiliate": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/TokenSwapAffiliateV3"
+                  }
+                ]
+              },
+              "refundAddress": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Source-chain address used for refunds; required by create-order"
+              }
+            }
+          }
+        ],
+        "description": "V4 token-swap quote with its source-chain refund address."
       },
       "GatewayTxData": {
         "oneOf": [
@@ -4294,6 +4851,37 @@
         ],
         "description": "V3 register-tx body. Offramp and token-swap use chain-aware `srcTxHash` + `srcChain`\n(EVM `0x…` on EVM chains, Base58 signature on Solana)."
       },
+      "RegisterTxV4": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "onramp"
+            ],
+            "properties": {
+              "onramp": {
+                "type": "object",
+                "required": [
+                  "order_id",
+                  "bitcoin_tx_hex"
+                ],
+                "properties": {
+                  "bitcoin_tx_hex": {
+                    "type": "string",
+                    "description": "Hex-encoded signed Bitcoin transaction for the gateway to broadcast"
+                  },
+                  "order_id": {
+                    "type": "string",
+                    "description": "Unique order id",
+                    "example": "f81d4fae-7dec-11d0-a765-00a0c91e6bf6"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "description": "V4 register-tx body: delegates on-chain submission of a signed onramp Bitcoin transaction to\nthe gateway, which validates and broadcasts it. Unlike V3 there is no txid form (the gateway\ndoes the broadcasting) and no offramp or token-swap variant (their source transactions are\nindexed from the chain)."
+      },
       "ResolvedAffiliate": {
         "type": "object",
         "description": "Resolved affiliate returned in V2 responses. Includes the computed fee amount in\ninventory asset units (sats for wBTC, 6-decimal units for USDT).",
@@ -4427,6 +5015,10 @@
     {
       "name": "v3",
       "description": "BOB Gateway Core API (v3)"
+    },
+    {
+      "name": "v4",
+      "description": "BOB Gateway Core API (v4)"
     }
   ]
 }
