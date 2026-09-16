@@ -133,10 +133,7 @@ type ParseDetailsArgs = {
  */
 export class GatewayError<
     C extends GatewayErrorCode | GatewayErrorCodeV2 | GatewayErrorCodeV3 | GatewayErrorCodeV4 =
-        | GatewayErrorCode
-        | GatewayErrorCodeV2
-        | GatewayErrorCodeV3
-        | GatewayErrorCodeV4,
+        GatewayErrorCode | GatewayErrorCodeV2 | GatewayErrorCodeV3 | GatewayErrorCodeV4,
 > extends Error {
     /** Stable error code, safe to switch/match on. */
     readonly code: C;
