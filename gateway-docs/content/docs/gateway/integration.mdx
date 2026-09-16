@@ -9,25 +9,16 @@ The BOB Gateway SDK makes it easy to bring native BTC swaps directly into your a
 
 We recommend using the API directly, but you may use our SDK for convenience.
 
-## What's new in V3
+## V4 integration
 
-<Callout>
-This guide targets the V3 API. V1 and V2 endpoints remain reachable but are superseded — the SDK calls `/v3` under the hood. Upgrading an existing integration? See the [Migration Guide](/gateway/migration).
-</Callout>
+The SDK calls `/v4` under the hood. See the [Migration Guide](/gateway/migration) for the API and generated-type changes.
 
-<Callout type="warn">
-**The V1 API will be deprecated at the end of July 2026** and shut down afterwards. Migrate any V1 integration to V3 before that date — see the [Migration Guide](/gateway/migration). V2 remains supported.
-</Callout>
+- Pass a **`refundAddress` on the source chain** for every quote you intend to execute. It is optional for a price-only quote, but order creation rejects a quote without one with `MISSING_REFUND_ADDRESS`. The SDK forwards the address you provide; it does not infer it from `fromUserAddress`.
+- Remove **`ownerAddress`** from quote parameters. It is no longer part of the V4 request.
+- Bitcoin signers must return **signed raw transaction hex**. The SDK submits it to Gateway for validation and broadcasting. Offramp and token-swap transactions are indexed from the source chain without `register-tx`.
+- `executeQuote` supports Bitcoin signing and viem-compatible EVM/Tron clients. **Solana source transactions require the API and a Solana signer**; the SDK does not sign Solana `VersionedTransaction` payloads. Solana can still be a destination for supported routes.
 
-V3 builds on V2 with multi-chain support and richer settlement data:
-
-- **Non-EVM chains (Tron & Solana)** — quotes and orders now span EVM, Tron, and Solana as well as Bitcoin. Addresses and token identifiers are `0x…` on EVM chains and Base58 on Tron/Solana. `executeQuote` signs and broadcasts the right transaction shape for each chain; if you build transactions yourself, `createOrder` returns a tagged union you dispatch on (`type: 'evm' | 'tron' | 'solana'`).
-- **`ownerAddress` (required) and `refundAddress`** — `getQuote` now takes an `ownerAddress` (the EVM owner / refund-claimant, also used for order lookup) and an optional Bitcoin `refundAddress` for onramps. Routes that need an owner but don't get one fail with `MISSING_OWNER_ADDRESS`.
-- **USD on order info** — `srcInfo`, `dstInfo`, settled transfers (`receivedTokens` / `refundedTokens`), and `pendingBtcPayment` now each carry an optional `usd` value (valued at order time). In V2, `usd` was only on quote amounts and fee-breakdown lines.
-- **Affiliate fees on `tokenSwap`** — `tokenSwap` quotes now expose a resolved single `affiliate` (`{ address, bps }`), charged by the aggregator on the source chain. Aggregators allow only one partner fee per swap, so passing more than one affiliate returns `TOO_MANY_AFFILIATES`. `onramp`/`offramp` keep the V2 multi-recipient `affiliates` list ([details](#monetization-affiliate-fees)).
-- **Removed parameters** — `gasRefill`, `strategyAddress`/`strategyTarget`, and `strategyMessage` are no longer supported and are rejected by the gateway.
-- **Paginated `getOrders`** — `getOrders` accepts `{ userAddress, cursor?, limit? }` and returns `{ orders, nextCursor }` (carried over from V2). Pass back `nextCursor` to fetch the next page; a null/missing value means you've reached the end ([details](#monitor-orders)).
-- **Discriminated order status** — `success` / `refunded` are objects carrying `receivedTokens` / `refundedTokens` (each entry has `chain`, `token`, `amount`, the settlement `txHash`, and now `usd`); `status.inProgress.pendingBtcPayment` exposes the gateway's outgoing Bitcoin `{ txid, amount, usd }` on in-progress X-to-BTC orders. Read the destination `txHash` from the status payload — `dstInfo` doesn't carry one.
+Quotes retain affiliate fees, optional USD amounts, and price impact. Orders retain pagination and discriminated settlement status. Use `getRoutes()` to discover current chains and tokens.
 
 ## Installation
 
@@ -92,7 +83,7 @@ import { GatewaySDK } from '@gobob/bob-sdk';
 const gatewaySDK = new GatewaySDK({ apiKey: 'your-api-key' });
 ```
 
-The API key must be exactly 32 characters long. When provided, the SDK will include it in the `Authorization` header as a Bearer token (`Authorization: Bearer <api-key>`). If you're calling the API directly, set the same header on every V3 request.
+The API key must be exactly 32 characters long. When provided, the SDK will include it in the `Authorization` header as a Bearer token (`Authorization: Bearer <api-key>`). If you're calling the API directly, set the same header on every V4 request.
 
 ## Get Available Routes
 
@@ -123,10 +114,10 @@ const quote = await gatewaySDK.getQuote({
   fromChain: 'bitcoin',
   fromToken: '0x0000000000000000000000000000000000000000',
   fromUserAddress: 'bc1qafk4yhqvj4wep57m62dgrmutldusqde8adh20d',
+  refundAddress: 'bc1qafk4yhqvj4wep57m62dgrmutldusqde8adh20d', // Bitcoin source-chain refund
   toChain: 'bob',
   toToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
   toUserAddress: '0x2D2E86236a5bC1c8a5e5499C517E17Fb88Dbc18c',
-  ownerAddress: '0x2D2E86236a5bC1c8a5e5499C517E17Fb88Dbc18c', // EVM owner / refund-claimant
   amount: parseBtc("0.1"), // 0.1 BTC
 });
 ```
@@ -140,10 +131,10 @@ const quote = await gatewaySDK.getQuote({
   fromChain: 'bitcoin',
   fromToken: '0x0000000000000000000000000000000000000000',
   fromUserAddress: 'bc1qafk4yhqvj4wep57m62dgrmutldusqde8adh20d',
+  refundAddress: 'bc1qafk4yhqvj4wep57m62dgrmutldusqde8adh20d', // Bitcoin source-chain refund
   toChain: 'bob',
   toToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
   toUserAddress: '0x2D2E86236a5bC1c8a5e5499C517E17Fb88Dbc18c',
-  ownerAddress: '0x2D2E86236a5bC1c8a5e5499C517E17Fb88Dbc18c',
   amount: parseBtc("0.1"),
   // onramp/offramp accept multiple recipients; tokenSwap accepts exactly one
   affiliates: [{ address: '0xYourAddress', bps: 50 }], // 0.50% to one recipient
@@ -155,15 +146,15 @@ const quote = await gatewaySDK.getQuote({
 <Tab value="Token Swap">
 
 ```typescript
-// V3 supports cross-chain token swaps via the tokenSwap route.
+// Cross-chain token swaps use the tokenSwap route.
 const quote = await gatewaySDK.getQuote({
   fromChain: 'bob',
   fromToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c', // source token on BOB
   toChain: 'bob',
   toToken: '0x...', // destination token
   fromUserAddress: '0x...',
+  refundAddress: '0x...', // Address on the source chain
   toUserAddress: '0x...',
-  ownerAddress: '0x...',
   amount: '1000000', // amount in smallest unit
 });
 ```
@@ -178,10 +169,10 @@ const quote = await gatewaySDK.getQuote({
   fromChain: 'bitcoin',
   fromToken: '0x0000000000000000000000000000000000000000',
   fromUserAddress: 'bc1qafk4yhqvj4wep57m62dgrmutldusqde8adh20d',
+  refundAddress: 'bc1qafk4yhqvj4wep57m62dgrmutldusqde8adh20d', // Bitcoin source-chain refund
   toChain: 'solana',
   toToken: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', // USDC mint (Base58)
   toUserAddress: '7xKX...9aBc', // Base58 wallet address
-  ownerAddress: '0x2D2E86236a5bC1c8a5e5499C517E17Fb88Dbc18c', // EVM owner for lookup
   amount: parseBtc("0.1"),
 });
 ```
@@ -218,12 +209,12 @@ if ('onramp' in quote) {
   console.log('Price impact:', quote.offramp.priceImpact);
   console.log('ETA:', quote.offramp.estimatedTimeInSecs, 'seconds');
 } else if ('tokenSwap' in quote) {
-  // Cross-chain token swap (V3)
+  // Cross-chain token swap
   console.log('Input:', quote.tokenSwap.inputAmount);
   console.log('Fees:', quote.tokenSwap.fees);
   console.log('Price impact:', quote.tokenSwap.priceImpact);
   console.log('ETA:', quote.tokenSwap.estimatedTimeInSecs, 'seconds');
-  // V3: the resolved single affiliate (null for fee-free swaps)
+  // The resolved single affiliate (null for fee-free swaps)
   if (quote.tokenSwap.affiliate) {
     const { address, bps } = quote.tokenSwap.affiliate;
     console.log(`Affiliate: ${bps} bps to ${address}`);
@@ -237,7 +228,7 @@ You don't need to handle all quote types — the response type matches your `fro
 
 ## Execute the Quote
 
-Execute the quote by having the user sign the Bitcoin transaction:
+Execute the quote by having the user sign the Bitcoin transaction. `executeQuote` returns `{ order, tx }`; keep the order ID to monitor settlement. Without `btcSigner`, it returns an onramp order with no `tx` so the user can pay its Bitcoin deposit address externally. A source-chain `refundAddress` is still required.
 
 <Tabs items={["Reown AppKit","OKX Wallet","Custom Adapter"]}>
 
@@ -267,14 +258,14 @@ const { walletProvider } = useAppKitProvider<BitcoinConnector>('bip122');
 const { address: btcAddress } = useAppKitAccount();
 
 // Execute the quote
-const txId = await gatewaySDK.executeQuote({
+const { order, tx } = await gatewaySDK.executeQuote({
   quote,
   walletClient,
   publicClient,
   btcSigner: new ReownWalletAdapter(walletProvider, btcAddress),
 });
 
-console.log('Transaction ID:', txId);
+console.log('Order:', order, 'Transaction ID:', tx);
 ```
 
 </Tab>
@@ -285,7 +276,7 @@ console.log('Transaction ID:', txId);
 import { OkxWalletAdapter } from '@gobob/bob-sdk';
 
 // Assuming you have window.okxwallet available
-const txId = await gatewaySDK.executeQuote({
+const { order, tx } = await gatewaySDK.executeQuote({
   quote,
   walletClient,
   publicClient,
@@ -309,7 +300,7 @@ class CustomWalletAdapter implements BitcoinSigner {
     opReturn?: string;
   }): Promise<string> {
     // Your wallet integration logic here
-    // Return signed transaction hex
+    // Return finalized raw transaction hex, not a txid or PSBT
   }
   
   // OR implement signAllInputs for PSBT-based wallets
@@ -318,7 +309,7 @@ class CustomWalletAdapter implements BitcoinSigner {
   }
 }
 
-const txId = await gatewaySDK.executeQuote({
+const { order, tx } = await gatewaySDK.executeQuote({
   quote,
   walletClient,
   publicClient,
@@ -345,7 +336,7 @@ const { orders, nextCursor } = await gatewaySDK.getOrders({
 });
 
 orders.forEach(order => {
-  // V3: srcInfo/dstInfo now carry an optional `usd` value alongside the amount
+  // srcInfo/dstInfo carry an optional `usd` value alongside the amount
   console.log(`Source: ${order.srcInfo.amount} ${order.srcInfo.token} (${order.srcInfo.chain})${order.srcInfo.usd ? ` ~$${order.srcInfo.usd}` : ''}`);
   console.log(`Destination (estimated): ${order.dstInfo.amount} ${order.dstInfo.token} (${order.dstInfo.chain})`);
 
@@ -361,7 +352,7 @@ orders.forEach(order => {
     console.log('Status: failed');
   } else if ('success' in order.status) {
     console.log('Status: success');
-    // Settled token transfers (with on-chain txHash, and V3 `usd`) are on the status payload
+    // Settled token transfers (with on-chain txHash, and optional `usd`) are on the status payload
     for (const t of order.status.success.receivedTokens) {
       console.log(`Received ${t.amount} ${t.token} on ${t.chain} (tx ${t.txHash})${t.usd ? ` ~$${t.usd}` : ''}`);
     }
@@ -536,10 +527,10 @@ if (tokenSwap?.affiliate) {
 
 ### Raw API equivalent
 
-For integrators not using the SDK, pass the same pairs to the V3 quote endpoint as the `affiliates` query parameter:
+For integrators not using the SDK, pass the same pairs to the V4 quote endpoint as the `affiliates` query parameter:
 
 ```bash
-GET /v3/get-quote?...&affiliates=0xPartnerA:50,0xPartnerB:25
+GET /v4/get-quote?...&affiliates=0xPartnerA:50,0xPartnerB:25
 ```
 
 URL-encode the comma if your client doesn't allow raw commas in query strings.

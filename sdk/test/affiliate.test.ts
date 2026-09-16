@@ -1,9 +1,9 @@
 import nock from 'nock';
 import { getAddress, type Address } from 'viem';
 import { afterEach, describe, expect, it } from 'vitest';
-import { GatewaySDK, instanceOfGatewayQuoteV2OneOf, instanceOfGatewayQuoteV2OneOf1 } from '../src/gateway';
+import { GatewaySDK, instanceOfGatewayQuoteV3OneOf, instanceOfGatewayQuoteV4OneOf } from '../src/gateway';
 import { ETHEREUM_USDT_ADDRESS } from '../src/gateway/client';
-import { GatewayQuoteV2OneOf, GatewayQuoteV2OneOf1 } from '../src/gateway/generated-client';
+import { GatewayQuoteV3OneOf, GatewayQuoteV4OneOf } from '../src/gateway/generated-client';
 import type { Affiliate } from '../src/gateway/types';
 
 const ETHEREUM_GATEWAY_BASE_URL = 'https://gateway-api-ethereum.gobob.xyz';
@@ -31,7 +31,7 @@ describe('Gateway Multiple Affiliates', () => {
     ];
 
     it('resolves multiple affiliates on a bitcoin → ethereum onramp quote', async () => {
-        const mockOnrampQuote: GatewayQuoteV2OneOf = {
+        const mockOnrampQuote: GatewayQuoteV3OneOf = {
             onramp: {
                 dstChain: 'ethereum',
                 dstToken: ETHEREUM_USDT_ADDRESS,
@@ -74,8 +74,8 @@ describe('Gateway Multiple Affiliates', () => {
             affiliates,
         });
 
-        expect(instanceOfGatewayQuoteV2OneOf(quote)).toBe(true);
-        if (!instanceOfGatewayQuoteV2OneOf(quote)) {
+        expect(instanceOfGatewayQuoteV3OneOf(quote)).toBe(true);
+        if (!instanceOfGatewayQuoteV3OneOf(quote)) {
             return;
         }
 
@@ -93,7 +93,7 @@ describe('Gateway Multiple Affiliates', () => {
     });
 
     it('resolves multiple affiliates on an ethereum → bitcoin offramp quote', async () => {
-        const mockOfframpQuote: GatewayQuoteV2OneOf1 = {
+        const mockOfframpQuote: GatewayQuoteV4OneOf = {
             offramp: {
                 feeBreakdown: {
                     affiliateFee: mockTokenAmount('75'),
@@ -133,8 +133,8 @@ describe('Gateway Multiple Affiliates', () => {
             affiliates,
         });
 
-        expect(instanceOfGatewayQuoteV2OneOf1(quote)).toBe(true);
-        if (!instanceOfGatewayQuoteV2OneOf1(quote)) {
+        expect(instanceOfGatewayQuoteV4OneOf(quote)).toBe(true);
+        if (!instanceOfGatewayQuoteV4OneOf(quote)) {
             return;
         }
 

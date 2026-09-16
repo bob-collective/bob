@@ -13,13 +13,13 @@
  */
 
 import { mapValues } from '../runtime';
-import type { GatewayOrderStatusV3OneOf2Refunded } from './GatewayOrderStatusV3OneOf2Refunded';
+import type { GatewayOrderStatusV3OneOf2Success } from './GatewayOrderStatusV3OneOf2Success';
 import {
-    GatewayOrderStatusV3OneOf2RefundedFromJSON,
-    GatewayOrderStatusV3OneOf2RefundedFromJSONTyped,
-    GatewayOrderStatusV3OneOf2RefundedToJSON,
-    GatewayOrderStatusV3OneOf2RefundedToJSONTyped,
-} from './GatewayOrderStatusV3OneOf2Refunded';
+    GatewayOrderStatusV3OneOf2SuccessFromJSON,
+    GatewayOrderStatusV3OneOf2SuccessFromJSONTyped,
+    GatewayOrderStatusV3OneOf2SuccessToJSON,
+    GatewayOrderStatusV3OneOf2SuccessToJSONTyped,
+} from './GatewayOrderStatusV3OneOf2Success';
 
 /**
  * 
@@ -29,17 +29,17 @@ import {
 export interface GatewayOrderStatusV3OneOf2 {
     /**
      * 
-     * @type {GatewayOrderStatusV3OneOf2Refunded}
+     * @type {GatewayOrderStatusV3OneOf2Success}
      * @memberof GatewayOrderStatusV3OneOf2
      */
-    refunded: GatewayOrderStatusV3OneOf2Refunded;
+    success: GatewayOrderStatusV3OneOf2Success;
 }
 
 /**
  * Check if a given object implements the GatewayOrderStatusV3OneOf2 interface.
  */
 export function instanceOfGatewayOrderStatusV3OneOf2(value: object): value is GatewayOrderStatusV3OneOf2 {
-    if (!('refunded' in value) || value['refunded'] === undefined) return false;
+    if (!('success' in value) || value['success'] === undefined) return false;
     return true;
 }
 
@@ -53,7 +53,7 @@ export function GatewayOrderStatusV3OneOf2FromJSONTyped(json: any, ignoreDiscrim
     }
     return {
         
-        'refunded': GatewayOrderStatusV3OneOf2RefundedFromJSON(json['refunded']),
+        'success': GatewayOrderStatusV3OneOf2SuccessFromJSON(json['success']),
     };
 }
 
@@ -68,7 +68,7 @@ export function GatewayOrderStatusV3OneOf2ToJSONTyped(value?: GatewayOrderStatus
 
     return {
         
-        'refunded': GatewayOrderStatusV3OneOf2RefundedToJSON(value['refunded']),
+        'success': GatewayOrderStatusV3OneOf2SuccessToJSON(value['success']),
     };
 }
 

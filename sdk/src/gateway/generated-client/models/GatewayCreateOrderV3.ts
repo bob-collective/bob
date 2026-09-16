@@ -12,13 +12,6 @@
  * Do not edit the class manually.
  */
 
-import type { GatewayCreateOrderOneOf } from './GatewayCreateOrderOneOf';
-import {
-    instanceOfGatewayCreateOrderOneOf,
-    GatewayCreateOrderOneOfFromJSON,
-    GatewayCreateOrderOneOfFromJSONTyped,
-    GatewayCreateOrderOneOfToJSON,
-} from './GatewayCreateOrderOneOf';
 import type { GatewayCreateOrderV3OneOf } from './GatewayCreateOrderV3OneOf';
 import {
     instanceOfGatewayCreateOrderV3OneOf,
@@ -33,13 +26,20 @@ import {
     GatewayCreateOrderV3OneOf1FromJSONTyped,
     GatewayCreateOrderV3OneOf1ToJSON,
 } from './GatewayCreateOrderV3OneOf1';
+import type { GatewayCreateOrderV3OneOf2 } from './GatewayCreateOrderV3OneOf2';
+import {
+    instanceOfGatewayCreateOrderV3OneOf2,
+    GatewayCreateOrderV3OneOf2FromJSON,
+    GatewayCreateOrderV3OneOf2FromJSONTyped,
+    GatewayCreateOrderV3OneOf2ToJSON,
+} from './GatewayCreateOrderV3OneOf2';
 
 /**
  * @type GatewayCreateOrderV3
  * V3 create-order response; offramp and token-swap carry polymorphic `GatewayTxData`.
  * @export
  */
-export type GatewayCreateOrderV3 = GatewayCreateOrderOneOf | GatewayCreateOrderV3OneOf | GatewayCreateOrderV3OneOf1;
+export type GatewayCreateOrderV3 = GatewayCreateOrderV3OneOf | GatewayCreateOrderV3OneOf1 | GatewayCreateOrderV3OneOf2;
 
 export function GatewayCreateOrderV3FromJSON(json: any): GatewayCreateOrderV3 {
     return GatewayCreateOrderV3FromJSONTyped(json, false);
@@ -52,14 +52,14 @@ export function GatewayCreateOrderV3FromJSONTyped(json: any, ignoreDiscriminator
     if (typeof json !== 'object') {
         return json;
     }
-    if (instanceOfGatewayCreateOrderOneOf(json)) {
-        return GatewayCreateOrderOneOfFromJSONTyped(json, true);
-    }
     if (instanceOfGatewayCreateOrderV3OneOf(json)) {
         return GatewayCreateOrderV3OneOfFromJSONTyped(json, true);
     }
     if (instanceOfGatewayCreateOrderV3OneOf1(json)) {
         return GatewayCreateOrderV3OneOf1FromJSONTyped(json, true);
+    }
+    if (instanceOfGatewayCreateOrderV3OneOf2(json)) {
+        return GatewayCreateOrderV3OneOf2FromJSONTyped(json, true);
     }
     return {} as any;
 }
@@ -75,14 +75,14 @@ export function GatewayCreateOrderV3ToJSONTyped(value?: GatewayCreateOrderV3 | n
     if (typeof value !== 'object') {
         return value;
     }
-    if (instanceOfGatewayCreateOrderOneOf(value)) {
-        return GatewayCreateOrderOneOfToJSON(value as GatewayCreateOrderOneOf);
-    }
     if (instanceOfGatewayCreateOrderV3OneOf(value)) {
         return GatewayCreateOrderV3OneOfToJSON(value as GatewayCreateOrderV3OneOf);
     }
     if (instanceOfGatewayCreateOrderV3OneOf1(value)) {
         return GatewayCreateOrderV3OneOf1ToJSON(value as GatewayCreateOrderV3OneOf1);
+    }
+    if (instanceOfGatewayCreateOrderV3OneOf2(value)) {
+        return GatewayCreateOrderV3OneOf2ToJSON(value as GatewayCreateOrderV3OneOf2);
     }
     return {};
 }

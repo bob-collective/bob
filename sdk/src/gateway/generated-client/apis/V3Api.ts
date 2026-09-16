@@ -132,7 +132,7 @@ export class V3Api extends runtime.BaseAPI {
     }
 
     /**
-     * Behaviourally identical to v2; exists so the v3 API surface has its own `operationId` (`get_max_spendable_v3`) rather than sharing v2\'s, which would tag the same operation under both v2 and v3 and break generated clients.
+     * Thin wrapper so the v3 API surface has its own `operationId` (`get_max_spendable_v3`).
      * Get the maximum spendable Bitcoin amount for the given address (v3).
      */
     async getMaxSpendableV3Raw(requestParameters: GetMaxSpendableV3Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<GatewayMaxSpendable>> {
@@ -170,7 +170,7 @@ export class V3Api extends runtime.BaseAPI {
     }
 
     /**
-     * Behaviourally identical to v2; exists so the v3 API surface has its own `operationId` (`get_max_spendable_v3`) rather than sharing v2\'s, which would tag the same operation under both v2 and v3 and break generated clients.
+     * Thin wrapper so the v3 API surface has its own `operationId` (`get_max_spendable_v3`).
      * Get the maximum spendable Bitcoin amount for the given address (v3).
      */
     async getMaxSpendableV3(requestParameters: GetMaxSpendableV3Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<GatewayMaxSpendable> {

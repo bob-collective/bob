@@ -12,13 +12,13 @@
  * Do not edit the class manually.
  */
 
-import type { GatewayQuoteV2OneOf } from './GatewayQuoteV2OneOf';
+import type { GatewayQuoteV3OneOf } from './GatewayQuoteV3OneOf';
 import {
-    instanceOfGatewayQuoteV2OneOf,
-    GatewayQuoteV2OneOfFromJSON,
-    GatewayQuoteV2OneOfFromJSONTyped,
-    GatewayQuoteV2OneOfToJSON,
-} from './GatewayQuoteV2OneOf';
+    instanceOfGatewayQuoteV3OneOf,
+    GatewayQuoteV3OneOfFromJSON,
+    GatewayQuoteV3OneOfFromJSONTyped,
+    GatewayQuoteV3OneOfToJSON,
+} from './GatewayQuoteV3OneOf';
 import type { GatewayQuoteV4OneOf } from './GatewayQuoteV4OneOf';
 import {
     instanceOfGatewayQuoteV4OneOf,
@@ -39,7 +39,7 @@ import {
  * Gateway quote response for V4.
  * @export
  */
-export type GatewayQuoteV4 = GatewayQuoteV2OneOf | GatewayQuoteV4OneOf | GatewayQuoteV4OneOf1;
+export type GatewayQuoteV4 = GatewayQuoteV3OneOf | GatewayQuoteV4OneOf | GatewayQuoteV4OneOf1;
 
 export function GatewayQuoteV4FromJSON(json: any): GatewayQuoteV4 {
     return GatewayQuoteV4FromJSONTyped(json, false);
@@ -52,8 +52,8 @@ export function GatewayQuoteV4FromJSONTyped(json: any, ignoreDiscriminator: bool
     if (typeof json !== 'object') {
         return json;
     }
-    if (instanceOfGatewayQuoteV2OneOf(json)) {
-        return GatewayQuoteV2OneOfFromJSONTyped(json, true);
+    if (instanceOfGatewayQuoteV3OneOf(json)) {
+        return GatewayQuoteV3OneOfFromJSONTyped(json, true);
     }
     if (instanceOfGatewayQuoteV4OneOf(json)) {
         return GatewayQuoteV4OneOfFromJSONTyped(json, true);
@@ -75,8 +75,8 @@ export function GatewayQuoteV4ToJSONTyped(value?: GatewayQuoteV4 | null, ignoreD
     if (typeof value !== 'object') {
         return value;
     }
-    if (instanceOfGatewayQuoteV2OneOf(value)) {
-        return GatewayQuoteV2OneOfToJSON(value as GatewayQuoteV2OneOf);
+    if (instanceOfGatewayQuoteV3OneOf(value)) {
+        return GatewayQuoteV3OneOfToJSON(value as GatewayQuoteV3OneOf);
     }
     if (instanceOfGatewayQuoteV4OneOf(value)) {
         return GatewayQuoteV4OneOfToJSON(value as GatewayQuoteV4OneOf);

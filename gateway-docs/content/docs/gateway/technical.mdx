@@ -30,14 +30,14 @@ Custom strategies (`strategyTarget` / `strategyMessage`) and gas refills were re
 
 ### Order creation
 
-    `create-order` returns an `orderId` and a **unique Bitcoin deposit address belonging to the solver's wallet**. If you passed the user's `sender` address, the response also carries a ready-to-sign PSBT (`psbtHex`) with coin selection already done.
+    Supply a Bitcoin `refundAddress` in the quote before creating a V4 order. `create-order` returns an `orderId` and a **unique Bitcoin deposit address belonging to the solver's wallet**. If you passed the user's `sender` address, the response also carries a ready-to-sign PSBT (`psbtHex`) with coin selection already done.
   </Step>
 
   <Step>
 
 ### Bitcoin payment
 
-    The user signs and broadcasts one Bitcoin transaction. Your app reports it with `register-tx`, which links the transaction to the order. Nothing on the destination chain has happened yet — the user has spent only their BTC and the Bitcoin miner fee.
+    The user signs one Bitcoin transaction. Your app submits the finalized raw transaction hex to `/v4/register-tx`; Gateway validates it against the order, screens it, and broadcasts it. A txid alone is not accepted. Nothing on the destination chain has happened yet — the user has spent only their BTC and the Bitcoin miner fee.
   </Step>
 
   <Step>
@@ -67,8 +67,8 @@ Custom strategies (`strategyTarget` / `strategyMessage`) and gas refills were re
 
     A release that fails — prices drifted past the quoted minimum, the onward swap reverts — is re-quoted and retried on an exponential backoff (15s, doubling) for up to an hour, then settled as a refund by the same contract that would have released it:
 
-    - with a `refundAddress`, `commitBitcoinRefund` reserves the order's terminal state on-chain and the BTC is then sent from the solver's Bitcoin wallet, net of the fee needed to confirm that transaction
-    - without one, `refundOrder` pays USDT to the order owner on Ethereum
+    - for V4 orders, the required Bitcoin `refundAddress` determines the refund destination: `commitBitcoinRefund` reserves the order's terminal state on-chain and the BTC is then sent from the solver's Bitcoin wallet, net of the fee needed to confirm that transaction
+    - for older orders created without a Bitcoin refund address, `refundOrder` pays USDT to the order owner on Ethereum
 
     Either way the order earns no fee: `refundOrder` marks the fee obligation settled so `payFees` can never pay out on a refunded order, and every withheld fee goes back to the user. See [Refunds](/gateway/refunds).
   </Step>
@@ -93,8 +93,9 @@ sequenceDiagram
     API->>User: signed quote (1 min validity)
     User->>API: create-order
     API->>User: orderId + deposit address (+ PSBT)
-    User->>Bitcoin: broadcast BTC deposit
-    User->>API: register-tx
+    User->>API: register-tx (signed raw Bitcoin hex)
+    API->>API: validate transaction + screen
+    API->>Bitcoin: broadcast BTC deposit
     Solver->>Bitcoin: watch deposit until confirmed
     Solver->>Solver: TRM screening + simulate destination call
     Solver->>Onramp: releaseFundsAndCallStrategy
@@ -110,6 +111,8 @@ sequenceDiagram
 ### Quote and order creation
 
     `get-quote` returns the minimum sats the user will receive, plus the solver fee, the Bitcoin miner fee for the payout (`inclusionFee`), and protocol and affiliate fees. `create-order` returns an EVM transaction that calls `createOrder` on `GatewayOfframpRegistryV7`, **escrowing the user's USDT in the contract** together with their Bitcoin output script, the minimum sat output, the affiliate fee list, and a creation deadline. The call also carries an EIP-712 solver signature over those terms: the registry recovers it against its configured `orderSigner` and consumes the digest, so an order can only be created on terms a solver actually approved, and the same approval can't be replayed.
+
+    The user signs and broadcasts the source-chain transaction. Gateway indexes it from the chain; there is no V4 offramp `register-tx` call.
 
     Users starting from a different chain or token don't create the order themselves: their token is swapped and bridged to USDT on Ethereum through a third-party provider, and the arriving message is executed by a Gateway composer contract that creates the order on their behalf.
   </Step>

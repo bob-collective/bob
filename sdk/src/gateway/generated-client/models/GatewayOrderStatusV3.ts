@@ -12,13 +12,6 @@
  * Do not edit the class manually.
  */
 
-import type { GatewayOrderStatusOneOf1 } from './GatewayOrderStatusOneOf1';
-import {
-    instanceOfGatewayOrderStatusOneOf1,
-    GatewayOrderStatusOneOf1FromJSON,
-    GatewayOrderStatusOneOf1FromJSONTyped,
-    GatewayOrderStatusOneOf1ToJSON,
-} from './GatewayOrderStatusOneOf1';
 import type { GatewayOrderStatusV3OneOf } from './GatewayOrderStatusV3OneOf';
 import {
     instanceOfGatewayOrderStatusV3OneOf,
@@ -40,6 +33,13 @@ import {
     GatewayOrderStatusV3OneOf2FromJSONTyped,
     GatewayOrderStatusV3OneOf2ToJSON,
 } from './GatewayOrderStatusV3OneOf2';
+import type { GatewayOrderStatusV3OneOf3 } from './GatewayOrderStatusV3OneOf3';
+import {
+    instanceOfGatewayOrderStatusV3OneOf3,
+    GatewayOrderStatusV3OneOf3FromJSON,
+    GatewayOrderStatusV3OneOf3FromJSONTyped,
+    GatewayOrderStatusV3OneOf3ToJSON,
+} from './GatewayOrderStatusV3OneOf3';
 
 /**
  * @type GatewayOrderStatusV3
@@ -50,7 +50,7 @@ import {
  * is evicted from the mempool before confirmation; the solver never replaces the payout tx.
  * @export
  */
-export type GatewayOrderStatusV3 = GatewayOrderStatusOneOf1 | GatewayOrderStatusV3OneOf | GatewayOrderStatusV3OneOf1 | GatewayOrderStatusV3OneOf2;
+export type GatewayOrderStatusV3 = GatewayOrderStatusV3OneOf | GatewayOrderStatusV3OneOf1 | GatewayOrderStatusV3OneOf2 | GatewayOrderStatusV3OneOf3;
 
 export function GatewayOrderStatusV3FromJSON(json: any): GatewayOrderStatusV3 {
     return GatewayOrderStatusV3FromJSONTyped(json, false);
@@ -63,9 +63,6 @@ export function GatewayOrderStatusV3FromJSONTyped(json: any, ignoreDiscriminator
     if (typeof json !== 'object') {
         return json;
     }
-    if (instanceOfGatewayOrderStatusOneOf1(json)) {
-        return GatewayOrderStatusOneOf1FromJSONTyped(json, true);
-    }
     if (instanceOfGatewayOrderStatusV3OneOf(json)) {
         return GatewayOrderStatusV3OneOfFromJSONTyped(json, true);
     }
@@ -74,6 +71,9 @@ export function GatewayOrderStatusV3FromJSONTyped(json: any, ignoreDiscriminator
     }
     if (instanceOfGatewayOrderStatusV3OneOf2(json)) {
         return GatewayOrderStatusV3OneOf2FromJSONTyped(json, true);
+    }
+    if (instanceOfGatewayOrderStatusV3OneOf3(json)) {
+        return GatewayOrderStatusV3OneOf3FromJSONTyped(json, true);
     }
     return {} as any;
 }
@@ -89,9 +89,6 @@ export function GatewayOrderStatusV3ToJSONTyped(value?: GatewayOrderStatusV3 | n
     if (typeof value !== 'object') {
         return value;
     }
-    if (instanceOfGatewayOrderStatusOneOf1(value)) {
-        return GatewayOrderStatusOneOf1ToJSON(value as GatewayOrderStatusOneOf1);
-    }
     if (instanceOfGatewayOrderStatusV3OneOf(value)) {
         return GatewayOrderStatusV3OneOfToJSON(value as GatewayOrderStatusV3OneOf);
     }
@@ -100,6 +97,9 @@ export function GatewayOrderStatusV3ToJSONTyped(value?: GatewayOrderStatusV3 | n
     }
     if (instanceOfGatewayOrderStatusV3OneOf2(value)) {
         return GatewayOrderStatusV3OneOf2ToJSON(value as GatewayOrderStatusV3OneOf2);
+    }
+    if (instanceOfGatewayOrderStatusV3OneOf3(value)) {
+        return GatewayOrderStatusV3OneOf3ToJSON(value as GatewayOrderStatusV3OneOf3);
     }
     return {};
 }

@@ -13,8 +13,8 @@ Users can always check their order — including refund status — on the [Gatew
 
 | Scenario | What the user receives | Who acts |
 |---|---|---|
-| BTC to X: swap can't fill at quoted terms | BTC to their refund address, or USDT on Ethereum | Gateway, automatic |
-| BTC to X: destination swap or bridge can't land | BTC to their refund address, or USDT on Ethereum | Gateway, automatic |
+| BTC to X: swap can't fill at quoted terms | BTC to their Bitcoin refund address | Gateway, automatic |
+| BTC to X: destination swap or bridge can't land | BTC to their Bitcoin refund address | Gateway, automatic |
 | X to BTC: payout delayed | BTC (Gateway bumps the fee) | Gateway, automatic |
 | X to BTC: payout can't complete (very rare) | Their escrowed USDT back | Gateway, after the on-chain refund delay |
 
@@ -26,16 +26,19 @@ There are two cases where a BTC-to-X swap returns funds instead of the expected 
 
 2. **The destination swap or bridge can't land.** When a route swaps or bridges onwards through a third-party provider, that on-chain call can revert. The payout and the onward call are one atomic transaction, so the whole release reverts with it and the user is never left holding a partial result.
 
-Both cases resolve the same way, automatically, with no action needed from the user or the integrator. The solver simulates the destination call before releasing, then re-quotes and retries the release on an exponential backoff — starting at 15 seconds and doubling — for up to an hour. If the release still can't land, Gateway settles the order as a refund, and the channel is decided by whether the order was created with a Bitcoin `refundAddress`:
+Both cases resolve automatically, with no refund transaction for the user or integrator to submit. The solver simulates the destination call before releasing, then re-quotes and retries with exponential backoff — starting at 15 seconds and doubling — for up to an hour. If the release still can't land, Gateway commits the order to a Bitcoin refund on-chain and pays the order's Bitcoin `refundAddress` from the solver's wallet. The Bitcoin miner fee is deducted from the refund.
 
-- **With a `refundAddress`** — the order is committed to a Bitcoin refund on-chain, then paid from the solver's Bitcoin wallet to that address. The Bitcoin fee needed to get the refund transaction confirmed is deducted from the amount sent, so the user bears the cost of moving their own coins back.
-- **Without one** — USDT on Ethereum to the order owner.
+A refunded order earns no fee. Every fee withheld from the fill — solver, protocol and affiliate — is returned along with the deposit.
 
-A refunded order earns no fee. Every fee withheld from the fill — solver, protocol and affiliate — is returned to the user along with the deposit.
+## Set the refund address before execution
 
-<Callout>
-Pass a `refundAddress` when you request a quote if you want failed BTC-to-X swaps returned in BTC rather than USDT on Ethereum.
-</Callout>
+V4 requires `refundAddress` before order creation for **all routes**. It may be omitted for a price-only quote, but `create-order` rejects such a quote with `MISSING_REFUND_ADDRESS`. Request a fresh quote with the address before execution.
+
+- For an onramp, use the user's Bitcoin refund address.
+- For an offramp or token swap, use an address encoded for the source chain.
+- The SDK forwards `refundAddress`; it does not infer it from the sender.
+
+Older onramp orders created without a Bitcoin refund address can settle refunds in USDT on Ethereum to the order owner. New V4 orders require the address; see the [Migration Guide](/gateway/migration).
 
 ### Refunds after a partial recovery
 
@@ -68,7 +71,7 @@ No. Refunds in both directions are settled by Gateway, and there is nothing for 
 
 ## Refund status in the API
 
-A completed refund shows up as the `refunded` order status, which lists the `refundedTokens` actually returned — each with `chain`, `token`, `amount`, and the settlement `txHash`:
+A completed refund shows up as the `refunded` order status, which lists the `refundedTokens` actually returned in the SDK (`refunded_tokens` in raw API JSON) — each with `chain`, `token`, `amount`, and the settlement `txHash`:
 
 - `status.refunded.refundedTokens` — the completed refund
 - A BTC refund appears here as a Bitcoin entry, where `txHash` is the Bitcoin txid rather than an EVM transaction hash
