@@ -117,14 +117,14 @@ describe("handleQuote", () => {
   });
 
   // ─── A1 ────────────────────────────────────────────────────────────────────
-  // `ownerAddress` is the EVM-side address controlling the order — the sender on an
-  // offramp. `quote` derived the sender only for `--amount ALL`, so on an ordinary
-  // offramp it was undefined and `ownerAddress` fell back to the (Bitcoin) recipient.
+  // The EVM side of an offramp is the sender, and it must reach the gateway as
+  // `fromUserAddress`. `quote` derived the sender only for `--amount ALL`, so on an
+  // ordinary offramp it was undefined and the (Bitcoin) recipient was sent in its place.
   // Staging rejected EVERY offramp quote with
   // "INVALID_REQUEST: Invalid Ethereum address: Expected an EVM address but found a
   // Bitcoin address". `swap` derived it unconditionally, which is why only `quote` broke.
 
-  it("sends the EVM sender as ownerAddress on an offramp quote with a fixed amount", async () => {
+  it("sends the EVM sender as fromUserAddress on an offramp quote with a fixed amount", async () => {
     const { resolvePrivateKey, deriveAddress } = await import("../../src/chains/index.js");
     await mockOfframpRecipient();
     vi.mocked(resolvePrivateKey).mockReturnValueOnce("0xevmkey");
@@ -134,13 +134,14 @@ describe("handleQuote", () => {
     await handleQuote({ src: "USDT:ethereum", dst: "BTC", amount: "47000000" });
 
     expect(mockGetQuote).toHaveBeenCalledWith(
-      expect.objectContaining({ ownerAddress: EVM_SENDER, toUserAddress: BTC_RECIPIENT }),
+      expect.objectContaining({ fromUserAddress: EVM_SENDER, toUserAddress: BTC_RECIPIENT }),
     );
   });
 
   it("fails with an actionable error rather than quoting an offramp with no EVM sender", async () => {
-    // The API makes ownerAddress mandatory (omitting it → MISSING_OWNER_ADDRESS), and the
-    // BTC recipient is not a legal substitute. There is nothing to send, so say so.
+    // An offramp is controlled by its EVM sender, and the BTC recipient is not a legal
+    // substitute — an order indexed under it could never be listed by `gateway-cli
+    // orders`, which takes an EVM address. There is nothing to send, so say so.
     const { resolvePrivateKey } = await import("../../src/chains/index.js");
     await mockOfframpRecipient();
     vi.mocked(resolvePrivateKey).mockReturnValueOnce(undefined);
@@ -203,7 +204,52 @@ describe("handleQuote", () => {
       src: "USDT:ethereum", dst: "BTC", amount: "47000000", owner: EVM_SENDER,
     });
 
+    // `--owner` settles the owner locally, so nothing needs the sender and the malformed
+    // key is never read. The v4 quote carries no owner field at all, so the request goes
+    // out with the sender absent rather than with a derived one.
     expect(deriveAddress).not.toHaveBeenCalled();
-    expect(mockGetQuote).toHaveBeenCalledWith(expect.objectContaining({ ownerAddress: EVM_SENDER }));
+    expect(mockGetQuote).toHaveBeenCalledWith(
+      expect.objectContaining({ toUserAddress: BTC_RECIPIENT, fromUserAddress: undefined }),
+    );
+  });
+
+  // ─── Refund address ────────────────────────────────────────────────────────
+  // The gateway defaults nothing: a quote asked for without a refund address comes back
+  // `refundAddress: null` even when a sender was sent, and create-order then rejects the
+  // EVM-source variants with MISSING_REFUND_ADDRESS. So the CLI must send one whenever it
+  // knows one. (The family check itself is tested against the real validator in
+  // tests/util/swap-context.test.ts — it is a no-op mock here.)
+
+  it("defaults the refund address to the resolved sender", async () => {
+    const { resolvePrivateKey, deriveAddress } = await import("../../src/chains/index.js");
+    await mockOfframpRecipient();
+    vi.mocked(resolvePrivateKey).mockReturnValueOnce("0xevmkey");
+    vi.mocked(deriveAddress).mockResolvedValueOnce(EVM_SENDER);
+    mockGetQuote.mockResolvedValueOnce(offrampSdkQuote);
+
+    await handleQuote({ src: "USDT:ethereum", dst: "BTC", amount: "47000000" });
+
+    expect(mockGetQuote).toHaveBeenCalledWith(
+      expect.objectContaining({ refundAddress: EVM_SENDER }),
+    );
+  });
+
+  it("prefers an explicit --refund-address, checked against the SOURCE chain", async () => {
+    const REFUND = "0x9999999999999999999999999999999999999999";
+    const { resolvePrivateKey, deriveAddress, validateAddressFamily } =
+      await import("../../src/chains/index.js");
+    await mockOfframpRecipient();
+    vi.mocked(resolvePrivateKey).mockReturnValueOnce("0xevmkey");
+    vi.mocked(deriveAddress).mockResolvedValueOnce(EVM_SENDER);
+    mockGetQuote.mockResolvedValueOnce(offrampSdkQuote);
+
+    await handleQuote({
+      src: "USDT:ethereum", dst: "BTC", amount: "47000000", refundAddress: REFUND,
+    });
+
+    expect(validateAddressFamily).toHaveBeenCalledWith("ethereum", REFUND, "--refund-address");
+    expect(mockGetQuote).toHaveBeenCalledWith(
+      expect.objectContaining({ refundAddress: REFUND }),
+    );
   });
 });

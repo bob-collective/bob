@@ -58,7 +58,7 @@ vi.mock("../../src/config.js", () => ({
     getOrder: mockGetOrder,
     executeQuote: mockExecuteQuote,
   })),
-  getApi: vi.fn(() => ({ createOrderV3: mockCreateOrder })),
+  getApi: vi.fn(() => ({ createOrderV4: mockCreateOrder })),
   BTC_DECIMALS: 8,
 }));
 
@@ -108,8 +108,8 @@ vi.mock("../../src/chains/index.js", () => ({
   deriveAddress: vi.fn().mockResolvedValue("bc1qtest"),
   resolveSigner: vi.fn().mockResolvedValue({ address: "bc1qtest", signer: mockBtcSigner }),
   getTokenBalance: vi.fn().mockResolvedValue({ total: "5000000", allSpendable: "4900000" }),
-  buildRegisterPayload: vi.fn((_src: string, orderId: string, txId: string) => ({
-    onramp: { orderId, bitcoinTxid: txId },
+  buildRegisterPayload: vi.fn((_src: string, orderId: string, txHex: string) => ({
+    onramp: { orderId, bitcoinTxHex: txHex },
   })),
   resolvePrivateKey: vi.fn((chain: string, privateKey?: string) => privateKey),
   resolveRecipient: vi.fn().mockResolvedValue("0x4444444444444444444444444444444444444444"),

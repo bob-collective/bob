@@ -6,8 +6,9 @@ import { buildRegisterPayload } from "../chains/index.js";
  * automatic registration fails. EVM-source orders are rejected before the request
  * goes out: a no-op call would report success on an order nothing had reconciled.
  *
- * @param opts - Order ID and the raw signed Bitcoin transaction (hex) or its txid
- * @throws Error if the order does not originate on Bitcoin
+ * @param opts - Order ID and the raw signed Bitcoin transaction (hex)
+ * @throws Error if the order does not originate on Bitcoin, or if `txid` is a bare
+ *   transaction id rather than the serialized transaction
  */
 export async function handleRegister(opts: { orderId: string; txid: string }) {
   const sdk = getSdk();
@@ -19,5 +20,5 @@ export async function handleRegister(opts: { orderId: string; txid: string }) {
     opts.txid,
   );
 
-  return getApi().registerTxV3({ registerTxV3: registerTx });
+  return getApi().registerTxV4({ registerTxV4: registerTx });
 }

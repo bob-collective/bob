@@ -1,8 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { resolveOwnerAddress } from "../../src/util/swap-context.js";
+import { resolveOwnerAddress, resolveRefundAddress } from "../../src/util/swap-context.js";
 
 const EVM = "0xAF91558Ba2B1994530c9cfCcbda5AE9cD2b456bb";
 const BTC = "bc1q4xdatls497ea76fmuefu9we4ld4yu2vy8hedne";
+const OTHER_EVM = "0x1111111111111111111111111111111111111111";
 
 // `ownerAddress` is the EVM address that controls the order. The gateway rejects anything
 // else outright ("Invalid Ethereum address: Expected an EVM address but found a Bitcoin
@@ -57,5 +58,41 @@ describe("resolveOwnerAddress", () => {
     expect(() => resolveOwnerAddress({
       srcFamily: "evm", dstFamily: "bitcoin", recipient: BTC,
     })).toThrow(/Could not determine the EVM owner address/);
+  });
+});
+
+// The refund address is the mirror image of the owner: always SOURCE-chain, so Bitcoin on
+// an onramp and EVM on an offramp or token swap. The gateway defaults nothing — a quote
+// asked for without one comes back `refundAddress: null` even when a sender was sent — and
+// answers a family mismatch with a bare `INVALID_REQUEST: Conversion Error` that names
+// neither the flag nor the family. Both facts are why the resolution lives here.
+describe("resolveRefundAddress", () => {
+  it("defaults to the sender — the address the funds left", () => {
+    expect(resolveRefundAddress({ srcChain: "ethereum", senderAddress: EVM })).toBe(EVM);
+    expect(resolveRefundAddress({ srcChain: "bitcoin", senderAddress: BTC })).toBe(BTC);
+  });
+
+  it("prefers an explicit --refund-address over the sender", () => {
+    expect(resolveRefundAddress({
+      explicit: OTHER_EVM, srcChain: "ethereum", senderAddress: EVM,
+    })).toBe(OTHER_EVM);
+  });
+
+  it("is undefined when nothing supplied one — the quote is still valid without it", () => {
+    expect(resolveRefundAddress({ srcChain: "ethereum" })).toBeUndefined();
+  });
+
+  it("takes a Bitcoin address on a BTC-source onramp", () => {
+    expect(resolveRefundAddress({ explicit: BTC, srcChain: "bitcoin" })).toBe(BTC);
+  });
+
+  it("rejects an EVM --refund-address on a BTC-source onramp", () => {
+    expect(() => resolveRefundAddress({ explicit: EVM, srcChain: "bitcoin" }))
+      .toThrow(/--refund-address .* is not a valid Bitcoin address/);
+  });
+
+  it("rejects a Bitcoin --refund-address on an EVM-source swap", () => {
+    expect(() => resolveRefundAddress({ explicit: BTC, srcChain: "ethereum" }))
+      .toThrow(/--refund-address .* is not a valid EVM address/);
   });
 });
