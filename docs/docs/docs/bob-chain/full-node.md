@@ -16,7 +16,7 @@ To stay updated on node upgrades and announcements, join our [Telegram channel](
 As of September 2026 we recommend you have at least the following hardware configuration to run a node:
 
 - at least 8 GB RAM
-- an SSD, preferably NVME drive with at least 100 GB free
+- an SSD, preferably NVME drive with at least 100 GB free; an archive node restored from the snapshot below needs at least 250 GB (the mainnet snapshot alone is ~106 GiB and the database keeps growing)
 
 Software stack:
 
@@ -84,7 +84,7 @@ trusted_nodes = [
 ]
 ```
 
-Without this peer, a node that falls behind can only re-derive the gap from L1, which is slow. The peer retains a rolling window of recent blocks — it closes gaps, it does not bootstrap a node from genesis, so start fresh nodes from a snapshot (available from Conduit on request).
+Without this peer, a node that falls behind can only re-derive the gap from L1, which is slow. The peer retains a rolling window of recent blocks — it closes gaps, it does not bootstrap a node from genesis, so start fresh nodes from a snapshot (see [Running an Archive Node](#running-an-archive-node) below).
 
 ### 5. Create the op-node environment file
 
@@ -165,6 +165,73 @@ services:
 docker compose up -d
 ```
 
+## Running an Archive Node
+
+The full node configuration above runs `op-reth` with `--full`, which prunes historical state: it serves the current chain but cannot answer queries against arbitrary past blocks (historical `eth_call`, `eth_getProof`, tracing). An archive node keeps all state and history from genesis. The simplest way to run one is to restore Conduit's archive-mode snapshot, which also skips the initial sync entirely.
+
+Conduit publishes a regularly refreshed `op-reth` snapshot for BOB Mainnet in a requester-pays Google Cloud Storage bucket:
+
+| Network | Object | Size |
+| ------- | ------ | ---- |
+| BOB Mainnet | `gs://conduit-networks-snapshots/bob-mainnet-0/latest.tar` | ~106 GiB |
+
+The snapshot is a complete **archive-mode `op-reth` data directory**: the execution database, static files with all headers, transactions, and receipts back to genesis, and a `proofs-history` store (see the note below). The archive is not compressed, so the extracted datadir is about the same size as the download. The restore streams and extracts in a single pass, so no extra disk space for the archive itself is required.
+
+### Prepare the configuration
+
+Follow steps 1–6 of the full node guide above: the data directories, JWT secret, genesis file, trusted EL peer (`reth.toml`), `op-node.env`, and the Docker Compose file are identical for an archive node.
+
+### Restore the snapshot
+
+Prerequisites:
+
+- The [Google Cloud CLI](https://cloud.google.com/cli) (`gcloud`).
+- A Google Cloud project with billing enabled. The bucket is requester-pays: download egress is charged to this project (pass it via `--billing-project`, or set `CLOUDSDK_BILLING_QUOTA_PROJECT`).
+- The authenticated account needs the `roles/serviceusage.serviceUsageConsumer` role on the billing project ([requester-pays requirements](https://docs.cloud.google.com/storage/docs/requester-pays#requirements)).
+
+Check the size and freshness of the snapshot:
+
+```sh
+gcloud --billing-project=<GCP_PROJECT_ID> storage objects describe \
+  gs://conduit-networks-snapshots/bob-mainnet-0/latest.tar --format="value(size,updated)"
+```
+
+With the containers stopped and `/opt/op-reth` containing only `jwt.hex`, `genesis.json`, and `reth.toml`, restore the snapshot (expect several hours for ~106 GiB):
+
+```sh
+gcloud --billing-project=<GCP_PROJECT_ID> storage cat \
+  gs://conduit-networks-snapshots/bob-mainnet-0/latest.tar |
+  tar --no-same-owner --no-same-permissions -xf - -C /opt/op-reth --strip-components=1
+```
+
+This extracts `db/`, `static_files/`, `blobstore/`, and `proofs-history/` directly into the datadir; it does not touch the configuration files already in place.
+
+### Adjust the execution client flags
+
+:::warning
+Remove **`--full`** and **`--storage.v2`** from the `op-reth` command in the Docker Compose file from step 6.
+
+The snapshot is an unpruned, archive-mode database. `--full` is a pruning preset, and running a restored archive database under prune flags is unsupported: reth can enter a prune-stage retry loop ([paradigmxyz/reth#21791](https://github.com/paradigmxyz/reth/issues/21791)) or panic on static-file consistency checks ([paradigmxyz/reth#23463](https://github.com/paradigmxyz/reth/issues/23463)). `--storage.v2` only applies to newly created databases and has no effect on the restored one.
+:::
+
+:::info Historical proofs (optional)
+The snapshot includes a `proofs-history/` database — versioned trie data that serves `eth_getProof` efficiently for blocks within its retention window. To use it, add `--proofs-history --proofs-history.storage-version=v2` to the `op-reth` command. The restored data is usually older than the retention window; if `op-reth` refuses to start with an error about more than 1,000 blocks to prune, run once before starting the node:
+
+```sh
+docker compose run --rm --no-deps op-reth proofs prune --chain=/data/genesis.json --datadir=/data
+```
+
+If you don't need historical `eth_getProof`, leave the flag off — the restored directory is simply ignored.
+:::
+
+### Start the node
+
+```sh
+docker compose up -d
+```
+
+The node starts from the snapshot tip and follows the chain; verify progress as described in [Verifying Sync Progress](#verifying-sync-progress).
+
 ## Verifying Sync Progress
 
 Sync proceeds in pipeline stages. You can monitor progress with:
@@ -177,7 +244,7 @@ curl -s -X POST http://localhost:8545 \
 
 While syncing, `eth_syncing` returns a status object with per-stage block checkpoints (Headers → Bodies → Execution). Once all stages are complete, it returns `false` and `eth_blockNumber` will reflect the live chain head.
 
-Expected sync time from scratch is several hours depending on hardware and network. If you would rather not sync from genesis, Conduit can provide a recent op-reth snapshot on request.
+Expected sync time from scratch is several hours depending on hardware and network. A node restored from the snapshot starts near the current tip and typically catches up within minutes to a few hours, depending on the age of the snapshot.
 
 ## Rollup Configuration and Genesis
 
