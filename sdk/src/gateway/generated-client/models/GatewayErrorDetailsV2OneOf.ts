@@ -24,28 +24,21 @@ export interface GatewayErrorDetailsV2OneOf {
      * @type {string}
      * @memberof GatewayErrorDetailsV2OneOf
      */
-    chainId: string;
+    actual: string;
     /**
      * 
      * @type {string}
      * @memberof GatewayErrorDetailsV2OneOf
      */
-    limit: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof GatewayErrorDetailsV2OneOf
-     */
-    token: string;
+    expected: string;
 }
 
 /**
  * Check if a given object implements the GatewayErrorDetailsV2OneOf interface.
  */
 export function instanceOfGatewayErrorDetailsV2OneOf(value: object): value is GatewayErrorDetailsV2OneOf {
-    if (!('chainId' in value) || value['chainId'] === undefined) return false;
-    if (!('limit' in value) || value['limit'] === undefined) return false;
-    if (!('token' in value) || value['token'] === undefined) return false;
+    if (!('actual' in value) || value['actual'] === undefined) return false;
+    if (!('expected' in value) || value['expected'] === undefined) return false;
     return true;
 }
 
@@ -59,9 +52,8 @@ export function GatewayErrorDetailsV2OneOfFromJSONTyped(json: any, ignoreDiscrim
     }
     return {
         
-        'chainId': json['chain_id'],
-        'limit': json['limit'],
-        'token': json['token'],
+        'actual': json['actual'],
+        'expected': json['expected'],
     };
 }
 
@@ -76,9 +68,8 @@ export function GatewayErrorDetailsV2OneOfToJSONTyped(value?: GatewayErrorDetail
 
     return {
         
-        'chain_id': value['chainId'],
-        'limit': value['limit'],
-        'token': value['token'],
+        'actual': value['actual'],
+        'expected': value['expected'],
     };
 }
 

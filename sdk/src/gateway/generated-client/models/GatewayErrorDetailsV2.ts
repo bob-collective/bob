@@ -12,55 +12,6 @@
  * Do not edit the class manually.
  */
 
-import type { GatewayErrorDetailsOneOf } from './GatewayErrorDetailsOneOf';
-import {
-    instanceOfGatewayErrorDetailsOneOf,
-    GatewayErrorDetailsOneOfFromJSON,
-    GatewayErrorDetailsOneOfFromJSONTyped,
-    GatewayErrorDetailsOneOfToJSON,
-} from './GatewayErrorDetailsOneOf';
-import type { GatewayErrorDetailsOneOf1 } from './GatewayErrorDetailsOneOf1';
-import {
-    instanceOfGatewayErrorDetailsOneOf1,
-    GatewayErrorDetailsOneOf1FromJSON,
-    GatewayErrorDetailsOneOf1FromJSONTyped,
-    GatewayErrorDetailsOneOf1ToJSON,
-} from './GatewayErrorDetailsOneOf1';
-import type { GatewayErrorDetailsOneOf2 } from './GatewayErrorDetailsOneOf2';
-import {
-    instanceOfGatewayErrorDetailsOneOf2,
-    GatewayErrorDetailsOneOf2FromJSON,
-    GatewayErrorDetailsOneOf2FromJSONTyped,
-    GatewayErrorDetailsOneOf2ToJSON,
-} from './GatewayErrorDetailsOneOf2';
-import type { GatewayErrorDetailsOneOf3 } from './GatewayErrorDetailsOneOf3';
-import {
-    instanceOfGatewayErrorDetailsOneOf3,
-    GatewayErrorDetailsOneOf3FromJSON,
-    GatewayErrorDetailsOneOf3FromJSONTyped,
-    GatewayErrorDetailsOneOf3ToJSON,
-} from './GatewayErrorDetailsOneOf3';
-import type { GatewayErrorDetailsOneOf4 } from './GatewayErrorDetailsOneOf4';
-import {
-    instanceOfGatewayErrorDetailsOneOf4,
-    GatewayErrorDetailsOneOf4FromJSON,
-    GatewayErrorDetailsOneOf4FromJSONTyped,
-    GatewayErrorDetailsOneOf4ToJSON,
-} from './GatewayErrorDetailsOneOf4';
-import type { GatewayErrorDetailsOneOf5 } from './GatewayErrorDetailsOneOf5';
-import {
-    instanceOfGatewayErrorDetailsOneOf5,
-    GatewayErrorDetailsOneOf5FromJSON,
-    GatewayErrorDetailsOneOf5FromJSONTyped,
-    GatewayErrorDetailsOneOf5ToJSON,
-} from './GatewayErrorDetailsOneOf5';
-import type { GatewayErrorDetailsOneOf6 } from './GatewayErrorDetailsOneOf6';
-import {
-    instanceOfGatewayErrorDetailsOneOf6,
-    GatewayErrorDetailsOneOf6FromJSON,
-    GatewayErrorDetailsOneOf6FromJSONTyped,
-    GatewayErrorDetailsOneOf6ToJSON,
-} from './GatewayErrorDetailsOneOf6';
 import type { GatewayErrorDetailsV2OneOf } from './GatewayErrorDetailsV2OneOf';
 import {
     instanceOfGatewayErrorDetailsV2OneOf,
@@ -75,6 +26,55 @@ import {
     GatewayErrorDetailsV2OneOf1FromJSONTyped,
     GatewayErrorDetailsV2OneOf1ToJSON,
 } from './GatewayErrorDetailsV2OneOf1';
+import type { GatewayErrorDetailsV2OneOf2 } from './GatewayErrorDetailsV2OneOf2';
+import {
+    instanceOfGatewayErrorDetailsV2OneOf2,
+    GatewayErrorDetailsV2OneOf2FromJSON,
+    GatewayErrorDetailsV2OneOf2FromJSONTyped,
+    GatewayErrorDetailsV2OneOf2ToJSON,
+} from './GatewayErrorDetailsV2OneOf2';
+import type { GatewayErrorDetailsV2OneOf3 } from './GatewayErrorDetailsV2OneOf3';
+import {
+    instanceOfGatewayErrorDetailsV2OneOf3,
+    GatewayErrorDetailsV2OneOf3FromJSON,
+    GatewayErrorDetailsV2OneOf3FromJSONTyped,
+    GatewayErrorDetailsV2OneOf3ToJSON,
+} from './GatewayErrorDetailsV2OneOf3';
+import type { GatewayErrorDetailsV2OneOf4 } from './GatewayErrorDetailsV2OneOf4';
+import {
+    instanceOfGatewayErrorDetailsV2OneOf4,
+    GatewayErrorDetailsV2OneOf4FromJSON,
+    GatewayErrorDetailsV2OneOf4FromJSONTyped,
+    GatewayErrorDetailsV2OneOf4ToJSON,
+} from './GatewayErrorDetailsV2OneOf4';
+import type { GatewayErrorDetailsV2OneOf5 } from './GatewayErrorDetailsV2OneOf5';
+import {
+    instanceOfGatewayErrorDetailsV2OneOf5,
+    GatewayErrorDetailsV2OneOf5FromJSON,
+    GatewayErrorDetailsV2OneOf5FromJSONTyped,
+    GatewayErrorDetailsV2OneOf5ToJSON,
+} from './GatewayErrorDetailsV2OneOf5';
+import type { GatewayErrorDetailsV2OneOf6 } from './GatewayErrorDetailsV2OneOf6';
+import {
+    instanceOfGatewayErrorDetailsV2OneOf6,
+    GatewayErrorDetailsV2OneOf6FromJSON,
+    GatewayErrorDetailsV2OneOf6FromJSONTyped,
+    GatewayErrorDetailsV2OneOf6ToJSON,
+} from './GatewayErrorDetailsV2OneOf6';
+import type { GatewayErrorDetailsV2OneOf7 } from './GatewayErrorDetailsV2OneOf7';
+import {
+    instanceOfGatewayErrorDetailsV2OneOf7,
+    GatewayErrorDetailsV2OneOf7FromJSON,
+    GatewayErrorDetailsV2OneOf7FromJSONTyped,
+    GatewayErrorDetailsV2OneOf7ToJSON,
+} from './GatewayErrorDetailsV2OneOf7';
+import type { GatewayErrorDetailsV2OneOf8 } from './GatewayErrorDetailsV2OneOf8';
+import {
+    instanceOfGatewayErrorDetailsV2OneOf8,
+    GatewayErrorDetailsV2OneOf8FromJSON,
+    GatewayErrorDetailsV2OneOf8FromJSONTyped,
+    GatewayErrorDetailsV2OneOf8ToJSON,
+} from './GatewayErrorDetailsV2OneOf8';
 
 /**
  * @type GatewayErrorDetailsV2
@@ -84,7 +84,7 @@ import {
  * (e.g. typescript-fetch) can generate type guards correctly.
  * @export
  */
-export type GatewayErrorDetailsV2 = GatewayErrorDetailsOneOf | GatewayErrorDetailsOneOf1 | GatewayErrorDetailsOneOf2 | GatewayErrorDetailsOneOf3 | GatewayErrorDetailsOneOf4 | GatewayErrorDetailsOneOf5 | GatewayErrorDetailsOneOf6 | GatewayErrorDetailsV2OneOf | GatewayErrorDetailsV2OneOf1;
+export type GatewayErrorDetailsV2 = GatewayErrorDetailsV2OneOf | GatewayErrorDetailsV2OneOf1 | GatewayErrorDetailsV2OneOf2 | GatewayErrorDetailsV2OneOf3 | GatewayErrorDetailsV2OneOf4 | GatewayErrorDetailsV2OneOf5 | GatewayErrorDetailsV2OneOf6 | GatewayErrorDetailsV2OneOf7 | GatewayErrorDetailsV2OneOf8;
 
 export function GatewayErrorDetailsV2FromJSON(json: any): GatewayErrorDetailsV2 {
     return GatewayErrorDetailsV2FromJSONTyped(json, false);
@@ -97,32 +97,32 @@ export function GatewayErrorDetailsV2FromJSONTyped(json: any, ignoreDiscriminato
     if (typeof json !== 'object') {
         return json;
     }
-    if (instanceOfGatewayErrorDetailsOneOf(json)) {
-        return GatewayErrorDetailsOneOfFromJSONTyped(json, true);
-    }
-    if (instanceOfGatewayErrorDetailsOneOf1(json)) {
-        return GatewayErrorDetailsOneOf1FromJSONTyped(json, true);
-    }
-    if (instanceOfGatewayErrorDetailsOneOf2(json)) {
-        return GatewayErrorDetailsOneOf2FromJSONTyped(json, true);
-    }
-    if (instanceOfGatewayErrorDetailsOneOf3(json)) {
-        return GatewayErrorDetailsOneOf3FromJSONTyped(json, true);
-    }
-    if (instanceOfGatewayErrorDetailsOneOf4(json)) {
-        return GatewayErrorDetailsOneOf4FromJSONTyped(json, true);
-    }
-    if (instanceOfGatewayErrorDetailsOneOf5(json)) {
-        return GatewayErrorDetailsOneOf5FromJSONTyped(json, true);
-    }
-    if (instanceOfGatewayErrorDetailsOneOf6(json)) {
-        return GatewayErrorDetailsOneOf6FromJSONTyped(json, true);
-    }
     if (instanceOfGatewayErrorDetailsV2OneOf(json)) {
         return GatewayErrorDetailsV2OneOfFromJSONTyped(json, true);
     }
     if (instanceOfGatewayErrorDetailsV2OneOf1(json)) {
         return GatewayErrorDetailsV2OneOf1FromJSONTyped(json, true);
+    }
+    if (instanceOfGatewayErrorDetailsV2OneOf2(json)) {
+        return GatewayErrorDetailsV2OneOf2FromJSONTyped(json, true);
+    }
+    if (instanceOfGatewayErrorDetailsV2OneOf3(json)) {
+        return GatewayErrorDetailsV2OneOf3FromJSONTyped(json, true);
+    }
+    if (instanceOfGatewayErrorDetailsV2OneOf4(json)) {
+        return GatewayErrorDetailsV2OneOf4FromJSONTyped(json, true);
+    }
+    if (instanceOfGatewayErrorDetailsV2OneOf5(json)) {
+        return GatewayErrorDetailsV2OneOf5FromJSONTyped(json, true);
+    }
+    if (instanceOfGatewayErrorDetailsV2OneOf6(json)) {
+        return GatewayErrorDetailsV2OneOf6FromJSONTyped(json, true);
+    }
+    if (instanceOfGatewayErrorDetailsV2OneOf7(json)) {
+        return GatewayErrorDetailsV2OneOf7FromJSONTyped(json, true);
+    }
+    if (instanceOfGatewayErrorDetailsV2OneOf8(json)) {
+        return GatewayErrorDetailsV2OneOf8FromJSONTyped(json, true);
     }
     return {} as any;
 }
@@ -138,32 +138,32 @@ export function GatewayErrorDetailsV2ToJSONTyped(value?: GatewayErrorDetailsV2 |
     if (typeof value !== 'object') {
         return value;
     }
-    if (instanceOfGatewayErrorDetailsOneOf(value)) {
-        return GatewayErrorDetailsOneOfToJSON(value as GatewayErrorDetailsOneOf);
-    }
-    if (instanceOfGatewayErrorDetailsOneOf1(value)) {
-        return GatewayErrorDetailsOneOf1ToJSON(value as GatewayErrorDetailsOneOf1);
-    }
-    if (instanceOfGatewayErrorDetailsOneOf2(value)) {
-        return GatewayErrorDetailsOneOf2ToJSON(value as GatewayErrorDetailsOneOf2);
-    }
-    if (instanceOfGatewayErrorDetailsOneOf3(value)) {
-        return GatewayErrorDetailsOneOf3ToJSON(value as GatewayErrorDetailsOneOf3);
-    }
-    if (instanceOfGatewayErrorDetailsOneOf4(value)) {
-        return GatewayErrorDetailsOneOf4ToJSON(value as GatewayErrorDetailsOneOf4);
-    }
-    if (instanceOfGatewayErrorDetailsOneOf5(value)) {
-        return GatewayErrorDetailsOneOf5ToJSON(value as GatewayErrorDetailsOneOf5);
-    }
-    if (instanceOfGatewayErrorDetailsOneOf6(value)) {
-        return GatewayErrorDetailsOneOf6ToJSON(value as GatewayErrorDetailsOneOf6);
-    }
     if (instanceOfGatewayErrorDetailsV2OneOf(value)) {
         return GatewayErrorDetailsV2OneOfToJSON(value as GatewayErrorDetailsV2OneOf);
     }
     if (instanceOfGatewayErrorDetailsV2OneOf1(value)) {
         return GatewayErrorDetailsV2OneOf1ToJSON(value as GatewayErrorDetailsV2OneOf1);
+    }
+    if (instanceOfGatewayErrorDetailsV2OneOf2(value)) {
+        return GatewayErrorDetailsV2OneOf2ToJSON(value as GatewayErrorDetailsV2OneOf2);
+    }
+    if (instanceOfGatewayErrorDetailsV2OneOf3(value)) {
+        return GatewayErrorDetailsV2OneOf3ToJSON(value as GatewayErrorDetailsV2OneOf3);
+    }
+    if (instanceOfGatewayErrorDetailsV2OneOf4(value)) {
+        return GatewayErrorDetailsV2OneOf4ToJSON(value as GatewayErrorDetailsV2OneOf4);
+    }
+    if (instanceOfGatewayErrorDetailsV2OneOf5(value)) {
+        return GatewayErrorDetailsV2OneOf5ToJSON(value as GatewayErrorDetailsV2OneOf5);
+    }
+    if (instanceOfGatewayErrorDetailsV2OneOf6(value)) {
+        return GatewayErrorDetailsV2OneOf6ToJSON(value as GatewayErrorDetailsV2OneOf6);
+    }
+    if (instanceOfGatewayErrorDetailsV2OneOf7(value)) {
+        return GatewayErrorDetailsV2OneOf7ToJSON(value as GatewayErrorDetailsV2OneOf7);
+    }
+    if (instanceOfGatewayErrorDetailsV2OneOf8(value)) {
+        return GatewayErrorDetailsV2OneOf8ToJSON(value as GatewayErrorDetailsV2OneOf8);
     }
     return {};
 }

@@ -12,13 +12,6 @@
  * Do not edit the class manually.
  */
 
-import type { RegisterTxOneOf } from './RegisterTxOneOf';
-import {
-    instanceOfRegisterTxOneOf,
-    RegisterTxOneOfFromJSON,
-    RegisterTxOneOfFromJSONTyped,
-    RegisterTxOneOfToJSON,
-} from './RegisterTxOneOf';
 import type { RegisterTxV3OneOf } from './RegisterTxV3OneOf';
 import {
     instanceOfRegisterTxV3OneOf,
@@ -33,6 +26,13 @@ import {
     RegisterTxV3OneOf1FromJSONTyped,
     RegisterTxV3OneOf1ToJSON,
 } from './RegisterTxV3OneOf1';
+import type { RegisterTxV3OneOf2 } from './RegisterTxV3OneOf2';
+import {
+    instanceOfRegisterTxV3OneOf2,
+    RegisterTxV3OneOf2FromJSON,
+    RegisterTxV3OneOf2FromJSONTyped,
+    RegisterTxV3OneOf2ToJSON,
+} from './RegisterTxV3OneOf2';
 
 /**
  * @type RegisterTxV3
@@ -40,7 +40,7 @@ import {
  * (EVM `0x…` on EVM chains, Base58 signature on Solana).
  * @export
  */
-export type RegisterTxV3 = RegisterTxOneOf | RegisterTxV3OneOf | RegisterTxV3OneOf1;
+export type RegisterTxV3 = RegisterTxV3OneOf | RegisterTxV3OneOf1 | RegisterTxV3OneOf2;
 
 export function RegisterTxV3FromJSON(json: any): RegisterTxV3 {
     return RegisterTxV3FromJSONTyped(json, false);
@@ -53,14 +53,14 @@ export function RegisterTxV3FromJSONTyped(json: any, ignoreDiscriminator: boolea
     if (typeof json !== 'object') {
         return json;
     }
-    if (instanceOfRegisterTxOneOf(json)) {
-        return RegisterTxOneOfFromJSONTyped(json, true);
-    }
     if (instanceOfRegisterTxV3OneOf(json)) {
         return RegisterTxV3OneOfFromJSONTyped(json, true);
     }
     if (instanceOfRegisterTxV3OneOf1(json)) {
         return RegisterTxV3OneOf1FromJSONTyped(json, true);
+    }
+    if (instanceOfRegisterTxV3OneOf2(json)) {
+        return RegisterTxV3OneOf2FromJSONTyped(json, true);
     }
     return {} as any;
 }
@@ -76,14 +76,14 @@ export function RegisterTxV3ToJSONTyped(value?: RegisterTxV3 | null, ignoreDiscr
     if (typeof value !== 'object') {
         return value;
     }
-    if (instanceOfRegisterTxOneOf(value)) {
-        return RegisterTxOneOfToJSON(value as RegisterTxOneOf);
-    }
     if (instanceOfRegisterTxV3OneOf(value)) {
         return RegisterTxV3OneOfToJSON(value as RegisterTxV3OneOf);
     }
     if (instanceOfRegisterTxV3OneOf1(value)) {
         return RegisterTxV3OneOf1ToJSON(value as RegisterTxV3OneOf1);
+    }
+    if (instanceOfRegisterTxV3OneOf2(value)) {
+        return RegisterTxV3OneOf2ToJSON(value as RegisterTxV3OneOf2);
     }
     return {};
 }

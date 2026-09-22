@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
-const ROUTES_API = 'https://gateway-api-mainnet.gobob.xyz/v2/get-routes';
+const ROUTES_API = 'https://gateway-api-mainnet.gobob.xyz/v4/get-routes';
 const TOKENLIST_URL =
   'https://raw.githubusercontent.com/bob-collective/tokenlist/main/tokenlist.json';
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';

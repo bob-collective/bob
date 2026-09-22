@@ -13,13 +13,13 @@
  */
 
 import { mapValues } from '../runtime';
-import type { RegisterTxV3OneOfOfframp } from './RegisterTxV3OneOfOfframp';
+import type { RegisterTxV3OneOf1Offramp } from './RegisterTxV3OneOf1Offramp';
 import {
-    RegisterTxV3OneOfOfframpFromJSON,
-    RegisterTxV3OneOfOfframpFromJSONTyped,
-    RegisterTxV3OneOfOfframpToJSON,
-    RegisterTxV3OneOfOfframpToJSONTyped,
-} from './RegisterTxV3OneOfOfframp';
+    RegisterTxV3OneOf1OfframpFromJSON,
+    RegisterTxV3OneOf1OfframpFromJSONTyped,
+    RegisterTxV3OneOf1OfframpToJSON,
+    RegisterTxV3OneOf1OfframpToJSONTyped,
+} from './RegisterTxV3OneOf1Offramp';
 
 /**
  * 
@@ -29,17 +29,17 @@ import {
 export interface RegisterTxV3OneOf1 {
     /**
      * 
-     * @type {RegisterTxV3OneOfOfframp}
+     * @type {RegisterTxV3OneOf1Offramp}
      * @memberof RegisterTxV3OneOf1
      */
-    tokenSwap: RegisterTxV3OneOfOfframp;
+    offramp: RegisterTxV3OneOf1Offramp;
 }
 
 /**
  * Check if a given object implements the RegisterTxV3OneOf1 interface.
  */
 export function instanceOfRegisterTxV3OneOf1(value: object): value is RegisterTxV3OneOf1 {
-    if (!('tokenSwap' in value) || value['tokenSwap'] === undefined) return false;
+    if (!('offramp' in value) || value['offramp'] === undefined) return false;
     return true;
 }
 
@@ -53,7 +53,7 @@ export function RegisterTxV3OneOf1FromJSONTyped(json: any, ignoreDiscriminator: 
     }
     return {
         
-        'tokenSwap': RegisterTxV3OneOfOfframpFromJSON(json['tokenSwap']),
+        'offramp': RegisterTxV3OneOf1OfframpFromJSON(json['offramp']),
     };
 }
 
@@ -68,7 +68,7 @@ export function RegisterTxV3OneOf1ToJSONTyped(value?: RegisterTxV3OneOf1 | null,
 
     return {
         
-        'tokenSwap': RegisterTxV3OneOfOfframpToJSON(value['tokenSwap']),
+        'offramp': RegisterTxV3OneOf1OfframpToJSON(value['offramp']),
     };
 }
 

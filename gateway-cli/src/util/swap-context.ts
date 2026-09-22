@@ -17,6 +17,7 @@ export interface SwapContextOptions {
   recipient?: string;
   sender?: string;
   owner?: string;
+  refundAddress?: string;
   slippage?: number;
   feeToken?: string;
   feeReserve?: string;
@@ -65,10 +66,20 @@ export interface SwapContext {
   /** Destination-side recipient — a Bitcoin address on an offramp. */
   recipient: string;
   /**
-   * The EVM-side address that controls the order. Required by the V3 API; never a
-   * Bitcoin address. See {@link resolveOwnerAddress}.
+   * The EVM-side address that controls the order; never a Bitcoin address.
+   *
+   * The V4 quote no longer carries it — the gateway derives the owner from the
+   * EVM side of the swap — but it is still the address orders are INDEXED by, so
+   * it remains the only answer to "which orders are mine?". See
+   * {@link resolveOwnerAddress}.
    */
   ownerAddress: string;
+  /**
+   * Where a failed order pays back to, on the SOURCE chain — a Bitcoin address on an
+   * onramp, an EVM address otherwise. Undefined only when nothing supplied one and no
+   * sender was resolved. See {@link resolveRefundAddress}.
+   */
+  refundAddress?: string;
   /** Source amount in atomic units. */
   atomicUnits: string;
   /** Human-readable rendering of the source amount. */
@@ -93,10 +104,9 @@ export interface SwapContext {
  * the source chain is known — which makes this the only place the invariant can hold.
  *
  * The recipient is NOT a fallback for an EVM-source swap: on an offramp it is a
- * Bitcoin address, and the API rejects the quote outright with
- * `INVALID_REQUEST: Invalid Ethereum address: Expected an EVM address but found a
- * Bitcoin address`. `ownerAddress` is also mandatory, so omitting it is not an
- * option either — an undeterminable owner is a hard, actionable error.
+ * Bitcoin address, and an order indexed under it could never be listed by
+ * `gateway-cli orders`, which takes an EVM address. An undeterminable owner is
+ * therefore a hard, actionable error rather than something to guess at.
  */
 export function resolveOwnerAddress(opts: {
   explicit?: string;
@@ -132,6 +142,35 @@ export function resolveOwnerAddress(opts: {
     );
   }
   return picked.owner;
+}
+
+// ─── Refund address ──────────────────────────────────────────────────────────
+
+/**
+ * The SOURCE-chain address a failed order pays back to: a Bitcoin address on an
+ * onramp, an EVM address on an offramp or a token swap. It is the opposite side of
+ * {@link resolveOwnerAddress}, which is always EVM whatever the direction.
+ *
+ * The gateway neither infers it nor defaults it — a quote asked for without one comes
+ * back with `refundAddress: null`, even when a sender was supplied — and create-order
+ * then rejects the EVM-source variants with `MISSING_REFUND_ADDRESS`. So the default
+ * is made here, and it is the sender: the address the funds left is the only address
+ * "refund" can mean without being told.
+ *
+ * An explicit `--refund-address` is family-checked against the source chain, because
+ * the gateway's own answer to a mismatch is `INVALID_REQUEST: Conversion Error`, which
+ * names neither the flag nor the family that was wrong.
+ */
+export function resolveRefundAddress(opts: {
+  explicit?: string;
+  srcChain: string;
+  senderAddress?: string;
+}): string | undefined {
+  if (opts.explicit) {
+    validateAddressFamily(opts.srcChain, opts.explicit, "--refund-address");
+    return opts.explicit;
+  }
+  return opts.senderAddress;
 }
 
 // ─── Context ─────────────────────────────────────────────────────────────────
@@ -218,19 +257,23 @@ export async function resolveSwapContext(
   const recipient = await resolveRecipient(dstAsset.chain, opts.recipient, config);
   // An explicit --recipient is taken verbatim, so check it belongs to the destination's
   // family. Without this a Bitcoin --recipient on an EVM destination reaches the gateway as
-  // `toUserAddress` (and, on an onramp, as `ownerAddress`) and comes back as a remote 400
-  // instead of a local error naming the flag. `send` already validates this way.
+  // `toUserAddress` and comes back as a remote 400 instead of a local error naming the
+  // flag. `send` already validates this way.
   validateAddressFamily(dstAsset.chain, recipient, "--recipient");
 
   const ownerAddress = resolveOwnerAddress({
     explicit: opts.owner, srcFamily, dstFamily, senderAddress, recipient,
   });
 
+  const refundAddress = resolveRefundAddress({
+    explicit: opts.refundAddress, srcChain: srcAsset.chain, senderAddress,
+  });
+
   const slippageBps = opts.slippage ?? config.slippageBps;
 
   return {
     srcAsset, dstAsset, srcFamily, dstFamily, variant, evmChain,
-    senderAddress, recipient, ownerAddress, atomicUnits, display, slippageBps, key,
+    senderAddress, recipient, ownerAddress, refundAddress, atomicUnits, display, slippageBps, key,
     quoteParams: {
       fromChain: srcAsset.chain,
       toChain: dstAsset.chain,
@@ -238,7 +281,7 @@ export async function resolveSwapContext(
       toToken: dstAsset.address,
       toUserAddress: recipient,
       fromUserAddress: senderAddress,
-      ownerAddress,
+      refundAddress,
       amount: atomicUnits,
       maxSlippage: slippageBps,
     },

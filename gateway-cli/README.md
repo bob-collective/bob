@@ -120,8 +120,8 @@ gateway-cli routes --src-chain bitcoin        # routes from BTC
 ```bash
 gateway-cli status <order-id>                 # check order status
 gateway-cli orders <address>                  # list orders for address
-gateway-cli register <order-id> <bitcoin-tx>  # manually register a Bitcoin tx for an
-                                              # onramp order (recovery; raw hex or txid)
+gateway-cli register <order-id> <raw-tx-hex> # manually register a Bitcoin tx for an
+                                              # onramp order (recovery; raw hex only)
 ```
 
 ## Amount format
@@ -159,12 +159,19 @@ All config via environment variables. No config files.
 --amount <value>         Amount (see format table above)
 --recipient <address>    Recipient address (optional if destination wallet key is set)
 --sender <address>       Sender address (optional)
+--refund-address <addr>  Source-chain address a failed order refunds to (default: --sender)
 --slippage <bps>         Slippage tolerance in basis points (default: 300)
 --btc-fee-rate <sat>     Bitcoin fee rate override
 --fee-token <address>    ERC20 token for gas payment (paymaster)
 --fee-reserve <amount>   Amount of fee token to reserve for gas
 --json                   Output as JSON
 ```
+
+> **Note:** `--refund-address` belongs to the **source** chain — a Bitcoin address on a
+> BTC onramp, an EVM address on an offramp or token swap. The gateway does not infer one
+> (a quote asked for without it comes back with `refundAddress: null` even when a sender
+> was supplied, and creating the order then fails with `MISSING_REFUND_ADDRESS`), so the
+> CLI defaults it to the sender — the address the funds left.
 
 > **Note:** When `--recipient` is omitted, the CLI derives the recipient from the
 > destination chain's private key (`BITCOIN_PRIVATE_KEY` for BTC destinations,
@@ -235,9 +242,10 @@ git push origin cli-v0.3.0-rc0
   to re-run, and points at `gateway-cli orders <owner-address>` to check whether an order exists.
 - **Registration failure (BTC onramp only)**: registration applies to Bitcoin-originated orders,
   where handing the signed transaction to the gateway *is* the broadcast. If it fails, retry with
-  `gateway-cli register <order-id> <bitcoin-tx>`. EVM-source orders (offramp, tokenSwap) are not
-  registered at all as of `@gobob/bob-sdk` 5.14.1 — the gateway detects those transactions
-  on-chain — and `register` rejects them.
+  `gateway-cli register <order-id> <raw-tx-hex>`. The v4 gateway takes the serialized
+  transaction and nothing else, so a bare txid is refused locally. EVM-source orders
+  (offramp, tokenSwap) are not registered at all as of `@gobob/bob-sdk` 5.14.1 — the gateway
+  detects those transactions on-chain — and `register` rejects them.
 - **Status read failures while polling**: a swap's funds are committed once it is submitted, so
   the order status is the only authority on whether it failed. Errors while *reading* that status
   (gateway 5xx, network failures) are retried until `--timeout`, never reported as swap failures.

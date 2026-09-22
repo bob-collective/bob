@@ -80,6 +80,7 @@ program
   .option("--recipient <address>", "Recipient address")
   .option("--sender <address>", "Sender address")
   .option("--owner <address>", "Order owner EVM address")
+  .option("--refund-address <address>", "Source-chain address a failed order refunds to (default: --sender)")
   .option("--slippage <bps>", "Slippage in basis points")
   .option("--btc-fee-rate <sat/vbyte>", "Bitcoin fee rate (default: mempool.space next-block)")
   .option("--fee-token <address>", "ERC20 token used to pay gas (paymaster)")
@@ -102,6 +103,7 @@ program
   .option("--recipient <address>", "Recipient address")
   .option("--sender <address>", "Sender address")
   .option("--owner <address>", "Order owner EVM address")
+  .option("--refund-address <address>", "Source-chain address a failed order refunds to (default: --sender)")
   .option("--slippage <bps>", "Slippage in basis points")
   .option("--btc-fee-rate <sat/vbyte>", "Bitcoin fee rate (default: mempool.space)")
   .option("--fee-token <address>", "ERC20 token used to pay gas (paymaster)")
@@ -186,8 +188,8 @@ program
   }));
 
 program
-  .command("register <order-id> <bitcoin-tx>")
-  .description("Register a Bitcoin tx (raw hex or txid) for an existing onramp order (recovery)")
+  .command("register <order-id> <bitcoin-tx-hex>")
+  .description("Register a Bitcoin tx (raw hex) for an existing onramp order (recovery)")
   .option("--json", "Output as JSON", false)
   .action(withErrorHandling(async (orderId, txid, opts) => {
     const { handleRegister } = await import("./commands/register.js");

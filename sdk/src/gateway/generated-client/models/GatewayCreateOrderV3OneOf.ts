@@ -13,13 +13,13 @@
  */
 
 import { mapValues } from '../runtime';
-import type { GatewayCreateOrderV3OneOfOfframp } from './GatewayCreateOrderV3OneOfOfframp';
+import type { GatewayCreateOrderV3OneOfOnramp } from './GatewayCreateOrderV3OneOfOnramp';
 import {
-    GatewayCreateOrderV3OneOfOfframpFromJSON,
-    GatewayCreateOrderV3OneOfOfframpFromJSONTyped,
-    GatewayCreateOrderV3OneOfOfframpToJSON,
-    GatewayCreateOrderV3OneOfOfframpToJSONTyped,
-} from './GatewayCreateOrderV3OneOfOfframp';
+    GatewayCreateOrderV3OneOfOnrampFromJSON,
+    GatewayCreateOrderV3OneOfOnrampFromJSONTyped,
+    GatewayCreateOrderV3OneOfOnrampToJSON,
+    GatewayCreateOrderV3OneOfOnrampToJSONTyped,
+} from './GatewayCreateOrderV3OneOfOnramp';
 
 /**
  * 
@@ -29,17 +29,17 @@ import {
 export interface GatewayCreateOrderV3OneOf {
     /**
      * 
-     * @type {GatewayCreateOrderV3OneOfOfframp}
+     * @type {GatewayCreateOrderV3OneOfOnramp}
      * @memberof GatewayCreateOrderV3OneOf
      */
-    offramp: GatewayCreateOrderV3OneOfOfframp;
+    onramp: GatewayCreateOrderV3OneOfOnramp;
 }
 
 /**
  * Check if a given object implements the GatewayCreateOrderV3OneOf interface.
  */
 export function instanceOfGatewayCreateOrderV3OneOf(value: object): value is GatewayCreateOrderV3OneOf {
-    if (!('offramp' in value) || value['offramp'] === undefined) return false;
+    if (!('onramp' in value) || value['onramp'] === undefined) return false;
     return true;
 }
 
@@ -53,7 +53,7 @@ export function GatewayCreateOrderV3OneOfFromJSONTyped(json: any, ignoreDiscrimi
     }
     return {
         
-        'offramp': GatewayCreateOrderV3OneOfOfframpFromJSON(json['offramp']),
+        'onramp': GatewayCreateOrderV3OneOfOnrampFromJSON(json['onramp']),
     };
 }
 
@@ -68,7 +68,7 @@ export function GatewayCreateOrderV3OneOfToJSONTyped(value?: GatewayCreateOrderV
 
     return {
         
-        'offramp': GatewayCreateOrderV3OneOfOfframpToJSON(value['offramp']),
+        'onramp': GatewayCreateOrderV3OneOfOnrampToJSON(value['onramp']),
     };
 }
 

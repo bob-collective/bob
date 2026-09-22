@@ -1,5 +1,5 @@
 import type { BitcoinSigner, ExecuteQuoteStep, GatewayCreateOrderV3 } from "@gobob/bob-sdk";
-import { getInnerQuoteV3 } from "../util/quote.js";
+import { getInnerQuoteV4 } from "../util/quote.js";
 import { type WalletClient, type PublicClient } from "viem";
 import { withRetry, SwapError, PointOfNoReturnError } from "../errors.js";
 import { getRoutes } from "../util/route-provider.js";
@@ -94,12 +94,12 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
   }
 
   // --unsigned has no public SDK path: executeQuote always signs.
-  // Use the V3 API directly to fetch the order with its PSBT (BTC) or unsigned tx (EVM).
+  // Use the V4 API directly to fetch the order with its PSBT (BTC) or unsigned tx (EVM).
   // Nothing here touches a wallet, so it is freely retryable.
   if (opts.unsigned) {
     const order: GatewayCreateOrderV3 = await withRetry(async () => {
       const quote = await sdk.getQuote(ctx.quoteParams);
-      return await getApi().createOrderV3({ gatewayQuoteV3: quote });
+      return await getApi().createOrderV4({ gatewayQuoteV4: quote });
     }, { retries, isTransient });
     const orderData = (order as any)[variant];
     if (!orderData?.orderId) {
@@ -144,7 +144,7 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
         btcSigner,
         callback: (step: ExecuteQuoteStep) => guard.pointOfNoReturn(step.type),
       });
-      return { ...result, outputAmount: getInnerQuoteV3(quote).outputAmount.amount };
+      return { ...result, outputAmount: getInnerQuoteV4(quote).outputAmount.amount };
     }, { retries, isTransient });
   } catch (err) {
     // Failed past the point of no return: a tx may be on-chain, but we never got the

@@ -1,331 +1,184 @@
 ---
 title: "Migration Guide"
-description: "Upgrade a Gateway integration from V1 or V2 to the V3 API"
+description: "Upgrade to the V4 Gateway API and SDK, including the removal of V1 and V2"
 icon: TrendingUp
 ---
 ## Overview
 
-The V3 API is the current version of BOB Gateway. It adds non-EVM chains (Tron & Solana), richer settlement data, and cross-chain token swaps with affiliate fees. V1 and V2 endpoints remain reachable, but they are superseded and receive no new features — new integrations should target `/v3`, and existing ones should migrate.
+V4 is the current BOB Gateway API. It requires a source-chain refund address before order creation and makes `register-tx` an onramp-only Bitcoin submission endpoint. V3 remains available for existing integrations.
 
-<Callout type="warn">
-**The V1 API will be deprecated at the end of July 2026.** V1 endpoints keep working until then, but will be shut down afterwards — migrate any V1 integration to V3 before that date. V2 remains supported.
-</Callout>
+### V1 and V2 removal
 
-<Callout>
-If you use the **`@gobob/bob-sdk`** SDK, you don't call versioned endpoints directly — the SDK calls `/v3` under the hood. Skip to [Migrating the SDK](#migrating-the-sdk) for the package-level changes. The endpoint sections below are for integrators calling the API directly.
-</Callout>
-
-Pick your starting point:
+**V1 and V2 have been removed.** Their endpoints and generated API clients are no longer available. The earlier deprecation schedule is complete; migrate directly to V4 using the notes below.
 
 <Cards>
-  <Card title="I'm on V2" icon="2" href="#upgrade-from-v2">
-    Multi-chain, chain-aware `register-tx`, USD on order info, tokenSwap affiliates.
+  <Card title="Upgrade from V3" icon="arrow-up" href="#upgrade-from-v3">
+    Refund addresses, quote parameters, and Bitcoin submission.
   </Card>
-  <Card title="I'm on V1" icon="1" href="#upgrade-from-v1">
-    Everything in V1 → V2, then everything in V2 → V3.
+  <Card title="Upgrade from V1 or V2" icon="history" href="#upgrade-from-v1-or-v2">
+    Additional changes for integrations on the removed APIs.
+  </Card>
+  <Card title="Migrating the SDK" icon="code" href="#migrating-the-sdk">
+    Package usage, generated types, and signing adapters.
   </Card>
 </Cards>
 
-### What changed at a glance
+## Upgrade from V3
 
-| Area | V1 | V2 | V3 |
-| --- | --- | --- | --- |
-| Chains | Bitcoin ↔ EVM | Bitcoin ↔ EVM | + Tron & Solana |
-| Third route | `layerZero` | `tokenSwap` (EVM↔EVM) | `tokenSwap` (cross-chain) |
-| Affiliate fees | `affiliateId` (single) | `affiliates` list | + single `affiliate` on `tokenSwap` |
-| `get-quote` extras | `gasRefill`, `strategy*` | `gasRefill`, `strategy*` | removed; `ownerAddress`/`refundAddress` added |
-| `register-tx` (X→BTC / swap) | `evm_txhash` | `evm_txhash` | `src_tx_hash` + `src_chain` |
-| `get-orders` response | bare array | `{ orders, nextCursor }` | `{ orders, nextCursor }` + `usd` |
-| USD values | — | on quote amounts & fees | + on order info & settled transfers |
+### 1. Change the endpoint version
 
----
+The base URL is unchanged: `https://gateway-api-mainnet.gobob.xyz`. Update all seven endpoints:
 
-## Upgrade from V2
+| Method | V4 path |
+| --- | --- |
+| GET | `/v4/get-routes` |
+| GET | `/v4/get-quote` |
+| POST | `/v4/create-order` |
+| PATCH | `/v4/register-tx` |
+| GET | `/v4/get-order/{id}` |
+| GET | `/v4/get-orders/{user_address}` |
+| GET | `/v4/get-max-spendable/{address}` |
 
-### 1. Change the base path
+### 2. Replace ownerAddress with a source-chain refund address
 
-Every endpoint moves from `/v2/...` to `/v3/...`. The route names are unchanged.
+Remove `ownerAddress` from quote requests. V4 accepts `refundAddress` for **every route**, encoded for the source chain:
 
-```diff
-- GET  /v2/get-routes
-- GET  /v2/get-quote
-- POST /v2/create-order
-- PATCH /v2/register-tx
-- GET  /v2/get-order/{id}
-- GET  /v2/get-orders/{user_address}
-+ GET  /v3/get-routes
-+ GET  /v3/get-quote
-+ POST /v3/create-order
-+ PATCH /v3/register-tx
-+ GET  /v3/get-order/{id}
-+ GET  /v3/get-orders/{user_address}
-```
+| Route | Refund address |
+| --- | --- |
+| `onramp` | Bitcoin address |
+| `offramp` | Address on the source chain, such as EVM hex or Tron Base58 |
+| `tokenSwap` | Address on the source chain, such as EVM hex, Tron Base58, or Solana Base58 |
 
-### 2. Update `get-quote` parameters
-
-Three parameters were **removed** and two were **added**. Supplying a removed parameter is rejected by the gateway.
+A price-only `get-quote` request may omit `refundAddress`. **`create-order` rejects a quote without it** with `MISSING_REFUND_ADDRESS`. Request a fresh quote with the address before execution and pass the returned quote to `create-order`.
 
 ```diff
-  GET /v3/get-quote
-    ?srcChain=bitcoin
-    &dstChain=bob
-    &srcToken=0x0000000000000000000000000000000000000000
-    &dstToken=0x0555E30da8f98308EdB960aa94C0Db47230d2B9c
-    &recipient=0x2D2E86236a5bC1c8a5e5499C517E17Fb88Dbc18c
-    &amount=10000000
-    &slippage=50
-    &affiliates=0xPartnerA:50,0xPartnerB:25
--   &gasRefill=...
--   &strategyTarget=...
--   &strategyMessage=...
-+   &ownerAddress=0x2D2E86236a5bC1c8a5e5499C517E17Fb88Dbc18c   # EVM owner / refund-claimant, also used for order lookup
-+   &refundAddress=bc1q...                                     # optional Bitcoin refund address for onramps
+- GET /v3/get-quote?...&ownerAddress=0xOwner
++ GET /v4/get-quote?...&refundAddress=bc1q...
 ```
 
-<Callout type="warn">
-Routes that need an owner but don't get one return the new `MISSING_OWNER_ADDRESS` error code. Add `ownerAddress` to every quote request as part of this migration.
-</Callout>
+The example above is for an onramp. Use a source-chain address for other routes; the Bitcoin destination of an offramp is not its refund address. Keep `sender` and `recipient` encoded for their respective chains.
 
-### 3. Update `register-tx` bodies
+### 3. Submit only signed Bitcoin transactions to register-tx
 
-The `onramp` body is **unchanged**. For `offramp` and `tokenSwap`, `evm_txhash` is replaced by `src_tx_hash` + `src_chain` — the source-chain transaction identifier and the chain it was broadcast on.
+V4 `register-tx` delegates onramp broadcasting to Gateway. It validates the signed transaction against the order, screens it, and broadcasts it.
 
-<Tabs items={["V2","V3"]}>
+```http
+PATCH /v4/register-tx
+Content-Type: application/json
 
-<Tab value="V2">
-
-```json
-// offramp / tokenSwap
 {
-  "offramp": {
+  "onramp": {
     "order_id": "f81d4fae-7dec-11d0-a765-00a0c91e6bf6",
-    "evm_txhash": "0xabc..."
+    "bitcoin_tx_hex": "<signed raw Bitcoin transaction hex>"
   }
 }
 ```
 
-</Tab>
+- Finalize the signed PSBT and extract raw transaction hex before submission. A PSBT or `bitcoin_txid` alone is not accepted.
+- Remove `offramp` and `tokenSwap` registration calls. Broadcast their source transactions with the user's wallet; Gateway indexes them from the chain.
+- Do not send the old `src_tx_hash` / `src_chain` registration bodies to V4.
+- The submission response remains a string or `{ "onramp": { "txid": "..." } }`. Continue polling the order for settlement.
 
-<Tab value="V3">
+### 4. Keep shared response handling
 
-```json
-// offramp / tokenSwap
-{
-  "offramp": {
-    "order_id": "f81d4fae-7dec-11d0-a765-00a0c91e6bf6",
-    "src_tx_hash": "0xabc...",   // 0x… hash on EVM, Base58 signature on Solana
-    "src_chain": "ethereum"
-  }
-}
-```
+V4 retains these V3 response models:
 
-</Tab>
+- `GatewayCreateOrderV3`: `onramp`, `offramp`, or `tokenSwap`. For the latter two, dispatch on the transaction's `type`: `evm`, `tron`, or `solana`.
+- `GatewayOrderInfoV3` and `PaginatedOrdersResponseV3`: order status, settled transfers, pagination, and optional USD amounts.
+- `GatewayTokenAmountV2`: quote amounts and fee lines with optional USD values.
 
-</Tabs>
+A model's suffix identifies the schema version, not the endpoint you should call. Use `/v4` even when its response model ends in `V2` or `V3`.
 
-### 4. Handle the tagged transaction union from `create-order`
+### V4 upgrade checklist
 
-Because orders can now settle on EVM, Tron, or Solana, `POST /v3/create-order` returns a tagged `GatewayTxData` union for `offramp`/`tokenSwap`. Dispatch on `type`:
+- Move endpoint calls to `/v4`.
+- Remove `ownerAddress` from quote requests.
+- Include a source-chain `refundAddress` before creating any order and handle `MISSING_REFUND_ADDRESS`.
+- Submit finalized Bitcoin transaction hex for onramps; remove registration calls for other routes.
+- Preserve tagged transaction handling, pagination, affiliate fees, and settlement-status parsing.
 
-```typescript
-const tx = order.tx; // from create-order response
-switch (tx.type) {
-  case 'evm':
-    // { to, data, value } — send with your EVM wallet
-    break;
-  case 'tron':
-    // adds `feeLimit` (max TRX in sun the wallet may burn)
-    break;
-  case 'solana':
-    // base64-encoded, unsigned VersionedTransaction:
-    // decode → sign → re-serialize → broadcast (don't sign the base64 string directly)
-    break;
-}
-```
+## Upgrade from V1 or V2
 
-<Callout>
-Addresses and token identifiers are `0x…` on EVM chains and Base58 on Tron/Solana. Use `GET /v3/get-routes` to discover supported token identifiers per chain.
-</Callout>
+Apply the [V4 upgrade checklist](#v4-upgrade-checklist), plus these changes from the intervening releases. You do not need to call an intermediate API version.
 
-### 5. Read USD values from order info
+### Upgrade from V2
 
-`srcInfo`, `dstInfo`, settled transfers (`received_tokens` / `refunded_tokens`), and `pending_btc_payment` now each carry an optional `usd` field, valued at order time. In V2, `usd` appeared only on quote amounts and fee-breakdown lines. Existing code keeps working; opt in by reading the new field where you display fiat estimates.
+- **Multi-chain transaction data:** `offramp.tx` and `tokenSwap.tx` are tagged unions. EVM data has `to`, `data`, and `value`; Tron adds `feeLimit`; Solana contains a base64 unsigned `transaction` and `chainId`. Decode, sign, re-serialize, and broadcast Solana transactions with a Solana signer.
+- **Quote parameters:** remove `gasRefill`, `strategyTarget`, and `strategyMessage`. Supply `refundAddress` as described above.
+- **Affiliate fees:** onramps and offramps accept multiple recipients. Token swaps accept at most one affiliate and expose it as `affiliate: { address, bps }`, charged on the source chain. More than one returns `TOO_MANY_AFFILIATES`; omit affiliates for fee-free swaps.
+- **Order amounts:** `srcInfo`, `dstInfo`, settled transfers, and pending Bitcoin payments carry optional `usd` values. The destination amount in `dstInfo` is an estimate; read settled amounts and transaction hashes from the status payload.
+- **Refunds and fee bumps:** Gateway manages them. `refundTx` remains null, and there is no user-submitted `bumpFeeTx`. Track `pending_btc_payment` and `refunded_tokens` instead.
 
-### 6. Affiliate fees on `tokenSwap`
+### Upgrade from V1
 
-`onramp` and `offramp` keep the V2 multi-recipient `affiliates` list. `tokenSwap` is different: the fee is charged by the aggregator (Bungee/Velora) on the **source chain**, and aggregators allow only **one** partner fee per swap. A `tokenSwap` quote embeds a single resolved `affiliate` (`{ address, bps }`); passing more than one affiliate returns the new `TOO_MANY_AFFILIATES` error. See the [Monetization section](/gateway/integration#monetization-affiliate-fees) for details.
+Also apply the [V2 notes](#upgrade-from-v2):
 
-### 7. New error codes
-
-Handle these V3 additions alongside your existing error handling:
-
-| Code | Meaning | How to handle |
-| --- | --- | --- |
-| `MISSING_OWNER_ADDRESS` | A route needs `ownerAddress` but none was supplied | Retry the quote with `ownerAddress` set |
-| `TOO_MANY_AFFILIATES` | More than one affiliate on a `tokenSwap` | Send exactly one affiliate for swaps |
-| `AFFILIATE_FEES_NOT_SUPPORTED_FOR_ROUTE` | Route doesn't support affiliate fees | Retry with `affiliates` omitted, or surface to the user |
-
-<Callout>
-Gateway no longer exposes a `bumpFeeTx` EVM transaction for X-to-BTC orders — it manages BTC-payout fee bumps internally. Track the outgoing payout via `status.inProgress.pending_btc_payment` (`{ txid, amount, usd }`) instead.
-</Callout>
-
-### V2 upgrade checklist
-
-- Repoint all endpoints from `/v2` to `/v3`.
-- Add `ownerAddress` to `get-quote`; add `refundAddress` for onramps where desired.
-- Remove `gasRefill`, `strategyTarget`, and `strategyMessage` from `get-quote`.
-- Swap `evm_txhash` for `src_tx_hash` + `src_chain` in `offramp`/`tokenSwap` `register-tx` bodies.
-- Dispatch on the `create-order` transaction `type` (`evm` / `tron` / `solana`).
-- Send exactly one affiliate on `tokenSwap` quotes.
-- Handle `MISSING_OWNER_ADDRESS`, `TOO_MANY_AFFILIATES`, `AFFILIATE_FEES_NOT_SUPPORTED_FOR_ROUTE`.
-
----
-
-## Upgrade from V1
-
-V1 → V3 is **V1 → V2 followed by V2 → V3**. Apply the V1 → V2 changes below, then work through everything in [Upgrade from V2](#upgrade-from-v2).
-
-### V1 → V2 changes
-
-<Steps>
-
-<Step>
-
-### Affiliate fees: affiliateId → affiliates
-
-
-V1's single `affiliateId` parameter is replaced by an `affiliates` list of comma-separated `<address>:<bps>` pairs, so a quote can split fees across multiple recipients (`1 bps = 0.01%`).
-
-```diff
-- GET /v1/get-quote?...&affiliateId=your-affiliate-id
-+ GET /v2/get-quote?...&affiliates=0xPartnerA:50,0xPartnerB:25
-```
-
-</Step>
-
-<Step>
-
-### Third route: layerZero → tokenSwap
-
-
-The V1 `layerZero` variant is replaced by `tokenSwap` (EVM↔EVM token swaps in V2; cross-chain in V3). The variant key changes in both the `create-order` body and the `register-tx` body.
-
-```diff
-  // create-order body
-- { "layerZero": { ...quote data } }
-+ { "tokenSwap": { ...quote data } }
-
-  // register-tx body (V2 still uses evm_txhash — see V2 → V3 for the src_tx_hash change)
-- { "layerZero": { "order_id": "...", "evm_txhash": "0x..." } }
-+ { "tokenSwap":  { "order_id": "...", "evm_txhash": "0x..." } }
-```
-
-</Step>
-
-<Step>
-
-### get-orders is now paginated
-
-
-V1's `GET /v1/get-orders/{user_address}` returned a bare JSON array. V2 returns a paginated object and accepts `cursor` and `limit` query parameters.
-
-```diff
-- GET /v1/get-orders/0x742d...       → [ order, order, ... ]
-+ GET /v2/get-orders/0x742d...?limit=20
-+                                    → { "orders": [ ... ], "nextCursor": "..." }
-```
-
-Loop on `nextCursor` (null/absent means the last page) instead of reading the whole array at once.
-
-</Step>
-
-<Step>
-
-### USD values and price impact on quotes
-
-
-V2 quote amounts use `GatewayTokenAmountV2`, which carries an optional `usd` field on every token amount and on each fee-breakdown line. V2 quotes also expose `priceImpact` (a fraction) and `priceImpactUsd`. These are additive — read them where you want to display fiat estimates or slippage.
-
-</Step>
-
-</Steps>
-
-### V1 → V3 checklist
-
-- Replace `affiliateId` with the `affiliates` list.
-- Rename the `layerZero` variant to `tokenSwap` in `create-order` and `register-tx`.
-- Switch `get-orders` parsing to the paginated `{ orders, nextCursor }` shape.
-- Then apply the full [V2 upgrade checklist](#v2-upgrade-checklist).
-
----
+- Replace `affiliateId` with `affiliates`, a comma-separated list of `<address>:<bps>` pairs in the API or an array of `{ address, bps }` in the SDK.
+- Replace the `layerZero` quote and create-order variant with `tokenSwap`. Remove its registration call entirely.
+- Replace the bare order array with a paginated response. Both the raw API and SDK return `{ orders, nextCursor }`. Pass the cursor back until it is null or absent.
+- Handle the `inProgress`, `success`, `failed`, and `refunded` status objects instead of bare strings. Raw settled transfers use `received_tokens` / `refunded_tokens`; the SDK uses `receivedTokens` / `refundedTokens`.
+- Quote amounts and fee lines include optional USD values, `priceImpact` is a fraction, and `priceImpactUsd` is optional.
 
 ## Migrating the SDK
 
-The `@gobob/bob-sdk` SDK hides the API version — upgrading the package moves you to `/v3`. Two breaking changes at the SDK surface matter when you upgrade:
+The SDK source in this release uses V4 through `V4Api`. Upgrade `@gobob/bob-sdk` and use an options object to configure it:
 
-<Steps>
+```typescript
+import { GatewaySDK, parseBtc } from '@gobob/bob-sdk';
 
-<Step>
+const gateway = new GatewaySDK(); // Mainnet
+// Staging: new GatewaySDK({ basePath: 'https://gateway-api-staging.gobob.xyz' })
+// Authenticated: new GatewaySDK({ apiKey: '<32-character key>' })
 
-### Constructor takes an options object
-
-
-```diff
-- const gatewaySDK = new GatewaySDK('https://gateway-api-staging.gobob.xyz');
-+ const gatewaySDK = new GatewaySDK({ basePath: STAGING_GATEWAY_BASE_URL });
-+ // with a key:
-+ const gatewaySDK = new GatewaySDK({ apiKey: '<32-char key>' });
+const quote = await gateway.getQuote({
+  fromChain: 'bitcoin',
+  fromToken: '0x0000000000000000000000000000000000000000',
+  fromUserAddress: 'bc1q...',
+  toChain: 'bob',
+  toToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
+  toUserAddress: '0x...',
+  refundAddress: 'bc1q...', // Required to execute; use a source-chain address
+  amount: parseBtc('0.1'),
+});
 ```
 
-</Step>
+`getQuote` forwards `refundAddress` as supplied; it does not fill it from `fromUserAddress`. Remove `ownerAddress` from your SDK parameters too.
 
-<Step>
+### Generated types
 
-### getQuote params: affiliates array + required ownerAddress
+Regenerating from the released spec removes `V1Api`, `V2Api`, and schemas used only by those APIs. Code importing generated types directly must update its imports:
 
+| Previous generated type | Current type |
+| --- | --- |
+| `GatewayQuote` / `GatewayQuoteV2` | `GatewayQuoteV4` |
+| `GatewayQuoteV2OneOf` (onramp) | `GatewayQuoteV3OneOf` |
+| Older offramp quote wrapper | `GatewayQuoteV4OneOf` |
+| Older token-swap quote wrapper | `GatewayQuoteV4OneOf1` |
+| `GatewayCreateOrder` / `GatewayCreateOrderV2` | `GatewayCreateOrderV3` |
+| `GatewayOrderInfo` / `GatewayOrderInfoV2` | `GatewayOrderInfoV3` |
+| `PaginatedOrdersResponse` | `PaginatedOrdersResponseV3` |
+| Generated `GatewayError` response | `GatewayErrorV4` |
 
-```diff
-  const quote = await gatewaySDK.getQuote({
-    fromChain: 'bitcoin',
-    fromToken: '0x0000000000000000000000000000000000000000',
-    toChain: 'bob',
-    toToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
-    toUserAddress: '0x2D2E...',
-    amount: parseBtc('0.1'),
--   affiliateId: 'your-affiliate-id',
-+   affiliates: [{ address: '0xYourAddress', bps: 50 }],
-+   ownerAddress: '0x2D2E...', // now required — EVM owner / refund-claimant
-  });
-```
+Prefer narrowing quotes with `'onramp' in quote`, `'offramp' in quote`, and `'tokenSwap' in quote`, or use `getInnerQuote(quote)` for common fields. Anonymous generated `OneOf` names can change when schemas are removed. The SDK's `GatewayError` class and named error-detail aliases remain the application-facing error interface; handle `GatewayErrorCodeV4Variants.MissingRefundAddress` for missing refund addresses.
 
-`gasRefill`, `strategyTarget`, and `strategyMessage` are no longer sent to the gateway.
+### Signing and execution
 
-</Step>
+`executeQuote` returns `{ order, tx }`, not a transaction ID alone. Without `btcSigner`, it returns an onramp order with no `tx` for external Bitcoin payment. Keep the order ID and poll for settlement.
 
-<Step>
+Both `BitcoinSigner` methods (`sendBitcoin` and `signAllInputs`) must resolve to **signed raw transaction hex**, not a txid or PSBT. Prefer signing without broadcasting so Gateway can validate and broadcast the transaction. An adapter whose wallet broadcasts itself must retrieve the raw transaction hex before returning; the built-in OKX adapter does this.
 
-### getOrders is paginated and status is discriminated
-
-
-`getOrders` returns `{ orders, nextCursor }`, and each `order.status` is a discriminated object (`inProgress` / `success` / `failed` / `refunded`) rather than a bare string. See the [integration guide](/gateway/integration#monitor-orders) for the full read pattern.
-
-</Step>
-
-</Steps>
+For EVM sources, inject viem wallet and public clients. Tron requires compatible adapters. Solana source transactions require the API and a Solana signer; `executeQuote` does not sign Solana transactions.
 
 ## Next Steps
 
 <Cards>
-  <Card title="Integration Guide" icon="code" href="/gateway/integration">
-    The full V3 integration walkthrough
+  <Card title="SDK Guide" icon="code" href="/gateway/integration">
+    Quote, execute, and monitor with the SDK
   </Card>
   <Card title="API Reference" icon="book" href="/api-reference/overview">
-    Complete V3 endpoint documentation
+    Current V4 endpoints and submission flow
   </Card>
-  <Card title="Fees" icon="coins" href="/gateway/fees">
-    The full fee and affiliate model
-  </Card>
-  <Card title="Supported Routes" icon="route" href="/gateway/supported-routes">
-    Chains and tokens available on V3
+  <Card title="Refunds" icon="arrow-rotate-left" href="/gateway/refunds">
+    Refund addresses and settlement status
   </Card>
 </Cards>

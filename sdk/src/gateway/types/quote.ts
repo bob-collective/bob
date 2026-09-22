@@ -42,7 +42,7 @@ export interface GatewayQuoteParams {
     affiliates?: Affiliate[];
 
     // NOTE: the following are new fields added by us
-    /** @description Bitcoin address to receive refunds if the order fails */
+    /** @description Source-chain refund address. Optional for quoting, required before creating an order. */
     refundAddress?: string;
     /** @description Strategy address target */
     strategyAddress?: string;

@@ -29,6 +29,10 @@ export const quoteSchema = z.object({
   recipient: z.string().optional(),
   sender: z.string().optional(),
   owner: z.string().refine(v => isAddress(v, { strict: false }), { message: "must be a valid EVM address" }).optional(),
+  // Deliberately not family-checked here: the refund address belongs to the SOURCE
+  // chain, which this schema cannot see (`src` is still an unparsed `asset[:chain]`
+  // string). `resolveSwapContext` checks it once the source chain is known.
+  refundAddress: z.string().optional(),
   slippage: positiveInt.optional(),
   btcFeeRate: positiveInt.optional(),
   feeToken: z.string().refine(v => isAddress(v, { strict: false }), { message: "must be a valid EVM address" }).optional(),

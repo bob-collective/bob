@@ -8,7 +8,7 @@ icon: CircleQuestionMark
 ### What happens if my swap fails?
 No user is ever left with funds spent and nothing delivered.
 
-On a BTC-to-X swap, the destination payout is one atomic transaction, so there is no partial fill to unwind. If it can't land at the quoted terms — prices drifted while the Bitcoin deposit confirmed, or the destination swap or bridge won't go through — the solver re-quotes and retries with backoff for about an hour, then settles the order as a refund: BTC back to the Bitcoin `refundAddress` if the order was created with one, otherwise USDT to the order owner on Ethereum.
+On a BTC-to-X swap, the destination payout is one atomic transaction, so there is no partial fill to unwind. If it can't land at the quoted terms — prices drifted while the Bitcoin deposit confirmed, or the destination swap or bridge won't go through — the solver re-quotes and retries with backoff for about an hour, then settles the order as a refund: BTC back to the Bitcoin `refundAddress`, which V4 requires before order creation. Older orders created without one can refund USDT to the order owner on Ethereum.
 
 On an X-to-BTC swap, the user's USDT stays escrowed in the offramp registry until an SPV proof of the Bitcoin payout is verified on-chain. If the payout never happens, Gateway refunds the escrow to the user once the on-chain refund delay has elapsed. Either way the funds can only go to the user or to a solver that proved it paid them. See [Refunds](/gateway/refunds) for details.
 

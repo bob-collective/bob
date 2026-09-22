@@ -12,13 +12,6 @@
  * Do not edit the class manually.
  */
 
-import type { GatewayQuoteV2OneOf } from './GatewayQuoteV2OneOf';
-import {
-    instanceOfGatewayQuoteV2OneOf,
-    GatewayQuoteV2OneOfFromJSON,
-    GatewayQuoteV2OneOfFromJSONTyped,
-    GatewayQuoteV2OneOfToJSON,
-} from './GatewayQuoteV2OneOf';
 import type { GatewayQuoteV3OneOf } from './GatewayQuoteV3OneOf';
 import {
     instanceOfGatewayQuoteV3OneOf,
@@ -33,6 +26,13 @@ import {
     GatewayQuoteV3OneOf1FromJSONTyped,
     GatewayQuoteV3OneOf1ToJSON,
 } from './GatewayQuoteV3OneOf1';
+import type { GatewayQuoteV3OneOf2 } from './GatewayQuoteV3OneOf2';
+import {
+    instanceOfGatewayQuoteV3OneOf2,
+    GatewayQuoteV3OneOf2FromJSON,
+    GatewayQuoteV3OneOf2FromJSONTyped,
+    GatewayQuoteV3OneOf2ToJSON,
+} from './GatewayQuoteV3OneOf2';
 
 /**
  * @type GatewayQuoteV3
@@ -40,7 +40,7 @@ import {
  * `ownerAddress` is embedded in each variant that carries an owner concept.
  * @export
  */
-export type GatewayQuoteV3 = GatewayQuoteV2OneOf | GatewayQuoteV3OneOf | GatewayQuoteV3OneOf1;
+export type GatewayQuoteV3 = GatewayQuoteV3OneOf | GatewayQuoteV3OneOf1 | GatewayQuoteV3OneOf2;
 
 export function GatewayQuoteV3FromJSON(json: any): GatewayQuoteV3 {
     return GatewayQuoteV3FromJSONTyped(json, false);
@@ -53,14 +53,14 @@ export function GatewayQuoteV3FromJSONTyped(json: any, ignoreDiscriminator: bool
     if (typeof json !== 'object') {
         return json;
     }
-    if (instanceOfGatewayQuoteV2OneOf(json)) {
-        return GatewayQuoteV2OneOfFromJSONTyped(json, true);
-    }
     if (instanceOfGatewayQuoteV3OneOf(json)) {
         return GatewayQuoteV3OneOfFromJSONTyped(json, true);
     }
     if (instanceOfGatewayQuoteV3OneOf1(json)) {
         return GatewayQuoteV3OneOf1FromJSONTyped(json, true);
+    }
+    if (instanceOfGatewayQuoteV3OneOf2(json)) {
+        return GatewayQuoteV3OneOf2FromJSONTyped(json, true);
     }
     return {} as any;
 }
@@ -76,14 +76,14 @@ export function GatewayQuoteV3ToJSONTyped(value?: GatewayQuoteV3 | null, ignoreD
     if (typeof value !== 'object') {
         return value;
     }
-    if (instanceOfGatewayQuoteV2OneOf(value)) {
-        return GatewayQuoteV2OneOfToJSON(value as GatewayQuoteV2OneOf);
-    }
     if (instanceOfGatewayQuoteV3OneOf(value)) {
         return GatewayQuoteV3OneOfToJSON(value as GatewayQuoteV3OneOf);
     }
     if (instanceOfGatewayQuoteV3OneOf1(value)) {
         return GatewayQuoteV3OneOf1ToJSON(value as GatewayQuoteV3OneOf1);
+    }
+    if (instanceOfGatewayQuoteV3OneOf2(value)) {
+        return GatewayQuoteV3OneOf2ToJSON(value as GatewayQuoteV3OneOf2);
     }
     return {};
 }

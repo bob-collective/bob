@@ -4,12 +4,11 @@
  *
  * The spec is owned by the backend and refreshed by the openapi-docs-sync
  * workflow -- this script only reads it. Output is regenerated on every build
- * (see the `prebuild` script), so the reference never drifts from the spec.
+ * (see the `build` script), so the reference never drifts from the spec.
  *
- * Operations are grouped by their tag (v1 / v2 / v3), matching how the Mintlify
- * docs.json grouped them. v1 and v2 are still built and reachable by URL, but
- * are left out of api-reference/meta.json so they stay out of the sidebar --
- * the equivalent of Mintlify's "hidden": true.
+ * Operations are grouped by their tag (v3 / v4). The sidebar targets v4;
+ * v3 remains reachable by URL for existing integrations. Removed versions
+ * disappear when their operations are dropped from the spec.
  */
 import fs from 'node:fs';
 import path from 'node:path';

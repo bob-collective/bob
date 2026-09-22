@@ -1,7 +1,6 @@
 # Gateway SDK
 
-Client for the BOB **Gateway** — trustless onramp (Bitcoin → BOB / EVM) and offramp
-(EVM → Bitcoin), plus EVM cross-chain (LayerZero) transfers and strategy execution.
+Client for the BOB **Gateway V4 API** — Bitcoin onramps and offramps, plus cross-chain token swaps. See the [migration guide](https://docs.gobob.xyz/gateway/migration) for upgrade notes and the V1/V2 removal.
 
 ## Install
 
@@ -26,9 +25,10 @@ const gateway = new GatewaySDK(); // mainnet by default
 const quote = await gateway.getQuote({
     fromChain: 'bitcoin',
     toChain: 'bob',
-    fromToken: 'BTC',
-    toToken: 'WBTC',
+    fromToken: '0x0000000000000000000000000000000000000000',
+    toToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
     fromUserAddress: 'bc1q...',
+    refundAddress: 'bc1q...', // Source-chain refund address required for order creation
     toUserAddress: '0x...',
     amount: 100_000_000, // 1 BTC in satoshis
 });
@@ -56,13 +56,17 @@ const { order, tx } = await gateway.executeQuote({
 | `getRoutes()`                                                                | Supported routes — chains, tokens, bridges. Source of valid `fromToken` / `toToken` addresses. |
 | `getMaxSpendable(address)`                                                   | Max spendable BTC for an address.                                                              |
 
-`getQuote` returns a discriminated union — narrow it with the generated type guards
-(`instanceOfGatewayQuoteV2OneOf` = onramp, `instanceOfGatewayQuoteV3OneOf` = offramp).
-Each quote exposes `inputAmount`, `feeBreakdown`, `priceImpact` (fraction, plus
-optional `priceImpactUsd`), and `estimatedTimeInSecs`.
+`getQuote` returns `GatewayQuoteV4`. Narrow it with `'onramp' in quote`,
+`'offramp' in quote`, or `'tokenSwap' in quote`, or use `getInnerQuote(quote)`.
+Quotes expose `inputAmount`, fees, optional `priceImpact` (a fraction) and
+`priceImpactUsd`, and `estimatedTimeInSecs`.
+
+`refundAddress` is optional for price-only quotes but required before creating
+an order on every route. Use an address on the source chain; the SDK does not
+infer it from `fromUserAddress`. `ownerAddress` is no longer a quote parameter.
 
 `executeQuote` returns `ExecuteQuoteResult` = `{ order, tx }` where `tx` is a Bitcoin
-txid (onramp) or EVM hash (offramp). In the **walletless onramp flow** (no `btcSigner`
+txid (onramp) or source-chain hash (offramp/tokenSwap). In the **walletless onramp flow** (no `btcSigner`
 passed), `tx` is absent — complete the BTC payment externally using
 `order.onramp.address` and `order.onramp.orderId`.
 
@@ -173,14 +177,23 @@ offramp order` if `walletClient.account` is missing.
 - **`value` is a `bigint`** of the native amount (from `order.offramp.tx.value`),
   `data` is `0x`-prefixed hex.
 
+## Solana sources
+
+For Solana source transactions, use the API directly with a Solana signer.
+`executeQuote` does not sign the base64 unsigned `VersionedTransaction` returned
+by the API. Supported routes can still use Solana as a destination.
+
 ## Bitcoin signing (`btcSigner`)
 
 `executeQuote` accepts an optional `BitcoinSigner` with two mutually exclusive
-patterns (an adapter implements one):
+patterns (an adapter implements one). Both must return signed raw transaction
+hex, not a txid or PSBT. V4 `register-tx` validates, screens, and broadcasts
+onramp transactions. Offramp and token-swap transactions are indexed from the
+source chain and do not need registration:
 
 ```typescript
 interface BitcoinSigner {
-    // High-level: wallet builds + broadcasts (e.g. OKX). Returns txid/hex.
+    // High-level: wallet builds/signs. Return raw signed transaction hex.
     sendBitcoin?(params: {
         from: string | null | undefined;
         to: string;
@@ -189,10 +202,13 @@ interface BitcoinSigner {
         isSignet?: boolean;
     }): Promise<string>;
 
-    // Low-level: sign a PSBT, return signed hex (e.g. Reown).
+    // Low-level: sign/finalize a PSBT, return raw transaction hex (e.g. Reown).
     signAllInputs?(psbtHex: string): Promise<string>;
 }
 ```
+
+Prefer signing without broadcasting. If a wallet broadcasts itself, retrieve
+the raw transaction hex before returning; the built-in OKX adapter does this.
 
 ### Custom adapter
 
@@ -201,7 +217,7 @@ import type { BitcoinSigner } from '@gobob/bob-sdk';
 
 class CustomWalletAdapter implements BitcoinSigner {
     async sendBitcoin(params: { from: string; to: string; value: string; opReturn?: string }): Promise<string> {
-        // build, sign, broadcast — return txid/signed hex
+        // Build and sign; return raw signed transaction hex
     }
 
     async signAllInputs(psbtHex: string): Promise<string> {
@@ -224,6 +240,9 @@ const quote = await gateway.getQuote({
     ],
 });
 ```
+
+Token swaps accept at most one affiliate, charged on the source chain; multiple
+recipients return `TOO_MANY_AFFILIATES`. Onramps and offramps accept multiple recipients.
 
 Routes that don't support affiliate fees return `AFFILIATE_FEES_NOT_SUPPORTED_FOR_ROUTE`.
 

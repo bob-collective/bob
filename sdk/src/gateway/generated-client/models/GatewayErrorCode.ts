@@ -31,7 +31,6 @@ export const GatewayErrorCode = {
     PerAccountLimitExceeded: 'PER_ACCOUNT_LIMIT_EXCEEDED',
     GlobalLimitExceeded: 'GLOBAL_LIMIT_EXCEEDED',
     ExceededLimit: 'EXCEEDED_LIMIT',
-    RoutePriceImpactTooHigh: 'ROUTE_PRICE_IMPACT_TOO_HIGH',
     InvalidRequest: 'INVALID_REQUEST',
     InvalidOrderArgs: 'INVALID_ORDER_ARGS',
     InvalidAffiliateFee: 'INVALID_AFFILIATE_FEE',

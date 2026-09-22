@@ -24,7 +24,9 @@ Software stack:
 - [Docker Compose](https://docs.docker.com/compose/install/)
 
 :::warning
-BOB Mainnet activates the **Karst hard fork** (OP Contracts v7.0.0) at **Wed Sep 23 2026 16:00:01 UTC** (timestamp `1790179201`). The fork is consensus-breaking: every node must run `op-node` **v1.19.3** or later and a Karst-capable `op-reth` (**v2.3.0** or later), with the Karst override enabled, **before** the activation time. `op-geth` has reached end of support and cannot be used for Karst — an `op-reth` execution client is required.
+BOB Mainnet activates the **Karst hard fork** (OP Contracts v7.0.0) at **Wed Sep 23 2026 16:00:01 UTC** (timestamp `1790179201`). The fork is consensus-breaking: every node must run `op-node` **v1.19.3** or later and a Karst-capable `op-reth` (**v2.4.3** or later), with the Karst override enabled, **before** the activation time. `op-geth` has reached end of support and cannot be used for Karst — an `op-reth` execution client is required.
+
+`op-reth` **v2.4.3** additionally fixes a transaction-decoding vulnerability: without the fix, a malformed deposit transaction (missing its `0x7E` EIP-2718 type prefix) can push a node onto a non-canonical chain. Do not run earlier versions; the upgrade is an in-place image bump and requires no resync.
 
 The upgrade also includes EIPs that affect gas pricing and may be relevant to application and smart contract developers — see the [breaking changes in Optimism Upgrade 19](https://docs.optimism.io/notices/archive/upgrade-19#breaking-changes).
 :::
@@ -121,7 +123,7 @@ OP_NODE_METRICS_ADDR=127.0.0.1
 ```yml title="docker-compose.yml"
 services:
   op-reth:
-    image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-reth:v2.4.2
+    image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-reth:v2.4.4
     command:
       - node
       - --chain=/data/genesis.json
@@ -145,7 +147,7 @@ services:
     restart: unless-stopped
 
   op-node:
-    image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node:v1.19.5
+    image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node:v1.19.7
     command:
       - op-node
     env_file: op-node.env

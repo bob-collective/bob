@@ -14,6 +14,7 @@ import {
     sonic,
     unichain,
     arbitrum,
+    robinhood,
 } from 'viem/chains';
 
 export function toHexScriptPubKey(userAddress: string, network: bitcoin.Network): string {
@@ -66,6 +67,7 @@ export const supportedChainsMapping = {
     // `hyperliquid` is the staging gateway's name for the same chain (id 999);
     // register both aliases so the CLI resolves either until the API canonicalizes to `hyperevm`.
     hyperliquid: hyperEvm,
+    robinhood,
 } as const;
 
 const chainIdToChainConfigMapping = Object.values(supportedChainsMapping).reduce(
