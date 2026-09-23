@@ -1,5 +1,6 @@
-import { assert, describe, it } from 'vitest';
-import { Block, EsploraClient, Transaction } from '../src/esplora';
+import nock from 'nock';
+import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { Block, EsploraClient, MAINNET_ESPLORA_BASE_PATH, Transaction } from '../src/esplora';
 
 describe('Esplora Tests', () => {
     it('should get block height', async () => {
@@ -151,5 +152,87 @@ describe('Esplora Tests', () => {
         const client = new EsploraClient('mainnet');
         const feeRate = await client.getFeeEstimate(1);
         assert(feeRate > 0);
+    });
+});
+
+describe('Esplora initOverrides', () => {
+    const address = 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq';
+    const utxoResponse = [
+        {
+            txid: 'a'.repeat(64),
+            vout: 0,
+            status: { confirmed: true, block_height: 800000, block_hash: 'b'.repeat(64), block_time: 1 },
+            value: 1000,
+        },
+    ];
+
+    beforeEach(() => {
+        nock.disableNetConnect();
+    });
+
+    afterEach(() => {
+        nock.cleanAll();
+        nock.enableNetConnect();
+        vi.restoreAllMocks();
+    });
+
+    it('forwards the abort signal from getAddressUtxos to fetch', async () => {
+        nock(MAINNET_ESPLORA_BASE_PATH).get(`/address/${address}/utxo`).reply(200, utxoResponse);
+        const fetchSpy = vi.spyOn(globalThis, 'fetch');
+        const controller = new AbortController();
+
+        const utxos = await new EsploraClient('mainnet').getAddressUtxos(address, undefined, {
+            signal: controller.signal,
+        });
+
+        expect(utxos).toEqual([{ txid: 'a'.repeat(64), vout: 0, value: 1000, confirmed: true, height: 800000 }]);
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+        expect(fetchSpy.mock.calls[0][1]?.signal).toBe(controller.signal);
+    });
+
+    it('keeps the confirmed filter working alongside initOverrides', async () => {
+        nock(MAINNET_ESPLORA_BASE_PATH).get(`/address/${address}/utxo`).reply(200, utxoResponse);
+
+        const utxos = await new EsploraClient('mainnet').getAddressUtxos(address, false, {
+            signal: new AbortController().signal,
+        });
+
+        expect(utxos).toEqual([]);
+    });
+
+    it('forwards the abort signal from text endpoints to fetch', async () => {
+        nock(MAINNET_ESPLORA_BASE_PATH).get('/blocks/tip/height').reply(200, '900000');
+        const fetchSpy = vi.spyOn(globalThis, 'fetch');
+        const controller = new AbortController();
+
+        const height = await new EsploraClient('mainnet').getLatestHeight({ signal: controller.signal });
+
+        expect(height).toBe(900000);
+        expect(fetchSpy.mock.calls[0][1]?.signal).toBe(controller.signal);
+    });
+
+    it('rejects getAddressUtxos with an AbortError when aborted', async () => {
+        const scope = nock(MAINNET_ESPLORA_BASE_PATH)
+            .get(`/address/${address}/utxo`)
+            .delay(10_000)
+            .reply(200, utxoResponse);
+        const controller = new AbortController();
+
+        const promise = new EsploraClient('mainnet').getAddressUtxos(address, undefined, {
+            signal: controller.signal,
+        });
+        setTimeout(() => controller.abort(), 10);
+
+        await expect(promise).rejects.toMatchObject({ name: 'AbortError' });
+        expect(scope.isDone()).toBe(true);
+    });
+
+    it('rejects getBalance with an AbortError without issuing the request when already aborted', async () => {
+        const scope = nock(MAINNET_ESPLORA_BASE_PATH).get(`/address/${address}`).reply(200, {});
+
+        await expect(
+            new EsploraClient('mainnet').getBalance(address, { signal: AbortSignal.abort() })
+        ).rejects.toMatchObject({ name: 'AbortError' });
+        expect(scope.isDone()).toBe(false);
     });
 });

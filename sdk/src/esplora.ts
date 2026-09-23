@@ -192,16 +192,18 @@ export class EsploraClient {
     /**
      * Get the latest block height of the Bitcoin chain.
      *
+     * @param {RequestInit} [initOverrides] - Optional request overrides passed to `fetch` (e.g. `{ signal }` to abort the request).
      * @returns {Promise<number>} A promise that resolves to the latest block number.
      */
-    async getLatestHeight(): Promise<number> {
-        return parseInt(await this.getText(`${this.basePath}/blocks/tip/height`), 10);
+    async getLatestHeight(initOverrides?: RequestInit): Promise<number> {
+        return parseInt(await this.getText(`${this.basePath}/blocks/tip/height`, initOverrides), 10);
     }
 
     /**
      * Get the complete block data for a Bitcoin block with a given hash.
      *
      * @param {string} hash - The hash of the Bitcoin block.
+     * @param {RequestInit} [initOverrides] - Optional request overrides passed to `fetch` (e.g. `{ signal }` to abort the request).
      * @returns {Promise<Block>} A promise that resolves to the block data.
      *
      * @example
@@ -218,8 +220,8 @@ export class EsploraClient {
      * });
      * ```
      */
-    async getBlock(blockHash: string): Promise<Block> {
-        return this.getJson(`${this.basePath}/block/${blockHash}`);
+    async getBlock(blockHash: string, initOverrides?: RequestInit): Promise<Block> {
+        return this.getJson(`${this.basePath}/block/${blockHash}`, initOverrides);
     }
 
     /**
@@ -228,6 +230,7 @@ export class EsploraClient {
      * This function retrieves the block hash for the Bitcoin block at the given height.
      *
      * @param {number} height - The height of the Bitcoin block.
+     * @param {RequestInit} [initOverrides] - Optional request overrides passed to `fetch` (e.g. `{ signal }` to abort the request).
      * @returns {Promise<string>} A promise that resolves to the block hash of the Bitcoin block.
      *
      * @example
@@ -244,14 +247,15 @@ export class EsploraClient {
      *   });
      * ```
      */
-    async getBlockHash(height: number): Promise<string> {
-        return this.getText(`${this.basePath}/block-height/${height}`);
+    async getBlockHash(height: number, initOverrides?: RequestInit): Promise<string> {
+        return this.getText(`${this.basePath}/block-height/${height}`, initOverrides);
     }
 
     /**
      * Get the raw block header, represented as a hex string, for a Bitcoin block with a given hash.
      *
      * @param {string} hash - The hash of the Bitcoin block.
+     * @param {RequestInit} [initOverrides] - Optional request overrides passed to `fetch` (e.g. `{ signal }` to abort the request).
      * @returns {Promise<string>} A promise that resolves to the raw block header as a hex string.
      *
      * @example
@@ -268,22 +272,23 @@ export class EsploraClient {
      *   });
      * ```
      */
-    async getBlockHeader(hash: string): Promise<string> {
-        return this.getText(`${this.basePath}/block/${hash}/header`);
+    async getBlockHeader(hash: string, initOverrides?: RequestInit): Promise<string> {
+        return this.getText(`${this.basePath}/block/${hash}/header`, initOverrides);
     }
 
     /**
      * @ignore
      */
-    async getBlockHeaderAt(height: number): Promise<string> {
-        const blockHash = await this.getBlockHash(height);
-        return await this.getBlockHeader(blockHash);
+    async getBlockHeaderAt(height: number, initOverrides?: RequestInit): Promise<string> {
+        const blockHash = await this.getBlockHash(height, initOverrides);
+        return await this.getBlockHeader(blockHash, initOverrides);
     }
 
     /**
      * Get the complete transaction data for a Bitcoin transaction with a given ID (txId).
      *
      * @param txId {string} - The ID of a Bitcoin transaction.
+     * @param {RequestInit} [initOverrides] - Optional request overrides passed to `fetch` (e.g. `{ signal }` to abort the request).
      * @returns {Promise<Transaction>} A promise that resolves to the transaction data.
      *
      * @example
@@ -300,18 +305,19 @@ export class EsploraClient {
      * });
      * ```
      */
-    async getTransaction(txId: string): Promise<Transaction> {
-        return this.getJson(`${this.basePath}/tx/${txId}`);
+    async getTransaction(txId: string, initOverrides?: RequestInit): Promise<Transaction> {
+        return this.getJson(`${this.basePath}/tx/${txId}`, initOverrides);
     }
 
-    async getTransactionStatus(txId: string): Promise<TransactionStatus> {
-        return this.getJson(`${this.basePath}/tx/${txId}/status`);
+    async getTransactionStatus(txId: string, initOverrides?: RequestInit): Promise<TransactionStatus> {
+        return this.getJson(`${this.basePath}/tx/${txId}/status`, initOverrides);
     }
 
     /**
      * Get the transaction data, represented as a hex string, for a Bitcoin transaction with a given ID (txId).
      *
      * @param {string} txId - The ID of a Bitcoin transaction.
+     * @param {RequestInit} [initOverrides] - Optional request overrides passed to `fetch` (e.g. `{ signal }` to abort the request).
      * @returns {Promise<string>} A promise that resolves to the transaction data as a hex string.
      *
      * @example
@@ -328,14 +334,15 @@ export class EsploraClient {
      *   });
      * ```
      */
-    async getTransactionHex(txId: string): Promise<string> {
-        return this.getText(`${this.basePath}/tx/${txId}/hex`);
+    async getTransactionHex(txId: string, initOverrides?: RequestInit): Promise<string> {
+        return this.getText(`${this.basePath}/tx/${txId}/hex`, initOverrides);
     }
 
     /**
      * Get the encoded merkle inclusion proof for a Bitcoin transaction with a given ID (txId).
      *
      * @param {string} txId - The ID of a Bitcoin transaction.
+     * @param {RequestInit} [initOverrides] - Optional request overrides passed to `fetch` (e.g. `{ signal }` to abort the request).
      * @returns {Promise<MerkleProof>} A promise that resolves to the encoded merkle inclusion proof.
      *
      * @example
@@ -352,12 +359,12 @@ export class EsploraClient {
      *   });
      * ```
      */
-    async getMerkleProof(txId: string): Promise<MerkleProof> {
+    async getMerkleProof(txId: string, initOverrides?: RequestInit): Promise<MerkleProof> {
         const response = await this.getJson<{
             block_height: number;
             merkle: string[];
             pos: number;
-        }>(`${this.basePath}/tx/${txId}/merkle-proof`);
+        }>(`${this.basePath}/tx/${txId}/merkle-proof`, initOverrides);
         return {
             blockHeight: response.block_height,
             merkle: encodeEsploraMerkleProof(response.merkle),
@@ -369,16 +376,18 @@ export class EsploraClient {
      * Get the fee estimate (in sat/vB) for the given confirmation target.
      *
      * @param {number} confirmationTarget - The number of blocks to be included in.
+     * @param {RequestInit} [initOverrides] - Optional request overrides passed to `fetch` (e.g. `{ signal }` to abort the request).
      * @returns {Promise<number>} A promise that resolves to the fee rate.
      */
-    async getFeeEstimate(confirmationTarget: number): Promise<number> {
-        const response = await this.getJson<Record<number, number>>(`${this.basePath}/fee-estimates`);
+    async getFeeEstimate(confirmationTarget: number, initOverrides?: RequestInit): Promise<number> {
+        const response = await this.getJson<Record<number, number>>(`${this.basePath}/fee-estimates`, initOverrides);
         return response[confirmationTarget];
     }
 
     /**
      * Get the fee estimates (in sat/vB) for different confirmation targets.
      *
+     * @param {RequestInit} [initOverrides] - Optional request overrides passed to `fetch` (e.g. `{ signal }` to abort the request).
      * @returns {Promise<EsploraFeeEstimates>} A promise that resolves to an object where:
      * - The keys are the confirmation targets (in blocks) before which the transaction is expected to confirm.
      * - The values are the estimated fee rates (in sat/vB) for each target.
@@ -393,8 +402,8 @@ export class EsploraClient {
      *   1008: 1.53    // Estimated fee for confirmation within 1008 blocks
      * }
      */
-    async getFeeEstimates(): Promise<EsploraFeeEstimates> {
-        return this.getJson<EsploraFeeEstimates>(`${this.basePath}/fee-estimates`);
+    async getFeeEstimates(initOverrides?: RequestInit): Promise<EsploraFeeEstimates> {
+        return this.getJson<EsploraFeeEstimates>(`${this.basePath}/fee-estimates`, initOverrides);
     }
 
     /**
@@ -403,9 +412,10 @@ export class EsploraClient {
      * @dev Should return up to 500 UTXOs - depending on the configured limit.
      * @param {string} address - The Bitcoin address to check.
      * @param {boolean} [confirmed] - Whether to return only confirmed UTXOs. If omitted, defaults to false.
+     * @param {RequestInit} [initOverrides] - Optional request overrides passed to `fetch` (e.g. `{ signal }` to abort the request).
      * @returns {Promise<Array<UTXO>>} A promise that resolves to an array of UTXOs.
      */
-    async getAddressUtxos(address: string, confirmed?: boolean): Promise<Array<UTXO>> {
+    async getAddressUtxos(address: string, confirmed?: boolean, initOverrides?: RequestInit): Promise<Array<UTXO>> {
         // https://github.com/Blockstream/electrs/blob/306f66acf2ab10bcd99b8012e95a0de30b2cc012/src/rest.rs#L860
         // https://github.com/Blockstream/electrs/blob/306f66acf2ab10bcd99b8012e95a0de30b2cc012/src/new_index/query.rs#L82
         // https://github.com/Blockstream/electrs/blob/306f66acf2ab10bcd99b8012e95a0de30b2cc012/src/config.rs#L177
@@ -421,7 +431,7 @@ export class EsploraClient {
                 };
                 value: number;
             }>
-        >(`${this.basePath}/address/${address}/utxo`);
+        >(`${this.basePath}/address/${address}/utxo`, initOverrides);
         return response
             .filter((utxo) => (typeof confirmed !== 'undefined' ? confirmed === utxo.status.confirmed : true))
             .map<UTXO>((utxo) => {
@@ -462,12 +472,16 @@ export class EsploraClient {
      *      that are pending (unconfirmed). The total is the sum of both confirmed and unconfirmed balances.
      *
      * @param {string} address - The Bitcoin address to check.
+     * @param {RequestInit} [initOverrides] - Optional request overrides passed to `fetch` (e.g. `{ signal }` to abort the request).
      * @returns {Promise<{ confirmed: number, unconfirmed: number, total: number }>} A promise that resolves to an object containing:
      *      - `confirmed`: The confirmed on-chain balance in satoshis.
      *      - `unconfirmed`: The unconfirmed balance (in mempool) in satoshis.
      *      - `total`: The total balance, which is the sum of the confirmed and unconfirmed balances.
      */
-    async getBalance(address: string): Promise<{ confirmed: number; unconfirmed: number; total: number }> {
+    async getBalance(
+        address: string,
+        initOverrides?: RequestInit
+    ): Promise<{ confirmed: number; unconfirmed: number; total: number }> {
         const response = await this.getJson<{
             address: string;
             chain_stats: {
@@ -484,7 +498,7 @@ export class EsploraClient {
                 spent_txo_sum: number;
                 tx_count: number;
             };
-        }>(`${this.basePath}/address/${address}`);
+        }>(`${this.basePath}/address/${address}`, initOverrides);
 
         const confirmedBalance = response.chain_stats.funded_txo_sum - response.chain_stats.spent_txo_sum;
         const unconfirmedBalance = response.mempool_stats.funded_txo_sum - response.mempool_stats.spent_txo_sum;
@@ -499,8 +513,8 @@ export class EsploraClient {
     /**
      * @ignore
      */
-    private async getJson<T>(url: string): Promise<T> {
-        const response = await fetch(url);
+    private async getJson<T>(url: string, initOverrides?: RequestInit): Promise<T> {
+        const response = await fetch(url, initOverrides);
         if (!response.ok) {
             const text = await response.text();
             const errorText = `Esplora error: ${text}`;
@@ -512,8 +526,8 @@ export class EsploraClient {
     /**
      * @ignore
      */
-    private async getText(url: string): Promise<string> {
-        const response = await fetch(url);
+    private async getText(url: string, initOverrides?: RequestInit): Promise<string> {
+        const response = await fetch(url, initOverrides);
         if (!response.ok) {
             throw new Error(response.statusText);
         }
