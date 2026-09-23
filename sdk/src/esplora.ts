@@ -411,7 +411,7 @@ export class EsploraClient {
      *
      * @dev Should return up to 500 UTXOs - depending on the configured limit.
      * @param {string} address - The Bitcoin address to check.
-     * @param {boolean} [confirmed] - Whether to return only confirmed UTXOs. If omitted, defaults to false.
+     * @param {boolean} [confirmed] - `true` returns only confirmed UTXOs, `false` only unconfirmed ones. If omitted, all UTXOs are returned.
      * @param {RequestInit} [initOverrides] - Optional request overrides passed to `fetch` (e.g. `{ signal }` to abort the request).
      * @returns {Promise<Array<UTXO>>} A promise that resolves to an array of UTXOs.
      */
