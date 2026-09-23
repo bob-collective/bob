@@ -101,7 +101,7 @@ const routes = await gatewaySDK.getRoutes();
 
 ## Get a Quote
 
-Omit `maxSlippage` to let Gateway recommend a slippage tolerance for the route. The SDK leaves the API's `slippage` parameter unset and returns the resolved value in the quote. To set your own tolerance, supply basis points, for example `maxSlippage: 300` for 3%. The SDK no longer applies a fixed 3% default; see the [migration notes](/gateway/migration#migrating-the-sdk) and [recommendation example](/gateway/faq#what-if-i-dont-know-what-slippage-to-set). Always review the quote's resolved `slippage` before execution.
+Omit `maxSlippage` to let Gateway recommend a slippage tolerance for the route. The SDK leaves the API's `slippage` parameter unset and returns the resolved value in the quote. To set your own tolerance, supply basis points, for example `maxSlippage: 300` for 3%. The SDK no longer applies a fixed 3% default; see the [migration notes](/gateway/migration#migrating-the-sdk) and [recommendation example](/gateway/integration#request-a-slippage-recommendation). Always review the quote's resolved `slippage` before execution.
 
 Request a quote for the user's desired transaction:
 
@@ -190,6 +190,46 @@ On EVM chains, token parameters (`fromToken`, `toToken`) must be `0x`-prefixed h
 <Callout type="idea">
 Display quote fields like fees and estimated time to give users transparency about the transaction. See the section below for how to access these fields.
 </Callout>
+
+### Request a Slippage Recommendation
+
+Omit `maxSlippage` to request a quote with Gateway's recommended tolerance. You can inspect the recommendation without creating an order:
+
+```typescript
+import { GatewaySDK, getInnerQuote, parseBtc } from '@gobob/bob-sdk';
+
+const gateway = new GatewaySDK();
+const quote = await gateway.getQuote({
+  fromChain: 'bitcoin',
+  fromToken: '0x0000000000000000000000000000000000000000',
+  toChain: 'bob',
+  toToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
+  toUserAddress: '0x2D2E86236a5bC1c8a5e5499C517E17Fb88Dbc18c',
+  amount: parseBtc('0.1'),
+  // Omit maxSlippage to request Gateway's recommendation.
+});
+
+const slippageBps = Number(getInnerQuote(quote).slippage);
+console.log(`Recommended slippage: ${slippageBps} bps (${slippageBps / 100}%)`);
+```
+
+The equivalent API request leaves out the `slippage` query parameter entirely:
+
+```bash
+curl --get 'https://gateway-api-mainnet.gobob.xyz/v4/get-quote' \
+  --data-urlencode 'srcChain=bitcoin' \
+  --data-urlencode 'dstChain=bob' \
+  --data-urlencode 'srcToken=0x0000000000000000000000000000000000000000' \
+  --data-urlencode 'dstToken=0x0555E30da8f98308EdB960aa94C0Db47230d2B9c' \
+  --data-urlencode 'recipient=0x2D2E86236a5bC1c8a5e5499C517E17Fb88Dbc18c' \
+  --data-urlencode 'amount=10000000'
+```
+
+Read `onramp.slippage`, `offramp.slippage`, or `tokenSwap.slippage` in the response. The onramp value is a string and the other variants use numbers; all are in basis points.
+
+Show the resolved tolerance to the user before execution. These examples request a quote only: include a source-chain `refundAddress` in a fresh quote before creating an order. If the user accepts the tolerance, pass that returned quote unchanged to `create-order`. If they want a different limit, request a new quote with an explicit `slippage` / `maxSlippage`; do not edit the returned quote.
+
+V3 still requires `slippage`. Older SDK versions send a fixed 3% when `maxSlippage` is omitted; upgrade to use this behavior, or call the V4 API directly. See the [migration notes](/gateway/migration#migrating-the-sdk).
 
 ### Understanding Quote Types
 

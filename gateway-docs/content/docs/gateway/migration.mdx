@@ -69,7 +69,7 @@ This is a backward-compatible addition alongside the breaking changes above: exi
 + GET /v4/get-quote?...
 ```
 
-Slippage is expressed in basis points (`100` = 1%, `300` = 3%). Read the resolved value from `onramp.slippage`, `offramp.slippage`, or `tokenSwap.slippage` and show it before execution. Pass the returned quote unchanged to `create-order`; to use a different tolerance, request a new quote with an explicit `slippage` value. See the [recommendation example](/gateway/faq#what-if-i-dont-know-what-slippage-to-set).
+Slippage is expressed in basis points (`100` = 1%, `300` = 3%). Read the resolved value from `onramp.slippage`, `offramp.slippage`, or `tokenSwap.slippage` and show it before execution. Pass the returned quote unchanged to `create-order`; to use a different tolerance, request a new quote with an explicit `slippage` value. See the [recommendation example](/gateway/integration#request-a-slippage-recommendation).
 
 ### 4. Submit only signed Bitcoin transactions to register-tx
 

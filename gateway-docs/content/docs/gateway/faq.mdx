@@ -52,7 +52,7 @@ A Gateway swap has a protocol fee, a solver spread, optional affiliate fees, and
 ### What slippage tolerance should I use?
 Slippage is how much price movement you're willing to accept between getting a quote and the swap actually settling. It doesn't change the price you're quoted — it decides how far the market can move against you before the swap is called off.
 
-If you don't have a tolerance in mind, let Gateway recommend one as shown below. To set your own limit, pass `slippage` to the V4 API or `maxSlippage` to the SDK in basis points: `100` = 1%, `300` = 3%. An explicit `0` means zero tolerance; it does not request a recommendation.
+If you don't have a tolerance in mind, let Gateway recommend one. To set your own limit, pass `slippage` to the V4 API or `maxSlippage` to the SDK in basis points: `100` = 1%, `300` = 3%. An explicit `0` means zero tolerance; it does not request a recommendation.
 
 For Bitcoin swaps, allow for price movement while the deposit confirms. A tighter tolerance can cause a quote to be rejected or a swap to be refunded if it cannot settle within the limit. If a route reports a minimum tolerance above your limit, review it before requesting another quote.
 
@@ -62,43 +62,9 @@ Always read the resolved `slippage` from the quote. Same-chain token swaps use a
 
 Omit `slippage` from `GET /v4/get-quote`, or omit `maxSlippage` when calling the SDK's `getQuote`. Gateway chooses a suitable tolerance for the route and includes it in the quote. You can request and inspect this recommendation without creating an order.
 
-```typescript
-import { GatewaySDK, getInnerQuote, parseBtc } from '@gobob/bob-sdk';
-
-const gateway = new GatewaySDK();
-const quote = await gateway.getQuote({
-  fromChain: 'bitcoin',
-  fromToken: '0x0000000000000000000000000000000000000000',
-  toChain: 'bob',
-  toToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
-  toUserAddress: '0x2D2E86236a5bC1c8a5e5499C517E17Fb88Dbc18c',
-  amount: parseBtc('0.1'),
-  // Omit maxSlippage to request Gateway's recommendation.
-});
-
-const slippageBps = Number(getInnerQuote(quote).slippage);
-console.log(`Recommended slippage: ${slippageBps} bps (${slippageBps / 100}%)`);
-```
-
-The equivalent API request leaves out the `slippage` query parameter entirely:
-
-```bash
-curl --get 'https://gateway-api-mainnet.gobob.xyz/v4/get-quote' \
-  --data-urlencode 'srcChain=bitcoin' \
-  --data-urlencode 'dstChain=bob' \
-  --data-urlencode 'srcToken=0x0000000000000000000000000000000000000000' \
-  --data-urlencode 'dstToken=0x0555E30da8f98308EdB960aa94C0Db47230d2B9c' \
-  --data-urlencode 'recipient=0x2D2E86236a5bC1c8a5e5499C517E17Fb88Dbc18c' \
-  --data-urlencode 'amount=10000000'
-```
-
-Read `onramp.slippage`, `offramp.slippage`, or `tokenSwap.slippage` in the response. The onramp value is a string and the other variants use numbers; all are in basis points.
-
 Gateway derives the recommendation from the route's swap slippage plus headroom for price movement. Routes without a swap leg use the headroom alone, while same-chain token swaps keep their tighter execution tolerance. The recommendation can vary by route and quote; it is not a fixed default or a guarantee of settlement.
 
-Show the resolved tolerance to the user before execution. These examples request a quote only: include a source-chain `refundAddress` in a fresh quote before creating an order. If the user accepts the tolerance, pass that returned quote unchanged to `create-order`. If they want a different limit, request a new quote with an explicit `slippage` / `maxSlippage`; do not edit the returned quote.
-
-V3 still requires `slippage`. Older SDK versions send a fixed 3% when `maxSlippage` is omitted; upgrade to use this behavior, or call the V4 API directly. See the [migration notes](/gateway/migration#migrating-the-sdk).
+Review the recommended tolerance before creating an order. See [Request a Slippage Recommendation](/gateway/integration#request-a-slippage-recommendation) for SDK and API examples, and the [migration notes](/gateway/migration#migrating-the-sdk) if you use an older SDK.
 
 ### Are any regions blocked from using Gateway?
 Yes. For compliance reasons, BOB Gateway is unavailable to users connecting from the following jurisdictions:

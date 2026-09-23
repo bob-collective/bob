@@ -21,7 +21,7 @@ This reference targets `/v4`. See the [Migration Guide](/gateway/migration) to u
 
 - **Source-chain refunds** — `refundAddress` is optional when requesting a quote but required before `create-order` for every route. Use a Bitcoin address for onramps and an address on the source chain for offramps and token swaps. A missing address returns `MISSING_REFUND_ADDRESS`.
 - **No `ownerAddress` parameter** — V4 quote requests use `sender`, `recipient`, and `refundAddress`; remove `ownerAddress` from your requests.
-- **Optional slippage** — omit `slippage` from `GET /v4/get-quote` to let Gateway choose a suitable tolerance for the route. The quote reports the resolved value in basis points. Explicit values remain supported; V3 still requires the parameter. See the [recommendation example](/gateway/faq#what-if-i-dont-know-what-slippage-to-set).
+- **Optional slippage** — omit `slippage` from `GET /v4/get-quote` to let Gateway choose a suitable tolerance for the route. The quote reports the resolved value in basis points. Explicit values remain supported; V3 still requires the parameter. See the [recommendation example](/gateway/integration#request-a-slippage-recommendation).
 - **Onramp submission only** — `PATCH /v4/register-tx` accepts `{ "onramp": { "order_id": "...", "bitcoin_tx_hex": "..." } }`. Gateway validates, screens, and broadcasts the signed Bitcoin transaction. A txid alone is not accepted. Offramp and token-swap source transactions are indexed from the chain without registration.
 - **Shared response models** — V4 keeps V3's tagged EVM/Tron/Solana transaction data, paginated orders, settlement transfers, and optional USD values. Model names such as `GatewayCreateOrderV3` and `GatewayTokenAmountV2` still appear in the V4 specification.
 
