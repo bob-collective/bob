@@ -352,6 +352,7 @@ export async function estimateTxFee(
  *
  * @param {string} [address] The Bitcoin address. If no address specified returning object will contain zeros.
  * @param isSignet True if using Bitcoin Signet.
+ * @param {RequestInit} [initOverrides] Optional request overrides passed to `fetch` (e.g. `{ signal }` to abort the request).
  * @returns {Promise<Balance>} The balance object of provided address in satoshis.
  *
  * @example
@@ -360,9 +361,13 @@ export async function estimateTxFee(
  *
  * const balance = await getBalance(address);
  * console.log(balance);
+ *
+ * // Abort the request, e.g. with React Query's `signal` or a timeout
+ * const controller = new AbortController();
+ * const balanceWithSignal = await getBalance(address, false, { signal: controller.signal });
  * ```
  */
-export async function getBalance(address?: string, isSignet: boolean = false) {
+export async function getBalance(address?: string, isSignet: boolean = false, initOverrides?: RequestInit) {
     if (!address) {
         return { confirmed: BigInt(0), unconfirmed: BigInt(0), total: BigInt(0) };
     }
@@ -371,7 +376,7 @@ export async function getBalance(address?: string, isSignet: boolean = false) {
 
     const esploraClient = new EsploraClient(addressInfo.network);
 
-    const utxos = await esploraClient.getAddressUtxos(address);
+    const utxos = await esploraClient.getAddressUtxos(address, undefined, initOverrides);
 
     const total = utxos.reduce((acc, utxo) => acc + utxo.value, 0);
 

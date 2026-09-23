@@ -2,8 +2,9 @@ import { base64, hex } from '@scure/base';
 import { Address, NETWORK, OutScript, p2sh, p2wpkh, Script, selectUTXO, Transaction } from '@scure/btc-signer';
 import { TransactionOutput } from '@scure/btc-signer/psbt';
 import { AddressType, getAddressInfo, Network } from 'bitcoin-address-validation';
-import { assert, beforeEach, describe, expect, it, Mock, vi } from 'vitest';
-import { EsploraClient, UTXO } from '../src/esplora';
+import nock from 'nock';
+import { afterEach, assert, beforeEach, describe, expect, it, Mock, vi } from 'vitest';
+import { EsploraClient, MAINNET_ESPLORA_BASE_PATH, UTXO } from '../src/esplora';
 import { createBitcoinPsbt, estimateTxFee, getBalance, getInputFromUtxoAndTx } from '../src/wallet/utxo';
 
 vi.mock(import('@scure/btc-signer'), async (importOriginal) => {
@@ -385,6 +386,92 @@ describe('UTXO Tests', () => {
         assert(zeroBalance.confirmed === 0n, 'If no address specified confirmed must be 0');
         assert(zeroBalance.unconfirmed === 0n, 'If no address specified unconfirmed must be 0');
         assert(zeroBalance.total === 0n, 'If no address specified total must be 0');
+    });
+
+    describe('getBalance with initOverrides', () => {
+        const address = 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq';
+        const utxoPath = `/address/${address}/utxo`;
+        const utxoResponse = [
+            {
+                txid: 'a'.repeat(64),
+                vout: 0,
+                status: { confirmed: true, block_height: 800000, block_hash: 'b'.repeat(64), block_time: 1 },
+                value: 1000,
+            },
+            {
+                txid: 'c'.repeat(64),
+                vout: 1,
+                status: { confirmed: false },
+                value: 250,
+            },
+        ];
+
+        // Captured during collection, before any `beforeEach` has wrapped `global.fetch` in a mock:
+        // the outer `beforeEach` re-wraps the previous mock, so its call history leaks across tests.
+        const originalFetch = global.fetch;
+        let fetchSpy: Mock<typeof fetch>;
+
+        beforeEach(() => {
+            nock.disableNetConnect();
+            fetchSpy = vi.fn(originalFetch);
+            global.fetch = fetchSpy;
+        });
+
+        afterEach(() => {
+            global.fetch = originalFetch;
+            nock.cleanAll();
+            nock.enableNetConnect();
+        });
+
+        it('keeps working without initOverrides', async () => {
+            nock(MAINNET_ESPLORA_BASE_PATH).get(utxoPath).reply(200, utxoResponse);
+
+            const balance = await getBalance(address);
+
+            expect(balance).toEqual({ confirmed: 1000n, unconfirmed: 250n, total: 1250n });
+            expect(fetchSpy).toHaveBeenCalledTimes(1);
+            expect(fetchSpy.mock.calls[0][1]).toBeUndefined();
+        });
+
+        it('forwards the abort signal to fetch', async () => {
+            nock(MAINNET_ESPLORA_BASE_PATH).get(utxoPath).reply(200, utxoResponse);
+            const controller = new AbortController();
+
+            const balance = await getBalance(address, false, { signal: controller.signal });
+
+            expect(balance).toEqual({ confirmed: 1000n, unconfirmed: 250n, total: 1250n });
+            expect(fetchSpy).toHaveBeenCalledTimes(1);
+            const [url, init] = fetchSpy.mock.calls[0];
+            expect(url).toBe(`${MAINNET_ESPLORA_BASE_PATH}${utxoPath}`);
+            expect(init?.signal).toBe(controller.signal);
+        });
+
+        it('rejects with an AbortError when aborted while the request is pending', async () => {
+            const scope = nock(MAINNET_ESPLORA_BASE_PATH).get(utxoPath).delay(10_000).reply(200, utxoResponse);
+            const controller = new AbortController();
+
+            const promise = getBalance(address, false, { signal: controller.signal });
+            setTimeout(() => controller.abort(), 10);
+
+            await expect(promise).rejects.toMatchObject({ name: 'AbortError' });
+            expect(scope.isDone()).toBe(true);
+        });
+
+        it('rejects with an AbortError without issuing the request when the signal is already aborted', async () => {
+            const scope = nock(MAINNET_ESPLORA_BASE_PATH).get(utxoPath).reply(200, utxoResponse);
+
+            await expect(getBalance(address, false, { signal: AbortSignal.abort() })).rejects.toMatchObject({
+                name: 'AbortError',
+            });
+            expect(scope.isDone()).toBe(false);
+        });
+
+        it('returns a zero balance without fetching when no address is provided', async () => {
+            const balance = await getBalance(undefined, false, { signal: new AbortController().signal });
+
+            expect(balance).toEqual({ confirmed: 0n, unconfirmed: 0n, total: 0n });
+            expect(fetchSpy).not.toHaveBeenCalled();
+        });
     });
 
     describe('utxoSelectionStrategy', () => {
