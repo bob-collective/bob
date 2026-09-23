@@ -83,7 +83,7 @@ afterEach(() => {
 });
 
 describe('Gateway Tests', () => {
-    it('should get quote', async () => {
+    it.each([undefined, 0, 125])('should get quotes with maxSlippage=%s', async (maxSlippage) => {
         const gatewaySDK = new GatewaySDK();
 
         const mockOnrampQuote: GatewayQuoteV3OneOf = {
@@ -140,7 +140,7 @@ describe('Gateway Tests', () => {
                 recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
                 sender: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
                 signedQuoteData: MOCK_SIGNED_QUOTE_DATA,
-                slippage: '0',
+                slippage: '175',
                 token: '0x0000000000000000000000000000000000000000',
             },
         };
@@ -221,20 +221,21 @@ describe('Gateway Tests', () => {
 
         nock(`${MAINNET_GATEWAY_BASE_URL}`)
             .get('/v4/get-quote')
-            .query((q) => q.srcChain === 'bitcoin')
+            .query((q) => q.srcChain === 'bitcoin' && q.slippage === maxSlippage?.toString())
             .reply(200, mockOnrampQuote);
 
         nock(`${MAINNET_GATEWAY_BASE_URL}`)
             .get('/v4/get-quote')
-            .query((q) => q.dstChain === 'bitcoin')
+            .query((q) => q.dstChain === 'bitcoin' && q.slippage === maxSlippage?.toString())
             .reply(200, mockOfframpQuote);
 
         nock(`${MAINNET_GATEWAY_BASE_URL}`)
             .get('/v4/get-quote')
-            .query((q) => q.srcChain === 'bsc')
+            .query((q) => q.srcChain === 'bsc' && q.slippage === maxSlippage?.toString())
             .reply(200, mockLayerZeroQuote);
 
         const result1 = await gatewaySDK.getQuote({
+            maxSlippage,
             fromChain: 'bitcoin',
             fromToken: '0x0000000000000000000000000000000000000000',
             toChain: 'bob',
@@ -246,8 +247,10 @@ describe('Gateway Tests', () => {
 
         assert(instanceOfGatewayQuoteV3OneOf(result1));
         expect(gatewayUtils.getInnerQuote(result1)).toBe(result1.onramp);
+        expect(result1.onramp.slippage).toBe('175');
 
         const result2 = await gatewaySDK.getQuote({
+            maxSlippage,
             fromChain: 'bob',
             fromToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
             toChain: 'bitcoin',
@@ -258,8 +261,10 @@ describe('Gateway Tests', () => {
 
         assert(instanceOfGatewayQuoteV4OneOf(result2));
         expect(gatewayUtils.getInnerQuote(result2)).toBe(result2.offramp);
+        expect(result2.offramp.slippage).toBe(300);
 
         const result3 = await gatewaySDK.getQuote({
+            maxSlippage,
             fromChain: 'bsc',
             fromToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
             toChain: 'bob',
@@ -271,6 +276,7 @@ describe('Gateway Tests', () => {
 
         assert(instanceOfGatewayQuoteV4OneOf1(result3));
         expect(gatewayUtils.getInnerQuote(result3)).toBe(result3.tokenSwap);
+        expect(result3.tokenSwap.slippage).toBe(100);
     });
 
     it('getQuote forwards refundAddress and affiliates as query params', async () => {

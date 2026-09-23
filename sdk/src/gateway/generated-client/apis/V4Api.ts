@@ -71,8 +71,8 @@ export interface GetQuoteV4Request {
     srcToken: string;
     dstToken: string;
     amount: string;
-    slippage: string;
     sender?: string;
+    slippage?: string;
     affiliates?: string;
     refundAddress?: string;
 }
@@ -269,7 +269,7 @@ export class V4Api extends runtime.BaseAPI {
     }
 
     /**
-     * Get a gateway quote (V4 — `refundAddress` is optional here, required by create-order).
+     * Get a gateway quote (V4 — `refundAddress` is optional here, required by create-order; `slippage` is optional and resolved per route when omitted).
      */
     async getQuoteV4Raw(requestParameters: GetQuoteV4Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<GatewayQuoteV4>> {
         if (requestParameters['srcChain'] == null) {
@@ -311,13 +311,6 @@ export class V4Api extends runtime.BaseAPI {
             throw new runtime.RequiredError(
                 'amount',
                 'Required parameter "amount" was null or undefined when calling getQuoteV4().'
-            );
-        }
-
-        if (requestParameters['slippage'] == null) {
-            throw new runtime.RequiredError(
-                'slippage',
-                'Required parameter "slippage" was null or undefined when calling getQuoteV4().'
             );
         }
 
@@ -379,7 +372,7 @@ export class V4Api extends runtime.BaseAPI {
     }
 
     /**
-     * Get a gateway quote (V4 — `refundAddress` is optional here, required by create-order).
+     * Get a gateway quote (V4 — `refundAddress` is optional here, required by create-order; `slippage` is optional and resolved per route when omitted).
      */
     async getQuoteV4(requestParameters: GetQuoteV4Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<GatewayQuoteV4> {
         const response = await this.getQuoteV4Raw(requestParameters, initOverrides);

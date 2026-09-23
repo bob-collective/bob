@@ -657,7 +657,7 @@
         "tags": [
           "v4"
         ],
-        "summary": "Get a gateway quote (V4 — `refundAddress` is optional here, required by create-order).",
+        "summary": "Get a gateway quote (V4 — `refundAddress` is optional here, required by create-order;\n`slippage` is optional and resolved per route when omitted).",
         "operationId": "get_quote_v4",
         "parameters": [
           {
@@ -740,8 +740,8 @@
           {
             "name": "slippage",
             "in": "query",
-            "description": "Slippage tolerance (in basis points, e.g., 300 = 3%)",
-            "required": true,
+            "description": "Slippage tolerance (in basis points, e.g., 300 = 3%). Optional: when omitted, the gateway\npicks a suitable value for the route and reports it in the quote's `slippage` field.",
+            "required": false,
             "schema": {
               "type": "string"
             },
