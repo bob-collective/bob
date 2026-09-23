@@ -31,7 +31,7 @@ export interface GatewayQuoteParams {
     toUserAddress: string;
     /** @description Amount of tokens to send from the source chain */
     amount: number | string | bigint; // NOTE: modified from Swing
-    /** @description Maximum slippage percentage in bps */
+    /** @description Slippage tolerance in basis points (300 = 3%). Omit to let Gateway choose a value per route, reported in the quote's slippage field. */
     maxSlippage?: number;
     /**
      * Affiliate fee recipients. One or more `{ address, bps }` pairs; each

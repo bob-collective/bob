@@ -52,32 +52,53 @@ A Gateway swap has a protocol fee, a solver spread, optional affiliate fees, and
 ### What slippage tolerance should I use?
 Slippage is how much price movement you're willing to accept between getting a quote and the swap actually settling. It doesn't change the price you're quoted — it decides how far the market can move against you before the swap is called off.
 
-For Bitcoin swaps that window is longer than you might expect, because it runs until your first Bitcoin confirmation. That's why these tiers follow how *volatile* an asset is rather than how deep its liquidity is.
+If you don't have a tolerance in mind, let Gateway recommend one as shown below. To set your own limit, pass `slippage` to the V4 API or `maxSlippage` to the SDK in basis points: `100` = 1%, `300` = 3%. An explicit `0` means zero tolerance; it does not request a recommendation.
 
-Start here:
+For Bitcoin swaps, allow for price movement while the deposit confirms. A tighter tolerance can cause a quote to be rejected or a swap to be refunded if it cannot settle within the limit. If a route reports a minimum tolerance above your limit, review it before requesting another quote.
 
-| If you're swapping | Use |
-| --- | --- |
-| Stablecoins or other pegged tokens, including ones not pegged to the dollar | **0.5%–1%** |
-| Big, liquid assets — native gas tokens, wrapped or bridged Bitcoin, tokenised gold | **2%–3%** |
-| Thin or exotic markets — bridged synthetics, commodity tokens on smaller chains, anything newly listed | **5%** |
+Always read the resolved `slippage` from the quote. Same-chain token swaps use at most 15 bps (0.15%) and honor a tighter explicit request.
 
-Swapping a token on one chain for a token on another? Use **1%**, whatever the assets are. That's a floor the aggregators impose, and even a USDC-to-USDT swap can't go under it. Asking for more than 1% won't get you a better price — it just stops your request being turned down.
+### What if I don't know what slippage to set?
 
-Where those numbers come from:
+Omit `slippage` from `GET /v4/get-quote`, or omit `maxSlippage` when calling the SDK's `getQuote`. Gateway chooses a suitable tolerance for the route and includes it in the quote. You can request and inspect this recommendation without creating an order.
 
-- **Stablecoins barely move.** Over the confirmation window, 99 times out of 100 the price drifts by less than 0.2%. Lean toward 1% if you're swapping more than about $10k, or if the peg is thinly traded.
-- **Liquid assets move more** — 99 times out of 100, somewhere between 1.3% and 2.3% over an hour. 2% is comfortable for the deepest markets. Go to 3% for punchier assets, and for wrapped Bitcoin on a chain that isn't its primary one, which has its own 2.5% minimum. Routes in this tier won't accept less than 0.5%, and some want as much as 2.5%.
-- **Thin markets are unpredictable enough** that our liquidity providers set slippage themselves. They land between 2.5% and 5%, and it climbs with order size — so if you ask for less, bigger orders simply get turned down.
+```typescript
+import { GatewaySDK, getInnerQuote, parseBtc } from '@gobob/bob-sdk';
 
-A few things that catch people out:
+const gateway = new GatewaySDK();
+const quote = await gateway.getQuote({
+  fromChain: 'bitcoin',
+  fromToken: '0x0000000000000000000000000000000000000000',
+  toChain: 'bob',
+  toToken: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
+  toUserAddress: '0x2D2E86236a5bC1c8a5e5499C517E17Fb88Dbc18c',
+  amount: parseBtc('0.1'),
+  // Omit maxSlippage to request Gateway's recommendation.
+});
 
-<Callout>
-0.5% is the lowest figure we document, but some routes insist on more. If your request comes in under a route's minimum, the error tells you the value it wants — send that back, rather than guessing your way upward.
-</Callout>
+const slippageBps = Number(getInnerQuote(quote).slippage);
+console.log(`Recommended slippage: ${slippageBps} bps (${slippageBps / 100}%)`);
+```
 
-- **When an aggregator handles the route, your number is a limit rather than a request.** We never tell those providers what slippage to use; they pick their own, and we throw the quote away if it's worse than what you asked for.
-- **Token swaps that stay on one chain always settle at 0.15%**, no matter what you send us. None of the guidance above applies to them, and the quote will tell you the figure actually used.
+The equivalent API request leaves out the `slippage` query parameter entirely:
+
+```bash
+curl --get 'https://gateway-api-mainnet.gobob.xyz/v4/get-quote' \
+  --data-urlencode 'srcChain=bitcoin' \
+  --data-urlencode 'dstChain=bob' \
+  --data-urlencode 'srcToken=0x0000000000000000000000000000000000000000' \
+  --data-urlencode 'dstToken=0x0555E30da8f98308EdB960aa94C0Db47230d2B9c' \
+  --data-urlencode 'recipient=0x2D2E86236a5bC1c8a5e5499C517E17Fb88Dbc18c' \
+  --data-urlencode 'amount=10000000'
+```
+
+Read `onramp.slippage`, `offramp.slippage`, or `tokenSwap.slippage` in the response. The onramp value is a string and the other variants use numbers; all are in basis points.
+
+Gateway derives the recommendation from the route's swap slippage plus headroom for price movement. Routes without a swap leg use the headroom alone, while same-chain token swaps keep their tighter execution tolerance. The recommendation can vary by route and quote; it is not a fixed default or a guarantee of settlement.
+
+Show the resolved tolerance to the user before execution. These examples request a quote only: include a source-chain `refundAddress` in a fresh quote before creating an order. If the user accepts the tolerance, pass that returned quote unchanged to `create-order`. If they want a different limit, request a new quote with an explicit `slippage` / `maxSlippage`; do not edit the returned quote.
+
+V3 still requires `slippage`. Older SDK versions send a fixed 3% when `maxSlippage` is omitted; upgrade to use this behavior, or call the V4 API directly. See the [migration notes](/gateway/migration#migrating-the-sdk).
 
 ### Are any regions blocked from using Gateway?
 Yes. For compliance reasons, BOB Gateway is unavailable to users connecting from the following jurisdictions:

@@ -101,6 +101,8 @@ const routes = await gatewaySDK.getRoutes();
 
 ## Get a Quote
 
+Omit `maxSlippage` to let Gateway recommend a slippage tolerance for the route. The SDK leaves the API's `slippage` parameter unset and returns the resolved value in the quote. To set your own tolerance, supply basis points, for example `maxSlippage: 300` for 3%. The SDK no longer applies a fixed 3% default; see the [migration notes](/gateway/migration#migrating-the-sdk) and [recommendation example](/gateway/faq#what-if-i-dont-know-what-slippage-to-set). Always review the quote's resolved `slippage` before execution.
+
 Request a quote for the user's desired transaction:
 
 <Tabs items={["BTC to BOB","With Affiliate Fees","Token Swap","To Solana / Tron"]}>
