@@ -26,6 +26,7 @@ export {
     GetQuoteParams,
 } from './types';
 export {
+    applyGasBuffer,
     formatBtc,
     getChainConfig,
     getInnerQuote,

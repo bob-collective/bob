@@ -11,6 +11,12 @@ const GAS_BUFFER_FIXED = 300_000n;
  * the fixed floor and large (aggregator) txs get the multiplier. Unused gas is
  * refunded, so a generous limit is nearly free while a tight one causes
  * out-of-gas failures on gas-heavy routes.
+ *
+ * Exported because `executeQuote` sends this limit to the wallet, whose pre-flight
+ * check is `value + gasLimit * maxFeePerGas <= balance`. A caller reserving native
+ * balance for a max-value send must therefore size the reserve from this exact
+ * function — deriving the formula independently lets the two drift apart and
+ * reproduces the insufficient-funds failure the limit exists to prevent.
  */
 export function applyGasBuffer(estimate: bigint): bigint {
     const multiplied = (estimate * GAS_BUFFER_NUM) / GAS_BUFFER_DEN;
