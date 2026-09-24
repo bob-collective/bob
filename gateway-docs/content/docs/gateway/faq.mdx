@@ -77,7 +77,15 @@ A few things that catch people out:
 </Callout>
 
 - **When an aggregator handles the route, your number is a limit rather than a request.** We never tell those providers what slippage to use; they pick their own, and we throw the quote away if it's worse than what you asked for.
-- **Token swaps that stay on one chain always settle at 0.15%**, no matter what you send us. None of the guidance above applies to them, and the quote will tell you the figure actually used.
+- **Token swaps that stay on one chain use at most 0.15%** and honor a tighter explicit request. None of the guidance above applies to them, and the quote will tell you the figure actually used.
+
+### Can I use automated slippage if I don't know what to set?
+
+Yes. Omit `slippage` from `GET /v4/get-quote`, or omit `maxSlippage` when calling the SDK's `getQuote`. Gateway chooses a suitable tolerance for the route and includes it in the quote. You can request and inspect this recommendation without creating an order.
+
+Gateway derives the recommendation from the route's swap slippage plus headroom for price movement. Routes without a swap leg use the headroom alone, while same-chain token swaps keep their tighter execution tolerance. The recommendation can vary by route and quote; it is not a fixed default or a guarantee of settlement.
+
+Review the recommended tolerance before creating an order. See [Request a Slippage Recommendation](/gateway/integration#request-a-slippage-recommendation) for SDK and API examples, and the [migration notes](/gateway/migration#migrating-the-sdk) if you use an older SDK.
 
 ### Are any regions blocked from using Gateway?
 Yes. For compliance reasons, BOB Gateway is unavailable to users connecting from the following jurisdictions:

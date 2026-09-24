@@ -102,9 +102,6 @@ export const ETHEREUM_USDT_ADDRESS = '0xdAC17F958D2ee523a2206206994597C13D831ec7
  */
 export const MAINNET_GATEWAY_BASE_URL = 'https://gateway-api-mainnet.gobob.xyz';
 
-/** Default slippage tolerance in basis points (300 = 3%). */
-export const DEFAULT_MAX_SLIPPAGE_BPS = '300';
-
 /**
  * Base url for the staging Gateway API.
  * @default "https://gateway-api-staging.gobob.xyz"
@@ -257,7 +254,7 @@ export class GatewayApiClient {
                 srcToken: params.fromToken.toString(),
                 dstToken: params.toToken.toString(),
                 amount: params.amount.toString(),
-                slippage: params.maxSlippage?.toString() || DEFAULT_MAX_SLIPPAGE_BPS,
+                slippage: params.maxSlippage?.toString(),
                 refundAddress: params.refundAddress?.toString(),
                 affiliates: params.affiliates?.map((a) => `${a.address}:${a.bps}`).join(','),
             },

@@ -5,7 +5,7 @@ icon: TrendingUp
 ---
 ## Overview
 
-V4 is the current BOB Gateway API. It requires a source-chain refund address before order creation and makes `register-tx` an onramp-only Bitcoin submission endpoint. V3 remains available for existing integrations.
+V4 is the current BOB Gateway API. It requires a source-chain refund address before order creation, makes `register-tx` an onramp-only Bitcoin submission endpoint, and supports optional slippage with a recommendation per route. V3 remains available for existing integrations.
 
 ### V1 and V2 removal
 
@@ -58,7 +58,20 @@ A price-only `get-quote` request may omit `refundAddress`. **`create-order` reje
 
 The example above is for an onramp. Use a source-chain address for other routes; the Bitcoin destination of an offramp is not its refund address. Keep `sender` and `recipient` encoded for their respective chains.
 
-### 3. Submit only signed Bitcoin transactions to register-tx
+### 3. Choose explicit or automatic slippage
+
+`GET /v4/get-quote` now accepts requests without `slippage`. Gateway chooses a suitable tolerance for the route and returns it in the quote's `slippage` field. V3 still requires this parameter.
+
+This is a backward-compatible addition alongside the breaking changes above: existing explicit values remain supported. To request a recommendation, remove the parameter entirely:
+
+```diff
+- GET /v4/get-quote?...&slippage=300
++ GET /v4/get-quote?...
+```
+
+Slippage is expressed in basis points (`100` = 1%, `300` = 3%). Read the resolved value from `onramp.slippage`, `offramp.slippage`, or `tokenSwap.slippage` and show it before execution. Pass the returned quote unchanged to `create-order`; to use a different tolerance, request a new quote with an explicit `slippage` value. See the [recommendation example](/gateway/integration#request-a-slippage-recommendation).
+
+### 4. Submit only signed Bitcoin transactions to register-tx
 
 V4 `register-tx` delegates onramp broadcasting to Gateway. It validates the signed transaction against the order, screens it, and broadcasts it.
 
@@ -79,7 +92,7 @@ Content-Type: application/json
 - Do not send the old `src_tx_hash` / `src_chain` registration bodies to V4.
 - The submission response remains a string or `{ "onramp": { "txid": "..." } }`. Continue polling the order for settlement.
 
-### 4. Keep shared response handling
+### 5. Keep shared response handling
 
 V4 retains these V3 response models:
 
@@ -94,6 +107,7 @@ A model's suffix identifies the schema version, not the endpoint you should call
 - Move endpoint calls to `/v4`.
 - Remove `ownerAddress` from quote requests.
 - Include a source-chain `refundAddress` before creating any order and handle `MISSING_REFUND_ADDRESS`.
+- Keep an explicit `slippage` limit, or omit it to use Gateway's recommendation; display the resolved value from the quote.
 - Submit finalized Bitcoin transaction hex for onramps; remove registration calls for other routes.
 - Preserve tagged transaction handling, pagination, affiliate fees, and settlement-status parsing.
 
@@ -143,6 +157,17 @@ const quote = await gateway.getQuote({
 ```
 
 `getQuote` forwards `refundAddress` as supplied; it does not fill it from `fromUserAddress`. Remove `ownerAddress` from your SDK parameters too.
+
+**Slippage default changed:** the SDK no longer sends `slippage=300` (3%) when `maxSlippage` is omitted. The example above now lets Gateway recommend a tolerance per route. To preserve the previous behavior, set it explicitly:
+
+```diff
+ const quote = await gateway.getQuote({
+   // ... other quote parameters
++  maxSlippage: 300, // Preserve the previous 3% tolerance
+ });
+```
+
+Omit `maxSlippage` to use the recommendation and read the resolved `slippage` from the returned quote. Explicit values, including `0`, are forwarded unchanged. The exported `DEFAULT_MAX_SLIPPAGE_BPS` constant has been removed; replace any direct imports with your application's chosen tolerance. Older generated clients also require `slippage`; regenerate them from the updated OpenAPI spec to make that request parameter optional.
 
 ### Generated types
 
