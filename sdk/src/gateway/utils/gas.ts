@@ -19,9 +19,22 @@ export function applyGasBuffer(estimate: bigint): bigint {
 }
 
 /**
- * Buffered gas limit for local-key sends, or `undefined` to fall back to viem's
- * default estimation. If `eth_estimateGas` reverts we return `undefined` so the
- * send behaves exactly as it does today — never introducing a new failure mode.
+ * Chains whose adapter does not speak plain EVM JSON-RPC for gas. The Tron adapter's
+ * `publicClient` is not required to implement `estimateGas`, and its `sendTransaction`
+ * takes no `gas` field (see README — required surface), so estimating there would both
+ * break that contract and be discarded.
+ */
+const CHAINS_WITHOUT_GAS_ESTIMATION = new Set(['tron']);
+
+/** Whether the source chain's client adapter can answer `eth_estimateGas`. */
+export function supportsGasEstimation(srcChain: string): boolean {
+    return !CHAINS_WITHOUT_GAS_ESTIMATION.has(srcChain.toLowerCase());
+}
+
+/**
+ * Buffered gas limit for offramp / tokenSwap sends, or `undefined` to fall back to the
+ * caller's own estimation. If `eth_estimateGas` reverts we return `undefined` so the send
+ * behaves exactly as it does without a limit — never introducing a new failure mode.
  */
 export async function estimateGasWithBuffer(
     publicClient: PublicClient<Transport>,
