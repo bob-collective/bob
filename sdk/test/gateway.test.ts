@@ -1454,12 +1454,8 @@ describe('Gateway Tests', () => {
     });
 
     it('passes the address string, not the account object, for json-rpc accounts on offramp', async () => {
-        // Scope: the `account` argument only. Browser wallets (wagmi) and the UI's custom
-        // Tron client both use type 'json-rpc' and store the address as a string (base58
-        // for Tron). They must keep receiving `account.address`, so the wallet signs and
-        // any base58<->hex conversion is handled by the injected client.
-        // Gas-limit behaviour for these accounts is covered separately, under
-        // 'gas-limit buffer' — it is no longer unchanged for browser wallets.
+        // Scope: the `account` argument only — json-rpc accounts keep receiving
+        // `account.address`. Gas-limit behaviour for them is covered under 'gas-limit buffer'.
         const gatewaySDK = new GatewaySDK();
         const jsonRpcAddress = '0xabcd1234abcd1234abcd1234abcd1234abcd1234' as Address;
 
@@ -3425,9 +3421,6 @@ describe('Gateway Tests', () => {
             expect(error.cause).toBe(gasError);
         });
 
-        // Browser wallets used to be excluded (bob#1090 kept them byte-for-byte unchanged), so they
-        // estimated and padded their own limit. Their pre-flight check `value + gasLimit * maxFee`
-        // then refused max-balance native sends, so they now get the SDK's limit too.
         it('applies the +300k floor as gas for a json-rpc (browser-wallet) offramp send', async () => {
             const gatewaySDK = new GatewaySDK();
             mockCreateOrder();
@@ -3492,8 +3485,6 @@ describe('Gateway Tests', () => {
                 publicClient: mockPublicClient,
             });
 
-            // The Tron adapter's publicClient need not implement estimateGas, and its
-            // sendTransaction takes no gas field — see the README's required surface.
             expect(estimateGasMock).not.toHaveBeenCalled();
             expect(sendTransactionMock.mock.calls[0][0]).not.toHaveProperty('gas');
         });
@@ -3585,8 +3576,7 @@ describe('Gateway Tests', () => {
                 });
             nock(`${MAINNET_GATEWAY_BASE_URL}`).patch('/v4/register-tx').reply(200, JSON.stringify('ok'));
 
-            // Above 1.5m the multiplier overtakes the fixed cushion, the branch the
-            // local-key cases never reach.
+            // Above 1.5m the multiplier overtakes the fixed cushion — the branch no other test hits.
             const estimate = 2_000_000n;
             const sendTransactionMock = vi.fn().mockResolvedValue('0xtxhash' as `0x${string}`);
             const estimateGasMock = vi.fn().mockResolvedValue(estimate);

@@ -12,11 +12,7 @@ const GAS_BUFFER_FIXED = 300_000n;
  * refunded, so a generous limit is nearly free while a tight one causes
  * out-of-gas failures on gas-heavy routes.
  *
- * Exported because `executeQuote` sends this limit to the wallet, whose pre-flight
- * check is `value + gasLimit * maxFeePerGas <= balance`. A caller reserving native
- * balance for a max-value send must therefore size the reserve from this exact
- * function — deriving the formula independently lets the two drift apart and
- * reproduces the insufficient-funds failure the limit exists to prevent.
+ * Public so callers can size a balance reserve from it — see the README's gas-limit section.
  */
 export function applyGasBuffer(estimate: bigint): bigint {
     const multiplied = (estimate * GAS_BUFFER_NUM) / GAS_BUFFER_DEN;
@@ -25,14 +21,11 @@ export function applyGasBuffer(estimate: bigint): bigint {
 }
 
 /**
- * Chains whose adapter does not speak plain EVM JSON-RPC for gas. The Tron adapter's
- * `publicClient` is not required to implement `estimateGas`, and its `sendTransaction`
- * takes no `gas` field (see README — required surface), so estimating there would both
- * break that contract and be discarded.
+ * The Tron adapter is not required to implement `estimateGas`, and its `sendTransaction`
+ * takes no `gas` field (README — required surface), so a limit there breaks the contract.
  */
 const CHAINS_WITHOUT_GAS_ESTIMATION = new Set(['tron']);
 
-/** Whether the source chain's client adapter can answer `eth_estimateGas`. */
 export function supportsGasEstimation(srcChain: string): boolean {
     return !CHAINS_WITHOUT_GAS_ESTIMATION.has(srcChain.toLowerCase());
 }
