@@ -35,7 +35,7 @@ export function loadConfig(): Config {
   const feeRate = process.env.BTC_FEE_RATE ? parseInt(process.env.BTC_FEE_RATE, 10) : undefined;
   _config = {
     apiUrl: process.env.GATEWAY_API_URL,
-    apiKey: process.env.GATEWAY_API_KEY,
+    apiKey: process.env.GATEWAY_API_KEY?.trim() || undefined,
     bitcoinPrivateKey: process.env.BITCOIN_PRIVATE_KEY,
     evmPrivateKey: process.env.EVM_PRIVATE_KEY,
     timeoutMs: 1_800_000,

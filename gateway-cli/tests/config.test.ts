@@ -17,7 +17,7 @@ afterEach(() => {
 
 describe("Gateway SDK configuration", () => {
   test("passes the configured API key and URL to the SDK", async () => {
-    process.env.GATEWAY_API_KEY = "a".repeat(32);
+    process.env.GATEWAY_API_KEY = ` ${"a".repeat(32)}\n`;
     process.env.GATEWAY_API_URL = "https://gateway.example";
     const { getSdk } = await import("../src/config.js");
 
@@ -26,5 +26,13 @@ describe("Gateway SDK configuration", () => {
       basePath: "https://gateway.example",
       apiKey: "a".repeat(32),
     });
+  });
+
+  test("treats a blank key as unconfigured", async () => {
+    process.env.GATEWAY_API_KEY = " \n";
+    const { getSdk } = await import("../src/config.js");
+
+    getSdk();
+    expect(gatewaySDK).toHaveBeenCalledWith({ basePath: undefined, apiKey: undefined });
   });
 });
