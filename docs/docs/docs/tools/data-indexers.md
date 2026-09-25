@@ -1,5 +1,18 @@
 # Data Indexers
 
+## Envio
+
+[Envio](https://envio.dev/?utm_source=bob&utm_medium=partner-docs) is a high-performance indexing framework that turns smart contract events into a queryable GraphQL API, with managed hosting on Envio Cloud.
+
+Envio's [HyperIndex](https://docs.envio.dev/docs/HyperIndex/overview?utm_source=bob&utm_medium=partner-docs) natively supports indexing any EVM chain out of the box, so you can index BOB today using RPC as the data source.
+Auto-generate an indexer from any verified contract with `pnpx envio init`, write handlers in TypeScript, JavaScript, or ReScript, and deploy on Envio Cloud or self-host.
+See the [quickstart](https://docs.envio.dev/docs/HyperIndex/quickstart?utm_source=bob&utm_medium=partner-docs) and the [RPC data source guide](https://docs.envio.dev/docs/HyperIndex/rpc-sync?utm_source=bob&utm_medium=partner-docs) to get started.
+
+**Supported Networks**
+
+- BOB Mainnet
+- BOB Sepolia (Testnet)
+
 ## Goldsky
 
 [Goldsky](https://goldsky.com/) is a data indexer for web3 builders, offering high-performance subgraph hosting and realtime data replication pipelines.
