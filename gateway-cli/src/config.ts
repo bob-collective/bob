@@ -10,6 +10,8 @@ export const BTC_DECIMALS = 8;
 export interface Config {
   /** Gateway API base URL (default: production endpoint). */
   apiUrl?: string;
+  /** Gateway API key for authenticated requests. */
+  apiKey?: string;
   /** Bitcoin private key in WIF or hex format. */
   bitcoinPrivateKey?: string;
   /** EVM private key in hex format. */
@@ -33,6 +35,7 @@ export function loadConfig(): Config {
   const feeRate = process.env.BTC_FEE_RATE ? parseInt(process.env.BTC_FEE_RATE, 10) : undefined;
   _config = {
     apiUrl: process.env.GATEWAY_API_URL,
+    apiKey: process.env.GATEWAY_API_KEY?.trim() || undefined,
     bitcoinPrivateKey: process.env.BITCOIN_PRIVATE_KEY,
     evmPrivateKey: process.env.EVM_PRIVATE_KEY,
     timeoutMs: 1_800_000,
@@ -51,8 +54,8 @@ let _sdk: InstanceType<typeof GatewaySDK> | null = null;
  */
 export function getSdk(): InstanceType<typeof GatewaySDK> {
   if (!_sdk) {
-    const { apiUrl } = loadConfig();
-    _sdk = apiUrl ? new GatewaySDK({ basePath: apiUrl }) : new GatewaySDK();
+    const { apiUrl, apiKey } = loadConfig();
+    _sdk = new GatewaySDK({ basePath: apiUrl, apiKey });
   }
   return _sdk;
 }
