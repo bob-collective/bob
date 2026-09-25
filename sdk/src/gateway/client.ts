@@ -46,7 +46,7 @@ import {
     type GetQuoteParams,
     type StrategyParams,
 } from './types';
-import { estimateGasWithBuffer, formatBtc, isValidTronAddress, tronAddressToHex } from './utils';
+import { estimateGasWithBuffer, formatBtc, isValidTronAddress, supportsGasEstimation, tronAddressToHex } from './utils';
 
 const RETRY_COUNT = 8; // Number of times to retry fetching transaction receipt after sending a transaction
 
@@ -505,14 +505,13 @@ export class GatewayApiClient {
             let transactionHash: string;
             try {
                 const offrampValue = BigInt(order.offramp.tx.value || 0);
-                const offrampGas =
-                    walletClient.account.type === 'local'
-                        ? await estimateGasWithBuffer(publicClient, walletClient.account, {
-                              to: spenderAddress,
-                              data: offrampData,
-                              value: offrampValue,
-                          })
-                        : undefined;
+                const offrampGas = supportsGasEstimation(quote.offramp.srcChain)
+                    ? await estimateGasWithBuffer(publicClient, walletClient.account, {
+                          to: spenderAddress,
+                          data: offrampData,
+                          value: offrampValue,
+                      })
+                    : undefined;
 
                 const hash = await walletClient.sendTransaction({
                     account: signerAccount(walletClient),
@@ -663,14 +662,13 @@ export class GatewayApiClient {
             let transactionHash: string;
             try {
                 const tokenSwapValue = BigInt(order.tokenSwap.tx.value || 0);
-                const tokenSwapGas =
-                    walletClient.account.type === 'local'
-                        ? await estimateGasWithBuffer(publicClient, walletClient.account, {
-                              to: tokenSwapTo,
-                              data: tokenSwapData,
-                              value: tokenSwapValue,
-                          })
-                        : undefined;
+                const tokenSwapGas = supportsGasEstimation(quote.tokenSwap.srcChain)
+                    ? await estimateGasWithBuffer(publicClient, walletClient.account, {
+                          to: tokenSwapTo,
+                          data: tokenSwapData,
+                          value: tokenSwapValue,
+                      })
+                    : undefined;
 
                 const hash = await walletClient.sendTransaction({
                     account: signerAccount(walletClient),

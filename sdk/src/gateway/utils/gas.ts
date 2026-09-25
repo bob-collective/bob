@@ -11,6 +11,8 @@ const GAS_BUFFER_FIXED = 300_000n;
  * the fixed floor and large (aggregator) txs get the multiplier. Unused gas is
  * refunded, so a generous limit is nearly free while a tight one causes
  * out-of-gas failures on gas-heavy routes.
+ *
+ * Public so callers can size a balance reserve from it — see the README's gas-limit section.
  */
 export function applyGasBuffer(estimate: bigint): bigint {
     const multiplied = (estimate * GAS_BUFFER_NUM) / GAS_BUFFER_DEN;
@@ -19,9 +21,19 @@ export function applyGasBuffer(estimate: bigint): bigint {
 }
 
 /**
- * Buffered gas limit for local-key sends, or `undefined` to fall back to viem's
- * default estimation. If `eth_estimateGas` reverts we return `undefined` so the
- * send behaves exactly as it does today — never introducing a new failure mode.
+ * The Tron adapter is not required to implement `estimateGas`, and its `sendTransaction`
+ * takes no `gas` field (README — required surface), so a limit there breaks the contract.
+ */
+const CHAINS_WITHOUT_GAS_ESTIMATION = new Set(['tron']);
+
+export function supportsGasEstimation(srcChain: string): boolean {
+    return !CHAINS_WITHOUT_GAS_ESTIMATION.has(srcChain.toLowerCase());
+}
+
+/**
+ * Buffered gas limit for offramp / tokenSwap sends, or `undefined` to fall back to the
+ * caller's own estimation. If `eth_estimateGas` reverts we return `undefined` so the send
+ * behaves exactly as it does without a limit — never introducing a new failure mode.
  */
 export async function estimateGasWithBuffer(
     publicClient: PublicClient<Transport>,
