@@ -1453,12 +1453,9 @@ describe('Gateway Tests', () => {
         expect((passedAccount as Account).type).toBe('local');
     });
 
-    it('passes the address string for json-rpc accounts on offramp (browser/Tron unchanged)', async () => {
-        // Guarantee: the local-account fix must NOT change behaviour for json-rpc
-        // accounts. Browser wallets (wagmi) and the UI's custom Tron client both
-        // use type 'json-rpc' and store the address as a string (base58 for Tron).
-        // They must keep receiving `account.address`, so the wallet signs and any
-        // base58<->hex conversion is handled by the injected client as before.
+    it('passes the address string, not the account object, for json-rpc accounts on offramp', async () => {
+        // Scope: the `account` argument only — json-rpc accounts keep receiving
+        // `account.address`. Gas-limit behaviour for them is covered under 'gas-limit buffer'.
         const gatewaySDK = new GatewaySDK();
         const jsonRpcAddress = '0xabcd1234abcd1234abcd1234abcd1234abcd1234' as Address;
 
@@ -3424,12 +3421,13 @@ describe('Gateway Tests', () => {
             expect(error.cause).toBe(gasError);
         });
 
-        it('does NOT estimate or set gas for a json-rpc (browser-wallet) offramp send', async () => {
+        it('applies the +300k floor as gas for a json-rpc (browser-wallet) offramp send', async () => {
             const gatewaySDK = new GatewaySDK();
             mockCreateOrder();
 
+            const estimate = 200_000n;
             const sendTransactionMock = vi.fn().mockResolvedValue('0xtxhash' as `0x${string}`);
-            const estimateGasMock = vi.fn();
+            const estimateGasMock = vi.fn().mockResolvedValue(estimate);
 
             // address-only account => viem json-rpc account (type !== 'local')
             const mockWalletClient = {
@@ -3447,6 +3445,42 @@ describe('Gateway Tests', () => {
 
             await gatewaySDK.executeQuote({
                 quote: offrampQuote(),
+                walletClient: mockWalletClient,
+                publicClient: mockPublicClient,
+            });
+
+            // max(200_000*12/10, 200_000+300_000) = max(240_000, 500_000) = 500_000
+            expect(estimateGasMock).toHaveBeenCalledWith(
+                expect.objectContaining({ to: spenderAddress, data: '0xabcdef', value: 0n })
+            );
+            expect(sendTransactionMock).toHaveBeenCalledWith(expect.objectContaining({ gas: 500_000n }));
+        });
+
+        it('does NOT estimate or set gas when the source chain is Tron', async () => {
+            const gatewaySDK = new GatewaySDK();
+            mockCreateOrder();
+
+            const sendTransactionMock = vi.fn().mockResolvedValue('0xtxhash' as `0x${string}`);
+            const estimateGasMock = vi.fn().mockResolvedValue(200_000n);
+
+            const tronQuote = offrampQuote();
+            tronQuote.offramp.srcChain = 'tron';
+
+            const mockWalletClient = {
+                account: { address: localAccount.address },
+                writeContract: vi.fn(),
+                sendTransaction: sendTransactionMock,
+            } as unknown as WalletClient<Transport, ViemChain, Account>;
+
+            const mockPublicClient = {
+                readContract: mockOftReadContract({ approvalRequired: false }),
+                multicall: vi.fn().mockResolvedValue([0n]),
+                estimateGas: estimateGasMock,
+                waitForTransactionReceipt: vi.fn().mockResolvedValue({}),
+            } as unknown as PublicClient<Transport>;
+
+            await gatewaySDK.executeQuote({
+                quote: tronQuote,
                 walletClient: mockWalletClient,
                 publicClient: mockPublicClient,
             });
@@ -3512,6 +3546,62 @@ describe('Gateway Tests', () => {
                 expect.objectContaining({ to: tokenSwapTo, data: '0xabcdef', value: 0n })
             );
             expect(sendTransactionMock).toHaveBeenCalledWith(expect.objectContaining({ gas: 1_374_362n }));
+        });
+
+        it('applies the 1.2x multiplier as gas for a json-rpc (browser-wallet) tokenSwap send', async () => {
+            const gatewaySDK = new GatewaySDK();
+
+            const tokenSwapTo = '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c';
+            const tokenSwapQuote: GatewayQuoteV4OneOf1 = {
+                tokenSwap: {
+                    dstChain: 'bob',
+                    estimatedTimeInSecs: 60,
+                    fees: { amount: '0', address: zeroAddress, chain: 'bob' },
+                    inputAmount: { amount: '100000', address: zeroAddress, chain: 'ethereum' },
+                    outputAmount: { amount: '100000', address: zeroAddress, chain: 'bob' },
+                    recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+                    slippage: 100,
+                    srcChain: 'ethereum',
+                    txTo: tokenSwapTo,
+                },
+            };
+
+            nock(`${MAINNET_GATEWAY_BASE_URL}`)
+                .post('/v4/create-order')
+                .reply(200, {
+                    tokenSwap: {
+                        order_id: 'tokenswap-gas-jsonrpc',
+                        tx: { type: 'evm', chain: 'ethereum', to: tokenSwapTo, data: '0xabcdef', value: '0' },
+                    },
+                });
+            nock(`${MAINNET_GATEWAY_BASE_URL}`).patch('/v4/register-tx').reply(200, JSON.stringify('ok'));
+
+            // Above 1.5m the multiplier overtakes the fixed cushion — the branch no other test hits.
+            const estimate = 2_000_000n;
+            const sendTransactionMock = vi.fn().mockResolvedValue('0xtxhash' as `0x${string}`);
+            const estimateGasMock = vi.fn().mockResolvedValue(estimate);
+
+            const mockWalletClient = {
+                account: { address: localAccount.address },
+                writeContract: vi.fn(),
+                sendTransaction: sendTransactionMock,
+            } as unknown as WalletClient<Transport, ViemChain, Account>;
+
+            const mockPublicClient = {
+                readContract: mockOftReadContract({ approvalRequired: false }),
+                multicall: vi.fn().mockResolvedValue([0n]),
+                estimateGas: estimateGasMock,
+                waitForTransactionReceipt: vi.fn().mockResolvedValue({}),
+            } as unknown as PublicClient<Transport>;
+
+            await gatewaySDK.executeQuote({
+                quote: tokenSwapQuote,
+                walletClient: mockWalletClient,
+                publicClient: mockPublicClient,
+            });
+
+            // max(2_000_000*12/10, 2_000_000+300_000) = max(2_400_000, 2_300_000) = 2_400_000
+            expect(sendTransactionMock).toHaveBeenCalledWith(expect.objectContaining({ gas: 2_400_000n }));
         });
     });
 

@@ -110,6 +110,37 @@ for non-EVM chains like Tron.
 | `writeContract(request)` → `Hash`                        | Send the `approve` / allowance-reset tx produced by `simulateContract`. |
 | `sendTransaction({ account, to, data, value })` → `Hash` | Broadcast the gateway order transaction.                                |
 
+## Gas limits and balance reserves
+
+On EVM chains `executeQuote` attaches an explicit gas limit to the offramp and tokenSwap sends:
+
+```ts
+gas = applyGasBuffer(estimate); // max(estimate * 1.2, estimate + 300_000)
+```
+
+`applyGasBuffer` is exported so callers can size against the same function the SDK uses rather than
+re-deriving it. That matters because wallets gate a send on
+
+```
+value + gas * maxFeePerGas <= balance
+```
+
+so anything spending a user's **entire native balance** has to hold back `gas * maxFeePerGas`, not
+the fee the transaction will actually cost. The two differ substantially: wallets quote a
+`maxFeePerGas` well above the price finally paid, and refund the unused gas.
+
+**Two caveats.**
+
+The fixed `+300_000` floor dominates for small estimates, so the limit can exceed what a wallet
+would have chosen by itself — a 60k estimate becomes 360k, where a wallet's own padding is nearer
+90k. A near-max send that previously fit can stop fitting. If your reserve was tuned against
+wallet-chosen limits, re-check it.
+
+An exact reserve is not computable ahead of time. `estimate` is derived from `order.tx.data`, which
+only exists once `createOrderV4` has run inside `executeQuote`, and `maxFeePerGas` is the wallet's
+own choice. Over-reserve. A server-supplied gas figure on the quote would remove the guesswork —
+tracked in bob-collective/bob-gateway#2042.
+
 ## Tron support
 
 To run an onramp/offramp against Tron you must **inject a `walletClient` and a
