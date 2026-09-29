@@ -1,7 +1,10 @@
 use eyre::{bail, Result};
 use reqwest::{Client, Url};
 use serde::Deserialize;
-use std::str::FromStr;
+use std::{str::FromStr, time::Duration};
+
+/// Caps how long a single request may hang so a stalled mempool.space call cannot block the caller.
+const REQUEST_TIMEOUT: Duration = Duration::from_secs(10);
 
 const MEMPOOL_MAINNET_URL: &str = "https://mempool.space/api/v1/";
 const MEMPOOL_TESTNET_URL: &str = "https://mempool.space/testnet/api/v1/";
@@ -37,7 +40,10 @@ impl MempoolClient {
             },
         };
 
-        Ok(Self { url: Url::from_str(&url)?, cli: Client::new() })
+        Ok(Self {
+            url: Url::from_str(&url)?,
+            cli: Client::builder().timeout(REQUEST_TIMEOUT).build()?,
+        })
     }
 
     async fn get(&self, path: &str) -> Result<String> {
