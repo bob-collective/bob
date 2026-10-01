@@ -43,10 +43,11 @@ import {
     ExecuteQuoteError,
     type ExecuteQuoteStep,
     ExecuteQuoteStepType,
+    type PreparedTransaction,
     type GetQuoteParams,
     type StrategyParams,
 } from './types';
-import { estimateGasWithBuffer, formatBtc, isValidTronAddress, supportsGasEstimation, tronAddressToHex } from './utils';
+import { estimateGas, formatBtc, isValidTronAddress, supportsGasEstimation, tronAddressToHex } from './utils';
 
 const RETRY_COUNT = 8; // Number of times to retry fetching transaction receipt after sending a transaction
 
@@ -279,9 +280,12 @@ export class GatewayApiClient {
             publicClient,
             btcSigner,
             callback,
+            onPreparedTransaction,
         }: {
             quote: GatewayQuoteV4;
             callback?: (step: ExecuteQuoteStep) => void;
+            /** Called once per EVM send, after the gas estimate and before the wallet opens. */
+            onPreparedTransaction?: (transaction: PreparedTransaction) => void;
         } & AllWalletClientParams,
         initOverrides?: RequestInit
     ): Promise<ExecuteQuoteResult> {
@@ -505,13 +509,24 @@ export class GatewayApiClient {
             let transactionHash: string;
             try {
                 const offrampValue = BigInt(order.offramp.tx.value || 0);
-                const offrampGas = supportsGasEstimation(quote.offramp.srcChain)
-                    ? await estimateGasWithBuffer(publicClient, walletClient.account, {
+                const offrampEstimate = supportsGasEstimation(quote.offramp.srcChain)
+                    ? await estimateGas(publicClient, walletClient.account, {
                           to: spenderAddress,
                           data: offrampData,
                           value: offrampValue,
                       })
                     : undefined;
+                const offrampGas = offrampEstimate?.limit;
+
+                onPreparedTransaction?.({
+                    orderId,
+                    chain: quote.offramp.srcChain,
+                    to: spenderAddress,
+                    data: offrampData,
+                    value: offrampValue,
+                    estimatedGas: offrampEstimate?.estimate,
+                    gasLimit: offrampGas,
+                });
 
                 const hash = await walletClient.sendTransaction({
                     account: signerAccount(walletClient),
@@ -662,13 +677,24 @@ export class GatewayApiClient {
             let transactionHash: string;
             try {
                 const tokenSwapValue = BigInt(order.tokenSwap.tx.value || 0);
-                const tokenSwapGas = supportsGasEstimation(quote.tokenSwap.srcChain)
-                    ? await estimateGasWithBuffer(publicClient, walletClient.account, {
+                const tokenSwapEstimate = supportsGasEstimation(quote.tokenSwap.srcChain)
+                    ? await estimateGas(publicClient, walletClient.account, {
                           to: tokenSwapTo,
                           data: tokenSwapData,
                           value: tokenSwapValue,
                       })
                     : undefined;
+                const tokenSwapGas = tokenSwapEstimate?.limit;
+
+                onPreparedTransaction?.({
+                    orderId,
+                    chain: quote.tokenSwap.srcChain,
+                    to: tokenSwapTo,
+                    data: tokenSwapData,
+                    value: tokenSwapValue,
+                    estimatedGas: tokenSwapEstimate?.estimate,
+                    gasLimit: tokenSwapGas,
+                });
 
                 const hash = await walletClient.sendTransaction({
                     account: signerAccount(walletClient),

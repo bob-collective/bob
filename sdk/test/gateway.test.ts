@@ -25,6 +25,7 @@ import {
     GatewayErrorCodeV4Variants,
     GatewaySDK,
     isGatewayError,
+    PreparedTransaction,
 } from '../src/gateway';
 import { assertAllowanceHolderSpender } from '../src/gateway/allowance-holder';
 import { ETHEREUM_USDT_ADDRESS, MAINNET_GATEWAY_BASE_URL } from '../src/gateway/client';
@@ -3353,6 +3354,79 @@ describe('Gateway Tests', () => {
             expect(sendTransactionMock).toHaveBeenCalledWith(expect.objectContaining({ gas: 1_374_362n }));
         });
 
+        it('reports the prepared transaction with its estimate before the wallet is asked', async () => {
+            const gatewaySDK = new GatewaySDK();
+            mockCreateOrder();
+
+            const prepared: PreparedTransaction[] = [];
+            const sendTransactionMock = vi.fn().mockResolvedValue('0xtxhash' as `0x${string}`);
+
+            const mockWalletClient = {
+                account: localAccount,
+                writeContract: vi.fn(),
+                sendTransaction: sendTransactionMock,
+            } as unknown as WalletClient<Transport, ViemChain, Account>;
+
+            const mockPublicClient = {
+                readContract: mockOftReadContract({ approvalRequired: false }),
+                multicall: vi.fn().mockResolvedValue([0n]),
+                estimateGas: vi.fn().mockResolvedValue(1_074_362n),
+                waitForTransactionReceipt: vi.fn().mockResolvedValue({}),
+            } as unknown as PublicClient<Transport>;
+
+            await gatewaySDK.executeQuote({
+                quote: offrampQuote(),
+                walletClient: mockWalletClient,
+                publicClient: mockPublicClient,
+                onPreparedTransaction: (transaction) => prepared.push(transaction),
+            });
+
+            expect(prepared).toHaveLength(1);
+            expect(prepared[0]).toMatchObject({
+                chain: 'ethereum',
+                to: spenderAddress,
+                data: '0xabcdef',
+                value: 0n,
+                estimatedGas: 1_074_362n,
+                gasLimit: 1_374_362n,
+            });
+            expect(prepared[0].orderId).toBeTruthy();
+            // The point of the callback: a caller can size a reserve from it while it can still matter.
+            expect(sendTransactionMock).toHaveBeenCalledTimes(1);
+        });
+
+        it('reports the prepared transaction without an estimate when it reverted', async () => {
+            const gatewaySDK = new GatewaySDK();
+            mockCreateOrder();
+
+            const prepared: PreparedTransaction[] = [];
+
+            const mockWalletClient = {
+                account: localAccount,
+                writeContract: vi.fn(),
+                sendTransaction: vi.fn().mockResolvedValue('0xtxhash' as `0x${string}`),
+            } as unknown as WalletClient<Transport, ViemChain, Account>;
+
+            const mockPublicClient = {
+                readContract: mockOftReadContract({ approvalRequired: false }),
+                multicall: vi.fn().mockResolvedValue([0n]),
+                estimateGas: vi.fn().mockRejectedValue(new Error('execution reverted')),
+                waitForTransactionReceipt: vi.fn().mockResolvedValue({}),
+            } as unknown as PublicClient<Transport>;
+
+            await gatewaySDK.executeQuote({
+                quote: offrampQuote(),
+                walletClient: mockWalletClient,
+                publicClient: mockPublicClient,
+                onPreparedTransaction: (transaction) => prepared.push(transaction),
+            });
+
+            // Distinguishable from a measurement, so a caller does not record the wallet's own guess.
+            expect(prepared[0].estimatedGas).toBeUndefined();
+            expect(prepared[0].gasLimit).toBeUndefined();
+            expect(prepared[0].data).toBe('0xabcdef');
+        });
+
         it('falls back to no gas field when estimateGas throws (no new failure mode)', async () => {
             const gatewaySDK = new GatewaySDK();
             mockCreateOrder();
@@ -3381,17 +3455,14 @@ describe('Gateway Tests', () => {
             expect(sendTransactionMock.mock.calls[0][0]).not.toHaveProperty('gas');
         });
 
-        it('attaches orderId when estimateGasWithBuffer itself rejects', async () => {
+        it('attaches orderId when the gas estimate itself rejects', async () => {
             const gatewaySDK = new GatewaySDK();
             mockCreateOrder();
 
-            // estimateGasWithBuffer always swallows eth_estimateGas failures internally (see
-            // sdk/src/gateway/utils/gas.ts), so a rejection can only be observed at this call
-            // site by replacing the function itself, not by rejecting the underlying estimateGas.
+            // `estimateGas` swallows eth_estimateGas failures internally (see sdk/src/gateway/utils/gas.ts),
+            // so a rejection can only be observed at this call site by replacing the function itself.
             const gasError = new Error('gas estimation blew up');
-            const estimateGasWithBufferSpy = vi
-                .spyOn(gatewayUtils, 'estimateGasWithBuffer')
-                .mockRejectedValueOnce(gasError);
+            const estimateGasSpy = vi.spyOn(gatewayUtils, 'estimateGas').mockRejectedValueOnce(gasError);
 
             const mockWalletClient = {
                 account: localAccount,
@@ -3413,7 +3484,7 @@ describe('Gateway Tests', () => {
                 })
                 .catch((thrown: unknown) => thrown);
 
-            estimateGasWithBufferSpy.mockRestore();
+            estimateGasSpy.mockRestore();
 
             expect(error).toBeInstanceOf(ExecuteQuoteError);
             assert(error instanceof ExecuteQuoteError);

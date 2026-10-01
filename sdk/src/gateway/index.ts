@@ -23,10 +23,12 @@ export {
     ExecuteQuoteStep,
     ExecuteQuoteStepType,
     GatewayQuoteParams,
+    PreparedTransaction,
     GetQuoteParams,
 } from './types';
 export {
     applyGasBuffer,
+    estimateGas,
     formatBtc,
     getChainConfig,
     getInnerQuote,

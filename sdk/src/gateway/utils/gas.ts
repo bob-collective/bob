@@ -30,16 +30,27 @@ export function supportsGasEstimation(srcChain: string): boolean {
     return !CHAINS_WITHOUT_GAS_ESTIMATION.has(srcChain.toLowerCase());
 }
 
+/** The raw `eth_estimateGas` result and the limit derived from it, or `undefined` for both when it reverted. */
+export interface GasEstimate {
+    /** `eth_estimateGas` on the exact transaction being sent. */
+    estimate: bigint;
+    /** `applyGasBuffer(estimate)` — the limit attached to the send. */
+    limit: bigint;
+}
+
 /**
  * Buffered gas limit for offramp / tokenSwap sends, or `undefined` to fall back to the
  * caller's own estimation. If `eth_estimateGas` reverts we return `undefined` so the send
  * behaves exactly as it does without a limit — never introducing a new failure mode.
+ *
+ * Returns the raw estimate too: a caller sizing a balance reserve needs the measurement, and
+ * `applyGasBuffer` is not invertible — `max(x1.2, +300k)` hides which branch produced the limit.
  */
-export async function estimateGasWithBuffer(
+export async function estimateGas(
     publicClient: PublicClient<Transport>,
     account: Account,
     tx: { to: Address; data: Hex; value: bigint }
-): Promise<bigint | undefined> {
+): Promise<GasEstimate | undefined> {
     try {
         const estimate = await publicClient.estimateGas({
             account,
@@ -47,8 +58,16 @@ export async function estimateGasWithBuffer(
             data: tx.data,
             value: tx.value,
         });
-        return applyGasBuffer(estimate);
+        return { estimate, limit: applyGasBuffer(estimate) };
     } catch {
         return undefined;
     }
+}
+
+export async function estimateGasWithBuffer(
+    publicClient: PublicClient<Transport>,
+    account: Account,
+    tx: { to: Address; data: Hex; value: bigint }
+): Promise<bigint | undefined> {
+    return (await estimateGas(publicClient, account, tx))?.limit;
 }
