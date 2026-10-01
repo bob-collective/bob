@@ -12,11 +12,11 @@ jobs:
 
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Cache Bitcoin Core
         id: cache-bitcoin
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: /usr/local/bin/bitcoind
           key: bitcoin-core-0.29.3
@@ -29,24 +29,24 @@ jobs:
           sudo mv bitcoin-29.3/bin/bitcoind /usr/local/bin/
 
       - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1
+        uses: foundry-rs/foundry-toolchain@908c540300062bd5a7e473851cdb4282204cee09 # v1
 
       - name: Set variables
         run: |
           echo "TOOLCHAIN=$(rustup show active-toolchain | cut -d ' ' -f1)" >> $GITHUB_ENV
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@nightly
+        uses: dtolnay/rust-toolchain@be39649afda95dbf70f87cce95f68b8d5797b296 # nightly
         with:
           toolchain: ${{ env.TOOLCHAIN }}
           components: rustfmt, clippy, rust-docs
 
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
         with:
           cache-on-failure: true
 
       - name: Cache cargo install binaries
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         id: cargo-bin-cache
         with:
           path: ~/.cargo/bin/electrs
