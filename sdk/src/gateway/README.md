@@ -47,14 +47,14 @@ const { order, tx } = await gateway.executeQuote({
 
 ## Core methods
 
-| Method                                                                       | Purpose                                                                                        |
-| ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `getQuote(params)`                                                           | Fetch a quote. Onramp vs offramp inferred from `fromChain` / `toChain`.                        |
-| `executeQuote({ quote, walletClient, publicClient, btcSigner?, callback? })` | Run the full flow for a quote (approvals → on-chain tx / BTC signing).                         |
-| `getOrders({ userAddress, cursor?, limit? })`                                | Paginated orders for an EVM address → `{ orders, nextCursor? }`.                               |
-| `getOrder(id)`                                                               | Single order by id (txId/txHash).                                                              |
-| `getRoutes()`                                                                | Supported routes — chains, tokens, bridges. Source of valid `fromToken` / `toToken` addresses. |
-| `getMaxSpendable(address)`                                                   | Max spendable BTC for an address.                                                              |
+| Method                                                                                    | Purpose                                                                                        |
+| ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `getQuote(params)`                                                                        | Fetch a quote. Onramp vs offramp inferred from `fromChain` / `toChain`.                        |
+| `executeQuote({ quote, walletClient, publicClient, btcSigner?, callback?, gasOptions? })` | Run the full flow for a quote (approvals → on-chain tx / BTC signing).                         |
+| `getOrders({ userAddress, cursor?, limit? })`                                             | Paginated orders for an EVM address → `{ orders, nextCursor? }`.                               |
+| `getOrder(id)`                                                                            | Single order by id (txId/txHash).                                                              |
+| `getRoutes()`                                                                             | Supported routes — chains, tokens, bridges. Source of valid `fromToken` / `toToken` addresses. |
+| `getMaxSpendable(address)`                                                                | Max spendable BTC for an address.                                                              |
 
 `getQuote` returns `GatewayQuoteV4`. Narrow it with `'onramp' in quote`,
 `'offramp' in quote`, or `'tokenSwap' in quote`, or use `getInnerQuote(quote)`.
@@ -96,21 +96,22 @@ for non-EVM chains like Tron.
 
 ### `publicClient` — required surface
 
-| Member                                                                            | Used for                                                      |
-| --------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| `readContract({ address, abi, functionName, args? })`                             | ERC-20 `allowance`, OFT `approvalRequired`.                   |
-| `simulateContract({ account, address, abi, functionName, args })` → `{ request }` | Build the validated `approve` / reset request before writing. |
-| `waitForTransactionReceipt({ hash, retryCount })`                                 | Block on approval / send receipts.                            |
+| Member                                                                            | Used for                                                                                      |
+| --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `readContract({ address, abi, functionName, args? })`                             | ERC-20 `allowance`, OFT `approvalRequired`.                                                   |
+| `simulateContract({ account, address, abi, functionName, args })` → `{ request }` | Build the validated `approve` / reset request before writing.                                 |
+| `estimateGas({ account, to, data, value })` → `bigint`                            | Size the order transaction's gas limit (not called on Tron). A failure sends without a limit. |
+| `waitForTransactionReceipt({ hash, retryCount })`                                 | Block on approval / send receipts.                                                            |
 
 ### `walletClient` — required surface
 
-| Member                                                   | Used for                                                                |
-| -------------------------------------------------------- | ----------------------------------------------------------------------- |
-| `account` (`Account` with `.address`)                    | Sender address; `executeQuote` throws if absent for offramp.            |
-| `writeContract(request)` → `Hash`                        | Send the `approve` / allowance-reset tx produced by `simulateContract`. |
-| `sendTransaction({ account, to, data, value })` → `Hash` | Broadcast the gateway order transaction.                                |
+| Member                                                   | Used for                                                                                                |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `account` (`Account` with `.address`)                    | Sender address; `executeQuote` throws if absent for offramp.                                            |
+| `writeContract(request)` → `Hash`                        | Send the `approve` / allowance-reset tx produced by `simulateContract`, plus any `gasOptions` fees.     |
+| `sendTransaction({ account, to, data, value })` → `Hash` | Broadcast the gateway order transaction. On EVM chains it also carries `gas` and any `gasOptions` fees. |
 
-## Gas limits and balance reserves
+## Gas limits, fees and balance reserves
 
 On EVM chains `executeQuote` attaches an explicit gas limit to the offramp and tokenSwap sends:
 
@@ -129,17 +130,77 @@ so anything spending a user's **entire native balance** has to hold back `gas * 
 the fee the transaction will actually cost. The two differ substantially: wallets quote a
 `maxFeePerGas` well above the price finally paid, and refund the unused gas.
 
-**Two caveats.**
-
 The fixed `+300_000` floor dominates for small estimates, so the limit can exceed what a wallet
 would have chosen by itself — a 60k estimate becomes 360k, where a wallet's own padding is nearer
 90k. A near-max send that previously fit can stop fitting. If your reserve was tuned against
 wallet-chosen limits, re-check it.
 
-An exact reserve is not computable ahead of time. `estimate` is derived from `order.tx.data`, which
-only exists once `createOrderV4` has run inside `executeQuote`, and `maxFeePerGas` is the wallet's
-own choice. Over-reserve. A server-supplied gas figure on the quote would remove the guesswork —
-tracked in bob-collective/bob-gateway#2042.
+The `SendTransaction` step passed to `callback` reports what was attached as `step.gas`:
+`{ estimate, limit }`, or just `{ limit }` when `gasOptions.gasLimit` was a `bigint`. It is absent
+when the wallet picks the limit (Tron, `gasLimit: 'wallet'`, or a failed estimate).
+
+### `gasOptions`
+
+```ts
+import { parseGwei } from 'viem';
+
+await gateway.executeQuote({
+    quote,
+    walletClient,
+    publicClient,
+    gasOptions: {
+        gasLimit: 800_000n, // or (estimate) => bigint, or 'wallet'
+        maxFeePerGas: parseGwei('30'),
+        maxPriorityFeePerGas: parseGwei('1'),
+    },
+});
+```
+
+| Field                                  | Applies to                      | Effect                                                                        |
+| -------------------------------------- | ------------------------------- | ----------------------------------------------------------------------------- |
+| `gasLimit: bigint`                     | order transaction               | Attached as-is; `eth_estimateGas` is skipped.                                 |
+| `gasLimit: (estimate) => bigint`       | order transaction               | Receives the estimate and returns the limit. The default is `applyGasBuffer`. |
+| `gasLimit: 'wallet'`                   | order transaction               | No limit is attached; the wallet estimates its own.                           |
+| `maxFeePerGas`, `maxPriorityFeePerGas` | allowance reset, approve, order | EIP-1559 fee cap and tip.                                                     |
+| `gasPrice`                             | allowance reset, approve, order | Legacy gas price. Cannot be combined with the EIP-1559 fields.                |
+
+- Invalid settings throw a plain `Error` before the order is created, so they never leave one behind.
+  A `gasLimit` function that returns a non-positive limit throws `ExecuteQuoteError` instead, since it
+  runs after the order exists.
+- Ignored on onramps, which send no EVM transaction, and on Tron sources, whose adapter takes no gas
+  fields. Pass the same `gasOptions` on every route.
+- Approval gas limits are left to `simulateContract` and the wallet. Fees go on the approval write,
+  not the simulation.
+- Fees are binding for local-key signers. An injected wallet receives them as the dapp's suggestion
+  and may replace them or let the user edit them.
+- A fee cap below the base fee at inclusion leaves the transaction pending rather than refused, so
+  leave headroom.
+
+### Spending a whole native balance
+
+Size the reserve and the send from the same fees, so the wallet's check uses the rate the reserve
+was sized with:
+
+```ts
+const { maxFeePerGas, maxPriorityFeePerGas } = await publicClient.estimateFeesPerGas();
+const reserve = applyGasBuffer(ROUTE_GAS_UPPER_BOUND) * maxFeePerGas; // your own bound on route gas
+const quote = await gateway.getQuote({ /* ... */ amount: balance - reserve });
+
+await gateway.executeQuote({
+    quote,
+    walletClient,
+    publicClient,
+    gasOptions: { maxFeePerGas, maxPriorityFeePerGas },
+});
+```
+
+The default limit stays within that reserve whenever the route's real gas is within the bound, since
+`applyGasBuffer` only grows with its input. Pinning `gasLimit` to the bound instead makes the check
+exact, but turns a route heavier than the bound from a wallet refusal into an out-of-gas revert.
+
+The gas half is still a guess. The real estimate needs `order.tx.data`, which only exists once
+`createOrderV4` has run inside `executeQuote`. A server-supplied gas figure on the quote would remove
+it — tracked in bob-collective/bob-gateway#2042.
 
 ## Tron support
 

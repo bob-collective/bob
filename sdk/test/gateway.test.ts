@@ -18,6 +18,7 @@ import { afterEach, assert, describe, expect, it, vi } from 'vitest';
 import {
     BitcoinSigner,
     ExecuteQuoteError,
+    ExecuteQuoteGasOptions,
     ExecuteQuoteStep,
     ExecuteQuoteStepType,
     GatewayError,
@@ -3381,17 +3382,15 @@ describe('Gateway Tests', () => {
             expect(sendTransactionMock.mock.calls[0][0]).not.toHaveProperty('gas');
         });
 
-        it('attaches orderId when estimateGasWithBuffer itself rejects', async () => {
+        it('attaches orderId when resolveGasLimit itself rejects', async () => {
             const gatewaySDK = new GatewaySDK();
             mockCreateOrder();
 
-            // estimateGasWithBuffer always swallows eth_estimateGas failures internally (see
-            // sdk/src/gateway/utils/gas.ts), so a rejection can only be observed at this call
-            // site by replacing the function itself, not by rejecting the underlying estimateGas.
+            // resolveGasLimit swallows eth_estimateGas failures internally (see
+            // sdk/src/gateway/utils/gas.ts), so a rejection is observed at this call site by
+            // replacing the function itself, not by rejecting the underlying estimateGas.
             const gasError = new Error('gas estimation blew up');
-            const estimateGasWithBufferSpy = vi
-                .spyOn(gatewayUtils, 'estimateGasWithBuffer')
-                .mockRejectedValueOnce(gasError);
+            const resolveGasLimitSpy = vi.spyOn(gatewayUtils, 'resolveGasLimit').mockRejectedValueOnce(gasError);
 
             const mockWalletClient = {
                 account: localAccount,
@@ -3413,7 +3412,7 @@ describe('Gateway Tests', () => {
                 })
                 .catch((thrown: unknown) => thrown);
 
-            estimateGasWithBufferSpy.mockRestore();
+            resolveGasLimitSpy.mockRestore();
 
             expect(error).toBeInstanceOf(ExecuteQuoteError);
             assert(error instanceof ExecuteQuoteError);
@@ -3602,6 +3601,303 @@ describe('Gateway Tests', () => {
 
             // max(2_000_000*12/10, 2_000_000+300_000) = max(2_400_000, 2_300_000) = 2_400_000
             expect(sendTransactionMock).toHaveBeenCalledWith(expect.objectContaining({ gas: 2_400_000n }));
+        });
+    });
+
+    describe('gasOptions', () => {
+        // Throwaway placeholder key (= 1); only used to build a local viem account.
+        const account = privateKeyToAccount('0x0000000000000000000000000000000000000000000000000000000000000001');
+        const eip1559Fees = { maxFeePerGas: 30_000_000_000n, maxPriorityFeePerGas: 1_000_000_000n };
+
+        const offrampQuote = (tokenAddress: string = zeroAddress, srcChain = 'ethereum'): GatewayQuoteV4OneOf => ({
+            offramp: {
+                srcChain,
+                feeBreakdown: {
+                    protocolFee: { address: zeroAddress, amount: '5', chain: srcChain },
+                    affiliateFee: { address: zeroAddress, amount: '2', chain: srcChain },
+                    solverFee: { address: zeroAddress, amount: '1', chain: srcChain },
+                    inclusionFee: { address: zeroAddress, amount: '1', chain: srcChain },
+                    fastestFeeRate: '6',
+                },
+                inputAmount: { address: tokenAddress, amount: '1000', chain: srcChain },
+                outputAmount: { address: zeroAddress, amount: '990', chain: srcChain },
+                tokenAddress,
+                recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+                slippage: 0,
+                totalFeeUsd: '3',
+                txTo: zeroAddress,
+            },
+        });
+
+        function mockOfframpOrder() {
+            return nock(`${MAINNET_GATEWAY_BASE_URL}`)
+                .post('/v4/create-order')
+                .reply(200, {
+                    offramp: {
+                        order_id: 'offramp-gas-options',
+                        tx: {
+                            type: 'evm',
+                            chain: 'ethereum',
+                            to: ETHEREUM_ALLOWANCE_HOLDER,
+                            data: '0xabcdef',
+                            value: '0',
+                        },
+                    },
+                });
+        }
+
+        // `allowance` set => the token needs approval at that allowance; unset => no approval path.
+        function mockClients({ estimate = 200_000n, allowance }: { estimate?: bigint; allowance?: bigint } = {}) {
+            const writeContract = vi.fn().mockResolvedValue('0xapprovehash' as `0x${string}`);
+            const sendTransaction = vi.fn().mockResolvedValue('0xtxhash' as `0x${string}`);
+            const estimateGas = vi.fn().mockResolvedValue(estimate);
+            // Echoes its arguments as the request, as viem's simulateContract does.
+            const simulateContract = vi.fn().mockImplementation(async (args: object) => ({ request: { ...args } }));
+
+            return {
+                writeContract,
+                sendTransaction,
+                estimateGas,
+                simulateContract,
+                walletClient: { account, writeContract, sendTransaction } as unknown as WalletClient<
+                    Transport,
+                    ViemChain,
+                    Account
+                >,
+                publicClient: {
+                    readContract: mockOftReadContract({ approvalRequired: allowance !== undefined, allowance }),
+                    estimateGas,
+                    simulateContract,
+                    waitForTransactionReceipt: vi.fn().mockResolvedValue({}),
+                } as unknown as PublicClient<Transport>,
+            };
+        }
+
+        it('attaches a bigint gasLimit as-is without estimating', async () => {
+            mockOfframpOrder();
+            const mocks = mockClients();
+            const callback = vi.fn<(step: ExecuteQuoteStep) => void>();
+
+            await new GatewaySDK().executeQuote({
+                quote: offrampQuote(),
+                walletClient: mocks.walletClient,
+                publicClient: mocks.publicClient,
+                callback,
+                gasOptions: { gasLimit: 800_000n },
+            });
+
+            expect(mocks.estimateGas).not.toHaveBeenCalled();
+            expect(mocks.sendTransaction).toHaveBeenCalledWith(expect.objectContaining({ gas: 800_000n }));
+            expect(callback).toHaveBeenLastCalledWith(expect.objectContaining({ gas: { limit: 800_000n } }));
+        });
+
+        it('passes the estimate to a gasLimit function and attaches its result', async () => {
+            mockOfframpOrder();
+            const mocks = mockClients({ estimate: 200_000n });
+            const gasLimit = vi.fn((estimate: bigint) => estimate * 2n);
+            const callback = vi.fn<(step: ExecuteQuoteStep) => void>();
+
+            await new GatewaySDK().executeQuote({
+                quote: offrampQuote(),
+                walletClient: mocks.walletClient,
+                publicClient: mocks.publicClient,
+                callback,
+                gasOptions: { gasLimit },
+            });
+
+            expect(gasLimit).toHaveBeenCalledWith(200_000n);
+            expect(mocks.sendTransaction).toHaveBeenCalledWith(expect.objectContaining({ gas: 400_000n }));
+            expect(callback).toHaveBeenLastCalledWith(
+                expect.objectContaining({ gas: { estimate: 200_000n, limit: 400_000n } })
+            );
+        });
+
+        it("leaves the limit to the wallet and skips estimation for gasLimit: 'wallet'", async () => {
+            mockOfframpOrder();
+            const mocks = mockClients();
+            const callback = vi.fn<(step: ExecuteQuoteStep) => void>();
+
+            await new GatewaySDK().executeQuote({
+                quote: offrampQuote(),
+                walletClient: mocks.walletClient,
+                publicClient: mocks.publicClient,
+                callback,
+                gasOptions: { gasLimit: 'wallet' },
+            });
+
+            expect(mocks.estimateGas).not.toHaveBeenCalled();
+            expect(mocks.sendTransaction.mock.calls[0][0]).not.toHaveProperty('gas');
+            expect(callback.mock.lastCall?.[0]).not.toHaveProperty('gas');
+        });
+
+        it('reports the estimate and the buffered limit on the SendTransaction step by default', async () => {
+            mockOfframpOrder();
+            const mocks = mockClients({ estimate: 200_000n });
+            const callback = vi.fn<(step: ExecuteQuoteStep) => void>();
+
+            await new GatewaySDK().executeQuote({
+                quote: offrampQuote(),
+                walletClient: mocks.walletClient,
+                publicClient: mocks.publicClient,
+                callback,
+            });
+
+            // max(200_000*12/10, 200_000+300_000) = 500_000
+            expect(callback).toHaveBeenLastCalledWith({
+                step: 1,
+                type: ExecuteQuoteStepType.SendTransaction,
+                totalSteps: 1,
+                orderId: 'offramp-gas-options',
+                gas: { estimate: 200_000n, limit: 500_000n },
+            });
+        });
+
+        it('puts EIP-1559 fees on the reset, approve and send writes, not on the simulations', async () => {
+            mockOfframpOrder();
+            // USDT with a non-zero allowance below the input => reset + approve + send.
+            const mocks = mockClients({ allowance: 1n });
+
+            await new GatewaySDK().executeQuote({
+                quote: offrampQuote(ETHEREUM_USDT_ADDRESS),
+                walletClient: mocks.walletClient,
+                publicClient: mocks.publicClient,
+                gasOptions: eip1559Fees,
+            });
+
+            expect(mocks.writeContract).toHaveBeenCalledTimes(2);
+            expect(mocks.writeContract).toHaveBeenNthCalledWith(
+                1,
+                expect.objectContaining({ args: [ETHEREUM_ALLOWANCE_HOLDER, 0n], ...eip1559Fees })
+            );
+            expect(mocks.writeContract).toHaveBeenNthCalledWith(
+                2,
+                expect.objectContaining({ args: [ETHEREUM_ALLOWANCE_HOLDER, maxUint256], ...eip1559Fees })
+            );
+            expect(mocks.sendTransaction).toHaveBeenCalledWith(
+                expect.objectContaining({ gas: 500_000n, ...eip1559Fees })
+            );
+
+            expect(mocks.simulateContract).toHaveBeenCalledTimes(2);
+            for (const [args] of mocks.simulateContract.mock.calls) {
+                expect(args).not.toHaveProperty('maxFeePerGas');
+                expect(args).not.toHaveProperty('maxPriorityFeePerGas');
+            }
+        });
+
+        it('puts a legacy gasPrice on the tokenSwap reset, approve and send writes', async () => {
+            const tokenSwapQuote: GatewayQuoteV4OneOf1 = {
+                tokenSwap: {
+                    dstChain: 'bob',
+                    estimatedTimeInSecs: 60,
+                    fees: { amount: '0', address: zeroAddress, chain: 'bob' },
+                    inputAmount: { amount: '100000', address: ETHEREUM_USDT_ADDRESS, chain: 'ethereum' },
+                    outputAmount: { amount: '100000', address: zeroAddress, chain: 'bob' },
+                    recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+                    slippage: 100,
+                    srcChain: 'ethereum',
+                    txTo: ETHEREUM_ALLOWANCE_HOLDER,
+                },
+            };
+            nock(`${MAINNET_GATEWAY_BASE_URL}`)
+                .post('/v4/create-order')
+                .reply(200, {
+                    tokenSwap: {
+                        order_id: 'tokenswap-gas-options',
+                        tx: {
+                            type: 'evm',
+                            chain: 'ethereum',
+                            to: ETHEREUM_ALLOWANCE_HOLDER,
+                            data: '0xabcdef',
+                            value: '0',
+                        },
+                    },
+                });
+            const mocks = mockClients({ allowance: 1n });
+            const callback = vi.fn<(step: ExecuteQuoteStep) => void>();
+
+            await new GatewaySDK().executeQuote({
+                quote: tokenSwapQuote,
+                walletClient: mocks.walletClient,
+                publicClient: mocks.publicClient,
+                callback,
+                gasOptions: { gasPrice: 5_000_000_000n },
+            });
+
+            expect(mocks.writeContract).toHaveBeenCalledTimes(2);
+            for (const [request] of mocks.writeContract.mock.calls) {
+                expect(request).toMatchObject({ gasPrice: 5_000_000_000n });
+                expect(request).not.toHaveProperty('maxFeePerGas');
+            }
+            expect(mocks.sendTransaction).toHaveBeenCalledWith(
+                expect.objectContaining({ gas: 500_000n, gasPrice: 5_000_000_000n })
+            );
+            expect(mocks.sendTransaction.mock.calls[0][0]).not.toHaveProperty('maxFeePerGas');
+            expect(callback).toHaveBeenLastCalledWith(
+                expect.objectContaining({
+                    type: ExecuteQuoteStepType.SendTransaction,
+                    gas: { estimate: 200_000n, limit: 500_000n },
+                })
+            );
+        });
+
+        it('ignores gasOptions on a Tron source', async () => {
+            mockOfframpOrder();
+            const mocks = mockClients();
+
+            await new GatewaySDK().executeQuote({
+                quote: offrampQuote(zeroAddress, 'tron'),
+                walletClient: mocks.walletClient,
+                publicClient: mocks.publicClient,
+                gasOptions: { gasLimit: 800_000n, ...eip1559Fees },
+            });
+
+            expect(mocks.estimateGas).not.toHaveBeenCalled();
+            const sent = mocks.sendTransaction.mock.calls[0][0];
+            expect(sent).not.toHaveProperty('gas');
+            expect(sent).not.toHaveProperty('maxFeePerGas');
+            expect(sent).not.toHaveProperty('maxPriorityFeePerGas');
+        });
+
+        it.each([
+            ['gasPrice combined with EIP-1559 fees', { gasPrice: 1n, maxFeePerGas: 2n }, 'cannot be combined'],
+            ['a tip above the fee cap', { maxFeePerGas: 1n, maxPriorityFeePerGas: 2n }, 'cannot exceed maxFeePerGas'],
+            ['a zero gasLimit', { gasLimit: 0n }, 'gasOptions.gasLimit must be'],
+            ['a number gasLimit', { gasLimit: 800_000 }, 'gasOptions.gasLimit must be'],
+            ['a number fee', { maxFeePerGas: 30 }, 'gasOptions.maxFeePerGas must be'],
+        ])('rejects %s before creating an order', async (_, gasOptions, message) => {
+            const createOrder = mockOfframpOrder();
+            const mocks = mockClients();
+
+            await expect(
+                new GatewaySDK().executeQuote({
+                    quote: offrampQuote(),
+                    walletClient: mocks.walletClient,
+                    publicClient: mocks.publicClient,
+                    gasOptions: gasOptions as unknown as ExecuteQuoteGasOptions,
+                })
+            ).rejects.toThrow(message);
+
+            expect(createOrder.isDone()).toBe(false);
+            expect(mocks.sendTransaction).not.toHaveBeenCalled();
+        });
+
+        it('rejects with the orderId when a gasLimit function returns a non-positive limit', async () => {
+            mockOfframpOrder();
+            const mocks = mockClients();
+
+            const error = await new GatewaySDK()
+                .executeQuote({
+                    quote: offrampQuote(),
+                    walletClient: mocks.walletClient,
+                    publicClient: mocks.publicClient,
+                    gasOptions: { gasLimit: () => 0n },
+                })
+                .catch((thrown: unknown) => thrown);
+
+            expect(error).toBeInstanceOf(ExecuteQuoteError);
+            assert(error instanceof ExecuteQuoteError);
+            expect(error.orderId).toBe('offramp-gas-options');
+            expect(mocks.sendTransaction).not.toHaveBeenCalled();
         });
     });
 

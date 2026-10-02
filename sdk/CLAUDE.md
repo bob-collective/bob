@@ -41,7 +41,7 @@ ESLint ignores `src/gateway/generated-client/**`.
 Instantiated with optional `basePath` and `apiKey` arguments (defaults to mainnet). Core flow:
 
 1. **`getQuote(params)`** — fetch a quote (returns a discriminated union: onramp | offramp | layerZero)
-2. **`executeQuote({ quote, walletClient, publicClient, btcSigner? })`** — execute the full transaction flow for a quote
+2. **`executeQuote({ quote, walletClient, publicClient, btcSigner?, gasOptions? })`** — execute the full transaction flow for a quote; `gasOptions` sets the EVM gas limit and fees
 3. **`getOrders(address)`** — list all orders for an EVM address
 4. **`getRoutes()`** — list supported token/chain routes
 5. **`getMaxSpendable(address)`** — max spendable BTC for an address
