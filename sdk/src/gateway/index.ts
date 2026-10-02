@@ -20,8 +20,10 @@ export * from './generated-client';
 export {
     BitcoinSigner,
     ExecuteQuoteError,
+    ExecuteQuoteGasOptions,
     ExecuteQuoteStep,
     ExecuteQuoteStepType,
+    GasLimitOption,
     GatewayQuoteParams,
     GetQuoteParams,
 } from './types';

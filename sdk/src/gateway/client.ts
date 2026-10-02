@@ -41,12 +41,21 @@ import type { GatewayErrorV4 as GatewayErrorInterface } from './generated-client
 import {
     type BitcoinSigner,
     ExecuteQuoteError,
+    type ExecuteQuoteGasOptions,
     type ExecuteQuoteStep,
     ExecuteQuoteStepType,
     type GetQuoteParams,
     type StrategyParams,
 } from './types';
-import { estimateGasWithBuffer, formatBtc, isValidTronAddress, supportsGasEstimation, tronAddressToHex } from './utils';
+import {
+    assertValidGasOptions,
+    feeOverrides,
+    formatBtc,
+    isValidTronAddress,
+    resolveGasLimit,
+    supportsGasEstimation,
+    tronAddressToHex,
+} from './utils';
 
 const RETRY_COUNT = 8; // Number of times to retry fetching transaction receipt after sending a transaction
 
@@ -75,6 +84,16 @@ async function simulateApproval<T>(orderId: string, simulate: () => Promise<{ re
     } catch (error) {
         throw new ExecuteQuoteError(orderId, getApprovalErrorMessage(error), { cause: error });
     }
+}
+
+/**
+ * Attaches the caller's fees to an approval write. They go on the write rather than into `simulateContract`:
+ * an `eth_call` carrying a fee but no gas can be checked against fee × the node's gas cap and fail on an
+ * ordinary balance. Generic so the simulated request keeps its type; at runtime it holds only the fields
+ * the SDK passed.
+ */
+function withFees<T extends object>(request: T, fees: ReturnType<typeof feeOverrides>): T {
+    return { ...request, ...fees };
 }
 
 /**
@@ -269,8 +288,9 @@ export class GatewayApiClient {
      * For offramp: approves tokens if needed and creates on-chain order
      *
      * @param params Parameters including quote and wallet clients - see {@link GatewayQuote} & {@link AllWalletClientParams}
+     * @param params.gasOptions Gas limit and fees for the EVM transactions - see {@link ExecuteQuoteGasOptions}
      * @returns Promise resolving to the full order and optional transaction hash
-     * @throws {Error} If required signers are missing or transaction fails
+     * @throws {Error} If required signers are missing, `gasOptions` is invalid, or transaction fails
      */
     async executeQuote(
         {
@@ -279,12 +299,17 @@ export class GatewayApiClient {
             publicClient,
             btcSigner,
             callback,
+            gasOptions,
         }: {
             quote: GatewayQuoteV4;
             callback?: (step: ExecuteQuoteStep) => void;
+            gasOptions?: ExecuteQuoteGasOptions;
         } & AllWalletClientParams,
         initOverrides?: RequestInit
     ): Promise<ExecuteQuoteResult> {
+        // Before any order exists, so a bad setting cannot leave one behind.
+        assertValidGasOptions(gasOptions);
+
         if (instanceOfGatewayQuoteV3OneOf(quote)) {
             const order = await this.api.createOrderV4({
                 gatewayQuoteV4: { onramp: quote.onramp },
@@ -383,6 +408,8 @@ export class GatewayApiClient {
             const accountAddress = walletClient.account.address;
             const tokenAddress = quote.offramp.tokenAddress;
             const requiredAmount = BigInt(quote.offramp.inputAmount.amount);
+            const usesGasFields = supportsGasEstimation(quote.offramp.srcChain);
+            const fees = feeOverrides(usesGasFields ? gasOptions : undefined);
 
             const order = await this.api.createOrderV4({
                 gatewayQuoteV4: { offramp: quote.offramp },
@@ -468,7 +495,7 @@ export class GatewayApiClient {
                     callback?.({ step: 1, type: ExecuteQuoteStepType.ResetApproval, totalSteps, orderId });
 
                     try {
-                        const resetTxHash = await walletClient.writeContract(resetRequest);
+                        const resetTxHash = await walletClient.writeContract(withFees(resetRequest, fees));
                         await publicClient.waitForTransactionReceipt({ hash: resetTxHash, retryCount: RETRY_COUNT });
                     } catch (error) {
                         throw new ExecuteQuoteError(orderId, getApprovalErrorMessage(error), { cause: error });
@@ -492,33 +519,49 @@ export class GatewayApiClient {
                 callback?.({ step: needsReset ? 2 : 1, type: ExecuteQuoteStepType.Approve, totalSteps, orderId });
 
                 try {
-                    const approveTxHash = await walletClient.writeContract(approveRequest);
+                    const approveTxHash = await walletClient.writeContract(withFees(approveRequest, fees));
                     await publicClient.waitForTransactionReceipt({ hash: approveTxHash, retryCount: RETRY_COUNT });
                 } catch (error) {
                     throw new ExecuteQuoteError(orderId, getApprovalErrorMessage(error), { cause: error });
                 }
             }
 
-            callback?.({ step: totalSteps, type: ExecuteQuoteStepType.SendTransaction, totalSteps, orderId });
             const offrampData = order.offramp.tx.data as Hex;
+
+            let offrampValue: bigint;
+            let offrampGas: ExecuteQuoteStep['gas'];
+            try {
+                offrampValue = BigInt(order.offramp.tx.value || 0);
+                offrampGas = usesGasFields
+                    ? await resolveGasLimit(
+                          publicClient,
+                          walletClient.account,
+                          { to: spenderAddress, data: offrampData, value: offrampValue },
+                          gasOptions?.gasLimit
+                      )
+                    : undefined;
+            } catch (error) {
+                throw new ExecuteQuoteError(orderId, EXECUTE_QUOTE_ERROR_MESSAGE, { cause: error });
+            }
+
+            // After gas is resolved so the step can report it; outside the try so a callback throw propagates as-is.
+            callback?.({
+                step: totalSteps,
+                type: ExecuteQuoteStepType.SendTransaction,
+                totalSteps,
+                orderId,
+                ...(offrampGas && { gas: offrampGas }),
+            });
 
             let transactionHash: string;
             try {
-                const offrampValue = BigInt(order.offramp.tx.value || 0);
-                const offrampGas = supportsGasEstimation(quote.offramp.srcChain)
-                    ? await estimateGasWithBuffer(publicClient, walletClient.account, {
-                          to: spenderAddress,
-                          data: offrampData,
-                          value: offrampValue,
-                      })
-                    : undefined;
-
                 const hash = await walletClient.sendTransaction({
                     account: signerAccount(walletClient),
                     data: offrampData,
                     to: spenderAddress,
                     value: offrampValue,
-                    ...(offrampGas !== undefined && { gas: offrampGas }),
+                    ...(offrampGas && { gas: offrampGas.limit }),
+                    ...fees,
                 });
 
                 await publicClient?.waitForTransactionReceipt({ hash, retryCount: RETRY_COUNT });
@@ -534,6 +577,8 @@ export class GatewayApiClient {
             const requiredAmount = BigInt(quote.tokenSwap.inputAmount.amount);
             const accountAddress = walletClient.account.address;
             const receiver = quote.tokenSwap.txTo as Address;
+            const usesGasFields = supportsGasEstimation(quote.tokenSwap.srcChain);
+            const fees = feeOverrides(usesGasFields ? gasOptions : undefined);
 
             // Pre-check allowance before createOrder so we can compute totalSteps upfront.
             // receiver is available from the quote (unlike offramp where spender comes from the order).
@@ -616,7 +661,7 @@ export class GatewayApiClient {
                     callback?.({ step: 1, type: ExecuteQuoteStepType.ResetApproval, totalSteps, orderId });
 
                     try {
-                        const resetTxHash = await walletClient.writeContract(resetRequest);
+                        const resetTxHash = await walletClient.writeContract(withFees(resetRequest, fees));
                         await publicClient.waitForTransactionReceipt({
                             hash: resetTxHash,
                             retryCount: RETRY_COUNT,
@@ -647,7 +692,7 @@ export class GatewayApiClient {
                 });
 
                 try {
-                    const txHash = await walletClient.writeContract(approveRequest);
+                    const txHash = await walletClient.writeContract(withFees(approveRequest, fees));
 
                     await publicClient.waitForTransactionReceipt({ hash: txHash, retryCount: RETRY_COUNT });
                 } catch (error) {
@@ -655,27 +700,43 @@ export class GatewayApiClient {
                 }
             }
 
-            callback?.({ step: totalSteps, type: ExecuteQuoteStepType.SendTransaction, totalSteps, orderId });
             const tokenSwapTo = order.tokenSwap.tx.to as Address;
             const tokenSwapData = order.tokenSwap.tx.data as Hex;
 
+            let tokenSwapValue: bigint;
+            let tokenSwapGas: ExecuteQuoteStep['gas'];
+            try {
+                tokenSwapValue = BigInt(order.tokenSwap.tx.value || 0);
+                tokenSwapGas = usesGasFields
+                    ? await resolveGasLimit(
+                          publicClient,
+                          walletClient.account,
+                          { to: tokenSwapTo, data: tokenSwapData, value: tokenSwapValue },
+                          gasOptions?.gasLimit
+                      )
+                    : undefined;
+            } catch (error) {
+                throw new ExecuteQuoteError(orderId, EXECUTE_QUOTE_ERROR_MESSAGE, { cause: error });
+            }
+
+            // After gas is resolved so the step can report it; outside the try so a callback throw propagates as-is.
+            callback?.({
+                step: totalSteps,
+                type: ExecuteQuoteStepType.SendTransaction,
+                totalSteps,
+                orderId,
+                ...(tokenSwapGas && { gas: tokenSwapGas }),
+            });
+
             let transactionHash: string;
             try {
-                const tokenSwapValue = BigInt(order.tokenSwap.tx.value || 0);
-                const tokenSwapGas = supportsGasEstimation(quote.tokenSwap.srcChain)
-                    ? await estimateGasWithBuffer(publicClient, walletClient.account, {
-                          to: tokenSwapTo,
-                          data: tokenSwapData,
-                          value: tokenSwapValue,
-                      })
-                    : undefined;
-
                 const hash = await walletClient.sendTransaction({
                     account: signerAccount(walletClient),
                     data: tokenSwapData,
                     to: tokenSwapTo,
                     value: tokenSwapValue,
-                    ...(tokenSwapGas !== undefined && { gas: tokenSwapGas }),
+                    ...(tokenSwapGas && { gas: tokenSwapGas.limit }),
+                    ...fees,
                 });
 
                 await publicClient.waitForTransactionReceipt({ hash, retryCount: RETRY_COUNT });
