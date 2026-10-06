@@ -26,7 +26,6 @@ import {
     GatewayErrorCodeV4Variants,
     GatewaySDK,
     InsufficientGasFundsError,
-    estimateGatewayFees,
     isGatewayError,
 } from '../src/gateway';
 import { assertAllowanceHolderSpender } from '../src/gateway/allowance-holder';
@@ -4048,40 +4047,6 @@ describe('Gateway Tests', () => {
 
                 expect(mocks.sendTransaction).toHaveBeenCalledTimes(1);
             });
-        });
-    });
-
-    describe('estimateGatewayFees', () => {
-        function feeHistoryClient(baseFeePerGas: bigint[], reward: bigint[][]) {
-            const getFeeHistory = vi
-                .fn()
-                .mockResolvedValue({ baseFeePerGas, reward, gasUsedRatio: [], oldestBlock: 0n });
-            return { getFeeHistory, publicClient: { getFeeHistory } as unknown as PublicClient<Transport> };
-        }
-
-        it('doubles the next base fee and adds the median of the non-zero block tips', async () => {
-            const { getFeeHistory, publicClient } = feeHistoryClient([90n, 95n, 100n], [[0n], [0n], [5n], [3n], [9n]]);
-
-            await expect(estimateGatewayFees(publicClient)).resolves.toEqual({
-                maxFeePerGas: 205n,
-                maxPriorityFeePerGas: 5n,
-            });
-            expect(getFeeHistory).toHaveBeenCalledWith({ blockCount: 10, rewardPercentiles: [50] });
-        });
-
-        it('prices from the base fee alone on a chain whose blocks carry no tips', async () => {
-            const { publicClient } = feeHistoryClient([20n], [[0n], [0n]]);
-
-            await expect(estimateGatewayFees(publicClient)).resolves.toEqual({
-                maxFeePerGas: 40n,
-                maxPriorityFeePerGas: 0n,
-            });
-        });
-
-        it('throws on a chain reporting neither a base fee nor tips', async () => {
-            const { publicClient } = feeHistoryClient([0n], [[0n]]);
-
-            await expect(estimateGatewayFees(publicClient)).rejects.toThrow('pass gasPrice');
         });
     });
 

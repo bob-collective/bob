@@ -103,7 +103,6 @@ for non-EVM chains like Tron.
 | `estimateGas({ account, to, data, value })` → `bigint`                            | Size the order transaction's gas limit (not called on Tron). A failure sends without a limit. |
 | `waitForTransactionReceipt({ hash, retryCount })`                                 | Block on approval / send receipts. A reverted receipt throws `ExecuteQuoteError`.             |
 | `getBalance({ address })` → `bigint`                                              | Only under `gasOptions.checkBalance`: the sender's native balance before the send.            |
-| `getFeeHistory({ blockCount, rewardPercentiles })`                                | Only for `estimateGatewayFees`.                                                               |
 
 ### `walletClient` — required surface
 
@@ -179,9 +178,10 @@ await gateway.executeQuote({
 - Fees are binding for local-key signers. An injected wallet receives them as the dapp's suggestion
   and may replace them or let the user edit them.
 - A fee cap below the base fee at inclusion leaves the transaction pending rather than refused, so
-  leave headroom. `estimateGatewayFees(publicClient)` returns `2 × next base fee + median tip` from fee
-  history, which stays includable through about six full blocks; `eth_maxPriorityFeePerGas` can report a
-  tip far below what blocks include.
+  leave headroom. Twice the next block's base fee plus the tip stays includable through about six full
+  blocks. Take the tip from `getFeeHistory` rather than `eth_maxPriorityFeePerGas`, which viem's
+  `estimateFeesPerGas` uses and which can report far below what blocks include: 0.00002 gwei against a
+  0.078 gwei median on Ethereum on 2026-10-06.
 - `checkBalance` needs a fee cap and a resolved limit, and is skipped without them or when the balance
   read fails. It is off by default because a sponsored or smart account can pay gas from somewhere the
   balance does not show. The order already exists when it throws, as for any failure after creation.
@@ -192,8 +192,15 @@ Size the reserve and the send from the same fees, so the wallet's check uses the
 was sized with:
 
 ```ts
-const fees = await estimateGatewayFees(publicClient);
-const reserve = applyGasBuffer(ROUTE_GAS_UPPER_BOUND) * fees.maxFeePerGas; // your own bound on route gas
+const { baseFeePerGas, reward } = await publicClient.getFeeHistory({ blockCount: 10, rewardPercentiles: [50] });
+const tips = (reward ?? [])
+    .map(([tip]) => tip)
+    .filter((tip) => tip > 0n)
+    .sort((a, b) => (a < b ? -1 : 1));
+const maxPriorityFeePerGas = tips[Math.floor(tips.length / 2)] ?? 0n;
+const maxFeePerGas = baseFeePerGas[baseFeePerGas.length - 1] * 2n + maxPriorityFeePerGas;
+
+const reserve = applyGasBuffer(ROUTE_GAS_UPPER_BOUND) * maxFeePerGas; // your own bound on route gas
 const quote = await gateway.getQuote({ /* ... */ amount: balance - reserve });
 
 try {
@@ -201,7 +208,7 @@ try {
         quote,
         walletClient,
         publicClient,
-        gasOptions: { ...fees, checkBalance: true },
+        gasOptions: { maxFeePerGas, maxPriorityFeePerGas, checkBalance: true },
     });
 } catch (error) {
     if (error instanceof InsufficientGasFundsError) {

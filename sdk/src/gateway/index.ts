@@ -30,7 +30,6 @@ export {
 } from './types';
 export {
     applyGasBuffer,
-    estimateGatewayFees,
     formatBtc,
     getChainConfig,
     getInnerQuote,

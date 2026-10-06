@@ -82,38 +82,6 @@ export function feeCap(options: ExecuteQuoteGasOptions | undefined): bigint | un
     return options?.maxFeePerGas ?? options?.gasPrice;
 }
 
-const FEE_HISTORY_BLOCKS = 10;
-
-/**
- * EIP-1559 fees for `gasOptions`, from the chain's own fee history:
- * - `maxPriorityFeePerGas`: the median of each recent block's median tip. `eth_maxPriorityFeePerGas` can run
- *   far below what blocks include (0.00002 gwei against a 0.078 gwei median on Ethereum, 2026-10-06), and
- *   blocks that included nothing report a zero tip, so those are left out.
- * - `maxFeePerGas`: twice the next block's base fee plus that tip. The base fee rises at most 12.5% a block,
- *   so doubling it keeps the transaction includable through about six full blocks (the rule ethers uses).
- *
- * Use the same result to size a native-balance reserve and as `gasOptions`, so the wallet's check runs
- * against the fee the reserve was sized with.
- */
-export async function estimateGatewayFees(
-    publicClient: Pick<PublicClient<Transport>, 'getFeeHistory'>
-): Promise<{ maxFeePerGas: bigint; maxPriorityFeePerGas: bigint }> {
-    const history = await publicClient.getFeeHistory({ blockCount: FEE_HISTORY_BLOCKS, rewardPercentiles: [50] });
-    const nextBaseFee = history.baseFeePerGas.at(-1) ?? 0n;
-    const tips = (history.reward ?? [])
-        .map(([tip]) => tip ?? 0n)
-        .filter((tip) => tip > 0n)
-        .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
-    const maxPriorityFeePerGas = tips[Math.floor(tips.length / 2)] ?? 0n;
-    const maxFeePerGas = nextBaseFee * 2n + maxPriorityFeePerGas;
-
-    if (maxFeePerGas === 0n) {
-        throw new Error('Fee history reported no base fee and no tips; pass gasPrice for this chain instead');
-    }
-
-    return { maxFeePerGas, maxPriorityFeePerGas };
-}
-
 /** The fee fields the caller set, to spread into a viem write. Empty when none were. */
 export function feeOverrides(options: ExecuteQuoteGasOptions | undefined) {
     if (options?.gasPrice !== undefined) return { gasPrice: options.gasPrice };
