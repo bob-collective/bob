@@ -137,8 +137,8 @@ would have chosen by itself — a 60k estimate becomes 360k, where a wallet's ow
 wallet-chosen limits, re-check it.
 
 The `SendTransaction` step passed to `callback` reports what was attached as `step.gas`:
-`{ estimate, limit }`, or just `{ limit }` when `gasOptions.gasLimit` was a `bigint`. It is absent
-when the wallet picks the limit (Tron, `gasLimit: 'wallet'`, or a failed estimate).
+`{ estimate, limit }`. It is absent when the wallet picks the limit (Tron, `gasLimit: 'wallet'`, or a
+failed estimate).
 
 ### `gasOptions`
 
@@ -150,7 +150,7 @@ await gateway.executeQuote({
     walletClient,
     publicClient,
     gasOptions: {
-        gasLimit: 800_000n, // or (estimate) => bigint, or 'wallet'
+        gasLimit: 'wallet', // optional: leave the limit to the wallet
         maxFeePerGas: parseGwei('30'),
         maxPriorityFeePerGas: parseGwei('1'),
     },
@@ -159,8 +159,6 @@ await gateway.executeQuote({
 
 | Field                                  | Applies to                      | Effect                                                                                                                     |
 | -------------------------------------- | ------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `gasLimit: bigint`                     | order transaction               | Attached as-is; `eth_estimateGas` is skipped.                                                                              |
-| `gasLimit: (estimate) => bigint`       | order transaction               | Receives the estimate and returns the limit. The default is `applyGasBuffer`.                                              |
 | `gasLimit: 'wallet'`                   | order transaction               | No limit is attached; the wallet estimates its own.                                                                        |
 | `maxFeePerGas`, `maxPriorityFeePerGas` | allowance reset, approve, order | EIP-1559 fee cap and tip.                                                                                                  |
 | `gasPrice`                             | allowance reset, approve, order | Legacy gas price. Cannot be combined with the EIP-1559 fields.                                                             |
@@ -169,8 +167,6 @@ await gateway.executeQuote({
 - Invalid settings throw a plain `Error` before the order is created, so they never leave one behind.
   That includes a `maxFeePerGas` without its `maxPriorityFeePerGas` (viem would fill the tip from the node
   after the order exists, and fail if it exceeds the cap) and a zero fee cap or `gasPrice`.
-  A `gasLimit` function that returns a non-positive limit throws `ExecuteQuoteError` instead, since it
-  runs after the order exists.
 - Ignored on onramps, which send no EVM transaction, and on Tron sources, whose adapter takes no gas
   fields. Pass the same `gasOptions` on every route.
 - Approval gas limits are left to `simulateContract` and the wallet. Fees go on the approval write,
@@ -218,9 +214,8 @@ try {
 }
 ```
 
-The default limit stays within that reserve whenever the route's real gas is within the bound, since
-`applyGasBuffer` only grows with its input. Pinning `gasLimit` to the bound instead makes the check
-exact, but turns a route heavier than the bound from a wallet refusal into an out-of-gas revert.
+The attached limit stays within that reserve whenever the route's real gas is within the bound, since
+`applyGasBuffer` only grows with its input.
 
 The gas half is still a guess. The real estimate needs `order.tx.data`, which only exists once
 `createOrderV4` has run inside `executeQuote`. A server-supplied gas figure on the quote would remove

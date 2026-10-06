@@ -12,19 +12,11 @@ export interface ExecuteQuoteStep {
     /** Absent for callback invocations before order creation. */
     orderId?: string;
     /**
-     * `SendTransaction` step on EVM sources only: the gas limit attached to the send and, when the limit was
-     * derived from one, the `eth_estimateGas` result. Absent when the wallet picks the limit.
+     * `SendTransaction` step on EVM sources only: the `eth_estimateGas` result and the limit attached to the
+     * send. Absent when the wallet picks the limit.
      */
-    gas?: { estimate?: bigint; limit: bigint };
+    gas?: { estimate: bigint; limit: bigint };
 }
-
-/**
- * Gas limit for the order transaction (the offramp / tokenSwap send):
- * - `bigint`: attached as-is; `eth_estimateGas` is skipped.
- * - function: receives the `eth_estimateGas` result and returns the limit. The default is `applyGasBuffer`.
- * - `'wallet'`: no limit is attached, so the wallet estimates its own.
- */
-export type GasLimitOption = bigint | ((estimate: bigint) => bigint) | 'wallet';
 
 /**
  * A fee cap needs its tip: viem fills a missing tip from the node only after the order exists, and fails there
@@ -46,7 +38,8 @@ type LegacyFeeOptions = {
  * no EVM transaction, and on Tron sources, whose adapter takes no gas fields.
  */
 export type ExecuteQuoteGasOptions = {
-    gasLimit?: GasLimitOption;
+    /** `'wallet'` attaches no limit to the order send, so the wallet estimates its own. */
+    gasLimit?: 'wallet';
     /**
      * Before the wallet prompt, throw {@link InsufficientGasFundsError} when the native balance cannot cover
      * `value + gasLimit × fee cap`. Skipped without a fee cap or a resolved limit. Off by default: a sponsored

@@ -3683,45 +3683,6 @@ describe('Gateway Tests', () => {
             };
         }
 
-        it('attaches a bigint gasLimit as-is without estimating', async () => {
-            mockOfframpOrder();
-            const mocks = mockClients();
-            const callback = vi.fn<(step: ExecuteQuoteStep) => void>();
-
-            await new GatewaySDK().executeQuote({
-                quote: offrampQuote(),
-                walletClient: mocks.walletClient,
-                publicClient: mocks.publicClient,
-                callback,
-                gasOptions: { gasLimit: 800_000n },
-            });
-
-            expect(mocks.estimateGas).not.toHaveBeenCalled();
-            expect(mocks.sendTransaction).toHaveBeenCalledWith(expect.objectContaining({ gas: 800_000n }));
-            expect(callback).toHaveBeenLastCalledWith(expect.objectContaining({ gas: { limit: 800_000n } }));
-        });
-
-        it('passes the estimate to a gasLimit function and attaches its result', async () => {
-            mockOfframpOrder();
-            const mocks = mockClients({ estimate: 200_000n });
-            const gasLimit = vi.fn((estimate: bigint) => estimate * 2n);
-            const callback = vi.fn<(step: ExecuteQuoteStep) => void>();
-
-            await new GatewaySDK().executeQuote({
-                quote: offrampQuote(),
-                walletClient: mocks.walletClient,
-                publicClient: mocks.publicClient,
-                callback,
-                gasOptions: { gasLimit },
-            });
-
-            expect(gasLimit).toHaveBeenCalledWith(200_000n);
-            expect(mocks.sendTransaction).toHaveBeenCalledWith(expect.objectContaining({ gas: 400_000n }));
-            expect(callback).toHaveBeenLastCalledWith(
-                expect.objectContaining({ gas: { estimate: 200_000n, limit: 400_000n } })
-            );
-        });
-
         it("leaves the limit to the wallet and skips estimation for gasLimit: 'wallet'", async () => {
             mockOfframpOrder();
             const mocks = mockClients();
@@ -3856,7 +3817,7 @@ describe('Gateway Tests', () => {
                 quote: offrampQuote(zeroAddress, 'tron'),
                 walletClient: mocks.walletClient,
                 publicClient: mocks.publicClient,
-                gasOptions: { gasLimit: 800_000n, ...eip1559Fees },
+                gasOptions: eip1559Fees,
             });
 
             expect(mocks.estimateGas).not.toHaveBeenCalled();
@@ -3869,8 +3830,7 @@ describe('Gateway Tests', () => {
         it.each([
             ['gasPrice combined with EIP-1559 fees', { gasPrice: 1n, maxFeePerGas: 2n }, 'cannot be combined'],
             ['a tip above the fee cap', { maxFeePerGas: 1n, maxPriorityFeePerGas: 2n }, 'cannot exceed maxFeePerGas'],
-            ['a zero gasLimit', { gasLimit: 0n }, 'gasOptions.gasLimit must be'],
-            ['a number gasLimit', { gasLimit: 800_000 }, 'gasOptions.gasLimit must be'],
+            ['a gasLimit other than wallet', { gasLimit: 800_000n }, "gasOptions.gasLimit must be 'wallet'"],
             ['a number fee', { maxFeePerGas: 30 }, 'gasOptions.maxFeePerGas must be'],
             ['a fee cap without its tip', { maxFeePerGas: 2n }, 'requires maxPriorityFeePerGas'],
             ['a zero fee cap', { maxFeePerGas: 0n, maxPriorityFeePerGas: 0n }, 'maxFeePerGas must be positive'],
@@ -3890,25 +3850,6 @@ describe('Gateway Tests', () => {
             ).rejects.toThrow(message);
 
             expect(createOrder.isDone()).toBe(false);
-            expect(mocks.sendTransaction).not.toHaveBeenCalled();
-        });
-
-        it('rejects with the orderId when a gasLimit function returns a non-positive limit', async () => {
-            mockOfframpOrder();
-            const mocks = mockClients();
-
-            const error = await new GatewaySDK()
-                .executeQuote({
-                    quote: offrampQuote(),
-                    walletClient: mocks.walletClient,
-                    publicClient: mocks.publicClient,
-                    gasOptions: { gasLimit: () => 0n },
-                })
-                .catch((thrown: unknown) => thrown);
-
-            expect(error).toBeInstanceOf(ExecuteQuoteError);
-            assert(error instanceof ExecuteQuoteError);
-            expect(error.orderId).toBe('offramp-gas-options');
             expect(mocks.sendTransaction).not.toHaveBeenCalled();
         });
 

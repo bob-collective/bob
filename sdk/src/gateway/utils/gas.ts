@@ -1,5 +1,5 @@
 import { type Account, type Address, type Hex, type PublicClient, type Transport } from 'viem';
-import type { ExecuteQuoteGasOptions, GasLimitOption } from '../types';
+import type { ExecuteQuoteGasOptions } from '../types';
 
 const GAS_BUFFER_NUM = 12n;
 const GAS_BUFFER_DEN = 10n;
@@ -37,14 +37,8 @@ const FEE_FIELDS = ['gasPrice', 'maxFeePerGas', 'maxPriorityFeePerGas'] as const
 export function assertValidGasOptions(options: ExecuteQuoteGasOptions | undefined): void {
     if (!options) return;
 
-    const { gasLimit } = options;
-    if (
-        gasLimit !== undefined &&
-        gasLimit !== 'wallet' &&
-        typeof gasLimit !== 'function' &&
-        !(typeof gasLimit === 'bigint' && gasLimit > 0n)
-    ) {
-        throw new Error("gasOptions.gasLimit must be a positive bigint, a function, or 'wallet'");
+    if (options.gasLimit !== undefined && options.gasLimit !== 'wallet') {
+        throw new Error("gasOptions.gasLimit must be 'wallet' when set");
     }
 
     for (const field of FEE_FIELDS) {
@@ -91,10 +85,9 @@ export async function resolveGasLimit(
     publicClient: PublicClient<Transport>,
     account: Account,
     tx: { to: Address; data: Hex; value: bigint },
-    option: GasLimitOption = applyGasBuffer
-): Promise<{ estimate?: bigint; limit: bigint } | undefined> {
-    if (option === 'wallet') return undefined;
-    if (typeof option === 'bigint') return { limit: option };
+    gasLimit: 'wallet' | undefined
+): Promise<{ estimate: bigint; limit: bigint } | undefined> {
+    if (gasLimit === 'wallet') return undefined;
 
     let estimate: bigint;
     try {
@@ -108,10 +101,5 @@ export async function resolveGasLimit(
         return undefined;
     }
 
-    const limit = option(estimate);
-    if (typeof limit !== 'bigint' || limit <= 0n) {
-        throw new Error('gasOptions.gasLimit function must return a positive bigint');
-    }
-
-    return { estimate, limit };
+    return { estimate, limit: applyGasBuffer(estimate) };
 }

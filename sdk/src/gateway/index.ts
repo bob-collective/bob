@@ -23,7 +23,6 @@ export {
     ExecuteQuoteGasOptions,
     ExecuteQuoteStep,
     ExecuteQuoteStepType,
-    GasLimitOption,
     GatewayQuoteParams,
     GetQuoteParams,
     InsufficientGasFundsError,
