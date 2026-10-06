@@ -26,11 +26,13 @@ export interface ExecuteQuoteStep {
  */
 export type GasLimitOption = bigint | ((estimate: bigint) => bigint) | 'wallet';
 
-type Eip1559FeeOptions = {
-    maxFeePerGas?: bigint;
-    maxPriorityFeePerGas?: bigint;
-    gasPrice?: never;
-};
+/**
+ * A fee cap needs its tip: viem fills a missing tip from the node only after the order exists, and fails there
+ * when that tip exceeds the cap.
+ */
+type Eip1559FeeOptions =
+    | { maxFeePerGas: bigint; maxPriorityFeePerGas: bigint; gasPrice?: never }
+    | { maxFeePerGas?: never; maxPriorityFeePerGas?: bigint; gasPrice?: never };
 
 type LegacyFeeOptions = {
     gasPrice?: bigint;
@@ -43,13 +45,22 @@ type LegacyFeeOptions = {
  * reset, approve, order send); `gasLimit` applies to the order send only. Ignored on onramps, which send
  * no EVM transaction, and on Tron sources, whose adapter takes no gas fields.
  */
-export type ExecuteQuoteGasOptions = { gasLimit?: GasLimitOption } & (Eip1559FeeOptions | LegacyFeeOptions);
+export type ExecuteQuoteGasOptions = {
+    gasLimit?: GasLimitOption;
+    /**
+     * Before the wallet prompt, read the sender's native balance and throw {@link InsufficientGasFundsError}
+     * when it cannot cover `value + gasLimit × fee cap`, the check the wallet and node apply. Needs a fee cap
+     * (`maxFeePerGas` or `gasPrice`) and a resolved limit, and is skipped without them. Off by default: a
+     * sponsored or smart account can pay gas from somewhere this balance does not show.
+     */
+    checkBalance?: boolean;
+} & (Eip1559FeeOptions | LegacyFeeOptions);
 
 /** Thrown by {@link GatewayApiClient.executeQuote} after order creation; `cause`, when present, is the exact caught value. */
 export class ExecuteQuoteError extends Error {
     readonly orderId: string;
 
-    readonly name = 'ExecuteQuoteError';
+    readonly name: string = 'ExecuteQuoteError';
 
     constructor(
         orderId: string,
@@ -58,5 +69,28 @@ export class ExecuteQuoteError extends Error {
     ) {
         super(message, options);
         this.orderId = orderId;
+    }
+}
+
+/**
+ * Thrown by {@link GatewayApiClient.executeQuote} under `gasOptions.checkBalance`, before the wallet prompt,
+ * when the native balance is short of `value + gasCost`. `balance - gasCost` is the largest `value` that
+ * would have passed.
+ */
+export class InsufficientGasFundsError extends ExecuteQuoteError {
+    readonly name: string = 'InsufficientGasFundsError';
+
+    readonly balance: bigint;
+
+    readonly value: bigint;
+
+    /** `gasLimit × fee cap` of the send that was refused. */
+    readonly gasCost: bigint;
+
+    constructor(orderId: string, { balance, value, gasCost }: { balance: bigint; value: bigint; gasCost: bigint }) {
+        super(orderId, 'Insufficient native balance for the transaction value and its gas');
+        this.balance = balance;
+        this.value = value;
+        this.gasCost = gasCost;
     }
 }

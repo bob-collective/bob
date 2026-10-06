@@ -45,10 +45,12 @@ import {
     type ExecuteQuoteStep,
     ExecuteQuoteStepType,
     type GetQuoteParams,
+    InsufficientGasFundsError,
     type StrategyParams,
 } from './types';
 import {
     assertValidGasOptions,
+    feeCap,
     feeOverrides,
     formatBtc,
     isValidTronAddress,
@@ -90,10 +92,43 @@ async function simulateApproval<T>(orderId: string, simulate: () => Promise<{ re
  * Attaches the caller's fees to an approval write. They go on the write rather than into `simulateContract`:
  * an `eth_call` carrying a fee but no gas can be checked against fee × the node's gas cap and fail on an
  * ordinary balance. Generic so the simulated request keeps its type; at runtime it holds only the fields
- * the SDK passed.
+ * the SDK passed. Without fees the request is returned as-is, so an adapter's own request object (Tron)
+ * reaches its `writeContract` unchanged.
  */
 function withFees<T extends object>(request: T, fees: ReturnType<typeof feeOverrides>): T {
-    return { ...request, ...fees };
+    return Object.keys(fees).length === 0 ? request : { ...request, ...fees };
+}
+
+/** `waitForTransactionReceipt` also resolves for a transaction that reverted, so its status has to be read. */
+async function waitForSuccess(publicClient: PublicClient<Transport>, hash: Hex): Promise<void> {
+    const receipt = await publicClient.waitForTransactionReceipt({ hash, retryCount: RETRY_COUNT });
+    if (receipt.status === 'reverted') throw new Error(`Transaction ${hash} reverted`);
+}
+
+/**
+ * Under `gasOptions.checkBalance`, refuses a send the wallet's own `value + gas × fee cap` check would refuse,
+ * before its prompt opens. A failed balance read skips the check rather than blocking the send.
+ */
+async function assertFundsForSend(
+    publicClient: PublicClient<Transport>,
+    orderId: string,
+    tx: { from: Address; value: bigint; gas: ExecuteQuoteStep['gas'] },
+    options: ExecuteQuoteGasOptions | undefined
+): Promise<void> {
+    const cap = feeCap(options);
+    if (!options?.checkBalance || cap === undefined || tx.gas === undefined) return;
+
+    let balance: bigint;
+    try {
+        balance = await publicClient.getBalance({ address: tx.from });
+    } catch {
+        return;
+    }
+
+    const gasCost = tx.gas.limit * cap;
+    if (balance < tx.value + gasCost) {
+        throw new InsufficientGasFundsError(orderId, { balance, value: tx.value, gasCost });
+    }
 }
 
 /**
@@ -496,7 +531,7 @@ export class GatewayApiClient {
 
                     try {
                         const resetTxHash = await walletClient.writeContract(withFees(resetRequest, fees));
-                        await publicClient.waitForTransactionReceipt({ hash: resetTxHash, retryCount: RETRY_COUNT });
+                        await waitForSuccess(publicClient, resetTxHash);
                     } catch (error) {
                         throw new ExecuteQuoteError(orderId, getApprovalErrorMessage(error), { cause: error });
                     }
@@ -520,7 +555,7 @@ export class GatewayApiClient {
 
                 try {
                     const approveTxHash = await walletClient.writeContract(withFees(approveRequest, fees));
-                    await publicClient.waitForTransactionReceipt({ hash: approveTxHash, retryCount: RETRY_COUNT });
+                    await waitForSuccess(publicClient, approveTxHash);
                 } catch (error) {
                     throw new ExecuteQuoteError(orderId, getApprovalErrorMessage(error), { cause: error });
                 }
@@ -544,6 +579,13 @@ export class GatewayApiClient {
                 throw new ExecuteQuoteError(orderId, EXECUTE_QUOTE_ERROR_MESSAGE, { cause: error });
             }
 
+            await assertFundsForSend(
+                publicClient,
+                orderId,
+                { from: accountAddress, value: offrampValue, gas: offrampGas },
+                usesGasFields ? gasOptions : undefined
+            );
+
             // After gas is resolved so the step can report it; outside the try so a callback throw propagates as-is.
             callback?.({
                 step: totalSteps,
@@ -564,7 +606,7 @@ export class GatewayApiClient {
                     ...fees,
                 });
 
-                await publicClient?.waitForTransactionReceipt({ hash, retryCount: RETRY_COUNT });
+                await waitForSuccess(publicClient, hash);
 
                 transactionHash = hash;
             } catch (error) {
@@ -662,10 +704,7 @@ export class GatewayApiClient {
 
                     try {
                         const resetTxHash = await walletClient.writeContract(withFees(resetRequest, fees));
-                        await publicClient.waitForTransactionReceipt({
-                            hash: resetTxHash,
-                            retryCount: RETRY_COUNT,
-                        });
+                        await waitForSuccess(publicClient, resetTxHash);
                     } catch (error) {
                         throw new ExecuteQuoteError(orderId, getApprovalErrorMessage(error), { cause: error });
                     }
@@ -694,7 +733,7 @@ export class GatewayApiClient {
                 try {
                     const txHash = await walletClient.writeContract(withFees(approveRequest, fees));
 
-                    await publicClient.waitForTransactionReceipt({ hash: txHash, retryCount: RETRY_COUNT });
+                    await waitForSuccess(publicClient, txHash);
                 } catch (error) {
                     throw new ExecuteQuoteError(orderId, getApprovalErrorMessage(error), { cause: error });
                 }
@@ -719,6 +758,13 @@ export class GatewayApiClient {
                 throw new ExecuteQuoteError(orderId, EXECUTE_QUOTE_ERROR_MESSAGE, { cause: error });
             }
 
+            await assertFundsForSend(
+                publicClient,
+                orderId,
+                { from: accountAddress, value: tokenSwapValue, gas: tokenSwapGas },
+                usesGasFields ? gasOptions : undefined
+            );
+
             // After gas is resolved so the step can report it; outside the try so a callback throw propagates as-is.
             callback?.({
                 step: totalSteps,
@@ -739,7 +785,7 @@ export class GatewayApiClient {
                     ...fees,
                 });
 
-                await publicClient.waitForTransactionReceipt({ hash, retryCount: RETRY_COUNT });
+                await waitForSuccess(publicClient, hash);
 
                 transactionHash = hash;
             } catch (error) {
