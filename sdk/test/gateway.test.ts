@@ -3387,9 +3387,7 @@ describe('Gateway Tests', () => {
             const gatewaySDK = new GatewaySDK();
             mockCreateOrder();
 
-            // resolveGasLimit swallows eth_estimateGas failures internally (see
-            // sdk/src/gateway/utils/gas.ts), so a rejection is observed at this call site by
-            // replacing the function itself, not by rejecting the underlying estimateGas.
+            // resolveGasLimit swallows estimateGas failures, so the rejection has to come from the function itself.
             const gasError = new Error('gas estimation blew up');
             const resolveGasLimitSpy = vi.spyOn(gatewayUtils, 'resolveGasLimit').mockRejectedValueOnce(gasError);
 
@@ -3647,7 +3645,6 @@ describe('Gateway Tests', () => {
                 });
         }
 
-        // `allowance` set => the token needs approval at that allowance; unset => no approval path.
         function mockClients({
             estimate = 200_000n,
             allowance,
@@ -3663,7 +3660,6 @@ describe('Gateway Tests', () => {
             const sendTransaction = vi.fn().mockResolvedValue('0xtxhash' as `0x${string}`);
             const estimateGas = vi.fn().mockResolvedValue(estimate);
             const getBalance = vi.fn().mockResolvedValue(balance);
-            // Echoes its arguments as the request, as viem's simulateContract does.
             const simulateContract = vi.fn().mockImplementation(async (args: object) => ({ request: { ...args } }));
 
             return {
@@ -3756,7 +3752,6 @@ describe('Gateway Tests', () => {
                 callback,
             });
 
-            // max(200_000*12/10, 200_000+300_000) = 500_000
             expect(callback).toHaveBeenLastCalledWith({
                 step: 1,
                 type: ExecuteQuoteStepType.SendTransaction,
@@ -3768,7 +3763,6 @@ describe('Gateway Tests', () => {
 
         it('puts EIP-1559 fees on the reset, approve and send writes, not on the simulations', async () => {
             mockOfframpOrder();
-            // USDT with a non-zero allowance below the input => reset + approve + send.
             const mocks = mockClients({ allowance: 1n });
 
             await new GatewaySDK().executeQuote({
@@ -3967,7 +3961,6 @@ describe('Gateway Tests', () => {
         });
 
         describe('checkBalance', () => {
-            // 500_000 buffered gas (from the 200_000 estimate) x the 30 gwei cap.
             const gasCost = 500_000n * eip1559Fees.maxFeePerGas;
 
             it('throws InsufficientGasFundsError before the wallet prompt when value plus gas exceeds the balance', async () => {

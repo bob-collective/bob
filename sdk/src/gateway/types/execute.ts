@@ -48,10 +48,9 @@ type LegacyFeeOptions = {
 export type ExecuteQuoteGasOptions = {
     gasLimit?: GasLimitOption;
     /**
-     * Before the wallet prompt, read the sender's native balance and throw {@link InsufficientGasFundsError}
-     * when it cannot cover `value + gasLimit × fee cap`, the check the wallet and node apply. Needs a fee cap
-     * (`maxFeePerGas` or `gasPrice`) and a resolved limit, and is skipped without them. Off by default: a
-     * sponsored or smart account can pay gas from somewhere this balance does not show.
+     * Before the wallet prompt, throw {@link InsufficientGasFundsError} when the native balance cannot cover
+     * `value + gasLimit × fee cap`. Skipped without a fee cap or a resolved limit. Off by default: a sponsored
+     * or smart account can pay gas from somewhere this balance does not show.
      */
     checkBalance?: boolean;
 } & (Eip1559FeeOptions | LegacyFeeOptions);
@@ -72,11 +71,7 @@ export class ExecuteQuoteError extends Error {
     }
 }
 
-/**
- * Thrown by {@link GatewayApiClient.executeQuote} under `gasOptions.checkBalance`, before the wallet prompt,
- * when the native balance is short of `value + gasCost`. `balance - gasCost` is the largest `value` that
- * would have passed.
- */
+/** Thrown under `gasOptions.checkBalance`. `balance - gasCost` is the largest `value` that would have passed. */
 export class InsufficientGasFundsError extends ExecuteQuoteError {
     readonly name: string = 'InsufficientGasFundsError';
 

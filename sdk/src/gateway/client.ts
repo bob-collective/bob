@@ -89,11 +89,9 @@ async function simulateApproval<T>(orderId: string, simulate: () => Promise<{ re
 }
 
 /**
- * Attaches the caller's fees to an approval write. They go on the write rather than into `simulateContract`:
- * an `eth_call` carrying a fee but no gas can be checked against fee × the node's gas cap and fail on an
- * ordinary balance. Generic so the simulated request keeps its type; at runtime it holds only the fields
- * the SDK passed. Without fees the request is returned as-is, so an adapter's own request object (Tron)
- * reaches its `writeContract` unchanged.
+ * Fees go on the write, not `simulateContract`: an `eth_call` with a fee but no gas can be checked against
+ * fee × the node's gas cap and fail on an ordinary balance. Without fees the request is returned as-is, so an
+ * adapter's own request object (Tron) reaches its `writeContract` unchanged.
  */
 function withFees<T extends object>(request: T, fees: ReturnType<typeof feeOverrides>): T {
     return Object.keys(fees).length === 0 ? request : { ...request, ...fees };
@@ -105,10 +103,6 @@ async function waitForSuccess(publicClient: PublicClient<Transport>, hash: Hex):
     if (receipt.status === 'reverted') throw new Error(`Transaction ${hash} reverted`);
 }
 
-/**
- * Under `gasOptions.checkBalance`, refuses a send the wallet's own `value + gas × fee cap` check would refuse,
- * before its prompt opens. A failed balance read skips the check rather than blocking the send.
- */
 async function assertFundsForSend(
     publicClient: PublicClient<Transport>,
     orderId: string,
@@ -586,7 +580,6 @@ export class GatewayApiClient {
                 usesGasFields ? gasOptions : undefined
             );
 
-            // After gas is resolved so the step can report it; outside the try so a callback throw propagates as-is.
             callback?.({
                 step: totalSteps,
                 type: ExecuteQuoteStepType.SendTransaction,
@@ -765,7 +758,6 @@ export class GatewayApiClient {
                 usesGasFields ? gasOptions : undefined
             );
 
-            // After gas is resolved so the step can report it; outside the try so a callback throw propagates as-is.
             callback?.({
                 step: totalSteps,
                 type: ExecuteQuoteStepType.SendTransaction,

@@ -33,10 +33,7 @@ export function supportsGasEstimation(srcChain: string): boolean {
 
 const FEE_FIELDS = ['gasPrice', 'maxFeePerGas', 'maxPriorityFeePerGas'] as const;
 
-/**
- * Rejects `gasOptions` that would otherwise fail only after the order exists. Checks types as well as
- * values, since a JS caller can pass a `number` where a `bigint` is expected.
- */
+/** Checks types as well as values: a JS caller can pass a `number` where a `bigint` is expected. */
 export function assertValidGasOptions(options: ExecuteQuoteGasOptions | undefined): void {
     if (!options) return;
 
@@ -65,7 +62,6 @@ export function assertValidGasOptions(options: ExecuteQuoteGasOptions | undefine
     if (gasPrice !== undefined && (maxFeePerGas !== undefined || maxPriorityFeePerGas !== undefined)) {
         throw new Error('gasOptions.gasPrice cannot be combined with maxFeePerGas or maxPriorityFeePerGas');
     }
-    // A zero cap can never be included, so the send would sit pending after the order exists.
     if (gasPrice === 0n || maxFeePerGas === 0n) {
         throw new Error(`gasOptions.${gasPrice === 0n ? 'gasPrice' : 'maxFeePerGas'} must be positive`);
     }
@@ -77,12 +73,10 @@ export function assertValidGasOptions(options: ExecuteQuoteGasOptions | undefine
     }
 }
 
-/** The cap the wallet multiplies the gas limit by in its balance check, or `undefined` when the wallet picks it. */
 export function feeCap(options: ExecuteQuoteGasOptions | undefined): bigint | undefined {
     return options?.maxFeePerGas ?? options?.gasPrice;
 }
 
-/** The fee fields the caller set, to spread into a viem write. Empty when none were. */
 export function feeOverrides(options: ExecuteQuoteGasOptions | undefined) {
     if (options?.gasPrice !== undefined) return { gasPrice: options.gasPrice };
 
@@ -92,11 +86,7 @@ export function feeOverrides(options: ExecuteQuoteGasOptions | undefined) {
     };
 }
 
-/**
- * Gas limit for an offramp / tokenSwap send under `option`, or `undefined` to leave the limit to the
- * wallet. A failed `eth_estimateGas` also returns `undefined`, so the send behaves exactly as it does
- * without a limit — never introducing a new failure mode.
- */
+/** A failed `eth_estimateGas` returns `undefined`, leaving the limit to the wallet rather than failing the send. */
 export async function resolveGasLimit(
     publicClient: PublicClient<Transport>,
     account: Account,
