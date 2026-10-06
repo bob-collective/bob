@@ -3649,12 +3649,10 @@ describe('Gateway Tests', () => {
             estimate = 200_000n,
             allowance,
             balance = 10n ** 18n,
-            receiptStatus = 'success',
         }: {
             estimate?: bigint;
             allowance?: bigint;
             balance?: bigint;
-            receiptStatus?: 'success' | 'reverted';
         } = {}) {
             const writeContract = vi.fn().mockResolvedValue('0xapprovehash' as `0x${string}`);
             const sendTransaction = vi.fn().mockResolvedValue('0xtxhash' as `0x${string}`);
@@ -3678,7 +3676,7 @@ describe('Gateway Tests', () => {
                     estimateGas,
                     simulateContract,
                     getBalance,
-                    waitForTransactionReceipt: vi.fn().mockResolvedValue({ status: receiptStatus }),
+                    waitForTransactionReceipt: vi.fn().mockResolvedValue({}),
                 } as unknown as PublicClient<Transport>,
             };
         }
@@ -3850,40 +3848,6 @@ describe('Gateway Tests', () => {
             ).rejects.toThrow(message);
 
             expect(createOrder.isDone()).toBe(false);
-            expect(mocks.sendTransaction).not.toHaveBeenCalled();
-        });
-
-        it('rejects with the orderId when the send reverts on-chain', async () => {
-            mockOfframpOrder();
-            const mocks = mockClients({ receiptStatus: 'reverted' });
-
-            const error = await new GatewaySDK()
-                .executeQuote({
-                    quote: offrampQuote(),
-                    walletClient: mocks.walletClient,
-                    publicClient: mocks.publicClient,
-                })
-                .catch((thrown: unknown) => thrown);
-
-            expect(error).toBeInstanceOf(ExecuteQuoteError);
-            assert(error instanceof ExecuteQuoteError);
-            expect(error.orderId).toBe('offramp-gas-options');
-            expect(error.cause).toEqual(new Error('Transaction 0xtxhash reverted'));
-        });
-
-        it('stops before the send when an approval reverts on-chain', async () => {
-            mockOfframpOrder();
-            const mocks = mockClients({ allowance: 0n, receiptStatus: 'reverted' });
-
-            await expect(
-                new GatewaySDK().executeQuote({
-                    quote: offrampQuote(ETHEREUM_USDT_ADDRESS),
-                    walletClient: mocks.walletClient,
-                    publicClient: mocks.publicClient,
-                })
-            ).rejects.toBeInstanceOf(ExecuteQuoteError);
-
-            expect(mocks.writeContract).toHaveBeenCalledTimes(1);
             expect(mocks.sendTransaction).not.toHaveBeenCalled();
         });
 

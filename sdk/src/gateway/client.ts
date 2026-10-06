@@ -97,12 +97,6 @@ function withFees<T extends object>(request: T, fees: ReturnType<typeof feeOverr
     return Object.keys(fees).length === 0 ? request : { ...request, ...fees };
 }
 
-/** `waitForTransactionReceipt` also resolves for a transaction that reverted, so its status has to be read. */
-async function waitForSuccess(publicClient: PublicClient<Transport>, hash: Hex): Promise<void> {
-    const receipt = await publicClient.waitForTransactionReceipt({ hash, retryCount: RETRY_COUNT });
-    if (receipt.status === 'reverted') throw new Error(`Transaction ${hash} reverted`);
-}
-
 async function assertFundsForSend(
     publicClient: PublicClient<Transport>,
     orderId: string,
@@ -525,7 +519,7 @@ export class GatewayApiClient {
 
                     try {
                         const resetTxHash = await walletClient.writeContract(withFees(resetRequest, fees));
-                        await waitForSuccess(publicClient, resetTxHash);
+                        await publicClient.waitForTransactionReceipt({ hash: resetTxHash, retryCount: RETRY_COUNT });
                     } catch (error) {
                         throw new ExecuteQuoteError(orderId, getApprovalErrorMessage(error), { cause: error });
                     }
@@ -549,7 +543,7 @@ export class GatewayApiClient {
 
                 try {
                     const approveTxHash = await walletClient.writeContract(withFees(approveRequest, fees));
-                    await waitForSuccess(publicClient, approveTxHash);
+                    await publicClient.waitForTransactionReceipt({ hash: approveTxHash, retryCount: RETRY_COUNT });
                 } catch (error) {
                     throw new ExecuteQuoteError(orderId, getApprovalErrorMessage(error), { cause: error });
                 }
@@ -599,7 +593,7 @@ export class GatewayApiClient {
                     ...fees,
                 });
 
-                await waitForSuccess(publicClient, hash);
+                await publicClient?.waitForTransactionReceipt({ hash, retryCount: RETRY_COUNT });
 
                 transactionHash = hash;
             } catch (error) {
@@ -697,7 +691,10 @@ export class GatewayApiClient {
 
                     try {
                         const resetTxHash = await walletClient.writeContract(withFees(resetRequest, fees));
-                        await waitForSuccess(publicClient, resetTxHash);
+                        await publicClient.waitForTransactionReceipt({
+                            hash: resetTxHash,
+                            retryCount: RETRY_COUNT,
+                        });
                     } catch (error) {
                         throw new ExecuteQuoteError(orderId, getApprovalErrorMessage(error), { cause: error });
                     }
@@ -726,7 +723,7 @@ export class GatewayApiClient {
                 try {
                     const txHash = await walletClient.writeContract(withFees(approveRequest, fees));
 
-                    await waitForSuccess(publicClient, txHash);
+                    await publicClient.waitForTransactionReceipt({ hash: txHash, retryCount: RETRY_COUNT });
                 } catch (error) {
                     throw new ExecuteQuoteError(orderId, getApprovalErrorMessage(error), { cause: error });
                 }
@@ -777,7 +774,7 @@ export class GatewayApiClient {
                     ...fees,
                 });
 
-                await waitForSuccess(publicClient, hash);
+                await publicClient.waitForTransactionReceipt({ hash, retryCount: RETRY_COUNT });
 
                 transactionHash = hash;
             } catch (error) {

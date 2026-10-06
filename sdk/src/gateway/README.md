@@ -101,7 +101,7 @@ for non-EVM chains like Tron.
 | `readContract({ address, abi, functionName, args? })`                             | ERC-20 `allowance`, OFT `approvalRequired`.                                                   |
 | `simulateContract({ account, address, abi, functionName, args })` → `{ request }` | Build the validated `approve` / reset request before writing.                                 |
 | `estimateGas({ account, to, data, value })` → `bigint`                            | Size the order transaction's gas limit (not called on Tron). A failure sends without a limit. |
-| `waitForTransactionReceipt({ hash, retryCount })`                                 | Block on approval / send receipts. A reverted receipt throws `ExecuteQuoteError`.             |
+| `waitForTransactionReceipt({ hash, retryCount })`                                 | Block on approval / send receipts.                                                            |
 | `getBalance({ address })` → `bigint`                                              | Only under `gasOptions.checkBalance`: the sender's native balance before the send.            |
 
 ### `walletClient` — required surface
@@ -363,6 +363,5 @@ API failures throw a typed `GatewayError` (`isGatewayError`, `GatewayErrorCode`,
 and per-code detail types — `NoRouteDetails`, `ExceededLimitDetails`, …). Non-JSON
 HTTP errors are wrapped via `GatewayError.fromText`.
 
-Failures after the order exists throw `ExecuteQuoteError` with its `orderId`, including a transaction
-whose receipt reports a revert. `InsufficientGasFundsError` extends it, carrying `balance`, `value` and
+Failures after the order exists throw `ExecuteQuoteError` with its `orderId`. `InsufficientGasFundsError` extends it, carrying `balance`, `value` and
 `gasCost`, when `gasOptions.checkBalance` stops a send the wallet would refuse.
