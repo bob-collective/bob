@@ -45,12 +45,10 @@ import {
     type ExecuteQuoteStep,
     ExecuteQuoteStepType,
     type GetQuoteParams,
-    InsufficientGasFundsError,
     type StrategyParams,
 } from './types';
 import {
     assertValidGasOptions,
-    feeCap,
     feeOverrides,
     formatBtc,
     isValidTronAddress,
@@ -95,28 +93,6 @@ async function simulateApproval<T>(orderId: string, simulate: () => Promise<{ re
  */
 function withFees<T extends object>(request: T, fees: ReturnType<typeof feeOverrides>): T {
     return Object.keys(fees).length === 0 ? request : { ...request, ...fees };
-}
-
-async function assertFundsForSend(
-    publicClient: PublicClient<Transport>,
-    orderId: string,
-    tx: { from: Address; value: bigint; gas: ExecuteQuoteStep['gas'] },
-    options: ExecuteQuoteGasOptions | undefined
-): Promise<void> {
-    const cap = feeCap(options);
-    if (!options?.checkBalance || cap === undefined || tx.gas === undefined) return;
-
-    let balance: bigint;
-    try {
-        balance = await publicClient.getBalance({ address: tx.from });
-    } catch {
-        return;
-    }
-
-    const gasCost = tx.gas.limit * cap;
-    if (balance < tx.value + gasCost) {
-        throw new InsufficientGasFundsError(orderId, { balance, value: tx.value, gasCost });
-    }
 }
 
 /**
@@ -567,13 +543,6 @@ export class GatewayApiClient {
                 throw new ExecuteQuoteError(orderId, EXECUTE_QUOTE_ERROR_MESSAGE, { cause: error });
             }
 
-            await assertFundsForSend(
-                publicClient,
-                orderId,
-                { from: accountAddress, value: offrampValue, gas: offrampGas },
-                usesGasFields ? gasOptions : undefined
-            );
-
             callback?.({
                 step: totalSteps,
                 type: ExecuteQuoteStepType.SendTransaction,
@@ -747,13 +716,6 @@ export class GatewayApiClient {
             } catch (error) {
                 throw new ExecuteQuoteError(orderId, EXECUTE_QUOTE_ERROR_MESSAGE, { cause: error });
             }
-
-            await assertFundsForSend(
-                publicClient,
-                orderId,
-                { from: accountAddress, value: tokenSwapValue, gas: tokenSwapGas },
-                usesGasFields ? gasOptions : undefined
-            );
 
             callback?.({
                 step: totalSteps,

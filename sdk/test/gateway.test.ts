@@ -25,7 +25,6 @@ import {
     GatewayErrorCode,
     GatewayErrorCodeV4Variants,
     GatewaySDK,
-    InsufficientGasFundsError,
     isGatewayError,
 } from '../src/gateway';
 import { assertAllowanceHolderSpender } from '../src/gateway/allowance-holder';
@@ -3628,7 +3627,7 @@ describe('Gateway Tests', () => {
             },
         });
 
-        function mockOfframpOrder(value = '0') {
+        function mockOfframpOrder() {
             return nock(`${MAINNET_GATEWAY_BASE_URL}`)
                 .post('/v4/create-order')
                 .reply(200, {
@@ -3639,7 +3638,7 @@ describe('Gateway Tests', () => {
                             chain: 'ethereum',
                             to: ETHEREUM_ALLOWANCE_HOLDER,
                             data: '0xabcdef',
-                            value,
+                            value: '0',
                         },
                     },
                 });
@@ -3648,16 +3647,13 @@ describe('Gateway Tests', () => {
         function mockClients({
             estimate = 200_000n,
             allowance,
-            balance = 10n ** 18n,
         }: {
             estimate?: bigint;
             allowance?: bigint;
-            balance?: bigint;
         } = {}) {
             const writeContract = vi.fn().mockResolvedValue('0xapprovehash' as `0x${string}`);
             const sendTransaction = vi.fn().mockResolvedValue('0xtxhash' as `0x${string}`);
             const estimateGas = vi.fn().mockResolvedValue(estimate);
-            const getBalance = vi.fn().mockResolvedValue(balance);
             const simulateContract = vi.fn().mockImplementation(async (args: object) => ({ request: { ...args } }));
 
             return {
@@ -3665,7 +3661,6 @@ describe('Gateway Tests', () => {
                 sendTransaction,
                 estimateGas,
                 simulateContract,
-                getBalance,
                 walletClient: { account, writeContract, sendTransaction } as unknown as WalletClient<
                     Transport,
                     ViemChain,
@@ -3675,7 +3670,6 @@ describe('Gateway Tests', () => {
                     readContract: mockOftReadContract({ approvalRequired: allowance !== undefined, allowance }),
                     estimateGas,
                     simulateContract,
-                    getBalance,
                     waitForTransactionReceipt: vi.fn().mockResolvedValue({}),
                 } as unknown as PublicClient<Transport>,
             };
@@ -3833,7 +3827,6 @@ describe('Gateway Tests', () => {
             ['a fee cap without its tip', { maxFeePerGas: 2n }, 'requires maxPriorityFeePerGas'],
             ['a zero fee cap', { maxFeePerGas: 0n, maxPriorityFeePerGas: 0n }, 'maxFeePerGas must be positive'],
             ['a zero gasPrice', { gasPrice: 0n }, 'gasPrice must be positive'],
-            ['a non-boolean checkBalance', { checkBalance: 'yes' }, 'checkBalance must be a boolean'],
         ])('rejects %s before creating an order', async (_, gasOptions, message) => {
             const createOrder = mockOfframpOrder();
             const mocks = mockClients();
@@ -3863,88 +3856,6 @@ describe('Gateway Tests', () => {
 
             const simulated = await mocks.simulateContract.mock.results[0].value;
             expect(mocks.writeContract.mock.calls[0][0]).toBe(simulated.request);
-        });
-
-        describe('checkBalance', () => {
-            const gasCost = 500_000n * eip1559Fees.maxFeePerGas;
-
-            it('throws InsufficientGasFundsError before the wallet prompt when value plus gas exceeds the balance', async () => {
-                mockOfframpOrder('1000');
-                const mocks = mockClients({ balance: gasCost + 999n });
-                const callback = vi.fn<(step: ExecuteQuoteStep) => void>();
-
-                const error = await new GatewaySDK()
-                    .executeQuote({
-                        quote: offrampQuote(),
-                        walletClient: mocks.walletClient,
-                        publicClient: mocks.publicClient,
-                        callback,
-                        gasOptions: { ...eip1559Fees, checkBalance: true },
-                    })
-                    .catch((thrown: unknown) => thrown);
-
-                expect(error).toBeInstanceOf(InsufficientGasFundsError);
-                expect(error).toBeInstanceOf(ExecuteQuoteError);
-                expect(error).toMatchObject({
-                    orderId: 'offramp-gas-options',
-                    balance: gasCost + 999n,
-                    value: 1000n,
-                    gasCost,
-                });
-                expect(mocks.getBalance).toHaveBeenCalledWith({ address: account.address });
-                expect(mocks.sendTransaction).not.toHaveBeenCalled();
-                expect(callback).not.toHaveBeenCalledWith(
-                    expect.objectContaining({ type: ExecuteQuoteStepType.SendTransaction })
-                );
-            });
-
-            it('sends when the balance covers value plus gas exactly', async () => {
-                mockOfframpOrder('1000');
-                const mocks = mockClients({ balance: gasCost + 1000n });
-
-                await new GatewaySDK().executeQuote({
-                    quote: offrampQuote(),
-                    walletClient: mocks.walletClient,
-                    publicClient: mocks.publicClient,
-                    gasOptions: { ...eip1559Fees, checkBalance: true },
-                });
-
-                expect(mocks.sendTransaction).toHaveBeenCalledTimes(1);
-            });
-
-            it.each([
-                ['without checkBalance', { ...eip1559Fees }],
-                ['without a fee cap', { checkBalance: true }],
-                ['when the wallet picks the limit', { ...eip1559Fees, checkBalance: true, gasLimit: 'wallet' }],
-            ])('skips the check %s', async (_, gasOptions) => {
-                mockOfframpOrder();
-                const mocks = mockClients({ balance: 0n });
-
-                await new GatewaySDK().executeQuote({
-                    quote: offrampQuote(),
-                    walletClient: mocks.walletClient,
-                    publicClient: mocks.publicClient,
-                    gasOptions: gasOptions as ExecuteQuoteGasOptions,
-                });
-
-                expect(mocks.getBalance).not.toHaveBeenCalled();
-                expect(mocks.sendTransaction).toHaveBeenCalledTimes(1);
-            });
-
-            it('sends anyway when the balance cannot be read', async () => {
-                mockOfframpOrder();
-                const mocks = mockClients();
-                mocks.getBalance.mockRejectedValue(new Error('rpc down'));
-
-                await new GatewaySDK().executeQuote({
-                    quote: offrampQuote(),
-                    walletClient: mocks.walletClient,
-                    publicClient: mocks.publicClient,
-                    gasOptions: { ...eip1559Fees, checkBalance: true },
-                });
-
-                expect(mocks.sendTransaction).toHaveBeenCalledTimes(1);
-            });
         });
     });
 

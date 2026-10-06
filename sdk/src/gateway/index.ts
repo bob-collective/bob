@@ -25,7 +25,6 @@ export {
     ExecuteQuoteStepType,
     GatewayQuoteParams,
     GetQuoteParams,
-    InsufficientGasFundsError,
 } from './types';
 export {
     applyGasBuffer,

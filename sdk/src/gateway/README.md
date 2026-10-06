@@ -102,7 +102,6 @@ for non-EVM chains like Tron.
 | `simulateContract({ account, address, abi, functionName, args })` → `{ request }` | Build the validated `approve` / reset request before writing.                                 |
 | `estimateGas({ account, to, data, value })` → `bigint`                            | Size the order transaction's gas limit (not called on Tron). A failure sends without a limit. |
 | `waitForTransactionReceipt({ hash, retryCount })`                                 | Block on approval / send receipts.                                                            |
-| `getBalance({ address })` → `bigint`                                              | Only under `gasOptions.checkBalance`: the sender's native balance before the send.            |
 
 ### `walletClient` — required surface
 
@@ -157,12 +156,11 @@ await gateway.executeQuote({
 });
 ```
 
-| Field                                  | Applies to                      | Effect                                                                                                                     |
-| -------------------------------------- | ------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `gasLimit: 'wallet'`                   | order transaction               | No limit is attached; the wallet estimates its own.                                                                        |
-| `maxFeePerGas`, `maxPriorityFeePerGas` | allowance reset, approve, order | EIP-1559 fee cap and tip.                                                                                                  |
-| `gasPrice`                             | allowance reset, approve, order | Legacy gas price. Cannot be combined with the EIP-1559 fields.                                                             |
-| `checkBalance: true`                   | order transaction               | Before the wallet prompt, throws `InsufficientGasFundsError` when the native balance cannot cover `value + gas × fee cap`. |
+| Field                                  | Applies to                      | Effect                                                         |
+| -------------------------------------- | ------------------------------- | -------------------------------------------------------------- |
+| `gasLimit: 'wallet'`                   | order transaction               | No limit is attached; the wallet estimates its own.            |
+| `maxFeePerGas`, `maxPriorityFeePerGas` | allowance reset, approve, order | EIP-1559 fee cap and tip.                                      |
+| `gasPrice`                             | allowance reset, approve, order | Legacy gas price. Cannot be combined with the EIP-1559 fields. |
 
 - Invalid settings throw a plain `Error` before the order is created, so they never leave one behind.
   That includes a `maxFeePerGas` without its `maxPriorityFeePerGas` (viem would fill the tip from the node
@@ -178,9 +176,6 @@ await gateway.executeQuote({
   blocks. Take the tip from `getFeeHistory` rather than `eth_maxPriorityFeePerGas`, which viem's
   `estimateFeesPerGas` uses and which can report far below what blocks include: 0.00002 gwei against a
   0.078 gwei median on Ethereum on 2026-10-06.
-- `checkBalance` needs a fee cap and a resolved limit, and is skipped without them or when the balance
-  read fails. It is off by default because a sponsored or smart account can pay gas from somewhere the
-  balance does not show. The order already exists when it throws, as for any failure after creation.
 
 ### Spending a whole native balance
 
@@ -199,19 +194,12 @@ const maxFeePerGas = baseFeePerGas[baseFeePerGas.length - 1] * 2n + maxPriorityF
 const reserve = applyGasBuffer(ROUTE_GAS_UPPER_BOUND) * maxFeePerGas; // your own bound on route gas
 const quote = await gateway.getQuote({ /* ... */ amount: balance - reserve });
 
-try {
-    await gateway.executeQuote({
-        quote,
-        walletClient,
-        publicClient,
-        gasOptions: { maxFeePerGas, maxPriorityFeePerGas, checkBalance: true },
-    });
-} catch (error) {
-    if (error instanceof InsufficientGasFundsError) {
-        // The route needed more gas than the bound: `error.balance - error.gasCost` is the amount that fits.
-    }
-    throw error;
-}
+await gateway.executeQuote({
+    quote,
+    walletClient,
+    publicClient,
+    gasOptions: { maxFeePerGas, maxPriorityFeePerGas },
+});
 ```
 
 The attached limit stays within that reserve whenever the route's real gas is within the bound, since
@@ -362,6 +350,3 @@ Routes that don't support affiliate fees return `AFFILIATE_FEES_NOT_SUPPORTED_FO
 API failures throw a typed `GatewayError` (`isGatewayError`, `GatewayErrorCode`,
 and per-code detail types — `NoRouteDetails`, `ExceededLimitDetails`, …). Non-JSON
 HTTP errors are wrapped via `GatewayError.fromText`.
-
-Failures after the order exists throw `ExecuteQuoteError` with its `orderId`. `InsufficientGasFundsError` extends it, carrying `balance`, `value` and
-`gasCost`, when `gasOptions.checkBalance` stops a send the wallet would refuse.

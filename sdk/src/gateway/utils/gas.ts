@@ -48,10 +48,6 @@ export function assertValidGasOptions(options: ExecuteQuoteGasOptions | undefine
         }
     }
 
-    if (options.checkBalance !== undefined && typeof options.checkBalance !== 'boolean') {
-        throw new Error('gasOptions.checkBalance must be a boolean');
-    }
-
     const { gasPrice, maxFeePerGas, maxPriorityFeePerGas } = options;
     if (gasPrice !== undefined && (maxFeePerGas !== undefined || maxPriorityFeePerGas !== undefined)) {
         throw new Error('gasOptions.gasPrice cannot be combined with maxFeePerGas or maxPriorityFeePerGas');
@@ -65,10 +61,6 @@ export function assertValidGasOptions(options: ExecuteQuoteGasOptions | undefine
     if (maxFeePerGas !== undefined && maxPriorityFeePerGas !== undefined && maxPriorityFeePerGas > maxFeePerGas) {
         throw new Error('gasOptions.maxPriorityFeePerGas cannot exceed maxFeePerGas');
     }
-}
-
-export function feeCap(options: ExecuteQuoteGasOptions | undefined): bigint | undefined {
-    return options?.maxFeePerGas ?? options?.gasPrice;
 }
 
 export function feeOverrides(options: ExecuteQuoteGasOptions | undefined) {

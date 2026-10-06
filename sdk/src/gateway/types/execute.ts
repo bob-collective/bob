@@ -40,19 +40,13 @@ type LegacyFeeOptions = {
 export type ExecuteQuoteGasOptions = {
     /** `'wallet'` attaches no limit to the order send, so the wallet estimates its own. */
     gasLimit?: 'wallet';
-    /**
-     * Before the wallet prompt, throw {@link InsufficientGasFundsError} when the native balance cannot cover
-     * `value + gasLimit × fee cap`. Skipped without a fee cap or a resolved limit. Off by default: a sponsored
-     * or smart account can pay gas from somewhere this balance does not show.
-     */
-    checkBalance?: boolean;
 } & (Eip1559FeeOptions | LegacyFeeOptions);
 
 /** Thrown by {@link GatewayApiClient.executeQuote} after order creation; `cause`, when present, is the exact caught value. */
 export class ExecuteQuoteError extends Error {
     readonly orderId: string;
 
-    readonly name: string = 'ExecuteQuoteError';
+    readonly name = 'ExecuteQuoteError';
 
     constructor(
         orderId: string,
@@ -61,24 +55,5 @@ export class ExecuteQuoteError extends Error {
     ) {
         super(message, options);
         this.orderId = orderId;
-    }
-}
-
-/** Thrown under `gasOptions.checkBalance`. `balance - gasCost` is the largest `value` that would have passed. */
-export class InsufficientGasFundsError extends ExecuteQuoteError {
-    readonly name: string = 'InsufficientGasFundsError';
-
-    readonly balance: bigint;
-
-    readonly value: bigint;
-
-    /** `gasLimit × fee cap` of the send that was refused. */
-    readonly gasCost: bigint;
-
-    constructor(orderId: string, { balance, value, gasCost }: { balance: bigint; value: bigint; gasCost: bigint }) {
-        super(orderId, 'Insufficient native balance for the transaction value and its gas');
-        this.balance = balance;
-        this.value = value;
-        this.gasCost = gasCost;
     }
 }
