@@ -96,8 +96,11 @@ export type DetailsFor<C extends GatewayErrorCode | GatewayErrorCodeV2 | Gateway
 
 type AnyGatewayErrorCode = GatewayErrorCode | GatewayErrorCodeV2 | GatewayErrorCodeV3 | GatewayErrorCodeV4;
 
+// `raw` is the JSON body exactly as the Gateway sent it, which serialises detail fields in
+// snake_case. Typing it as `DetailsFor<C>` claimed the camelCase shape the SDK returns and let
+// every multi-word key be read under a name the wire never uses.
 type ParseDetailsArgs = {
-    [C in AnyGatewayErrorCode]: { code: C; raw: DetailsFor<C> | null };
+    [C in AnyGatewayErrorCode]: { code: C; raw: Record<string, unknown> | null };
 }[AnyGatewayErrorCode];
 
 // ─── Class ───────────────────────────────────────────────────────────────────
@@ -257,8 +260,8 @@ function parseDetails({ code, raw }: ParseDetailsArgs): DetailsFor<AnyGatewayErr
         // Rust: GatewayErrorDetails::UnableToCoverFees { total_fees, available_amount }
         case GatewayErrorCode.UnableToCoverFees:
             return {
-                totalFees: String(raw?.totalFees ?? ''),
-                availableAmount: String(raw?.availableAmount ?? ''),
+                totalFees: String(raw?.total_fees ?? ''),
+                availableAmount: String(raw?.available_amount ?? ''),
             } satisfies UnableToCoverFeesDetails;
 
         // Rust: GatewayErrorDetails::SimulationFailed { tenderly_url }
@@ -266,17 +269,17 @@ function parseDetails({ code, raw }: ParseDetailsArgs): DetailsFor<AnyGatewayErr
         case GatewayErrorCode.SimulationFailed:
         case GatewayErrorCode.GasEstimateFailed:
             return {
-                tenderlyUrl: typeof raw?.tenderlyUrl === 'string' ? raw?.tenderlyUrl : null,
+                tenderlyUrl: typeof raw?.tenderly_url === 'string' ? raw?.tenderly_url : null,
             } satisfies SimulationFailedDetails;
 
         // Rust: GatewayErrorDetails::NoRoute { src_chain, src_token, dst_chain, dst_token }
         case GatewayErrorCode.NoRoute:
         case GatewayErrorCodeV2.AffiliateFeesNotSupportedForRoute:
             return {
-                srcChain: String(raw?.srcChain ?? ''),
-                srcToken: String(raw?.srcToken ?? ''),
-                dstChain: String(raw?.dstChain ?? ''),
-                dstToken: String(raw?.dstToken ?? ''),
+                srcChain: String(raw?.src_chain ?? ''),
+                srcToken: String(raw?.src_token ?? ''),
+                dstChain: String(raw?.dst_chain ?? ''),
+                dstToken: String(raw?.dst_token ?? ''),
             } satisfies NoRouteDetails;
 
         // Rust: GatewayErrorDetailsV2::InsufficientSolverBalance { limit, token, chain_id },
@@ -284,7 +287,7 @@ function parseDetails({ code, raw }: ParseDetailsArgs): DetailsFor<AnyGatewayErr
             return {
                 limit: String(raw?.limit ?? ''),
                 token: String(raw?.token ?? ''),
-                chainId: String(raw?.chainId ?? ''),
+                chainId: String(raw?.chain_id ?? ''),
             } satisfies InsufficientSolverBalanceDetails;
 
         // Rust: GatewayErrorDetails::ExceededLimit { limit }
@@ -302,19 +305,19 @@ function parseDetails({ code, raw }: ParseDetailsArgs): DetailsFor<AnyGatewayErr
 
         case GatewayErrorCode.SlippageTooLow:
             return {
-                requestedBps: String(raw?.requestedBps),
-                requiredBps: String(raw?.requiredBps),
+                requestedBps: String(raw?.requested_bps ?? ''),
+                requiredBps: String(raw?.required_bps ?? ''),
             } satisfies SlippageTooLowDetails;
 
         case GatewayErrorCodeV3.NonCompliantAddresses:
             return {
-                addresses: raw?.addresses || [],
+                addresses: Array.isArray(raw?.addresses) ? raw.addresses.map(String) : [],
             } satisfies NonCompliantAddressesDetails;
 
         case GatewayErrorCodeV3.TooManyAffiliates:
             return {
-                max: String(raw?.max),
-                actual: String(raw?.actual),
+                max: String(raw?.max ?? ''),
+                actual: String(raw?.actual ?? ''),
             } satisfies TooManyAffiliatesDetails;
 
         // Codes with no details in Rust (details field absent or unit variant → {}):
