@@ -237,7 +237,9 @@ export function isGatewayError(err: unknown): err is AnyGatewayError {
 }
 
 // ─── Code-aware detail parser ─────────────────────────────────────────────────
-// Reads detail fields using generated-client property names.
+// Reads the response body, so fields are spelled as the Gateway sends them (snake_case) and
+// returned under the generated-client property names (camelCase). The generated
+// `…DetailsFromJSON` helpers do the same mapping and are the reference for it.
 // Each case corresponds to a GatewayErrorDetails enum variant in error.rs.
 
 function parseDetails({ code, raw }: ParseDetailsArgs): DetailsFor<AnyGatewayErrorCode> {
