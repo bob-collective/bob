@@ -65,13 +65,13 @@ describe('GatewayError.fromResponse — snake_case detail bodies', () => {
         expect(error.details).toEqual({ tenderlyUrl: 'https://dashboard.tenderly.co/tx/1' });
     });
 
-    it('leaves an absent detail empty rather than the string "undefined"', () => {
+    it('leaves an absent detail undefined rather than the string "undefined"', () => {
         const error = GatewayError.fromResponse({
             code: GatewayErrorCodeV3.TooManyAffiliates,
             error: 'Too many affiliates',
             details: {},
         });
 
-        expect(error.details).toEqual({ max: '', actual: '' });
+        expect(error.details).toStrictEqual({ max: undefined, actual: undefined });
     });
 });
