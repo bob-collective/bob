@@ -65,6 +65,18 @@ describe('GatewayError.fromResponse — snake_case detail bodies', () => {
         expect(error.details).toEqual({ tenderlyUrl: 'https://dashboard.tenderly.co/tx/1' });
     });
 
+    it('still gives an object when the response omits details entirely', () => {
+        const error = GatewayError.fromResponse({
+            code: GatewayErrorCode.SlippageTooLow,
+            error: 'Across requires a slippage of at least 550 bps, got 500 bps',
+        });
+
+        // `DetailsFor` promises an object for any code that carries details, so a caller may read a
+        // field without a null check. Passing the body straight through handed them `null`.
+        expect(error.details).not.toBeNull();
+        expect(error.details.requiredBps).toBeUndefined();
+    });
+
     it('leaves an absent detail undefined rather than the string "undefined"', () => {
         const error = GatewayError.fromResponse({
             code: GatewayErrorCodeV3.TooManyAffiliates,

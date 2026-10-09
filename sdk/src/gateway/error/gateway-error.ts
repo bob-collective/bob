@@ -253,51 +253,56 @@ export function isGatewayError(err: unknown): err is AnyGatewayError {
 // Each case corresponds to a GatewayErrorDetails enum variant in error.rs.
 
 function parseDetails({ code, raw }: ParseDetailsArgs): DetailsFor<AnyGatewayErrorCode> {
+    // The generated helpers pass `null` straight through, but `DetailsFor` promises an object for
+    // every code that carries details, so a response omitting them would hand callers a `null` the
+    // type told them was safe to read. An empty body gives the same shape with absent fields.
+    const body = raw ?? {};
+
     switch (code) {
         // Rust: GatewayErrorDetails::InsufficientAmount { expected, actual }
         case GatewayErrorCode.InsufficientAmount:
         case GatewayErrorCode.InsufficientPaymentAmount:
-            return GatewayErrorDetailsV2OneOfFromJSON(raw);
+            return GatewayErrorDetailsV2OneOfFromJSON(body);
 
         // Rust: GatewayErrorDetails::InsufficientSwapAmount { required, available }
         case GatewayErrorCode.InsufficientSwapAmount:
-            return GatewayErrorDetailsV2OneOf1FromJSON(raw);
+            return GatewayErrorDetailsV2OneOf1FromJSON(body);
 
         // Rust: GatewayErrorDetails::UnableToCoverFees { total_fees, available_amount }
         case GatewayErrorCode.UnableToCoverFees:
-            return GatewayErrorDetailsV2OneOf2FromJSON(raw);
+            return GatewayErrorDetailsV2OneOf2FromJSON(body);
 
         // Rust: GatewayErrorDetails::SimulationFailed { tenderly_url }
         // GasEstimateFailed also uses this shape (TenderlyError::GasEstimateFailed)
         case GatewayErrorCode.SimulationFailed:
         case GatewayErrorCode.GasEstimateFailed:
-            return GatewayErrorDetailsV2OneOf3FromJSON(raw);
+            return GatewayErrorDetailsV2OneOf3FromJSON(body);
 
         // Rust: GatewayErrorDetails::NoRoute { src_chain, src_token, dst_chain, dst_token }
         case GatewayErrorCode.NoRoute:
         case GatewayErrorCodeV2.AffiliateFeesNotSupportedForRoute:
-            return GatewayErrorDetailsV2OneOf4FromJSON(raw);
+            return GatewayErrorDetailsV2OneOf4FromJSON(body);
 
         // Rust: GatewayErrorDetailsV2::InsufficientSolverBalance { limit, token, chain_id },
         case GatewayErrorCode.InsufficientSolverBalance:
-            return GatewayErrorDetailsV2OneOf7FromJSON(raw);
+            return GatewayErrorDetailsV2OneOf7FromJSON(body);
 
         // Rust: GatewayErrorDetails::ExceededLimit { limit }
         case GatewayErrorCode.ExceededLimit:
-            return GatewayErrorDetailsV2OneOf5FromJSON(raw);
+            return GatewayErrorDetailsV2OneOf5FromJSON(body);
 
         // Rust: GatewayErrorDetails::QuoteAmountTooLow { minimum, actual }
         case GatewayErrorCode.QuoteAmountTooLow:
-            return GatewayErrorDetailsV2OneOf6FromJSON(raw);
+            return GatewayErrorDetailsV2OneOf6FromJSON(body);
 
         case GatewayErrorCode.SlippageTooLow:
-            return GatewayErrorDetailsV3OneOfFromJSON(raw);
+            return GatewayErrorDetailsV3OneOfFromJSON(body);
 
         case GatewayErrorCodeV3.NonCompliantAddresses:
-            return GatewayErrorDetailsV3OneOf1FromJSON(raw);
+            return GatewayErrorDetailsV3OneOf1FromJSON(body);
 
         case GatewayErrorCodeV3.TooManyAffiliates:
-            return GatewayErrorDetailsV3OneOf2FromJSON(raw);
+            return GatewayErrorDetailsV3OneOf2FromJSON(body);
 
         // Codes with no details in Rust (details field absent or unit variant → {}):
         //   InsufficientConfirmedFunds, PerAccountLimitExceeded, GlobalLimitExceeded,
