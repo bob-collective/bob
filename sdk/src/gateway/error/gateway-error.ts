@@ -4,16 +4,27 @@ import {
     GatewayErrorCodeV3Variants as GatewayErrorCodeV3,
     GatewayErrorCodeV4Variants as GatewayErrorCodeV4,
     GatewayErrorDetailsV2OneOf,
+    GatewayErrorDetailsV2OneOfFromJSON,
     GatewayErrorDetailsV2OneOf1,
+    GatewayErrorDetailsV2OneOf1FromJSON,
     GatewayErrorDetailsV2OneOf2,
+    GatewayErrorDetailsV2OneOf2FromJSON,
     GatewayErrorDetailsV2OneOf3,
+    GatewayErrorDetailsV2OneOf3FromJSON,
     GatewayErrorDetailsV2OneOf4,
+    GatewayErrorDetailsV2OneOf4FromJSON,
     GatewayErrorDetailsV2OneOf5,
+    GatewayErrorDetailsV2OneOf5FromJSON,
     GatewayErrorDetailsV2OneOf6,
+    GatewayErrorDetailsV2OneOf6FromJSON,
     GatewayErrorDetailsV2OneOf7,
+    GatewayErrorDetailsV2OneOf7FromJSON,
     GatewayErrorDetailsV3OneOf,
+    GatewayErrorDetailsV3OneOfFromJSON,
     GatewayErrorDetailsV3OneOf1,
+    GatewayErrorDetailsV3OneOf1FromJSON,
     GatewayErrorDetailsV3OneOf2,
+    GatewayErrorDetailsV3OneOf2FromJSON,
 } from '../generated-client';
 import type { GatewayErrorV4 as GatewayErrorInterface } from '../generated-client/models/GatewayErrorV4';
 import { instanceOfGatewayErrorV4 } from '../generated-client/models/GatewayErrorV4';
@@ -237,9 +248,8 @@ export function isGatewayError(err: unknown): err is AnyGatewayError {
 }
 
 // ─── Code-aware detail parser ─────────────────────────────────────────────────
-// Reads the response body, so fields are spelled as the Gateway sends them (snake_case) and
-// returned under the generated-client property names (camelCase). The generated
-// `…DetailsFromJSON` helpers do the same mapping and are the reference for it.
+// Reads the response body, so fields are spelled as the Gateway sends them (snake_case). The
+// generated `…FromJSON` helpers map them onto the generated-client property names (camelCase).
 // Each case corresponds to a GatewayErrorDetails enum variant in error.rs.
 
 function parseDetails({ code, raw }: ParseDetailsArgs): DetailsFor<AnyGatewayErrorCode> {
@@ -247,80 +257,47 @@ function parseDetails({ code, raw }: ParseDetailsArgs): DetailsFor<AnyGatewayErr
         // Rust: GatewayErrorDetails::InsufficientAmount { expected, actual }
         case GatewayErrorCode.InsufficientAmount:
         case GatewayErrorCode.InsufficientPaymentAmount:
-            return {
-                expected: String(raw?.expected ?? ''),
-                actual: String(raw?.actual ?? ''),
-            } satisfies InsufficientAmountDetails;
+            return GatewayErrorDetailsV2OneOfFromJSON(raw);
 
         // Rust: GatewayErrorDetails::InsufficientSwapAmount { required, available }
         case GatewayErrorCode.InsufficientSwapAmount:
-            return {
-                required: String(raw?.required ?? ''),
-                available: String(raw?.available ?? ''),
-            } satisfies InsufficientSwapAmountDetails;
+            return GatewayErrorDetailsV2OneOf1FromJSON(raw);
 
         // Rust: GatewayErrorDetails::UnableToCoverFees { total_fees, available_amount }
         case GatewayErrorCode.UnableToCoverFees:
-            return {
-                totalFees: String(raw?.total_fees ?? ''),
-                availableAmount: String(raw?.available_amount ?? ''),
-            } satisfies UnableToCoverFeesDetails;
+            return GatewayErrorDetailsV2OneOf2FromJSON(raw);
 
         // Rust: GatewayErrorDetails::SimulationFailed { tenderly_url }
         // GasEstimateFailed also uses this shape (TenderlyError::GasEstimateFailed)
         case GatewayErrorCode.SimulationFailed:
         case GatewayErrorCode.GasEstimateFailed:
-            return {
-                tenderlyUrl: typeof raw?.tenderly_url === 'string' ? raw?.tenderly_url : null,
-            } satisfies SimulationFailedDetails;
+            return GatewayErrorDetailsV2OneOf3FromJSON(raw);
 
         // Rust: GatewayErrorDetails::NoRoute { src_chain, src_token, dst_chain, dst_token }
         case GatewayErrorCode.NoRoute:
         case GatewayErrorCodeV2.AffiliateFeesNotSupportedForRoute:
-            return {
-                srcChain: String(raw?.src_chain ?? ''),
-                srcToken: String(raw?.src_token ?? ''),
-                dstChain: String(raw?.dst_chain ?? ''),
-                dstToken: String(raw?.dst_token ?? ''),
-            } satisfies NoRouteDetails;
+            return GatewayErrorDetailsV2OneOf4FromJSON(raw);
 
         // Rust: GatewayErrorDetailsV2::InsufficientSolverBalance { limit, token, chain_id },
         case GatewayErrorCode.InsufficientSolverBalance:
-            return {
-                limit: String(raw?.limit ?? ''),
-                token: String(raw?.token ?? ''),
-                chainId: String(raw?.chain_id ?? ''),
-            } satisfies InsufficientSolverBalanceDetails;
+            return GatewayErrorDetailsV2OneOf7FromJSON(raw);
 
         // Rust: GatewayErrorDetails::ExceededLimit { limit }
         case GatewayErrorCode.ExceededLimit:
-            return {
-                limit: String(raw?.limit ?? ''),
-            } satisfies ExceededLimitDetails;
+            return GatewayErrorDetailsV2OneOf5FromJSON(raw);
 
         // Rust: GatewayErrorDetails::QuoteAmountTooLow { minimum, actual }
         case GatewayErrorCode.QuoteAmountTooLow:
-            return {
-                minimum: String(raw?.minimum ?? ''),
-                actual: String(raw?.actual ?? ''),
-            } satisfies QuoteAmountTooLowDetails;
+            return GatewayErrorDetailsV2OneOf6FromJSON(raw);
 
         case GatewayErrorCode.SlippageTooLow:
-            return {
-                requestedBps: String(raw?.requested_bps ?? ''),
-                requiredBps: String(raw?.required_bps ?? ''),
-            } satisfies SlippageTooLowDetails;
+            return GatewayErrorDetailsV3OneOfFromJSON(raw);
 
         case GatewayErrorCodeV3.NonCompliantAddresses:
-            return {
-                addresses: Array.isArray(raw?.addresses) ? raw.addresses.map(String) : [],
-            } satisfies NonCompliantAddressesDetails;
+            return GatewayErrorDetailsV3OneOf1FromJSON(raw);
 
         case GatewayErrorCodeV3.TooManyAffiliates:
-            return {
-                max: String(raw?.max ?? ''),
-                actual: String(raw?.actual ?? ''),
-            } satisfies TooManyAffiliatesDetails;
+            return GatewayErrorDetailsV3OneOf2FromJSON(raw);
 
         // Codes with no details in Rust (details field absent or unit variant → {}):
         //   InsufficientConfirmedFunds, PerAccountLimitExceeded, GlobalLimitExceeded,

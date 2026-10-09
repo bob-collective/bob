@@ -2049,8 +2049,8 @@ describe('Gateway Tests', () => {
             code: GatewayErrorCode.SlippageTooLow,
             error: 'Slippage too low',
             details: {
-                requestedBps: '100',
-                requiredBps: '200',
+                requested_bps: '100',
+                required_bps: '200',
             },
         });
 
@@ -2066,10 +2066,10 @@ describe('Gateway Tests', () => {
             code: GatewayErrorCodeV2.AffiliateFeesNotSupportedForRoute,
             error: 'Affiliate fees not supported for route',
             details: {
-                srcChain: 'ethereum',
-                srcToken: '0x1',
-                dstChain: 'bob',
-                dstToken: '0x2',
+                src_chain: 'ethereum',
+                src_token: '0x1',
+                dst_chain: 'bob',
+                dst_token: '0x2',
             },
         });
 
@@ -2121,10 +2121,10 @@ describe('Gateway Tests', () => {
         });
 
         expect(error.code).toBe(GatewayErrorCode.InsufficientSolverBalance);
-        expect(error.details).toEqual({
+        expect(error.details).toStrictEqual({
             limit: '1000',
-            token: '',
-            chainId: '',
+            token: undefined,
+            chainId: undefined,
         });
     });
 
