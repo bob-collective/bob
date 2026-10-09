@@ -48,6 +48,11 @@ Map them with the **per-variant** helper the `code` switch already selects —
 The names differ only by `OneOf`, but the union one guesses the variant from the body's shape,
 ignores `code`, and returns `{}` for every real error body.
 
+Those helpers copy fields through with no fallback, while `DetailsFor` still declares each one
+required. A response omitting a field therefore leaves `undefined` behind a type that says
+otherwise — harmless for a string a caller interpolates, a crash for one it iterates, so
+`addresses` is defaulted explicitly.
+
 ## Public API
 
 ### GatewaySDK (primary class)

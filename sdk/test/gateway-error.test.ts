@@ -77,6 +77,18 @@ describe('GatewayError.fromResponse — snake_case detail bodies', () => {
         expect(error.details.requiredBps).toBeUndefined();
     });
 
+    it('keeps the compliance addresses iterable when the gateway omits them', () => {
+        const omitted = GatewayError.fromResponse({
+            code: GatewayErrorCodeV3.NonCompliantAddresses,
+            error: 'Non-compliant addresses',
+            details: {},
+        });
+
+        // Declared as an array, so callers map over it without a guard.
+        expect(omitted.details.addresses).toEqual([]);
+        expect(() => omitted.details.addresses.map((a) => a)).not.toThrow();
+    });
+
     it('leaves an absent detail undefined rather than the string "undefined"', () => {
         const error = GatewayError.fromResponse({
             code: GatewayErrorCodeV3.TooManyAffiliates,

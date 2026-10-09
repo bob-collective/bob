@@ -256,7 +256,7 @@ function parseDetails({ code, raw }: ParseDetailsArgs): DetailsFor<AnyGatewayErr
     // The generated helpers pass `null` straight through, but `DetailsFor` promises an object for
     // every code that carries details, so a response omitting them would hand callers a `null` the
     // type told them was safe to read. An empty body gives the same shape with absent fields.
-    const body = raw ?? {};
+    const body: Record<string, unknown> = raw ?? {};
 
     switch (code) {
         // Rust: GatewayErrorDetails::InsufficientAmount { expected, actual }
@@ -298,8 +298,13 @@ function parseDetails({ code, raw }: ParseDetailsArgs): DetailsFor<AnyGatewayErr
         case GatewayErrorCode.SlippageTooLow:
             return GatewayErrorDetailsV3OneOfFromJSON(body);
 
+        // `addresses` is declared as an array, so callers iterate it without a guard. The generated
+        // mapper copies the field through, which leaves `undefined` when the Gateway omits it.
         case GatewayErrorCodeV3.NonCompliantAddresses:
-            return GatewayErrorDetailsV3OneOf1FromJSON(body);
+            return {
+                ...GatewayErrorDetailsV3OneOf1FromJSON(body),
+                addresses: Array.isArray(body.addresses) ? body.addresses.map(String) : [],
+            };
 
         case GatewayErrorCodeV3.TooManyAffiliates:
             return GatewayErrorDetailsV3OneOf2FromJSON(body);
