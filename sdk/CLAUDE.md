@@ -34,6 +34,20 @@ When debugging API issues or verifying request/response shapes, refer to the gat
 
 ESLint ignores `src/gateway/generated-client/**`.
 
+### Error bodies skip the generated deserialization
+
+Successful responses pass through the generated `…FromJSON` deserializers (`JSONApiResponse`, in
+`generated-client/apis/`), so everywhere else in the SDK sees camelCase. Error responses do not: the
+middleware in `client.ts` hands `response.json()` straight to `GatewayError.fromResponse`, so
+`parseDetails` receives the body exactly as the Gateway sent it — snake_case, like `required_bps` or
+`src_chain`. Reading those by their camelCase names returns `undefined` with no type error, because
+the parameter is typed as the shape the function *returns*.
+
+Map them with the **per-variant** helper the `code` switch already selects —
+`GatewayErrorDetailsV3OneOfFromJSON(raw)` — never the union-level `GatewayErrorDetailsV3FromJSON(raw)`.
+The names differ only by `OneOf`, but the union one guesses the variant from the body's shape,
+ignores `code`, and returns `{}` for every real error body.
+
 ## Public API
 
 ### GatewaySDK (primary class)
