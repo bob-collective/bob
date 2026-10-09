@@ -298,13 +298,8 @@ function parseDetails({ code, raw }: ParseDetailsArgs): DetailsFor<AnyGatewayErr
         case GatewayErrorCode.SlippageTooLow:
             return GatewayErrorDetailsV3OneOfFromJSON(body);
 
-        // `addresses` is declared as an array, so callers iterate it without a guard. The generated
-        // mapper copies the field through, which leaves `undefined` when the Gateway omits it.
         case GatewayErrorCodeV3.NonCompliantAddresses:
-            return {
-                ...GatewayErrorDetailsV3OneOf1FromJSON(body),
-                addresses: Array.isArray(body.addresses) ? body.addresses.map(String) : [],
-            };
+            return GatewayErrorDetailsV3OneOf1FromJSON(body);
 
         case GatewayErrorCodeV3.TooManyAffiliates:
             return GatewayErrorDetailsV3OneOf2FromJSON(body);
