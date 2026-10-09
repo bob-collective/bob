@@ -2,6 +2,8 @@ minimumReleaseAge: 7200
 minimumReleaseAgeExclude:
 - '@gobob/*'
 overrides:
+  'concurrently>shell-quote': 1.12.0
+  'get-uri>basic-ftp': 6.2.1
   '@metamask/utils>uuid': 11.1.1
   'ethers>ws': 8.21.0
   'mocha>diff': 8.0.3
