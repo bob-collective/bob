@@ -97,6 +97,9 @@ export interface SwapMempoolPendingJson {
   mempoolTxId: string;
 }
 
+/** Where a quote's slippage tolerance came from. */
+export type SlippageSource = "recommended" | "requested";
+
 /** Quote details for preview before swap execution. */
 export interface QuoteJson {
   srcAmount: string;
@@ -106,7 +109,12 @@ export interface QuoteJson {
   dstChain: string;
   feeNetworkBtc?: string;
   feeProtocolBps?: number;
+  /** Slippage tolerance the quote was priced with, as resolved by the gateway. */
   slippageBps: number;
+  /** Whether {@link slippageBps} is the gateway's recommendation or the user's --slippage. */
+  slippageSource: SlippageSource;
+  /** Set only when an explicit --slippage is below the route's recommendation. */
+  recommendedSlippageBps?: number;
   feeRateSatPerVbyte?: number;
   gasEstimateEth?: string;
 }
@@ -163,6 +171,9 @@ export interface ConfirmationData {
   feeRateSatPerVbyte?: number;
   gasEstimateEth?: string;
   slippageBps: number;
+  slippageSource: SlippageSource;
+  /** Shown when an explicit --slippage is below the route's recommendation. */
+  slippageWarning?: string;
   recipient: string;
 }
 
@@ -248,7 +259,8 @@ export function formatConfirmation(data: ConfirmationData): string {
     lines.push(`  Fee rate   ${data.feeRateSatPerVbyte} sat/vbyte`);
   if (data.gasEstimateEth)
     lines.push(`  Gas (est)  ~${data.gasEstimateEth} ETH`);
-  lines.push(`  Slippage   ${(data.slippageBps / 100).toFixed(1)}% max  (${data.slippageBps} bps)`);
+  lines.push(`  Slippage   ${(data.slippageBps / 100).toFixed(2)}% max  (${data.slippageBps} bps, ${data.slippageSource})`);
+  if (data.slippageWarning) lines.push(`  Warning    ${data.slippageWarning}`);
   lines.push(`  Recipient  ${data.recipient}`);
   return lines.join("\n");
 }

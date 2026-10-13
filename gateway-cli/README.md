@@ -161,12 +161,17 @@ All config via environment variables. No config files.
 --recipient <address>    Recipient address (optional if destination wallet key is set)
 --sender <address>       Sender address (optional)
 --refund-address <addr>  Source-chain address a failed order refunds to (default: --sender)
---slippage <bps>         Slippage tolerance in basis points (default: 300)
+--slippage <bps>         Slippage tolerance in basis points (default: gateway-recommended per route)
 --btc-fee-rate <sat>     Bitcoin fee rate override
 --fee-token <address>    ERC20 token for gas payment (paymaster)
 --fee-reserve <amount>   Amount of fee token to reserve for gas
 --json                   Output as JSON
 ```
+
+> **Note:** omit `--slippage` to use the tolerance the gateway recommends for the route;
+> the quote reports the value actually used. An explicit `--slippage` below that
+> recommendation is still honoured, but the CLI warns: such swaps are likely to fail at
+> settlement and be refunded.
 
 > **Note:** `--refund-address` belongs to the **source** chain — a Bitcoin address on a
 > BTC onramp, an EVM address on an offramp or token swap. The gateway does not infer one

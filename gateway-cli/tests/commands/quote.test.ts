@@ -8,7 +8,6 @@ const mockGetRecommendedFees = vi.fn();
 
 vi.mock("../../src/config.js", () => ({
   loadConfig: vi.fn(() => ({
-    slippageBps: 300,
     btcFeeRate: undefined,
     bitcoinPrivateKey: undefined,
     evmPrivateKey: undefined,
@@ -66,6 +65,7 @@ const sdkQuote = {
     inputAmount: { amount: "5000000" },
     outputAmount: { amount: "4800000000" },
     fee: { amount: "10000" },
+    slippage: "175",
   },
 };
 
@@ -251,5 +251,54 @@ describe("handleQuote", () => {
     expect(mockGetQuote).toHaveBeenCalledWith(
       expect.objectContaining({ refundAddress: REFUND }),
     );
+  });
+
+  // ─── Slippage ──────────────────────────────────────────────────────────────
+  // --slippage is optional: omitted, the gateway recommends a tolerance per route and
+  // reports it on the quote. An explicit value is echoed back, hiding the recommendation,
+  // so `quote` probes for it — a limit below it is likely to fail at settlement.
+
+  const onrampOpts = {
+    src: "BTC", dst: "USDC:base", amount: "5000000", recipient: "0x1111111111111111111111111111111111111111", btcFeeRate: 15,
+  };
+
+  /** Gateway stub: recommends 175 bps, and echoes any explicit slippage back. */
+  function gatewayRecommending175() {
+    mockGetQuote.mockImplementation(async (p: { maxSlippage?: number }) => ({
+      onramp: { ...sdkQuote.onramp, slippage: String(p.maxSlippage ?? 175) },
+    }));
+  }
+
+  it("omits slippage from the request and reports the gateway's recommendation", async () => {
+    gatewayRecommending175();
+
+    const result = await handleQuote(onrampOpts);
+
+    expect(mockGetQuote).toHaveBeenCalledOnce();
+    expect(mockGetQuote.mock.calls[0][0].maxSlippage).toBeUndefined();
+    expect(result.quote).toMatchObject({ slippageBps: 175, slippageSource: "recommended" });
+    expect(result.quote.recommendedSlippageBps).toBeUndefined();
+    expect(result.confirmation.slippageWarning).toBeUndefined();
+  });
+
+  it("warns when --slippage is below the gateway's recommendation", async () => {
+    gatewayRecommending175();
+
+    const result = await handleQuote({ ...onrampOpts, slippage: 50 });
+
+    // The user's limit is still the one quoted — it is a warning, not an override.
+    expect(mockGetQuote).toHaveBeenCalledWith(expect.objectContaining({ maxSlippage: 50 }));
+    expect(result.quote).toMatchObject({ slippageBps: 50, slippageSource: "requested", recommendedSlippageBps: 175 });
+    expect(result.confirmation.slippageWarning).toMatch(/50 bps is below the gateway's recommended 175 bps/);
+  });
+
+  it("does not warn when --slippage meets the gateway's recommendation", async () => {
+    gatewayRecommending175();
+
+    const result = await handleQuote({ ...onrampOpts, slippage: 300 });
+
+    expect(result.quote).toMatchObject({ slippageBps: 300, slippageSource: "requested" });
+    expect(result.quote.recommendedSlippageBps).toBeUndefined();
+    expect(result.confirmation.slippageWarning).toBeUndefined();
   });
 });

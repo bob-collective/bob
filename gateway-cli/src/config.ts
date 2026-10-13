@@ -5,7 +5,7 @@ export const BTC_DECIMALS = 8;
 
 /**
  * Application configuration loaded from environment variables.
- * All values are optional except timeoutMs and slippageBps which have defaults.
+ * All values are optional except timeoutMs, which has a default.
  */
 export interface Config {
   /** Gateway API base URL (default: production endpoint). */
@@ -18,8 +18,6 @@ export interface Config {
   evmPrivateKey?: string;
   /** Polling timeout in milliseconds (default: 30 minutes). */
   timeoutMs: number;
-  /** Default slippage tolerance in basis points (default: 300 = 3%). */
-  slippageBps: number;
   /** Bitcoin fee rate in sat/vbyte (default: from mempool.space). */
   btcFeeRate?: number;
 }
@@ -39,7 +37,6 @@ export function loadConfig(): Config {
     bitcoinPrivateKey: process.env.BITCOIN_PRIVATE_KEY,
     evmPrivateKey: process.env.EVM_PRIVATE_KEY,
     timeoutMs: 1_800_000,
-    slippageBps: 300,
     btcFeeRate: feeRate != null && !isNaN(feeRate) ? feeRate : undefined,
   };
   return _config;

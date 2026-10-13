@@ -1,5 +1,6 @@
 import type { BitcoinSigner, ExecuteQuoteStep, GatewayCreateOrderV3 } from "@gobob/bob-sdk";
 import { getInnerQuoteV4 } from "../util/quote.js";
+import { checkSlippage } from "../util/slippage.js";
 import { type WalletClient, type PublicClient } from "viem";
 import { withRetry, SwapError, PointOfNoReturnError } from "../errors.js";
 import { getRoutes } from "../util/route-provider.js";
@@ -92,6 +93,11 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
       throw new Error(`Timed out waiting for pending transactions to settle for ${addr}. There may be stuck transactions — check your wallet before retrying.`);
     }
   }
+
+  // An explicit --slippage below the route's recommendation will likely be refunded
+  // rather than filled. Say so before anything is signed; the user's limit still stands.
+  const slippageWarning = await checkSlippage((p) => sdk.getQuote(p), ctx.quoteParams);
+  if (slippageWarning) log.warn(slippageWarning.message);
 
   // --unsigned has no public SDK path: executeQuote always signs.
   // Use the V4 API directly to fetch the order with its PSBT (BTC) or unsigned tx (EVM).

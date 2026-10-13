@@ -47,7 +47,6 @@ const mockBtcSigner = {
 
 vi.mock("../../src/config.js", () => ({
   loadConfig: vi.fn(() => ({
-    slippageBps: 300,
     timeoutMs: 5000,
     bitcoinPrivateKey: undefined,
     evmPrivateKey: undefined,
@@ -232,6 +231,42 @@ describe("handleSwap", () => {
 
     expect(mockGetQuote).toHaveBeenCalledOnce();
     expect(mockExecuteQuote).toHaveBeenCalledOnce();
+  });
+
+  it("sends no slippage by default, letting the gateway recommend one", async () => {
+    const { handleSwap } = await import("../../src/commands/swap.js");
+    await handleSwap(baseOpts, silentLogger);
+
+    expect(mockGetQuote).toHaveBeenCalledOnce();
+    expect(mockGetQuote.mock.calls[0][0].maxSlippage).toBeUndefined();
+  });
+
+  it("warns before signing when --slippage is below the gateway's recommendation", async () => {
+    // Gateway recommends 175 bps and echoes any explicit value back.
+    mockGetQuote.mockImplementation(async (p: { maxSlippage?: number }) => ({
+      onramp: { ...onrampQuote.onramp, slippage: String(p.maxSlippage ?? 175) },
+    }));
+    const warn = vi.fn();
+    const { handleSwap } = await import("../../src/commands/swap.js");
+
+    await handleSwap({ ...baseOpts, slippage: 50 }, { progress: () => {}, warn });
+
+    expect(warn).toHaveBeenCalledWith(expect.stringMatching(/50 bps is below the gateway's recommended 175 bps/));
+    expect(warn.mock.invocationCallOrder[0]).toBeLessThan(mockExecuteQuote.mock.invocationCallOrder[0]);
+    // The user's limit still stands: the executed quote is the one priced at 50 bps.
+    expect(mockExecuteQuote.mock.calls[0][0].quote.onramp.slippage).toBe("50");
+  });
+
+  it("does not warn when --slippage meets the gateway's recommendation", async () => {
+    mockGetQuote.mockImplementation(async (p: { maxSlippage?: number }) => ({
+      onramp: { ...onrampQuote.onramp, slippage: String(p.maxSlippage ?? 175) },
+    }));
+    const warn = vi.fn();
+    const { handleSwap } = await import("../../src/commands/swap.js");
+
+    await handleSwap({ ...baseOpts, slippage: 300 }, { progress: () => {}, warn });
+
+    expect(warn).not.toHaveBeenCalled();
   });
 
   it("hands the watcher the order id and ONE signal carrying the whole --timeout budget", async () => {
