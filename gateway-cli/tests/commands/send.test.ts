@@ -3,7 +3,7 @@ import type { Logger } from "../../src/output.js";
 
 vi.mock("../../src/config.js", () => ({
   BTC_DECIMALS: 8,
-  loadConfig: () => ({ timeoutMs: 1000, slippageBps: 300 }),
+  loadConfig: () => ({ timeoutMs: 1000 }),
   getSdk: () => ({}),
 }));
 

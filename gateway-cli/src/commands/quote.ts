@@ -1,4 +1,5 @@
 import { getInnerQuoteV4 } from "../util/quote.js";
+import { checkSlippage, slippageJson } from "../util/slippage.js";
 import { getRoutes } from "../util/route-provider.js";
 import { resolveSwapContext, type SwapContextOptions } from "../util/swap-context.js";
 import { MempoolClient } from "@gobob/bob-sdk";
@@ -48,8 +49,14 @@ export async function handleQuote(opts: QuoteOptions): Promise<QuoteResult> {
     }
   }
 
-  const quote = await sdk.getQuote(ctx.quoteParams);
+  // An explicit --slippage hides the route's recommendation (the gateway echoes the
+  // explicit value back), so it is fetched alongside to check the user isn't undercutting it.
+  const [quote, slippageWarning] = await Promise.all([
+    sdk.getQuote(ctx.quoteParams),
+    checkSlippage((p) => sdk.getQuote(p), ctx.quoteParams),
+  ]);
   const outputAmount = getInnerQuoteV4(quote).outputAmount.amount;
+  const slippage = slippageJson(quote, ctx.slippageBps, slippageWarning);
 
   return {
     quote: {
@@ -58,7 +65,7 @@ export async function handleQuote(opts: QuoteOptions): Promise<QuoteResult> {
       dstAmount: outputAmount,
       dstAsset: ctx.dstAsset.symbol,
       dstChain: ctx.dstAsset.chain,
-      slippageBps: ctx.slippageBps,
+      ...slippage,
       feeRateSatPerVbyte: feeRate,
     },
     confirmation: {
@@ -69,7 +76,9 @@ export async function handleQuote(opts: QuoteOptions): Promise<QuoteResult> {
       dstAsset: ctx.dstAsset.symbol,
       dstChain: ctx.dstAsset.chain,
       feeRateSatPerVbyte: feeRate,
-      slippageBps: ctx.slippageBps,
+      slippageBps: slippage.slippageBps,
+      slippageRequested: slippage.slippageRequested,
+      slippageWarning: slippage.slippageWarning,
       recipient: ctx.recipient,
     },
   };

@@ -1,5 +1,6 @@
-import type { BitcoinSigner, ExecuteQuoteStep, GatewayCreateOrderV3 } from "@gobob/bob-sdk";
+import type { BitcoinSigner, ExecuteQuoteStep, GatewayCreateOrderV3, GatewayQuoteV4 } from "@gobob/bob-sdk";
 import { getInnerQuoteV4 } from "../util/quote.js";
+import { checkSlippage, slippageJson } from "../util/slippage.js";
 import { type WalletClient, type PublicClient } from "viem";
 import { withRetry, SwapError, PointOfNoReturnError } from "../errors.js";
 import { getRoutes } from "../util/route-provider.js";
@@ -9,7 +10,7 @@ import { sleep } from "../util/sleep.js";
 import { loadConfig, getSdk, getApi } from "../config.js";
 import { resolveSigner } from "../chains/index.js";
 import { CHAIN_IDS } from "../chains/evm.js";
-import type { Logger, SwapSuccessJson, SwapSubmittedJson, SwapMempoolPendingJson, SwapInFlightJson } from "../output.js";
+import type { Logger, SlippageJson, SwapSuccessJson, SwapSubmittedJson, SwapMempoolPendingJson, SwapInFlightJson } from "../output.js";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -22,7 +23,7 @@ export interface SwapOptions extends SwapContextOptions {
 }
 
 export type SwapResult =
-  | { type: "unsigned"; orderId: string; psbtBase64?: string; txInfo?: any }
+  | ({ type: "unsigned"; orderId: string; psbtBase64?: string; txInfo?: any } & SlippageJson)
   | { type: "submitted"; data: SwapSubmittedJson }
   | { type: "confirmed"; data: SwapSuccessJson }
   | { type: "mempoolPending"; data: SwapMempoolPendingJson }
@@ -93,13 +94,21 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
     }
   }
 
+  // An explicit --slippage below the route's recommendation will likely be refunded
+  // rather than filled. Say so before anything is signed; the user's limit still stands.
+  const slippageWarning = await checkSlippage((p) => sdk.getQuote(p), ctx.quoteParams);
+  if (slippageWarning) log.warn(slippageWarning.message);
+  // The JSON logger is silent, so the warning also travels in every result below.
+  const slippageOf = (quote: GatewayQuoteV4) => slippageJson(quote, ctx.slippageBps, slippageWarning);
+
   // --unsigned has no public SDK path: executeQuote always signs.
   // Use the V4 API directly to fetch the order with its PSBT (BTC) or unsigned tx (EVM).
   // Nothing here touches a wallet, so it is freely retryable.
   if (opts.unsigned) {
-    const order: GatewayCreateOrderV3 = await withRetry(async () => {
+    const { order, slippage } = await withRetry(async () => {
       const quote = await sdk.getQuote(ctx.quoteParams);
-      return await getApi().createOrderV4({ gatewayQuoteV4: quote });
+      const order: GatewayCreateOrderV3 = await getApi().createOrderV4({ gatewayQuoteV4: quote });
+      return { order, slippage: slippageOf(quote) };
     }, { retries, isTransient });
     const orderData = (order as any)[variant];
     if (!orderData?.orderId) {
@@ -108,9 +117,9 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
     if (variant === "onramp") {
       const psbtHex = orderData.psbtHex;
       if (!psbtHex) throw new Error("Gateway did not return a PSBT for this onramp order.");
-      return { type: "unsigned", orderId: orderData.orderId, psbtBase64: Buffer.from(psbtHex, "hex").toString("base64") };
+      return { type: "unsigned", orderId: orderData.orderId, psbtBase64: Buffer.from(psbtHex, "hex").toString("base64"), ...slippage };
     }
-    return { type: "unsigned", orderId: orderData.orderId, txInfo: orderData.tx };
+    return { type: "unsigned", orderId: orderData.orderId, txInfo: orderData.tx, ...slippage };
   }
 
   // ── Point of no return ─────────────────────────────────────────────────────
@@ -144,7 +153,7 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
         btcSigner,
         callback: (step: ExecuteQuoteStep) => guard.pointOfNoReturn(step.type),
       });
-      return { ...result, outputAmount: getInnerQuoteV4(quote).outputAmount.amount };
+      return { ...result, outputAmount: getInnerQuoteV4(quote).outputAmount.amount, slippage: slippageOf(quote) };
     }, { retries, isTransient });
   } catch (err) {
     // Failed past the point of no return: a tx may be on-chain, but we never got the
@@ -153,7 +162,7 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
     if (err instanceof PointOfNoReturnError) throw pointOfNoReturnError(err, ctx);
     throw err;
   }
-  const { order, tx, outputAmount } = executed;
+  const { order, tx, outputAmount, slippage } = executed;
 
   const orderData = (order as any)[variant];
   if (!orderData?.orderId) {
@@ -170,7 +179,7 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
   if (!opts.wait) {
     return {
       type: "submitted",
-      data: { orderId, status: "submitted", srcAmount: atomicUnits, srcAsset: srcAsset.symbol, dstAsset: dstAsset.symbol, dstChain: dstAsset.chain, txId },
+      data: { orderId, status: "submitted", srcAmount: atomicUnits, srcAsset: srcAsset.symbol, dstAsset: dstAsset.symbol, dstChain: dstAsset.chain, txId, ...slippage },
     };
   }
 
@@ -200,7 +209,7 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
       log.progress(`✓ Confirmed — ${outAmt} ${dstAsset.symbol} delivered to ${recipient}`);
       return {
         type: "confirmed",
-        data: { orderId, status: "confirmed", srcAmount: atomicUnits, srcAsset: srcAsset.symbol, dstAmount: outAmt, dstAsset: dstAsset.symbol, dstChain: dstAsset.chain, quotedDstAmount: outputAmount, actualSlippageBps: slipBps, txId, elapsedMs },
+        data: { orderId, status: "confirmed", srcAmount: atomicUnits, srcAsset: srcAsset.symbol, dstAmount: outAmt, dstAsset: dstAsset.symbol, dstChain: dstAsset.chain, quotedDstAmount: outputAmount, actualSlippageBps: slipBps, txId, elapsedMs, ...slippage },
       };
     }
 
@@ -228,7 +237,7 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
         log.progress(`~ BTC payout broadcast, not yet confirmed: ${outcome.payoutTxId}`);
         return {
           type: "mempoolPending",
-          data: { orderId, status: "mempool_pending", srcAmount: atomicUnits, srcAsset: srcAsset.symbol, dstAsset: dstAsset.symbol, dstChain: dstAsset.chain, mempoolTxId: outcome.payoutTxId },
+          data: { orderId, status: "mempool_pending", srcAmount: atomicUnits, srcAsset: srcAsset.symbol, dstAsset: dstAsset.symbol, dstChain: dstAsset.chain, mempoolTxId: outcome.payoutTxId, ...slippage },
         };
       }
 
@@ -245,6 +254,7 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
           orderId, status: "in_flight", srcAmount: atomicUnits, srcAsset: srcAsset.symbol,
           dstAsset: dstAsset.symbol, dstChain: dstAsset.chain, txId, elapsedMs,
           ...(outcome.lastError && { lastError: outcome.lastError }),
+          ...slippage,
         },
       };
     }

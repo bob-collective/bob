@@ -38,8 +38,27 @@ export function render(data: unknown, mode: OutputMode, humanFormatter?: (data: 
 
 // ─── Types (JSON output shapes) ──────────────────────────────────────────────
 
+/**
+ * The slippage tolerance a quote or swap was priced with. Carried in the JSON output
+ * of both `quote` and `swap`, so a warning reaches `--json` callers too — the JSON
+ * logger is silent.
+ */
+export interface SlippageJson {
+  /**
+   * Slippage tolerance the quote was priced with, as resolved by the gateway. Absent
+   * only if the quote carried no usable value.
+   */
+  slippageBps?: number;
+  /** True when {@link slippageBps} is the user's --slippage, false when the gateway recommended it. */
+  slippageRequested: boolean;
+  /** Set only when an explicit --slippage is below the route's recommendation. */
+  recommendedSlippageBps?: number;
+  /** Set only when an explicit --slippage is below the route's recommendation. */
+  slippageWarning?: string;
+}
+
 /** Successful swap confirmation with full details. */
-export interface SwapSuccessJson {
+export interface SwapSuccessJson extends SlippageJson {
   orderId: string;
   status: "confirmed" | "strategy_skipped" | "strategy_failed";
   srcAmount: string;
@@ -54,7 +73,7 @@ export interface SwapSuccessJson {
 }
 
 /** Swap submitted successfully, awaiting confirmation. */
-export interface SwapSubmittedJson {
+export interface SwapSubmittedJson extends SlippageJson {
   orderId: string;
   status: "submitted";
   srcAmount: string;
@@ -73,7 +92,7 @@ export interface SwapSubmittedJson {
  * operator (or gateway-bot) can follow it up with `gateway-cli status <orderId>`.
  * Additive: it does not change any existing shape.
  */
-export interface SwapInFlightJson {
+export interface SwapInFlightJson extends SlippageJson {
   orderId: string;
   status: "in_flight";
   srcAmount: string;
@@ -87,7 +106,7 @@ export interface SwapInFlightJson {
 }
 
 /** Swap pending in mempool (unconfirmed Bitcoin transaction). */
-export interface SwapMempoolPendingJson {
+export interface SwapMempoolPendingJson extends SlippageJson {
   orderId: string;
   status: "mempool_pending";
   srcAmount: string;
@@ -98,7 +117,7 @@ export interface SwapMempoolPendingJson {
 }
 
 /** Quote details for preview before swap execution. */
-export interface QuoteJson {
+export interface QuoteJson extends SlippageJson {
   srcAmount: string;
   srcAsset: string;
   dstAmount: string;
@@ -106,7 +125,6 @@ export interface QuoteJson {
   dstChain: string;
   feeNetworkBtc?: string;
   feeProtocolBps?: number;
-  slippageBps: number;
   feeRateSatPerVbyte?: number;
   gasEstimateEth?: string;
 }
@@ -162,7 +180,10 @@ export interface ConfirmationData {
   feeNetwork?: string;
   feeRateSatPerVbyte?: number;
   gasEstimateEth?: string;
-  slippageBps: number;
+  slippageBps?: number;
+  slippageRequested: boolean;
+  /** Shown when an explicit --slippage is below the route's recommendation. */
+  slippageWarning?: string;
   recipient: string;
 }
 
@@ -248,7 +269,11 @@ export function formatConfirmation(data: ConfirmationData): string {
     lines.push(`  Fee rate   ${data.feeRateSatPerVbyte} sat/vbyte`);
   if (data.gasEstimateEth)
     lines.push(`  Gas (est)  ~${data.gasEstimateEth} ETH`);
-  lines.push(`  Slippage   ${(data.slippageBps / 100).toFixed(1)}% max  (${data.slippageBps} bps)`);
+  const slippageOrigin = data.slippageRequested ? "requested" : "recommended";
+  lines.push(data.slippageBps === undefined
+    ? `  Slippage   not reported by the gateway  (${slippageOrigin})`
+    : `  Slippage   ${(data.slippageBps / 100).toFixed(2)}% max  (${data.slippageBps} bps, ${slippageOrigin})`);
+  if (data.slippageWarning) lines.push(`  Warning    ${data.slippageWarning}`);
   lines.push(`  Recipient  ${data.recipient}`);
   return lines.join("\n");
 }

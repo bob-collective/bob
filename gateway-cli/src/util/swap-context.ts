@@ -84,7 +84,11 @@ export interface SwapContext {
   atomicUnits: string;
   /** Human-readable rendering of the source amount. */
   display: string;
-  slippageBps: number;
+  /**
+   * The user's explicit `--slippage`, if any. Undefined asks the gateway to recommend
+   * one per route; the figure actually used is on the quote (see `quotedSlippageBps`).
+   */
+  slippageBps?: number;
   /** The signing key, resolved only when {@link SwapContextNeeds.signing} asked for it. */
   key?: string;
   /** Quote parameters, identical for `quote` and `swap` by construction. */
@@ -186,7 +190,7 @@ export function resolveRefundAddress(opts: {
 export async function resolveSwapContext(
   opts: SwapContextOptions,
   routes: RouteInfo[],
-  config: { bitcoinPrivateKey?: string; evmPrivateKey?: string; slippageBps: number },
+  config: { bitcoinPrivateKey?: string; evmPrivateKey?: string },
   needs: SwapContextNeeds,
 ): Promise<SwapContext> {
   // The source is resolved ONLY here, through the same resolver the rest of the CLI
@@ -269,7 +273,7 @@ export async function resolveSwapContext(
     explicit: opts.refundAddress, srcChain: srcAsset.chain, senderAddress,
   });
 
-  const slippageBps = opts.slippage ?? config.slippageBps;
+  const slippageBps = opts.slippage;
 
   return {
     srcAsset, dstAsset, srcFamily, dstFamily, variant, evmChain,

@@ -47,7 +47,6 @@ const mockBtcSigner = {
 
 vi.mock("../../src/config.js", () => ({
   loadConfig: vi.fn(() => ({
-    slippageBps: 300,
     timeoutMs: 5000,
     bitcoinPrivateKey: undefined,
     evmPrivateKey: undefined,
@@ -232,6 +231,100 @@ describe("handleSwap", () => {
 
     expect(mockGetQuote).toHaveBeenCalledOnce();
     expect(mockExecuteQuote).toHaveBeenCalledOnce();
+  });
+
+  it("sends no slippage by default, letting the gateway recommend one", async () => {
+    const { handleSwap } = await import("../../src/commands/swap.js");
+    await handleSwap(baseOpts, silentLogger);
+
+    expect(mockGetQuote).toHaveBeenCalledOnce();
+    expect(mockGetQuote.mock.calls[0][0].maxSlippage).toBeUndefined();
+  });
+
+  it("warns before signing when --slippage is below the gateway's recommendation", async () => {
+    // Gateway recommends 175 bps and echoes any explicit value back.
+    mockGetQuote.mockImplementation(async (p: { maxSlippage?: number }) => ({
+      onramp: { ...onrampQuote.onramp, slippage: String(p.maxSlippage ?? 175) },
+    }));
+    const warn = vi.fn();
+    const { handleSwap } = await import("../../src/commands/swap.js");
+
+    await handleSwap({ ...baseOpts, slippage: 50 }, { progress: () => {}, warn });
+
+    expect(warn).toHaveBeenCalledWith(expect.stringMatching(/50 bps is below the gateway's recommended 175 bps/));
+    expect(warn.mock.invocationCallOrder[0]).toBeLessThan(mockExecuteQuote.mock.invocationCallOrder[0]);
+    // The user's limit still stands: the executed quote is the one priced at 50 bps.
+    expect(mockExecuteQuote.mock.calls[0][0].quote.onramp.slippage).toBe("50");
+  });
+
+  // The JSON logger writes nothing, so under --json a warning that only went to
+  // `log.warn` would be lost. It must travel in the result, as it does for `quote`.
+  describe("--json: slippage reaches the result, not only the (silent) logger", () => {
+    beforeEach(() => {
+      mockGetQuote.mockImplementation(async (p: { maxSlippage?: number }) => ({
+        onramp: { ...onrampQuote.onramp, slippage: String(p.maxSlippage ?? 175) },
+      }));
+    });
+
+    it("carries the warning on a confirmed swap", async () => {
+      const { createLogger } = await import("../../src/output.js");
+      const { handleSwap } = await import("../../src/commands/swap.js");
+
+      const result = await handleSwap({ ...baseOpts, slippage: 50 }, createLogger("json"));
+
+      expect(result.type).toBe("confirmed");
+      if (result.type !== "confirmed") return;
+      expect(result.data).toMatchObject({ slippageBps: 50, slippageRequested: true, recommendedSlippageBps: 175 });
+      expect(result.data.slippageWarning).toMatch(/50 bps is below the gateway's recommended 175 bps/);
+    });
+
+    it("carries the warning on a --no-wait submission", async () => {
+      const { createLogger } = await import("../../src/output.js");
+      const { handleSwap } = await import("../../src/commands/swap.js");
+
+      const result = await handleSwap({ ...baseOpts, slippage: 50, wait: false }, createLogger("json"));
+
+      expect(result.type).toBe("submitted");
+      if (result.type !== "submitted") return;
+      expect(result.data).toMatchObject({ slippageBps: 50, recommendedSlippageBps: 175 });
+      expect(result.data.slippageWarning).toBeDefined();
+    });
+
+    it("carries the warning on an --unsigned order", async () => {
+      const { createLogger } = await import("../../src/output.js");
+      const { handleSwap } = await import("../../src/commands/swap.js");
+
+      const result = await handleSwap({ ...baseOpts, slippage: 50, unsigned: true }, createLogger("json"));
+
+      expect(result.type).toBe("unsigned");
+      if (result.type !== "unsigned") return;
+      expect(result).toMatchObject({ slippageBps: 50, slippageRequested: true, recommendedSlippageBps: 175 });
+      expect(result.slippageWarning).toBeDefined();
+    });
+
+    it("reports the recommended slippage, and no warning, when --slippage is omitted", async () => {
+      const { createLogger } = await import("../../src/output.js");
+      const { handleSwap } = await import("../../src/commands/swap.js");
+
+      const result = await handleSwap(baseOpts, createLogger("json"));
+
+      if (result.type !== "confirmed") throw new Error(`expected confirmed, got ${result.type}`);
+      expect(result.data).toMatchObject({ slippageBps: 175, slippageRequested: false });
+      expect(result.data.recommendedSlippageBps).toBeUndefined();
+      expect(result.data.slippageWarning).toBeUndefined();
+    });
+  });
+
+  it("does not warn when --slippage meets the gateway's recommendation", async () => {
+    mockGetQuote.mockImplementation(async (p: { maxSlippage?: number }) => ({
+      onramp: { ...onrampQuote.onramp, slippage: String(p.maxSlippage ?? 175) },
+    }));
+    const warn = vi.fn();
+    const { handleSwap } = await import("../../src/commands/swap.js");
+
+    await handleSwap({ ...baseOpts, slippage: 300 }, { progress: () => {}, warn });
+
+    expect(warn).not.toHaveBeenCalled();
   });
 
   it("hands the watcher the order id and ONE signal carrying the whole --timeout budget", async () => {
