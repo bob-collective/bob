@@ -276,7 +276,7 @@ describe("handleQuote", () => {
 
     expect(mockGetQuote).toHaveBeenCalledOnce();
     expect(mockGetQuote.mock.calls[0][0].maxSlippage).toBeUndefined();
-    expect(result.quote).toMatchObject({ slippageBps: 175, slippageSource: "recommended" });
+    expect(result.quote).toMatchObject({ slippageBps: 175, slippageRequested: false });
     expect(result.quote.recommendedSlippageBps).toBeUndefined();
     expect(result.confirmation.slippageWarning).toBeUndefined();
   });
@@ -288,7 +288,7 @@ describe("handleQuote", () => {
 
     // The user's limit is still the one quoted — it is a warning, not an override.
     expect(mockGetQuote).toHaveBeenCalledWith(expect.objectContaining({ maxSlippage: 50 }));
-    expect(result.quote).toMatchObject({ slippageBps: 50, slippageSource: "requested", recommendedSlippageBps: 175 });
+    expect(result.quote).toMatchObject({ slippageBps: 50, slippageRequested: true, recommendedSlippageBps: 175 });
     expect(result.quote.slippageWarning).toMatch(/50 bps is below the gateway's recommended 175 bps/);
     expect(result.confirmation.slippageWarning).toMatch(/50 bps is below the gateway's recommended 175 bps/);
   });
@@ -298,7 +298,7 @@ describe("handleQuote", () => {
 
     const result = await handleQuote({ ...onrampOpts, slippage: 300 });
 
-    expect(result.quote).toMatchObject({ slippageBps: 300, slippageSource: "requested" });
+    expect(result.quote).toMatchObject({ slippageBps: 300, slippageRequested: true });
     expect(result.quote.recommendedSlippageBps).toBeUndefined();
     expect(result.confirmation.slippageWarning).toBeUndefined();
   });

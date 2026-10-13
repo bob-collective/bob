@@ -274,7 +274,7 @@ describe("handleSwap", () => {
 
       expect(result.type).toBe("confirmed");
       if (result.type !== "confirmed") return;
-      expect(result.data).toMatchObject({ slippageBps: 50, slippageSource: "requested", recommendedSlippageBps: 175 });
+      expect(result.data).toMatchObject({ slippageBps: 50, slippageRequested: true, recommendedSlippageBps: 175 });
       expect(result.data.slippageWarning).toMatch(/50 bps is below the gateway's recommended 175 bps/);
     });
 
@@ -298,7 +298,7 @@ describe("handleSwap", () => {
 
       expect(result.type).toBe("unsigned");
       if (result.type !== "unsigned") return;
-      expect(result).toMatchObject({ slippageBps: 50, slippageSource: "requested", recommendedSlippageBps: 175 });
+      expect(result).toMatchObject({ slippageBps: 50, slippageRequested: true, recommendedSlippageBps: 175 });
       expect(result.slippageWarning).toBeDefined();
     });
 
@@ -309,7 +309,7 @@ describe("handleSwap", () => {
       const result = await handleSwap(baseOpts, createLogger("json"));
 
       if (result.type !== "confirmed") throw new Error(`expected confirmed, got ${result.type}`);
-      expect(result.data).toMatchObject({ slippageBps: 175, slippageSource: "recommended" });
+      expect(result.data).toMatchObject({ slippageBps: 175, slippageRequested: false });
       expect(result.data.recommendedSlippageBps).toBeUndefined();
       expect(result.data.slippageWarning).toBeUndefined();
     });

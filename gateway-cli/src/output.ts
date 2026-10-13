@@ -38,19 +38,19 @@ export function render(data: unknown, mode: OutputMode, humanFormatter?: (data: 
 
 // ─── Types (JSON output shapes) ──────────────────────────────────────────────
 
-/** Where a quote's slippage tolerance came from. */
-export type SlippageSource = "recommended" | "requested";
-
 /**
  * The slippage tolerance a quote or swap was priced with. Carried in the JSON output
  * of both `quote` and `swap`, so a warning reaches `--json` callers too — the JSON
  * logger is silent.
  */
 export interface SlippageJson {
-  /** Slippage tolerance the quote was priced with, as resolved by the gateway. */
-  slippageBps: number;
-  /** Whether {@link slippageBps} is the gateway's recommendation or the user's --slippage. */
-  slippageSource: SlippageSource;
+  /**
+   * Slippage tolerance the quote was priced with, as resolved by the gateway. Absent
+   * only if the quote carried no usable value.
+   */
+  slippageBps?: number;
+  /** True when {@link slippageBps} is the user's --slippage, false when the gateway recommended it. */
+  slippageRequested: boolean;
   /** Set only when an explicit --slippage is below the route's recommendation. */
   recommendedSlippageBps?: number;
   /** Set only when an explicit --slippage is below the route's recommendation. */
@@ -180,8 +180,8 @@ export interface ConfirmationData {
   feeNetwork?: string;
   feeRateSatPerVbyte?: number;
   gasEstimateEth?: string;
-  slippageBps: number;
-  slippageSource: SlippageSource;
+  slippageBps?: number;
+  slippageRequested: boolean;
   /** Shown when an explicit --slippage is below the route's recommendation. */
   slippageWarning?: string;
   recipient: string;
@@ -269,7 +269,10 @@ export function formatConfirmation(data: ConfirmationData): string {
     lines.push(`  Fee rate   ${data.feeRateSatPerVbyte} sat/vbyte`);
   if (data.gasEstimateEth)
     lines.push(`  Gas (est)  ~${data.gasEstimateEth} ETH`);
-  lines.push(`  Slippage   ${(data.slippageBps / 100).toFixed(2)}% max  (${data.slippageBps} bps, ${data.slippageSource})`);
+  const slippageOrigin = data.slippageRequested ? "requested" : "recommended";
+  lines.push(data.slippageBps === undefined
+    ? `  Slippage   not reported by the gateway  (${slippageOrigin})`
+    : `  Slippage   ${(data.slippageBps / 100).toFixed(2)}% max  (${data.slippageBps} bps, ${slippageOrigin})`);
   if (data.slippageWarning) lines.push(`  Warning    ${data.slippageWarning}`);
   lines.push(`  Recipient  ${data.recipient}`);
   return lines.join("\n");

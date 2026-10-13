@@ -31,6 +31,21 @@ describe("quotedSlippageBps", () => {
   it("reads the offramp's numeric slippage", () => {
     expect(quotedSlippageBps(offramp(250))).toBe(250);
   });
+
+  // The SDK types the onramp value as a bare string, and `Number("")` is 0: a blank or
+  // malformed value must read as "not reported", never as zero tolerance.
+  it.each(["", "  ", "abc", "1.5", "-5", "1e3"])("treats onramp slippage %j as missing, not as a number", (raw) => {
+    expect(quotedSlippageBps(onramp(raw))).toBeUndefined();
+  });
+
+  it.each([NaN, -1, 1.5])("treats numeric slippage %s as missing", (raw) => {
+    expect(quotedSlippageBps(offramp(raw))).toBeUndefined();
+  });
+
+  it("accepts an explicit zero", () => {
+    expect(quotedSlippageBps(onramp("0"))).toBe(0);
+    expect(quotedSlippageBps(offramp(0))).toBe(0);
+  });
 });
 
 describe("checkSlippage", () => {
@@ -64,6 +79,12 @@ describe("checkSlippage", () => {
 
   it.each([175, 300])("does not warn when the requested %s bps meets the 175 bps recommendation", async (bps) => {
     expect(await checkSlippage(gateway(175), { ...params, maxSlippage: bps })).toBeUndefined();
+  });
+
+  it("does not warn when the recommendation comes back blank — it would read as 0 bps", async () => {
+    const getQuote = vi.fn(async () => onramp(""));
+
+    expect(await checkSlippage(getQuote, { ...params, maxSlippage: 50 })).toBeUndefined();
   });
 
   it("does not fail when the recommendation probe fails — it only ever decides a warning", async () => {

@@ -77,7 +77,7 @@ export async function handleQuote(opts: QuoteOptions): Promise<QuoteResult> {
       dstChain: ctx.dstAsset.chain,
       feeRateSatPerVbyte: feeRate,
       slippageBps: slippage.slippageBps,
-      slippageSource: slippage.slippageSource,
+      slippageRequested: slippage.slippageRequested,
       slippageWarning: slippage.slippageWarning,
       recipient: ctx.recipient,
     },

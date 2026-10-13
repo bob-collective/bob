@@ -3,14 +3,20 @@ import type { SlippageJson } from "../output.js";
 import { getInnerQuoteV4 } from "./quote.js";
 
 /**
- * The slippage tolerance a quote was actually priced with, in basis points.
+ * The slippage tolerance a quote was actually priced with, in basis points, or
+ * `undefined` if the quote carries no usable value.
  *
  * The gateway resolves it per route when the request omits `slippage`, and echoes an
  * explicit value back otherwise — so this, not the flag, is the figure to show. The
  * onramp variant carries it as a string, offramp and tokenSwap as numbers.
+ *
+ * Parsed strictly: `Number("")` is `0`, so a blank onramp string would otherwise be
+ * reported as zero tolerance rather than as missing.
  */
-export function quotedSlippageBps(quote: GatewayQuoteV4): number {
-  return Number(getInnerQuoteV4(quote).slippage);
+export function quotedSlippageBps(quote: GatewayQuoteV4): number | undefined {
+  const raw = getInnerQuoteV4(quote).slippage;
+  const bps = typeof raw === "string" ? (/^\d+$/.test(raw.trim()) ? Number(raw) : NaN) : raw;
+  return Number.isSafeInteger(bps) && bps >= 0 ? bps : undefined;
 }
 
 /** An explicit `--slippage` that undercuts what the gateway recommends for the route. */
@@ -38,13 +44,13 @@ export async function checkSlippage(
   const requestedBps = params.maxSlippage;
   if (requestedBps === undefined) return undefined;
 
-  let recommendedBps: number;
+  let recommendedBps: number | undefined;
   try {
     recommendedBps = quotedSlippageBps(await getQuote({ ...params, maxSlippage: undefined }));
   } catch {
     return undefined;
   }
-  if (!Number.isFinite(recommendedBps) || requestedBps >= recommendedBps) return undefined;
+  if (recommendedBps === undefined || requestedBps >= recommendedBps) return undefined;
 
   return {
     requestedBps,
@@ -56,8 +62,8 @@ export async function checkSlippage(
 }
 
 /**
- * The JSON slippage fields for a quote: what it was priced with, where that came from,
- * and the warning from {@link checkSlippage}, if any.
+ * The JSON slippage fields for a quote: what it was priced with, whether the user asked
+ * for it, and the warning from {@link checkSlippage}, if any.
  */
 export function slippageJson(
   quote: GatewayQuoteV4,
@@ -66,7 +72,7 @@ export function slippageJson(
 ): SlippageJson {
   return {
     slippageBps: quotedSlippageBps(quote),
-    slippageSource: requestedBps === undefined ? "recommended" : "requested",
+    slippageRequested: requestedBps !== undefined,
     ...(warning && { recommendedSlippageBps: warning.recommendedBps, slippageWarning: warning.message }),
   };
 }
