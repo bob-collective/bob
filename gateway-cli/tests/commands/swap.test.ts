@@ -257,6 +257,64 @@ describe("handleSwap", () => {
     expect(mockExecuteQuote.mock.calls[0][0].quote.onramp.slippage).toBe("50");
   });
 
+  // The JSON logger writes nothing, so under --json a warning that only went to
+  // `log.warn` would be lost. It must travel in the result, as it does for `quote`.
+  describe("--json: slippage reaches the result, not only the (silent) logger", () => {
+    beforeEach(() => {
+      mockGetQuote.mockImplementation(async (p: { maxSlippage?: number }) => ({
+        onramp: { ...onrampQuote.onramp, slippage: String(p.maxSlippage ?? 175) },
+      }));
+    });
+
+    it("carries the warning on a confirmed swap", async () => {
+      const { createLogger } = await import("../../src/output.js");
+      const { handleSwap } = await import("../../src/commands/swap.js");
+
+      const result = await handleSwap({ ...baseOpts, slippage: 50 }, createLogger("json"));
+
+      expect(result.type).toBe("confirmed");
+      if (result.type !== "confirmed") return;
+      expect(result.data).toMatchObject({ slippageBps: 50, slippageSource: "requested", recommendedSlippageBps: 175 });
+      expect(result.data.slippageWarning).toMatch(/50 bps is below the gateway's recommended 175 bps/);
+    });
+
+    it("carries the warning on a --no-wait submission", async () => {
+      const { createLogger } = await import("../../src/output.js");
+      const { handleSwap } = await import("../../src/commands/swap.js");
+
+      const result = await handleSwap({ ...baseOpts, slippage: 50, wait: false }, createLogger("json"));
+
+      expect(result.type).toBe("submitted");
+      if (result.type !== "submitted") return;
+      expect(result.data).toMatchObject({ slippageBps: 50, recommendedSlippageBps: 175 });
+      expect(result.data.slippageWarning).toBeDefined();
+    });
+
+    it("carries the warning on an --unsigned order", async () => {
+      const { createLogger } = await import("../../src/output.js");
+      const { handleSwap } = await import("../../src/commands/swap.js");
+
+      const result = await handleSwap({ ...baseOpts, slippage: 50, unsigned: true }, createLogger("json"));
+
+      expect(result.type).toBe("unsigned");
+      if (result.type !== "unsigned") return;
+      expect(result).toMatchObject({ slippageBps: 50, slippageSource: "requested", recommendedSlippageBps: 175 });
+      expect(result.slippageWarning).toBeDefined();
+    });
+
+    it("reports the recommended slippage, and no warning, when --slippage is omitted", async () => {
+      const { createLogger } = await import("../../src/output.js");
+      const { handleSwap } = await import("../../src/commands/swap.js");
+
+      const result = await handleSwap(baseOpts, createLogger("json"));
+
+      if (result.type !== "confirmed") throw new Error(`expected confirmed, got ${result.type}`);
+      expect(result.data).toMatchObject({ slippageBps: 175, slippageSource: "recommended" });
+      expect(result.data.recommendedSlippageBps).toBeUndefined();
+      expect(result.data.slippageWarning).toBeUndefined();
+    });
+  });
+
   it("does not warn when --slippage meets the gateway's recommendation", async () => {
     mockGetQuote.mockImplementation(async (p: { maxSlippage?: number }) => ({
       onramp: { ...onrampQuote.onramp, slippage: String(p.maxSlippage ?? 175) },

@@ -289,6 +289,7 @@ describe("handleQuote", () => {
     // The user's limit is still the one quoted — it is a warning, not an override.
     expect(mockGetQuote).toHaveBeenCalledWith(expect.objectContaining({ maxSlippage: 50 }));
     expect(result.quote).toMatchObject({ slippageBps: 50, slippageSource: "requested", recommendedSlippageBps: 175 });
+    expect(result.quote.slippageWarning).toMatch(/50 bps is below the gateway's recommended 175 bps/);
     expect(result.confirmation.slippageWarning).toMatch(/50 bps is below the gateway's recommended 175 bps/);
   });
 

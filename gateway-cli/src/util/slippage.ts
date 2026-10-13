@@ -1,4 +1,5 @@
 import type { GatewayQuoteV4, GetQuoteParams } from "@gobob/bob-sdk";
+import type { SlippageJson } from "../output.js";
 import { getInnerQuoteV4 } from "./quote.js";
 
 /**
@@ -51,5 +52,21 @@ export async function checkSlippage(
     message:
       `--slippage ${requestedBps} bps is below the gateway's recommended ${recommendedBps} bps for this route.\n` +
       `  The swap will likely fail and be refunded. Omit --slippage to use the recommendation.`,
+  };
+}
+
+/**
+ * The JSON slippage fields for a quote: what it was priced with, where that came from,
+ * and the warning from {@link checkSlippage}, if any.
+ */
+export function slippageJson(
+  quote: GatewayQuoteV4,
+  requestedBps: number | undefined,
+  warning: SlippageWarning | undefined,
+): SlippageJson {
+  return {
+    slippageBps: quotedSlippageBps(quote),
+    slippageSource: requestedBps === undefined ? "recommended" : "requested",
+    ...(warning && { recommendedSlippageBps: warning.recommendedBps, slippageWarning: warning.message }),
   };
 }

@@ -1,5 +1,5 @@
 import { getInnerQuoteV4 } from "../util/quote.js";
-import { checkSlippage, quotedSlippageBps } from "../util/slippage.js";
+import { checkSlippage, slippageJson } from "../util/slippage.js";
 import { getRoutes } from "../util/route-provider.js";
 import { resolveSwapContext, type SwapContextOptions } from "../util/swap-context.js";
 import { MempoolClient } from "@gobob/bob-sdk";
@@ -56,8 +56,7 @@ export async function handleQuote(opts: QuoteOptions): Promise<QuoteResult> {
     checkSlippage((p) => sdk.getQuote(p), ctx.quoteParams),
   ]);
   const outputAmount = getInnerQuoteV4(quote).outputAmount.amount;
-  const slippageBps = quotedSlippageBps(quote);
-  const slippageSource = ctx.slippageBps === undefined ? "recommended" : "requested";
+  const slippage = slippageJson(quote, ctx.slippageBps, slippageWarning);
 
   return {
     quote: {
@@ -66,9 +65,7 @@ export async function handleQuote(opts: QuoteOptions): Promise<QuoteResult> {
       dstAmount: outputAmount,
       dstAsset: ctx.dstAsset.symbol,
       dstChain: ctx.dstAsset.chain,
-      slippageBps,
-      slippageSource,
-      recommendedSlippageBps: slippageWarning?.recommendedBps,
+      ...slippage,
       feeRateSatPerVbyte: feeRate,
     },
     confirmation: {
@@ -79,9 +76,9 @@ export async function handleQuote(opts: QuoteOptions): Promise<QuoteResult> {
       dstAsset: ctx.dstAsset.symbol,
       dstChain: ctx.dstAsset.chain,
       feeRateSatPerVbyte: feeRate,
-      slippageBps,
-      slippageSource,
-      slippageWarning: slippageWarning?.message,
+      slippageBps: slippage.slippageBps,
+      slippageSource: slippage.slippageSource,
+      slippageWarning: slippage.slippageWarning,
       recipient: ctx.recipient,
     },
   };
