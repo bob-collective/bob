@@ -5,6 +5,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 const mockGetBalance = vi.fn();
 const mockEstimateFeesPerGas = vi.fn();
 const mockMulticall = vi.fn();
+const mockReadContract = vi.fn();
 
 vi.mock("viem", async (importOriginal) => {
   const actual = await importOriginal<typeof import("viem")>();
@@ -14,6 +15,7 @@ vi.mock("viem", async (importOriginal) => {
       getBalance: mockGetBalance,
       estimateFeesPerGas: mockEstimateFeesPerGas,
       multicall: mockMulticall,
+      readContract: mockReadContract,
     })),
     createWalletClient: vi.fn(() => ({
       account: { address: "0xTestAddress" },
@@ -60,7 +62,7 @@ vi.mock("../../src/util/rpc-resolver.js", () => ({
 
 // ─── Import after mocks ─────────────────────────────────────────────────────
 
-import { getEvmBalances, NATIVE_GAS_BUFFER, getTokenMetadata } from "../../src/chains/evm.js";
+import { getEvmBalances, NATIVE_GAS_BUFFER, getTokenMetadata, getErc20Allowance } from "../../src/chains/evm.js";
 
 // ─── Tests ──────────────────────────────────────────────────────────────────
 
@@ -183,5 +185,33 @@ describe("getEvmBalances", () => {
     });
 
     expect(result.tokens![0].allSpendable).toBe("0");
+  });
+});
+
+describe("getErc20Allowance", () => {
+  beforeEach(() => {
+    mockReadContract.mockReset();
+  });
+
+  const OWNER = "0x2935C2621F4035Dbbf7BC370384B68e76a37C283";
+  const SPENDER = "0x2e77b55EE57FB33e5366987b25dDF6bE94F0892C";
+  const WBTC = "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599";
+
+  it("returns the on-chain allowance for an ERC20 token", async () => {
+    mockReadContract.mockResolvedValue(53464n);
+
+    const allowance = await getErc20Allowance("ethereum", WBTC, OWNER, SPENDER);
+
+    expect(allowance).toBe(53464n);
+    expect(mockReadContract).toHaveBeenCalledWith(
+      expect.objectContaining({ address: WBTC, functionName: "allowance", args: [OWNER, SPENDER] }),
+    );
+  });
+
+  it("short-circuits to 0 for the native token without an RPC call", async () => {
+    const allowance = await getErc20Allowance("ethereum", "0x0000000000000000000000000000000000000000", OWNER, SPENDER);
+
+    expect(allowance).toBe(0n);
+    expect(mockReadContract).not.toHaveBeenCalled();
   });
 });

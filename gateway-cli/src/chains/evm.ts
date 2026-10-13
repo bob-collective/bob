@@ -137,7 +137,7 @@ const ZERO_ADDR = "0x0000000000000000000000000000000000000000" as `0x${string}`;
  * Check if a token address represents the native token.
  * Native tokens have no contract address (represented by zero address or undefined).
  */
-function isNativeToken(tokenAddress?: string): boolean {
+export function isNativeToken(tokenAddress?: string): boolean {
   if (!tokenAddress) return true;
   // Non-EVM addresses (e.g. Tron base58 tokens from Tron routes) are never the
   // EVM native token. Guard here — isAddressEqual throws on non-EVM input, which
@@ -263,6 +263,24 @@ export async function getEvmBalances(
   }
 
   return { address, native, tokens: tokenBals };
+}
+
+/**
+ * Read an ERC20 allowance (owner → spender) in atomic units.
+ *
+ * Returns 0n for the native token: it has no allowance concept, and callers
+ * checking whether a Gateway contract can pull `srcAsset` should treat native as
+ * "no approval needed" and skip the check rather than query a non-contract address.
+ */
+export async function getErc20Allowance(chain: string, token: string, owner: string, spender: string): Promise<bigint> {
+  if (isNativeToken(token)) return 0n;
+  const client = await getClient(chain);
+  return client.readContract({
+    address: token as `0x${string}`,
+    abi: erc20Abi,
+    functionName: "allowance",
+    args: [owner as `0x${string}`, spender as `0x${string}`],
+  });
 }
 
 // ─── Signer ─────────────────────────────────────────────────────────────────
