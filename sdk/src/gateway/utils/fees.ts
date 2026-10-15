@@ -1,4 +1,4 @@
-import { parseGwei, type Chain, type PublicClient, type Transport } from 'viem';
+import { parseGwei, type Account, type Chain, type PublicClient, type Transport } from 'viem';
 import { supportsGasEstimation } from './gas';
 
 /**
@@ -23,16 +23,24 @@ export interface SendFees {
 }
 
 /**
- * EIP-1559 fees for Gateway sends and their approvals, or `undefined` to fall back to the
- * wallet's own fee estimation. Estimation failures (legacy chains, RPC errors) and adapters
- * that take no fee fields return `undefined`, so a send behaves exactly as it does without
- * explicit fees — never introducing a new failure mode.
+ * EIP-1559 fees for Gateway sends and their approvals, or `undefined` to leave fees to the
+ * wallet, exactly as without this function:
+ *
+ * - JSON-RPC (browser) accounts: the wallet picks its own fees, and explicit fields would
+ *   override them — off Ethereum, possibly with a zero tip. The zero-tip problem is viem's
+ *   default for local-key accounts.
+ * - Adapters that take no fee fields (Tron), and estimation failures (legacy chains, RPC errors).
+ * - An order `send` carrying native value whose `value + gas * maxFeePerGas` would exceed the
+ *   balance (or can't be checked), so the higher cap never rejects a send sized against the
+ *   wallet's own, lower one.
  */
 export async function estimateSendFees(
     publicClient: PublicClient<Transport>,
-    srcChain: string
+    srcChain: string,
+    account: Account | undefined,
+    send?: { value: bigint; gas?: bigint }
 ): Promise<SendFees | undefined> {
-    if (!supportsGasEstimation(srcChain)) return undefined;
+    if (account?.type !== 'local' || !supportsGasEstimation(srcChain)) return undefined;
     try {
         const chain = {
             ...publicClient.chain,
@@ -41,10 +49,16 @@ export async function estimateSendFees(
         const estimate = await publicClient.estimateFeesPerGas({ chain, type: 'eip1559' });
         const floor = MIN_PRIORITY_FEE_PER_GAS[srcChain.toLowerCase()] ?? 0n;
         const tip = estimate.maxPriorityFeePerGas > floor ? estimate.maxPriorityFeePerGas : floor;
-        return {
+        const fees = {
             maxPriorityFeePerGas: tip,
             maxFeePerGas: estimate.maxFeePerGas - estimate.maxPriorityFeePerGas + tip,
         };
+        if (send && send.value > 0n) {
+            if (send.gas === undefined) return undefined;
+            const balance = await publicClient.getBalance({ address: account.address });
+            if (send.value + send.gas * fees.maxFeePerGas > balance) return undefined;
+        }
+        return fees;
     } catch {
         return undefined;
     }
@@ -58,8 +72,9 @@ export async function estimateSendFees(
 export async function withSendFees<T extends object>(
     publicClient: PublicClient<Transport>,
     srcChain: string,
+    account: Account | undefined,
     request: T
 ): Promise<T> {
-    const fees = await estimateSendFees(publicClient, srcChain);
+    const fees = await estimateSendFees(publicClient, srcChain, account);
     return fees ? ({ ...request, ...fees } as T) : request;
 }

@@ -113,18 +113,25 @@ for non-EVM chains like Tron.
 
 ## Transaction fees
 
-On EIP-1559 chains `executeQuote` sets `maxFeePerGas` and `maxPriorityFeePerGas` on every approval,
-allowance reset and order transaction, instead of leaving them to the wallet:
+For **local-key accounts** (`privateKeyToAccount` and similar) on EIP-1559 chains, `executeQuote` sets
+`maxFeePerGas` and `maxPriorityFeePerGas` on every approval, allowance reset and order transaction.
+Without them viem prices these sends itself, and its defaults strand them:
 
 - `maxFeePerGas` allows **2x** the current base fee (viem's default is 1.2x), so a rising base fee
-  doesn't strand the transaction.
-- On Ethereum the tip is at least **0.1 gwei**. Common Ethereum RPCs report
-  `eth_maxPriorityFeePerGas` as 0, and a zero-tip transaction can be mined after the order's
+  doesn't hold the transaction back.
+- On Ethereum the tip is at least **0.1 gwei**. viem takes the tip from `eth_maxPriorityFeePerGas`,
+  which common Ethereum RPCs report as 0, and a zero-tip transaction can be mined after the order's
   creation deadline, when it reverts with `Order creation deadline has passed` and still costs gas
   (bob-collective/bob#1214). Other chains use the estimated tip unchanged.
 
-Fees are estimated with `publicClient.estimateFeesPerGas` just before each write. If that is missing
-or fails (legacy chains, RPC errors), and on Tron, the transaction is sent without fee fields, as before.
+Fees are estimated with `publicClient.estimateFeesPerGas` just before each write. The transaction is
+sent without fee fields, exactly as before, when:
+
+- the account is a JSON-RPC (browser) account: the wallet chooses its own fees;
+- the source chain is Tron, or `estimateFeesPerGas` is missing or fails (legacy chains, RPC errors);
+- the order transaction carries native value and `value + gas * maxFeePerGas` would exceed the
+  balance, or the gas limit or balance can't be read. A send sized against the wallet's lower cap
+  keeps working instead of being rejected after the order is created.
 
 ## Gas limits and balance reserves
 
@@ -142,7 +149,9 @@ value + gas * maxFeePerGas <= balance
 ```
 
 so anything spending a user's **entire native balance** has to hold back `gas * maxFeePerGas`, not
-the fee the transaction will actually cost. The two differ substantially: wallets quote a
+the fee the transaction will actually cost. For local-key accounts on EIP-1559 chains that `maxFeePerGas` is the SDK's
+`2 * baseFee + tip` (see [Transaction fees](#transaction-fees)); a send that only fits under a lower
+cap falls back to the wallet's own fees rather than failing. The two differ substantially: wallets quote a
 `maxFeePerGas` well above the price finally paid, and refund the unused gas.
 
 **Two caveats.**

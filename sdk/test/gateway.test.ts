@@ -3651,9 +3651,12 @@ describe('Gateway Tests', () => {
             nock(`${MAINNET_GATEWAY_BASE_URL}`).patch('/v4/register-tx').reply(200, JSON.stringify('ok'));
         }
 
-        function mockClients(publicOverrides: Record<string, unknown>) {
+        // Throwaway placeholder key (= 1): fees are only set for local-key accounts.
+        const localAccount = privateKeyToAccount('0x0000000000000000000000000000000000000000000000000000000000000001');
+
+        function mockClients(publicOverrides: Record<string, unknown>, account: Account = localAccount) {
             const walletClient = {
-                account: { address: '0xabcd1234abcd1234abcd1234abcd1234abcd1234' as Address },
+                account,
                 writeContract: vi.fn().mockResolvedValue('0xapprovehash' as `0x${string}`),
                 sendTransaction: vi.fn().mockResolvedValue('0xtxhash' as `0x${string}`),
             };
@@ -3714,6 +3717,19 @@ describe('Gateway Tests', () => {
             await new GatewaySDK().executeQuote({ quote: tokenSwapQuote, ...typed });
 
             expect(walletClient.sendTransaction).toHaveBeenCalledWith(expect.objectContaining(expectedFees));
+        });
+
+        it('leaves fees to JSON-RPC (browser) wallets', async () => {
+            mockOfframpOrder();
+            // address-only account => viem json-rpc account (type !== 'local')
+            const { walletClient, typed } = mockClients({ estimateFeesPerGas: estimateFeesPerGas() }, {
+                address: localAccount.address,
+            } as Account);
+
+            await new GatewaySDK().executeQuote({ quote: ethereumOfframpQuote(), ...typed });
+
+            expect(walletClient.writeContract.mock.calls[0][0]).not.toHaveProperty('maxFeePerGas');
+            expect(walletClient.sendTransaction.mock.calls[0][0]).not.toHaveProperty('maxFeePerGas');
         });
 
         it('leaves fees to the wallet when they cannot be estimated (no new failure mode)', async () => {

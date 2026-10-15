@@ -477,7 +477,7 @@ export class GatewayApiClient {
 
                     try {
                         const resetTxHash = await walletClient.writeContract(
-                            await withSendFees(publicClient, quote.offramp.srcChain, resetRequest)
+                            await withSendFees(publicClient, quote.offramp.srcChain, walletClient.account, resetRequest)
                         );
                         await publicClient.waitForTransactionReceipt({ hash: resetTxHash, retryCount: RETRY_COUNT });
                     } catch (error) {
@@ -503,7 +503,7 @@ export class GatewayApiClient {
 
                 try {
                     const approveTxHash = await walletClient.writeContract(
-                        await withSendFees(publicClient, quote.offramp.srcChain, approveRequest)
+                        await withSendFees(publicClient, quote.offramp.srcChain, walletClient.account, approveRequest)
                     );
                     await publicClient.waitForTransactionReceipt({ hash: approveTxHash, retryCount: RETRY_COUNT });
                 } catch (error) {
@@ -526,7 +526,10 @@ export class GatewayApiClient {
                     : undefined;
 
                 const hash = await walletClient.sendTransaction({
-                    ...(await estimateSendFees(publicClient, quote.offramp.srcChain)),
+                    ...(await estimateSendFees(publicClient, quote.offramp.srcChain, walletClient.account, {
+                        value: offrampValue,
+                        gas: offrampGas,
+                    })),
                     account: signerAccount(walletClient),
                     data: offrampData,
                     to: spenderAddress,
@@ -630,7 +633,12 @@ export class GatewayApiClient {
 
                     try {
                         const resetTxHash = await walletClient.writeContract(
-                            await withSendFees(publicClient, quote.tokenSwap.srcChain, resetRequest)
+                            await withSendFees(
+                                publicClient,
+                                quote.tokenSwap.srcChain,
+                                walletClient.account,
+                                resetRequest
+                            )
                         );
                         await publicClient.waitForTransactionReceipt({
                             hash: resetTxHash,
@@ -663,7 +671,7 @@ export class GatewayApiClient {
 
                 try {
                     const txHash = await walletClient.writeContract(
-                        await withSendFees(publicClient, quote.tokenSwap.srcChain, approveRequest)
+                        await withSendFees(publicClient, quote.tokenSwap.srcChain, walletClient.account, approveRequest)
                     );
 
                     await publicClient.waitForTransactionReceipt({ hash: txHash, retryCount: RETRY_COUNT });
@@ -688,7 +696,10 @@ export class GatewayApiClient {
                     : undefined;
 
                 const hash = await walletClient.sendTransaction({
-                    ...(await estimateSendFees(publicClient, quote.tokenSwap.srcChain)),
+                    ...(await estimateSendFees(publicClient, quote.tokenSwap.srcChain, walletClient.account, {
+                        value: tokenSwapValue,
+                        gas: tokenSwapGas,
+                    })),
                     account: signerAccount(walletClient),
                     data: tokenSwapData,
                     to: tokenSwapTo,
