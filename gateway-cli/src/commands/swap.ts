@@ -156,9 +156,9 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
       return { ...result, outputAmount: getInnerQuoteV4(quote).outputAmount.amount, slippage: slippageOf(quote) };
     }, { retries, isTransient });
   } catch (err) {
-    // Failed past the point of no return: a tx may be on-chain, but we never got the
-    // order id back, so there is nothing to poll and nothing to reconcile automatically.
-    // Fail loudly and tell the operator not to do the one thing that would double-send.
+    // Failed past the point of no return: a tx may be on-chain. The SDK's error names
+    // the order, but this path still cannot poll it — fail loudly and tell the operator
+    // not to do the one thing that would double-send.
     if (err instanceof PointOfNoReturnError) throw pointOfNoReturnError(err, ctx);
     throw err;
   }
@@ -278,14 +278,23 @@ export async function handleSwap(opts: SwapOptions, log: Logger): Promise<SwapRe
  * to check — at exactly the moment they are tempted to re-run and double-send.
  */
 function pointOfNoReturnError(err: PointOfNoReturnError, ctx: SwapContext): SwapError {
+  // The SDK only throws from here after createOrder, and its ExecuteQuoteError names the
+  // order. Read it structurally rather than via `instanceof`: a duplicate copy of the SDK
+  // in the dependency tree would silently lose the id again. Without it the operator is
+  // told an order may exist but not which one, and has to match the dangling order up
+  // against the gateway's own records by hand.
+  const { orderId } = err.originalError as { orderId?: unknown };
+
   return new SwapError(
-    `Swap aborted after the wallet was asked to sign (step: ${err.reason}). ` +
+    `Swap aborted after the wallet was asked to sign (step: ${err.reason}` +
+    `${typeof orderId === "string" ? `, order: ${orderId}` : ""}). ` +
     `A transaction may already have been broadcast — do NOT re-run this swap or you may send twice. ` +
     `(The signature was requested but we never learned whether it reached the chain; a failure during ` +
     `transaction preparation may mean nothing was sent.) ` +
     `Confirm with \`gateway-cli orders ${ctx.ownerAddress}\` before re-running. ` +
     `Underlying error: ${err.originalError.message}`,
     {
+      ...(typeof orderId === "string" && { orderId }),
       srcAsset: { symbol: ctx.srcAsset.symbol, chain: ctx.srcAsset.chain },
       dstAsset: { symbol: ctx.dstAsset.symbol, chain: ctx.dstAsset.chain },
       ...(ctx.variant !== "onramp" && {
