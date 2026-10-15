@@ -7,6 +7,7 @@ import {
     erc20Abi,
     InsufficientFundsError,
     maxUint256,
+    parseEther,
     parseGwei,
     PublicClient,
     Transport,
@@ -3665,6 +3666,10 @@ describe('Gateway Tests', () => {
                 multicall: vi.fn().mockResolvedValue([0n]),
                 simulateContract: vi.fn().mockResolvedValue({ request: { functionName: 'approve' } }),
                 waitForTransactionReceipt: vi.fn().mockResolvedValue({}),
+                // Fees need a known gas limit and a balance that covers it.
+                estimateGas: vi.fn().mockResolvedValue(200_000n),
+                estimateContractGas: vi.fn().mockResolvedValue(50_000n),
+                getBalance: vi.fn().mockResolvedValue(parseEther('1')),
                 ...publicOverrides,
             };
             return {
@@ -3717,6 +3722,20 @@ describe('Gateway Tests', () => {
             await new GatewaySDK().executeQuote({ quote: tokenSwapQuote, ...typed });
 
             expect(walletClient.sendTransaction).toHaveBeenCalledWith(expect.objectContaining(expectedFees));
+        });
+
+        it('falls back on an ERC-20 offramp whose ETH balance only covers the old, lower cap', async () => {
+            mockOfframpOrder();
+            // approve: 50k * 0.26 gwei and send: 200k * 0.26 gwei both exceed a 10 gwei-wei balance.
+            const { walletClient, typed } = mockClients({
+                estimateFeesPerGas: estimateFeesPerGas(),
+                getBalance: vi.fn().mockResolvedValue(10_000n),
+            });
+
+            await new GatewaySDK().executeQuote({ quote: ethereumOfframpQuote(), ...typed });
+
+            expect(walletClient.writeContract.mock.calls[0][0]).not.toHaveProperty('maxFeePerGas');
+            expect(walletClient.sendTransaction.mock.calls[0][0]).not.toHaveProperty('maxFeePerGas');
         });
 
         it('leaves fees to JSON-RPC (browser) wallets', async () => {

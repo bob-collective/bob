@@ -1,4 +1,4 @@
-import { parseGwei, type Account, type Chain, type PublicClient, type Transport } from 'viem';
+import { parseGwei, type Account, type Chain, type LocalAccount, type PublicClient, type Transport } from 'viem';
 import { supportsGasEstimation } from './gas';
 
 /**
@@ -30,17 +30,17 @@ export interface SendFees {
  *   override them — off Ethereum, possibly with a zero tip. The zero-tip problem is viem's
  *   default for local-key accounts.
  * - Adapters that take no fee fields (Tron), and estimation failures (legacy chains, RPC errors).
- * - An order `send` carrying native value whose `value + gas * maxFeePerGas` would exceed the
- *   balance (or can't be checked), so the higher cap never rejects a send sized against the
- *   wallet's own, lower one.
+ * - A write whose `value + gas * maxFeePerGas` would exceed the balance, or can't be checked
+ *   because the gas limit or balance is unknown. The higher cap must never reject a write that
+ *   fit under the wallet's own, lower one — including approvals paid from a near-empty balance.
  */
 export async function estimateSendFees(
     publicClient: PublicClient<Transport>,
     srcChain: string,
     account: Account | undefined,
-    send?: { value: bigint; gas?: bigint }
+    tx: { value: bigint; gas: bigint | undefined }
 ): Promise<SendFees | undefined> {
-    if (account?.type !== 'local' || !supportsGasEstimation(srcChain)) return undefined;
+    if (!setsFees(account, srcChain) || tx.gas === undefined) return undefined;
     try {
         const chain = {
             ...publicClient.chain,
@@ -53,21 +53,22 @@ export async function estimateSendFees(
             maxPriorityFeePerGas: tip,
             maxFeePerGas: estimate.maxFeePerGas - estimate.maxPriorityFeePerGas + tip,
         };
-        if (send && send.value > 0n) {
-            if (send.gas === undefined) return undefined;
-            const balance = await publicClient.getBalance({ address: account.address });
-            if (send.value + send.gas * fees.maxFeePerGas > balance) return undefined;
-        }
-        return fees;
+        const balance = await publicClient.getBalance({ address: account.address });
+        return tx.value + tx.gas * fees.maxFeePerGas > balance ? undefined : fees;
     } catch {
         return undefined;
     }
 }
 
+function setsFees(account: Account | undefined, srcChain: string): account is LocalAccount {
+    return account?.type === 'local' && supportsGasEstimation(srcChain);
+}
+
 /**
- * A simulated write `request` with {@link estimateSendFees} applied, or unchanged when no fees
- * can be estimated. The cast keeps the request's own type: viem types simulated requests as
- * possibly legacy, but fees are only returned for EIP-1559 chains.
+ * A simulated write `request` (approval or allowance reset) with {@link estimateSendFees}
+ * applied, estimating its gas for the balance check, or unchanged when no fees apply. The cast
+ * keeps the request's own type: viem types simulated requests as possibly legacy, but fees are
+ * only returned for EIP-1559 chains.
  */
 export async function withSendFees<T extends object>(
     publicClient: PublicClient<Transport>,
@@ -75,6 +76,11 @@ export async function withSendFees<T extends object>(
     account: Account | undefined,
     request: T
 ): Promise<T> {
-    const fees = await estimateSendFees(publicClient, srcChain, account);
+    if (!setsFees(account, srcChain)) return request;
+    const gas = await publicClient
+        .estimateContractGas(request as unknown as Parameters<typeof publicClient.estimateContractGas>[0])
+        .catch(() => undefined);
+    const value = (request as { value?: bigint }).value ?? 0n;
+    const fees = await estimateSendFees(publicClient, srcChain, account, { value, gas });
     return fees ? ({ ...request, ...fees } as T) : request;
 }

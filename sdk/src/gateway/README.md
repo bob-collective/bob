@@ -102,6 +102,7 @@ for non-EVM chains like Tron.
 | `simulateContract({ account, address, abi, functionName, args })` → `{ request }` | Build the validated `approve` / reset request before writing.           |
 | `waitForTransactionReceipt({ hash, retryCount })`                                 | Block on approval / send receipts.                                      |
 | `estimateFeesPerGas({ chain, type })` (optional)                                  | EIP-1559 fees for EVM sends; see [Transaction fees](#transaction-fees). |
+| `estimateContractGas(request)`, `getBalance({ address })` (optional)              | The fee balance check; see [Transaction fees](#transaction-fees).       |
 
 ### `walletClient` — required surface
 
@@ -129,9 +130,10 @@ sent without fee fields, exactly as before, when:
 
 - the account is a JSON-RPC (browser) account: the wallet chooses its own fees;
 - the source chain is Tron, or `estimateFeesPerGas` is missing or fails (legacy chains, RPC errors);
-- the order transaction carries native value and `value + gas * maxFeePerGas` would exceed the
-  balance, or the gas limit or balance can't be read. A send sized against the wallet's lower cap
-  keeps working instead of being rejected after the order is created.
+- `value + gas * maxFeePerGas` would exceed the native balance, or the gas limit or balance can't be
+  read. This applies to every write (approvals and resets included, with their gas estimated via
+  `estimateContractGas`), so a write that fit under the wallet's own, lower cap keeps working
+  instead of being rejected — the order transaction included, after the order is created.
 
 ## Gas limits and balance reserves
 
