@@ -530,6 +530,21 @@ describe("handleSwap", () => {
     expect(caught.message).toContain("approve");
   });
 
+  it("names the order when a wallet step fails after createOrder", async () => {
+    mockExecuteQuote.mockImplementation(async ({ callback }: any) => {
+      callback?.({ step: 1, type: "approve", totalSteps: 2, orderId: "order-abc" });
+      throw Object.assign(new Error("Failed to execute Gateway quote after order creation"), { orderId: "order-abc" });
+    });
+
+    const { handleSwap } = await import("../../src/commands/swap.js");
+    const caught: any = await handleSwap({ ...baseOpts, retry: true }, silentLogger).catch(e => e);
+
+    expect(caught.context.orderId).toBe("order-abc");
+    // Named in the sentence too, not only the context: a caller that logs the first line
+    // of the CLI's output (as the funding script does) would otherwise still miss it.
+    expect(caught.message).toContain("order: order-abc");
+  });
+
   it("reports the FURTHEST step reached, not the first, when several steps fired", async () => {
     // An EVM ERC20 swap fires approve → send_transaction. If the error names the first
     // step, an operator reads "only the approve went out" and concludes it is safe to
