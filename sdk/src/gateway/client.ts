@@ -46,7 +46,15 @@ import {
     type GetQuoteParams,
     type StrategyParams,
 } from './types';
-import { estimateGasWithBuffer, formatBtc, isValidTronAddress, supportsGasEstimation, tronAddressToHex } from './utils';
+import {
+    estimateGasWithBuffer,
+    estimateSendFees,
+    formatBtc,
+    isValidTronAddress,
+    supportsGasEstimation,
+    tronAddressToHex,
+    withSendFees,
+} from './utils';
 
 const RETRY_COUNT = 8; // Number of times to retry fetching transaction receipt after sending a transaction
 
@@ -468,7 +476,9 @@ export class GatewayApiClient {
                     callback?.({ step: 1, type: ExecuteQuoteStepType.ResetApproval, totalSteps, orderId });
 
                     try {
-                        const resetTxHash = await walletClient.writeContract(resetRequest);
+                        const resetTxHash = await walletClient.writeContract(
+                            await withSendFees(publicClient, quote.offramp.srcChain, resetRequest)
+                        );
                         await publicClient.waitForTransactionReceipt({ hash: resetTxHash, retryCount: RETRY_COUNT });
                     } catch (error) {
                         throw new ExecuteQuoteError(orderId, getApprovalErrorMessage(error), { cause: error });
@@ -492,7 +502,9 @@ export class GatewayApiClient {
                 callback?.({ step: needsReset ? 2 : 1, type: ExecuteQuoteStepType.Approve, totalSteps, orderId });
 
                 try {
-                    const approveTxHash = await walletClient.writeContract(approveRequest);
+                    const approveTxHash = await walletClient.writeContract(
+                        await withSendFees(publicClient, quote.offramp.srcChain, approveRequest)
+                    );
                     await publicClient.waitForTransactionReceipt({ hash: approveTxHash, retryCount: RETRY_COUNT });
                 } catch (error) {
                     throw new ExecuteQuoteError(orderId, getApprovalErrorMessage(error), { cause: error });
@@ -514,6 +526,7 @@ export class GatewayApiClient {
                     : undefined;
 
                 const hash = await walletClient.sendTransaction({
+                    ...(await estimateSendFees(publicClient, quote.offramp.srcChain)),
                     account: signerAccount(walletClient),
                     data: offrampData,
                     to: spenderAddress,
@@ -616,7 +629,9 @@ export class GatewayApiClient {
                     callback?.({ step: 1, type: ExecuteQuoteStepType.ResetApproval, totalSteps, orderId });
 
                     try {
-                        const resetTxHash = await walletClient.writeContract(resetRequest);
+                        const resetTxHash = await walletClient.writeContract(
+                            await withSendFees(publicClient, quote.tokenSwap.srcChain, resetRequest)
+                        );
                         await publicClient.waitForTransactionReceipt({
                             hash: resetTxHash,
                             retryCount: RETRY_COUNT,
@@ -647,7 +662,9 @@ export class GatewayApiClient {
                 });
 
                 try {
-                    const txHash = await walletClient.writeContract(approveRequest);
+                    const txHash = await walletClient.writeContract(
+                        await withSendFees(publicClient, quote.tokenSwap.srcChain, approveRequest)
+                    );
 
                     await publicClient.waitForTransactionReceipt({ hash: txHash, retryCount: RETRY_COUNT });
                 } catch (error) {
@@ -671,6 +688,7 @@ export class GatewayApiClient {
                     : undefined;
 
                 const hash = await walletClient.sendTransaction({
+                    ...(await estimateSendFees(publicClient, quote.tokenSwap.srcChain)),
                     account: signerAccount(walletClient),
                     data: tokenSwapData,
                     to: tokenSwapTo,

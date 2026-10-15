@@ -96,11 +96,12 @@ for non-EVM chains like Tron.
 
 ### `publicClient` — required surface
 
-| Member                                                                            | Used for                                                      |
-| --------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| `readContract({ address, abi, functionName, args? })`                             | ERC-20 `allowance`, OFT `approvalRequired`.                   |
-| `simulateContract({ account, address, abi, functionName, args })` → `{ request }` | Build the validated `approve` / reset request before writing. |
-| `waitForTransactionReceipt({ hash, retryCount })`                                 | Block on approval / send receipts.                            |
+| Member                                                                            | Used for                                                                |
+| --------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `readContract({ address, abi, functionName, args? })`                             | ERC-20 `allowance`, OFT `approvalRequired`.                             |
+| `simulateContract({ account, address, abi, functionName, args })` → `{ request }` | Build the validated `approve` / reset request before writing.           |
+| `waitForTransactionReceipt({ hash, retryCount })`                                 | Block on approval / send receipts.                                      |
+| `estimateFeesPerGas({ chain, type })` (optional)                                  | EIP-1559 fees for EVM sends; see [Transaction fees](#transaction-fees). |
 
 ### `walletClient` — required surface
 
@@ -109,6 +110,21 @@ for non-EVM chains like Tron.
 | `account` (`Account` with `.address`)                    | Sender address; `executeQuote` throws if absent for offramp.            |
 | `writeContract(request)` → `Hash`                        | Send the `approve` / allowance-reset tx produced by `simulateContract`. |
 | `sendTransaction({ account, to, data, value })` → `Hash` | Broadcast the gateway order transaction.                                |
+
+## Transaction fees
+
+On EIP-1559 chains `executeQuote` sets `maxFeePerGas` and `maxPriorityFeePerGas` on every approval,
+allowance reset and order transaction, instead of leaving them to the wallet:
+
+- `maxFeePerGas` allows **2x** the current base fee (viem's default is 1.2x), so a rising base fee
+  doesn't strand the transaction.
+- On Ethereum the tip is at least **0.1 gwei**. Common Ethereum RPCs report
+  `eth_maxPriorityFeePerGas` as 0, and a zero-tip transaction can be mined after the order's
+  creation deadline, when it reverts with `Order creation deadline has passed` and still costs gas
+  (bob-collective/bob#1214). Other chains use the estimated tip unchanged.
+
+Fees are estimated with `publicClient.estimateFeesPerGas` just before each write. If that is missing
+or fails (legacy chains, RPC errors), and on Tron, the transaction is sent without fee fields, as before.
 
 ## Gas limits and balance reserves
 
@@ -137,8 +153,8 @@ would have chosen by itself — a 60k estimate becomes 360k, where a wallet's ow
 wallet-chosen limits, re-check it.
 
 An exact reserve is not computable ahead of time. `estimate` is derived from `order.tx.data`, which
-only exists once `createOrderV4` has run inside `executeQuote`, and `maxFeePerGas` is the wallet's
-own choice. Over-reserve. A server-supplied gas figure on the quote would remove the guesswork —
+only exists once `createOrderV4` has run inside `executeQuote`, and `maxFeePerGas` follows the base
+fee at send time (see [Transaction fees](#transaction-fees)). Over-reserve. A server-supplied gas figure on the quote would remove the guesswork —
 tracked in bob-collective/bob-gateway#2042.
 
 ## Tron support
