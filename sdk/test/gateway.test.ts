@@ -4,11 +4,14 @@ import {
     Address,
     CallExecutionError,
     ContractFunctionExecutionError,
+    createWalletClient,
+    custom,
     erc20Abi,
+    Hex,
     InsufficientFundsError,
     maxUint256,
-    parseEther,
     parseGwei,
+    parseTransaction,
     PublicClient,
     Transport,
     Chain as ViemChain,
@@ -16,6 +19,7 @@ import {
     zeroAddress,
 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
+import { mainnet } from 'viem/chains';
 import { afterEach, assert, describe, expect, it, vi } from 'vitest';
 import {
     BitcoinSigner,
@@ -3607,12 +3611,13 @@ describe('Gateway Tests', () => {
         });
     });
 
-    describe('send fees (#1214)', () => {
+    describe('base-fee headroom for local accounts (#1214)', () => {
         const USDC_ETHEREUM: Address = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48';
-        // eth_maxPriorityFeePerGas returns 0 on common Ethereum RPCs; viem would send with no tip.
-        const estimateFeesPerGas = () =>
-            vi.fn().mockResolvedValue({ maxFeePerGas: parseGwei('0.16'), maxPriorityFeePerGas: 0n });
-        const expectedFees = { maxFeePerGas: parseGwei('0.26'), maxPriorityFeePerGas: parseGwei('0.1') };
+        const TOKEN_SWAP_TO: Address = '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c';
+        // Throwaway placeholder key (= 1): the override only applies to local-key accounts.
+        const localAccount = privateKeyToAccount('0x0000000000000000000000000000000000000000000000000000000000000001');
+        // address-only account => viem json-rpc account (type !== 'local')
+        const jsonRpcAccount = { address: localAccount.address } as Account;
 
         const ethereumOfframpQuote = (): GatewayQuoteV4OneOf => ({
             offramp: {
@@ -3634,6 +3639,21 @@ describe('Gateway Tests', () => {
             },
         });
 
+        // zeroAddress input token => no approval; straight to sendTransaction
+        const tokenSwapQuote = (srcChain: string): GatewayQuoteV4OneOf1 => ({
+            tokenSwap: {
+                dstChain: 'bob',
+                estimatedTimeInSecs: 60,
+                fees: { amount: '0', address: zeroAddress, chain: 'bob' },
+                inputAmount: { amount: '100000', address: zeroAddress, chain: srcChain },
+                outputAmount: { amount: '100000', address: zeroAddress, chain: 'bob' },
+                recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+                slippage: 100,
+                srcChain,
+                txTo: TOKEN_SWAP_TO,
+            },
+        });
+
         function mockOfframpOrder() {
             nock(`${MAINNET_GATEWAY_BASE_URL}`)
                 .post('/v4/create-order')
@@ -3652,116 +3672,126 @@ describe('Gateway Tests', () => {
             nock(`${MAINNET_GATEWAY_BASE_URL}`).patch('/v4/register-tx').reply(200, JSON.stringify('ok'));
         }
 
-        // Throwaway placeholder key (= 1): fees are only set for local-key accounts.
-        const localAccount = privateKeyToAccount('0x0000000000000000000000000000000000000000000000000000000000000001');
-
-        function mockClients(publicOverrides: Record<string, unknown>, account: Account = localAccount) {
-            const walletClient = {
-                account,
-                writeContract: vi.fn().mockResolvedValue('0xapprovehash' as `0x${string}`),
-                sendTransaction: vi.fn().mockResolvedValue('0xtxhash' as `0x${string}`),
-            };
-            const publicClient = {
-                readContract: mockOftReadContract({ approvalRequired: true }),
-                multicall: vi.fn().mockResolvedValue([0n]),
-                simulateContract: vi.fn().mockResolvedValue({ request: { functionName: 'approve' } }),
-                waitForTransactionReceipt: vi.fn().mockResolvedValue({}),
-                // Fees need a known gas limit and a balance that covers it.
-                estimateGas: vi.fn().mockResolvedValue(200_000n),
-                estimateContractGas: vi.fn().mockResolvedValue(50_000n),
-                getBalance: vi.fn().mockResolvedValue(parseEther('1')),
-                ...publicOverrides,
-            };
-            return {
-                walletClient,
-                publicClient,
-                typed: {
-                    walletClient: walletClient as unknown as WalletClient<Transport, ViemChain, Account>,
-                    publicClient: publicClient as unknown as PublicClient<Transport>,
-                },
-            };
-        }
-
-        it('sends the Ethereum offramp approval and transaction with a tip and 2x base-fee headroom', async () => {
-            mockOfframpOrder();
-            const { walletClient, typed } = mockClients({ estimateFeesPerGas: estimateFeesPerGas() });
-
-            await new GatewaySDK().executeQuote({ quote: ethereumOfframpQuote(), ...typed });
-
-            expect(walletClient.writeContract).toHaveBeenCalledWith(expect.objectContaining(expectedFees));
-            expect(walletClient.sendTransaction).toHaveBeenCalledWith(expect.objectContaining(expectedFees));
-        });
-
-        it('sends an Ethereum tokenSwap with the same fees', async () => {
-            const tokenSwapTo = '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c';
-            const tokenSwapQuote: GatewayQuoteV4OneOf1 = {
-                tokenSwap: {
-                    dstChain: 'bob',
-                    estimatedTimeInSecs: 60,
-                    fees: { amount: '0', address: zeroAddress, chain: 'bob' },
-                    // zeroAddress input token => no approval; straight to sendTransaction
-                    inputAmount: { amount: '100000', address: zeroAddress, chain: 'ethereum' },
-                    outputAmount: { amount: '100000', address: zeroAddress, chain: 'bob' },
-                    recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
-                    slippage: 100,
-                    srcChain: 'ethereum',
-                    txTo: tokenSwapTo,
-                },
-            };
+        function mockTokenSwapOrder(srcChain: string) {
             nock(`${MAINNET_GATEWAY_BASE_URL}`)
                 .post('/v4/create-order')
                 .reply(200, {
                     tokenSwap: {
                         order_id: 'tokenswap-fees-1',
-                        tx: { type: 'evm', chain: 'ethereum', to: tokenSwapTo, data: '0xabcdef', value: '0' },
+                        tx: { type: 'evm', chain: srcChain, to: TOKEN_SWAP_TO, data: '0xabcdef', value: '0' },
                     },
                 });
             nock(`${MAINNET_GATEWAY_BASE_URL}`).patch('/v4/register-tx').reply(200, JSON.stringify('ok'));
-            const { walletClient, typed } = mockClients({ estimateFeesPerGas: estimateFeesPerGas() });
+        }
 
-            await new GatewaySDK().executeQuote({ quote: tokenSwapQuote, ...typed });
+        function mockPublicClient() {
+            return {
+                readContract: mockOftReadContract({ approvalRequired: true }),
+                multicall: vi.fn().mockResolvedValue([0n]),
+                simulateContract: vi.fn().mockResolvedValue({ request: { functionName: 'approve' } }),
+                waitForTransactionReceipt: vi.fn().mockResolvedValue({}),
+                estimateGas: vi.fn().mockResolvedValue(200_000n),
+            };
+        }
 
-            expect(walletClient.sendTransaction).toHaveBeenCalledWith(expect.objectContaining(expectedFees));
+        function mockClients(account: Account) {
+            const walletClient = {
+                account,
+                chain: mainnet,
+                writeContract: vi.fn().mockResolvedValue('0xapprovehash' as `0x${string}`),
+                sendTransaction: vi.fn().mockResolvedValue('0xtxhash' as `0x${string}`),
+            };
+            return {
+                walletClient,
+                typed: {
+                    walletClient: walletClient as unknown as WalletClient<Transport, ViemChain, Account>,
+                    publicClient: mockPublicClient() as unknown as PublicClient<Transport>,
+                },
+            };
+        }
+
+        const withHeadroom = expect.objectContaining({
+            chain: expect.objectContaining({ id: mainnet.id, fees: expect.objectContaining({ baseFeeMultiplier: 2 }) }),
         });
 
-        it('falls back on an ERC-20 offramp whose ETH balance only covers the old, lower cap', async () => {
+        it('sends the offramp approval and transaction on a chain with 2x base-fee headroom', async () => {
             mockOfframpOrder();
-            // approve: 50k * 0.26 gwei and send: 200k * 0.26 gwei both exceed a 10 gwei-wei balance.
-            const { walletClient, typed } = mockClients({
-                estimateFeesPerGas: estimateFeesPerGas(),
-                getBalance: vi.fn().mockResolvedValue(10_000n),
+            const { walletClient, typed } = mockClients(localAccount);
+
+            await new GatewaySDK().executeQuote({ quote: ethereumOfframpQuote(), ...typed });
+
+            expect(walletClient.writeContract).toHaveBeenCalledWith(withHeadroom);
+            expect(walletClient.sendTransaction).toHaveBeenCalledWith(withHeadroom);
+        });
+
+        it('sends the tokenSwap transaction on a chain with 2x base-fee headroom', async () => {
+            mockTokenSwapOrder('ethereum');
+            const { walletClient, typed } = mockClients(localAccount);
+
+            await new GatewaySDK().executeQuote({ quote: tokenSwapQuote('ethereum'), ...typed });
+
+            expect(walletClient.sendTransaction).toHaveBeenCalledWith(withHeadroom);
+        });
+
+        it('leaves JSON-RPC (browser) wallets unchanged', async () => {
+            mockOfframpOrder();
+            const { walletClient, typed } = mockClients(jsonRpcAccount);
+
+            await new GatewaySDK().executeQuote({ quote: ethereumOfframpQuote(), ...typed });
+
+            expect(walletClient.writeContract.mock.calls[0][0]).not.toHaveProperty('chain');
+            expect(walletClient.sendTransaction.mock.calls[0][0]).not.toHaveProperty('chain');
+        });
+
+        it('leaves Tron sends unchanged', async () => {
+            mockTokenSwapOrder('tron');
+            const { walletClient, typed } = mockClients(localAccount);
+
+            await new GatewaySDK().executeQuote({ quote: tokenSwapQuote('tron'), ...typed });
+
+            expect(walletClient.sendTransaction.mock.calls[0][0]).not.toHaveProperty('chain');
+        });
+
+        it('makes viem sign maxFeePerGas = 2 * baseFee + tip', async () => {
+            const baseFeePerGas = parseGwei('10');
+            const tip = parseGwei('1');
+            const rawTxs: Hex[] = [];
+            const walletClient = createWalletClient({
+                account: localAccount,
+                chain: mainnet,
+                transport: custom({
+                    async request({ method, params }) {
+                        switch (method) {
+                            case 'eth_chainId':
+                                return '0x1';
+                            case 'eth_getBlockByNumber':
+                                return { number: '0x1', baseFeePerGas: `0x${baseFeePerGas.toString(16)}` };
+                            case 'eth_maxPriorityFeePerGas':
+                                return `0x${tip.toString(16)}`;
+                            case 'eth_getTransactionCount':
+                                return '0x0';
+                            case 'eth_sendRawTransaction':
+                                rawTxs.push(params[0]);
+                                return '0x' + '11'.repeat(32);
+                            default:
+                                throw new Error(`unexpected RPC ${method}`);
+                        }
+                    },
+                }),
+            });
+            mockTokenSwapOrder('ethereum');
+
+            await new GatewaySDK().executeQuote({
+                quote: tokenSwapQuote('ethereum'),
+                walletClient,
+                publicClient: mockPublicClient() as unknown as PublicClient<Transport>,
             });
 
-            await new GatewaySDK().executeQuote({ quote: ethereumOfframpQuote(), ...typed });
-
-            expect(walletClient.writeContract.mock.calls[0][0]).not.toHaveProperty('maxFeePerGas');
-            expect(walletClient.sendTransaction.mock.calls[0][0]).not.toHaveProperty('maxFeePerGas');
-        });
-
-        it('leaves fees to JSON-RPC (browser) wallets', async () => {
-            mockOfframpOrder();
-            // address-only account => viem json-rpc account (type !== 'local')
-            const { walletClient, typed } = mockClients({ estimateFeesPerGas: estimateFeesPerGas() }, {
-                address: localAccount.address,
-            } as Account);
-
-            await new GatewaySDK().executeQuote({ quote: ethereumOfframpQuote(), ...typed });
-
-            expect(walletClient.writeContract.mock.calls[0][0]).not.toHaveProperty('maxFeePerGas');
-            expect(walletClient.sendTransaction.mock.calls[0][0]).not.toHaveProperty('maxFeePerGas');
-        });
-
-        it('leaves fees to the wallet when they cannot be estimated (no new failure mode)', async () => {
-            mockOfframpOrder();
-            const { walletClient, typed } = mockClients({
-                estimateFeesPerGas: vi.fn().mockRejectedValue(new Error('rpc unavailable')),
-            });
-
-            await new GatewaySDK().executeQuote({ quote: ethereumOfframpQuote(), ...typed });
-
-            expect(walletClient.writeContract.mock.calls[0][0]).not.toHaveProperty('maxFeePerGas');
-            expect(walletClient.sendTransaction.mock.calls[0][0]).not.toHaveProperty('maxFeePerGas');
-            expect(walletClient.sendTransaction.mock.calls[0][0]).not.toHaveProperty('maxPriorityFeePerGas');
+            expect(rawTxs).toHaveLength(1);
+            const tx = parseTransaction(rawTxs[0]);
+            // viem's default would be 1.2 * baseFee + tip = 13 gwei.
+            expect(tx.maxFeePerGas).toBe(2n * baseFeePerGas + tip);
+            expect(tx.maxPriorityFeePerGas).toBe(tip);
         });
     });
 
