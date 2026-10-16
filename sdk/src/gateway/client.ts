@@ -94,6 +94,31 @@ function signerAccount(walletClient: WalletClient<Transport, ViemChain, Account>
     return walletClient.account.type === 'local' ? walletClient.account : walletClient.account.address;
 }
 
+/** Base-fee headroom in `maxFeePerGas` for local-account sends. viem's default is 1.2x. */
+const BASE_FEE_MULTIPLIER = 2;
+
+/**
+ * Resolve the `chain` override to spread into viem write/send calls (bob#1214).
+ *
+ * viem prices local-account transactions itself, and its default `maxFeePerGas` of 1.2x the
+ * base fee holds a send back whenever the base fee rises after signing. It can then be mined
+ * after the order's creation deadline and revert. Local accounts therefore get the wallet's
+ * chain with a 2x `fees.baseFeeMultiplier`, which viem's fee estimation reads.
+ *
+ * json-rpc accounts get no override — unchanged behaviour, browser wallets choose their own
+ * fees. Tron gets none either: its adapter's `sendTransaction` takes no fee fields.
+ */
+function signerChain(walletClient: WalletClient<Transport, ViemChain, Account>, srcChain: string) {
+    return walletClient.account.type === 'local' && walletClient.chain && supportsGasEstimation(srcChain)
+        ? {
+              chain: {
+                  ...walletClient.chain,
+                  fees: { ...walletClient.chain.fees, baseFeeMultiplier: BASE_FEE_MULTIPLIER },
+              },
+          }
+        : {};
+}
+
 export const ETHEREUM_USDT_ADDRESS = '0xdAC17F958D2ee523a2206206994597C13D831ec7';
 
 /**
@@ -468,7 +493,10 @@ export class GatewayApiClient {
                     callback?.({ step: 1, type: ExecuteQuoteStepType.ResetApproval, totalSteps, orderId });
 
                     try {
-                        const resetTxHash = await walletClient.writeContract(resetRequest);
+                        const resetTxHash = await walletClient.writeContract({
+                            ...resetRequest,
+                            ...signerChain(walletClient, quote.offramp.srcChain),
+                        });
                         await publicClient.waitForTransactionReceipt({ hash: resetTxHash, retryCount: RETRY_COUNT });
                     } catch (error) {
                         throw new ExecuteQuoteError(orderId, getApprovalErrorMessage(error), { cause: error });
@@ -492,7 +520,10 @@ export class GatewayApiClient {
                 callback?.({ step: needsReset ? 2 : 1, type: ExecuteQuoteStepType.Approve, totalSteps, orderId });
 
                 try {
-                    const approveTxHash = await walletClient.writeContract(approveRequest);
+                    const approveTxHash = await walletClient.writeContract({
+                        ...approveRequest,
+                        ...signerChain(walletClient, quote.offramp.srcChain),
+                    });
                     await publicClient.waitForTransactionReceipt({ hash: approveTxHash, retryCount: RETRY_COUNT });
                 } catch (error) {
                     throw new ExecuteQuoteError(orderId, getApprovalErrorMessage(error), { cause: error });
@@ -514,6 +545,7 @@ export class GatewayApiClient {
                     : undefined;
 
                 const hash = await walletClient.sendTransaction({
+                    ...signerChain(walletClient, quote.offramp.srcChain),
                     account: signerAccount(walletClient),
                     data: offrampData,
                     to: spenderAddress,
@@ -616,7 +648,10 @@ export class GatewayApiClient {
                     callback?.({ step: 1, type: ExecuteQuoteStepType.ResetApproval, totalSteps, orderId });
 
                     try {
-                        const resetTxHash = await walletClient.writeContract(resetRequest);
+                        const resetTxHash = await walletClient.writeContract({
+                            ...resetRequest,
+                            ...signerChain(walletClient, quote.tokenSwap.srcChain),
+                        });
                         await publicClient.waitForTransactionReceipt({
                             hash: resetTxHash,
                             retryCount: RETRY_COUNT,
@@ -647,7 +682,10 @@ export class GatewayApiClient {
                 });
 
                 try {
-                    const txHash = await walletClient.writeContract(approveRequest);
+                    const txHash = await walletClient.writeContract({
+                        ...approveRequest,
+                        ...signerChain(walletClient, quote.tokenSwap.srcChain),
+                    });
 
                     await publicClient.waitForTransactionReceipt({ hash: txHash, retryCount: RETRY_COUNT });
                 } catch (error) {
@@ -671,6 +709,7 @@ export class GatewayApiClient {
                     : undefined;
 
                 const hash = await walletClient.sendTransaction({
+                    ...signerChain(walletClient, quote.tokenSwap.srcChain),
                     account: signerAccount(walletClient),
                     data: tokenSwapData,
                     to: tokenSwapTo,

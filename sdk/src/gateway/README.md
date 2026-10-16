@@ -110,6 +110,18 @@ for non-EVM chains like Tron.
 | `writeContract(request)` → `Hash`                        | Send the `approve` / allowance-reset tx produced by `simulateContract`. |
 | `sendTransaction({ account, to, data, value })` → `Hash` | Broadcast the gateway order transaction.                                |
 
+## Transaction fees
+
+For **local-key accounts** (`privateKeyToAccount` and similar), `executeQuote` sends every approval,
+allowance reset and order transaction with the wallet client's chain overridden to
+`fees.baseFeeMultiplier: 2`. viem still estimates the fees itself; its `maxFeePerGas` becomes
+`2 * baseFee + tip` instead of its default `1.2 * baseFee + tip`, so a rising base fee doesn't hold the
+transaction back until after the order's creation deadline (bob-collective/bob#1214). On a legacy
+(non-EIP-1559) chain viem applies the same multiplier to `gasPrice`.
+
+Nothing changes for JSON-RPC (browser) accounts, which choose their own fees, for Tron sources, or
+when the wallet client has no `chain`.
+
 ## Gas limits and balance reserves
 
 On EVM chains `executeQuote` attaches an explicit gas limit to the offramp and tokenSwap sends:
@@ -138,7 +150,8 @@ wallet-chosen limits, re-check it.
 
 An exact reserve is not computable ahead of time. `estimate` is derived from `order.tx.data`, which
 only exists once `createOrderV4` has run inside `executeQuote`, and `maxFeePerGas` is the wallet's
-own choice. Over-reserve. A server-supplied gas figure on the quote would remove the guesswork —
+own choice — for local-key accounts, `2 * baseFee + tip` at send time (see
+[Transaction fees](#transaction-fees)). Over-reserve. A server-supplied gas figure on the quote would remove the guesswork —
 tracked in bob-collective/bob-gateway#2042.
 
 ## Tron support
