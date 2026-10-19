@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@gobob/bob-sdk':
-        specifier: ^6.4.0
-        version: 6.4.0(typescript@5.9.3)(zod@4.3.6)
+        specifier: ^6.5.0
+        version: 6.5.0(typescript@5.9.3)(zod@4.3.6)
       '@gobob/tokenlist':
         specifier: github:bob-collective/tokenlist#1c19e45084477a201089d2afceba26193f08b65a
         version: https://codeload.github.com/bob-collective/tokenlist/tar.gz/1c19e45084477a201089d2afceba26193f08b65a(typescript@5.9.3)(zod@4.3.6)
@@ -207,8 +207,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@gobob/bob-sdk@6.4.0':
-    resolution: {integrity: sha512-6A+9t0O9rN9qST9W0RmlHuNPOQjLV4SnyyMK2/S976euepjOHYizS+StUWGuVohVyftjkc240TWj/QQjmtzQAg==}
+  '@gobob/bob-sdk@6.5.0':
+    resolution: {integrity: sha512-CoRYuDWZf+QfC+4RQN69jfgnNGkZh2vlaa72YU2YcaeWbqu+0pCIk/c6hmbr7gDz4FPmLVbiLOlNWb3axQyl/Q==}
 
   '@gobob/tokenlist@https://codeload.github.com/bob-collective/tokenlist/tar.gz/1c19e45084477a201089d2afceba26193f08b65a':
     resolution: {integrity: sha512-qvP9aNH4K+JNds7PPSwEVm6q4LN1TtAUKuKdCHdilu0Tnjov1dWXNibneAsleGDr0dCFLAodqN6iDMGRNkxNmw==, tarball: https://codeload.github.com/bob-collective/tokenlist/tar.gz/1c19e45084477a201089d2afceba26193f08b65a}
@@ -893,7 +893,7 @@ snapshots:
   '@esbuild/win32-x64@0.28.2':
     optional: true
 
-  '@gobob/bob-sdk@6.4.0(typescript@5.9.3)(zod@4.3.6)':
+  '@gobob/bob-sdk@6.5.0(typescript@5.9.3)(zod@4.3.6)':
     dependencies:
       '@bitcoinerlab/secp256k1': 1.2.0
       '@scure/base': 1.2.6
