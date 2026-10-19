@@ -9,11 +9,14 @@ import {
     erc20Abi,
     Hex,
     InsufficientFundsError,
+    InternalRpcError,
     maxUint256,
     parseGwei,
     parseTransaction,
     PublicClient,
+    TransactionExecutionError,
     Transport,
+    UserRejectedRequestError,
     Chain as ViemChain,
     WalletClient,
     zeroAddress,
@@ -1016,7 +1019,70 @@ describe('Gateway Tests', () => {
         assert(error instanceof ExecuteQuoteError);
         expect(error.orderId).toBe('offramp-order-throw-456');
         expect(error.cause).toBe(walletRejection);
-        expect(error.message).toBe('Failed to execute Gateway quote after order creation');
+        expect(error.message).toBe('User rejected the transaction');
+        expect(error.step).toBe(ExecuteQuoteStepType.SendTransaction);
+        expect(error.txHash).toBeUndefined();
+    });
+
+    it('names the broadcast offramp transaction when waiting for its receipt fails', async () => {
+        const gatewaySDK = new GatewaySDK();
+
+        const mockQuote: GatewayQuoteV4OneOf = {
+            offramp: {
+                txTo: '0x1234567890123456789012345678901234567890',
+                recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+                slippage: 300,
+                srcChain: 'bob',
+                feeBreakdown: {
+                    protocolFee: { address: zeroAddress, amount: '5', chain: 'bob' },
+                    affiliateFee: { address: zeroAddress, amount: '2', chain: 'bob' },
+                    inclusionFee: { address: zeroAddress, amount: '1', chain: 'bob' },
+                    solverFee: { address: zeroAddress, amount: '1', chain: 'bob' },
+                    fastestFeeRate: '6',
+                },
+                inputAmount: { address: zeroAddress, amount: '1000', chain: 'bob' },
+                outputAmount: { address: zeroAddress, amount: '990', chain: 'bob' },
+                tokenAddress: WBTC_OFT_ADDRESS,
+                totalFeeUsd: '3',
+            },
+        };
+
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
+            .post('/v4/create-order')
+            .reply(200, {
+                offramp: {
+                    order_id: 'offramp-order-receipt-timeout',
+                    tx: { to: '0x1234567890123456789012345678901234567890', data: '0xabcdef', value: '0' },
+                },
+            });
+
+        const receiptError = new Error('Timed out while waiting for transaction');
+
+        const mockWalletClient = {
+            account: { address: '0xabcd1234abcd1234abcd1234abcd1234abcd1234' as Address },
+            sendTransaction: vi.fn().mockResolvedValue('0xbroadcast'),
+        } as unknown as WalletClient<Transport, ViemChain, Account>;
+
+        const mockPublicClient = {
+            readContract: mockOftReadContract({ approvalRequired: true, allowance: maxUint256 }),
+            waitForTransactionReceipt: vi.fn().mockRejectedValue(receiptError),
+        } as unknown as PublicClient<Transport>;
+
+        const error = await gatewaySDK
+            .executeQuote({
+                quote: mockQuote,
+                walletClient: mockWalletClient,
+                publicClient: mockPublicClient,
+            })
+            .catch((thrown: unknown) => thrown);
+
+        expect(error).toBeInstanceOf(ExecuteQuoteError);
+        assert(error instanceof ExecuteQuoteError);
+        expect(error.orderId).toBe('offramp-order-receipt-timeout');
+        expect(error.cause).toBe(receiptError);
+        expect(error.message).toBe('Timed out while waiting for transaction');
+        expect(error.step).toBe(ExecuteQuoteStepType.SendTransaction);
+        expect(error.txHash).toBe('0xbroadcast');
     });
 
     it('should approve WBTC on bob offramp', async () => {
@@ -1381,7 +1447,10 @@ describe('Gateway Tests', () => {
         expect(error).toBeInstanceOf(ExecuteQuoteError);
         assert(error instanceof ExecuteQuoteError);
         expect(error.orderId).toBe('offramp-revert-order');
-        expect(error.message).toBe('Failed to execute Gateway quote after order creation');
+        expect(error.message).toBe(
+            'An unknown error occurred while executing the contract function "approve". (execution reverted)'
+        );
+        expect(error.step).toBe(ExecuteQuoteStepType.Approve);
         expect(error.cause).toBe(contractError);
         expect(callback).not.toHaveBeenCalled();
         expect(mockWalletClient.writeContract).not.toHaveBeenCalled();
@@ -2006,6 +2075,9 @@ describe('Gateway Tests', () => {
         expect(error).toBeInstanceOf(ExecuteQuoteError);
         assert(error instanceof ExecuteQuoteError);
         expect(error.orderId).toBe(mockOrderId);
+        expect(error.message).toBe('registerTx exploded');
+        expect(error.step).toBeUndefined();
+        expect(isGatewayError(error.cause)).toBe(true);
     });
 
     it('should get error', async () => {
@@ -2266,7 +2338,8 @@ describe('Gateway Tests', () => {
         expect(error).toBeInstanceOf(ExecuteQuoteError);
         assert(error instanceof ExecuteQuoteError);
         expect(error.orderId).toBe('tokenswap-order-throw-789');
-        expect(error.message).toBe('Failed to execute Gateway quote after order creation');
+        expect(error.message).toBe('User rejected the transaction');
+        expect(error.step).toBe(ExecuteQuoteStepType.SendTransaction);
         expect(error.cause).toBeInstanceOf(Error);
         assert(error.cause instanceof Error);
         expect(error.cause.message).toBe('User rejected the transaction');
@@ -2389,7 +2462,10 @@ describe('Gateway Tests', () => {
         expect(error).toBeInstanceOf(ExecuteQuoteError);
         assert(error instanceof ExecuteQuoteError);
         expect(error.orderId).toBe('tokenswap-revert-order');
-        expect(error.message).toBe('Failed to execute Gateway quote after order creation');
+        expect(error.message).toBe(
+            'An unknown error occurred while executing the contract function "approve". (execution reverted)'
+        );
+        expect(error.step).toBe(ExecuteQuoteStepType.Approve);
         expect(error.cause).toBe(contractError);
         expect(callback).not.toHaveBeenCalled();
         expect(mockWalletClient.writeContract).not.toHaveBeenCalled();
@@ -3805,10 +3881,46 @@ describe('Gateway Tests', () => {
             expect(error.name).toBe('ExecuteQuoteError');
             expect(error.orderId).toBe('order-abc');
             expect(error.cause).toBe(original);
-            expect(error.message).toBe('Failed to execute Gateway quote after order creation');
+            expect(error.message).toBe('boom');
         });
 
-        it('never forwards cause.message onto its own message, regardless of cause shape', () => {
+        it('takes the short message and the wallet text from a viem error, not its multi-line message', () => {
+            const rpcError = new InternalRpcError(new Error('Another approval request is already pending'));
+            const cause = new TransactionExecutionError(rpcError, { account: null });
+
+            expect(new ExecuteQuoteError('order-viem', undefined, { cause }).message).toBe(
+                'An internal error was received. (Another approval request is already pending)'
+            );
+        });
+
+        it('leaves out viem details the short message already carries', () => {
+            const cause = new UserRejectedRequestError(new Error('User rejected the request.'));
+
+            expect(new ExecuteQuoteError('order-rejected', undefined, { cause }).message).toBe(
+                'User rejected the request.'
+            );
+        });
+
+        it.each([
+            ['undefined', undefined],
+            ['null', null],
+            ['an empty message', new Error('')],
+            [
+                'a throwing getter',
+                Object.defineProperty({}, 'message', {
+                    get() {
+                        throw new Error('getter exploded');
+                    },
+                }),
+            ],
+        ])('falls back to the generic message for %s', (_, cause) => {
+            const error = new ExecuteQuoteError('order-fallback', undefined, { cause });
+
+            expect(error.message).toBe('Failed to execute Gateway quote after order creation');
+            expect(error.cause).toBe(cause);
+        });
+
+        it('keeps an explicit message over the cause text, regardless of cause shape', () => {
             const frozen = Object.freeze(new Error('frozen'));
             const rpcRejection = { code: 4001, message: 'User rejected the transaction' };
 
