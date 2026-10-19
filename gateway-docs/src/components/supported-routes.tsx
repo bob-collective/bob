@@ -8,7 +8,7 @@ const TOKENLIST_URL =
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 const NON_EVM: Record<string, string> = { bitcoin: 'BTC' };
-const CHAIN_LABELS: Record<string, string> = { bsc: 'BSC', bob: 'BOB' };
+const CHAIN_LABELS: Record<string, string> = { bsc: 'BSC', bob: 'BOB', hyperevm: 'HyperEVM' };
 
 const CHAIN_IDS: Record<string, number> = {
   arbitrum: 42161,
@@ -18,12 +18,14 @@ const CHAIN_IDS: Record<string, number> = {
   bob: 60808,
   bsc: 56,
   ethereum: 1,
-  hyperliquid: 999,
+  hyperevm: 999,
   plasma: 9745,
   polygon: 137,
+  robinhood: 4663,
   sei: 1329,
   soneium: 1868,
   sonic: 146,
+  tron: 728126428,
   unichain: 130,
 };
 
@@ -35,12 +37,14 @@ const EXPLORERS: Record<string, string> = {
   bob: 'https://explorer.gobob.xyz',
   bsc: 'https://bscscan.com',
   ethereum: 'https://etherscan.io',
-  hyperliquid: 'https://hyperevmscan.io',
+  hyperevm: 'https://hyperevmscan.io',
   plasma: 'https://plasmascan.to',
   polygon: 'https://polygonscan.com',
+  robinhood: 'https://robinhoodchain.blockscout.com',
   sei: 'https://seitrace.com',
   soneium: 'https://soneium.blockscout.com',
   sonic: 'https://sonicscan.org',
+  tron: 'https://tronscan.org',
   unichain: 'https://uniscan.xyz',
 };
 
