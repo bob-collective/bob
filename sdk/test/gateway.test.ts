@@ -9,11 +9,15 @@ import {
     erc20Abi,
     Hex,
     InsufficientFundsError,
+    InternalRpcError,
     maxUint256,
     parseGwei,
     parseTransaction,
     PublicClient,
+    ReplacementReason,
+    TransactionExecutionError,
     Transport,
+    UserRejectedRequestError,
     Chain as ViemChain,
     WalletClient,
     zeroAddress,
@@ -22,6 +26,7 @@ import { privateKeyToAccount } from 'viem/accounts';
 import { mainnet } from 'viem/chains';
 import { afterEach, assert, describe, expect, it, vi } from 'vitest';
 import {
+    BitcoinBroadcastError,
     BitcoinSigner,
     ExecuteQuoteError,
     ExecuteQuoteStep,
@@ -68,6 +73,13 @@ function createApprovalContractError(cause: Error, spender: Address, amount: big
         functionName: 'approve',
         args: [spender, amount],
     });
+}
+
+// The same failure thrown by a consumer's own viem copy: same names, other classes.
+function createForeignInsufficientFundsApprovalError() {
+    const named = (name: string, cause?: unknown) => Object.assign(new Error(name, { cause }), { name });
+
+    return named('ContractFunctionExecutionError', named('InsufficientFundsError'));
 }
 
 // Mirrors viem's own error nesting for a real insufficient-funds failure.
@@ -1016,7 +1028,203 @@ describe('Gateway Tests', () => {
         assert(error instanceof ExecuteQuoteError);
         expect(error.orderId).toBe('offramp-order-throw-456');
         expect(error.cause).toBe(walletRejection);
-        expect(error.message).toBe('Failed to execute Gateway quote after order creation');
+        expect(error.message).toBe('User rejected the transaction');
+        expect(error.step).toBe(ExecuteQuoteStepType.SendTransaction);
+        expect(error.txHash).toBeUndefined();
+    });
+
+    it('names the broadcast offramp transaction when waiting for its receipt fails', async () => {
+        const gatewaySDK = new GatewaySDK();
+
+        const mockQuote: GatewayQuoteV4OneOf = {
+            offramp: {
+                txTo: '0x1234567890123456789012345678901234567890',
+                recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+                slippage: 300,
+                srcChain: 'bob',
+                feeBreakdown: {
+                    protocolFee: { address: zeroAddress, amount: '5', chain: 'bob' },
+                    affiliateFee: { address: zeroAddress, amount: '2', chain: 'bob' },
+                    inclusionFee: { address: zeroAddress, amount: '1', chain: 'bob' },
+                    solverFee: { address: zeroAddress, amount: '1', chain: 'bob' },
+                    fastestFeeRate: '6',
+                },
+                inputAmount: { address: zeroAddress, amount: '1000', chain: 'bob' },
+                outputAmount: { address: zeroAddress, amount: '990', chain: 'bob' },
+                tokenAddress: WBTC_OFT_ADDRESS,
+                totalFeeUsd: '3',
+            },
+        };
+
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
+            .post('/v4/create-order')
+            .reply(200, {
+                offramp: {
+                    order_id: 'offramp-order-receipt-timeout',
+                    tx: { to: '0x1234567890123456789012345678901234567890', data: '0xabcdef', value: '0' },
+                },
+            });
+
+        const receiptError = new Error('Timed out while waiting for transaction');
+
+        const mockWalletClient = {
+            account: { address: '0xabcd1234abcd1234abcd1234abcd1234abcd1234' as Address },
+            sendTransaction: vi.fn().mockResolvedValue('0xbroadcast'),
+        } as unknown as WalletClient<Transport, ViemChain, Account>;
+
+        const mockPublicClient = {
+            readContract: mockOftReadContract({ approvalRequired: true, allowance: maxUint256 }),
+            waitForTransactionReceipt: vi.fn().mockRejectedValue(receiptError),
+        } as unknown as PublicClient<Transport>;
+
+        const error = await gatewaySDK
+            .executeQuote({
+                quote: mockQuote,
+                walletClient: mockWalletClient,
+                publicClient: mockPublicClient,
+            })
+            .catch((thrown: unknown) => thrown);
+
+        expect(error).toBeInstanceOf(ExecuteQuoteError);
+        assert(error instanceof ExecuteQuoteError);
+        expect(error.orderId).toBe('offramp-order-receipt-timeout');
+        expect(error.cause).toBe(receiptError);
+        expect(error.message).toBe('Timed out while waiting for transaction');
+        expect(error.step).toBe(ExecuteQuoteStepType.SendTransaction);
+        expect(error.txHash).toBe('0xbroadcast');
+        expect(error.txStatus).toBe('unconfirmed');
+    });
+
+    // viem's waitForTransactionReceipt resolves for reverted and replaced transactions alike.
+    describe('offramp transaction outcome', () => {
+        const mockQuote: GatewayQuoteV4OneOf = {
+            offramp: {
+                txTo: BOB_ALLOWANCE_HOLDER,
+                recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+                slippage: 300,
+                srcChain: 'bob',
+                feeBreakdown: {
+                    protocolFee: { address: zeroAddress, amount: '5', chain: 'bob' },
+                    affiliateFee: { address: zeroAddress, amount: '2', chain: 'bob' },
+                    inclusionFee: { address: zeroAddress, amount: '1', chain: 'bob' },
+                    solverFee: { address: zeroAddress, amount: '1', chain: 'bob' },
+                    fastestFeeRate: '6',
+                },
+                inputAmount: { address: zeroAddress, amount: '1000', chain: 'bob' },
+                outputAmount: { address: zeroAddress, amount: '990', chain: 'bob' },
+                tokenAddress: WBTC_OFT_ADDRESS,
+                totalFeeUsd: '3',
+            },
+        };
+
+        const execute = async (
+            allowance: bigint,
+            waitForTransactionReceipt: ReturnType<typeof vi.fn>,
+            sendTransaction = vi.fn().mockResolvedValue('0xbroadcast')
+        ) => {
+            nock(`${MAINNET_GATEWAY_BASE_URL}`)
+                .post('/v4/create-order')
+                .reply(200, {
+                    offramp: {
+                        order_id: 'offramp-order-mined',
+                        tx: { type: 'evm', chain: 'bob', to: BOB_ALLOWANCE_HOLDER, data: '0xabcdef', value: '0' },
+                    },
+                });
+
+            const walletClient = {
+                account: { address: '0xabcd1234abcd1234abcd1234abcd1234abcd1234' as Address },
+                writeContract: vi.fn().mockResolvedValue('0xapprove'),
+                sendTransaction,
+            } as unknown as WalletClient<Transport, ViemChain, Account>;
+
+            const publicClient = {
+                readContract: mockOftReadContract({ approvalRequired: true, allowance }),
+                multicall: vi.fn().mockResolvedValue([allowance]),
+                simulateContract: vi.fn().mockResolvedValue({ request: {} }),
+                waitForTransactionReceipt,
+            } as unknown as PublicClient<Transport>;
+
+            const result = await new GatewaySDK()
+                .executeQuote({ quote: mockQuote, walletClient, publicClient })
+                .catch((thrown: unknown) => thrown);
+
+            return { result, walletClient };
+        };
+
+        const replacedBy = (reason: ReplacementReason, hash: Hex) =>
+            vi.fn().mockImplementation(async ({ onReplaced }) => {
+                onReplaced({ reason, transaction: { hash } });
+                return { status: 'success', transactionHash: hash };
+            });
+
+        it('fails a reverted approval at its own step, without sending the order transaction', async () => {
+            const { result: error, walletClient } = await execute(
+                0n,
+                vi.fn().mockResolvedValue({ status: 'reverted', transactionHash: '0xapprove' })
+            );
+
+            expect(error).toBeInstanceOf(ExecuteQuoteError);
+            assert(error instanceof ExecuteQuoteError);
+            expect(error.orderId).toBe('offramp-order-mined');
+            expect(error.message).toBe('Transaction reverted');
+            expect(error.step).toBe(ExecuteQuoteStepType.Approve);
+            expect(error.txHash).toBe('0xapprove');
+            expect(error.txStatus).toBe('reverted');
+            expect(walletClient.sendTransaction).not.toHaveBeenCalled();
+        });
+
+        it('fails a reverted order transaction', async () => {
+            const { result: error } = await execute(
+                maxUint256,
+                vi.fn().mockResolvedValue({ status: 'reverted', transactionHash: '0xbroadcast' })
+            );
+
+            expect(error).toBeInstanceOf(ExecuteQuoteError);
+            assert(error instanceof ExecuteQuoteError);
+            expect(error.message).toBe('Transaction reverted');
+            expect(error.step).toBe(ExecuteQuoteStepType.SendTransaction);
+            expect(error.txHash).toBe('0xbroadcast');
+            expect(error.txStatus).toBe('reverted');
+        });
+
+        it.each(['cancelled', 'replaced'] as const)(
+            'fails an order transaction %s by another under its nonce',
+            async (reason) => {
+                const { result: error } = await execute(maxUint256, replacedBy(reason, '0xother'));
+
+                expect(error).toBeInstanceOf(ExecuteQuoteError);
+                assert(error instanceof ExecuteQuoteError);
+                expect(error.message).toBe(`Transaction ${reason} by 0xother`);
+                expect(error.step).toBe(ExecuteQuoteStepType.SendTransaction);
+                expect(error.txHash).toBe('0xbroadcast');
+                expect(error.txStatus).toBe(reason);
+            }
+        );
+
+        it('returns the replacement of a sped-up order transaction', async () => {
+            const { result } = await execute(maxUint256, replacedBy('repriced', '0xspedup'));
+
+            expect(result).toMatchObject({ tx: '0xspedup' });
+        });
+
+        // sendTransaction wraps it in TransactionExecutionError rather than ContractFunctionExecutionError.
+        it('translates an order transaction failing for insufficient native funds', async () => {
+            const sendError = new TransactionExecutionError(
+                new InsufficientFundsError({ cause: new Error('insufficient funds for gas * price + value') }),
+                { account: null }
+            );
+
+            const { result: error } = await execute(maxUint256, vi.fn(), vi.fn().mockRejectedValue(sendError));
+
+            expect(error).toBeInstanceOf(ExecuteQuoteError);
+            assert(error instanceof ExecuteQuoteError);
+            expect(error.message).toBe(
+                'Insufficient native funds for source and destination gas fees, please add more native funds to your account'
+            );
+            expect(error.cause).toBe(sendError);
+            expect(error.step).toBe(ExecuteQuoteStepType.SendTransaction);
+            expect(error.txHash).toBeUndefined();
+        });
     });
 
     it('should approve WBTC on bob offramp', async () => {
@@ -1187,70 +1395,76 @@ describe('Gateway Tests', () => {
         ).not.toThrow();
     });
 
-    it('attaches orderId and translates an offramp approval failure caused by insufficient funds', async () => {
-        const gatewaySDK = new GatewaySDK();
+    it.each([
+        ['viem', () => createInsufficientFundsApprovalError(BOB_ALLOWANCE_HOLDER, 1000n)],
+        ['another viem copy', createForeignInsufficientFundsApprovalError],
+    ])(
+        'attaches orderId and translates an offramp approval failure caused by insufficient funds, from %s',
+        async (_, createError) => {
+            const gatewaySDK = new GatewaySDK();
 
-        const mockQuote: GatewayQuoteV4OneOf = {
-            offramp: {
-                srcChain: 'bob',
-                feeBreakdown: {
-                    protocolFee: { address: zeroAddress, amount: '5', chain: 'bob' },
-                    affiliateFee: { address: zeroAddress, amount: '2', chain: 'bob' },
-                    solverFee: { address: zeroAddress, amount: '1', chain: 'bob' },
-                    inclusionFee: { address: zeroAddress, amount: '1', chain: 'bob' },
-                    fastestFeeRate: '6',
-                },
-                inputAmount: { address: zeroAddress, amount: '1000', chain: 'bob' },
-                outputAmount: { address: zeroAddress, amount: '990', chain: 'bob' },
-                tokenAddress: WBTC_OFT_ADDRESS,
-                recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
-                slippage: 0,
-                totalFeeUsd: '3',
-                txTo: zeroAddress,
-            },
-        };
-
-        const spenderAddress: Address = BOB_ALLOWANCE_HOLDER;
-
-        nock(`${MAINNET_GATEWAY_BASE_URL}`)
-            .post('/v4/create-order')
-            .reply(200, {
+            const mockQuote: GatewayQuoteV4OneOf = {
                 offramp: {
-                    order_id: 'offramp-gas-funds-order',
-                    tx: { type: 'evm', chain: 'bob', to: spenderAddress, data: '0xabcdef', value: '0' },
+                    srcChain: 'bob',
+                    feeBreakdown: {
+                        protocolFee: { address: zeroAddress, amount: '5', chain: 'bob' },
+                        affiliateFee: { address: zeroAddress, amount: '2', chain: 'bob' },
+                        solverFee: { address: zeroAddress, amount: '1', chain: 'bob' },
+                        inclusionFee: { address: zeroAddress, amount: '1', chain: 'bob' },
+                        fastestFeeRate: '6',
+                    },
+                    inputAmount: { address: zeroAddress, amount: '1000', chain: 'bob' },
+                    outputAmount: { address: zeroAddress, amount: '990', chain: 'bob' },
+                    tokenAddress: WBTC_OFT_ADDRESS,
+                    recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+                    slippage: 0,
+                    totalFeeUsd: '3',
+                    txTo: zeroAddress,
                 },
-            });
+            };
 
-        const contractError = createInsufficientFundsApprovalError(spenderAddress, 1000n);
+            const spenderAddress: Address = BOB_ALLOWANCE_HOLDER;
 
-        const mockWalletClient = {
-            account: { address: '0xabcd1234abcd1234abcd1234abcd1234abcd1234' as Address },
-            writeContract: vi.fn(),
-            sendTransaction: vi.fn(),
-        } as unknown as WalletClient<Transport, ViemChain, Account>;
+            nock(`${MAINNET_GATEWAY_BASE_URL}`)
+                .post('/v4/create-order')
+                .reply(200, {
+                    offramp: {
+                        order_id: 'offramp-gas-funds-order',
+                        tx: { type: 'evm', chain: 'bob', to: spenderAddress, data: '0xabcdef', value: '0' },
+                    },
+                });
 
-        const mockPublicClient = {
-            readContract: mockOftReadContract({ approvalRequired: true }),
-            simulateContract: vi.fn().mockRejectedValue(contractError),
-            waitForTransactionReceipt: vi.fn().mockResolvedValue({}),
-        } as unknown as PublicClient<Transport>;
+            const contractError = createError();
 
-        const error = await gatewaySDK
-            .executeQuote({
-                quote: mockQuote,
-                walletClient: mockWalletClient,
-                publicClient: mockPublicClient,
-            })
-            .catch((thrown: unknown) => thrown);
+            const mockWalletClient = {
+                account: { address: '0xabcd1234abcd1234abcd1234abcd1234abcd1234' as Address },
+                writeContract: vi.fn(),
+                sendTransaction: vi.fn(),
+            } as unknown as WalletClient<Transport, ViemChain, Account>;
 
-        expect(error).toBeInstanceOf(ExecuteQuoteError);
-        assert(error instanceof ExecuteQuoteError);
-        expect(error.orderId).toBe('offramp-gas-funds-order');
-        expect(error.message).toBe(
-            'Insufficient native funds for source and destination gas fees, please add more native funds to your account'
-        );
-        expect(error.cause).toBe(contractError);
-    });
+            const mockPublicClient = {
+                readContract: mockOftReadContract({ approvalRequired: true }),
+                simulateContract: vi.fn().mockRejectedValue(contractError),
+                waitForTransactionReceipt: vi.fn().mockResolvedValue({}),
+            } as unknown as PublicClient<Transport>;
+
+            const error = await gatewaySDK
+                .executeQuote({
+                    quote: mockQuote,
+                    walletClient: mockWalletClient,
+                    publicClient: mockPublicClient,
+                })
+                .catch((thrown: unknown) => thrown);
+
+            expect(error).toBeInstanceOf(ExecuteQuoteError);
+            assert(error instanceof ExecuteQuoteError);
+            expect(error.orderId).toBe('offramp-gas-funds-order');
+            expect(error.message).toBe(
+                'Insufficient native funds for source and destination gas fees, please add more native funds to your account'
+            );
+            expect(error.cause).toBe(contractError);
+        }
+    );
 
     it('attaches orderId and translates an offramp approval failure caused by insufficient funds at the write stage', async () => {
         const gatewaySDK = new GatewaySDK();
@@ -1381,7 +1595,10 @@ describe('Gateway Tests', () => {
         expect(error).toBeInstanceOf(ExecuteQuoteError);
         assert(error instanceof ExecuteQuoteError);
         expect(error.orderId).toBe('offramp-revert-order');
-        expect(error.message).toBe('Failed to execute Gateway quote after order creation');
+        expect(error.message).toBe(
+            'An unknown error occurred while executing the contract function "approve". (execution reverted)'
+        );
+        expect(error.step).toBe(ExecuteQuoteStepType.Approve);
         expect(error.cause).toBe(contractError);
         expect(callback).not.toHaveBeenCalled();
         expect(mockWalletClient.writeContract).not.toHaveBeenCalled();
@@ -2006,6 +2223,111 @@ describe('Gateway Tests', () => {
         expect(error).toBeInstanceOf(ExecuteQuoteError);
         assert(error instanceof ExecuteQuoteError);
         expect(error.orderId).toBe(mockOrderId);
+        expect(error.message).toBe('registerTx exploded');
+        expect(error.step).toBeUndefined();
+        // The truncated mock transaction does not parse, so there is no txid to name.
+        expect(error.txHash).toBeUndefined();
+        expect(error.txStatus).toBeUndefined();
+        expect(isGatewayError(error.cause)).toBe(true);
+    });
+
+    describe('onramp failure once the payment may be out', () => {
+        const mockQuote: GatewayQuoteV3OneOf = {
+            onramp: {
+                dstChain: 'bob',
+                dstToken: WBTC_OFT_ADDRESS,
+                executionFees: { address: zeroAddress, amount: '10', chain: 'bob' },
+                feeBreakdown: {
+                    protocolFee: { address: zeroAddress, amount: '5', chain: 'bob' },
+                    affiliateFee: { address: zeroAddress, amount: '2', chain: 'bob' },
+                    executionFee: { address: zeroAddress, amount: '1', chain: 'bob' },
+                    layerzeroFee: { address: zeroAddress, amount: '1', chain: 'bob' },
+                    solverFee: { address: zeroAddress, amount: '1', chain: 'bob' },
+                },
+                fees: { address: zeroAddress, amount: '3', chain: 'bob' },
+                inputAmount: { address: zeroAddress, amount: '1000', chain: 'bob' },
+                outputAmount: { address: zeroAddress, amount: '990', chain: 'bob' },
+                recipient: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+                sender: '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF',
+                signedQuoteData: MOCK_SIGNED_QUOTE_DATA,
+                slippage: '0',
+                token: '0x0000000000000000000000000000000000000000',
+            },
+        };
+
+        // Bitcoin's genesis coinbase transaction, with a well-known txid.
+        const broadcastTx =
+            '01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff4d04ffff001d0104455468652054696d65732030332f4a616e2f32303039204368616e63656c6c6f72206f6e206272696e6b206f66207365636f6e64206261696c6f757420666f722062616e6b73ffffffff0100f2052a01000000434104678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5fac00000000';
+        const broadcastTxId = '4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b';
+
+        const execute = (btcSigner: BitcoinSigner) => {
+            nock(`${MAINNET_GATEWAY_BASE_URL}`)
+                .post('/v4/create-order')
+                .reply(200, {
+                    onramp: {
+                        order_id: 'order-registertx-fail-after-signing',
+                        psbt_hex: 'cHNidP8BAH0CAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAzwAAAAA=',
+                        address: 'tb1qw508d6qejxtdg4y5r3zarvary0c5xw7kxpjzsx',
+                        op_return_data: '',
+                    },
+                });
+
+            nock(`${MAINNET_GATEWAY_BASE_URL}`).patch('/v4/register-tx').reply(500, { error: 'registerTx exploded' });
+
+            return new GatewaySDK()
+                .executeQuote({
+                    quote: mockQuote,
+                    walletClient: {
+                        account: { address: '0x1234567890123456789012345678901234567890' as Address },
+                    } as WalletClient<Transport, ViemChain, Account>,
+                    publicClient: {} as PublicClient<Transport>,
+                    btcSigner,
+                })
+                .catch((thrown: unknown) => thrown);
+        };
+
+        // Either signer's payment may be out: a sendBitcoin wallet can broadcast it, and registration can before failing.
+        it.each([
+            ['sendBitcoin', { sendBitcoin: async () => broadcastTx }],
+            ['signAllInputs', { signAllInputs: async () => broadcastTx }],
+        ])('names the transaction %s signed', async (_, btcSigner: BitcoinSigner) => {
+            const error = await execute(btcSigner);
+
+            expect(error).toBeInstanceOf(ExecuteQuoteError);
+            assert(error instanceof ExecuteQuoteError);
+            expect(error.orderId).toBe('order-registertx-fail-after-signing');
+            expect(error.message).toBe('registerTx exploded');
+            expect(error.step).toBeUndefined();
+            expect(error.txHash).toBe(broadcastTxId);
+            expect(error.txStatus).toBe('unconfirmed');
+        });
+
+        it.each([
+            ['sendBitcoin', 'this SDK', new BitcoinBroadcastError(broadcastTxId, 'Could not fetch its raw hex')],
+            [
+                'sendBitcoin',
+                'another SDK copy',
+                Object.assign(new Error('Could not fetch its raw hex'), {
+                    name: 'BitcoinBroadcastError',
+                    txid: broadcastTxId,
+                }),
+            ],
+            ['signAllInputs', 'this SDK', new BitcoinBroadcastError(broadcastTxId, 'Could not fetch its raw hex')],
+        ])('names the transaction a %s wallet broadcast before failing, from %s', async (method, _, broadcastError) => {
+            const fail = async (): Promise<string> => {
+                throw broadcastError;
+            };
+
+            const error = await execute({ [method]: fail });
+
+            expect(error).toBeInstanceOf(ExecuteQuoteError);
+            assert(error instanceof ExecuteQuoteError);
+            expect(error.orderId).toBe('order-registertx-fail-after-signing');
+            expect(error.cause).toBe(broadcastError);
+            expect(error.step).toBe(ExecuteQuoteStepType.SignBitcoinTransaction);
+            expect(error.txHash).toBe(broadcastTxId);
+            expect(error.txStatus).toBe('unconfirmed');
+        });
     });
 
     it('should get error', async () => {
@@ -2266,7 +2588,8 @@ describe('Gateway Tests', () => {
         expect(error).toBeInstanceOf(ExecuteQuoteError);
         assert(error instanceof ExecuteQuoteError);
         expect(error.orderId).toBe('tokenswap-order-throw-789');
-        expect(error.message).toBe('Failed to execute Gateway quote after order creation');
+        expect(error.message).toBe('User rejected the transaction');
+        expect(error.step).toBe(ExecuteQuoteStepType.SendTransaction);
         expect(error.cause).toBeInstanceOf(Error);
         assert(error.cause instanceof Error);
         expect(error.cause.message).toBe('User rejected the transaction');
@@ -2389,7 +2712,10 @@ describe('Gateway Tests', () => {
         expect(error).toBeInstanceOf(ExecuteQuoteError);
         assert(error instanceof ExecuteQuoteError);
         expect(error.orderId).toBe('tokenswap-revert-order');
-        expect(error.message).toBe('Failed to execute Gateway quote after order creation');
+        expect(error.message).toBe(
+            'An unknown error occurred while executing the contract function "approve". (execution reverted)'
+        );
+        expect(error.step).toBe(ExecuteQuoteStepType.Approve);
         expect(error.cause).toBe(contractError);
         expect(callback).not.toHaveBeenCalled();
         expect(mockWalletClient.writeContract).not.toHaveBeenCalled();
@@ -3805,10 +4131,46 @@ describe('Gateway Tests', () => {
             expect(error.name).toBe('ExecuteQuoteError');
             expect(error.orderId).toBe('order-abc');
             expect(error.cause).toBe(original);
-            expect(error.message).toBe('Failed to execute Gateway quote after order creation');
+            expect(error.message).toBe('boom');
         });
 
-        it('never forwards cause.message onto its own message, regardless of cause shape', () => {
+        it('takes the short message and the wallet text from a viem error, not its multi-line message', () => {
+            const rpcError = new InternalRpcError(new Error('Another approval request is already pending'));
+            const cause = new TransactionExecutionError(rpcError, { account: null });
+
+            expect(new ExecuteQuoteError('order-viem', undefined, { cause }).message).toBe(
+                'An internal error was received. (Another approval request is already pending)'
+            );
+        });
+
+        it('leaves out viem details the short message already carries', () => {
+            const cause = new UserRejectedRequestError(new Error('User rejected the request.'));
+
+            expect(new ExecuteQuoteError('order-rejected', undefined, { cause }).message).toBe(
+                'User rejected the request.'
+            );
+        });
+
+        it.each([
+            ['undefined', undefined],
+            ['null', null],
+            ['an empty message', new Error('')],
+            [
+                'a throwing getter',
+                Object.defineProperty({}, 'message', {
+                    get() {
+                        throw new Error('getter exploded');
+                    },
+                }),
+            ],
+        ])('falls back to the generic message for %s', (_, cause) => {
+            const error = new ExecuteQuoteError('order-fallback', undefined, { cause });
+
+            expect(error.message).toBe('Failed to execute Gateway quote after order creation');
+            expect(error.cause).toBe(cause);
+        });
+
+        it('keeps an explicit message over the cause text, regardless of cause shape', () => {
             const frozen = Object.freeze(new Error('frozen'));
             const rpcRejection = { code: 4001, message: 'User rejected the transaction' };
 

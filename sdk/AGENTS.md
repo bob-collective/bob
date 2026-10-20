@@ -75,7 +75,7 @@ Quotes are a union type. Use generated type guards to narrow:
 ### BitcoinSigner interface
 
 Two mutually exclusive signing patterns — adapters implement one:
-- `sendBitcoin(params)` — high-level: wallet broadcasts the tx (e.g. OKX)
+- `sendBitcoin(params)` — high-level: wallet builds and signs the tx, ideally without broadcasting; some broadcast anyway (e.g. OKX)
 - `signAllInputs(psbtHex)` — low-level: sign a PSBT and return hex (e.g. Reown)
 
 If no `btcSigner` is provided to `executeQuote`, it returns the order for external/manual payment.
@@ -91,7 +91,7 @@ If no `btcSigner` is provided to `executeQuote`, it returns the order for extern
 ## Key patterns
 
 - **USDT approval**: USDT on Ethereum requires resetting allowance to 0 before setting a new value (ERC-20 race condition). This is handled in `executeQuote` via a special ABI (`USDTApproveAbi`).
-- **Best-effort registration**: After on-chain tx success, `registerTx` failures are caught and silently ignored — the order can be reconciled later.
+- **Onramp registration**: `registerTx` validates and broadcasts the signed payment. Its failure throws `ExecuteQuoteError` naming the txid (`txStatus: 'unconfirmed'`), since a broadcasting wallet or registration itself may have sent the payment already; whether a `sendBitcoin` wallet broadcast is not knowable from the SDK.
 - **Viem integration**: The SDK expects viem `PublicClient` and `WalletClient` for all EVM operations.
 
 ## Testing

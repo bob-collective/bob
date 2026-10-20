@@ -18,10 +18,13 @@ export {
 } from './error/gateway-error';
 export * from './generated-client';
 export {
+    BitcoinBroadcastError,
     BitcoinSigner,
     ExecuteQuoteError,
+    ExecuteQuoteErrorOptions,
     ExecuteQuoteStep,
     ExecuteQuoteStepType,
+    ExecuteQuoteTxStatus,
     GatewayQuoteParams,
     GetQuoteParams,
 } from './types';
