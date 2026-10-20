@@ -40,7 +40,6 @@ import {
 } from './generated-client';
 import type { GatewayErrorV4 as GatewayErrorInterface } from './generated-client/models/GatewayErrorV4';
 import {
-    BitcoinBroadcastError,
     type BitcoinSigner,
     ExecuteQuoteError,
     type ExecuteQuoteStep,
@@ -55,14 +54,13 @@ const RETRY_COUNT = 8; // Number of times to retry fetching transaction receipt 
 const INSUFFICIENT_FUNDS_MESSAGE =
     'Insufficient native funds for source and destination gas fees, please add more native funds to your account';
 
-// ContractFunctionExecutionError also wraps plain reverts, so only translate when
+// viem wraps it differently per call (ContractFunctionExecutionError, TransactionExecutionError,
+// EstimateGasExecutionError), and those wrappers also carry plain reverts, so only translate when
 // InsufficientFundsError is actually in the cause chain. Matched by viem's `name` rather than
 // `instanceof`: a consumer on another viem version throws another copy's classes.
-function getApprovalErrorMessage(error: unknown): string | undefined {
+function getInsufficientFundsMessage(error: unknown): string | undefined {
     // A caught value can carry a throwing getter, which would replace the error being reported.
     try {
-        if ((error as { name?: unknown } | null)?.name !== 'ContractFunctionExecutionError') return undefined;
-
         // A hand-built cause chain can loop.
         const seen = new Set<unknown>();
         for (let link: unknown = error; typeof link === 'object' && link !== null && !seen.has(link);) {
@@ -78,6 +76,28 @@ function getApprovalErrorMessage(error: unknown): string | undefined {
     return undefined;
 }
 
+/**
+ * Error for a Bitcoin signer's failure. A wallet that broadcast before failing names the payment that is already
+ * out; matched by name rather than `instanceof`, as an adapter can be built against another copy of the SDK.
+ */
+function bitcoinSignerError(orderId: string, error: unknown): ExecuteQuoteError {
+    let txid: string | undefined;
+    // A caught value can carry a throwing getter, which would replace the error being reported.
+    try {
+        const { name, txid: namedTxid } = error as { name?: unknown; txid?: unknown };
+        if (name === 'BitcoinBroadcastError' && typeof namedTxid === 'string' && namedTxid) txid = namedTxid;
+    } catch {
+        // Reported without a txid.
+    }
+
+    return new ExecuteQuoteError(orderId, undefined, {
+        cause: error,
+        step: ExecuteQuoteStepType.SignBitcoinTransaction,
+        txHash: txid,
+        txStatus: txid ? 'unconfirmed' : undefined,
+    });
+}
+
 // Generic `T` preserves the exact overload-resolved `request` type per call site,
 // instead of the widened union a shared non-generic type would produce.
 async function simulateApproval<T>(
@@ -88,7 +108,7 @@ async function simulateApproval<T>(
     try {
         return (await simulate()).request;
     } catch (error) {
-        throw new ExecuteQuoteError(orderId, getApprovalErrorMessage(error), { cause: error, step });
+        throw new ExecuteQuoteError(orderId, getInsufficientFundsMessage(error), { cause: error, step });
     }
 }
 
@@ -109,7 +129,7 @@ async function submitTransaction(
     try {
         hash = await send();
     } catch (error) {
-        throw new ExecuteQuoteError(orderId, getApprovalErrorMessage(error), { cause: error, step });
+        throw new ExecuteQuoteError(orderId, getInsufficientFundsMessage(error), { cause: error, step });
     }
 
     let replacement: ReplacementReturnType | undefined;
@@ -428,15 +448,7 @@ export class GatewayApiClient {
                         // isSignet: this.isSignet,
                     });
                 } catch (error) {
-                    // A wallet that broadcast before failing names the payment that is already out.
-                    const txid = error instanceof BitcoinBroadcastError ? error.txid : undefined;
-
-                    throw new ExecuteQuoteError(orderId, undefined, {
-                        cause: error,
-                        step: ExecuteQuoteStepType.SignBitcoinTransaction,
-                        txHash: txid,
-                        txStatus: txid ? 'unconfirmed' : undefined,
-                    });
+                    throw bitcoinSignerError(orderId, error);
                 }
             } else if (btcSigner.signAllInputs) {
                 if (!order.onramp.psbtHex) {
@@ -455,10 +467,7 @@ export class GatewayApiClient {
                 try {
                     bitcoinTxHex = await btcSigner.signAllInputs(psbtHex);
                 } catch (error) {
-                    throw new ExecuteQuoteError(orderId, undefined, {
-                        cause: error,
-                        step: ExecuteQuoteStepType.SignBitcoinTransaction,
-                    });
+                    throw bitcoinSignerError(orderId, error);
                 }
             } else {
                 throw new ExecuteQuoteError(

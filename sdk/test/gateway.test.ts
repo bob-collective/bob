@@ -1096,7 +1096,7 @@ describe('Gateway Tests', () => {
     });
 
     // viem's waitForTransactionReceipt resolves for reverted and replaced transactions alike.
-    describe('mined offramp transaction outcome', () => {
+    describe('offramp transaction outcome', () => {
         const mockQuote: GatewayQuoteV4OneOf = {
             offramp: {
                 txTo: BOB_ALLOWANCE_HOLDER,
@@ -1117,7 +1117,11 @@ describe('Gateway Tests', () => {
             },
         };
 
-        const execute = async (allowance: bigint, waitForTransactionReceipt: ReturnType<typeof vi.fn>) => {
+        const execute = async (
+            allowance: bigint,
+            waitForTransactionReceipt: ReturnType<typeof vi.fn>,
+            sendTransaction = vi.fn().mockResolvedValue('0xbroadcast')
+        ) => {
             nock(`${MAINNET_GATEWAY_BASE_URL}`)
                 .post('/v4/create-order')
                 .reply(200, {
@@ -1130,7 +1134,7 @@ describe('Gateway Tests', () => {
             const walletClient = {
                 account: { address: '0xabcd1234abcd1234abcd1234abcd1234abcd1234' as Address },
                 writeContract: vi.fn().mockResolvedValue('0xapprove'),
-                sendTransaction: vi.fn().mockResolvedValue('0xbroadcast'),
+                sendTransaction,
             } as unknown as WalletClient<Transport, ViemChain, Account>;
 
             const publicClient = {
@@ -1201,6 +1205,25 @@ describe('Gateway Tests', () => {
             const { result } = await execute(maxUint256, replacedBy('repriced', '0xspedup'));
 
             expect(result).toMatchObject({ tx: '0xspedup' });
+        });
+
+        // sendTransaction wraps it in TransactionExecutionError rather than ContractFunctionExecutionError.
+        it('translates an order transaction failing for insufficient native funds', async () => {
+            const sendError = new TransactionExecutionError(
+                new InsufficientFundsError({ cause: new Error('insufficient funds for gas * price + value') }),
+                { account: null }
+            );
+
+            const { result: error } = await execute(maxUint256, vi.fn(), vi.fn().mockRejectedValue(sendError));
+
+            expect(error).toBeInstanceOf(ExecuteQuoteError);
+            assert(error instanceof ExecuteQuoteError);
+            expect(error.message).toBe(
+                'Insufficient native funds for source and destination gas fees, please add more native funds to your account'
+            );
+            expect(error.cause).toBe(sendError);
+            expect(error.step).toBe(ExecuteQuoteStepType.SendTransaction);
+            expect(error.txHash).toBeUndefined();
         });
     });
 
@@ -2279,14 +2302,23 @@ describe('Gateway Tests', () => {
             expect(error.txStatus).toBe('unconfirmed');
         });
 
-        it('names the transaction a sendBitcoin wallet broadcast before failing', async () => {
-            const broadcastError = new BitcoinBroadcastError(broadcastTxId, 'Could not fetch its raw hex');
+        it.each([
+            ['sendBitcoin', 'this SDK', new BitcoinBroadcastError(broadcastTxId, 'Could not fetch its raw hex')],
+            [
+                'sendBitcoin',
+                'another SDK copy',
+                Object.assign(new Error('Could not fetch its raw hex'), {
+                    name: 'BitcoinBroadcastError',
+                    txid: broadcastTxId,
+                }),
+            ],
+            ['signAllInputs', 'this SDK', new BitcoinBroadcastError(broadcastTxId, 'Could not fetch its raw hex')],
+        ])('names the transaction a %s wallet broadcast before failing, from %s', async (method, _, broadcastError) => {
+            const fail = async (): Promise<string> => {
+                throw broadcastError;
+            };
 
-            const error = await execute({
-                sendBitcoin: async () => {
-                    throw broadcastError;
-                },
-            });
+            const error = await execute({ [method]: fail });
 
             expect(error).toBeInstanceOf(ExecuteQuoteError);
             assert(error instanceof ExecuteQuoteError);
