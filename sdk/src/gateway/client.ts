@@ -485,13 +485,8 @@ export class GatewayApiClient {
             } catch (error) {
                 const txid = bitcoinTxId(bitcoinTxHex);
 
-                // sendBitcoin broadcast the payment already, and the solver finds it at the order's deposit
-                // address without registration: failing here would invite paying twice.
-                if (btcSigner.sendBitcoin && txid) {
-                    return { order, tx: txid };
-                }
-
-                // signAllInputs leaves broadcasting to registration, which may have done it before failing.
+                // The payment may be out regardless: a wallet behind sendBitcoin can broadcast it itself, and
+                // registration broadcasts it before it can still fail. Neither is known here, so name it.
                 throw new ExecuteQuoteError(orderId, undefined, {
                     cause: error,
                     txHash: txid,

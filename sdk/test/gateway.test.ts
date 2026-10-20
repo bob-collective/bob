@@ -2262,20 +2262,12 @@ describe('Gateway Tests', () => {
                 .catch((thrown: unknown) => thrown);
         };
 
-        // The solver finds the payment at the deposit address without registration.
-        it('resolves with the txid sendBitcoin broadcast', async () => {
-            const result = await execute({ sendBitcoin: async () => broadcastTx });
-
-            expect(result).toEqual({
-                order: expect.objectContaining({
-                    onramp: expect.objectContaining({ orderId: 'order-registertx-fail-after-signing' }),
-                }),
-                tx: broadcastTxId,
-            });
-        });
-
-        it('names the transaction signAllInputs signed, which registration may have broadcast', async () => {
-            const error = await execute({ signAllInputs: async () => broadcastTx });
+        // Either signer's payment may be out: a sendBitcoin wallet can broadcast it, and registration can before failing.
+        it.each([
+            ['sendBitcoin', { sendBitcoin: async () => broadcastTx }],
+            ['signAllInputs', { signAllInputs: async () => broadcastTx }],
+        ])('names the transaction %s signed', async (_, btcSigner: BitcoinSigner) => {
+            const error = await execute(btcSigner);
 
             expect(error).toBeInstanceOf(ExecuteQuoteError);
             assert(error instanceof ExecuteQuoteError);
