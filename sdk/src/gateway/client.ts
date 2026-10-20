@@ -1,3 +1,4 @@
+import { Transaction as BitcoinTransaction } from 'bitcoinjs-lib';
 import {
     type Account,
     type Address,
@@ -9,6 +10,8 @@ import {
     isAddressEqual,
     maxUint256,
     type PublicClient,
+    type ReplacementReturnType,
+    type TransactionReceipt,
     type Transport,
     type Chain as ViemChain,
     type WalletClient,
@@ -83,6 +86,9 @@ async function simulateApproval<T>(
 /**
  * Send a transaction and wait for its receipt. The two fail apart, so a failure after broadcast
  * still names the transaction: by then it can be mined, and the order filled, regardless.
+ *
+ * viem resolves for a reverted receipt and for a replacement under the same nonce alike, so both
+ * are checked here: otherwise the step counts as done although its call never ran.
  */
 async function submitTransaction(
     orderId: string,
@@ -97,13 +103,44 @@ async function submitTransaction(
         throw new ExecuteQuoteError(orderId, getApprovalErrorMessage(error), { cause: error, step });
     }
 
+    let replacement: ReplacementReturnType | undefined;
+    let receipt: TransactionReceipt | undefined;
     try {
-        await publicClient?.waitForTransactionReceipt({ hash, retryCount: RETRY_COUNT });
+        receipt = await publicClient?.waitForTransactionReceipt({
+            hash,
+            retryCount: RETRY_COUNT,
+            onReplaced: (replaced) => {
+                replacement = replaced;
+            },
+        });
     } catch (error) {
         throw new ExecuteQuoteError(orderId, undefined, { cause: error, step, txHash: hash });
     }
 
-    return hash;
+    // A wallet's speed-up re-sends the same call, so its replacement is this step's transaction;
+    // a cancellation or a different call means this step never ran.
+    if (replacement && replacement.reason !== 'repriced') {
+        throw new ExecuteQuoteError(orderId, `Transaction ${replacement.reason} by ${replacement.transaction.hash}`, {
+            step,
+            txHash: hash,
+        });
+    }
+
+    const minedHash = replacement?.transaction.hash ?? hash;
+    if (receipt?.status === 'reverted') {
+        throw new ExecuteQuoteError(orderId, 'Transaction reverted', { step, txHash: minedHash });
+    }
+
+    return minedHash;
+}
+
+/** Txid of a signed raw Bitcoin transaction, or undefined when it does not parse. */
+function bitcoinTxId(txHex: string): string | undefined {
+    try {
+        return BitcoinTransaction.fromHex(txHex).getId();
+    } catch {
+        return undefined;
+    }
 }
 
 /**
@@ -428,7 +465,8 @@ export class GatewayApiClient {
                     tx = response;
                 }
             } catch (error) {
-                throw new ExecuteQuoteError(orderId, undefined, { cause: error });
+                // sendBitcoin broadcast the transaction already; for signAllInputs, registration may have before failing.
+                throw new ExecuteQuoteError(orderId, undefined, { cause: error, txHash: bitcoinTxId(bitcoinTxHex) });
             }
 
             if (typeof tx === 'string') {

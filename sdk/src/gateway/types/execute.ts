@@ -49,7 +49,11 @@ function describeCause(cause: unknown): string | undefined {
 export type ExecuteQuoteErrorOptions = ErrorOptions & {
     /** The step whose operation failed. Absent outside one: an allowance read, or transaction registration. */
     step?: ExecuteQuoteStepType;
-    /** Set once the transaction was broadcast, when waiting for its receipt is what failed. */
+    /**
+     * The transaction the failing operation sent (Bitcoin txid on onramp), once it may have reached the network:
+     * check it before retrying. Its absence does not prove nothing was broadcast, as a wallet can broadcast and
+     * still reject.
+     */
     txHash?: string;
 };
 
