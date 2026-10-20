@@ -91,7 +91,7 @@ If no `btcSigner` is provided to `executeQuote`, it returns the order for extern
 ## Key patterns
 
 - **USDT approval**: USDT on Ethereum requires resetting allowance to 0 before setting a new value (ERC-20 race condition). This is handled in `executeQuote` via a special ABI (`USDTApproveAbi`).
-- **Best-effort registration**: After on-chain tx success, `registerTx` failures are caught and silently ignored — the order can be reconciled later.
+- **Best-effort registration**: Once `sendBitcoin` has broadcast an onramp payment, `registerTx` failures are caught and ignored — the solver finds the payment at the order's deposit address. With `signAllInputs`, registration is what broadcasts, so its failure throws.
 - **Viem integration**: The SDK expects viem `PublicClient` and `WalletClient` for all EVM operations.
 
 ## Testing

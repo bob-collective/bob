@@ -2,10 +2,8 @@ import { Transaction as BitcoinTransaction } from 'bitcoinjs-lib';
 import {
     type Account,
     type Address,
-    ContractFunctionExecutionError,
     erc20Abi,
     Hex,
-    InsufficientFundsError,
     isAddress,
     isAddressEqual,
     maxUint256,
@@ -57,13 +55,23 @@ const INSUFFICIENT_FUNDS_MESSAGE =
     'Insufficient native funds for source and destination gas fees, please add more native funds to your account';
 
 // ContractFunctionExecutionError also wraps plain reverts, so only translate when
-// InsufficientFundsError is actually in the cause chain.
+// InsufficientFundsError is actually in the cause chain. Matched by viem's `name` rather than
+// `instanceof`: a consumer on another viem version throws another copy's classes.
 function getApprovalErrorMessage(error: unknown): string | undefined {
-    if (
-        error instanceof ContractFunctionExecutionError &&
-        error.walk((cause) => cause instanceof InsufficientFundsError)
-    ) {
-        return INSUFFICIENT_FUNDS_MESSAGE;
+    // A caught value can carry a throwing getter, which would replace the error being reported.
+    try {
+        if ((error as { name?: unknown } | null)?.name !== 'ContractFunctionExecutionError') return undefined;
+
+        // A hand-built cause chain can loop.
+        const seen = new Set<unknown>();
+        for (let link: unknown = error; typeof link === 'object' && link !== null && !seen.has(link);) {
+            seen.add(link);
+            const { name, cause } = link as { name?: unknown; cause?: unknown };
+            if (name === 'InsufficientFundsError') return INSUFFICIENT_FUNDS_MESSAGE;
+            link = cause;
+        }
+    } catch {
+        // Fall through to the cause's own text.
     }
 
     return undefined;
@@ -114,7 +122,12 @@ async function submitTransaction(
             },
         });
     } catch (error) {
-        throw new ExecuteQuoteError(orderId, undefined, { cause: error, step, txHash: hash });
+        throw new ExecuteQuoteError(orderId, undefined, {
+            cause: error,
+            step,
+            txHash: hash,
+            txStatus: 'unconfirmed',
+        });
     }
 
     // A wallet's speed-up re-sends the same call, so its replacement is this step's transaction;
@@ -123,12 +136,17 @@ async function submitTransaction(
         throw new ExecuteQuoteError(orderId, `Transaction ${replacement.reason} by ${replacement.transaction.hash}`, {
             step,
             txHash: hash,
+            txStatus: replacement.reason,
         });
     }
 
     const minedHash = replacement?.transaction.hash ?? hash;
     if (receipt?.status === 'reverted') {
-        throw new ExecuteQuoteError(orderId, 'Transaction reverted', { step, txHash: minedHash });
+        throw new ExecuteQuoteError(orderId, 'Transaction reverted', {
+            step,
+            txHash: minedHash,
+            txStatus: 'reverted',
+        });
     }
 
     return minedHash;
@@ -465,8 +483,20 @@ export class GatewayApiClient {
                     tx = response;
                 }
             } catch (error) {
-                // sendBitcoin broadcast the transaction already; for signAllInputs, registration may have before failing.
-                throw new ExecuteQuoteError(orderId, undefined, { cause: error, txHash: bitcoinTxId(bitcoinTxHex) });
+                const txid = bitcoinTxId(bitcoinTxHex);
+
+                // sendBitcoin broadcast the payment already, and the solver finds it at the order's deposit
+                // address without registration: failing here would invite paying twice.
+                if (btcSigner.sendBitcoin && txid) {
+                    return { order, tx: txid };
+                }
+
+                // signAllInputs leaves broadcasting to registration, which may have done it before failing.
+                throw new ExecuteQuoteError(orderId, undefined, {
+                    cause: error,
+                    txHash: txid,
+                    txStatus: txid ? 'unconfirmed' : undefined,
+                });
             }
 
             if (typeof tx === 'string') {

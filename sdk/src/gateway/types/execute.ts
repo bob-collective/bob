@@ -46,15 +46,22 @@ function describeCause(cause: unknown): string | undefined {
     }
 }
 
+/**
+ * What became of an {@link ExecuteQuoteError}'s `txHash`. `unconfirmed` may still be mined, so check it before
+ * retrying; the others are final, and the step's call did not take effect.
+ */
+export type ExecuteQuoteTxStatus = 'unconfirmed' | 'reverted' | 'cancelled' | 'replaced';
+
 export type ExecuteQuoteErrorOptions = ErrorOptions & {
     /** The step whose operation failed. Absent outside one: an allowance read, or transaction registration. */
     step?: ExecuteQuoteStepType;
     /**
-     * The transaction the failing operation sent (Bitcoin txid on onramp), once it may have reached the network:
-     * check it before retrying. Its absence does not prove nothing was broadcast, as a wallet can broadcast and
-     * still reject.
+     * The transaction the failing operation sent (Bitcoin txid on onramp), once it may have reached the network.
+     * Its absence does not prove nothing was broadcast, as a wallet can broadcast and still reject.
      */
     txHash?: string;
+    /** Set with `txHash`. */
+    txStatus?: ExecuteQuoteTxStatus;
 };
 
 /**
@@ -70,10 +77,17 @@ export class ExecuteQuoteError extends Error {
 
     readonly txHash?: string;
 
-    constructor(orderId: string, message?: string, { step, txHash, ...options }: ExecuteQuoteErrorOptions = {}) {
+    readonly txStatus?: ExecuteQuoteTxStatus;
+
+    constructor(
+        orderId: string,
+        message?: string,
+        { step, txHash, txStatus, ...options }: ExecuteQuoteErrorOptions = {}
+    ) {
         super(message || describeCause(options.cause) || EXECUTE_QUOTE_ERROR_MESSAGE, options);
         this.orderId = orderId;
         this.step = step;
         this.txHash = txHash;
+        this.txStatus = txStatus;
     }
 }
