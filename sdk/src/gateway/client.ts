@@ -40,6 +40,7 @@ import {
 } from './generated-client';
 import type { GatewayErrorV4 as GatewayErrorInterface } from './generated-client/models/GatewayErrorV4';
 import {
+    BitcoinBroadcastError,
     type BitcoinSigner,
     ExecuteQuoteError,
     type ExecuteQuoteStep,
@@ -427,9 +428,14 @@ export class GatewayApiClient {
                         // isSignet: this.isSignet,
                     });
                 } catch (error) {
+                    // A wallet that broadcast before failing names the payment that is already out.
+                    const txid = error instanceof BitcoinBroadcastError ? error.txid : undefined;
+
                     throw new ExecuteQuoteError(orderId, undefined, {
                         cause: error,
                         step: ExecuteQuoteStepType.SignBitcoinTransaction,
+                        txHash: txid,
+                        txStatus: txid ? 'unconfirmed' : undefined,
                     });
                 }
             } else if (btcSigner.signAllInputs) {

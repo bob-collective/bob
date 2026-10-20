@@ -26,6 +26,7 @@ import { privateKeyToAccount } from 'viem/accounts';
 import { mainnet } from 'viem/chains';
 import { afterEach, assert, describe, expect, it, vi } from 'vitest';
 import {
+    BitcoinBroadcastError,
     BitcoinSigner,
     ExecuteQuoteError,
     ExecuteQuoteStep,
@@ -2207,7 +2208,7 @@ describe('Gateway Tests', () => {
         expect(isGatewayError(error.cause)).toBe(true);
     });
 
-    describe('onramp registration failure after signing', () => {
+    describe('onramp failure once the payment may be out', () => {
         const mockQuote: GatewayQuoteV3OneOf = {
             onramp: {
                 dstChain: 'bob',
@@ -2274,6 +2275,24 @@ describe('Gateway Tests', () => {
             expect(error.orderId).toBe('order-registertx-fail-after-signing');
             expect(error.message).toBe('registerTx exploded');
             expect(error.step).toBeUndefined();
+            expect(error.txHash).toBe(broadcastTxId);
+            expect(error.txStatus).toBe('unconfirmed');
+        });
+
+        it('names the transaction a sendBitcoin wallet broadcast before failing', async () => {
+            const broadcastError = new BitcoinBroadcastError(broadcastTxId, 'Could not fetch its raw hex');
+
+            const error = await execute({
+                sendBitcoin: async () => {
+                    throw broadcastError;
+                },
+            });
+
+            expect(error).toBeInstanceOf(ExecuteQuoteError);
+            assert(error instanceof ExecuteQuoteError);
+            expect(error.orderId).toBe('order-registertx-fail-after-signing');
+            expect(error.cause).toBe(broadcastError);
+            expect(error.step).toBe(ExecuteQuoteStepType.SignBitcoinTransaction);
             expect(error.txHash).toBe(broadcastTxId);
             expect(error.txStatus).toBe('unconfirmed');
         });
