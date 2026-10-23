@@ -7,7 +7,7 @@ import {
   validateAddressFamily, getChainFamily, resolvePrivateKey, deriveAddress, resolveSigner,
   type BtcSigner, type EvmSigner,
 } from "../chains/index.js";
-import { sendEvm, buildUnsignedEvmTx, nativeSweepAmount, getEvmBalances, CHAIN_IDS } from "../chains/evm.js";
+import { sendEvm, buildUnsignedEvmTx, prepareNativeSweep, getEvmBalances, CHAIN_IDS } from "../chains/evm.js";
 import { sendBtc, buildBtcPsbt, estimateBtcSweepAmount } from "../chains/bitcoin.js";
 import type { SendSuccessJson, SendUnsignedJson, Logger } from "../output.js";
 
@@ -84,24 +84,30 @@ export async function handleSend(opts: SendOptions, log: Logger): Promise<SendRe
   const feeRate = opts.btcFeeRate ?? config.btcFeeRate;
 
   // ── amount resolution (with chain-specific ALL spendable) ──
-  const amount = await resolveSendAmount(opts, asset, senderAddress, {
-    spendable: async () => {
-      if (family === "bitcoin") {
-        return estimateBtcSweepAmount(senderAddress!, feeRate);
-      }
-      if (!signer) throw new Error("An EVM RPC connection is required for --amount ALL. Set a working RPC or remove --unsigned.");
-      const evmSigner = signer as EvmSigner;
-      if (isNative(asset.address)) {
-        const [balance, fees] = await Promise.all([
-          evmSigner.publicClient.getBalance({ address: senderAddress as `0x${string}` }),
-          evmSigner.publicClient.estimateFeesPerGas(),
-        ]);
-        return nativeSweepAmount(balance, fees.maxFeePerGas ?? fees.gasPrice ?? 0n);
-      }
-      const bal = await getEvmBalances(asset.chain, senderAddress!, [{ address: asset.address, symbol: asset.symbol, decimals: asset.decimals }]);
-      return BigInt(bal.tokens![0].balance);
-    },
-  });
+  // A native sweep is sized and priced by one read, taken right before the send, so the
+  // upcoming send cannot be quoted a higher fee than the amount was reduced by.
+  const isNativeSweep = isSweep && family === "evm" && isNative(asset.address);
+  const sweep = isNativeSweep
+    ? await (async () => {
+        if (!signer) throw new Error("An EVM RPC connection is required for --amount ALL. Set a working RPC or remove --unsigned.");
+        return prepareNativeSweep(signer as EvmSigner, opts.to);
+      })()
+    : undefined;
+
+  const amount = sweep
+    ? sweep.amount
+    : await resolveSendAmount(opts, asset, senderAddress, {
+        spendable: async () => {
+          if (family === "bitcoin") {
+            return estimateBtcSweepAmount(senderAddress!, feeRate);
+          }
+          if (!signer) throw new Error("An EVM RPC connection is required for --amount ALL. Set a working RPC or remove --unsigned.");
+          const bal = await getEvmBalances(asset.chain, senderAddress!, [{ address: asset.address, symbol: asset.symbol, decimals: asset.decimals }]);
+          return BigInt(bal.tokens![0].balance);
+        },
+      });
+  // A sweep whose whole balance goes to gas has nothing left to send.
+  if (sweep && sweep.amount === 0n) throw new Error(`No ${asset.symbol} balance available to send.`);
 
   // ── unsigned path ──
   if (opts.unsigned) {
@@ -120,7 +126,7 @@ export async function handleSend(opts: SendOptions, log: Logger): Promise<SendRe
   if (family === "bitcoin") {
     txId = await sendBtc((signer as BtcSigner).signer, senderAddress!, opts.to, amount, feeRate, isSweep ? "all" : "default");
   } else {
-    txId = await sendEvm(signer as EvmSigner, asset, opts.to, amount);
+    txId = await sendEvm(signer as EvmSigner, asset, opts.to, amount, sweep?.fees);
   }
   log.progress(`✓ Broadcast: ${txId}`);
 

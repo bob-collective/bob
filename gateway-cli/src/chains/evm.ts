@@ -305,10 +305,61 @@ import type { EvmSigner } from './index.js';
 /** Default gas units for a simple value/ERC20 transfer when sweeping native balance. */
 const TRANSFER_GAS_LIMIT = 21_000n;
 
+/**
+ * Base-fee headroom for the fee cap that both sizes and prices a native sweep.
+ * viem's own cap (1.2x base) leaves little room for the base fee to move before inclusion,
+ * and a sweep is sized down to its exact gas cost, so it must carry headroom of its own.
+ * 2x survives ~5 consecutive max (+12.5%) base-fee blocks; whatever the tx does not spend
+ * stays in the wallet.
+ */
+const SWEEP_BASE_FEE_MULTIPLIER = 2n;
+
 /** Spendable native amount for a sweep: balance minus the exact gas cost of one transfer. */
 export function nativeSweepAmount(balance: bigint, maxFeePerGas: bigint, gasLimit: bigint = TRANSFER_GAS_LIMIT): bigint {
   const cost = gasLimit * maxFeePerGas;
   return balance > cost ? balance - cost : 0n;
+}
+
+/** Fees pinned on a native sweep, so the broadcast cannot re-price above the sized amount. */
+export type NativeSweepFees =
+  | { gas: bigint; maxFeePerGas: bigint; maxPriorityFeePerGas?: bigint }
+  | { gas: bigint; gasPrice: bigint };
+
+export interface NativeSweep {
+  amount: bigint;
+  fees: NativeSweepFees;
+}
+
+/**
+ * Size and price a native sweep from a single balance/fee/gas read.
+ * The same fee cap and gas limit are pinned on the send (see `sendEvm`), otherwise viem
+ * re-estimates fees at broadcast time and a base-fee tick rejects the sweep for
+ * insufficient funds before it is even signed.
+ */
+export async function prepareNativeSweep(signer: EvmSigner, to: string): Promise<NativeSweep> {
+  const { publicClient, walletClient } = signer;
+  const account = walletClient.account!;
+  const chain = walletClient.chain!;
+
+  const [balance, feeData, block] = await Promise.all([
+    publicClient.getBalance({ address: account.address }),
+    publicClient.estimateFeesPerGas({ chain }),
+    publicClient.getBlock({ chain, blockTag: 'latest' }),
+  ]);
+  // Worst case for the transfer: the whole balance moves, so per-value branching in a
+  // contract recipient is simulated at the top of its range. Simple transfers return 21000.
+  const gas = await publicClient.estimateGas({ account, chain, to: to as `0x${string}`, value: balance });
+
+  // EIP-1559 chains price off maxFeePerGas, rebuilt from the block's base fee so the cap
+  // carries headroom; legacy chains only expose gasPrice and take viem's estimate as-is.
+  if (block.baseFeePerGas != null) {
+    const maxPriorityFeePerGas = feeData.maxPriorityFeePerGas ?? 0n;
+    const maxFeePerGas = block.baseFeePerGas * SWEEP_BASE_FEE_MULTIPLIER + maxPriorityFeePerGas;
+    const fees: NativeSweepFees = { gas, maxFeePerGas, maxPriorityFeePerGas };
+    return { amount: nativeSweepAmount(balance, maxFeePerGas, gas), fees };
+  }
+  const gasPrice = feeData.gasPrice ?? 0n;
+  return { amount: nativeSweepAmount(balance, gasPrice, gas), fees: { gas, gasPrice } };
 }
 
 /** Build unsigned EVM tx params for native or ERC20 transfer (for --unsigned output). */
@@ -320,13 +371,32 @@ export function buildUnsignedEvmTx(asset: ResolvedAsset, to: string, amount: big
   return { from, to: asset.address, value: "0", data, chainId };
 }
 
-/** Execute a direct EVM transfer (native or ERC20). Returns the tx hash. */
-export async function sendEvm(signer: EvmSigner, asset: ResolvedAsset, to: string, amount: bigint): Promise<Hex> {
+/**
+ * Execute a direct EVM transfer (native or ERC20). Returns the tx hash.
+ * A native sweep passes the fees it was sized against, so viem leaves them alone.
+ */
+export async function sendEvm(
+  signer: EvmSigner,
+  asset: ResolvedAsset,
+  to: string,
+  amount: bigint,
+  sweepFees?: NativeSweepFees,
+): Promise<Hex> {
   const { walletClient } = signer;
   const account = walletClient.account!;
   const chain = walletClient.chain!;
   if (isNativeToken(asset.address)) {
-    return walletClient.sendTransaction({ account, chain, to: to as `0x${string}`, value: amount });
+    const tx = { account, chain, to: to as `0x${string}`, value: amount };
+    if (!sweepFees) return walletClient.sendTransaction(tx);
+    if ("maxFeePerGas" in sweepFees) {
+      return walletClient.sendTransaction({
+        ...tx,
+        gas: sweepFees.gas,
+        maxFeePerGas: sweepFees.maxFeePerGas,
+        ...(sweepFees.maxPriorityFeePerGas === undefined ? {} : { maxPriorityFeePerGas: sweepFees.maxPriorityFeePerGas }),
+      });
+    }
+    return walletClient.sendTransaction({ ...tx, gas: sweepFees.gas, gasPrice: sweepFees.gasPrice });
   }
   return walletClient.writeContract({
     account,
