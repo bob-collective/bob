@@ -1,0 +1,104 @@
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { spawn, type ChildProcess } from "node:child_process";
+import { existsSync } from "node:fs";
+import { createPublicClient, createWalletClient, http, parseEther, formatEther } from "viem";
+import { privateKeyToAccount } from "viem/accounts";
+import { anvil } from "viem/chains";
+import { prepareNativeSweep, sendEvm } from "../../src/chains/evm.js";
+import type { ResolvedAsset } from "../../src/util/input-resolver.js";
+
+/**
+ * End-to-end sweep against a real node, because the thing under test is the node's balance
+ * rule (`value + gas * fee cap (+ L1 fee) <= balance`), which a mocked estimateGas cannot model.
+ * Runs only where `anvil` is installed; CI without Foundry skips it.
+ */
+const ANVIL_BIN = process.env.ANVIL_BIN ?? `${process.env.HOME}/.foundry/bin/anvil`;
+const RPC_PORT = 8599;
+const RPC = `http://localhost:${RPC_PORT}`;
+const KEY = ("0x" + "11".repeat(32)) as `0x${string}`;
+const TO = "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC";
+const ETH: ResolvedAsset = { chain: "ethereum", address: "0x0000000000000000000000000000000000000000", symbol: "ETH", decimals: 18 };
+const GWEI = 1_000_000_000n;
+
+/** `CALLVALUE ISZERO PUSH1 0x08 JUMPI STOP JUMPDEST PUSH1 0 PUSH1 0 REVERT`: a deposit contract
+ * that rejects zero-value calls, the recipient class the two-pass estimate exists for. */
+const REJECT_ZERO_VALUE_CODE = "0x3415600857005b60006000fd";
+const CONTRACT_TO = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
+
+const hasAnvil = existsSync(ANVIL_BIN);
+
+describe.skipIf(!hasAnvil)("native ALL sweep on a real node", () => {
+  let node: ChildProcess | undefined;
+  const account = privateKeyToAccount(KEY);
+  const publicClient = createPublicClient({ chain: anvil, transport: http(RPC) });
+  const walletClient = createWalletClient({ account, chain: anvil, transport: http(RPC) });
+
+  beforeAll(async () => {
+    node = spawn(ANVIL_BIN, ["--port", String(RPC_PORT), "--base-fee", (10n * GWEI).toString()], { stdio: "ignore" });
+    for (let i = 0; i < 100; i++) {
+      try {
+        await publicClient.getBlockNumber();
+        return;
+      } catch {
+        await new Promise(r => setTimeout(r, 100));
+      }
+    }
+    throw new Error("anvil did not start");
+  }, 30_000);
+
+  afterAll(() => {
+    node?.kill("SIGKILL");
+  });
+
+  it("estimating the whole balance as value is rejected unless the sender is topped up", async () => {
+    await publicClient.request({ method: "anvil_setBalance" as never, params: [account.address, "0xde0b6b3a7640000"] as never });
+    const balance = await publicClient.getBalance({ address: account.address });
+
+    const params = { from: account.address, to: TO, value: `0x${balance.toString(16)}`, maxFeePerGas: `0x${(21n * GWEI).toString(16)}` };
+    await expect(publicClient.request({ method: "eth_estimateGas", params: [params] as never })).rejects.toThrow();
+
+    // The state override tops the sender up, so the same estimate answers: this is what
+    // prepareNativeSweep relies on to probe with a realistic, nonzero value.
+    const override = { [account.address]: { balance: `0x${(balance * 2n).toString(16)}` } };
+    await expect(publicClient.request({
+      method: "eth_estimateGas",
+      params: [params, "latest", override] as never,
+    })).resolves.toBe(`0x${(21_000n).toString(16)}`);
+  });
+
+  it("sizes and broadcasts a full-balance sweep", async () => {
+    await publicClient.request({ method: "anvil_setBalance" as never, params: [account.address, "0xde0b6b3a7640000"] as never });
+    await publicClient.request({ method: "anvil_setBalance" as never, params: [TO, "0x0"] as never });
+    const balance = await publicClient.getBalance({ address: account.address });
+
+    const sweep = await prepareNativeSweep({ address: account.address, publicClient, walletClient } as never, TO);
+    const feeCap = "maxFeePerGas" in sweep.fees ? sweep.fees.maxFeePerGas : sweep.fees.gasPrice;
+    expect(sweep.amount + sweep.fees.gas * feeCap).toBeLessThanOrEqual(balance);
+
+    const hash = await sendEvm({ address: account.address, publicClient, walletClient } as never, ETH, TO, sweep.amount, sweep.fees);
+    const receipt = await publicClient.waitForTransactionReceipt({ hash });
+    expect(receipt.status).toBe("success");
+
+    expect(await publicClient.getBalance({ address: TO })).toBe(sweep.amount);
+    // Headroom is dust: it stays in the wallet rather than being charged.
+    console.log(`swept ${formatEther(sweep.amount)} ETH, left ${formatEther(await publicClient.getBalance({ address: account.address }))} ETH`);
+    expect(await publicClient.getBalance({ address: account.address })).toBeLessThan(parseEther("0.01"));
+  }, 60_000);
+
+  it("sweeps to a recipient that rejects zero-value calls", async () => {
+    await publicClient.request({ method: "anvil_setCode" as never, params: [CONTRACT_TO, REJECT_ZERO_VALUE_CODE] as never });
+    await publicClient.request({ method: "anvil_setBalance" as never, params: [account.address, "0xde0b6b3a7640000"] as never });
+
+    // The recipient really does refuse an empty-value call...
+    await expect(publicClient.estimateGas({ account, to: CONTRACT_TO as `0x${string}`, value: 0n })).rejects.toThrow();
+
+    // ...and the sweep still sizes and lands, because the probe carries the whole balance.
+    const signer = { address: account.address, publicClient, walletClient } as never;
+    const sweep = await prepareNativeSweep(signer, CONTRACT_TO);
+    expect(sweep.amount).toBeGreaterThan(parseEther("0.99"));
+
+    const hash = await sendEvm(signer, ETH, CONTRACT_TO, sweep.amount, sweep.fees);
+    expect((await publicClient.waitForTransactionReceipt({ hash })).status).toBe("success");
+    expect(await publicClient.getBalance({ address: CONTRACT_TO as `0x${string}` })).toBe(sweep.amount);
+  }, 60_000);
+});
