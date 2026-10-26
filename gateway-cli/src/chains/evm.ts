@@ -328,6 +328,9 @@ const SWEEP_GAS_LIMIT_BUFFER_PERCENT = 20n;
  */
 const SWEEP_L1_FEE_MULTIPLIER = 2n;
 
+/** Gas ceiling used to top up the sender in the estimate's state override, never charged. */
+const TRANSACTION_GAS_CEILING = 1_000_000n;
+
 /** Spendable native amount for a sweep: balance minus the exact gas cost of one transfer. */
 export function nativeSweepAmount(balance: bigint, maxFeePerGas: bigint, gasLimit: bigint = TRANSFER_GAS_LIMIT): bigint {
   const cost = gasLimit * maxFeePerGas;
@@ -359,11 +362,41 @@ async function estimateSweepL1Fee(
   account: `0x${string}`,
   to: `0x${string}`,
 ): Promise<bigint> {
-  const oracle = (chain.contracts?.gasPriceOracle as Record<number, { address: `0x${string}` } | undefined> | undefined)?.[chain.id];
-  if (!oracle) return 0n;
+  // viem keeps the predeploy flat on the chain's contracts map (`contracts.gasPriceOracle.address`),
+  // not keyed by chain id — mirror `getChainContractAddress` rather than indexing by chain.id.
+  const oracle = (chain.contracts as Record<string, { address?: `0x${string}` } | undefined> | undefined)?.gasPriceOracle;
+  if (!oracle?.address) return 0n;
   // The CLI's chain objects are the SDK's augmented configs; structurally they are viem chains.
   const fee = await estimateL1Fee(publicClient, { account, to, chain: chain as Chain, gasPriceOracleAddress: oracle.address });
   return fee * SWEEP_L1_FEE_MULTIPLIER;
+}
+
+/**
+ * Gas for the transfer, probed at the whole balance with the sender's balance overridden so the
+ * node's allowance check passes. Simulating a realistic nonzero value means a recipient that
+ * rejects zero-value or below-minimum deposits still estimates, and it sizes the worst case.
+ * RPCs without state overrides fall back to a zero-value probe; the estimate at the amount
+ * actually sent (below) is authoritative either way.
+ */
+async function probeSweepGas(
+  publicClient: EvmSigner['publicClient'],
+  account: `0x${string}`,
+  to: `0x${string}`,
+  balance: bigint,
+  feePerGas: bigint,
+): Promise<bigint> {
+  try {
+    return await publicClient.estimateGas({
+      account,
+      to,
+      value: balance,
+      stateOverride: [{ address: account, balance: balance + TRANSACTION_GAS_CEILING * feePerGas }],
+    });
+  } catch {
+    // RPC without state overrides: a node that does not attach the fee cap to the estimate
+    // accepts the real value, one that does not accepts neither.
+    return publicClient.estimateGas({ account, to, value: balance }).catch(() => publicClient.estimateGas({ account, to, value: 0n }));
+  }
 }
 
 /**
@@ -390,9 +423,8 @@ export async function prepareNativeSweep(signer: EvmSigner, to: string): Promise
   const baseFee = block.baseFeePerGas;
   const feePerGas = baseFee != null ? baseFee * SWEEP_BASE_FEE_MULTIPLIER + maxPriorityFeePerGas : feeData.gasPrice ?? 0n;
 
-  // First estimate with no value: a node rejects eth_estimateGas when value cannot cover the
-  // value plus the gas it would allow, and the amount to send is not known until gas is.
-  const probe = await publicClient.estimateGas({ account, to: recipient, value: 0n });
+  // Probe the worst-case transfer first: the amount to send is not known until gas is.
+  const probe = await probeSweepGas(publicClient, account.address, recipient, balance, feePerGas);
   const l1Fee = await estimateSweepL1Fee(publicClient, chain, account.address, recipient);
 
   const spendable = (gas: bigint) => {

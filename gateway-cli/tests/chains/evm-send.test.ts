@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { encodeFunctionData, erc20Abi } from "viem";
+import { getChainConfig } from "@gobob/bob-sdk";
 import { nativeSweepAmount, buildUnsignedEvmTx, prepareNativeSweep, sendEvm } from "../../src/chains/evm.js";
 import type { EvmSigner } from "../../src/chains/index.js";
 import type { ResolvedAsset } from "../../src/util/input-resolver.js";
@@ -8,11 +9,16 @@ const TO = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
 const FROM = "0x1111111111111111111111111111111111111111";
 const USDC: ResolvedAsset = { chain: "base", address: "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913", symbol: "USDC", decimals: 6 };
 const ETH: ResolvedAsset = { chain: "base", address: "0x0000000000000000000000000000000000000000", symbol: "ETH", decimals: 18 };
+// Real chain configs: the OP-stack predeploys live flat on `contracts`, which is exactly the shape
+// the L1-fee lookup has to read.
+const BASE = getChainConfig("base");
+const ETHEREUM = getChainConfig("ethereum");
 
 describe("nativeSweepAmount", () => {
   it("deducts exactly 21000 * maxFeePerGas", () => {
     expect(nativeSweepAmount(1_000_000n, 10n)).toBe(1_000_000n - 21_000n * 10n);
   });
+
   it("returns 0 when the gas cost exceeds the balance", () => {
     expect(nativeSweepAmount(100n, 10n)).toBe(0n);
   });
@@ -25,35 +31,42 @@ const BASE_FEE = 10_000_000_000n;
 const SWEEP_CAP = BASE_FEE * 2n + TIP;
 const ESTIMATE_GAS = 21_000n;
 const PINNED_GAS = ESTIMATE_GAS + (ESTIMATE_GAS * 20n) / 100n;
-const ORACLE = "0x420000000000000000000000000000000000000F";
+const ORACLE = BASE.contracts.gasPriceOracle.address;
 const L1_FEE = 1_000n;
 
 interface FakeOptions {
   balance?: bigint;
   feeData?: unknown;
   block?: unknown;
+  chain?: unknown;
   /** Gas the node reports for a transfer, optionally as a function of the value simulated. */
   gas?: bigint | ((value: bigint) => bigint);
-  /** Chain contracts map; base-like (OP-stack) by default? No: plain chain unless asked. */
-  contracts?: Record<string, unknown>;
+  /** Mirror a contract recipient whose receive/fallback rejects zero-value calls. */
+  rejectZeroValue?: boolean;
   l1Fee?: bigint;
 }
 
 /**
  * Minimal stand-in for an EvmSigner that behaves like a node where it matters: `estimateGas`
- * enforces the same allowance rule geth/reth/anvil do (value + gas * fee cap <= balance), so
- * simulating with the whole balance as value fails here exactly as it fails in production.
+ * enforces the allowance rule geth/reth/anvil do (value + gas * fee cap <= balance, against the
+ * caller's balance *after* any state override), and can refuse zero-value calls the way a
+ * deposit contract does.
  */
 function fakeSigner(opts: FakeOptions = {}) {
   const balance = opts.balance ?? BALANCE;
   const feeData = opts.feeData ?? { maxPriorityFeePerGas: TIP };
   const block = opts.block ?? { baseFeePerGas: BASE_FEE };
+  const chain = opts.chain ?? ETHEREUM;
   const gasFor = (value: bigint) => (typeof opts.gas === "function" ? opts.gas(value) : opts.gas ?? ESTIMATE_GAS);
 
-  const estimateGas = vi.fn(async (args: { value?: bigint }) => {
+  const estimateGas = vi.fn(async (args: { value?: bigint; stateOverride?: { address: string; balance: bigint }[] }) => {
     const value = args.value ?? 0n;
-    if (value + ESTIMATE_GAS * SWEEP_CAP > balance) {
+    const overridden = args.stateOverride?.find(o => o.address.toLowerCase() === FROM.toLowerCase())?.balance;
+    if (value + ESTIMATE_GAS * SWEEP_CAP > (overridden ?? balance)) {
       throw new Error("insufficient funds for gas * price + value");
+    }
+    if (opts.rejectZeroValue && value === 0n) {
+      throw new Error("execution reverted: minimum deposit");
     }
     return gasFor(value);
   });
@@ -61,12 +74,7 @@ function fakeSigner(opts: FakeOptions = {}) {
   const sendTransaction = vi.fn().mockResolvedValue(`0x${"ab".repeat(32)}`);
   const signer = {
     address: FROM,
-    walletClient: {
-      account: { address: FROM },
-      chain: { id: 8453, contracts: opts.contracts },
-      sendTransaction,
-      writeContract: vi.fn(),
-    },
+    walletClient: { account: { address: FROM }, chain, sendTransaction, writeContract: vi.fn() },
     publicClient: {
       getBalance: vi.fn().mockResolvedValue(balance),
       estimateFeesPerGas: vi.fn().mockResolvedValue(feeData),
@@ -76,7 +84,8 @@ function fakeSigner(opts: FakeOptions = {}) {
       request: vi.fn(async () => `0x${(opts.l1Fee ?? 0n).toString(16).padStart(64, "0")}`),
     },
   } as unknown as EvmSigner;
-  return { signer, sendTransaction, publicClient: (signer as any).publicClient, estimateGas };
+
+  return { signer, sendTransaction, publicClient: (signer as unknown as { publicClient: Record<string, any> }).publicClient, estimateGas };
 }
 
 describe("prepareNativeSweep", () => {
@@ -88,16 +97,35 @@ describe("prepareNativeSweep", () => {
     expect(sweep.amount).toBe(BALANCE - PINNED_GAS * SWEEP_CAP);
     // Sized so value + gas * fee cap can never exceed the balance, whatever viem does later.
     expect(sweep.amount + sweep.fees.gas * SWEEP_CAP).toBeLessThanOrEqual(BALANCE);
-    // Never simulate the whole balance: a node rejects that estimate for insufficient funds.
-    expect(estimateGas.mock.calls[0][0]).toMatchObject({ to: TO, value: 0n });
-    const simulatedValue = estimateGas.mock.calls[1][0].value as bigint;
-    expect(simulatedValue > 0n).toBe(true);
-    expect(simulatedValue + ESTIMATE_GAS * SWEEP_CAP).toBeLessThanOrEqual(BALANCE);
+  });
+
+  it("probes with the whole balance while topping the sender up, so the node's allowance check passes", async () => {
+    const { signer, estimateGas } = fakeSigner();
+    await prepareNativeSweep(signer, TO);
+
+    const probe = estimateGas.mock.calls[0][0];
+    expect(probe.value).toBe(BALANCE);
+    expect(probe.stateOverride).toEqual([{ address: FROM, balance: expect.any(BigInt) }]);
+    expect(probe.stateOverride![0].balance).toBeGreaterThan(BALANCE);
+
+    // The second estimate runs at the amount that will actually be sent, over the real balance.
+    const sent = estimateGas.mock.calls[1][0];
+    expect(sent.value).toBeGreaterThan(0n);
+    expect(sent.stateOverride).toBeUndefined();
+    expect((sent.value as bigint) + ESTIMATE_GAS * SWEEP_CAP).toBeLessThanOrEqual(BALANCE);
+  });
+
+  it("does not abort a sweep to a recipient that rejects zero-value calls", async () => {
+    const { signer } = fakeSigner({ rejectZeroValue: true });
+    const sweep = await prepareNativeSweep(signer, TO);
+
+    expect(sweep.amount).toBe(BALANCE - PINNED_GAS * SWEEP_CAP);
+    expect(sweep.fees.gas).toBe(PINNED_GAS);
   });
 
   it("re-estimates at the swept value and buffers, so a value-sensitive recipient cannot run short", async () => {
-    // A recipient that spends more gas the larger the value it receives: a single estimate at
-    // value 0 (25000) would pin an insufficient limit for the ~1 ETH transfer it actually gets.
+    // A recipient that spends more gas the larger the value it receives: a single estimate at a
+    // small value (25000) would pin an insufficient limit for the ~1 ETH transfer it actually gets.
     const { signer, estimateGas } = fakeSigner({ gas: value => (value > 500_000_000_000_000_000n ? 40_000n : 25_000n) });
     const sweep = await prepareNativeSweep(signer, TO);
 
@@ -115,10 +143,7 @@ describe("prepareNativeSweep", () => {
   });
 
   it("reserves the L1 data fee on OP-stack chains", async () => {
-    const { signer, publicClient } = fakeSigner({
-      contracts: { gasPriceOracle: { 8453: { address: ORACLE } } },
-      l1Fee: L1_FEE,
-    });
+    const { signer, publicClient } = fakeSigner({ chain: BASE, l1Fee: L1_FEE });
     const sweep = await prepareNativeSweep(signer, TO);
 
     // The oracle's quote is reserved twice (L1 gas price can move before inclusion).
@@ -129,8 +154,23 @@ describe("prepareNativeSweep", () => {
     expect(sweep.amount).toBe(BALANCE - PINNED_GAS * SWEEP_CAP - L1_FEE * 2n);
   });
 
+  // The real chain configs, so a lookup that silently finds nothing (the regression this
+  // guards) fails here instead of shipping as a zero reserve on every OP-stack chain.
+  it.each(["base", "optimism", "bob", "unichain", "soneium", "ethereum", "arbitrum", "bsc"])(
+    "reserves the L1 fee on %s exactly when its config has a GasPriceOracle",
+    async chainName => {
+      const chain = getChainConfig(chainName);
+      const { signer, publicClient } = fakeSigner({ chain, l1Fee: L1_FEE });
+      const sweep = await prepareNativeSweep(signer, TO);
+      const hasOracle = Boolean(chain.contracts?.gasPriceOracle);
+
+      expect(publicClient.request).toHaveBeenCalledTimes(hasOracle ? 1 : 0);
+      expect(sweep.amount).toBe(BALANCE - PINNED_GAS * SWEEP_CAP - (hasOracle ? L1_FEE * 2n : 0n));
+    },
+  );
+
   it("does not reserve an L1 fee on chains with no GasPriceOracle", async () => {
-    const { signer, publicClient } = fakeSigner({ l1Fee: L1_FEE });
+    const { signer, publicClient } = fakeSigner({ chain: ETHEREUM, l1Fee: L1_FEE });
     const sweep = await prepareNativeSweep(signer, TO);
     expect(publicClient.request).not.toHaveBeenCalled();
     expect(sweep.amount).toBe(BALANCE - PINNED_GAS * SWEEP_CAP);
@@ -172,11 +212,13 @@ describe("buildUnsignedEvmTx", () => {
     const tx = buildUnsignedEvmTx(ETH, TO, 500n, FROM, 8453);
     expect(tx).toEqual({ from: FROM, to: TO, value: "500", data: "0x", chainId: 8453 });
   });
+
   it("builds an ERC20 transfer with encoded calldata and zero value", () => {
     const tx = buildUnsignedEvmTx(USDC, TO, 500n, FROM, 8453);
     const expectedData = encodeFunctionData({ abi: erc20Abi, functionName: "transfer", args: [TO as `0x${string}`, 500n] });
     expect(tx).toEqual({ from: FROM, to: USDC.address, value: "0", data: expectedData, chainId: 8453 });
   });
+
   it("carries the fees a swept amount was sized against", () => {
     const tx = buildUnsignedEvmTx(ETH, TO, 500n, FROM, 8453, { gas: PINNED_GAS, maxFeePerGas: SWEEP_CAP, maxPriorityFeePerGas: TIP });
     expect(tx).toEqual({
@@ -184,6 +226,7 @@ describe("buildUnsignedEvmTx", () => {
       gas: PINNED_GAS.toString(), maxFeePerGas: SWEEP_CAP.toString(), maxPriorityFeePerGas: TIP.toString(),
     });
   });
+
   it("carries gasPrice when the sweep was priced on a legacy chain", () => {
     const tx = buildUnsignedEvmTx(ETH, TO, 500n, FROM, 8453, { gas: PINNED_GAS, gasPrice: 20_000_000_000n });
     expect(tx).toMatchObject({ gas: PINNED_GAS.toString(), gasPrice: "20000000000" });
