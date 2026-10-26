@@ -1,4 +1,5 @@
 import { createPublicClient, createWalletClient, http, erc20Abi, isAddress, isAddressEqual, isHex, encodeFunctionData, type WalletClient, type PublicClient, type Hex, type Chain } from 'viem';
+import { estimateL1Fee } from 'viem/op-stack';
 import { privateKeyToAccount } from 'viem/accounts';
 import { supportedChainsMapping, getChainConfig } from '@gobob/bob-sdk';
 import tokenlistJson from '@gobob/tokenlist/tokenlist.json';
@@ -314,10 +315,28 @@ const TRANSFER_GAS_LIMIT = 21_000n;
  */
 const SWEEP_BASE_FEE_MULTIPLIER = 2n;
 
+/**
+ * Gas-limit headroom over the node's estimate. A recipient's gas can depend on the value it
+ * receives, and the estimate is taken before the swept amount is final, so pin a limit above it.
+ * Unused gas is refunded, so this costs nothing.
+ */
+const SWEEP_GAS_LIMIT_BUFFER_PERCENT = 20n;
+
+/**
+ * L1 data-fee headroom on OP-stack chains: the GasPriceOracle quotes at the current L1 gas
+ * price, which can move before inclusion.
+ */
+const SWEEP_L1_FEE_MULTIPLIER = 2n;
+
 /** Spendable native amount for a sweep: balance minus the exact gas cost of one transfer. */
 export function nativeSweepAmount(balance: bigint, maxFeePerGas: bigint, gasLimit: bigint = TRANSFER_GAS_LIMIT): bigint {
   const cost = gasLimit * maxFeePerGas;
   return balance > cost ? balance - cost : 0n;
+}
+
+/** Gas limit to pin: the node's estimate plus headroom. */
+function withGasBuffer(gas: bigint): bigint {
+  return gas + (gas * SWEEP_GAS_LIMIT_BUFFER_PERCENT) / 100n;
 }
 
 /** Fees pinned on a native sweep, so the broadcast cannot re-price above the sized amount. */
@@ -331,6 +350,23 @@ export interface NativeSweep {
 }
 
 /**
+ * L1 data fee reserved out of an OP-stack sweep, with headroom. Zero on chains without a
+ * GasPriceOracle predeploy, which is every chain where the L1 fee is not charged separately.
+ */
+async function estimateSweepL1Fee(
+  publicClient: EvmSigner['publicClient'],
+  chain: NonNullable<EvmSigner['walletClient']['chain']>,
+  account: `0x${string}`,
+  to: `0x${string}`,
+): Promise<bigint> {
+  const oracle = (chain.contracts?.gasPriceOracle as Record<number, { address: `0x${string}` } | undefined> | undefined)?.[chain.id];
+  if (!oracle) return 0n;
+  // The CLI's chain objects are the SDK's augmented configs; structurally they are viem chains.
+  const fee = await estimateL1Fee(publicClient, { account, to, chain: chain as Chain, gasPriceOracleAddress: oracle.address });
+  return fee * SWEEP_L1_FEE_MULTIPLIER;
+}
+
+/**
  * Size and price a native sweep from a single balance/fee/gas read.
  * The same fee cap and gas limit are pinned on the send (see `sendEvm`), otherwise viem
  * re-estimates fees at broadcast time and a base-fee tick rejects the sweep for
@@ -340,32 +376,68 @@ export async function prepareNativeSweep(signer: EvmSigner, to: string): Promise
   const { publicClient, walletClient } = signer;
   const account = walletClient.account!;
   const chain = walletClient.chain!;
+  const recipient = to as `0x${string}`;
 
   const [balance, feeData, block] = await Promise.all([
     publicClient.getBalance({ address: account.address }),
     publicClient.estimateFeesPerGas({ chain }),
-    publicClient.getBlock({ chain, blockTag: 'latest' }),
+    publicClient.getBlock({ blockTag: 'latest' }),
   ]);
-  // Worst case for the transfer: the whole balance moves, so per-value branching in a
-  // contract recipient is simulated at the top of its range. Simple transfers return 21000.
-  const gas = await publicClient.estimateGas({ account, chain, to: to as `0x${string}`, value: balance });
 
   // EIP-1559 chains price off maxFeePerGas, rebuilt from the block's base fee so the cap
   // carries headroom; legacy chains only expose gasPrice and take viem's estimate as-is.
-  if (block.baseFeePerGas != null) {
-    const maxPriorityFeePerGas = feeData.maxPriorityFeePerGas ?? 0n;
-    const maxFeePerGas = block.baseFeePerGas * SWEEP_BASE_FEE_MULTIPLIER + maxPriorityFeePerGas;
-    const fees: NativeSweepFees = { gas, maxFeePerGas, maxPriorityFeePerGas };
-    return { amount: nativeSweepAmount(balance, maxFeePerGas, gas), fees };
-  }
-  const gasPrice = feeData.gasPrice ?? 0n;
-  return { amount: nativeSweepAmount(balance, gasPrice, gas), fees: { gas, gasPrice } };
+  const maxPriorityFeePerGas = feeData.maxPriorityFeePerGas ?? 0n;
+  const baseFee = block.baseFeePerGas;
+  const feePerGas = baseFee != null ? baseFee * SWEEP_BASE_FEE_MULTIPLIER + maxPriorityFeePerGas : feeData.gasPrice ?? 0n;
+
+  // First estimate with no value: a node rejects eth_estimateGas when value cannot cover the
+  // value plus the gas it would allow, and the amount to send is not known until gas is.
+  const probe = await publicClient.estimateGas({ account, to: recipient, value: 0n });
+  const l1Fee = await estimateSweepL1Fee(publicClient, chain, account.address, recipient);
+
+  const spendable = (gas: bigint) => {
+    const l2Spendable = nativeSweepAmount(balance, feePerGas, gas);
+    return l2Spendable > l1Fee ? l2Spendable - l1Fee : 0n;
+  };
+
+  // Second estimate at the amount that will actually be sent: a recipient whose gas depends on
+  // the value received is then simulated for the real transfer rather than the whole balance.
+  const estimated = await publicClient.estimateGas({ account, to: recipient, value: spendable(withGasBuffer(probe)) });
+  const gas = withGasBuffer(estimated > probe ? estimated : probe);
+  const fees: NativeSweepFees = baseFee != null
+    ? { gas, maxFeePerGas: feePerGas, maxPriorityFeePerGas }
+    : { gas, gasPrice: feePerGas };
+
+  return { amount: spendable(gas), fees };
 }
 
-/** Build unsigned EVM tx params for native or ERC20 transfer (for --unsigned output). */
-export function buildUnsignedEvmTx(asset: ResolvedAsset, to: string, amount: bigint, from: string, chainId: number) {
+/** Fees as decimal strings, so an external signer can pin exactly what the sweep was sized against. */
+function serializedFees(fees?: NativeSweepFees) {
+  if (!fees) return {};
+  if ("maxFeePerGas" in fees) {
+    return {
+      gas: fees.gas.toString(),
+      maxFeePerGas: fees.maxFeePerGas.toString(),
+      ...(fees.maxPriorityFeePerGas === undefined ? {} : { maxPriorityFeePerGas: fees.maxPriorityFeePerGas.toString() }),
+    };
+  }
+  return { gas: fees.gas.toString(), gasPrice: fees.gasPrice.toString() };
+}
+
+/**
+ * Build unsigned EVM tx params for native or ERC20 transfer (for --unsigned output).
+ * `sweepFees` is emitted with a swept amount so the external signer cannot re-price it away.
+ */
+export function buildUnsignedEvmTx(
+  asset: ResolvedAsset,
+  to: string,
+  amount: bigint,
+  from: string,
+  chainId: number,
+  sweepFees?: NativeSweepFees,
+) {
   if (isNativeToken(asset.address)) {
-    return { from, to, value: amount.toString(), data: "0x", chainId };
+    return { from, to, value: amount.toString(), data: "0x", chainId, ...serializedFees(sweepFees) };
   }
   const data = encodeFunctionData({ abi: erc20Abi, functionName: "transfer", args: [to as `0x${string}`, amount] });
   return { from, to: asset.address, value: "0", data, chainId };

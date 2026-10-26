@@ -116,7 +116,7 @@ export async function handleSend(opts: SendOptions, log: Logger): Promise<SendRe
       return { type: "unsigned", data: { unsigned: true, chain: asset.chain, asset: asset.symbol, amount: amount.toString(), to: opts.to, psbtBase64 } };
     }
     const from = senderAddress ?? zeroAddress;
-    const tx = buildUnsignedEvmTx(asset, opts.to, amount, from, CHAIN_IDS[asset.chain]);
+    const tx = buildUnsignedEvmTx(asset, opts.to, amount, from, CHAIN_IDS[asset.chain], sweep?.fees);
     return { type: "unsigned", data: { unsigned: true, chain: asset.chain, asset: asset.symbol, amount: amount.toString(), to: opts.to, tx } };
   }
 
