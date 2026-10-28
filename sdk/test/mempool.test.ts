@@ -19,6 +19,7 @@ const MOCKS = {
     txInfo: {
         txid: '82420f81f3d956b464dee4a1eb2bee4810d88140dfda2e67f0fc4e32996045c6',
         size: 223,
+        weight: 892,
         fee: 14200,
         status: {
             confirmed: false,
@@ -94,6 +95,7 @@ describe('Mempool Tests', () => {
                 txid: '111',
                 fee: 100_000,
                 size: 1000,
+                weight: 4000,
                 timestamp: 60 * 10,
                 status: {
                     confirmed: false,
@@ -103,6 +105,7 @@ describe('Mempool Tests', () => {
                 txid: '222',
                 fee: 80_000,
                 size: 1000,
+                weight: 4000,
                 timestamp: 3 * 60 * 10,
                 status: {
                     confirmed: false,
@@ -112,6 +115,7 @@ describe('Mempool Tests', () => {
                 txid: '333',
                 fee: 60_000,
                 size: 1000,
+                weight: 4000,
                 timestamp: 6 * 60 * 10,
                 status: {
                     confirmed: false,
@@ -121,6 +125,7 @@ describe('Mempool Tests', () => {
                 txid: '444',
                 fee: 40_000,
                 size: 1000,
+                weight: 4000,
                 timestamp: 144 * 60 * 10,
                 status: {
                     confirmed: false,
@@ -130,6 +135,7 @@ describe('Mempool Tests', () => {
                 txid: '555',
                 fee: 10_000,
                 size: 1000,
+                weight: 4000,
                 timestamp: Infinity,
                 status: {
                     confirmed: false,
@@ -139,10 +145,21 @@ describe('Mempool Tests', () => {
                 txid: '666',
                 fee: 1,
                 size: 1,
+                weight: 4,
                 timestamp: 0,
                 status: {
                     confirmed: true,
                     block_time: 1234,
+                },
+            },
+            {
+                txid: '777',
+                fee: 10_000,
+                size: 400,
+                weight: 1000,
+                timestamp: 144 * 60 * 10,
+                status: {
+                    confirmed: false,
                 },
             },
         ];
