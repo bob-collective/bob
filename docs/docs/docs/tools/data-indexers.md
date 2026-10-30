@@ -2,10 +2,10 @@
 
 ## Envio
 
-[Envio](https://envio.dev/?utm_source=bob&utm_medium=partner-docs) is a high-performance indexing framework that turns smart contract events into a queryable GraphQL API, with managed hosting on Envio Cloud.
+[Envio](https://envio.dev/?utm_source=bob&utm_medium=partner-docs) builds custom blockchain APIs and analytics. BOB developers can use HyperIndex to choose the contracts and events to track, write TypeScript handlers and query the result through a GraphQL API, then run it themselves or deploy to Envio Cloud.
 
-Envio's [HyperIndex](https://docs.envio.dev/docs/HyperIndex/overview?utm_source=bob&utm_medium=partner-docs) natively supports indexing any EVM chain out of the box, so you can index BOB today using RPC as the data source.
-Auto-generate an indexer from any verified contract with `pnpx envio init`, write handlers in TypeScript, JavaScript, or ReScript, and deploy on Envio Cloud or self-host.
+[HyperIndex](https://docs.envio.dev/docs/HyperIndex/overview?utm_source=bob&utm_medium=partner-docs) works with BOB using RPC as the data source.
+Auto-generate an indexer from any verified contract with `pnpx envio init`, write handlers in TypeScript, and deploy on Envio Cloud or self-host.
 See the [quickstart](https://docs.envio.dev/docs/HyperIndex/quickstart?utm_source=bob&utm_medium=partner-docs) and the [RPC data source guide](https://docs.envio.dev/docs/HyperIndex/rpc-sync?utm_source=bob&utm_medium=partner-docs) to get started.
 
 **Supported Networks**
