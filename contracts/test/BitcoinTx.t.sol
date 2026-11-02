@@ -110,7 +110,7 @@ contract BitcoinTxTest is Test {
     }
 
     function test_ProcessTxOutputsSingleOutputTransaction() public pure {
-        // tx api: https://btc-testnet.gobob.xyz/tx/b0fe4bd36b17be89f131c2e652578def3cc0c3d5aa9e7a3f972365a8dc46dba8
+        // tx api: https://mempool.space/testnet/api/tx/b0fe4bd36b17be89f131c2e652578def3cc0c3d5aa9e7a3f972365a8dc46dba8
         uint64 value =
             BitcoinTx.processTxOutputs(
             hex"01ab9ab90800000000160014d127b24a7e2aad2ddf21d4d940f6202158aa507d",
