@@ -44,4 +44,3 @@ Learn more about BOB's architecture:
 - **Testnet Chain ID**: 808813
 - **Testnet RPC**: https://bob-sepolia.rpc.gobob.xyz
 - **Testnet Explorer**: https://bob-sepolia.explorer.gobob.xyz/
-- **App**: https://bob-sepolia.gobob.xyz/
