@@ -48,6 +48,7 @@ import {
 
 export interface CreateOrderV4Request {
     gatewayQuoteV4: GatewayQuoteV4;
+    cFTurnstileResponse?: string | null;
 }
 
 export interface GetMaxSpendableV4Request {
@@ -79,6 +80,7 @@ export interface GetQuoteV4Request {
 
 export interface RegisterTxV4Request {
     registerTxV4: RegisterTxV4;
+    cFTurnstileResponse?: string | null;
 }
 
 /**
@@ -102,6 +104,10 @@ export class V4Api extends runtime.BaseAPI {
         const headerParameters: runtime.HTTPHeaders = {};
 
         headerParameters['Content-Type'] = 'application/json';
+
+        if (requestParameters['cFTurnstileResponse'] != null) {
+            headerParameters['CF-Turnstile-Response'] = String(requestParameters['cFTurnstileResponse']);
+        }
 
 
         let urlPath = `/v4/create-order`;
@@ -425,6 +431,10 @@ export class V4Api extends runtime.BaseAPI {
         const headerParameters: runtime.HTTPHeaders = {};
 
         headerParameters['Content-Type'] = 'application/json';
+
+        if (requestParameters['cFTurnstileResponse'] != null) {
+            headerParameters['CF-Turnstile-Response'] = String(requestParameters['cFTurnstileResponse']);
+        }
 
 
         let urlPath = `/v4/register-tx`;

@@ -85,6 +85,7 @@ models/RegisterTxV4.ts
 models/RegisterTxV4Onramp.ts
 models/ResolvedAffiliate.ts
 models/RouteInfo.ts
+models/RouteInfoV3.ts
 models/TokenSwapAffiliateV3.ts
 models/TronTxData.ts
 models/TxInfo.ts

@@ -24,7 +24,7 @@ import type {
   PaginatedOrdersResponseV3,
   RegisterTxSuccess,
   RegisterTxV3,
-  RouteInfo,
+  RouteInfoV3,
 } from '../models/index';
 import {
     GatewayCreateOrderV3FromJSON,
@@ -45,12 +45,13 @@ import {
     RegisterTxSuccessToJSON,
     RegisterTxV3FromJSON,
     RegisterTxV3ToJSON,
-    RouteInfoFromJSON,
-    RouteInfoToJSON,
+    RouteInfoV3FromJSON,
+    RouteInfoV3ToJSON,
 } from '../models/index';
 
 export interface CreateOrderV3Request {
     gatewayQuoteV3: GatewayQuoteV3;
+    cFTurnstileResponse?: string | null;
 }
 
 export interface GetMaxSpendableV3Request {
@@ -83,6 +84,7 @@ export interface GetQuoteV3Request {
 
 export interface RegisterTxV3Request {
     registerTxV3: RegisterTxV3;
+    cFTurnstileResponse?: string | null;
 }
 
 /**
@@ -107,6 +109,10 @@ export class V3Api extends runtime.BaseAPI {
         const headerParameters: runtime.HTTPHeaders = {};
 
         headerParameters['Content-Type'] = 'application/json';
+
+        if (requestParameters['cFTurnstileResponse'] != null) {
+            headerParameters['CF-Turnstile-Response'] = String(requestParameters['cFTurnstileResponse']);
+        }
 
 
         let urlPath = `/v3/create-order`;
@@ -401,7 +407,7 @@ export class V3Api extends runtime.BaseAPI {
     /**
      * Get all supported routes (v3).
      */
-    async getRoutesV3Raw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<RouteInfo>>> {
+    async getRoutesV3Raw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<RouteInfoV3>>> {
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -416,13 +422,13 @@ export class V3Api extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(RouteInfoFromJSON));
+        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(RouteInfoV3FromJSON));
     }
 
     /**
      * Get all supported routes (v3).
      */
-    async getRoutesV3(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<RouteInfo>> {
+    async getRoutesV3(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<RouteInfoV3>> {
         const response = await this.getRoutesV3Raw(initOverrides);
         return await response.value();
     }
@@ -443,6 +449,10 @@ export class V3Api extends runtime.BaseAPI {
         const headerParameters: runtime.HTTPHeaders = {};
 
         headerParameters['Content-Type'] = 'application/json';
+
+        if (requestParameters['cFTurnstileResponse'] != null) {
+            headerParameters['CF-Turnstile-Response'] = String(requestParameters['cFTurnstileResponse']);
+        }
 
 
         let urlPath = `/v3/register-tx`;

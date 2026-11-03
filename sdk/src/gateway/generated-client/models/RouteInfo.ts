@@ -32,6 +32,16 @@ export interface RouteInfo {
      */
     dstToken: string;
     /**
+     * The `CF-IPCountry` values whose callers may not use this route: ISO 3166-1 alpha-2 codes,
+     * plus `XX` (unknown) and `T1` (Tor). Present on tokenized stock and ETF routes only, so a
+     * caller listing routes on someone else's behalf, such as a server rendering for a browser, can
+     * withhold them from a visitor in one of these countries. A visitor whose country cannot be
+     * resolved at all is restricted too.
+     * @type {Array<string>}
+     * @memberof RouteInfo
+     */
+    restrictedCountries?: Array<string> | null;
+    /**
      * 
      * @type {string}
      * @memberof RouteInfo
@@ -68,6 +78,7 @@ export function RouteInfoFromJSONTyped(json: any, ignoreDiscriminator: boolean):
         
         'dstChain': json['dstChain'],
         'dstToken': json['dstToken'],
+        'restrictedCountries': json['restrictedCountries'] == null ? undefined : json['restrictedCountries'],
         'srcChain': json['srcChain'],
         'srcToken': json['srcToken'],
     };
@@ -86,6 +97,7 @@ export function RouteInfoToJSONTyped(value?: RouteInfo | null, ignoreDiscriminat
         
         'dstChain': value['dstChain'],
         'dstToken': value['dstToken'],
+        'restrictedCountries': value['restrictedCountries'],
         'srcChain': value['srcChain'],
         'srcToken': value['srcToken'],
     };

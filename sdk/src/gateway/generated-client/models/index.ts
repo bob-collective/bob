@@ -82,6 +82,7 @@ export * from './RegisterTxV4';
 export * from './RegisterTxV4Onramp';
 export * from './ResolvedAffiliate';
 export * from './RouteInfo';
+export * from './RouteInfoV3';
 export * from './TokenSwapAffiliateV3';
 export * from './TronTxData';
 export * from './TxInfo';

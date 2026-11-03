@@ -31,8 +31,9 @@ import {
 /**
  * V3 token-swap quote: the V2 shape plus a resolved `affiliate` and
  * `ownerAddress`. The quote *is* the create-order body, so both must round-trip
- * — the aggregator charges the affiliate on the source chain, and Bungee
- * refunds `ownerAddress` on a source-chain failure.
+ * — the aggregator charges the affiliate on the payment chain (destination for
+ * Across, source for Bungee/Velora), and Bungee refunds `ownerAddress` on a
+ * source-chain failure.
  * @export
  * @interface GatewayTokenSwapQuoteV3
  */

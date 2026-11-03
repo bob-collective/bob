@@ -18,7 +18,8 @@
  * @export
  */
 export const GatewayErrorCodeV4Variants = {
-    MissingRefundAddress: 'MISSING_REFUND_ADDRESS'
+    MissingRefundAddress: 'MISSING_REFUND_ADDRESS',
+    CaptchaVerificationFailed: 'CAPTCHA_VERIFICATION_FAILED'
 } as const;
 export type GatewayErrorCodeV4Variants = typeof GatewayErrorCodeV4Variants[keyof typeof GatewayErrorCodeV4Variants];
 
