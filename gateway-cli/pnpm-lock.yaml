@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@gobob/bob-sdk':
-        specifier: ^6.5.0
-        version: 6.5.0(typescript@5.9.3)(zod@4.3.6)
+        specifier: ^6.6.0
+        version: 6.6.0(typescript@5.9.3)(zod@4.3.6)
       '@gobob/tokenlist':
         specifier: github:bob-collective/tokenlist#1c19e45084477a201089d2afceba26193f08b65a
         version: https://codeload.github.com/bob-collective/tokenlist/tar.gz/1c19e45084477a201089d2afceba26193f08b65a(typescript@5.9.3)(zod@4.3.6)
@@ -21,8 +21,8 @@ importers:
         specifier: ^7.1.1
         version: 7.1.1
       viem:
-        specifier: 2.55.19
-        version: 2.55.19(typescript@5.9.3)(zod@4.3.6)
+        specifier: 2.57.3
+        version: 2.57.3(typescript@5.9.3)(zod@4.3.6)
       zod:
         specifier: ^4.3.6
         version: 4.3.6
@@ -207,8 +207,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@gobob/bob-sdk@6.5.0':
-    resolution: {integrity: sha512-CoRYuDWZf+QfC+4RQN69jfgnNGkZh2vlaa72YU2YcaeWbqu+0pCIk/c6hmbr7gDz4FPmLVbiLOlNWb3axQyl/Q==}
+  '@gobob/bob-sdk@6.6.0':
+    resolution: {integrity: sha512-N2G9LtZHh5/pbjUFvx0/7jfMQDuZzMG7v8kL8nNRv0qaD/6XKRZ15Zh3TCbM9TE35Mzs75f6Pg+T61vGJv2mow==}
 
   '@gobob/tokenlist@https://codeload.github.com/bob-collective/tokenlist/tar.gz/1c19e45084477a201089d2afceba26193f08b65a':
     resolution: {integrity: sha512-qvP9aNH4K+JNds7PPSwEVm6q4LN1TtAUKuKdCHdilu0Tnjov1dWXNibneAsleGDr0dCFLAodqN6iDMGRNkxNmw==, tarball: https://codeload.github.com/bob-collective/tokenlist/tar.gz/1c19e45084477a201089d2afceba26193f08b65a}
@@ -587,16 +587,8 @@ packages:
     resolution: {integrity: sha512-XrsrhT5sybtKI6wakr2SPOlGZWWYbUXZ7a0jT8/QOeAPau+1X/bSegNe5YR75oJmEZQbKningirmGOEJCIk61Q==}
     engines: {node: '>=12.20.0'}
 
-  ox@0.14.34:
-    resolution: {integrity: sha512-12seOIk7dv8eAoGQhcWaeKZxNz304IVcDvb9U5Y7JZAEVe21Nm1YMxLjhWah+su5BD4Omx4Zz0z5x3ij9M4GYQ==}
-    peerDependencies:
-      typescript: '>=5.4.0'
-    peerDependenciesMeta:
-      typescript:
-        optional: true
-
-  ox@0.14.44:
-    resolution: {integrity: sha512-O54qXXHEk4ySamMSyBpI0AeBegS5frxU6+LA6Jb9Sf6kMOxcTNaxYmwZfpOu22DIQsdKfgQxHq8EsAGaoBQScA==}
+  ox@0.14.45:
+    resolution: {integrity: sha512-jpsQ+p0JZh9mKCxxzxz0d5qFHZZg2/O9xW18IpEC/dNXXPVqmDJ0c//9RMz0CILkbSGPA42+cbU0fC/ghwJ03w==}
     peerDependencies:
       typescript: '>=5.4.0'
     peerDependenciesMeta:
@@ -687,16 +679,8 @@ packages:
   varuint-bitcoin@1.1.2:
     resolution: {integrity: sha512-4EVb+w4rx+YfVM32HQX42AbbT7/1f5zwAYhIujKXKk8NQK+JfRVl3pqT3hjNn/L+RstigmGGKVwHA/P0wgITZw==}
 
-  viem@2.55.19:
-    resolution: {integrity: sha512-4QPIX0eYPLsOBk53NKswVMkQoxuP7GlOBnB4wM6dkDokREO4QENNc3bmyPKK1PBTViXh0TPJCHLjIuU20Qi3fg==}
-    peerDependencies:
-      typescript: '>=5.0.4'
-    peerDependenciesMeta:
-      typescript:
-        optional: true
-
-  viem@2.56.5:
-    resolution: {integrity: sha512-GuEf/oee0PHgy4D6JIA8u0rY1g+sM5nF+p7HyMHO3vjlHC5G/ljfrgnUOnrES9m5Ny/P3RwWCHjDuN2T6HUWzQ==}
+  viem@2.57.3:
+    resolution: {integrity: sha512-441q6Z42ZU7+mTJrYAjQsBpVWK76nyGQcKOCGT6hp+tBpw1XsnTIgKaqZFLTaW5xmBN1ummEFgzFWmR05FISTg==}
     peerDependencies:
       typescript: '>=5.0.4'
     peerDependenciesMeta:
@@ -893,7 +877,7 @@ snapshots:
   '@esbuild/win32-x64@0.28.2':
     optional: true
 
-  '@gobob/bob-sdk@6.5.0(typescript@5.9.3)(zod@4.3.6)':
+  '@gobob/bob-sdk@6.6.0(typescript@5.9.3)(zod@4.3.6)':
     dependencies:
       '@bitcoinerlab/secp256k1': 1.2.0
       '@scure/base': 1.2.6
@@ -903,7 +887,7 @@ snapshots:
       bitcoinjs-lib: 6.1.7
       global: 4.4.0
       globals: 17.4.0
-      viem: 2.55.19(typescript@5.9.3)(zod@4.3.6)
+      viem: 2.57.3(typescript@5.9.3)(zod@4.3.6)
     transitivePeerDependencies:
       - bufferutil
       - typescript
@@ -913,7 +897,7 @@ snapshots:
   '@gobob/tokenlist@https://codeload.github.com/bob-collective/tokenlist/tar.gz/1c19e45084477a201089d2afceba26193f08b65a(typescript@5.9.3)(zod@4.3.6)':
     dependencies:
       '@scure/base': 2.4.0
-      viem: 2.56.5(typescript@5.9.3)(zod@4.3.6)
+      viem: 2.57.3(typescript@5.9.3)(zod@4.3.6)
     transitivePeerDependencies:
       - bufferutil
       - typescript
@@ -1238,22 +1222,7 @@ snapshots:
 
   obug@2.2.1: {}
 
-  ox@0.14.34(typescript@5.9.3)(zod@4.3.6):
-    dependencies:
-      '@adraffy/ens-normalize': 1.11.1
-      '@noble/ciphers': 1.3.0
-      '@noble/curves': 1.9.1
-      '@noble/hashes': 1.8.0
-      '@scure/bip32': 1.7.0
-      '@scure/bip39': 1.6.0
-      abitype: 1.2.3(typescript@5.9.3)(zod@4.3.6)
-      eventemitter3: 5.0.1
-    optionalDependencies:
-      typescript: 5.9.3
-    transitivePeerDependencies:
-      - zod
-
-  ox@0.14.44(typescript@5.9.3)(zod@4.3.6):
+  ox@0.14.45(typescript@5.9.3)(zod@4.3.6):
     dependencies:
       '@adraffy/ens-normalize': 1.11.1
       '@noble/ciphers': 1.3.0
@@ -1351,7 +1320,7 @@ snapshots:
     dependencies:
       safe-buffer: 5.2.1
 
-  viem@2.55.19(typescript@5.9.3)(zod@4.3.6):
+  viem@2.57.3(typescript@5.9.3)(zod@4.3.6):
     dependencies:
       '@noble/curves': 1.9.1
       '@noble/hashes': 1.8.0
@@ -1359,24 +1328,7 @@ snapshots:
       '@scure/bip39': 1.6.0
       abitype: 1.2.3(typescript@5.9.3)(zod@4.3.6)
       isows: 1.0.7(ws@8.21.0)
-      ox: 0.14.34(typescript@5.9.3)(zod@4.3.6)
-      ws: 8.21.0
-    optionalDependencies:
-      typescript: 5.9.3
-    transitivePeerDependencies:
-      - bufferutil
-      - utf-8-validate
-      - zod
-
-  viem@2.56.5(typescript@5.9.3)(zod@4.3.6):
-    dependencies:
-      '@noble/curves': 1.9.1
-      '@noble/hashes': 1.8.0
-      '@scure/bip32': 1.7.0
-      '@scure/bip39': 1.6.0
-      abitype: 1.2.3(typescript@5.9.3)(zod@4.3.6)
-      isows: 1.0.7(ws@8.21.0)
-      ox: 0.14.44(typescript@5.9.3)(zod@4.3.6)
+      ox: 0.14.45(typescript@5.9.3)(zod@4.3.6)
       ws: 8.21.0
     optionalDependencies:
       typescript: 5.9.3
