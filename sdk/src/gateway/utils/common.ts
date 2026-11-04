@@ -1,5 +1,5 @@
 import * as bitcoin from 'bitcoinjs-lib';
-import { createPublicClient, formatUnits, http, parseUnits, Chain as ViemChain } from 'viem';
+import { createPublicClient, formatUnits, http, parseUnits, PublicClient, Chain as ViemChain } from 'viem';
 import {
     avalanche,
     base,
@@ -38,7 +38,7 @@ export function slugify(str: string): string {
         .replace(/[^\w-]+/g, '');
 }
 
-export function viemClient(chain: ViemChain) {
+export function viemClient(chain: ViemChain): PublicClient<ReturnType<typeof http>, ViemChain> {
     return createPublicClient({ chain, transport: http() });
 }
 

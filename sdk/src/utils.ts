@@ -5,15 +5,15 @@ import { Block } from 'bitcoinjs-lib';
 /**
  * @ignore
  */
-import { BufferWriter, varuint } from 'bitcoinjs-lib/src/bufferutils';
+import { BufferWriter, varuint } from 'bitcoinjs-lib/src/bufferutils.js';
 /**
  * @ignore
  */
-import { hash256 } from 'bitcoinjs-lib/src/crypto';
+import { hash256 } from 'bitcoinjs-lib/src/crypto.js';
 /**
  * @ignore
  */
-import { Output, Transaction } from 'bitcoinjs-lib/src/transaction';
+import { Output, Transaction } from 'bitcoinjs-lib/src/transaction.js';
 /**
  * @ignore
  */

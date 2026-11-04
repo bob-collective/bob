@@ -11,11 +11,12 @@
         "test": "vitest run test/*.ts",
         "deploy-relay": "ts-node src/scripts/relay-genesis.ts",
         "update-relay": "ts-node src/scripts/relay-retarget.ts",
-        "build": "tsc -p tsconfig.json",
+        "build": "tsc -p tsconfig.json && node scripts/build-esm.mjs",
         "lint": "eslint .",
         "format": "prettier --write examples src test",
         "format:check": "prettier --check examples src test",
-        "codegen": "rm -rf ./src/gateway/generated-client && npx @openapitools/openapi-generator-cli generate --skip-validate-spec -g typescript-fetch -i $OPEN_API_SPEC_URL -o ./src/gateway/generated-client --global-property=apiDocs=false,modelDocs=false"
+        "codegen": "rm -rf ./src/gateway/generated-client && npx @openapitools/openapi-generator-cli generate --skip-validate-spec -g typescript-fetch -i $OPEN_API_SPEC_URL -o ./src/gateway/generated-client --global-property=apiDocs=false,modelDocs=false",
+        "test:package": "pnpm build && node --test scripts/package.test.mjs"
     },
     "files": [
         "dist/**/*",
@@ -58,5 +59,7 @@
         "global": "^4.4.0",
         "globals": "^17.4.0",
         "viem": "2.57.3"
-    }
+    },
+    "module": "dist/esm/index.js",
+    "sideEffects": false
 }
