@@ -123,7 +123,7 @@ OP_NODE_METRICS_ADDR=127.0.0.1
 ```yml title="docker-compose.yml"
 services:
   op-reth:
-    image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-reth:v2.4.4
+    image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-reth:v2.8.1
     command:
       - node
       - --chain=/data/genesis.json
