@@ -52,10 +52,8 @@ To get testnet ETH for BOB Sepolia:
    - [Alchemy Sepolia Faucet](https://sepoliafaucet.com/)
    - [Infura Sepolia Faucet](https://www.infura.io/faucet/sepolia)
    - [PoW Faucet](https://sepolia-faucet.pk910.de/)
-2. Bridge your Sepolia ETH to BOB Sepolia using the [BOB Bridge](https://bob-sepolia.gobob.xyz/bridge)
 
 ### Getting Signet BTC
 
 1. Get Signet BTC from a faucet:
    - [Signet Faucet](https://signetfaucet.com/)
-2. Bridge your Signet BTC to BOB Sepolia using the [BOB Bridge](https://bob-sepolia.gobob.xyz/bridge)
