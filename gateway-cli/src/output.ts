@@ -357,7 +357,18 @@ export interface SendUnsignedJson {
   amount: string;
   to: string;
   psbtBase64?: string;
-  tx?: { from: string; to: string; value: string; data: string; chainId: number };
+  tx?: {
+    from: string;
+    to: string;
+    value: string;
+    data: string;
+    chainId: number;
+    /** Fees pinned on a native sweep, so the external signer cannot re-price the amount away. */
+    gas?: string;
+    maxFeePerGas?: string;
+    maxPriorityFeePerGas?: string;
+    gasPrice?: string;
+  };
 }
 
 /** Human-readable formatter for send results. */
