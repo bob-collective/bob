@@ -434,7 +434,9 @@ export async function prepareNativeSweep(signer: EvmSigner, to: string): Promise
 
   // Second estimate at the amount that will actually be sent: a recipient whose gas depends on
   // the value received is then simulated for the real transfer rather than the whole balance.
-  const estimated = await publicClient.estimateGas({ account, to: recipient, value: spendable(withGasBuffer(probe)) });
+  // Pass the address, not the account: a local account makes viem prepare the request, which
+  // fills gas and fees from reads of its own — the re-pricing this sweep exists to avoid.
+  const estimated = await publicClient.estimateGas({ account: account.address, to: recipient, value: spendable(withGasBuffer(probe)) });
   const gas = withGasBuffer(estimated > probe ? estimated : probe);
   const fees: NativeSweepFees = baseFee != null
     ? { gas, maxFeePerGas: feePerGas, maxPriorityFeePerGas }
