@@ -24,9 +24,11 @@ Software stack:
 - [Docker Compose](https://docs.docker.com/compose/install/)
 
 :::warning
-BOB Mainnet activates the **Karst hard fork** (OP Contracts v7.0.0) at **Wed Sep 23 2026 16:00:01 UTC** (timestamp `1790179201`). The fork is consensus-breaking: every node must run `op-node` **v1.19.3** or later and a Karst-capable `op-reth` (**v2.4.3** or later), with the Karst override enabled, **before** the activation time. `op-geth` has reached end of support and cannot be used for Karst — an `op-reth` execution client is required.
+Run `op-reth` **v2.8.1 or later**. The Docker Compose example below pins v2.8.1.
 
-`op-reth` **v2.4.3** additionally fixes a transaction-decoding vulnerability: without the fix, a malformed deposit transaction (missing its `0x7E` EIP-2718 type prefix) can push a node onto a non-canonical chain. Do not run earlier versions; the upgrade is an in-place image bump and requires no resync.
+BOB Mainnet activates the **Karst hard fork** (OP Contracts v7.0.0) at **Wed Sep 23 2026 16:00:01 UTC** (timestamp `1790179201`). The fork is consensus-breaking: every node must run `op-node` **v1.19.3** or later and `op-reth`, with the Karst override enabled, **before** the activation time. `op-geth` has reached end of support and cannot be used for Karst — an `op-reth` execution client is required.
+
+The required release includes the transaction-decoding fix introduced in `op-reth` **v2.4.3**: without the fix, a malformed deposit transaction (missing its `0x7E` EIP-2718 type prefix) can push a node onto a non-canonical chain.
 
 The upgrade also includes EIPs that affect gas pricing and may be relevant to application and smart contract developers — see the [breaking changes in Optimism Upgrade 19](https://docs.optimism.io/notices/archive/upgrade-19#breaking-changes).
 :::
@@ -123,7 +125,7 @@ OP_NODE_METRICS_ADDR=127.0.0.1
 ```yml title="docker-compose.yml"
 services:
   op-reth:
-    image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-reth:v2.4.4
+    image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-reth:v2.8.1
     command:
       - node
       - --chain=/data/genesis.json
