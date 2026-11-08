@@ -189,15 +189,6 @@ describe('GatewayError.fromResponse', () => {
 });
 
 describe('GatewayError — HTTP status code', () => {
-    it('builds an InternalError from the text alone, with no status', () => {
-        const error = GatewayError.fromText('boom');
-
-        expect(error.code).toBe(GatewayErrorCode.InternalError);
-        expect(error.message).toBe('boom');
-        expect(error.details).toBeNull();
-        expect(error.httpCode).toBeUndefined();
-    });
-
     it('leaves the status undefined for an error built without one', () => {
         expect(new GatewayError(GatewayErrorCode.InternalError, 'boom', null).httpCode).toBeUndefined();
     });
@@ -223,7 +214,7 @@ describe('ApiError', () => {
     });
 
     it('is the base of GatewayError, so one check covers both', () => {
-        const error = GatewayError.fromText('blocked');
+        const error = new GatewayError(GatewayErrorCode.InternalError, 'blocked', null);
 
         expect(error).toBeInstanceOf(ApiError);
         expect(isApiError(error)).toBe(true);

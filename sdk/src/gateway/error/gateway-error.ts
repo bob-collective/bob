@@ -225,11 +225,6 @@ export class GatewayError<
             httpCode
         ) as AnyGatewayError;
     }
-
-    /** Build an `InternalError` carrying `message`, for an error not read from a response. */
-    static fromText(message: string): GatewayError<(typeof GatewayErrorCode)['InternalError']> {
-        return new GatewayError(GatewayErrorCode.InternalError, message, null);
-    }
 }
 
 /** Whether a parsed response body is in the Gateway's error shape (`code` and `error`). */
