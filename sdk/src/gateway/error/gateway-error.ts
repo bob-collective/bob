@@ -264,12 +264,9 @@ export class GatewayError<
         this.details = details;
     }
 
-    static fromText(
-        message: string,
-        options?: ErrorOptions,
-        httpCode?: number
-    ): GatewayError<(typeof GatewayErrorCode)['InternalError']> {
-        return new GatewayError(GatewayErrorCode.InternalError, message, null, options, httpCode);
+    /** Build an `InternalError` carrying `message`, for an error not read from a response. */
+    static fromText(message: string): GatewayError<(typeof GatewayErrorCode)['InternalError']> {
+        return new GatewayError(GatewayErrorCode.InternalError, message, null);
     }
 }
 

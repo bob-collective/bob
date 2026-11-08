@@ -167,16 +167,16 @@ describe('ApiError.fromResponse', () => {
 });
 
 describe('GatewayError — HTTP status code', () => {
-    it('keeps the status and the cause on an error built from text', () => {
-        const cause = new SyntaxError('Unexpected token <');
-        const error = GatewayError.fromText('Non-JSON response: HTTP 403', { cause }, 403);
+    it('builds an InternalError from the text alone, with no status', () => {
+        const error = GatewayError.fromText('boom');
 
-        expect(error.httpCode).toBe(403);
-        expect(error.cause).toBe(cause);
+        expect(error.code).toBe(GatewayErrorCode.InternalError);
+        expect(error.message).toBe('boom');
+        expect(error.details).toBeNull();
+        expect(error.httpCode).toBeUndefined();
     });
 
-    it('leaves the status undefined for an error not built from a response', () => {
-        expect(GatewayError.fromText('boom').httpCode).toBeUndefined();
+    it('leaves the status undefined for an error built without one', () => {
         expect(new GatewayError(GatewayErrorCode.InternalError, 'boom', null).httpCode).toBeUndefined();
     });
 
@@ -201,7 +201,7 @@ describe('ApiError', () => {
     });
 
     it('is the base of GatewayError, so one check covers both', () => {
-        const error = GatewayError.fromText('blocked', undefined, 403);
+        const error = GatewayError.fromText('blocked');
 
         expect(error).toBeInstanceOf(ApiError);
         expect(isApiError(error)).toBe(true);
