@@ -41,30 +41,24 @@ export class ApiError extends Error {
      * body, so pass a response whose body is unread (or a clone).
      */
     static async fromResponse(response: Response): Promise<ApiError> {
-        const body = await readErrorBody(response);
-        return 'parseError' in body
-            ? new ApiError(body.message, response.status, { cause: body.parseError })
-            : new ApiError(describeErrorBody(body.json), response.status);
+        const httpCode = response.status;
+
+        let body: unknown;
+        try {
+            body = await response.json();
+        } catch (parseError) {
+            return new ApiError(`Non-JSON response: HTTP ${httpCode} ${response.statusText}`, httpCode, {
+                cause: parseError,
+            });
+        }
+
+        return new ApiError(describeErrorBody(body), httpCode);
     }
 }
 
 /** Type guard for {@link ApiError}, including its subclass {@link GatewayError}. */
 export function isApiError(err: unknown): err is ApiError {
     return err instanceof ApiError;
-}
-
-/**
- * Parse an error response's body as JSON, or say why it is not JSON. Shared by the `fromResponse`
- * factories, which differ only in the class they build from it.
- */
-export async function readErrorBody(
-    response: Response
-): Promise<{ json: unknown } | { message: string; parseError: unknown }> {
-    try {
-        return { json: await response.json() };
-    } catch (parseError) {
-        return { message: `Non-JSON response: HTTP ${response.status} ${response.statusText}`, parseError };
-    }
 }
 
 /**

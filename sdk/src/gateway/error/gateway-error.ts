@@ -28,7 +28,7 @@ import {
 } from '../generated-client';
 import type { GatewayErrorV4 as GatewayErrorInterface } from '../generated-client/models/GatewayErrorV4';
 import { instanceOfGatewayErrorV4 } from '../generated-client/models/GatewayErrorV4';
-import { ApiError, describeErrorBody, readErrorBody } from './api-error';
+import { ApiError, describeErrorBody } from './api-error';
 
 export { GatewayErrorCode, GatewayErrorCodeV2, GatewayErrorCodeV3, GatewayErrorCodeV4 };
 
@@ -189,28 +189,25 @@ export class GatewayError<
      */
     static async fromResponse(response: Response): Promise<AnyGatewayError> {
         const httpCode = response.status;
-        const body = await readErrorBody(response);
 
-        if ('parseError' in body) {
+        let body: unknown;
+        try {
+            body = await response.json();
+        } catch (parseError) {
             return new GatewayError(
                 GatewayErrorCode.InternalError,
-                body.message,
+                `Non-JSON response: HTTP ${httpCode} ${response.statusText}`,
                 null,
-                { cause: body.parseError },
-                httpCode
-            );
-        }
-        if (!isGatewayErrorBody(body.json)) {
-            return new GatewayError(
-                GatewayErrorCode.InternalError,
-                describeErrorBody(body.json),
-                null,
-                undefined,
+                { cause: parseError },
                 httpCode
             );
         }
 
-        const fields = body.json as unknown as Record<string, unknown>;
+        if (!isGatewayErrorBody(body)) {
+            return new GatewayError(GatewayErrorCode.InternalError, describeErrorBody(body), null, undefined, httpCode);
+        }
+
+        const fields = body as unknown as Record<string, unknown>;
         const code = fields.code as AnyGatewayErrorCode;
         const raw =
             fields.details != null && typeof fields.details === 'object'
@@ -219,7 +216,7 @@ export class GatewayError<
 
         return new GatewayError(
             code,
-            body.json.error,
+            body.error,
             parseDetails({ code, raw } as ParseDetailsArgs),
             undefined,
             httpCode
