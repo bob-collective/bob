@@ -28,7 +28,7 @@ import {
 } from '../generated-client';
 import type { GatewayErrorV4 as GatewayErrorInterface } from '../generated-client/models/GatewayErrorV4';
 import { instanceOfGatewayErrorV4 } from '../generated-client/models/GatewayErrorV4';
-import { ApiError, ApiErrorOptions, describeErrorBody } from './api-error';
+import { ApiError, describeErrorBody } from './api-error';
 
 export { GatewayErrorCode, GatewayErrorCodeV2, GatewayErrorCodeV3, GatewayErrorCodeV4 };
 
@@ -168,8 +168,8 @@ export class GatewayError<
      */
     readonly details: DetailsFor<C>;
 
-    constructor(code: C, message: string, details: DetailsFor<C>, options?: ApiErrorOptions) {
-        super(message, options);
+    constructor(code: C, message: string, details: DetailsFor<C>, options?: ErrorOptions, httpCode?: number) {
+        super(message, httpCode, options);
         this.name = 'GatewayError';
         this.code = code;
         this.error = message;
@@ -186,17 +186,17 @@ export class GatewayError<
      * Returns {@link AnyGatewayError} — a discriminated union over all error codes —
      * so callers can switch on `.code` and have `.details` automatically narrowed.
      *
-     * Pass the response's status as `options.httpCode` to keep it on the error.
+     * Pass the response's status as `httpCode` to keep it on the error.
      */
-    static fromResponse(json: GatewayErrorInterface | object, options?: ApiErrorOptions): AnyGatewayError {
+    static fromResponse(json: GatewayErrorInterface | object, httpCode?: number): AnyGatewayError {
         if (!json || typeof json !== 'object') {
-            return GatewayError.fromText(String(json ?? ''), options);
+            return GatewayError.fromText(String(json ?? ''), undefined, httpCode);
         }
 
         const body = json as Record<string, unknown>;
 
         if (!instanceOfGatewayErrorV4(body)) {
-            return GatewayError.fromText(describeErrorBody(body), options);
+            return GatewayError.fromText(describeErrorBody(body), undefined, httpCode);
         }
 
         const code = body.code as AnyGatewayErrorCode;
@@ -208,15 +208,17 @@ export class GatewayError<
             code,
             message,
             parseDetails({ code, raw } as ParseDetailsArgs),
-            options
+            undefined,
+            httpCode
         ) as AnyGatewayError;
     }
 
     static fromText(
         message: string,
-        options?: ApiErrorOptions
+        options?: ErrorOptions,
+        httpCode?: number
     ): GatewayError<(typeof GatewayErrorCode)['InternalError']> {
-        return new GatewayError(GatewayErrorCode.InternalError, message, null, options);
+        return new GatewayError(GatewayErrorCode.InternalError, message, null, options, httpCode);
     }
 }
 

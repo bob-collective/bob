@@ -345,17 +345,18 @@ export class GatewayApiClient {
                                 } catch (parseError) {
                                     throw new ApiError(
                                         `Non-JSON response: HTTP ${httpCode} ${context.response.statusText}`,
-                                        { cause: parseError, httpCode }
+                                        httpCode,
+                                        { cause: parseError }
                                     );
                                 }
 
                                 // The Gateway codes every error it returns, so a body without a
                                 // `code` came from something in front of it (CDN, proxy, ingress).
                                 if (body && typeof body === 'object' && instanceOfGatewayErrorV4(body)) {
-                                    throw GatewayError.fromResponse(body, { httpCode });
+                                    throw GatewayError.fromResponse(body, httpCode);
                                 }
 
-                                throw new ApiError(describeErrorBody(body), { httpCode });
+                                throw new ApiError(describeErrorBody(body), httpCode);
                             }
 
                             return context.response;

@@ -1,9 +1,3 @@
-/** Options for building an {@link ApiError}. */
-export type ApiErrorOptions = ErrorOptions & {
-    /** HTTP status code of the response the error was built from. */
-    httpCode?: number;
-};
-
 /**
  * Error thrown by {@link GatewayApiClient} for a 4xx/5xx HTTP response.
  *
@@ -33,10 +27,10 @@ export class ApiError extends Error {
      */
     readonly httpCode?: number;
 
-    constructor(message: string, options?: ApiErrorOptions) {
+    constructor(message: string, httpCode?: number, options?: ErrorOptions) {
         super(message, options);
         this.name = 'ApiError';
-        this.httpCode = options?.httpCode;
+        this.httpCode = httpCode;
     }
 }
 

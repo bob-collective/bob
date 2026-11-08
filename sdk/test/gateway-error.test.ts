@@ -113,7 +113,7 @@ describe('GatewayError — HTTP status code', () => {
     it('keeps the status beside the code of a Gateway error body', () => {
         const error = GatewayError.fromResponse(
             { code: 'GEOBLOCKED', error: 'Service not available in your region' },
-            { httpCode: 403 }
+            403
         );
 
         expect(error.httpCode).toBe(403);
@@ -121,21 +121,21 @@ describe('GatewayError — HTTP status code', () => {
     });
 
     it('keeps the status when a JSON body is not a Gateway error', () => {
-        const error = GatewayError.fromResponse({ message: 'Forbidden' }, { httpCode: 403 });
+        const error = GatewayError.fromResponse({ message: 'Forbidden' }, 403);
 
         expect(error.code).toBe(GatewayErrorCode.InternalError);
         expect(error.httpCode).toBe(403);
     });
 
     it('keeps the status when the JSON body is not an object', () => {
-        const error = GatewayError.fromResponse(null as unknown as object, { httpCode: 502 });
+        const error = GatewayError.fromResponse(null as unknown as object, 502);
 
         expect(error.httpCode).toBe(502);
     });
 
     it('keeps the status and the cause on an error built from text', () => {
         const cause = new SyntaxError('Unexpected token <');
-        const error = GatewayError.fromText('Non-JSON response: HTTP 403', { httpCode: 403, cause });
+        const error = GatewayError.fromText('Non-JSON response: HTTP 403', { cause }, 403);
 
         expect(error.httpCode).toBe(403);
         expect(error.cause).toBe(cause);
@@ -148,12 +148,20 @@ describe('GatewayError — HTTP status code', () => {
         ).toBeUndefined();
         expect(new GatewayError(GatewayErrorCode.InternalError, 'boom', null).httpCode).toBeUndefined();
     });
+
+    it('takes the status apart from the standard error options', () => {
+        const cause = new Error('upstream');
+        const error = new GatewayError(GatewayErrorCode.InternalError, 'boom', null, { cause }, 500);
+
+        expect(error.cause).toBe(cause);
+        expect(error.httpCode).toBe(500);
+    });
 });
 
 describe('ApiError', () => {
     it('keeps the status and the cause it was built with', () => {
         const cause = new SyntaxError('Unexpected token <');
-        const error = new ApiError('Non-JSON response: HTTP 403', { httpCode: 403, cause });
+        const error = new ApiError('Non-JSON response: HTTP 403', 403, { cause });
 
         expect(error.httpCode).toBe(403);
         expect(error.cause).toBe(cause);
@@ -162,7 +170,7 @@ describe('ApiError', () => {
     });
 
     it('is the base of GatewayError, so one check covers both', () => {
-        const error = GatewayError.fromResponse({ code: 'GEOBLOCKED', error: 'blocked' }, { httpCode: 403 });
+        const error = GatewayError.fromResponse({ code: 'GEOBLOCKED', error: 'blocked' }, 403);
 
         expect(error).toBeInstanceOf(ApiError);
         expect(isApiError(error)).toBe(true);
