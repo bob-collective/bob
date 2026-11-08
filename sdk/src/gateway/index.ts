@@ -1,14 +1,13 @@
 export { OkxWalletAdapter } from './adapters/okx-wallet';
 export { ReownWalletAdapter } from './adapters/reown';
 export { ExecuteQuoteResult, GatewayApiClient as GatewaySDK } from './client';
+export { ApiError, isApiError } from './error/api-error';
 export {
     AnyGatewayError,
-    ApiError,
     DetailsFor,
     GatewayError,
     GatewayErrorCode,
     GatewayErrorDetailsMap,
-    isApiError,
     isGatewayError,
     type ExceededLimitDetails,
     type InsufficientAmountDetails,

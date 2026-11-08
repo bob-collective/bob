@@ -38,9 +38,9 @@ ESLint ignores `src/gateway/generated-client/**`.
 
 Successful responses pass through the generated `…FromJSON` deserializers (`JSONApiResponse`, in
 `generated-client/apis/`), so everywhere else in the SDK sees camelCase. Error responses do not: the
-middleware in `client.ts` hands the response to `ApiError.fromResponse`, which passes a coded
-`response.json()` straight to the `GatewayError` it builds (a body without `code` is not the
-Gateway's and becomes a plain `ApiError`), so
+middleware in `client.ts` (`errorFromResponse`) hands a response with a coded body to
+`GatewayError.fromResponse`, which passes `response.json()` straight to `parseDetails` (a body
+without `code` is not the Gateway's and goes to `ApiError.fromResponse` instead), so
 `parseDetails` receives the body exactly as the Gateway sent it — snake_case, like `required_bps` or
 `src_chain`. Reading those by their camelCase names returns `undefined` with no type error, because
 the parameter is typed as the shape the function *returns*.

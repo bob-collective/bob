@@ -1,4 +1,4 @@
-import { assert, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
     AnyGatewayError,
     ApiError,
@@ -14,16 +14,13 @@ import {
 const jsonResponse = (body: unknown, status = 400) =>
     new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 
-/** Reads a coded error body the way the client does, which gives a GatewayError for it. */
-async function gatewayErrorFrom(body: object, status = 400): Promise<AnyGatewayError> {
-    const error = await ApiError.fromResponse(jsonResponse(body, status));
-    assert(isGatewayError(error));
-    return error;
-}
+/** Reads an error body through `GatewayError.fromResponse`, as the client does for a coded one. */
+const gatewayErrorFrom = (body: object, status = 400): Promise<AnyGatewayError> =>
+    GatewayError.fromResponse(jsonResponse(body, status));
 
 // Every body here is copied from a live mainnet response. The Gateway serialises detail fields in
 // snake_case, so a camelCase read silently yields nothing and the figures never reach the caller.
-describe('ApiError.fromResponse — snake_case detail bodies', () => {
+describe('GatewayError.fromResponse — snake_case detail bodies', () => {
     it('reads the slippage a route requires', async () => {
         const error = await gatewayErrorFrom({
             code: GatewayErrorCode.SlippageTooLow,
@@ -122,47 +119,72 @@ describe('ApiError.fromResponse — snake_case detail bodies', () => {
 
 // The UI treats a 403 as the geoblock verdict, and only the status tells a 403 apart from a 5xx
 // once the body is not a Gateway error, so every error read from a response carries its status.
+// Each factory returns its own class; choosing between them is the client's job.
 describe('ApiError.fromResponse', () => {
-    it('gives a GatewayError carrying the status for a coded body', async () => {
+    it('gives a plain ApiError even for a coded body', async () => {
         const error = await ApiError.fromResponse(
             jsonResponse({ code: 'GEOBLOCKED', error: 'This service is not available in your location' }, 403)
         );
 
-        assert(isGatewayError(error));
-        expect(error.code).toBe('GEOBLOCKED');
+        expect(isGatewayError(error)).toBe(false);
         expect(error.httpCode).toBe(403);
+        expect(error.message).toBe('This service is not available in your location');
     });
 
-    it('gives a plain ApiError carrying the status for JSON without a code', async () => {
+    it('carries the status and the message of JSON without a code', async () => {
         const error = await ApiError.fromResponse(jsonResponse({ message: 'Forbidden' }, 403));
 
-        expect(isGatewayError(error)).toBe(false);
         expect(error.httpCode).toBe(403);
         expect(error.message).toBe('Forbidden');
     });
 
-    it('gives a plain ApiError for JSON that is not an object', async () => {
+    it('carries the status of JSON that is not an object', async () => {
         const error = await ApiError.fromResponse(jsonResponse(null, 502));
 
-        expect(isGatewayError(error)).toBe(false);
         expect(error.httpCode).toBe(502);
     });
 
-    it('gives a plain ApiError carrying the parse failure for a body that is not JSON', async () => {
+    it('carries the status and the parse failure of a body that is not JSON', async () => {
         const error = await ApiError.fromResponse(
             new Response('<html>Access denied</html>', { status: 403, statusText: 'Forbidden' })
         );
 
-        expect(isGatewayError(error)).toBe(false);
         expect(error.httpCode).toBe(403);
         expect(error.message).toBe('Non-JSON response: HTTP 403 Forbidden');
         expect(error.cause).toBeInstanceOf(SyntaxError);
     });
+});
 
-    it('is inherited by GatewayError', async () => {
-        const error = await GatewayError.fromResponse(jsonResponse({ code: 'GEOBLOCKED', error: 'blocked' }, 403));
+describe('GatewayError.fromResponse', () => {
+    it('carries the status beside the code of a coded body', async () => {
+        const error = await GatewayError.fromResponse(
+            jsonResponse({ code: 'GEOBLOCKED', error: 'This service is not available in your location' }, 403)
+        );
 
         expect(isGatewayError(error)).toBe(true);
+        expect(error.code).toBe('GEOBLOCKED');
+        expect(error.httpCode).toBe(403);
+    });
+
+    it('falls back to an InternalError carrying the status for JSON without a code', async () => {
+        const error = await GatewayError.fromResponse(jsonResponse({ message: 'Forbidden' }, 403));
+
+        expect(isGatewayError(error)).toBe(true);
+        expect(error.code).toBe(GatewayErrorCode.InternalError);
+        expect(error.httpCode).toBe(403);
+        expect(error.message).toBe('Forbidden');
+    });
+
+    it('falls back to an InternalError carrying the parse failure for a body that is not JSON', async () => {
+        const error = await GatewayError.fromResponse(
+            new Response('<html>Access denied</html>', { status: 403, statusText: 'Forbidden' })
+        );
+
+        expect(isGatewayError(error)).toBe(true);
+        expect(error.code).toBe(GatewayErrorCode.InternalError);
+        expect(error.httpCode).toBe(403);
+        expect(error.message).toBe('Non-JSON response: HTTP 403 Forbidden');
+        expect(error.cause).toBeInstanceOf(SyntaxError);
     });
 });
 

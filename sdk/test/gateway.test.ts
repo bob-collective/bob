@@ -26,7 +26,6 @@ import { privateKeyToAccount } from 'viem/accounts';
 import { mainnet } from 'viem/chains';
 import { afterEach, assert, describe, expect, it, vi } from 'vitest';
 import {
-    ApiError,
     BitcoinBroadcastError,
     BitcoinSigner,
     ExecuteQuoteError,
@@ -107,12 +106,9 @@ afterEach(() => {
 const jsonResponse = (body: unknown, status = 400) =>
     new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 
-/** Reads a coded error body the way the client does, which gives a GatewayError for it. */
-async function gatewayErrorFrom(body: object, status = 400): Promise<AnyGatewayError> {
-    const error = await ApiError.fromResponse(jsonResponse(body, status));
-    assert(isGatewayError(error));
-    return error;
-}
+/** Reads an error body through `GatewayError.fromResponse`, as the client does for a coded one. */
+const gatewayErrorFrom = (body: object, status = 400): Promise<AnyGatewayError> =>
+    GatewayError.fromResponse(jsonResponse(body, status));
 
 describe('Gateway Tests', () => {
     it.each([undefined, 0, 125])('should get quotes with maxSlippage=%s', async (maxSlippage) => {
