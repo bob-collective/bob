@@ -165,27 +165,6 @@ describe('GatewayError.fromResponse', () => {
         expect(error.code).toBe('GEOBLOCKED');
         expect(error.httpCode).toBe(403);
     });
-
-    it('falls back to an InternalError carrying the status for JSON without a code', async () => {
-        const error = await GatewayError.fromResponse(jsonResponse({ message: 'Forbidden' }, 403));
-
-        expect(isGatewayError(error)).toBe(true);
-        expect(error.code).toBe(GatewayErrorCode.InternalError);
-        expect(error.httpCode).toBe(403);
-        expect(error.message).toBe('Forbidden');
-    });
-
-    it('falls back to an InternalError carrying the parse failure for a body that is not JSON', async () => {
-        const error = await GatewayError.fromResponse(
-            new Response('<html>Access denied</html>', { status: 403, statusText: 'Forbidden' })
-        );
-
-        expect(isGatewayError(error)).toBe(true);
-        expect(error.code).toBe(GatewayErrorCode.InternalError);
-        expect(error.httpCode).toBe(403);
-        expect(error.message).toBe('Non-JSON response: HTTP 403 Forbidden');
-        expect(error.cause).toBeInstanceOf(SyntaxError);
-    });
 });
 
 describe('GatewayError — HTTP status code', () => {

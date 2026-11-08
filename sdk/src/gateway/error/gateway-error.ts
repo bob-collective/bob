@@ -28,7 +28,7 @@ import {
 } from '../generated-client';
 import type { GatewayErrorV4 as GatewayErrorInterface } from '../generated-client/models/GatewayErrorV4';
 import { instanceOfGatewayErrorV4 } from '../generated-client/models/GatewayErrorV4';
-import { ApiError, describeErrorBody } from './api-error';
+import { ApiError } from './api-error';
 
 export { GatewayErrorCode, GatewayErrorCodeV2, GatewayErrorCodeV3, GatewayErrorCodeV4 };
 
@@ -177,36 +177,18 @@ export class GatewayError<
     }
 
     /**
-     * Read a 4xx/5xx response into a `GatewayError` carrying its status.
+     * Read a 4xx/5xx response from the Gateway into a `GatewayError` carrying its status.
      *
-     * Details are extracted by `code`, matching the Rust `GatewayErrorDetails` enum exactly. A body
-     * not in the Gateway's shape falls back to `InternalError`, keeping any `error` or `message`
-     * string it holds, or naming the status (with the parse failure as `cause`) when it is not
-     * JSON. Reads the body, so pass a response whose body is unread (or a clone).
+     * The body must be in the Gateway's error shape (`{ code, error, details? }`, see
+     * {@link isGatewayErrorBody}); the client sends any other body to {@link ApiError.fromResponse}.
+     * Details are extracted by `code`, matching the Rust `GatewayErrorDetails` enum exactly. Reads
+     * the body, so pass a response whose body is unread (or a clone).
      *
      * Returns {@link AnyGatewayError} — a discriminated union over all error codes —
      * so callers can switch on `.code` and have `.details` automatically narrowed.
      */
     static async fromResponse(response: Response): Promise<AnyGatewayError> {
-        const httpCode = response.status;
-
-        let body: unknown;
-        try {
-            body = await response.json();
-        } catch (parseError) {
-            return new GatewayError(
-                GatewayErrorCode.InternalError,
-                `Non-JSON response: HTTP ${httpCode} ${response.statusText}`,
-                null,
-                { cause: parseError },
-                httpCode
-            );
-        }
-
-        if (!isGatewayErrorBody(body)) {
-            return new GatewayError(GatewayErrorCode.InternalError, describeErrorBody(body), null, undefined, httpCode);
-        }
-
+        const body: GatewayErrorInterface = await response.json();
         const fields = body as unknown as Record<string, unknown>;
         const code = fields.code as AnyGatewayErrorCode;
         const raw =
@@ -219,7 +201,7 @@ export class GatewayError<
             body.error,
             parseDetails({ code, raw } as ParseDetailsArgs),
             undefined,
-            httpCode
+            response.status
         ) as AnyGatewayError;
     }
 }

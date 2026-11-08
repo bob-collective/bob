@@ -65,7 +65,7 @@ export function isApiError(err: unknown): err is ApiError {
  * Message for an error body not in the Gateway's shape: its `error` or `message` string when it has
  * one, otherwise the body itself.
  */
-export function describeErrorBody(body: unknown): string {
+function describeErrorBody(body: unknown): string {
     if (!body || typeof body !== 'object') {
         return String(body ?? '');
     }
