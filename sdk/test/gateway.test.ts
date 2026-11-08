@@ -35,6 +35,7 @@ import {
     GatewayErrorCode,
     GatewayErrorCodeV4Variants,
     GatewaySDK,
+    isApiError,
     isGatewayError,
 } from '../src/gateway';
 import { assertAllowanceHolderSpender } from '../src/gateway/allowance-holder';
@@ -2199,7 +2200,9 @@ describe('Gateway Tests', () => {
                 },
             });
 
-        nock(`${MAINNET_GATEWAY_BASE_URL}`).patch('/v4/register-tx').reply(500, { error: 'registerTx exploded' });
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
+            .patch('/v4/register-tx')
+            .reply(500, { code: GatewayErrorCode.InternalError, error: 'registerTx exploded' });
 
         const mockBtcSigner: BitcoinSigner = {
             signAllInputs: async () => signedTx,
@@ -2272,7 +2275,9 @@ describe('Gateway Tests', () => {
                     },
                 });
 
-            nock(`${MAINNET_GATEWAY_BASE_URL}`).patch('/v4/register-tx').reply(500, { error: 'registerTx exploded' });
+            nock(`${MAINNET_GATEWAY_BASE_URL}`)
+                .patch('/v4/register-tx')
+                .reply(500, { code: GatewayErrorCode.InternalError, error: 'registerTx exploded' });
 
             return new GatewaySDK()
                 .executeQuote({
@@ -4192,5 +4197,85 @@ describe('Gateway Tests', () => {
             expect(error.orderId).toBe('order-validation');
             expect(Object.hasOwn(error, 'cause')).toBe(false);
         });
+    });
+});
+
+// A blocked location gets a 403 on get-routes, either from the Gateway with a GEOBLOCKED body or
+// from the proxy in front of it with a page that is not JSON. Only a coded body is the Gateway's
+// own error; anything else comes from something in front of it, and both keep the status.
+describe('GatewayApiClient — errors from a response', () => {
+    const getRoutesError = (): Promise<unknown> =>
+        new GatewaySDK().getRoutes().then(
+            () => undefined,
+            (e: unknown) => e
+        );
+
+    it('throws a GatewayError carrying the status for a coded body', async () => {
+        nock(`${MAINNET_GATEWAY_BASE_URL}/v4`)
+            .get('/get-routes')
+            .reply(403, { code: 'GEOBLOCKED', error: 'This service is not available in your location' });
+
+        const error = await getRoutesError();
+
+        assert(isGatewayError(error));
+        expect(error.code).toBe('GEOBLOCKED');
+        expect(error.httpCode).toBe(403);
+    });
+
+    it('lets a GatewayError be caught as an ApiError', async () => {
+        nock(`${MAINNET_GATEWAY_BASE_URL}/v4`)
+            .get('/get-routes')
+            .reply(403, { code: 'GEOBLOCKED', error: 'This service is not available in your location' });
+
+        const error = await getRoutesError();
+
+        assert(isApiError(error));
+        expect(error.httpCode).toBe(403);
+    });
+
+    it('throws an ApiError, not a GatewayError, for an HTML page', async () => {
+        nock(`${MAINNET_GATEWAY_BASE_URL}/v4`)
+            .get('/get-routes')
+            .reply(403, '<!DOCTYPE html><html><body>Access denied</body></html>', { 'Content-Type': 'text/html' });
+
+        const error = await getRoutesError();
+
+        expect(isGatewayError(error)).toBe(false);
+        assert(isApiError(error));
+        expect(error.httpCode).toBe(403);
+        expect(error.message).toMatch(/^Non-JSON response: HTTP 403/);
+        expect(error.cause).toBeInstanceOf(SyntaxError);
+    });
+
+    it('throws an ApiError for an empty body', async () => {
+        nock(`${MAINNET_GATEWAY_BASE_URL}/v4`).get('/get-routes').reply(403);
+
+        const error = await getRoutesError();
+
+        expect(isGatewayError(error)).toBe(false);
+        assert(isApiError(error));
+        expect(error.httpCode).toBe(403);
+    });
+
+    it('throws an ApiError for a JSON body without a code, keeping its message', async () => {
+        nock(`${MAINNET_GATEWAY_BASE_URL}/v4`).get('/get-routes').reply(502, { error: 'upstream unavailable' });
+
+        const error = await getRoutesError();
+
+        expect(isGatewayError(error)).toBe(false);
+        assert(isApiError(error));
+        expect(error.message).toBe('upstream unavailable');
+    });
+
+    it('tells a 403 from a 5xx when the body is not a Gateway error', async () => {
+        nock(`${MAINNET_GATEWAY_BASE_URL}/v4`).get('/get-routes').reply(403, { message: 'Forbidden' });
+        const forbidden = await getRoutesError();
+
+        nock(`${MAINNET_GATEWAY_BASE_URL}/v4`).get('/get-routes').reply(503, { message: 'Forbidden' });
+        const unavailable = await getRoutesError();
+
+        assert(isApiError(forbidden) && isApiError(unavailable));
+        expect(forbidden.httpCode).toBe(403);
+        expect(unavailable.httpCode).toBe(503);
     });
 });

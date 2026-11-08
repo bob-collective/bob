@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { GatewayError, GatewayErrorCode, GatewayErrorCodeV2, GatewayErrorCodeV3 } from '../src/gateway/error';
+import {
+    ApiError,
+    GatewayError,
+    GatewayErrorCode,
+    GatewayErrorCodeV2,
+    GatewayErrorCodeV3,
+    isApiError,
+} from '../src/gateway/error';
 
 // Every body here is copied from a live mainnet response. The Gateway serialises detail fields in
 // snake_case, so a camelCase read silently yields nothing and the figures never reach the caller.
@@ -97,5 +104,73 @@ describe('GatewayError.fromResponse — snake_case detail bodies', () => {
         });
 
         expect(error.details).toStrictEqual({ max: undefined, actual: undefined });
+    });
+});
+
+// The UI treats a 403 as the geoblock verdict, and only the status tells a 403 apart from a 5xx
+// once the body is not a Gateway error, so every factory carries the status it was handed.
+describe('GatewayError — HTTP status code', () => {
+    it('keeps the status beside the code of a Gateway error body', () => {
+        const error = GatewayError.fromResponse(
+            { code: 'GEOBLOCKED', error: 'Service not available in your region' },
+            { httpCode: 403 }
+        );
+
+        expect(error.httpCode).toBe(403);
+        expect(error.code).toBe('GEOBLOCKED');
+    });
+
+    it('keeps the status when a JSON body is not a Gateway error', () => {
+        const error = GatewayError.fromResponse({ message: 'Forbidden' }, { httpCode: 403 });
+
+        expect(error.code).toBe(GatewayErrorCode.InternalError);
+        expect(error.httpCode).toBe(403);
+    });
+
+    it('keeps the status when the JSON body is not an object', () => {
+        const error = GatewayError.fromResponse(null as unknown as object, { httpCode: 502 });
+
+        expect(error.httpCode).toBe(502);
+    });
+
+    it('keeps the status and the cause on an error built from text', () => {
+        const cause = new SyntaxError('Unexpected token <');
+        const error = GatewayError.fromText('Non-JSON response: HTTP 403', { httpCode: 403, cause });
+
+        expect(error.httpCode).toBe(403);
+        expect(error.cause).toBe(cause);
+    });
+
+    it('leaves the status undefined for an error not built from a response', () => {
+        expect(GatewayError.fromText('boom').httpCode).toBeUndefined();
+        expect(
+            GatewayError.fromResponse({ code: GatewayErrorCode.InternalError, error: 'boom' }).httpCode
+        ).toBeUndefined();
+        expect(new GatewayError(GatewayErrorCode.InternalError, 'boom', null).httpCode).toBeUndefined();
+    });
+});
+
+describe('ApiError', () => {
+    it('keeps the status and the cause it was built with', () => {
+        const cause = new SyntaxError('Unexpected token <');
+        const error = new ApiError('Non-JSON response: HTTP 403', { httpCode: 403, cause });
+
+        expect(error.httpCode).toBe(403);
+        expect(error.cause).toBe(cause);
+        expect(error.message).toBe('Non-JSON response: HTTP 403');
+        expect(error.name).toBe('ApiError');
+    });
+
+    it('is the base of GatewayError, so one check covers both', () => {
+        const error = GatewayError.fromResponse({ code: 'GEOBLOCKED', error: 'blocked' }, { httpCode: 403 });
+
+        expect(error).toBeInstanceOf(ApiError);
+        expect(isApiError(error)).toBe(true);
+        expect(error.name).toBe('GatewayError');
+    });
+
+    it('does not match an unrelated error', () => {
+        expect(isApiError(new Error('boom'))).toBe(false);
+        expect(isApiError('boom')).toBe(false);
     });
 });

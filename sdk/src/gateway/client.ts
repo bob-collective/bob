@@ -17,7 +17,7 @@ import {
 } from 'viem';
 import { oftApprovalRequiredAbi, strategyCaller, USDTApproveAbi } from './abi';
 import { assertAllowanceHolderSpender } from './allowance-holder';
-import { GatewayError } from './error';
+import { ApiError, describeErrorBody, GatewayError } from './error';
 import {
     Configuration,
     type GatewayCreateOrderV3,
@@ -38,7 +38,7 @@ import {
     type RouteInfo,
     V4Api,
 } from './generated-client';
-import type { GatewayErrorV4 as GatewayErrorInterface } from './generated-client/models/GatewayErrorV4';
+import { instanceOfGatewayErrorV4 } from './generated-client/models/GatewayErrorV4';
 import {
     type BitcoinSigner,
     ExecuteQuoteError,
@@ -338,18 +338,24 @@ export class GatewayApiClient {
                     {
                         async post(context) {
                             if (context.response && (context.response.status < 200 || context.response.status >= 300)) {
-                                let body: GatewayErrorInterface;
+                                const httpCode = context.response.status;
+                                let body: unknown;
                                 try {
                                     body = await context.response.json();
                                 } catch (parseError) {
-                                    const err = GatewayError.fromText(
-                                        `Non-JSON response: HTTP ${context.response.status} ${context.response.statusText}`
+                                    throw new ApiError(
+                                        `Non-JSON response: HTTP ${httpCode} ${context.response.statusText}`,
+                                        { cause: parseError, httpCode }
                                     );
-                                    err.cause = parseError;
-                                    throw err;
                                 }
 
-                                throw GatewayError.fromResponse(body);
+                                // The Gateway codes every error it returns, so a body without a
+                                // `code` came from something in front of it (CDN, proxy, ingress).
+                                if (body && typeof body === 'object' && instanceOfGatewayErrorV4(body)) {
+                                    throw GatewayError.fromResponse(body, { httpCode });
+                                }
+
+                                throw new ApiError(describeErrorBody(body), { httpCode });
                             }
 
                             return context.response;
