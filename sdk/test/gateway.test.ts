@@ -26,6 +26,7 @@ import { privateKeyToAccount } from 'viem/accounts';
 import { mainnet } from 'viem/chains';
 import { afterEach, assert, describe, expect, it, vi } from 'vitest';
 import {
+    ApiError,
     BitcoinBroadcastError,
     BitcoinSigner,
     ExecuteQuoteError,
@@ -37,6 +38,7 @@ import {
     GatewaySDK,
     isApiError,
     isGatewayError,
+    type AnyGatewayError,
 } from '../src/gateway';
 import { assertAllowanceHolderSpender } from '../src/gateway/allowance-holder';
 import { ETHEREUM_USDT_ADDRESS, MAINNET_GATEWAY_BASE_URL } from '../src/gateway/client';
@@ -100,6 +102,17 @@ function createRevertApprovalError(spender: Address, amount: bigint) {
 afterEach(() => {
     nock.cleanAll();
 });
+
+/** An error body as the middleware sees it: a JSON response with an error status. */
+const jsonResponse = (body: unknown, status = 400) =>
+    new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
+
+/** Reads a coded error body the way the client does, which gives a GatewayError for it. */
+async function gatewayErrorFrom(body: object, status = 400): Promise<AnyGatewayError> {
+    const error = await ApiError.fromResponse(jsonResponse(body, status));
+    assert(isGatewayError(error));
+    return error;
+}
 
 describe('Gateway Tests', () => {
     it.each([undefined, 0, 125])('should get quotes with maxSlippage=%s', async (maxSlippage) => {
@@ -2359,8 +2372,8 @@ describe('Gateway Tests', () => {
         ).rejects.toThrow(errorMessage);
     });
 
-    it('should parse QuoteAmountTooLow gateway errors with typed details', () => {
-        const error = GatewayError.fromResponse({
+    it('should parse QuoteAmountTooLow gateway errors with typed details', async () => {
+        const error = await gatewayErrorFrom({
             code: GatewayErrorCode.QuoteAmountTooLow,
             error: 'Quote amount too low',
             details: {
@@ -2377,8 +2390,8 @@ describe('Gateway Tests', () => {
         });
     });
 
-    it('should parse SlippageTooLow gateway errors with typed details', () => {
-        const error = GatewayError.fromResponse({
+    it('should parse SlippageTooLow gateway errors with typed details', async () => {
+        const error = await gatewayErrorFrom({
             code: GatewayErrorCode.SlippageTooLow,
             error: 'Slippage too low',
             details: {
@@ -2394,8 +2407,8 @@ describe('Gateway Tests', () => {
         });
     });
 
-    it('should parse AffiliateFeesNotSupportedForRoute gateway errors with typed details', () => {
-        const error = GatewayError.fromResponse({
+    it('should parse AffiliateFeesNotSupportedForRoute gateway errors with typed details', async () => {
+        const error = await gatewayErrorFrom({
             code: GatewayErrorCodeV2.AffiliateFeesNotSupportedForRoute,
             error: 'Affiliate fees not supported for route',
             details: {
@@ -2415,7 +2428,7 @@ describe('Gateway Tests', () => {
         });
     });
 
-    it('should parse gateway errors without structured details as null', () => {
+    it('should parse gateway errors without structured details as null', async () => {
         const codesWithoutDetails = [
             GatewayErrorCode.InsufficientConfirmedFunds,
             GatewayErrorCode.PerAccountLimitExceeded,
@@ -2433,7 +2446,7 @@ describe('Gateway Tests', () => {
         ];
 
         for (const code of codesWithoutDetails) {
-            const error = GatewayError.fromResponse({
+            const error = await gatewayErrorFrom({
                 code,
                 error: `${code} failed`,
                 details: {},
@@ -2444,8 +2457,8 @@ describe('Gateway Tests', () => {
         }
     });
 
-    it('should parse InsufficientSolverBalance gateway errors with typed details', () => {
-        const error = GatewayError.fromResponse({
+    it('should parse InsufficientSolverBalance gateway errors with typed details', async () => {
+        const error = await gatewayErrorFrom({
             code: GatewayErrorCode.InsufficientSolverBalance,
             error: 'Insufficient solver balance',
             details: {
@@ -3446,8 +3459,8 @@ describe('Gateway Tests', () => {
         });
     });
 
-    it('preserves the V4 missing-refund-address error', () => {
-        const error = GatewayError.fromResponse({
+    it('preserves the V4 missing-refund-address error', async () => {
+        const error = await gatewayErrorFrom({
             code: 'MISSING_REFUND_ADDRESS',
             error: 'A source-chain refund address is required',
         });

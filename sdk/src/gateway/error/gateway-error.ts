@@ -28,7 +28,6 @@ import {
 } from '../generated-client';
 import type { GatewayErrorV4 as GatewayErrorInterface } from '../generated-client/models/GatewayErrorV4';
 import { instanceOfGatewayErrorV4 } from '../generated-client/models/GatewayErrorV4';
-import { ApiError, describeErrorBody } from './api-error';
 
 export { GatewayErrorCode, GatewayErrorCodeV2, GatewayErrorCodeV3, GatewayErrorCodeV4 };
 
@@ -115,6 +114,95 @@ type ParseDetailsArgs = {
     [C in AnyGatewayErrorCode]: { code: C; raw: Record<string, unknown> | null };
 }[AnyGatewayErrorCode];
 
+// ─── Base class ──────────────────────────────────────────────────────────────
+// ApiError lives beside GatewayError rather than in its own module: `fromResponse` builds a
+// GatewayError, which extends ApiError, so two modules would have to import each other.
+
+/**
+ * Error thrown by {@link GatewayApiClient} for a 4xx/5xx HTTP response.
+ *
+ * A body in the Gateway's error shape (`{ code, error, details? }`) is thrown as the subclass
+ * {@link GatewayError}. Any other body — an HTML page, an empty body, JSON without a `code` — did
+ * not come from the Gateway but from something in front of it (a CDN, a proxy, a load balancer),
+ * and is thrown as a plain `ApiError`.
+ *
+ * Check {@link isGatewayError} first when the Gateway's `code` matters; check {@link isApiError}
+ * to handle every HTTP failure, whatever answered it:
+ *
+ * @example
+ * ```typescript
+ * try {
+ *   await gatewaySDK.getRoutes();
+ * } catch (err) {
+ *   if (isApiError(err) && err.httpCode === 403) {
+ *     // refused, by the Gateway (`GEOBLOCKED`) or by the proxy in front of it
+ *   }
+ * }
+ * ```
+ */
+export class ApiError extends Error {
+    /**
+     * HTTP status code of the response the error was built from. Always set on an error the
+     * client throws; `undefined` only for a {@link GatewayError} built without a response.
+     */
+    readonly httpCode?: number;
+
+    constructor(message: string, httpCode?: number, options?: ErrorOptions) {
+        super(message, options);
+        this.name = 'ApiError';
+        this.httpCode = httpCode;
+    }
+
+    /**
+     * Read a 4xx/5xx response into an error carrying its status.
+     *
+     * A body in the Gateway's error shape gives a {@link GatewayError}, its `details` parsed by
+     * `code`. Any other body gives a plain `ApiError`: for JSON, its message is the body's `error`
+     * or `message` string, else the body itself; for a body that is not JSON, it names the status
+     * and carries the parse failure as `cause`.
+     *
+     * Reads the body, so pass a response whose body is unread (or a clone). Also reachable as
+     * `GatewayError.fromResponse`.
+     */
+    static async fromResponse(response: Response): Promise<ApiError> {
+        const httpCode = response.status;
+
+        let body: unknown;
+        try {
+            body = await response.json();
+        } catch (parseError) {
+            return new ApiError(`Non-JSON response: HTTP ${httpCode} ${response.statusText}`, httpCode, {
+                cause: parseError,
+            });
+        }
+
+        // The Gateway codes every error it returns, so a body without a `code` came from something
+        // in front of it (CDN, proxy, ingress).
+        if (body && typeof body === 'object' && instanceOfGatewayErrorV4(body)) {
+            return gatewayErrorFromBody(body, httpCode);
+        }
+
+        return new ApiError(describeErrorBody(body), httpCode);
+    }
+}
+
+/** Type guard for {@link ApiError}, including its subclass {@link GatewayError}. */
+export function isApiError(err: unknown): err is ApiError {
+    return err instanceof ApiError;
+}
+
+/** Message for an error body not in the Gateway's shape. */
+function describeErrorBody(body: unknown): string {
+    if (!body || typeof body !== 'object') {
+        return String(body ?? '');
+    }
+
+    const fields = body as Record<string, unknown>;
+    if (typeof fields.error === 'string') return fields.error;
+    if (typeof fields.message === 'string') return fields.message;
+    return JSON.stringify(body);
+}
+
 // ─── Class ───────────────────────────────────────────────────────────────────
 
 /**
@@ -176,43 +264,6 @@ export class GatewayError<
         this.details = details;
     }
 
-    /**
-     * Parse a 4xx/5xx API response body into a typed `GatewayError`.
-     *
-     * Details are extracted by `code`, matching the Rust `GatewayErrorDetails` enum exactly.
-     * Falls back to `InternalError` for non-conforming bodies, preserving any `error` or
-     * `message` string present in the payload.
-     *
-     * Returns {@link AnyGatewayError} — a discriminated union over all error codes —
-     * so callers can switch on `.code` and have `.details` automatically narrowed.
-     *
-     * Pass the response's status as `httpCode` to keep it on the error.
-     */
-    static fromResponse(json: GatewayErrorInterface | object, httpCode?: number): AnyGatewayError {
-        if (!json || typeof json !== 'object') {
-            return GatewayError.fromText(String(json ?? ''), undefined, httpCode);
-        }
-
-        const body = json as Record<string, unknown>;
-
-        if (!instanceOfGatewayErrorV4(body)) {
-            return GatewayError.fromText(describeErrorBody(body), undefined, httpCode);
-        }
-
-        const code = body.code as AnyGatewayErrorCode;
-        const message = body.error as string;
-        const raw =
-            body.details != null && typeof body.details === 'object' ? (body.details as Record<string, unknown>) : null;
-
-        return new GatewayError(
-            code,
-            message,
-            parseDetails({ code, raw } as ParseDetailsArgs),
-            undefined,
-            httpCode
-        ) as AnyGatewayError;
-    }
-
     static fromText(
         message: string,
         options?: ErrorOptions,
@@ -220,6 +271,25 @@ export class GatewayError<
     ): GatewayError<(typeof GatewayErrorCode)['InternalError']> {
         return new GatewayError(GatewayErrorCode.InternalError, message, null, options, httpCode);
     }
+}
+
+/**
+ * Build the `GatewayError` a coded response body describes. Details are extracted by `code`,
+ * matching the Rust `GatewayErrorDetails` enum exactly.
+ */
+function gatewayErrorFromBody(json: GatewayErrorInterface, httpCode: number): AnyGatewayError {
+    const body = json as unknown as Record<string, unknown>;
+    const code = body.code as AnyGatewayErrorCode;
+    const raw =
+        body.details != null && typeof body.details === 'object' ? (body.details as Record<string, unknown>) : null;
+
+    return new GatewayError(
+        code,
+        json.error,
+        parseDetails({ code, raw } as ParseDetailsArgs),
+        undefined,
+        httpCode
+    ) as AnyGatewayError;
 }
 
 /**

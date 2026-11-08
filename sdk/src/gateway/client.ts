@@ -17,7 +17,7 @@ import {
 } from 'viem';
 import { oftApprovalRequiredAbi, strategyCaller, USDTApproveAbi } from './abi';
 import { assertAllowanceHolderSpender } from './allowance-holder';
-import { ApiError, describeErrorBody, GatewayError } from './error';
+import { ApiError } from './error';
 import {
     Configuration,
     type GatewayCreateOrderV3,
@@ -38,7 +38,6 @@ import {
     type RouteInfo,
     V4Api,
 } from './generated-client';
-import { instanceOfGatewayErrorV4 } from './generated-client/models/GatewayErrorV4';
 import {
     type BitcoinSigner,
     ExecuteQuoteError,
@@ -338,25 +337,7 @@ export class GatewayApiClient {
                     {
                         async post(context) {
                             if (context.response && (context.response.status < 200 || context.response.status >= 300)) {
-                                const httpCode = context.response.status;
-                                let body: unknown;
-                                try {
-                                    body = await context.response.json();
-                                } catch (parseError) {
-                                    throw new ApiError(
-                                        `Non-JSON response: HTTP ${httpCode} ${context.response.statusText}`,
-                                        httpCode,
-                                        { cause: parseError }
-                                    );
-                                }
-
-                                // The Gateway codes every error it returns, so a body without a
-                                // `code` came from something in front of it (CDN, proxy, ingress).
-                                if (body && typeof body === 'object' && instanceOfGatewayErrorV4(body)) {
-                                    throw GatewayError.fromResponse(body, httpCode);
-                                }
-
-                                throw new ApiError(describeErrorBody(body), httpCode);
+                                throw await ApiError.fromResponse(context.response);
                             }
 
                             return context.response;

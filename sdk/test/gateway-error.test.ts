@@ -1,18 +1,31 @@
-import { describe, expect, it } from 'vitest';
+import { assert, describe, expect, it } from 'vitest';
 import {
+    AnyGatewayError,
     ApiError,
     GatewayError,
     GatewayErrorCode,
     GatewayErrorCodeV2,
     GatewayErrorCodeV3,
     isApiError,
+    isGatewayError,
 } from '../src/gateway/error';
+
+/** An error body as the middleware sees it: a JSON response with an error status. */
+const jsonResponse = (body: unknown, status = 400) =>
+    new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
+
+/** Reads a coded error body the way the client does, which gives a GatewayError for it. */
+async function gatewayErrorFrom(body: object, status = 400): Promise<AnyGatewayError> {
+    const error = await ApiError.fromResponse(jsonResponse(body, status));
+    assert(isGatewayError(error));
+    return error;
+}
 
 // Every body here is copied from a live mainnet response. The Gateway serialises detail fields in
 // snake_case, so a camelCase read silently yields nothing and the figures never reach the caller.
-describe('GatewayError.fromResponse — snake_case detail bodies', () => {
-    it('reads the slippage a route requires', () => {
-        const error = GatewayError.fromResponse({
+describe('ApiError.fromResponse — snake_case detail bodies', () => {
+    it('reads the slippage a route requires', async () => {
+        const error = await gatewayErrorFrom({
             code: GatewayErrorCode.SlippageTooLow,
             error: 'Across requires a slippage of at least 550 bps, got 500 bps',
             details: { required_bps: '550', requested_bps: '500' },
@@ -22,8 +35,8 @@ describe('GatewayError.fromResponse — snake_case detail bodies', () => {
         expect(error.details).toEqual({ requiredBps: '550', requestedBps: '500' });
     });
 
-    it('reads the pair a missing route refers to', () => {
-        const error = GatewayError.fromResponse({
+    it('reads the pair a missing route refers to', async () => {
+        const error = await gatewayErrorFrom({
             code: GatewayErrorCode.NoRoute,
             error: 'No route found',
             details: {
@@ -42,8 +55,8 @@ describe('GatewayError.fromResponse — snake_case detail bodies', () => {
         });
     });
 
-    it('reads the chain a solver ceiling applies to', () => {
-        const error = GatewayError.fromResponse({
+    it('reads the chain a solver ceiling applies to', async () => {
+        const error = await gatewayErrorFrom({
             code: GatewayErrorCodeV2.InsufficientSolverBalance,
             error: 'Insufficient solver balance',
             details: { limit: '1000000', token: '0xdAC17F958D2ee523a2206206994597C13D831ec7', chain_id: '1' },
@@ -52,8 +65,8 @@ describe('GatewayError.fromResponse — snake_case detail bodies', () => {
         expect(error.details).toMatchObject({ chainId: '1', limit: '1000000' });
     });
 
-    it('reads the fee figures a shortfall reports', () => {
-        const error = GatewayError.fromResponse({
+    it('reads the fee figures a shortfall reports', async () => {
+        const error = await gatewayErrorFrom({
             code: GatewayErrorCode.UnableToCoverFees,
             error: 'Unable to cover fees',
             details: { total_fees: '5000', available_amount: '1200' },
@@ -62,8 +75,8 @@ describe('GatewayError.fromResponse — snake_case detail bodies', () => {
         expect(error.details).toEqual({ totalFees: '5000', availableAmount: '1200' });
     });
 
-    it('reads the tenderly url a simulation failure carries', () => {
-        const error = GatewayError.fromResponse({
+    it('reads the tenderly url a simulation failure carries', async () => {
+        const error = await gatewayErrorFrom({
             code: GatewayErrorCode.SimulationFailed,
             error: 'Simulation failed',
             details: { tenderly_url: 'https://dashboard.tenderly.co/tx/1' },
@@ -72,8 +85,8 @@ describe('GatewayError.fromResponse — snake_case detail bodies', () => {
         expect(error.details).toEqual({ tenderlyUrl: 'https://dashboard.tenderly.co/tx/1' });
     });
 
-    it('still gives an object when the response omits details entirely', () => {
-        const error = GatewayError.fromResponse({
+    it('still gives an object when the response omits details entirely', async () => {
+        const error = await gatewayErrorFrom({
             code: GatewayErrorCode.SlippageTooLow,
             error: 'Across requires a slippage of at least 550 bps, got 500 bps',
         });
@@ -84,8 +97,8 @@ describe('GatewayError.fromResponse — snake_case detail bodies', () => {
         expect(error.details.requiredBps).toBeUndefined();
     });
 
-    it('keeps the compliance addresses iterable when the gateway omits them', () => {
-        const omitted = GatewayError.fromResponse({
+    it('keeps the compliance addresses iterable when the gateway omits them', async () => {
+        const omitted = await gatewayErrorFrom({
             code: GatewayErrorCodeV3.NonCompliantAddresses,
             error: 'Non-compliant addresses',
             details: {},
@@ -96,8 +109,8 @@ describe('GatewayError.fromResponse — snake_case detail bodies', () => {
         expect(() => omitted.details.addresses.map((a) => a)).not.toThrow();
     });
 
-    it('leaves an absent detail undefined rather than the string "undefined"', () => {
-        const error = GatewayError.fromResponse({
+    it('leaves an absent detail undefined rather than the string "undefined"', async () => {
+        const error = await gatewayErrorFrom({
             code: GatewayErrorCodeV3.TooManyAffiliates,
             error: 'Too many affiliates',
             details: {},
@@ -108,31 +121,52 @@ describe('GatewayError.fromResponse — snake_case detail bodies', () => {
 });
 
 // The UI treats a 403 as the geoblock verdict, and only the status tells a 403 apart from a 5xx
-// once the body is not a Gateway error, so every factory carries the status it was handed.
-describe('GatewayError — HTTP status code', () => {
-    it('keeps the status beside the code of a Gateway error body', () => {
-        const error = GatewayError.fromResponse(
-            { code: 'GEOBLOCKED', error: 'Service not available in your region' },
-            403
+// once the body is not a Gateway error, so every error read from a response carries its status.
+describe('ApiError.fromResponse', () => {
+    it('gives a GatewayError carrying the status for a coded body', async () => {
+        const error = await ApiError.fromResponse(
+            jsonResponse({ code: 'GEOBLOCKED', error: 'This service is not available in your location' }, 403)
         );
 
-        expect(error.httpCode).toBe(403);
+        assert(isGatewayError(error));
         expect(error.code).toBe('GEOBLOCKED');
-    });
-
-    it('keeps the status when a JSON body is not a Gateway error', () => {
-        const error = GatewayError.fromResponse({ message: 'Forbidden' }, 403);
-
-        expect(error.code).toBe(GatewayErrorCode.InternalError);
         expect(error.httpCode).toBe(403);
     });
 
-    it('keeps the status when the JSON body is not an object', () => {
-        const error = GatewayError.fromResponse(null as unknown as object, 502);
+    it('gives a plain ApiError carrying the status for JSON without a code', async () => {
+        const error = await ApiError.fromResponse(jsonResponse({ message: 'Forbidden' }, 403));
 
+        expect(isGatewayError(error)).toBe(false);
+        expect(error.httpCode).toBe(403);
+        expect(error.message).toBe('Forbidden');
+    });
+
+    it('gives a plain ApiError for JSON that is not an object', async () => {
+        const error = await ApiError.fromResponse(jsonResponse(null, 502));
+
+        expect(isGatewayError(error)).toBe(false);
         expect(error.httpCode).toBe(502);
     });
 
+    it('gives a plain ApiError carrying the parse failure for a body that is not JSON', async () => {
+        const error = await ApiError.fromResponse(
+            new Response('<html>Access denied</html>', { status: 403, statusText: 'Forbidden' })
+        );
+
+        expect(isGatewayError(error)).toBe(false);
+        expect(error.httpCode).toBe(403);
+        expect(error.message).toBe('Non-JSON response: HTTP 403 Forbidden');
+        expect(error.cause).toBeInstanceOf(SyntaxError);
+    });
+
+    it('is inherited by GatewayError', async () => {
+        const error = await GatewayError.fromResponse(jsonResponse({ code: 'GEOBLOCKED', error: 'blocked' }, 403));
+
+        expect(isGatewayError(error)).toBe(true);
+    });
+});
+
+describe('GatewayError — HTTP status code', () => {
     it('keeps the status and the cause on an error built from text', () => {
         const cause = new SyntaxError('Unexpected token <');
         const error = GatewayError.fromText('Non-JSON response: HTTP 403', { cause }, 403);
@@ -143,9 +177,6 @@ describe('GatewayError — HTTP status code', () => {
 
     it('leaves the status undefined for an error not built from a response', () => {
         expect(GatewayError.fromText('boom').httpCode).toBeUndefined();
-        expect(
-            GatewayError.fromResponse({ code: GatewayErrorCode.InternalError, error: 'boom' }).httpCode
-        ).toBeUndefined();
         expect(new GatewayError(GatewayErrorCode.InternalError, 'boom', null).httpCode).toBeUndefined();
     });
 
@@ -170,7 +201,7 @@ describe('ApiError', () => {
     });
 
     it('is the base of GatewayError, so one check covers both', () => {
-        const error = GatewayError.fromResponse({ code: 'GEOBLOCKED', error: 'blocked' }, 403);
+        const error = GatewayError.fromText('blocked', undefined, 403);
 
         expect(error).toBeInstanceOf(ApiError);
         expect(isApiError(error)).toBe(true);
