@@ -117,25 +117,26 @@ describe('GatewayError.fromResponse — snake_case detail bodies', () => {
     });
 });
 
-// The UI treats a 403 as the geoblock verdict, and only the status tells a 403 apart from a 5xx
-// once the body is not a Gateway error, so every error read from a response carries its status.
-// Each factory returns its own class; choosing between them is the client's job.
+// Cloudflare refuses a blocked location with a 403 HTML page before the request reaches the
+// Gateway, which never answers 403 itself, so only the status identifies the geoblock. Every error
+// read from a response therefore carries its status. Each factory returns its own class; choosing
+// between them is the client's job.
 describe('ApiError.fromResponse', () => {
     it('gives a plain ApiError even for a coded body', async () => {
         const error = await ApiError.fromResponse(
-            jsonResponse({ code: 'GEOBLOCKED', error: 'This service is not available in your location' }, 403)
+            jsonResponse({ code: GatewayErrorCode.InternalError, error: 'Internal server error' }, 500)
         );
 
         expect(isGatewayError(error)).toBe(false);
-        expect(error.httpCode).toBe(403);
-        expect(error.message).toBe('This service is not available in your location');
+        expect(error.httpCode).toBe(500);
+        expect(error.message).toBe('Internal server error');
     });
 
     it('carries the status and the message of JSON without a code', async () => {
-        const error = await ApiError.fromResponse(jsonResponse({ message: 'Forbidden' }, 403));
+        const error = await ApiError.fromResponse(jsonResponse({ message: 'Bad Gateway' }, 502));
 
-        expect(error.httpCode).toBe(403);
-        expect(error.message).toBe('Forbidden');
+        expect(error.httpCode).toBe(502);
+        expect(error.message).toBe('Bad Gateway');
     });
 
     it('carries the status of JSON that is not an object', async () => {
@@ -144,7 +145,7 @@ describe('ApiError.fromResponse', () => {
         expect(error.httpCode).toBe(502);
     });
 
-    it('carries the status and the parse failure of a body that is not JSON', async () => {
+    it("carries the status and the parse failure of an HTML page, like Cloudflare's geoblock 403", async () => {
         const error = await ApiError.fromResponse(
             new Response('<html>Access denied</html>', { status: 403, statusText: 'Forbidden' })
         );
@@ -158,12 +159,12 @@ describe('ApiError.fromResponse', () => {
 describe('GatewayError.fromResponse', () => {
     it('carries the status beside the code of a coded body', async () => {
         const error = await GatewayError.fromResponse(
-            jsonResponse({ code: 'GEOBLOCKED', error: 'This service is not available in your location' }, 403)
+            jsonResponse({ code: GatewayErrorCode.InternalError, error: 'Internal server error' }, 500)
         );
 
         expect(isGatewayError(error)).toBe(true);
-        expect(error.code).toBe('GEOBLOCKED');
-        expect(error.httpCode).toBe(403);
+        expect(error.code).toBe(GatewayErrorCode.InternalError);
+        expect(error.httpCode).toBe(500);
     });
 });
 

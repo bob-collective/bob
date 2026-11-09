@@ -3,8 +3,12 @@
  *
  * A body in the Gateway's error shape (`{ code, error, details? }`) is thrown as the subclass
  * {@link GatewayError}. Any other body — an HTML page, an empty body, JSON without a `code` — did
- * not come from the Gateway but from something in front of it (a CDN, a proxy, a load balancer),
- * and is thrown as a plain `ApiError`.
+ * not come from the Gateway but from something in front of it (Cloudflare, a proxy, a load
+ * balancer), and is thrown as a plain `ApiError`.
+ *
+ * A blocked location is refused by Cloudflare with a 403 HTML page before the request reaches the
+ * Gateway, which never answers 403 itself. That refusal is therefore always a plain `ApiError`,
+ * recognisable only by its `httpCode`.
  *
  * Check {@link isGatewayError} first when the Gateway's `code` matters; check {@link isApiError}
  * to handle every HTTP failure, whatever answered it:
@@ -15,7 +19,7 @@
  *   await gatewaySDK.getRoutes();
  * } catch (err) {
  *   if (isApiError(err) && err.httpCode === 403) {
- *     // refused, by the Gateway (`GEOBLOCKED`) or by the proxy in front of it
+ *     // geoblocked: Cloudflare refused the request
  *   }
  * }
  * ```

@@ -305,9 +305,9 @@ export interface GatewaySDKOptions {
 
 /**
  * Read a 4xx/5xx response into the error to throw. The Gateway codes every error it returns, so a
- * body in its shape gives a {@link GatewayError}, and any other body — from a CDN, proxy or ingress
- * in front of it — a plain {@link ApiError}. Peeks at a clone, since the chosen factory reads the
- * body itself.
+ * body in its shape gives a {@link GatewayError}, and any other body — from Cloudflare (such as its
+ * 403 HTML page for a blocked location) or another proxy in front of it — a plain {@link ApiError}.
+ * Peeks at a clone, since the chosen factory reads the body itself.
  */
 async function errorFromResponse(response: Response): Promise<ApiError> {
     const body: unknown = await response

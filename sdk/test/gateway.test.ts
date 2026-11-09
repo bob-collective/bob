@@ -4209,9 +4209,9 @@ describe('Gateway Tests', () => {
     });
 });
 
-// A blocked location gets a 403 on get-routes, either from the Gateway with a GEOBLOCKED body or
-// from the proxy in front of it with a page that is not JSON. Only a coded body is the Gateway's
-// own error; anything else comes from something in front of it, and both keep the status.
+// Cloudflare refuses a blocked location with a 403 HTML page before the request reaches the
+// Gateway, which never answers 403 itself. Only a coded body is the Gateway's own error; anything
+// else comes from something in front of it, and both keep the status.
 describe('GatewayApiClient — errors from a response', () => {
     const getRoutesError = (): Promise<unknown> =>
         new GatewaySDK().getRoutes().then(
@@ -4219,33 +4219,35 @@ describe('GatewayApiClient — errors from a response', () => {
             (e: unknown) => e
         );
 
+    const htmlPage = (text: string) => `<!DOCTYPE html><html><body>${text}</body></html>`;
+
     it('throws a GatewayError carrying the status for a coded body', async () => {
         nock(`${MAINNET_GATEWAY_BASE_URL}/v4`)
             .get('/get-routes')
-            .reply(403, { code: 'GEOBLOCKED', error: 'This service is not available in your location' });
+            .reply(500, { code: GatewayErrorCode.InternalError, error: 'Internal server error' });
 
         const error = await getRoutesError();
 
         assert(isGatewayError(error));
-        expect(error.code).toBe('GEOBLOCKED');
-        expect(error.httpCode).toBe(403);
+        expect(error.code).toBe(GatewayErrorCode.InternalError);
+        expect(error.httpCode).toBe(500);
     });
 
     it('lets a GatewayError be caught as an ApiError', async () => {
         nock(`${MAINNET_GATEWAY_BASE_URL}/v4`)
             .get('/get-routes')
-            .reply(403, { code: 'GEOBLOCKED', error: 'This service is not available in your location' });
+            .reply(500, { code: GatewayErrorCode.InternalError, error: 'Internal server error' });
 
         const error = await getRoutesError();
 
         assert(isApiError(error));
-        expect(error.httpCode).toBe(403);
+        expect(error.httpCode).toBe(500);
     });
 
-    it('throws an ApiError, not a GatewayError, for an HTML page', async () => {
+    it("throws an ApiError, not a GatewayError, for Cloudflare's geoblock page", async () => {
         nock(`${MAINNET_GATEWAY_BASE_URL}/v4`)
             .get('/get-routes')
-            .reply(403, '<!DOCTYPE html><html><body>Access denied</body></html>', { 'Content-Type': 'text/html' });
+            .reply(403, htmlPage('Access denied'), { 'Content-Type': 'text/html' });
 
         const error = await getRoutesError();
 
@@ -4257,13 +4259,13 @@ describe('GatewayApiClient — errors from a response', () => {
     });
 
     it('throws an ApiError for an empty body', async () => {
-        nock(`${MAINNET_GATEWAY_BASE_URL}/v4`).get('/get-routes').reply(403);
+        nock(`${MAINNET_GATEWAY_BASE_URL}/v4`).get('/get-routes').reply(502);
 
         const error = await getRoutesError();
 
         expect(isGatewayError(error)).toBe(false);
         assert(isApiError(error));
-        expect(error.httpCode).toBe(403);
+        expect(error.httpCode).toBe(502);
     });
 
     it('throws an ApiError for a JSON body without a code, keeping its message', async () => {
@@ -4277,10 +4279,14 @@ describe('GatewayApiClient — errors from a response', () => {
     });
 
     it('tells a 403 from a 5xx when the body is not a Gateway error', async () => {
-        nock(`${MAINNET_GATEWAY_BASE_URL}/v4`).get('/get-routes').reply(403, { message: 'Forbidden' });
+        nock(`${MAINNET_GATEWAY_BASE_URL}/v4`)
+            .get('/get-routes')
+            .reply(403, htmlPage('Access denied'), { 'Content-Type': 'text/html' });
         const forbidden = await getRoutesError();
 
-        nock(`${MAINNET_GATEWAY_BASE_URL}/v4`).get('/get-routes').reply(503, { message: 'Forbidden' });
+        nock(`${MAINNET_GATEWAY_BASE_URL}/v4`)
+            .get('/get-routes')
+            .reply(503, htmlPage('Service unavailable'), { 'Content-Type': 'text/html' });
         const unavailable = await getRoutesError();
 
         assert(isApiError(forbidden) && isApiError(unavailable));

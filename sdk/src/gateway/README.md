@@ -298,14 +298,15 @@ A 4xx/5xx response throws an `ApiError` (`isApiError`) carrying the response's `
   `GatewayError` (`isGatewayError`, `GatewayErrorCode`, and per-code detail types —
   `NoRouteDetails`, `ExceededLimitDetails`, …).
 - Any other body — an HTML page, an empty body, JSON without a `code` — came from something in
-  front of the Gateway (CDN, proxy, ingress) and throws a plain `ApiError`.
+  front of the Gateway (Cloudflare, proxy, ingress) and throws a plain `ApiError`.
 
-Check `isGatewayError` first when the Gateway's `code` matters, and `isApiError` to handle every
-HTTP failure:
+A blocked location is refused by Cloudflare with a 403 HTML page; the Gateway never answers 403
+itself. Check `isGatewayError` first when the Gateway's `code` matters, and `isApiError` to handle
+every HTTP failure:
 
 ```typescript
 if (isApiError(err) && err.httpCode === 403) {
-    // refused, by the Gateway (`GEOBLOCKED`) or by the proxy in front of it
+    // geoblocked: Cloudflare refused the request
 }
 ```
 
