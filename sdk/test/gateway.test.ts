@@ -35,7 +35,9 @@ import {
     GatewayErrorCode,
     GatewayErrorCodeV4Variants,
     GatewaySDK,
+    isApiError,
     isGatewayError,
+    type AnyGatewayError,
 } from '../src/gateway';
 import { assertAllowanceHolderSpender } from '../src/gateway/allowance-holder';
 import { ETHEREUM_USDT_ADDRESS, MAINNET_GATEWAY_BASE_URL } from '../src/gateway/client';
@@ -99,6 +101,14 @@ function createRevertApprovalError(spender: Address, amount: bigint) {
 afterEach(() => {
     nock.cleanAll();
 });
+
+/** An error body as the middleware sees it: a JSON response with an error status. */
+const jsonResponse = (body: unknown, status = 400) =>
+    new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
+
+/** Reads an error body through `GatewayError.fromResponse`, as the client does for a coded one. */
+const gatewayErrorFrom = (body: object, status = 400): Promise<AnyGatewayError> =>
+    GatewayError.fromResponse(jsonResponse(body, status));
 
 describe('Gateway Tests', () => {
     it.each([undefined, 0, 125])('should get quotes with maxSlippage=%s', async (maxSlippage) => {
@@ -2199,7 +2209,9 @@ describe('Gateway Tests', () => {
                 },
             });
 
-        nock(`${MAINNET_GATEWAY_BASE_URL}`).patch('/v4/register-tx').reply(500, { error: 'registerTx exploded' });
+        nock(`${MAINNET_GATEWAY_BASE_URL}`)
+            .patch('/v4/register-tx')
+            .reply(500, { code: GatewayErrorCode.InternalError, error: 'registerTx exploded' });
 
         const mockBtcSigner: BitcoinSigner = {
             signAllInputs: async () => signedTx,
@@ -2272,7 +2284,9 @@ describe('Gateway Tests', () => {
                     },
                 });
 
-            nock(`${MAINNET_GATEWAY_BASE_URL}`).patch('/v4/register-tx').reply(500, { error: 'registerTx exploded' });
+            nock(`${MAINNET_GATEWAY_BASE_URL}`)
+                .patch('/v4/register-tx')
+                .reply(500, { code: GatewayErrorCode.InternalError, error: 'registerTx exploded' });
 
             return new GatewaySDK()
                 .executeQuote({
@@ -2354,8 +2368,8 @@ describe('Gateway Tests', () => {
         ).rejects.toThrow(errorMessage);
     });
 
-    it('should parse QuoteAmountTooLow gateway errors with typed details', () => {
-        const error = GatewayError.fromResponse({
+    it('should parse QuoteAmountTooLow gateway errors with typed details', async () => {
+        const error = await gatewayErrorFrom({
             code: GatewayErrorCode.QuoteAmountTooLow,
             error: 'Quote amount too low',
             details: {
@@ -2372,8 +2386,8 @@ describe('Gateway Tests', () => {
         });
     });
 
-    it('should parse SlippageTooLow gateway errors with typed details', () => {
-        const error = GatewayError.fromResponse({
+    it('should parse SlippageTooLow gateway errors with typed details', async () => {
+        const error = await gatewayErrorFrom({
             code: GatewayErrorCode.SlippageTooLow,
             error: 'Slippage too low',
             details: {
@@ -2389,8 +2403,8 @@ describe('Gateway Tests', () => {
         });
     });
 
-    it('should parse AffiliateFeesNotSupportedForRoute gateway errors with typed details', () => {
-        const error = GatewayError.fromResponse({
+    it('should parse AffiliateFeesNotSupportedForRoute gateway errors with typed details', async () => {
+        const error = await gatewayErrorFrom({
             code: GatewayErrorCodeV2.AffiliateFeesNotSupportedForRoute,
             error: 'Affiliate fees not supported for route',
             details: {
@@ -2410,7 +2424,7 @@ describe('Gateway Tests', () => {
         });
     });
 
-    it('should parse gateway errors without structured details as null', () => {
+    it('should parse gateway errors without structured details as null', async () => {
         const codesWithoutDetails = [
             GatewayErrorCode.InsufficientConfirmedFunds,
             GatewayErrorCode.PerAccountLimitExceeded,
@@ -2428,7 +2442,7 @@ describe('Gateway Tests', () => {
         ];
 
         for (const code of codesWithoutDetails) {
-            const error = GatewayError.fromResponse({
+            const error = await gatewayErrorFrom({
                 code,
                 error: `${code} failed`,
                 details: {},
@@ -2439,8 +2453,8 @@ describe('Gateway Tests', () => {
         }
     });
 
-    it('should parse InsufficientSolverBalance gateway errors with typed details', () => {
-        const error = GatewayError.fromResponse({
+    it('should parse InsufficientSolverBalance gateway errors with typed details', async () => {
+        const error = await gatewayErrorFrom({
             code: GatewayErrorCode.InsufficientSolverBalance,
             error: 'Insufficient solver balance',
             details: {
@@ -3441,8 +3455,8 @@ describe('Gateway Tests', () => {
         });
     });
 
-    it('preserves the V4 missing-refund-address error', () => {
-        const error = GatewayError.fromResponse({
+    it('preserves the V4 missing-refund-address error', async () => {
+        const error = await gatewayErrorFrom({
             code: 'MISSING_REFUND_ADDRESS',
             error: 'A source-chain refund address is required',
         });
@@ -4192,5 +4206,91 @@ describe('Gateway Tests', () => {
             expect(error.orderId).toBe('order-validation');
             expect(Object.hasOwn(error, 'cause')).toBe(false);
         });
+    });
+});
+
+// Cloudflare refuses a blocked location with a 403 HTML page before the request reaches the
+// Gateway, which never answers 403 itself. Only a coded body is the Gateway's own error; anything
+// else comes from something in front of it, and both keep the status.
+describe('GatewayApiClient — errors from a response', () => {
+    const getRoutesError = (): Promise<unknown> =>
+        new GatewaySDK().getRoutes().then(
+            () => undefined,
+            (e: unknown) => e
+        );
+
+    const htmlPage = (text: string) => `<!DOCTYPE html><html><body>${text}</body></html>`;
+
+    it('throws a GatewayError carrying the status for a coded body', async () => {
+        nock(`${MAINNET_GATEWAY_BASE_URL}/v4`)
+            .get('/get-routes')
+            .reply(500, { code: GatewayErrorCode.InternalError, error: 'Internal server error' });
+
+        const error = await getRoutesError();
+
+        assert(isGatewayError(error));
+        expect(error.code).toBe(GatewayErrorCode.InternalError);
+        expect(error.httpCode).toBe(500);
+    });
+
+    it('lets a GatewayError be caught as an ApiError', async () => {
+        nock(`${MAINNET_GATEWAY_BASE_URL}/v4`)
+            .get('/get-routes')
+            .reply(500, { code: GatewayErrorCode.InternalError, error: 'Internal server error' });
+
+        const error = await getRoutesError();
+
+        assert(isApiError(error));
+        expect(error.httpCode).toBe(500);
+    });
+
+    it("throws an ApiError, not a GatewayError, for Cloudflare's geoblock page", async () => {
+        nock(`${MAINNET_GATEWAY_BASE_URL}/v4`)
+            .get('/get-routes')
+            .reply(403, htmlPage('Access denied'), { 'Content-Type': 'text/html' });
+
+        const error = await getRoutesError();
+
+        expect(isGatewayError(error)).toBe(false);
+        assert(isApiError(error));
+        expect(error.httpCode).toBe(403);
+        expect(error.message).toMatch(/^Non-JSON response: HTTP 403/);
+        expect(error.cause).toBeInstanceOf(SyntaxError);
+    });
+
+    it('throws an ApiError for an empty body', async () => {
+        nock(`${MAINNET_GATEWAY_BASE_URL}/v4`).get('/get-routes').reply(502);
+
+        const error = await getRoutesError();
+
+        expect(isGatewayError(error)).toBe(false);
+        assert(isApiError(error));
+        expect(error.httpCode).toBe(502);
+    });
+
+    it('throws an ApiError for a JSON body without a code, keeping its message', async () => {
+        nock(`${MAINNET_GATEWAY_BASE_URL}/v4`).get('/get-routes').reply(502, { error: 'upstream unavailable' });
+
+        const error = await getRoutesError();
+
+        expect(isGatewayError(error)).toBe(false);
+        assert(isApiError(error));
+        expect(error.message).toBe('upstream unavailable');
+    });
+
+    it('tells a 403 from a 5xx when the body is not a Gateway error', async () => {
+        nock(`${MAINNET_GATEWAY_BASE_URL}/v4`)
+            .get('/get-routes')
+            .reply(403, htmlPage('Access denied'), { 'Content-Type': 'text/html' });
+        const forbidden = await getRoutesError();
+
+        nock(`${MAINNET_GATEWAY_BASE_URL}/v4`)
+            .get('/get-routes')
+            .reply(503, htmlPage('Service unavailable'), { 'Content-Type': 'text/html' });
+        const unavailable = await getRoutesError();
+
+        assert(isApiError(forbidden) && isApiError(unavailable));
+        expect(forbidden.httpCode).toBe(403);
+        expect(unavailable.httpCode).toBe(503);
     });
 });

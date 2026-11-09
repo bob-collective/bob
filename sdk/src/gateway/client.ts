@@ -17,7 +17,7 @@ import {
 } from 'viem';
 import { oftApprovalRequiredAbi, strategyCaller, USDTApproveAbi } from './abi';
 import { assertAllowanceHolderSpender } from './allowance-holder';
-import { GatewayError } from './error';
+import { ApiError, GatewayError, isGatewayErrorBody } from './error';
 import {
     Configuration,
     type GatewayCreateOrderV3,
@@ -38,7 +38,6 @@ import {
     type RouteInfo,
     V4Api,
 } from './generated-client';
-import type { GatewayErrorV4 as GatewayErrorInterface } from './generated-client/models/GatewayErrorV4';
 import {
     type BitcoinSigner,
     ExecuteQuoteError,
@@ -304,6 +303,21 @@ export interface GatewaySDKOptions {
     apiKey?: string;
 }
 
+/**
+ * Read a 4xx/5xx response into the error to throw. The Gateway codes every error it returns, so a
+ * body in its shape gives a {@link GatewayError}, and any other body — from Cloudflare (such as its
+ * 403 HTML page for a blocked location) or another proxy in front of it — a plain {@link ApiError}.
+ * Peeks at a clone, since the chosen factory reads the body itself.
+ */
+async function errorFromResponse(response: Response): Promise<ApiError> {
+    const body: unknown = await response
+        .clone()
+        .json()
+        .catch(() => undefined);
+
+    return isGatewayErrorBody(body) ? GatewayError.fromResponse(response) : ApiError.fromResponse(response);
+}
+
 export class GatewayApiClient {
     api: V4Api;
 
@@ -338,18 +352,7 @@ export class GatewayApiClient {
                     {
                         async post(context) {
                             if (context.response && (context.response.status < 200 || context.response.status >= 300)) {
-                                let body: GatewayErrorInterface;
-                                try {
-                                    body = await context.response.json();
-                                } catch (parseError) {
-                                    const err = GatewayError.fromText(
-                                        `Non-JSON response: HTTP ${context.response.status} ${context.response.statusText}`
-                                    );
-                                    err.cause = parseError;
-                                    throw err;
-                                }
-
-                                throw GatewayError.fromResponse(body);
+                                throw await errorFromResponse(context.response);
                             }
 
                             return context.response;

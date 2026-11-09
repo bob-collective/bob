@@ -292,6 +292,23 @@ Routes that don't support affiliate fees return `AFFILIATE_FEES_NOT_SUPPORTED_FO
 
 ## Errors
 
-API failures throw a typed `GatewayError` (`isGatewayError`, `GatewayErrorCode`,
-and per-code detail types — `NoRouteDetails`, `ExceededLimitDetails`, …). Non-JSON
-HTTP errors are wrapped via `GatewayError.fromText`.
+A 4xx/5xx response throws an `ApiError` (`isApiError`) carrying the response's `httpCode`.
+
+- A body in the Gateway's error shape (`{ code, error, details? }`) throws the subclass
+  `GatewayError` (`isGatewayError`, `GatewayErrorCode`, and per-code detail types —
+  `NoRouteDetails`, `ExceededLimitDetails`, …).
+- Any other body — an HTML page, an empty body, JSON without a `code` — came from something in
+  front of the Gateway (Cloudflare, proxy, ingress) and throws a plain `ApiError`.
+
+A blocked location is refused by Cloudflare with a 403 HTML page; the Gateway never answers 403
+itself. Check `isGatewayError` first when the Gateway's `code` matters, and `isApiError` to handle
+every HTTP failure:
+
+```typescript
+if (isApiError(err) && err.httpCode === 403) {
+    // geoblocked: Cloudflare refused the request
+}
+```
+
+A request that never gets a response (offline, DNS, CORS) throws the generated client's
+`FetchError` instead.
