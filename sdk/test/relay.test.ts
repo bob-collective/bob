@@ -10,13 +10,13 @@ describe.skip('Relay Tests', () => {
         const tx = new bitcoin.Transaction();
         const output = bitcoin.address.fromBech32('bcrt1qv9pt88qqwdnjmsuzhzdy9v57qcmghj4alhdg5y').data;
         console.log(Buffer.concat([Buffer.from([output.length]), output]).toString('hex'));
-        tx.addOutput(output, 15000);
+        tx.addOutput(output, 15000n);
         tx.addOutput(
             bitcoin.script.compile([
                 bitcoin.opcodes.OP_RETURN,
                 Buffer.from('675Ca18A04027fd50C88CcD03939E0e5C97b795f', 'hex'),
             ]),
-            0
+            0n
         );
         console.log(encodeRawOutput(tx).toString('hex'));
     });

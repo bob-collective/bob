@@ -1,116 +1,94 @@
 /**
  * @ignore
  */
-import { Block } from 'bitcoinjs-lib';
+import { Block, crypto, Transaction } from 'bitcoinjs-lib';
+
 /**
+ * Bitcoin CompactSize (varint) encoding.
  * @ignore
  */
-import { BufferWriter, varuint } from 'bitcoinjs-lib/src/bufferutils';
-/**
- * @ignore
- */
-import { hash256 } from 'bitcoinjs-lib/src/crypto';
-/**
- * @ignore
- */
-import { Output, Transaction } from 'bitcoinjs-lib/src/transaction';
-/**
- * @ignore
- */
-function varSliceSize(someScript: Buffer): number {
-    const length = someScript.length;
-    return varuint.encodingLength(length) + length;
+function encodeVarInt(n: number): Buffer {
+    if (n < 0xfd) {
+        return Buffer.from([n]);
+    }
+    if (n <= 0xffff) {
+        const buf = Buffer.allocUnsafe(3);
+        buf.writeUInt8(0xfd, 0);
+        buf.writeUInt16LE(n, 1);
+        return buf;
+    }
+    if (n <= 0xffffffff) {
+        const buf = Buffer.allocUnsafe(5);
+        buf.writeUInt8(0xfe, 0);
+        buf.writeUInt32LE(n, 1);
+        return buf;
+    }
+    const buf = Buffer.allocUnsafe(9);
+    buf.writeUInt8(0xff, 0);
+    buf.writeBigUInt64LE(BigInt(n), 1);
+    return buf;
 }
 
 /**
  * @ignore
  */
-export function encodeRawInput(tx: Transaction) {
-    const inputSize =
-        varuint.encodingLength(tx.ins.length) +
-        tx.ins.reduce((sum, input) => {
-            return sum + 40 + varSliceSize(input.script);
-        }, 0);
-
-    const inputBuffer = Buffer.allocUnsafe(inputSize);
-    const inputBufferWriter = new BufferWriter(inputBuffer, 0);
-
-    inputBufferWriter.writeVarInt(tx.ins.length);
-    tx.ins.forEach((txIn) => {
-        inputBufferWriter.writeSlice(txIn.hash);
-        inputBufferWriter.writeUInt32(txIn.index);
-        inputBufferWriter.writeVarSlice(txIn.script);
-        inputBufferWriter.writeUInt32(txIn.sequence);
-    });
-
-    return inputBuffer;
+function encodeUInt32LE(n: number): Buffer {
+    const buf = Buffer.allocUnsafe(4);
+    buf.writeUInt32LE(n, 0);
+    return buf;
 }
 
 /**
  * @ignore
  */
-function isOutput(out: Output): boolean {
-    return out.value !== undefined;
+function encodeUInt64LE(n: bigint): Buffer {
+    const buf = Buffer.allocUnsafe(8);
+    buf.writeBigUInt64LE(n, 0);
+    return buf;
 }
 
 /**
  * @ignore
  */
-export function encodeRawOutput(tx: Transaction) {
-    const outputSize =
-        varuint.encodingLength(tx.outs.length) +
-        tx.outs.reduce((sum, output) => {
-            return sum + 8 + varSliceSize(output.script);
-        }, 0);
-
-    const outputBuffer = Buffer.allocUnsafe(outputSize);
-    const outputBufferWriter = new BufferWriter(outputBuffer, 0);
-
-    outputBufferWriter.writeVarInt(tx.outs.length);
-    tx.outs.forEach((txOut) => {
-        if (isOutput(txOut)) {
-            outputBufferWriter.writeUInt64(txOut.value);
-        } else {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            outputBufferWriter.writeSlice((txOut as any).valueBuffer);
-        }
-
-        outputBufferWriter.writeVarSlice(txOut.script);
-    });
-
-    return outputBuffer;
+function encodeVarSlice(slice: Uint8Array): Buffer {
+    return Buffer.concat([encodeVarInt(slice.length), slice]);
 }
 
 /**
  * @ignore
  */
-function vectorSize(someVector: Buffer[]): number {
-    const length = someVector.length;
+export function encodeRawInput(tx: Transaction): Buffer {
+    return Buffer.concat([
+        encodeVarInt(tx.ins.length),
+        ...tx.ins.flatMap((txIn) => [
+            txIn.hash,
+            encodeUInt32LE(txIn.index),
+            encodeVarSlice(txIn.script),
+            encodeUInt32LE(txIn.sequence),
+        ]),
+    ]);
+}
 
-    return (
-        varuint.encodingLength(length) +
-        someVector.reduce((sum, witness) => {
-            return sum + varSliceSize(witness);
-        }, 0)
+/**
+ * @ignore
+ */
+export function encodeRawOutput(tx: Transaction): Buffer {
+    return Buffer.concat([
+        encodeVarInt(tx.outs.length),
+        ...tx.outs.flatMap((txOut) => [encodeUInt64LE(txOut.value), encodeVarSlice(txOut.script)]),
+    ]);
+}
+
+/**
+ * @ignore
+ */
+export function encodeRawWitness(tx: Transaction): Buffer {
+    return Buffer.concat(
+        tx.ins.flatMap((txIn) => [
+            encodeVarInt(txIn.witness.length),
+            ...txIn.witness.map((witness) => encodeVarSlice(witness)),
+        ])
     );
-}
-
-/**
- * @ignore
- */
-export function encodeRawWitness(tx: Transaction) {
-    const witnessSize = tx.ins.reduce((sum, input) => {
-        return sum + vectorSize(input.witness);
-    }, 0);
-
-    const witnessBuffer = Buffer.allocUnsafe(witnessSize);
-    const witnessBufferWriter = new BufferWriter(witnessBuffer, 0);
-
-    tx.ins.forEach((input) => {
-        witnessBufferWriter.writeVector(input.witness);
-    });
-
-    return witnessBuffer;
 }
 
 /**
@@ -154,7 +132,7 @@ function createMerkleBranchAndRoot(
         }
         merkle.push(hashes[index]);
         index = Math.floor(index / 2);
-        hashes = chunkArray(hashes, 2).map((pair) => hash256(Buffer.concat([pair[0], pair[1]])));
+        hashes = chunkArray(hashes, 2).map((pair) => Buffer.from(crypto.hash256(Buffer.concat([pair[0], pair[1]]))));
     }
     return {
         merkle,
@@ -171,7 +149,7 @@ function createMerkleBranchAndRoot(
  * @returns An object containing the position, proof, and root of the Merkle proof.
  */
 export function getMerkleProof(block: Block, txHash: string, forWitness?: boolean) {
-    const txIds = block.transactions!.map((tx) => tx.getHash(forWitness));
+    const txIds = block.transactions!.map((tx) => Buffer.from(tx.getHash(forWitness)));
     const pos = txIds.map((value) => value.toString('hex')).indexOf(txHash);
 
     const merkleAndRoot = createMerkleBranchAndRoot(txIds, pos);
