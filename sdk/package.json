@@ -1,6 +1,6 @@
 {
     "name": "@gobob/bob-sdk",
-    "version": "6.7.0",
+    "version": "6.7.1",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
     "repository": {
@@ -54,7 +54,7 @@
         "@scure/btc-signer": "^1.6.0",
         "bip39": "^3.1.0",
         "bitcoin-address-validation": "^3.0.0",
-        "bitcoinjs-lib": "^6.1.7",
+        "bitcoinjs-lib": "^6.1.10",
         "global": "^4.4.0",
         "globals": "^17.4.0",
         "viem": "2.57.3"
