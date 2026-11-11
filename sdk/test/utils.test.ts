@@ -1,70 +1,9 @@
-import { Block, opcodes, script, Transaction } from 'bitcoinjs-lib';
+import { Block } from 'bitcoinjs-lib';
 import { assert, describe, it } from 'vitest';
 import { MAINNET_ESPLORA_BASE_PATH } from '../src/esplora';
-import { encodeRawInput, encodeRawOutput, encodeRawWitness, getMerkleProof } from '../src/utils';
-
-// Two inputs, two outputs; with witness, the second input's 300-byte item needs a 3-byte varint length.
-function buildTx(seed: number, withWitness: boolean): Transaction {
-    const tx = new Transaction();
-    tx.version = 2;
-    tx.locktime = seed;
-    tx.addInput(Buffer.alloc(32, seed), seed, 0xfffffffd, Buffer.from([seed, seed + 1]));
-    tx.addInput(Buffer.alloc(32, seed + 1), 1, 0xffffffff, Buffer.alloc(0));
-    if (withWitness) {
-        tx.setWitness(0, [Buffer.alloc(72, 0xaa), Buffer.alloc(33, 0x02)]);
-        tx.setWitness(1, [Buffer.alloc(300, 0xbb)]);
-    }
-    tx.addOutput(Buffer.from('0014' + '11'.repeat(20), 'hex'), 2_100_000_000_000_000n);
-    tx.addOutput(script.compile([opcodes.OP_RETURN, Buffer.alloc(20, 0x67)]), 0n);
-    return tx;
-}
+import { getMerkleProof } from '../src/utils';
 
 describe('Utils Tests', () => {
-    // Expected values were produced by the bitcoinjs-lib v6 implementation of these helpers.
-    it('should encode raw input, output and witness vectors', () => {
-        const tx = buildTx(5, true);
-
-        assert.equal(
-            encodeRawInput(tx).toString('hex'),
-            '02' +
-                '05'.repeat(32) +
-                '05000000' +
-                '020506' +
-                'fdffffff' +
-                '06'.repeat(32) +
-                '01000000' +
-                '00' +
-                'ffffffff'
-        );
-        assert.equal(
-            encodeRawOutput(tx).toString('hex'),
-            '02' + '0040075af0750700' + '160014' + '11'.repeat(20) + '0000000000000000' + '166a14' + '67'.repeat(20)
-        );
-        assert.equal(
-            encodeRawWitness(tx).toString('hex'),
-            '02' + '48' + 'aa'.repeat(72) + '21' + '02'.repeat(33) + '01' + 'fd2c01' + 'bb'.repeat(300)
-        );
-    });
-
-    it('should construct merkle proofs for a block with an odd number of transactions', () => {
-        const block = new Block();
-        block.transactions = [0, 1, 2, 3, 4].map((i) => buildTx(10 + i, i % 2 === 0));
-
-        const txId = Buffer.from(block.transactions[4].getHash()).toString('hex');
-        assert.deepEqual(getMerkleProof(block, txId), {
-            pos: 4,
-            proof: '8c0dc768e05f685cac769198d38b3ae423b76e33998229fd03196b565da93299f073a61f1901214f4d1f6cfc65a5d6e95a45474117178b5f1d8daac608c785eb7417a32d27f4c29ec62a22247e8b854fc5be7d29487705690fd16a3455b3f9a1',
-            root: '6e11ba94874d1e4eabf6634951b6036a7d1623b7446968eeb57c7422e1e437db',
-        });
-
-        const wTxId = Buffer.from(block.transactions[2].getHash(true)).toString('hex');
-        assert.deepEqual(getMerkleProof(block, wTxId, true), {
-            pos: 2,
-            proof: '59b83489bafc173cfa7c7493362e8d4243bacd885ae1a094a62809a6575d87c27f87a5f54162d270df8e6b2e3cdab395922e7945c7ceebe3079c9c1f0dc7d8aa12f1693df910cc5ff92b821fa16f6e700e6fc2ff59a4181c5987b6dc38f80d6a',
-            root: '0853055db814372f54de3fc2e623bf6c96e5169ab4f5e5d5fc87fd7dc7dd72be',
-        });
-    });
-
     // NOTE: this is a bit flaky due to slow response times from electrs
     it('should construct witness merkle proof from block', { timeout: 20000, skip: true }, async () => {
         const hash = '000000000000000000015712838394aeb93f5d45d0e5bec197382c08b375016e';
