@@ -7,6 +7,7 @@ on:
       - ".claude-plugin/**"
       - "gateway-docs/openapi.json"
       - "sdk/src/gateway/allowance-holder.ts"
+      - "sdk/src/gateway/client.ts"
       - ".github/scripts/check-skills.mjs"
       - ".github/workflows/skills.yml"
 

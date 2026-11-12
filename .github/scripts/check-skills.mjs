@@ -20,6 +20,7 @@ const SKILLS_DIR = join(ROOT, 'skills');
 const MARKETPLACE = join(ROOT, '.claude-plugin/marketplace.json');
 const OPENAPI = join(ROOT, 'gateway-docs/openapi.json');
 const ALLOWANCE_HOLDER_TS = join(ROOT, 'sdk/src/gateway/allowance-holder.ts');
+const SDK_CLIENT_TS = join(ROOT, 'sdk/src/gateway/client.ts');
 const API_REFERENCE = join(SKILLS_DIR, 'gateway-integrate/api-reference.md');
 const SPENDER_TABLE = join(SKILLS_DIR, 'gateway-swap/SKILL.md');
 
@@ -242,6 +243,14 @@ if (!approvePages) {
     for (const chain of pageChains) {
         if (!(chain in expected)) fail(`${rel(SPENDER_TABLE)}: approve page row for "${chain}", which has no spender`);
     }
+}
+
+// The legacy-USDT warning must name the token the SDK resets before approving.
+const legacyUsdt = read(SDK_CLIENT_TS).match(/export const ETHEREUM_USDT_ADDRESS = '(0x[0-9a-fA-F]{40})'/)?.[1];
+if (!legacyUsdt) {
+    fail(`${rel(SDK_CLIENT_TS)}: cannot find ETHEREUM_USDT_ADDRESS`);
+} else if (!read(SPENDER_TABLE).toLowerCase().includes(legacyUsdt.toLowerCase())) {
+    fail(`${rel(SPENDER_TABLE)}: the legacy USDT warning does not name ${legacyUsdt}, which the SDK resets before approving`);
 }
 
 // ── Version bump ─────────────────────────────────────────────────────────────
