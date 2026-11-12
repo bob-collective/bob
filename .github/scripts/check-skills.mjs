@@ -228,6 +228,22 @@ for (const chain of Object.keys(actual)) {
     if (!(chain in expected)) fail(`${rel(SPENDER_TABLE)}: spender listed for "${chain}", which the SDK does not know`);
 }
 
+// Every chain with a spender needs a row in the approve-page table, even if it says "none".
+const approvePages = read(SPENDER_TABLE).match(/^\| Source chain \| Approve page \|\n\|[-|]+\|\n((?:\|.*\|\n)+)/m)?.[1];
+if (!approvePages) {
+    fail(`${rel(SPENDER_TABLE)}: no "| Source chain | Approve page |" table`);
+} else {
+    const pageChains = new Set(
+        [...approvePages.matchAll(/^\|([^|]*)\|/gm)].flatMap(([, cell]) => [...cell.matchAll(/`([a-z0-9-]+)`/g)].map(([, chain]) => chain))
+    );
+    for (const chain of Object.keys(expected)) {
+        if (!pageChains.has(chain)) fail(`${rel(SPENDER_TABLE)}: no approve page row for "${chain}"`);
+    }
+    for (const chain of pageChains) {
+        if (!(chain in expected)) fail(`${rel(SPENDER_TABLE)}: approve page row for "${chain}", which has no spender`);
+    }
+}
+
 // ── Version bump ─────────────────────────────────────────────────────────────
 
 const baseIndex = process.argv.indexOf('--base');

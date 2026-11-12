@@ -158,13 +158,29 @@ Compare EVM addresses without regard to letter case. If the source chain is not 
 the table, or the spender is a different address, stop: do not tell the user to
 approve it, and report the mismatch. Never suggest approving any other address.
 
-Then tell the user:
+Then give the user the approve page of the token contract from the table below,
+with `<token>` replaced by `inputAmount.address`. There they connect the sender's
+wallet, call `approve(<spender>, <amount>)`, and sign. The page's read tab shows
+`allowance(<sender>, <spender>)`: if it already covers the amount, no approval is
+needed. A proxy token, such as USDC, lists `approve` under "Write as Proxy"
+(`#writeProxyContract`, or `?tab=read_write_proxy` on Blockscout).
 
-- Check the current allowance in their wallet, or on the token contract's
-  block-explorer page: `allowance(<sender>, <spender>)`. If it already covers the
-  amount, no approval is needed.
-- Otherwise call `approve(<spender>, <amount>)` on the token contract. Approve the
-  exact amount, not an unlimited one.
+| Source chain | Approve page |
+|---|---|
+| `ethereum` | `https://etherscan.io/address/<token>#writeContract` |
+| `arbitrum` | `https://arbiscan.io/address/<token>#writeContract` |
+| `avalanche` | `https://snowscan.xyz/address/<token>#writeContract` |
+| `base` | `https://basescan.org/address/<token>#writeContract` |
+| `bsc` | `https://bscscan.com/address/<token>#writeContract` |
+| `hyperevm`, `hyperliquid` | `https://hyperevmscan.io/address/<token>#writeContract` |
+| `plasma` | `https://plasmascan.to/address/<token>#writeContract` |
+| `polygon` | `https://polygonscan.com/address/<token>#writeContract` |
+| `unichain` | `https://uniscan.xyz/address/<token>#writeContract` |
+| `robinhood` | `https://robinhoodchain.blockscout.com/address/<token>?tab=read_write_contract` |
+| `tron` | `https://tronscan.org/#/contract/<token>/code`, then Write Contract |
+| `bob` | none: the user approves in their wallet |
+
+- Approve the exact amount, not an unlimited one.
 - USDT on Ethereum (`0xdAC17F958D2ee523a2206206994597C13D831ec7`) rejects changing
   a non-zero allowance: approve `0` first, then the amount.
 - Wait until the approval is confirmed before sending the swap transaction.
