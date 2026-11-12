@@ -28,7 +28,6 @@ const SPENDER_TABLE = join(SKILLS_DIR, 'gateway-swap/SKILL.md');
 const KNOWN_IDENTIFIERS = {
     GATEWAY_API_KEY: 'environment variable',
     BOB_GATEWAY_MCP_URL: 'environment variable',
-    CAPTCHA_VERIFICATION_FAILED: 'returned by the gateway, but missing from the OpenAPI spec',
 };
 
 const FRONTMATTER_KEYS = new Set(['name', 'description', 'license', 'compatibility', 'metadata', 'allowed-tools']);

@@ -162,7 +162,6 @@ Non-2xx responses carry `{"code": "…", "error": "<message>", "details": {…}}
 | HTTP | Codes |
 |---|---|
 | 400 | `INVALID_REQUEST` (also an expired or tampered onramp quote, and an expired order), `MISSING_REFUND_ADDRESS`, `INVALID_ORDER_ARGS`, `INVALID_AFFILIATE_FEE`, `SLIPPAGE_TOO_LOW`, `SLIPPAGE_TOO_HIGH`, `INSUFFICIENT_CONFIRMED_FUNDS`, `INVALID_DESTINATION_CHAIN_ID` |
-| 403 | `CAPTCHA_VERIFICATION_FAILED` |
 | 404 | `NO_ROUTE`, `ORDER_NOT_FOUND`. An unknown id on `get-order` answers 404 with code `INTERNAL_ERROR` and message `Not Found`: go by the status |
 | 409 | `DUPLICATE_ORDER` |
 | 422 | `INSUFFICIENT_AMOUNT`, `QUOTE_AMOUNT_TOO_LOW`, `INSUFFICIENT_SWAP_AMOUNT`, `INSUFFICIENT_SOLVER_BALANCE`, `INSUFFICIENT_PAYMENT_AMOUNT`, `EXCEEDED_LIMIT`, `UNABLE_TO_COVER_FEES` |

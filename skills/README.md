@@ -116,10 +116,10 @@ URL and header.
 
 ### API key
 
-`GATEWAY_API_KEY` is a 32-character integrator API key. It is optional for quotes
-and order tracking. `create_order` and `register_tx` need it when the gateway
-enforces a captcha. Request one from gateway@gobob.xyz, and set it in the
-environment your agent starts from, never in chat.
+`GATEWAY_API_KEY` is an optional 32-character integrator API key. With it, the
+gateway applies that integrator's pricing to the orders; every tool works without
+it. Request one from gateway@gobob.xyz, and set it in the environment your agent
+starts from, never in chat.
 
 `create_order` creates a real order, and `register_tx` broadcasts a Bitcoin
 transaction that cannot be undone. Keep both behind your agent's tool-approval

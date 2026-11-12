@@ -42,10 +42,9 @@ call. Everything from `create-order` on moves real funds, and the user runs it.
 Staging API: `https://gateway-api-staging.gobob.xyz`.
 
 An API key is optional: `Authorization: Bearer <32-character key>`, or
-`new GatewaySDK({ apiKey })`. A key raises rate limits and gives a partner
-dashboard. When the gateway enforces a captcha, `create-order` and `register-tx`
-answer 403 `CAPTCHA_VERIFICATION_FAILED` unless the request carries a registered
-integrator key. Request one from gateway@gobob.xyz.
+`new GatewaySDK({ apiKey })`. With a key, the gateway applies your integrator
+pricing; a key also raises rate limits and gives a partner dashboard. Every
+endpoint works without one. Request one from gateway@gobob.xyz.
 
 ## The flow
 
@@ -183,7 +182,7 @@ its deposit address from any wallet.
 - [ ] The order id is stored, and status is polled until `success` or `refunded`,
       with `failed` shown as "contact support"
 - [ ] Error codes are handled: at least an expired quote, an amount that is too
-      low, no route, and the captcha
+      low, and no route
 - [ ] The user has tested it end to end with a small real amount, signing in their
       own wallet. Quotes are free; everything from `create-order` on moves real
       funds

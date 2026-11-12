@@ -198,7 +198,6 @@ Branch on `code`:
 
 | `code` | What to do |
 |---|---|
-| `CAPTCHA_VERIFICATION_FAILED` (403) | The gateway wants a captcha, which an agent cannot solve. Orders then need a registered integrator API key, which the user sets as `GATEWAY_API_KEY` in the environment their agent starts from (request one from gateway@gobob.xyz). It is configuration: do not ask for it in chat. Stop and tell the user. Do not retry. |
 | `MISSING_REFUND_ADDRESS` | Requote with `refund_address`. |
 | `INVALID_REQUEST` mentioning an expired quote, an expired order, or a signature | Requote, then create the order from the new quote. |
 | `NON_COMPLIANT_ADDRESSES` | An address failed compliance screening. Stop and tell the user. Do not help work around it. |
