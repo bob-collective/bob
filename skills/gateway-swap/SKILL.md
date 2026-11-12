@@ -183,13 +183,13 @@ needed. A proxy token, such as USDC, lists `approve` under "Write as Proxy"
 - Approve the exact amount, not an unlimited one.
 - Wait until the approval is confirmed before sending the swap transaction.
 
-**Legacy USDT.** Some USDT contracts revert when a non-zero allowance is changed to
-another non-zero value: USDT on Ethereum,
-`0xdAC17F958D2ee523a2206206994597C13D831ec7`. Only when the source token is one of
-these, warn the user: if the current allowance is above 0 but below the amount, the
-approval takes two transactions, each confirmed before the next — first
-`approve(<spender>, 0)` to reset it, then `approve(<spender>, <amount>)`. With an
-allowance of 0, one approval is enough. Say nothing about this for any other token.
+**Legacy USDT.** USDT on Ethereum (`0xdAC17F958D2ee523a2206206994597C13D831ec7`)
+reverts when a non-zero allowance is changed to another non-zero value. Only when
+the source token is that contract, warn the user: if the current allowance is above
+0 but below the amount, the approval takes two transactions, each confirmed before
+the next — first `approve(<spender>, 0)` to reset it, then
+`approve(<spender>, <amount>)`. With an allowance of 0, one approval is enough. No
+other token, USDT on other chains included, needs the reset: say nothing about it.
 
 ## Errors
 
