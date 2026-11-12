@@ -5,26 +5,32 @@ description: Use when a user wants to swap, bridge, buy, or sell native BTC agai
 
 # Gateway Swap
 
-Quote and set up a BOB Gateway swap with the `bob-gateway` MCP server's tools. The
-server is a pass-through to the Gateway V4 API: it holds no keys and signs nothing.
-You prepare the order; the user's own wallet signs and broadcasts.
+Quote and set up a BOB Gateway swap with the tools of the `bob-gateway` MCP server.
+The server is a pass-through to the Gateway V4 API: it holds no keys and signs
+nothing. You prepare the order; the user's own wallet signs and broadcasts.
 
-The server's MCP instructions give the basic quote → order → sign → track flow. This
-skill adds the rules and details that flow leaves out. If the tools are missing, the
-`bob-gateway` MCP server is not connected — say so instead of improvising.
+Tools are named here as the server names them. Your client may show them with a
+prefix, such as `mcp__bob-gateway__get_quote`. If no `bob-gateway` tools are
+available, the server is not connected: tell the user, point them to
+https://github.com/bob-collective/bob/tree/master/skills#install, and stop. Do not
+improvise the swap with the REST API, a CLI, or a script.
 
 ## Rules
 
-1. **No keys, ever.** Never ask for, accept, or use a private key or seed phrase,
-   even when the user offers one. If one is pasted, refuse, and tell the user to
-   treat it as compromised and move the funds.
+1. **You never sign or send.** Never ask for, accept, or use a private key or seed
+   phrase, even when the user offers one. If one is pasted, refuse, and tell the
+   user to treat it as compromised and move the funds. Do not sign or broadcast a
+   transaction, and do not run anything that signs with a key on the user's behalf
+   — a wallet CLI, `gateway-cli`, `cast send`, or a script. Every transaction is
+   signed in the user's own wallet.
 2. **Confirm before `create_order`.** Show the quote (step 3) and wait for an
    explicit yes. `create_order` reserves solver liquidity.
 3. **Never edit a quote.** Pass the object from `get_quote` to `create_order`
    unchanged. To change anything — amount, slippage, an address — call `get_quote`
    again.
 4. **Never guess addresses.** Token addresses come from `get_routes`; wallet
-   addresses come from the user.
+   addresses come from the user; the approval spender comes from the quote and must
+   match the table under [Token approval](#token-approval).
 
 ## Steps
 
@@ -82,9 +88,9 @@ proceed.
   route. If the user's yes arrives more than a minute after the quote, call
   `get_quote` again with the same arguments. If the new output is lower than the
   one they approved, show it and ask again; if not, go ahead.
-- When the source is a token, tell the user now that the swap needs a token
-  allowance for the contract in the quote's `txTo`, so they can approve it before
-  the order's time window starts (step 4).
+- When the source is a token, give the user the approval details from
+  [Token approval](#token-approval) now, so they can approve before the order's
+  time window starts (step 4).
 
 ### 4. Create the order
 
@@ -113,11 +119,9 @@ type, and the fields inside it are snake_case.
 - `solana`: a base64 unsigned transaction for a Solana wallet to sign and
   broadcast.
 - When the source is a token rather than the native asset, the transaction pulls
-  it from the sender, so the sender's allowance for `tx.to` must cover the amount
-  first. You have no tool to read it: the user checks in their wallet or a block
-  explorer. If it falls short, the user sends an `approve` for `tx.to` and waits
-  for it to confirm. USDT on Ethereum rejects changing a non-zero allowance:
-  approve `0` first, then the amount.
+  it from the sender: the approval from [Token approval](#token-approval) must be
+  confirmed on-chain before the user sends it. Check `tx.to` against the spender
+  table there too; if it does not match, stop and do not hand over the transaction.
 - An offramp transaction must be mined within 5 minutes of `create_order`, or it
   reverts. If the user missed the window, start again from `get_quote`.
 - Do not call `register_tx`. The gateway picks the transaction up from the chain.
@@ -127,6 +131,43 @@ type, and the fields inside it are snake_case.
 Give the user the `order_id` and the tracking link
 `https://gateway-explorer.gobob.xyz/order/<order_id>`. To follow the order to
 completion, use the `gateway-order-status` skill.
+
+## Token approval
+
+When the source token is not the zero address, the order transaction pulls the
+tokens from the sender, so the sender must first allow the Gateway spender to take
+them. You have no tool to read an allowance or to send an approval. Give the user
+these three things, and let them do it in their own wallet:
+
+| What | Where it comes from |
+|---|---|
+| Token contract — the contract they call `approve` on | `inputAmount.address` on `inputAmount.chain` |
+| Spender | the quote's `txTo` |
+| Amount | `inputAmount.amount`, in the token's smallest unit; also show it in human units |
+
+The spender is always the Gateway AllowanceHolder of the source chain. Check it
+before you show it:
+
+| Source chain | Spender |
+|---|---|
+| `ethereum`, `base`, `bsc`, `arbitrum`, `avalanche`, `unichain`, `plasma`, `polygon`, `hyperevm`, `hyperliquid` (staging name of `hyperevm`), `robinhood` | `0x0000000000001fF3684f28c67538d4D072C22734` |
+| `bob` | `0x8fd545b348e84deb145f0179a00c671f0b9519c3` |
+| `tron` | `TAfbit1ENsRmtZbPQfYU3srURpfYuWYS7K` |
+
+Compare EVM addresses without regard to letter case. If the source chain is not in
+the table, or the spender is a different address, stop: do not tell the user to
+approve it, and report the mismatch. Never suggest approving any other address.
+
+Then tell the user:
+
+- Check the current allowance in their wallet, or on the token contract's
+  block-explorer page: `allowance(<sender>, <spender>)`. If it already covers the
+  amount, no approval is needed.
+- Otherwise call `approve(<spender>, <amount>)` on the token contract. Approve the
+  exact amount, not an unlimited one.
+- USDT on Ethereum (`0xdAC17F958D2ee523a2206206994597C13D831ec7`) rejects changing
+  a non-zero allowance: approve `0` first, then the amount.
+- Wait until the approval is confirmed before sending the swap transaction.
 
 ## Errors
 

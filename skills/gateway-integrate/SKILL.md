@@ -15,6 +15,11 @@ token symbols, `gasRefill`, `ownerAddress`, `affiliateId`, refunds signed by the
 user. None of that is current. Check every endpoint, parameter and type against a
 source below before you write it.
 
+**You write the code; you never sign.** Do not handle a private key or seed phrase,
+and do not sign or send a transaction while you build or test — not through the
+SDK, the CLI, a wallet, or a script. Quotes and order lookups are free and safe to
+call. Everything from `create-order` on moves real funds, and the user runs it.
+
 ## Sources of truth
 
 | Need | Where |
@@ -32,7 +37,7 @@ source below before you write it.
 | **SDK** — `@gobob/bob-sdk` (`GatewaySDK`) with `viem` | TypeScript apps. `executeQuote` runs the approvals, signing and submission. |
 | **REST API** — `https://gateway-api-mainnet.gobob.xyz/v4` | Any language and backends. Required for swaps whose source chain is Solana. |
 | **MCP server** `bob-gateway` | Agents that swap at runtime, and inspecting the API while you build. |
-| **CLI** — `@gobob/gateway-cli` | Shell scripts and bots. Every command takes `--json`. |
+| **CLI** — `@gobob/gateway-cli` | Shell scripts and bots that the user runs. Every command takes `--json`. It signs with private keys from environment variables, so write and review the scripts, but never run a command that signs. |
 
 Staging API: `https://gateway-api-staging.gobob.xyz`.
 
@@ -179,5 +184,6 @@ its deposit address from any wallet.
       with `failed` shown as "contact support"
 - [ ] Error codes are handled: at least an expired quote, an amount that is too
       low, no route, and the captcha
-- [ ] Tested end to end with a small real amount. Quotes are free; everything
-      after `create-order` moves real funds
+- [ ] The user has tested it end to end with a small real amount, signing in their
+      own wallet. Quotes are free; everything from `create-order` on moves real
+      funds

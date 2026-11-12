@@ -8,6 +8,11 @@ description: Use when a user asks where their BOB Gateway swap or funds are, whe
 Look up BOB Gateway orders with the `bob-gateway` MCP server's `get_order` and
 `get_orders` tools, and explain what the result means. Both tools are read-only.
 
+Your client may show the tools with a prefix, such as
+`mcp__bob-gateway__get_order`. If no `bob-gateway` tools are available, the server
+is not connected: give the user the tracking link below, and point them to
+https://github.com/bob-collective/bob/tree/master/skills#install to connect it.
+
 ## Look up
 
 - **One order:** `get_order` with `id` set to the order id, the source Bitcoin

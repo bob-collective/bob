@@ -1,0 +1,34 @@
+name: Skills
+
+on:
+  pull_request:
+    paths:
+      - "skills/**"
+      - ".claude-plugin/**"
+      - "gateway-docs/openapi.json"
+      - "sdk/src/gateway/allowance-holder.ts"
+      - ".github/scripts/check-skills.mjs"
+      - ".github/workflows/skills.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Setup node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24"
+      - name: Check skills
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: node .github/scripts/check-skills.mjs --base "origin/$BASE_REF"
+      - name: Validate Claude Code marketplace
+        run: npx --yes @anthropic-ai/claude-code@2.1.322 plugin validate .
