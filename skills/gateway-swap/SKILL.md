@@ -1,0 +1,150 @@
+---
+name: gateway-swap
+description: Use when a user wants to swap, bridge, buy, or sell native BTC against tokens on EVM chains or Tron, or swap tokens across those chains, through BOB Gateway — including price checks ("how much USDC for 0.01 BTC?"), onramps (BTC to token), offramps (token to BTC), and any use of the bob-gateway MCP tools get_routes, get_quote, create_order, register_tx, or get_max_spendable.
+---
+
+# Gateway Swap
+
+Quote and set up a BOB Gateway swap with the `bob-gateway` MCP server's tools. The
+server is a pass-through to the Gateway V4 API: it holds no keys and signs nothing.
+You prepare the order; the user's own wallet signs and broadcasts.
+
+The server's MCP instructions give the basic quote → order → sign → track flow. This
+skill adds the rules and details that flow leaves out. If the tools are missing, the
+`bob-gateway` MCP server is not connected — say so instead of improvising.
+
+## Rules
+
+1. **No keys, ever.** Never ask for, accept, or use a private key or seed phrase,
+   even when the user offers one. If one is pasted, refuse, and tell the user to
+   treat it as compromised and move the funds.
+2. **Confirm before `create_order`.** Show the quote (step 3) and wait for an
+   explicit yes. `create_order` reserves solver liquidity.
+3. **Never edit a quote.** Pass the object from `get_quote` to `create_order`
+   unchanged. To change anything — amount, slippage, an address — call `get_quote`
+   again.
+4. **Never guess addresses.** Token addresses come from `get_routes`; wallet
+   addresses come from the user.
+
+## Steps
+
+### 1. Pin down the swap
+
+| | Onramp (BTC → token) | Offramp (token → BTC) | Token swap |
+|---|---|---|---|
+| `src_chain` | `bitcoin` | the token's chain | the source token's chain |
+| `sender` | the user's BTC address; optional, but needed to get a PSBT | **required** | **required** |
+| `recipient` | address on `dst_chain` | BTC address | address on `dst_chain` |
+| `refund_address` | BTC address | address on `src_chain` | address on `src_chain` |
+
+- The tool schema marks `sender` optional, but `create_order` rejects an offramp
+  or token-swap quote made without it.
+- Call `get_routes` with both `src_chain` and `dst_chain` and take the token
+  addresses from the result. It is also the authority on which chains are live.
+  Routes list addresses only, no symbols: if you cannot tell which address is the
+  token the user named, ask. BTC and native gas tokens are
+  `0x0000000000000000000000000000000000000000`. Tron tokens and addresses are
+  Base58 (`T…`).
+- `refund_address` is where the funds return if the swap cannot complete. Default
+  to the sender's address and state it in the confirmation. With no sender (an
+  onramp paid from an exchange, say), ask for an address the user controls.
+- `amount` is an integer string in the source token's smallest unit. BTC has 8
+  decimals. Token decimals vary by chain — USDT has 6 on Ethereum and 18 on BSC —
+  so check `inputAmount.usd` in the quote against what the user meant.
+- To send a whole BTC balance, `get_max_spendable` gives the amount left after
+  network fees.
+- Leave `slippage` unset unless the user asks for a value. The gateway then picks
+  one for the route and reports it in the quote.
+
+### 2. Quote
+
+`get_quote` returns one key — `onramp`, `offramp` or `tokenSwap` — holding the
+quote. Every amount in it is an object `{amount, address, chain, usd}`: `amount` is
+in the smallest unit of the token at `address` on `chain`. A fee line is in the
+token its own `address` and `chain` name — often USDT on Ethereum (6 decimals),
+or BTC for an offramp's `inclusionFee` — which need not be either swapped token.
+Use `usd` for display.
+
+### 3. Show the quote and wait
+
+Show, in human units: what the user sends (`inputAmount`), what they receive
+(`outputAmount`), total fees in USD (`fees.usd` on an onramp, which already
+includes `executionFees`; `totalFeeUsd` on an offramp), `slippage` (basis points),
+`estimatedTimeInSecs`, the recipient, and the refund address. Then ask whether to
+proceed.
+
+- `priceImpact` is a fraction: `"-0.05"` is a 5% loss. Call it out when it is
+  worse than `-0.01`.
+- A `tokenSwap` quote's `fees` is always zero. That is a placeholder, not a free
+  swap: the cost is in the rate, so compare `inputAmount.usd` with
+  `outputAmount.usd`.
+- An onramp quote expires one minute after it is issued, and prices move on every
+  route. If the user's yes arrives more than a minute after the quote, call
+  `get_quote` again with the same arguments. If the new output is lower than the
+  one they approved, show it and ask again; if not, go ahead.
+- When the source is a token, tell the user now that the swap needs a token
+  allowance for the contract in the quote's `txTo`, so they can approve it before
+  the order's time window starts (step 4).
+
+### 4. Create the order
+
+Call `create_order` with `{"quote": <the whole get_quote result>}`, including its
+`onramp` / `offramp` / `tokenSwap` key. The result has one key matching the quote
+type, and the fields inside it are snake_case.
+
+**Onramp** — `{order_id, address, op_return_data, psbt_hex?}`
+
+- With `psbt_hex` (present only when the quote had a `sender`): the user signs
+  every input in their Bitcoin wallet and broadcasts the finalized transaction.
+  Tell them first that the PSBT may spend any UTXO at the sender address,
+  including ones that carry ordinals, inscriptions or runes.
+- Without it: the user sends exactly `inputAmount.amount` sats to `address`, with
+  `op_return_data` in an OP_RETURN output when that field is set. If their wallet
+  cannot add one, requote with `sender` and use the PSBT.
+- The deposit is detected on-chain. `register_tx` is only for a user who holds a
+  fully signed raw transaction (hex — not a PSBT, not a txid) and cannot broadcast
+  it themselves. It broadcasts at once and cannot be undone, so call it only when
+  the user asks you to.
+
+**Offramp / token swap** — `{order_id, tx}`, where `tx.type` says how to send it
+
+- `evm`: send `{to, data, value}` from the sender address on `tx.chain`, unchanged.
+- `tron`: the same fields plus `feeLimit` (in sun).
+- `solana`: a base64 unsigned transaction for a Solana wallet to sign and
+  broadcast.
+- When the source is a token rather than the native asset, the transaction pulls
+  it from the sender, so the sender's allowance for `tx.to` must cover the amount
+  first. You have no tool to read it: the user checks in their wallet or a block
+  explorer. If it falls short, the user sends an `approve` for `tx.to` and waits
+  for it to confirm. USDT on Ethereum rejects changing a non-zero allowance:
+  approve `0` first, then the amount.
+- An offramp transaction must be mined within 5 minutes of `create_order`, or it
+  reverts. If the user missed the window, start again from `get_quote`.
+- Do not call `register_tx`. The gateway picks the transaction up from the chain.
+
+### 5. Hand off
+
+Give the user the `order_id` and the tracking link
+`https://gateway-explorer.gobob.xyz/order/<order_id>`. To follow the order to
+completion, use the `gateway-order-status` skill.
+
+## Errors
+
+A failed call returns `{"status": <http status>, "error": {"code", "error", "details"?}}`.
+Branch on `code`:
+
+| `code` | What to do |
+|---|---|
+| `CAPTCHA_VERIFICATION_FAILED` (403) | The gateway wants a captcha, which an agent cannot solve. Orders then need a registered integrator API key, which the user sets as `GATEWAY_API_KEY` in the environment their agent starts from (request one from gateway@gobob.xyz). It is configuration: do not ask for it in chat. Stop and tell the user. Do not retry. |
+| `MISSING_REFUND_ADDRESS` | Requote with `refund_address`. |
+| `INVALID_REQUEST` mentioning an expired quote, an expired order, or a signature | Requote, then create the order from the new quote. |
+| `NON_COMPLIANT_ADDRESSES` | An address failed compliance screening. Stop and tell the user. Do not help work around it. |
+| `NO_ROUTE`, `BUNGEE_NO_ROUTE`, `DISABLED_CHAIN` | The route is not available (now). Check `get_routes`. |
+| `QUOTE_AMOUNT_TOO_LOW`, `INSUFFICIENT_AMOUNT`, `UNABLE_TO_COVER_FEES` | The amount is too small. `details`, when present, has the figures (the minimum, or the fees against the amount). |
+| `INSUFFICIENT_SOLVER_BALANCE`, `EXCEEDED_LIMIT` | The amount is too large right now (`details.limit` when present). Offer a smaller amount. |
+| `SLIPPAGE_TOO_LOW` | Requote without `slippage` so the gateway chooses, or with a higher value. |
+| `SLIPPAGE_TOO_HIGH` | The limit is 1000 basis points. Requote with less, or without `slippage`. |
+| `PER_ACCOUNT_LIMIT_EXCEEDED`, `GLOBAL_LIMIT_EXCEEDED` (429) | Rate limited. Wait before retrying. |
+
+An error whose body is plain text instead of this object came from the network edge
+(a geo-block or a rate limit). Report it; do not try to route around it.

@@ -1,0 +1,36 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "bob",
+  "description": "BOB plugins for Claude Code",
+  "owner": {
+    "name": "BOB",
+    "url": "https://gobob.xyz"
+  },
+  "plugins": [
+    {
+      "name": "bob-gateway",
+      "version": "0.1.0",
+      "description": "Swap native BTC to and from tokens on EVM chains and Tron through BOB Gateway: the Gateway MCP server plus skills for swapping, tracking orders, and integrating Gateway into an app",
+      "author": {
+        "name": "BOB",
+        "url": "https://gobob.xyz"
+      },
+      "homepage": "https://docs.gobob.xyz/gateway/agents",
+      "repository": "https://github.com/bob-collective/bob",
+      "keywords": ["bob", "gateway", "bitcoin", "btc", "swap", "mcp"],
+      "category": "development",
+      "source": "./skills",
+      "strict": false,
+      "skills": ["./gateway-swap", "./gateway-order-status", "./gateway-integrate"],
+      "mcpServers": {
+        "bob-gateway": {
+          "type": "http",
+          "url": "${BOB_GATEWAY_MCP_URL:-https://mcp.gobob.xyz/mcp}",
+          "headers": {
+            "Authorization": "Bearer ${GATEWAY_API_KEY:-}"
+          }
+        }
+      }
+    }
+  ]
+}

@@ -25,6 +25,15 @@ BOB’s hybrid chain uniquely combines ZK proofs and BTC staking to create nativ
 - [Website](https://www.gobob.xyz/)
 - [Docs](https://docs.gobob.xyz/)
 
+## AI Agents
+
+[`skills/`](skills/) holds agent skills for BOB Gateway: swapping native BTC, tracking orders, and integrating Gateway into an app. In Claude Code, install them together with the Gateway MCP server:
+
+```shell
+claude plugin marketplace add bob-collective/bob
+claude plugin install bob-gateway@bob
+```
+
 ## Contribution
 
 BOB is an open-source project. We welcome contributions of all sorts. There are many ways to help, from reporting issues, contributing code, and helping us improve our community.
