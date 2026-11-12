@@ -30,5 +30,15 @@ jobs:
         env:
           BASE_REF: ${{ github.base_ref }}
         run: node .github/scripts/check-skills.mjs --base "origin/$BASE_REF"
+      - name: Validate with the Agent Skills reference validator
+        run: |
+          python3 -m venv "$RUNNER_TEMP/skills-ref"
+          "$RUNNER_TEMP/skills-ref/bin/pip" install --quiet \
+            "git+https://github.com/agentskills/agentskills@f130f348f502d9804278a617f86929846896d2e9#subdirectory=skills-ref"
+          status=0
+          for skill in skills/*/; do
+            "$RUNNER_TEMP/skills-ref/bin/skills-ref" validate "$skill" || status=1
+          done
+          exit "$status"
       - name: Validate Claude Code marketplace
         run: npx --yes @anthropic-ai/claude-code@2.1.322 plugin validate .

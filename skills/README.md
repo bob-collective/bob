@@ -147,5 +147,7 @@ prompt.
 `node .github/scripts/check-skills.mjs` checks the rules above that a script can
 check. It also checks the skills against the sources they restate: the endpoints
 and error codes in `gateway-docs/openapi.json`, and the AllowanceHolder spenders in
-`sdk/src/gateway/allowance-holder.ts`. CI runs it on every pull request that
-touches the skills or those sources.
+`sdk/src/gateway/allowance-holder.ts`. On every pull request that touches the
+skills or those sources, the `Skills` workflow runs it, the Agent Skills reference
+validator ([`skills-ref validate`](https://github.com/agentskills/agentskills/tree/main/skills-ref))
+on each skill, and `claude plugin validate .` on the marketplace.
