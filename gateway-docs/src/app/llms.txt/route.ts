@@ -20,7 +20,7 @@ export function GET() {
       'Every page below is also available as Markdown: append `.md` to its URL.',
       `- [All pages in one file](${siteUrl}/gateway/llms-full.txt)`,
       `- [OpenAPI spec](${apiSpecUrl})`,
-      `- [Hosted MCP server](${siteUrl}/gateway/agents): \`https://mcp.gobob.xyz/mcp\` (streamable HTTP) quotes, creates and tracks orders; it never signs`,
+      `- [Hosted MCP server](${siteUrl}/gateway/agents#connect-an-agent-over-mcp): \`https://mcp.gobob.xyz/mcp\` (streamable HTTP) quotes, creates and tracks orders; it never signs`,
       '',
       ...index,
     ].join('\n'),
