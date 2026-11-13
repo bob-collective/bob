@@ -10,8 +10,9 @@ Look up BOB Gateway orders with the `bob-gateway` MCP server's `get_order` and
 
 Your client may show the tools with a prefix, such as
 `mcp__bob-gateway__get_order`. If no `bob-gateway` tools are available, the server
-is not connected: give the user the tracking link below, and point them to
-https://github.com/bob-collective/bob/tree/master/skills#install to connect it.
+is not connected: tell the user, point them to
+https://github.com/bob-collective/bob/tree/master/skills#install, and stop. Do not
+look the order up with the REST API, a CLI, or a script.
 
 ## Look up
 
