@@ -22,22 +22,22 @@ call. Everything from `create-order` on moves real funds, and the user runs it.
 
 ## Sources of truth
 
-| Need | Where |
-|---|---|
-| Endpoints, parameters, schemas | `https://docs.gobob.xyz/api-reference/openapi.json` (paths under `/v4`) |
+| Need                                           | Where                                                                                                                        |
+| ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Endpoints, parameters, schemas                 | `https://docs.gobob.xyz/api-reference/openapi.json` (paths under `/v4`)                                                      |
 | Guides: SDK, wallets, fees, refunds, migration | `https://docs.gobob.xyz/gateway/integration` and the pages beside it; `https://docs.gobob.xyz/gateway/llms.txt` indexes them |
-| SDK types | `node_modules/@gobob/bob-sdk` in the project — read the installed version |
-| Live response shapes | the `bob-gateway` MCP tools (`get_routes`, `get_quote`, `get_order`), when connected: call them and look |
-| Wire-format cheat sheet | [api-reference.md](api-reference.md) next to this file |
+| SDK types                                      | `node_modules/@gobob/bob-sdk` in the project — read the installed version                                                    |
+| Live response shapes                           | the `bob-gateway` MCP tools (`get_routes`, `get_quote`, `get_order`), when connected: call them and look                     |
+| Wire-format cheat sheet                        | [api-reference.md](api-reference.md) next to this file                                                                       |
 
 ## Choose a surface
 
-| Surface | Use for |
-|---|---|
-| **SDK** — `@gobob/bob-sdk` (`GatewaySDK`) with `viem` | TypeScript apps. `executeQuote` runs the approvals, signing and submission. |
-| **REST API** — `https://gateway-api-mainnet.gobob.xyz/v4` | Any language and backends. Required for swaps whose source chain is Solana. |
-| **MCP server** `bob-gateway` | Agents that swap at runtime, and inspecting the API while you build. |
-| **CLI** — `@gobob/gateway-cli` | Shell scripts and bots that the user runs. Every command takes `--json`. It signs with private keys from environment variables, so write and review the scripts, but never run a command that signs. |
+| Surface                                                   | Use for                                                                                                                                                                                              |
+| --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **SDK** — `@gobob/bob-sdk` (`GatewaySDK`) with `viem`     | TypeScript apps. `executeQuote` runs the approvals, signing and submission.                                                                                                                          |
+| **REST API** — `https://gateway-api-mainnet.gobob.xyz/v4` | Any language and backends. Required for swaps whose source chain is Solana.                                                                                                                          |
+| **MCP server** `bob-gateway`                              | Agents that swap at runtime, and inspecting the API while you build.                                                                                                                                 |
+| **CLI** — `@gobob/gateway-cli`                            | Shell scripts and bots that the user runs. Every command takes `--json`. It signs with private keys from environment variables, so write and review the scripts, but never run a command that signs. |
 
 Staging API: `https://gateway-api-staging.gobob.xyz`.
 
@@ -65,15 +65,15 @@ endpoint works without one. Request one from gateway@gobob.xyz.
 With the SDK, `executeQuote` covers steps 3 to 5:
 
 ```ts
-import { GatewaySDK } from '@gobob/bob-sdk';
+import { GatewaySDK } from "@gobob/bob-sdk";
 
 const gateway = new GatewaySDK(); // mainnet; pass { basePath, apiKey } to override
 
 const quote = await gateway.getQuote({
-  fromChain: 'bitcoin',
-  fromToken: '0x0000000000000000000000000000000000000000', // BTC
-  toChain: 'base',
-  toToken: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', // take it from getRoutes()
+  fromChain: "bitcoin",
+  fromToken: "0x0000000000000000000000000000000000000000", // BTC
+  toChain: "base",
+  toToken: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", // take it from getRoutes()
   fromUserAddress: btcAddress,
   refundAddress: btcAddress, // on the source chain; required to execute
   toUserAddress: evmAddress,
@@ -86,7 +86,7 @@ const { order, tx } = await gateway.executeQuote({
   quote,
   walletClient, // viem WalletClient with a connected account
   publicClient, // viem PublicClient for the source chain
-  btcSigner,    // onramps: see below
+  btcSigner, // onramps: see below
   callback: (step) => step.orderId && saveOrderId(step.orderId), // fires before each signature
 });
 
