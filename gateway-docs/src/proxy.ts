@@ -2,12 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { isMarkdownPreferred, rewritePath } from 'fumadocs-core/negotiation';
 import { docsContentRoute, docsRoute } from '@/lib/shared';
 
+// Docs are served from the root, so `docsRoute` is `/`; without trimming it the
+// patterns start with `//` and never match.
+const docsPrefix = docsRoute.replace(/\/$/, '');
+
 const { rewrite: rewriteDocs } = rewritePath(
-  `${docsRoute}{/*path}`,
+  `${docsPrefix}{/*path}`,
   `${docsContentRoute}{/*path}/content.md`,
 );
 const { rewrite: rewriteSuffix } = rewritePath(
-  `${docsRoute}{/*path}.md`,
+  `${docsPrefix}{/*path}.md`,
   `${docsContentRoute}{/*path}/content.md`,
 );
 
@@ -30,3 +34,9 @@ export default function proxy(request: NextRequest) {
 
   return NextResponse.next();
 }
+
+// Docs pages only: with a root `docsRoute` the patterns above would otherwise
+// also rewrite `llms.txt`, assets and API routes.
+export const config = {
+  matcher: ['/gateway/:path*', '/api-reference/:path*'],
+};
