@@ -13,6 +13,7 @@ BOB (Build on Bitcoin) — a hybrid chain fusing Bitcoin security with Ethereum 
 | Crates | `crates/` | Rust | Shared libraries — `bindings` (generated) and `bob-utils` |
 | SDK | `sdk/` | TypeScript | Client SDK (`@gobob/bob-sdk`) |
 | Docs | `docs/` | TypeScript | Docusaurus documentation site |
+| Skills | `skills/` | Markdown | Agent skills for BOB Gateway in the open Agent Skills format, for any coding agent. Also shipped with the Gateway MCP server as the `bob-gateway` Claude Code plugin (`.claude-plugin/marketplace.json`). Conventions in `skills/README.md`; checked by `.github/scripts/check-skills.mjs` |
 
 ## Code Style
 

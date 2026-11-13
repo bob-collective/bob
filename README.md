@@ -25,6 +25,19 @@ BOB’s hybrid chain uniquely combines ZK proofs and BTC staking to create nativ
 - [Website](https://www.gobob.xyz/)
 - [Docs](https://docs.gobob.xyz/)
 
+## AI Agents
+
+[`skills/`](skills/) holds agent skills for BOB Gateway: swapping native BTC, tracking orders, and integrating Gateway into an app. They use the open [Agent Skills](https://agentskills.io) format and work in Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot and other coding agents.
+
+In Claude Code, install them together with the Gateway MCP server:
+
+```shell
+claude plugin marketplace add bob-collective/bob
+claude plugin install bob-gateway@bob
+```
+
+In other agents, run `npx skills add bob-collective/bob`, then connect the MCP server as [`skills/README.md`](skills/README.md#install) describes.
+
 ## Contribution
 
 BOB is an open-source project. We welcome contributions of all sorts. There are many ways to help, from reporting issues, contributing code, and helping us improve our community.
