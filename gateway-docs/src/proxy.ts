@@ -21,7 +21,10 @@ export default function proxy(request: NextRequest) {
     return NextResponse.rewrite(new URL(result, request.nextUrl));
   }
 
-  if (isMarkdownPreferred(request)) {
+  // A path with a file extension is a static file from `public/` (e.g.
+  // `openapi.json`), not a page, whatever the client's `Accept` prefers.
+  const isFile = /\.[^/]+$/.test(request.nextUrl.pathname);
+  if (!isFile && isMarkdownPreferred(request)) {
     const result = rewriteDocs(request.nextUrl.pathname);
 
     if (result) {
