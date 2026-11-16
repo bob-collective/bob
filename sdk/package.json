@@ -1,8 +1,23 @@
 {
     "name": "@gobob/bob-sdk",
     "version": "6.7.1",
-    "main": "dist/index.js",
-    "types": "dist/index.d.ts",
+    "main": "./dist/index.cjs",
+    "module": "./dist/index.mjs",
+    "types": "./dist/index.d.cts",
+    "exports": {
+        ".": {
+            "import": {
+                "types": "./dist/index.d.mts",
+                "default": "./dist/index.mjs"
+            },
+            "require": {
+                "types": "./dist/index.d.cts",
+                "default": "./dist/index.cjs"
+            }
+        },
+        "./package.json": "./package.json"
+    },
+    "sideEffects": false,
     "repository": {
         "type": "git",
         "url": "git+https://github.com/bob-collective/bob.git"
@@ -11,7 +26,7 @@
         "test": "vitest run test/*.ts",
         "deploy-relay": "ts-node src/scripts/relay-genesis.ts",
         "update-relay": "ts-node src/scripts/relay-retarget.ts",
-        "build": "tsc -p tsconfig.json",
+        "build": "tsdown src/index.ts --format esm --format cjs --dts",
         "lint": "eslint .",
         "format": "prettier --write examples src test",
         "format:check": "prettier --check examples src test",
@@ -43,6 +58,7 @@
         "prettier": "^3.8.1",
         "tiny-secp256k1": "^2.2.4",
         "ts-node": "^10.0.0",
+        "tsdown": "^0.23.7",
         "tsx": "^4.20.6",
         "typescript": "^5.7.3",
         "vitest": "^4.1.11",

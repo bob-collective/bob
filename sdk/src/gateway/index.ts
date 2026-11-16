@@ -1,13 +1,13 @@
 export { OkxWalletAdapter } from './adapters/okx-wallet';
 export { ReownWalletAdapter } from './adapters/reown';
-export { ExecuteQuoteResult, GatewayApiClient as GatewaySDK } from './client';
+export { type ExecuteQuoteResult, GatewayApiClient as GatewaySDK } from './client';
 export { ApiError, isApiError } from './error/api-error';
 export {
-    AnyGatewayError,
-    DetailsFor,
+    type AnyGatewayError,
+    type DetailsFor,
     GatewayError,
     GatewayErrorCode,
-    GatewayErrorDetailsMap,
+    type GatewayErrorDetailsMap,
     isGatewayError,
     type ExceededLimitDetails,
     type InsufficientAmountDetails,
@@ -20,14 +20,14 @@ export {
 export * from './generated-client';
 export {
     BitcoinBroadcastError,
-    BitcoinSigner,
+    type BitcoinSigner,
     ExecuteQuoteError,
-    ExecuteQuoteErrorOptions,
-    ExecuteQuoteStep,
+    type ExecuteQuoteErrorOptions,
+    type ExecuteQuoteStep,
     ExecuteQuoteStepType,
-    ExecuteQuoteTxStatus,
-    GatewayQuoteParams,
-    GetQuoteParams,
+    type ExecuteQuoteTxStatus,
+    type GatewayQuoteParams,
+    type GetQuoteParams,
 } from './types';
 export {
     applyGasBuffer,
