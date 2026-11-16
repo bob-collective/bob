@@ -1,6 +1,6 @@
 import * as btc from '@scure/btc-signer';
 import { hex } from '@scure/base';
-import { mnemonicToSeedSync } from 'bip39';
+import { mnemonicToSeedSync } from '@scure/bip39';
 import { HDKey } from '@scure/bip32';
 import { BitcoinSigner } from '../types';
 
@@ -50,6 +50,7 @@ export class ScureBitcoinSigner implements BitcoinSigner {
      * @param seedPhrase The BIP39 mnemonic seed phrase
      * @param derivationPath The derivation path (e.g., "m/84'/0'/0'/0/0")
      * @returns Promise resolving to a new ScureBitcoinSigner instance
+     * @throws If the phrase is not 12, 15, 18, 21 or 24 words separated by single spaces
      */
     static async fromSeedPhrase(seedPhrase: string, derivationPath: string): Promise<ScureBitcoinSigner> {
         try {
