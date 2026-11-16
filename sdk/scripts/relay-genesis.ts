@@ -1,4 +1,4 @@
-import { EsploraClient } from '../esplora';
+import { EsploraClient } from '../src/esplora';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import { exec } from 'node:child_process';
