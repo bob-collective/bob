@@ -1,4 +1,5 @@
-import { Transaction as BitcoinTransaction } from 'bitcoinjs-lib';
+import { hex } from '@scure/base';
+import { Transaction as BitcoinTransaction } from '@scure/btc-signer';
 import {
     type Account,
     type Address,
@@ -175,7 +176,12 @@ async function submitTransaction(
 /** Txid of a signed raw Bitcoin transaction, or undefined when it does not parse. */
 function bitcoinTxId(txHex: string): string | undefined {
     try {
-        return BitcoinTransaction.fromHex(txHex).getId();
+        // Only the id is needed, so skip the script and output-type checks that would reject an unusual payment.
+        return BitcoinTransaction.fromRaw(hex.decode(txHex), {
+            allowUnknownInputs: true,
+            allowUnknownOutputs: true,
+            disableScriptCheck: true,
+        }).id;
     } catch {
         return undefined;
     }

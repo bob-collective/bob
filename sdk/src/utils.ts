@@ -1,116 +1,106 @@
 /**
  * @ignore
  */
-import { Block } from 'bitcoinjs-lib';
+import { CompactSize } from '@scure/btc-signer';
 /**
  * @ignore
  */
-import { BufferWriter, varuint } from 'bitcoinjs-lib/src/bufferutils';
+import { sha256 } from 'viem';
+
 /**
- * @ignore
+ * A transaction input, as far as the raw encoders read it. A bitcoinjs-lib `Transaction` input satisfies it.
  */
-import { hash256 } from 'bitcoinjs-lib/src/crypto';
+export interface RawTxInput {
+    /** Previous transaction hash, in internal (little-endian) byte order. */
+    hash: Uint8Array;
+    index: number;
+    script: Uint8Array;
+    sequence: number;
+    witness: Uint8Array[];
+}
+
 /**
- * @ignore
+ * A transaction output, as far as the raw encoders read it. A bitcoinjs-lib `Transaction` output satisfies it.
  */
-import { Output, Transaction } from 'bitcoinjs-lib/src/transaction';
+export interface RawTxOutput {
+    /** Amount in satoshis. */
+    value: number | bigint;
+    script: Uint8Array;
+}
+
 /**
- * @ignore
+ * A block, as far as {@link getMerkleProof} reads it. A bitcoinjs-lib `Block` satisfies it.
  */
-function varSliceSize(someScript: Buffer): number {
-    const length = someScript.length;
-    return varuint.encodingLength(length) + length;
+export interface MerkleBlock {
+    transactions?: ReadonlyArray<{ getHash(forWitness?: boolean): Buffer }>;
 }
 
 /**
  * @ignore
  */
-export function encodeRawInput(tx: Transaction) {
-    const inputSize =
-        varuint.encodingLength(tx.ins.length) +
-        tx.ins.reduce((sum, input) => {
-            return sum + 40 + varSliceSize(input.script);
-        }, 0);
-
-    const inputBuffer = Buffer.allocUnsafe(inputSize);
-    const inputBufferWriter = new BufferWriter(inputBuffer, 0);
-
-    inputBufferWriter.writeVarInt(tx.ins.length);
-    tx.ins.forEach((txIn) => {
-        inputBufferWriter.writeSlice(txIn.hash);
-        inputBufferWriter.writeUInt32(txIn.index);
-        inputBufferWriter.writeVarSlice(txIn.script);
-        inputBufferWriter.writeUInt32(txIn.sequence);
-    });
-
-    return inputBuffer;
+function compactSize(n: number): Buffer {
+    return Buffer.from(CompactSize.encode(BigInt(n)));
 }
 
 /**
  * @ignore
  */
-function isOutput(out: Output): boolean {
-    return out.value !== undefined;
+function varSlice(bytes: Uint8Array): Buffer {
+    return Buffer.concat([compactSize(bytes.length), bytes]);
 }
 
 /**
  * @ignore
  */
-export function encodeRawOutput(tx: Transaction) {
-    const outputSize =
-        varuint.encodingLength(tx.outs.length) +
-        tx.outs.reduce((sum, output) => {
-            return sum + 8 + varSliceSize(output.script);
-        }, 0);
-
-    const outputBuffer = Buffer.allocUnsafe(outputSize);
-    const outputBufferWriter = new BufferWriter(outputBuffer, 0);
-
-    outputBufferWriter.writeVarInt(tx.outs.length);
-    tx.outs.forEach((txOut) => {
-        if (isOutput(txOut)) {
-            outputBufferWriter.writeUInt64(txOut.value);
-        } else {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            outputBufferWriter.writeSlice((txOut as any).valueBuffer);
-        }
-
-        outputBufferWriter.writeVarSlice(txOut.script);
-    });
-
-    return outputBuffer;
+function uint32LE(n: number): Buffer {
+    const buffer = Buffer.allocUnsafe(4);
+    buffer.writeUInt32LE(n);
+    return buffer;
 }
 
 /**
  * @ignore
  */
-function vectorSize(someVector: Buffer[]): number {
-    const length = someVector.length;
+function uint64LE(n: number | bigint): Buffer {
+    const buffer = Buffer.allocUnsafe(8);
+    buffer.writeBigUInt64LE(BigInt(n));
+    return buffer;
+}
 
-    return (
-        varuint.encodingLength(length) +
-        someVector.reduce((sum, witness) => {
-            return sum + varSliceSize(witness);
-        }, 0)
+/**
+ * @ignore
+ */
+export function encodeRawInput(tx: { ins: ReadonlyArray<Omit<RawTxInput, 'witness'>> }): Buffer {
+    return Buffer.concat([
+        compactSize(tx.ins.length),
+        ...tx.ins.flatMap((txIn) => [txIn.hash, uint32LE(txIn.index), varSlice(txIn.script), uint32LE(txIn.sequence)]),
+    ]);
+}
+
+/**
+ * @ignore
+ */
+export function encodeRawOutput(tx: { outs: ReadonlyArray<RawTxOutput> }): Buffer {
+    return Buffer.concat([
+        compactSize(tx.outs.length),
+        ...tx.outs.flatMap((txOut) => [uint64LE(txOut.value), varSlice(txOut.script)]),
+    ]);
+}
+
+/**
+ * @ignore
+ */
+export function encodeRawWitness(tx: { ins: ReadonlyArray<Pick<RawTxInput, 'witness'>> }): Buffer {
+    return Buffer.concat(
+        tx.ins.flatMap((input) => [compactSize(input.witness.length), ...input.witness.map((item) => varSlice(item))])
     );
 }
 
 /**
  * @ignore
  */
-export function encodeRawWitness(tx: Transaction) {
-    const witnessSize = tx.ins.reduce((sum, input) => {
-        return sum + vectorSize(input.witness);
-    }, 0);
-
-    const witnessBuffer = Buffer.allocUnsafe(witnessSize);
-    const witnessBufferWriter = new BufferWriter(witnessBuffer, 0);
-
-    tx.ins.forEach((input) => {
-        witnessBufferWriter.writeVector(input.witness);
-    });
-
-    return witnessBuffer;
+function hash256(data: Buffer): Buffer {
+    return Buffer.from(sha256(sha256(data, 'bytes'), 'bytes'));
 }
 
 /**
@@ -165,12 +155,12 @@ function createMerkleBranchAndRoot(
 /**
  * Retrieve a Merkle proof for a Bitcoin transaction from a block's raw data.
  *
- * @param block - The Bitcoin block containing the transaction.
+ * @param block - The Bitcoin block containing the transaction, e.g. a bitcoinjs-lib `Block`.
  * @param txHash - The transaction hash to construct a proof for.
  * @param forWitness - Set to `true` to construct a witness proof (default is `false`).
  * @returns An object containing the position, proof, and root of the Merkle proof.
  */
-export function getMerkleProof(block: Block, txHash: string, forWitness?: boolean) {
+export function getMerkleProof(block: MerkleBlock, txHash: string, forWitness?: boolean) {
     const txIds = block.transactions!.map((tx) => tx.getHash(forWitness));
     const pos = txIds.map((value) => value.toString('hex')).indexOf(txHash);
 
