@@ -74,7 +74,7 @@ The Gateway MCP server at `https://mcp.gobob.xyz/mcp` (streamable HTTP) exposes 
 
 ### Agent skills
 
-Three [agent skills](https://github.com/bob-collective/bob/tree/master/skills) teach the agent how to use Gateway well. They follow the open [Agent Skills](https://agentskills.io) format, so they work in any agent that reads `SKILL.md` files.
+Three [agent skills](https://github.com/bob-collective/bob-plugins/tree/main/plugins/bob-gateway) teach the agent how to use Gateway well. They follow the open [Agent Skills](https://agentskills.io) format, so they work in any agent that reads `SKILL.md` files.
 
 | Skill | Use it to |
 |-------|-----------|
@@ -91,7 +91,7 @@ Three [agent skills](https://github.com/bob-collective/bob/tree/master/skills) t
 The `bob-gateway` plugin bundles the skills and the MCP server:
 
 ```bash
-claude plugin marketplace add bob-collective/bob
+claude plugin marketplace add bob-collective/bob-plugins
 claude plugin install bob-gateway@bob
 ```
 
@@ -101,19 +101,26 @@ The plugin reads `GATEWAY_API_KEY` from the environment Claude Code starts in.
 
 <Tab value="Codex">
 
+The `bob-gateway` plugin bundles the skills and the MCP server:
+
 ```bash
-npx skills add bob-collective/bob -g -a codex
-codex mcp add bob-gateway --url https://mcp.gobob.xyz/mcp --bearer-token-env-var GATEWAY_API_KEY
+codex plugin marketplace add bob-collective/bob-plugins --ref main
+codex plugin add bob-gateway@bob
 ```
 
-Without an API key, leave out `--bearer-token-env-var GATEWAY_API_KEY`.
+The plugin connects without an API key. To send one, install the skills on their own and connect the server yourself:
+
+```bash
+npx skills add bob-collective/bob-plugins -g -a codex
+codex mcp add bob-gateway --url https://mcp.gobob.xyz/mcp --bearer-token-env-var GATEWAY_API_KEY
+```
 
 </Tab>
 
 <Tab value="Cursor">
 
 ```bash
-npx skills add bob-collective/bob
+npx skills add bob-collective/bob-plugins
 ```
 
 Then add the server to `.cursor/mcp.json` in your project, or to `~/.cursor/mcp.json`:
@@ -133,9 +140,9 @@ Then add the server to `.cursor/mcp.json` in your project, or to `~/.cursor/mcp.
 
 <Tab value="Other agents">
 
-Install the skills with `npx skills add bob-collective/bob`, or copy the skill directories into `.agents/skills/` in your project. Then add a streamable HTTP MCP server named `bob-gateway` with the URL `https://mcp.gobob.xyz/mcp` and an optional `Authorization: Bearer <API key>` header.
+Install the skills with `npx skills add bob-collective/bob-plugins`, or copy the skill directories into `.agents/skills/` in your project. Then add a streamable HTTP MCP server named `bob-gateway` with the URL `https://mcp.gobob.xyz/mcp` and an optional `Authorization: Bearer <API key>` header.
 
-The [skills README](https://github.com/bob-collective/bob/tree/master/skills#install) has ready-made configuration for Gemini CLI, GitHub Copilot and Claude Code without the plugin.
+The [plugin README](https://github.com/bob-collective/bob-plugins/tree/main/plugins/bob-gateway#install) has ready-made configuration for Gemini CLI, GitHub Copilot and Claude Code without the plugin.
 
 </Tab>
 
@@ -376,8 +383,8 @@ gateway-cli quote --src BTC --dst USDC:base --amount 100USD --json
 ```
 
 <Cards>
-  <Card title="Agent skills on GitHub" icon="github" href="https://github.com/bob-collective/bob/tree/master/skills">
-    The Gateway skills, install steps for each agent, and the Claude Code plugin.
+  <Card title="Agent skills on GitHub" icon="github" href="https://github.com/bob-collective/bob-plugins/tree/main/plugins/bob-gateway">
+    The Gateway skills, install steps for each agent, and the Claude Code and Codex plugin.
   </Card>
 
   <Card title="BOB Gateway CLI on GitHub" icon="github" href="https://github.com/bob-collective/bob/tree/master/gateway-cli">
