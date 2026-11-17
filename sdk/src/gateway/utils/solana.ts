@@ -1,4 +1,5 @@
-import { base58 } from '@scure/base';
+import { base58, base64 } from '@scure/base';
+import { bytesToHex, type Hex } from 'viem';
 
 const PUBLIC_KEY_LENGTH = 32;
 const SIGNATURE_LENGTH = 64;
@@ -6,14 +7,6 @@ const VERSION_PREFIX_MASK = 0x80;
 
 export function isSolanaChain(chain: string): boolean {
     return chain.toLowerCase() === 'solana';
-}
-
-export function isValidSolanaAddress(address: string): boolean {
-    try {
-        return base58.decode(address).length === PUBLIC_KEY_LENGTH;
-    } catch {
-        return false;
-    }
 }
 
 /** What `executeQuote` checks of a Solana transaction before its wallet signs it. */
@@ -70,4 +63,32 @@ export function readSolanaTransactionHeader(bytes: Uint8Array): SolanaTransactio
         feePayer: base58.encode(bytes.subarray(accountsStart, accountsStart + PUBLIC_KEY_LENGTH)),
         numRequiredSignatures,
     };
+}
+
+/**
+ * The `data` `executeQuote` passes to `walletClient.sendTransaction` for a Solana order: the wire bytes of the
+ * unsigned `VersionedTransaction` Gateway built (sent as base64), as hex. Throws unless `signer` pays the
+ * transaction's fee and is its only signer.
+ */
+export function solanaTransactionData(transaction: string, signer: string): Hex {
+    let bytes: Uint8Array;
+    let header: SolanaTransactionHeader;
+    try {
+        bytes = base64.decode(transaction);
+        header = readSolanaTransactionHeader(bytes);
+    } catch (error) {
+        throw new Error('Gateway returned a malformed Solana transaction', { cause: error });
+    }
+
+    // Only the wallet signs. A transaction needing another signer would have to come partially signed by Gateway.
+    if (header.numRequiredSignatures !== 1) {
+        throw new Error(
+            `Solana transaction requires ${header.numRequiredSignatures} signatures; only the wallet's is supported`
+        );
+    }
+    if (header.feePayer !== signer) {
+        throw new Error('Solana transaction fee payer is not the wallet address');
+    }
+
+    return bytesToHex(bytes);
 }

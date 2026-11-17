@@ -95,7 +95,7 @@ If no `btcSigner` is provided to `executeQuote`, it returns the order for extern
 - **USDT approval**: USDT on Ethereum requires resetting allowance to 0 before setting a new value (ERC-20 race condition). This is handled in `executeQuote` via a special ABI (`USDTApproveAbi`).
 - **Onramp registration**: `registerTx` validates and broadcasts the signed payment. Its failure throws `ExecuteQuoteError` naming the txid (`txStatus: 'unconfirmed'`), since a broadcasting wallet or registration itself may have sent the payment already; whether a `sendBitcoin` wallet broadcast is not knowable from the SDK.
 - **Viem integration**: The SDK expects viem `PublicClient` and `WalletClient` for all EVM operations.
-- **Solana sources**: for an offramp or token swap from Solana, `walletClient` is a `SolanaWallet` (`address`, `signAndSendTransaction(bytes)`) and `publicClient` a `SolanaConnection` (`getSignatureStatuses`, which a `@solana/web3.js` `Connection` satisfies). The flow lives in `gateway/solana-order.ts`: it checks the clients before order creation, checks the transaction's fee payer and signer count before signing, and polls for confirmation. No approvals. The SDK takes no `@solana/*` dependency.
+- **Solana sources**: like Tron, an order from Solana goes through viem-shaped `walletClient` / `publicClient` adapters the app builds. `executeQuote` passes the unsigned `VersionedTransaction` as hex `data` to `walletClient.sendTransaction({ account, data })`, which returns the Base58 signature, then `publicClient.waitForTransactionReceipt({ hash })`. No approvals. `utils/solana.ts` checks the fee payer and signer count before sending. The SDK takes no `@solana/*` dependency.
 
 ## Testing
 

@@ -16,7 +16,7 @@ The SDK calls `/v4` under the hood. See the [Migration Guide](/gateway/migration
 - Pass a **`refundAddress` on the source chain** for every quote you intend to execute. It is optional for a price-only quote, but order creation rejects a quote without one with `MISSING_REFUND_ADDRESS`. The SDK forwards the address you provide; it does not infer it from `fromUserAddress`.
 - Remove **`ownerAddress`** from quote parameters. It is no longer part of the V4 request.
 - Bitcoin signers must return **signed raw transaction hex**. The SDK submits it to Gateway for validation and broadcasting. Offramp and token-swap transactions are indexed from the source chain without `register-tx`.
-- `executeQuote` supports Bitcoin signing, viem-compatible EVM/Tron clients, and Solana sources: pass a `SolanaWallet` as `walletClient` and a `SolanaConnection` (such as a `@solana/web3.js` `Connection`) as `publicClient`. The wallet signs and sends the `VersionedTransaction` Gateway built; Solana needs no approval step. Solana can also be a destination for supported routes.
+- `executeQuote` supports Bitcoin signing and viem-compatible EVM, Tron and Solana clients. For a Solana source, the wallet client's `sendTransaction` receives the unsigned `VersionedTransaction` Gateway built as hex `data`, signs and sends it; Solana needs no approval step. Solana can also be a destination for supported routes.
 
 Quotes retain affiliate fees, optional USD amounts, and price impact. Orders retain pagination and discriminated settlement status. Use `getRoutes()` to discover current chains and tokens.
 

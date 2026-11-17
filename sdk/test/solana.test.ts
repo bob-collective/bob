@@ -1,19 +1,11 @@
 import { base58, base64 } from '@scure/base';
 import nock from 'nock';
-import { Account, Address, PublicClient, Transport, Chain as ViemChain, WalletClient } from 'viem';
+import { Account, bytesToHex, PublicClient, Transport, Chain as ViemChain, WalletClient } from 'viem';
 import { afterEach, assert, describe, expect, it, vi } from 'vitest';
-import {
-    ExecuteQuoteError,
-    ExecuteQuoteStepType,
-    GatewaySDK,
-    type ExecuteQuoteStep,
-    type SolanaConnection,
-    type SolanaWallet,
-} from '../src/gateway';
+import { ExecuteQuoteError, ExecuteQuoteStepType, GatewaySDK, type ExecuteQuoteStep } from '../src/gateway';
 import { MAINNET_GATEWAY_BASE_URL } from '../src/gateway/client';
 import { GatewayQuoteV4OneOf, GatewayQuoteV4OneOf1 } from '../src/gateway/generated-client';
-import { waitForSolanaConfirmation } from '../src/gateway/solana-order';
-import { isValidSolanaAddress, readSolanaTransactionHeader } from '../src/gateway/utils';
+import { readSolanaTransactionHeader, solanaTransactionData } from '../src/gateway/utils';
 
 const FEE_PAYER = new Uint8Array(32).fill(1);
 const OTHER_KEY = new Uint8Array(32).fill(2);
@@ -21,7 +13,6 @@ const PROGRAM_ID = new Uint8Array(32).fill(3);
 const WALLET_ADDRESS = base58.encode(FEE_PAYER);
 const SIGNATURE = base58.encode(new Uint8Array(64).fill(7));
 const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
-const SOLANA_CHAIN_ID = 900;
 
 function compactU16(value: number): number[] {
     const out: number[] = [];
@@ -61,7 +52,7 @@ function buildTransaction({
 }
 
 function solanaTx(transaction = buildTransaction()) {
-    return { type: 'solana', chainId: SOLANA_CHAIN_ID, transaction: base64.encode(transaction) };
+    return { type: 'solana', chainId: 900, transaction: base64.encode(transaction) };
 }
 
 function offrampQuote(srcChain = 'solana'): GatewayQuoteV4OneOf {
@@ -106,51 +97,50 @@ function tokenSwapQuote(srcChain = 'solana'): GatewayQuoteV4OneOf1 {
     };
 }
 
-function mockWallet(signAndSendTransaction = vi.fn().mockResolvedValue(SIGNATURE)) {
-    return { address: WALLET_ADDRESS, signAndSendTransaction } satisfies SolanaWallet;
-}
+/** A viem-shaped Solana adapter, as an app builds one: Base58 account, signature returned as the hash. */
+function solanaClients({
+    sendTransaction = vi.fn().mockResolvedValue(SIGNATURE),
+    receipt = { status: 'success' },
+}: { sendTransaction?: ReturnType<typeof vi.fn>; receipt?: object } = {}) {
+    const walletClient = {
+        account: { address: WALLET_ADDRESS, type: 'json-rpc' },
+        sendTransaction,
+        writeContract: vi.fn(),
+    };
+    const publicClient = {
+        readContract: vi.fn(),
+        simulateContract: vi.fn(),
+        waitForTransactionReceipt: vi.fn().mockResolvedValue(receipt),
+    };
 
-function mockConnection(...statuses: Array<{ confirmationStatus?: string | null; err: unknown } | null>) {
-    const getSignatureStatuses = vi.fn();
-    for (const status of statuses) getSignatureStatuses.mockResolvedValueOnce({ value: [status] });
-    return { getSignatureStatuses } as unknown as SolanaConnection & {
-        getSignatureStatuses: typeof getSignatureStatuses;
+    return {
+        walletClient,
+        publicClient,
+        params: {
+            walletClient: walletClient as unknown as WalletClient<Transport, ViemChain, Account>,
+            publicClient: publicClient as unknown as PublicClient<Transport>,
+        },
     };
 }
-
-const CONFIRMED = { confirmationStatus: 'confirmed', err: null };
-
-const evmWalletClient = {
-    account: { address: '0x1234567890123456789012345678901234567890' as Address },
-    sendTransaction: vi.fn(),
-} as unknown as WalletClient<Transport, ViemChain, Account>;
-
-const evmPublicClient = {
-    readContract: vi.fn(),
-    waitForTransactionReceipt: vi.fn(),
-} as unknown as PublicClient<Transport>;
 
 function mockCreateOrder(body: object) {
     return nock(MAINNET_GATEWAY_BASE_URL).post('/v4/create-order').reply(201, body);
 }
 
-describe('Solana source orders', () => {
+describe('orders from Solana', () => {
     afterEach(() => {
         nock.cleanAll();
-        vi.clearAllMocks();
     });
 
-    it('signs and sends an offramp from Solana with the SolanaWallet and confirms it', async () => {
+    it('sends an offramp from Solana through the wallet client and waits for its receipt', async () => {
         const transaction = buildTransaction();
         mockCreateOrder({ offramp: { order_id: 'sol-offramp-1', tx: solanaTx(transaction) } });
-        const walletClient = mockWallet();
-        const publicClient = mockConnection(CONFIRMED);
+        const { walletClient, publicClient, params } = solanaClients();
         const steps: ExecuteQuoteStep[] = [];
 
         const result = await new GatewaySDK().executeQuote({
             quote: offrampQuote(),
-            walletClient,
-            publicClient,
+            ...params,
             callback: (step) => steps.push(step),
         });
 
@@ -158,90 +148,73 @@ describe('Solana source orders', () => {
         expect(result.order).toEqual(
             expect.objectContaining({ offramp: expect.objectContaining({ orderId: 'sol-offramp-1' }) })
         );
-        expect(walletClient.signAndSendTransaction).toHaveBeenCalledOnce();
-        expect(walletClient.signAndSendTransaction.mock.calls[0][0]).toEqual(transaction);
-        expect(publicClient.getSignatureStatuses).toHaveBeenCalledWith([SIGNATURE]);
+        expect(walletClient.sendTransaction).toHaveBeenCalledExactlyOnceWith({
+            account: WALLET_ADDRESS,
+            data: bytesToHex(transaction),
+        });
+        expect(publicClient.waitForTransactionReceipt).toHaveBeenCalledWith(
+            expect.objectContaining({ hash: SIGNATURE })
+        );
+        // No approvals on Solana.
+        expect(publicClient.readContract).not.toHaveBeenCalled();
+        expect(publicClient.simulateContract).not.toHaveBeenCalled();
+        expect(walletClient.writeContract).not.toHaveBeenCalled();
         expect(steps).toEqual([
             { step: 1, type: ExecuteQuoteStepType.SendTransaction, totalSteps: 1, orderId: 'sol-offramp-1' },
         ]);
     });
 
-    it('signs and sends a token swap from Solana, legacy message included', async () => {
+    it('sends a token swap from Solana, legacy message included', async () => {
         const transaction = buildTransaction({ version: 'legacy' });
         mockCreateOrder({ tokenSwap: { order_id: 'sol-swap-1', tx: solanaTx(transaction) } });
-        const walletClient = mockWallet();
+        const { walletClient, publicClient, params } = solanaClients();
 
-        const result = await new GatewaySDK().executeQuote({
-            quote: tokenSwapQuote(),
-            walletClient,
-            publicClient: mockConnection({ confirmationStatus: 'finalized', err: null }),
-        });
+        const result = await new GatewaySDK().executeQuote({ quote: tokenSwapQuote(), ...params });
 
         expect(result.tx).toBe(SIGNATURE);
-        expect(walletClient.signAndSendTransaction.mock.calls[0][0]).toEqual(transaction);
+        expect(walletClient.sendTransaction).toHaveBeenCalledExactlyOnceWith({
+            account: WALLET_ADDRESS,
+            data: bytesToHex(transaction),
+        });
+        expect(publicClient.readContract).not.toHaveBeenCalled();
     });
 
-    it.each([
-        ['an EVM wallet client', evmWalletClient, mockConnection(), 'walletClient must be a SolanaWallet'],
-        [
-            'a SolanaWallet with an invalid address',
-            { ...mockWallet(), address: '0x1234567890123456789012345678901234567890' },
-            mockConnection(),
-            'SolanaWallet address is not a valid Solana address',
-        ],
-        ['an EVM public client', mockWallet(), evmPublicClient, 'publicClient must be a SolanaConnection'],
-    ])('refuses %s for an order from Solana before creating it', async (_, walletClient, publicClient, message) => {
-        const scope = mockCreateOrder({ offramp: { order_id: 'never', tx: solanaTx() } });
-
-        await expect(
-            new GatewaySDK().executeQuote({ quote: offrampQuote(), walletClient, publicClient })
-        ).rejects.toThrow(message);
-        expect(scope.isDone()).toBe(false);
-    });
-
-    it.each([
-        ['offramp', offrampQuote('ethereum')],
-        ['token swap', tokenSwapQuote('ethereum')],
-    ])('refuses Solana clients for a %s from an EVM chain before creating it', async (_, quote) => {
-        const scope = mockCreateOrder({});
-
-        await expect(
-            new GatewaySDK().executeQuote({ quote, walletClient: mockWallet(), publicClient: mockConnection() })
-        ).rejects.toThrow('Solana clients cannot send an order from ethereum');
-        expect(scope.isDone()).toBe(false);
-    });
-
-    it('refuses a Solana transaction for an order from an EVM chain', async () => {
-        mockCreateOrder({ offramp: { order_id: 'evm-offramp-1', tx: solanaTx() } });
+    it('reports a transaction that failed on-chain as reverted', async () => {
+        mockCreateOrder({ tokenSwap: { order_id: 'sol-swap-2', tx: solanaTx() } });
+        const { params } = solanaClients({ receipt: { status: 'reverted' } });
 
         const error = await new GatewaySDK()
-            .executeQuote({
-                quote: {
-                    offramp: {
-                        ...offrampQuote('bob').offramp,
-                        tokenAddress: '0x0000000000000000000000000000000000000000',
-                    },
-                },
-                walletClient: evmWalletClient,
-                publicClient: evmPublicClient,
-            })
+            .executeQuote({ quote: tokenSwapQuote(), ...params })
             .catch((thrown: unknown) => thrown);
 
         assert(error instanceof ExecuteQuoteError);
-        expect(error.orderId).toBe('evm-offramp-1');
-        expect(error.message).toBe('Gateway returned a Solana transaction for an order from bob');
-        expect(evmWalletClient.sendTransaction).not.toHaveBeenCalled();
+        expect(error.orderId).toBe('sol-swap-2');
+        expect(error.step).toBe(ExecuteQuoteStepType.SendTransaction);
+        expect(error.txHash).toBe(SIGNATURE);
+        expect(error.txStatus).toBe('reverted');
+    });
+
+    it('reports a wallet rejection on the send step without a transaction', async () => {
+        mockCreateOrder({ offramp: { order_id: 'sol-offramp-2', tx: solanaTx() } });
+        const rejection = new Error('User rejected the request.');
+        const { publicClient, params } = solanaClients({ sendTransaction: vi.fn().mockRejectedValue(rejection) });
+
+        const error = await new GatewaySDK()
+            .executeQuote({ quote: offrampQuote(), ...params })
+            .catch((thrown: unknown) => thrown);
+
+        assert(error instanceof ExecuteQuoteError);
+        expect(error.message).toBe('User rejected the request.');
+        expect(error.cause).toBe(rejection);
+        expect(error.step).toBe(ExecuteQuoteStepType.SendTransaction);
+        expect(error.txHash).toBeUndefined();
+        expect(publicClient.waitForTransactionReceipt).not.toHaveBeenCalled();
     });
 
     it.each([
         [
-            'an EVM transaction',
-            { type: 'evm', chain: 'solana', to: '0x1234567890123456789012345678901234567890', data: '0x', value: '0' },
-            'Gateway returned a evm transaction for an order from Solana',
-        ],
-        [
             'a malformed transaction',
-            { type: 'solana', chainId: SOLANA_CHAIN_ID, transaction: base64.encode(new Uint8Array([1, 0, 0])) },
+            { type: 'solana', chainId: 900, transaction: base64.encode(new Uint8Array([1, 0, 0])) },
             'Gateway returned a malformed Solana transaction',
         ],
         [
@@ -254,103 +227,46 @@ describe('Solana source orders', () => {
             solanaTx(buildTransaction({ signers: [FEE_PAYER, OTHER_KEY] })),
             "Solana transaction requires 2 signatures; only the wallet's is supported",
         ],
+        [
+            'a transaction of another chain',
+            { type: 'evm', chain: 'solana', to: '0x1234567890123456789012345678901234567890', data: '0x', value: '0' },
+            'Gateway returned a transaction of type evm for an order from solana',
+        ],
     ])('refuses %s before the wallet signs', async (_, tx, message) => {
-        mockCreateOrder({ offramp: { order_id: 'sol-offramp-2', tx } });
-        const walletClient = mockWallet();
+        mockCreateOrder({ offramp: { order_id: 'sol-offramp-3', tx } });
+        const { walletClient, params } = solanaClients();
 
         const error = await new GatewaySDK()
-            .executeQuote({ quote: offrampQuote(), walletClient, publicClient: mockConnection() })
+            .executeQuote({ quote: offrampQuote(), ...params })
             .catch((thrown: unknown) => thrown);
 
         assert(error instanceof ExecuteQuoteError);
-        expect(error.orderId).toBe('sol-offramp-2');
+        expect(error.orderId).toBe('sol-offramp-3');
         expect(error.message).toBe(message);
         expect(error.txHash).toBeUndefined();
-        expect(walletClient.signAndSendTransaction).not.toHaveBeenCalled();
+        expect(walletClient.sendTransaction).not.toHaveBeenCalled();
     });
 
-    it('reports a wallet rejection on the send step without a transaction', async () => {
-        mockCreateOrder({ offramp: { order_id: 'sol-offramp-3', tx: solanaTx() } });
-        const rejection = new Error('User rejected the request.');
-        const publicClient = mockConnection();
+    it('refuses a Solana transaction for an order from an EVM chain', async () => {
+        mockCreateOrder({ tokenSwap: { order_id: 'evm-swap-1', tx: solanaTx() } });
+        const { walletClient, params } = solanaClients();
+        const nativeEth = { amount: '1', address: '0x0000000000000000000000000000000000000000', chain: 'ethereum' };
 
         const error = await new GatewaySDK()
             .executeQuote({
-                quote: offrampQuote(),
-                walletClient: mockWallet(vi.fn().mockRejectedValue(rejection)),
-                publicClient,
+                quote: { tokenSwap: { ...tokenSwapQuote('ethereum').tokenSwap, inputAmount: nativeEth } },
+                ...params,
             })
             .catch((thrown: unknown) => thrown);
 
         assert(error instanceof ExecuteQuoteError);
-        expect(error.message).toBe('User rejected the request.');
-        expect(error.cause).toBe(rejection);
-        expect(error.step).toBe(ExecuteQuoteStepType.SendTransaction);
-        expect(error.txHash).toBeUndefined();
-        expect(publicClient.getSignatureStatuses).not.toHaveBeenCalled();
-    });
-
-    it('reports a transaction that failed on-chain as reverted', async () => {
-        mockCreateOrder({ tokenSwap: { order_id: 'sol-swap-2', tx: solanaTx() } });
-
-        const error = await new GatewaySDK()
-            .executeQuote({
-                quote: tokenSwapQuote(),
-                walletClient: mockWallet(),
-                publicClient: mockConnection({
-                    confirmationStatus: 'processed',
-                    err: { InstructionError: [0, { Custom: 1 }] },
-                }),
-            })
-            .catch((thrown: unknown) => thrown);
-
-        assert(error instanceof ExecuteQuoteError);
-        expect(error.orderId).toBe('sol-swap-2');
-        expect(error.message).toBe('Transaction reverted: {"InstructionError":[0,{"Custom":1}]}');
-        expect(error.step).toBe(ExecuteQuoteStepType.SendTransaction);
-        expect(error.txHash).toBe(SIGNATURE);
-        expect(error.txStatus).toBe('reverted');
+        expect(error.orderId).toBe('evm-swap-1');
+        expect(error.message).toBe('Gateway returned a Solana transaction for an order from ethereum');
+        expect(walletClient.sendTransaction).not.toHaveBeenCalled();
     });
 });
 
-describe('waitForSolanaConfirmation', () => {
-    it('keeps polling past unseen and processed statuses and RPC errors', async () => {
-        const connection = mockConnection(null, { confirmationStatus: 'processed', err: null });
-        connection.getSignatureStatuses.mockRejectedValueOnce(new Error('429 Too Many Requests'));
-        connection.getSignatureStatuses.mockResolvedValueOnce({ value: [CONFIRMED] });
-
-        await waitForSolanaConfirmation('order', connection, SIGNATURE, { pollIntervalMs: 1 });
-
-        expect(connection.getSignatureStatuses).toHaveBeenCalledTimes(4);
-    });
-
-    it('names the transaction as unconfirmed once the deadline passes, with the last RPC error', async () => {
-        const rpcError = new Error('fetch failed');
-        const getSignatureStatuses = vi.fn().mockRejectedValue(rpcError);
-
-        const error = await waitForSolanaConfirmation('order', { getSignatureStatuses }, SIGNATURE, {
-            timeoutMs: 20,
-            pollIntervalMs: 1,
-        }).catch((thrown: unknown) => thrown);
-
-        assert(error instanceof ExecuteQuoteError);
-        expect(error.message).toBe('Transaction not confirmed in time');
-        expect(error.cause).toBe(rpcError);
-        expect(error.step).toBe(ExecuteQuoteStepType.SendTransaction);
-        expect(error.txHash).toBe(SIGNATURE);
-        expect(error.txStatus).toBe('unconfirmed');
-    });
-});
-
-describe('Solana utils', () => {
-    it('validates Base58 public keys', () => {
-        expect(isValidSolanaAddress(WALLET_ADDRESS)).toBe(true);
-        expect(isValidSolanaAddress(USDC_MINT)).toBe(true);
-        expect(isValidSolanaAddress(SIGNATURE)).toBe(false);
-        expect(isValidSolanaAddress('0x1234567890123456789012345678901234567890')).toBe(false);
-        expect(isValidSolanaAddress('')).toBe(false);
-    });
-
+describe('Solana transaction utils', () => {
     it('reads the fee payer and required signatures of legacy and v0 transactions', () => {
         for (const version of [0, 'legacy'] as const) {
             expect(readSolanaTransactionHeader(buildTransaction({ version, signers: [FEE_PAYER, OTHER_KEY] }))).toEqual(
@@ -370,5 +286,10 @@ describe('Solana utils', () => {
         const v1 = transaction.slice();
         v1[65] = 0x81;
         expect(() => readSolanaTransactionHeader(v1)).toThrow('Unsupported Solana transaction version 1');
+    });
+
+    it('turns the base64 transaction into hex data for the wallet client', () => {
+        const transaction = buildTransaction();
+        expect(solanaTransactionData(base64.encode(transaction), WALLET_ADDRESS)).toBe(bytesToHex(transaction));
     });
 });

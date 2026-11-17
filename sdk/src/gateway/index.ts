@@ -28,9 +28,6 @@ export {
     ExecuteQuoteTxStatus,
     GatewayQuoteParams,
     GetQuoteParams,
-    SolanaConnection,
-    SolanaSignatureStatus,
-    SolanaWallet,
 } from './types';
 export {
     applyGasBuffer,
