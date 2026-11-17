@@ -1,13 +1,16 @@
 ---
 title: "Gateway for AI Agents"
-description: "Add native BTC swaps to any AI agent with the Gateway CLI — no SDK binding, no language lock-in, no custody of user keys."
+description: "Add native BTC swaps to any AI agent with the hosted Gateway MCP server, agent skills, or the Gateway CLI — no SDK binding, no language lock-in, no custody of user keys."
 icon: Bot
 ---
 # Gateway for AI Agents
 
 Gateway is the best swaps engine for native BTC. It supports a growing set of assets and chains — run `gateway-cli routes --json` to see what is available.
 
-The Gateway CLI makes that engine available to any AI agent that can run a shell command. No SDK to bind, no language to match, no service to host. A Python agent, a TypeScript agent, a shell script, or a scheduled job can all call the same interface and get structured output back.
+Agents reach that engine in two ways:
+
+- **The Gateway MCP server and agent skills.** Connect Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot or any other MCP client to the hosted server at `https://mcp.gobob.xyz/mcp`. The agent quotes and prepares the swap, and the user's own wallet signs it. See [Connect an agent over MCP](#connect-an-agent-over-mcp).
+- **The Gateway CLI.** Any agent that can run a shell command can use it. No SDK to bind, no language to match, no service to host. A Python agent, a TypeScript agent, a shell script, or a scheduled job can all call the same interface and get structured output back.
 
 ---
 
@@ -48,10 +51,107 @@ The Gateway CLI makes that engine available to any AI agent that can run a shell
     Agents that allocate capital, execute yield strategies, or rebalance across chains — and need to touch native BTC as part of those workflows.
   </Card>
 
-  <Card title="MCP builders" icon="plug">
-    The CLI is a clean blueprint for an MCP server. Wrap it once and the same BTC swap tool works across every MCP client.
+  <Card title="Coding agent users" icon="plug">
+    Ask Claude Code, Codex, Cursor or another coding agent to quote a swap, prepare it for your wallet, or track an order. Connect the hosted MCP server and add the agent skills — nothing to wrap or host.
   </Card>
 </Cards>
+
+---
+
+## Connect an agent over MCP
+
+The Gateway MCP server at `https://mcp.gobob.xyz/mcp` (streamable HTTP) exposes the public [V4 API](/api-reference/overview) as tools. It is a pass-through: it holds no keys and signs nothing. The agent prepares the order and tells the user what to sign; the user's own wallet signs and broadcasts every transaction, token approvals included.
+
+| Tool | API | What it does |
+|------|-----|--------------|
+| `get_routes` | `GET /v4/get-routes` | Lists supported routes, optionally filtered by `src_chain` and `dst_chain` |
+| `get_quote` | `GET /v4/get-quote` | Quotes a swap |
+| `create_order` | `POST /v4/create-order` | Creates an order from a quote and returns what the user signs: a deposit address or PSBT for onramps, a transaction otherwise |
+| `register_tx` | `PATCH /v4/register-tx` | Optional: broadcasts a fully signed onramp Bitcoin transaction. Deposits are detected on-chain without it |
+| `get_order` | `GET /v4/get-order/{id}` | Looks up one order by order id or source transaction hash |
+| `get_orders` | `GET /v4/get-orders/{addresses}` | Lists the orders of up to 20 addresses |
+| `get_max_spendable` | `GET /v4/get-max-spendable/{address}` | The most BTC an address can send after network fees |
+
+### Agent skills
+
+Three [agent skills](https://github.com/bob-collective/bob/tree/master/skills) teach the agent how to use Gateway well. They follow the open [Agent Skills](https://agentskills.io) format, so they work in any agent that reads `SKILL.md` files.
+
+| Skill | Use it to |
+|-------|-----------|
+| `gateway-swap` | Quote a swap, create the order after you confirm, and get exactly what to sign — including the token approval, checked against the Gateway spender |
+| `gateway-order-status` | Look up an order or an address's history and explain its status and refunds |
+| `gateway-integrate` | Write or review code that integrates Gateway with the SDK, the REST API, or the CLI. Works without the MCP server |
+
+### Install
+
+<Tabs items={["Claude Code","Codex","Cursor","Other agents"]}>
+
+<Tab value="Claude Code">
+
+The `bob-gateway` plugin bundles the skills and the MCP server:
+
+```bash
+claude plugin marketplace add bob-collective/bob
+claude plugin install bob-gateway@bob
+```
+
+The plugin reads `GATEWAY_API_KEY` from the environment Claude Code starts in.
+
+</Tab>
+
+<Tab value="Codex">
+
+```bash
+npx skills add bob-collective/bob -g -a codex
+codex mcp add bob-gateway --url https://mcp.gobob.xyz/mcp --bearer-token-env-var GATEWAY_API_KEY
+```
+
+Without an API key, leave out `--bearer-token-env-var GATEWAY_API_KEY`.
+
+</Tab>
+
+<Tab value="Cursor">
+
+```bash
+npx skills add bob-collective/bob
+```
+
+Then add the server to `.cursor/mcp.json` in your project, or to `~/.cursor/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "bob-gateway": {
+      "url": "https://mcp.gobob.xyz/mcp",
+      "headers": { "Authorization": "Bearer ${env:GATEWAY_API_KEY}" }
+    }
+  }
+}
+```
+
+</Tab>
+
+<Tab value="Other agents">
+
+Install the skills with `npx skills add bob-collective/bob`, or copy the skill directories into `.agents/skills/` in your project. Then add a streamable HTTP MCP server named `bob-gateway` with the URL `https://mcp.gobob.xyz/mcp` and an optional `Authorization: Bearer <API key>` header.
+
+The [skills README](https://github.com/bob-collective/bob/tree/master/skills#install) has ready-made configuration for Gemini CLI, GitHub Copilot and Claude Code without the plugin.
+
+</Tab>
+
+</Tabs>
+
+Then ask in plain words — "how much USDC on Base do I get for 0.01 BTC?", "swap 100 USDT on Ethereum to BTC", or "where is my order?".
+
+### API key
+
+An API key is optional: every tool works without one. With a key, Gateway applies your integrator pricing to quotes and orders, and your orders show up in your [partner dashboard](/gateway/onboarding). Set it as `GATEWAY_API_KEY` in the environment your agent starts from — never paste it into the chat.
+
+<Callout type="warn">
+  `create_order` creates a real order, and `register_tx` broadcasts a Bitcoin transaction that cannot be undone. Keep both behind your agent's tool-approval prompt. Never give an agent a private key or seed phrase: nothing in this flow needs one.
+</Callout>
+
+The server applies the same [regional restrictions](/gateway/faq#are-any-regions-blocked-from-using-gateway) as the Gateway API, so it refuses connections from blocked jurisdictions.
 
 ---
 
@@ -250,14 +350,14 @@ Example dry-run output:
 
 ## BOB Gateway integration paths
 
-The CLI is the fastest path into BOB Gateway, not the only one. The same engine is available through multiple surfaces:
+The MCP server and the CLI are the fastest paths into BOB Gateway, not the only ones. The same engine is available through multiple surfaces:
 
 | Path | Best for |
 |------|----------|
+| [**MCP server + agent skills**](#connect-an-agent-over-mcp) | Claude Code, Codex, Cursor and any other MCP client. Hosted at `mcp.gobob.xyz`, nothing to wrap or run, and the user's wallet signs. |
 | [**Gateway CLI**](https://github.com/bob-collective/bob/tree/master/gateway-cli) | Any agent that can shell out. Zero binding, works in any language, fastest to prototype. |
 | [**Gateway SDK**](/gateway/integration) | Agents built in TypeScript or Node. Type-safe, same swap engine, suitable for production web services. |
 | [**Gateway API**](/api-reference/overview) | Any language, server-to-server. Full control over request/response handling. |
-| **MCP server** | Agents using the Model Context Protocol. Wrap Gateway once and it works across every MCP client. |
 
 Gateway has already powered experiments like a Bitcoin yield bot built on Coinbase AgentKit. Frameworks evolve fast — the engine underneath does not. Whether an agent reaches Gateway through a CLI, an MCP server, or next year's framework, it is calling the same swaps engine for native BTC. Build the Bitcoin layer once and let the toolchains find it.
 
@@ -276,6 +376,10 @@ gateway-cli quote --src BTC --dst USDC:base --amount 100USD --json
 ```
 
 <Cards>
+  <Card title="Agent skills on GitHub" icon="github" href="https://github.com/bob-collective/bob/tree/master/skills">
+    The Gateway skills, install steps for each agent, and the Claude Code plugin.
+  </Card>
+
   <Card title="BOB Gateway CLI on GitHub" icon="github" href="https://github.com/bob-collective/bob/tree/master/gateway-cli">
     Source code, installation, and full command reference.
   </Card>
