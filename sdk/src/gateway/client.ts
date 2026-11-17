@@ -44,9 +44,19 @@ import {
     type ExecuteQuoteStep,
     ExecuteQuoteStepType,
     type GetQuoteParams,
+    type SolanaConnection,
+    type SolanaWallet,
     type StrategyParams,
 } from './types';
-import { estimateGasWithBuffer, formatBtc, isValidTronAddress, supportsGasEstimation, tronAddressToHex } from './utils';
+import { isSolanaConnection, isSolanaWallet, sendSolanaOrderTransaction, solanaClients } from './solana-order';
+import {
+    estimateGasWithBuffer,
+    formatBtc,
+    isSolanaChain,
+    isValidTronAddress,
+    supportsGasEstimation,
+    tronAddressToHex,
+} from './utils';
 
 const RETRY_COUNT = 8; // Number of times to retry fetching transaction receipt after sending a transaction
 
@@ -248,7 +258,17 @@ interface EvmWalletClientParams {
     publicClient: PublicClient<Transport>;
 }
 
-export interface AllWalletClientParams extends EvmWalletClientParams {
+export interface AllWalletClientParams {
+    /**
+     * The wallet that sends the order's source-chain transactions: a viem `WalletClient` (or a viem-shaped Tron
+     * adapter), or a {@link SolanaWallet} for an order from Solana.
+     */
+    walletClient: WalletClient<Transport, ViemChain, Account> | SolanaWallet;
+    /**
+     * Reads from the source chain: a viem `PublicClient` (or a viem-shaped Tron adapter), or a
+     * {@link SolanaConnection} for an order from Solana.
+     */
+    publicClient: PublicClient<Transport> | SolanaConnection;
     /**
      * Bitcoin signer used to sign the transaction inputs.
      */
@@ -258,7 +278,8 @@ export interface AllWalletClientParams extends EvmWalletClientParams {
 /**
  * Result of executing a gateway quote.
  *
- * `tx` is the transaction hash/id (Bitcoin txid for onramp, source-chain hash for offramp/tokenSwap).
+ * `tx` is the transaction hash/id (Bitcoin txid for onramp, source-chain hash for offramp/tokenSwap, which is the
+ * Base58 signature for an order from Solana).
  * It is absent only in the walletless onramp flow, where no `btcSigner` was provided.
  * In that case, use `order.onramp.address` and `order.onramp.orderId` to complete
  * the BTC payment externally.
@@ -400,6 +421,9 @@ export class GatewayApiClient {
      *
      * For onramp: creates order, signs Bitcoin transaction, and finalizes
      * For offramp: approves tokens if needed and creates on-chain order
+     * For an offramp or token swap from Solana: pass a {@link SolanaWallet} as `walletClient` and a
+     * {@link SolanaConnection} as `publicClient`; the wallet signs and sends the transaction Gateway built, with no
+     * approval step
      *
      * @param params Parameters including quote and wallet clients - see {@link GatewayQuote} & {@link AllWalletClientParams}
      * @returns Promise resolving to the full order and optional transaction hash
@@ -518,6 +542,24 @@ export class GatewayApiClient {
 
             return { order, tx: tx.onramp.txid };
         } else if (instanceOfGatewayQuoteV4OneOf(quote)) {
+            if (isSolanaChain(quote.offramp.srcChain)) {
+                const clients = solanaClients(walletClient, publicClient);
+                const order = await this.api.createOrderV4({
+                    gatewayQuoteV4: { offramp: quote.offramp },
+                });
+
+                if (!instanceOfGatewayCreateOrderV3OneOf1(order)) {
+                    throw new Error('Invalid order type returned from API');
+                }
+
+                const tx = await sendSolanaOrderTransaction(order.offramp.orderId, order.offramp.tx, clients, callback);
+                return { order, tx };
+            }
+
+            if (isSolanaWallet(walletClient) || isSolanaConnection(publicClient)) {
+                throw new Error(`Solana clients cannot send an order from ${quote.offramp.srcChain}`);
+            }
+
             if (!walletClient.account) {
                 throw new Error(`walletClient is required for offramp order`);
             }
@@ -538,7 +580,7 @@ export class GatewayApiClient {
             if (order.offramp.tx.type === 'solana') {
                 throw new ExecuteQuoteError(
                     orderId,
-                    'Solana source transactions require a Solana signer; use the API directly'
+                    `Gateway returned a Solana transaction for an order from ${quote.offramp.srcChain}`
                 );
             }
 
@@ -671,6 +713,29 @@ export class GatewayApiClient {
 
             return { order, tx: transactionHash };
         } else if (instanceOfGatewayQuoteV4OneOf1(quote)) {
+            if (isSolanaChain(quote.tokenSwap.srcChain)) {
+                const clients = solanaClients(walletClient, publicClient);
+                const order = await this.api.createOrderV4({
+                    gatewayQuoteV4: { tokenSwap: quote.tokenSwap },
+                });
+
+                if (!instanceOfGatewayCreateOrderV3OneOf2(order)) {
+                    throw new Error('Invalid order type returned from API');
+                }
+
+                const tx = await sendSolanaOrderTransaction(
+                    order.tokenSwap.orderId,
+                    order.tokenSwap.tx,
+                    clients,
+                    callback
+                );
+                return { order, tx };
+            }
+
+            if (isSolanaWallet(walletClient) || isSolanaConnection(publicClient)) {
+                throw new Error(`Solana clients cannot send an order from ${quote.tokenSwap.srcChain}`);
+            }
+
             const tokenAddress = quote.tokenSwap.inputAmount.address;
             const requiredAmount = BigInt(quote.tokenSwap.inputAmount.amount);
             const accountAddress = walletClient.account.address;
@@ -732,7 +797,7 @@ export class GatewayApiClient {
             if (order.tokenSwap.tx.type === 'solana') {
                 throw new ExecuteQuoteError(
                     orderId,
-                    'Solana source transactions require a Solana signer; use the API directly'
+                    `Gateway returned a Solana transaction for an order from ${quote.tokenSwap.srcChain}`
                 );
             }
 

@@ -66,7 +66,8 @@ an order on every route. Use an address on the source chain; the SDK does not
 infer it from `fromUserAddress`. `ownerAddress` is no longer a quote parameter.
 
 `executeQuote` returns `ExecuteQuoteResult` = `{ order, tx }` where `tx` is a Bitcoin
-txid (onramp) or source-chain hash (offramp/tokenSwap). In the **walletless onramp flow** (no `btcSigner`
+txid (onramp) or source-chain hash (offramp/tokenSwap; the Base58 signature for an order from Solana).
+In the **walletless onramp flow** (no `btcSigner`
 passed), `tx` is absent — complete the BTC payment externally using
 `order.onramp.address` and `order.onramp.orderId`.
 
@@ -92,7 +93,8 @@ On a standard EVM chain you create both with viem (`createPublicClient` /
 
 The SDK only calls the subset listed below — anything that satisfies these call
 signatures is accepted, regardless of the underlying chain. That is the seam used
-for non-EVM chains like Tron.
+for non-EVM chains like Tron. An order from Solana takes a `SolanaWallet` and a
+`SolanaConnection` instead; see [Solana support](#solana-support).
 
 ### `publicClient` — required surface
 
@@ -221,11 +223,62 @@ offramp order` if `walletClient.account` is missing.
 - **`value` is a `bigint`** of the native amount (from `order.offramp.tx.value`),
   `data` is `0x`-prefixed hex.
 
-## Solana sources
+## Solana support
 
-For Solana source transactions, use the API directly with a Solana signer.
-`executeQuote` does not sign the base64 unsigned `VersionedTransaction` returned
-by the API. Supported routes can still use Solana as a destination.
+For an offramp or token swap from Solana, pass a `SolanaWallet` as `walletClient`
+and a `SolanaConnection` as `publicClient`. Gateway builds the whole transaction
+(a base64 unsigned `VersionedTransaction`); the SDK decodes it, has the wallet sign
+and send it, and waits until the cluster confirms it. Solana has no token
+approvals, so the flow is a single `SendTransaction` step.
+
+```typescript
+interface SolanaWallet {
+    address: string; // Base58 public key: the fee payer and only signer
+    // Sign the unsigned transaction's wire bytes, broadcast, resolve with the Base58 signature
+    signAndSendTransaction(transaction: Uint8Array): Promise<string>;
+}
+
+interface SolanaConnection {
+    getSignatureStatuses(signatures: string[]): Promise<{
+        value: ({ confirmationStatus?: 'processed' | 'confirmed' | 'finalized' | null; err: unknown } | null)[];
+    }>;
+}
+```
+
+The interfaces take raw bytes, so the SDK has no `@solana/*` dependency: wrap your
+wallet in the app. With `@solana/web3.js` and a wallet-adapter or Reown AppKit
+provider, a `Connection` is a `SolanaConnection` as-is:
+
+```typescript
+import { Connection, VersionedTransaction } from '@solana/web3.js';
+
+const connection = new Connection('https://api.mainnet-beta.solana.com');
+
+const { order, tx } = await gateway.executeQuote({
+    quote,
+    walletClient: {
+        address: publicKey.toBase58(),
+        signAndSendTransaction: (transaction) =>
+            provider.sendTransaction(VersionedTransaction.deserialize(transaction), connection),
+    },
+    publicClient: connection,
+});
+```
+
+Before the wallet signs, `executeQuote` checks that the transaction's fee payer is
+`address` and that it needs no other signature. It then polls
+`getSignatureStatuses` until `confirmed`, for up to 90 seconds:
+
+- A transaction that failed on-chain throws `ExecuteQuoteError` with `txStatus: 'reverted'`.
+- One not confirmed in time throws with `txStatus: 'unconfirmed'`; check the signature before retrying.
+
+The transaction carries a recent blockhash, valid for about 60–90 seconds after
+the order is created. If the user approves too late, it cannot land: request a new
+quote and order.
+
+Passing Solana clients for an order from another chain, or EVM clients for an
+order from Solana, throws before the order is created. Solana can also be a
+destination on supported routes.
 
 ## Bitcoin signing (`btcSigner`)
 
