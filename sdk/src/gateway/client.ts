@@ -250,12 +250,12 @@ interface EvmWalletClientParams {
 
 export interface AllWalletClientParams {
     /**
-     * The wallet client that sends the source-chain transactions of an offramp or token swap. Onramps do not use
-     * it, so a caller with only a Bitcoin wallet (e.g. onramping to Solana) can omit it.
+     * The wallet client that sends the source-chain transactions. Required for offramp and token swap; an onramp
+     * only needs `btcSigner`, so it can omit this (e.g. an onramp to a Solana address).
      */
     walletClient?: WalletClient<Transport, ViemChain, Account>;
     /**
-     * The public client that reads the source chain of an offramp or token swap. Onramps do not use it.
+     * The public client that reads the source chain. Required for offramp and token swap; an onramp can omit it.
      */
     publicClient?: PublicClient<Transport>;
     /**
@@ -527,11 +527,8 @@ export class GatewayApiClient {
 
             return { order, tx: tx.onramp.txid };
         } else if (instanceOfGatewayQuoteV4OneOf(quote)) {
-            if (!walletClient?.account) {
-                throw new Error(`walletClient is required for offramp order`);
-            }
-            if (!publicClient) {
-                throw new Error(`publicClient is required for offramp order`);
+            if (!walletClient?.account || !publicClient) {
+                throw new Error(`walletClient and publicClient are required for offramp order`);
             }
             const accountAddress = walletClient.account.address;
             const tokenAddress = quote.offramp.tokenAddress;
@@ -683,13 +680,9 @@ export class GatewayApiClient {
 
             return { order, tx: transactionHash };
         } else if (instanceOfGatewayQuoteV4OneOf1(quote)) {
-            if (!walletClient?.account) {
-                throw new Error(`walletClient is required for token swap order`);
+            if (!walletClient || !publicClient) {
+                throw new Error(`walletClient and publicClient are required for token swap order`);
             }
-            if (!publicClient) {
-                throw new Error(`publicClient is required for token swap order`);
-            }
-
             const tokenAddress = quote.tokenSwap.inputAmount.address;
             const requiredAmount = BigInt(quote.tokenSwap.inputAmount.amount);
             const accountAddress = walletClient.account.address;

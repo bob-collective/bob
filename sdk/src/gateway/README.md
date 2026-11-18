@@ -45,7 +45,7 @@ const { order, tx } = await gateway.executeQuote({
 | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------- |
 | `getQuote(params)`                                                             | Fetch a quote. Onramp vs offramp inferred from `fromChain` / `toChain`.                        |
 | `executeQuote({ quote, walletClient?, publicClient?, btcSigner?, callback? })` | Run the full flow for a quote (approvals → on-chain tx / BTC signing).                         |
-| `getOrders({ userAddress, cursor?, limit? })`                                  | Paginated orders for an EVM, Bitcoin, Tron or Solana address → `{ orders, nextCursor? }`.      |
+| `getOrders({ userAddress, cursor?, limit? })`                                  | Paginated orders for an EVM address → `{ orders, nextCursor? }`.                               |
 | `getOrder(id)`                                                                 | Single order by id (txId/txHash).                                                              |
 | `getRoutes()`                                                                  | Supported routes — chains, tokens, bridges. Source of valid `fromToken` / `toToken` addresses. |
 | `getMaxSpendable(address)`                                                     | Max spendable BTC for an address.                                                              |
@@ -84,9 +84,8 @@ publicClient: PublicClient<Transport>;
 On a standard EVM chain you create both with viem (`createPublicClient` /
 `createWalletClient`) and inject them directly.
 
-Only offramps and token swaps use them, and `executeQuote` throws before creating
-such an order if either is missing. An onramp never touches them, so it can omit
-both — for example an onramp to Solana or Tron by a user with no EVM wallet.
+Only offramps and token swaps use them. An onramp needs only `btcSigner` and can
+omit both, e.g. an onramp to a Solana `toUserAddress` by a user with no EVM wallet.
 
 The SDK only calls the subset listed below — anything that satisfies these call
 signatures is accepted, regardless of the underlying chain. That is the seam used

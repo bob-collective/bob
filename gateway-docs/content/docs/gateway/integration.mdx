@@ -273,16 +273,28 @@ You don't need to handle all quote types — the response type matches your `fro
 
 Execute the quote by having the user sign the Bitcoin transaction. `executeQuote` returns `{ order, tx }`; keep the order ID to monitor settlement. Without `btcSigner`, it returns an onramp order with no `tx` so the user can pay its Bitcoin deposit address externally. A source-chain `refundAddress` is still required.
 
-An onramp needs only the Bitcoin signer: `walletClient` and `publicClient` are used by offramps and token swaps alone, so an onramp to any destination, Solana and Tron included, omits them.
-
 <Tabs items={["Reown AppKit","OKX Wallet","Custom Adapter"]}>
 
 <Tab value="Reown AppKit">
 
 ```typescript
+import { createPublicClient, createWalletClient, http, zeroAddress } from 'viem';
 import { useAppKitProvider, useAppKitAccount } from '@reown/appkit/react';
 import type { BitcoinConnector } from "@reown/appkit-adapter-bitcoin";
 import { ReownWalletAdapter } from '@gobob/bob-sdk';
+import { bob } from 'viem/chains';
+
+// Setup viem clients
+const publicClient = createPublicClient({
+  chain: bob,
+  transport: http(),
+});
+
+const walletClient = createWalletClient({
+  chain: bob,
+  transport: http(),
+  account: zeroAddress, // Replace with connected account
+});
 
 // Get Bitcoin wallet provider
 const { walletProvider } = useAppKitProvider<BitcoinConnector>('bip122');
@@ -291,6 +303,8 @@ const { address: btcAddress } = useAppKitAccount();
 // Execute the quote
 const { order, tx } = await gatewaySDK.executeQuote({
   quote,
+  walletClient,
+  publicClient,
   btcSigner: new ReownWalletAdapter(walletProvider, btcAddress),
 });
 
@@ -307,6 +321,8 @@ import { OkxWalletAdapter } from '@gobob/bob-sdk';
 // Assuming you have window.okxwallet available
 const { order, tx } = await gatewaySDK.executeQuote({
   quote,
+  walletClient,
+  publicClient,
   btcSigner: new OkxWalletAdapter(window.okxwallet),
 });
 ```
@@ -338,6 +354,8 @@ class CustomWalletAdapter implements BitcoinSigner {
 
 const { order, tx } = await gatewaySDK.executeQuote({
   quote,
+  walletClient,
+  publicClient,
   btcSigner: new CustomWalletAdapter(),
 });
 ```
@@ -352,7 +370,7 @@ For detailed wallet integration options including Reown AppKit, sats-wagmi, Dyna
 
 ## Monitor Orders
 
-Fetch a page of the user's pending and completed orders. `getOrders` returns `{ orders, nextCursor }` — pass `nextCursor` back to walk subsequent pages. `userAddress` can be an EVM, Bitcoin, Tron or Solana address:
+Fetch a page of the user's pending and completed orders. `getOrders` returns `{ orders, nextCursor }` — pass `nextCursor` back to walk subsequent pages:
 
 ```typescript
 const { orders, nextCursor } = await gatewaySDK.getOrders({
