@@ -33,3 +33,10 @@ Follow [Conduit's guide](https://docs.conduit.xyz/guides/run-a-node/op-stack-nod
 
 - [BOB Mainnet](https://boltrpc.io/networks/bob)
 
+## eRPC
+
+[eRPC](https://github.com/erpc/erpc) is an open-source, self-hosted RPC proxy. Point it at several BOB RPC providers from this page and it fails over between them, caches responses, and handles rate limits.
+
+**Supported Networks**
+
+- BOB Mainnet ([docs](https://docs.erpc.cloud/))
