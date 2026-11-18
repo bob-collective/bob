@@ -240,7 +240,8 @@ export class MempoolClient {
         if (txInfo.status.confirmed) return txInfo.status.block_time || ~~(Date.now() / 1000);
 
         const blockTime = 10 * 60;
-        const feeRate = txInfo.fee / txInfo.size;
+        const vsize = Math.ceil(txInfo.weight / 4);
+        const feeRate = txInfo.fee / vsize;
 
         if (feeRate >= recommendedFees.fastestFee) return lastBlockDetails.timestamp + blockTime;
         if (feeRate >= recommendedFees.halfHourFee) return lastBlockDetails.timestamp + 3 * blockTime;
