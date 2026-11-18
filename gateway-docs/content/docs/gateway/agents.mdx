@@ -67,8 +67,10 @@ The Gateway MCP server at `https://mcp.gobob.xyz/mcp` (streamable HTTP) exposes 
 | `get_routes` | `GET /v4/get-routes` | Lists supported routes, optionally filtered by `src_chain` and `dst_chain` |
 | `get_quote` | `GET /v4/get-quote` | Quotes a swap |
 | `create_order` | `POST /v4/create-order` | Creates an order from a quote and returns what the user signs: a deposit address or PSBT for onramps, a transaction otherwise |
+| `quote_and_create` | `GET /v4/get-quote`, then `POST /v4/create-order` | Quotes a swap and creates the order in one call, returning both. For use once the user has decided to swap |
 | `register_tx` | `PATCH /v4/register-tx` | Optional: broadcasts a fully signed onramp Bitcoin transaction. Deposits are detected on-chain without it |
 | `get_order` | `GET /v4/get-order/{id}` | Looks up one order by order id or source transaction hash |
+| `wait_for_order` | `GET /v4/get-order/{id}` every 15 seconds | Waits up to about 45 seconds for an order's status to leave `inProgress`, then returns the order as `get_order` does |
 | `get_orders` | `GET /v4/get-orders/{addresses}` | Lists the orders of up to 20 addresses |
 | `get_max_spendable` | `GET /v4/get-max-spendable/{address}` | The most BTC an address can send after network fees |
 
