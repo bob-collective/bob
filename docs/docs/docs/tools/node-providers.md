@@ -33,3 +33,11 @@ Follow [Conduit's guide](https://docs.conduit.xyz/guides/run-a-node/op-stack-nod
 
 - [BOB Mainnet](https://boltrpc.io/networks/bob)
 
+## MoltNode
+
+[MoltNode](https://moltnode.ag/bob) by Chord is a free JSON-RPC gateway with one URL per chain and no sign-up or API key. Requests are forwarded to the chain's upstream providers with failover.
+
+**Supported Networks**
+
+- [BOB Mainnet](https://moltnode.ag/bob)
+
