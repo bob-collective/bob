@@ -33,3 +33,10 @@ Follow [Conduit's guide](https://docs.conduit.xyz/guides/run-a-node/op-stack-nod
 
 - [BOB Mainnet](https://boltrpc.io/networks/bob)
 
+## SwiftNodes
+
+[SwiftNodes](https://swiftnodes.io/bob-rpc) provides BOB RPC over HTTP. Free tier; flat-rate paid plans.
+
+**Supported Networks**
+
+- [BOB Mainnet](https://swiftnodes.io/bob-rpc)
