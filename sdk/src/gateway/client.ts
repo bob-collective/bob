@@ -248,7 +248,16 @@ interface EvmWalletClientParams {
     publicClient: PublicClient<Transport>;
 }
 
-export interface AllWalletClientParams extends EvmWalletClientParams {
+export interface AllWalletClientParams {
+    /**
+     * The wallet client that sends the source-chain transactions of an offramp or token swap. Onramps do not use
+     * it, so a caller with only a Bitcoin wallet (e.g. onramping to Solana) can omit it.
+     */
+    walletClient?: WalletClient<Transport, ViemChain, Account>;
+    /**
+     * The public client that reads the source chain of an offramp or token swap. Onramps do not use it.
+     */
+    publicClient?: PublicClient<Transport>;
     /**
      * Bitcoin signer used to sign the transaction inputs.
      */
@@ -285,7 +294,7 @@ export type ExecuteQuoteResult =
  *   toChain: 'bob',
  *   toToken: 'WBTC',
  *   amount: 100000000, // 1 BTC in satoshis
- *   toUserAddress: '0x...'
+ *   toUserAddress: '0x...' // or a Base58 address for Solana / Tron
  * });
  * ```
  *
@@ -518,8 +527,11 @@ export class GatewayApiClient {
 
             return { order, tx: tx.onramp.txid };
         } else if (instanceOfGatewayQuoteV4OneOf(quote)) {
-            if (!walletClient.account) {
+            if (!walletClient?.account) {
                 throw new Error(`walletClient is required for offramp order`);
+            }
+            if (!publicClient) {
+                throw new Error(`publicClient is required for offramp order`);
             }
             const accountAddress = walletClient.account.address;
             const tokenAddress = quote.offramp.tokenAddress;
@@ -671,6 +683,13 @@ export class GatewayApiClient {
 
             return { order, tx: transactionHash };
         } else if (instanceOfGatewayQuoteV4OneOf1(quote)) {
+            if (!walletClient?.account) {
+                throw new Error(`walletClient is required for token swap order`);
+            }
+            if (!publicClient) {
+                throw new Error(`publicClient is required for token swap order`);
+            }
+
             const tokenAddress = quote.tokenSwap.inputAmount.address;
             const requiredAmount = BigInt(quote.tokenSwap.inputAmount.amount);
             const accountAddress = walletClient.account.address;

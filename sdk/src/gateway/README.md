@@ -16,8 +16,6 @@ pnpm add @gobob/bob-sdk viem
 
 ```typescript
 import { GatewaySDK } from '@gobob/bob-sdk';
-import { createPublicClient, createWalletClient, custom, http } from 'viem';
-import { bob } from 'viem/chains';
 
 const gateway = new GatewaySDK(); // mainnet by default
 
@@ -33,28 +31,24 @@ const quote = await gateway.getQuote({
     amount: 100_000_000, // 1 BTC in satoshis
 });
 
-// 2. Execute
-const publicClient = createPublicClient({ chain: bob, transport: http() });
-const walletClient = createWalletClient({ chain: bob, transport: custom(window.ethereum) });
-
+// 2. Execute. An onramp only needs the Bitcoin signer; offramps and token swaps
+// also take `walletClient` and `publicClient` (see below).
 const { order, tx } = await gateway.executeQuote({
     quote,
-    walletClient,
-    publicClient,
     btcSigner, // BitcoinSigner — required for onramp signing, optional for the walletless flow
 });
 ```
 
 ## Core methods
 
-| Method                                                                       | Purpose                                                                                        |
-| ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `getQuote(params)`                                                           | Fetch a quote. Onramp vs offramp inferred from `fromChain` / `toChain`.                        |
-| `executeQuote({ quote, walletClient, publicClient, btcSigner?, callback? })` | Run the full flow for a quote (approvals → on-chain tx / BTC signing).                         |
-| `getOrders({ userAddress, cursor?, limit? })`                                | Paginated orders for an EVM address → `{ orders, nextCursor? }`.                               |
-| `getOrder(id)`                                                               | Single order by id (txId/txHash).                                                              |
-| `getRoutes()`                                                                | Supported routes — chains, tokens, bridges. Source of valid `fromToken` / `toToken` addresses. |
-| `getMaxSpendable(address)`                                                   | Max spendable BTC for an address.                                                              |
+| Method                                                                         | Purpose                                                                                        |
+| ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------- |
+| `getQuote(params)`                                                             | Fetch a quote. Onramp vs offramp inferred from `fromChain` / `toChain`.                        |
+| `executeQuote({ quote, walletClient?, publicClient?, btcSigner?, callback? })` | Run the full flow for a quote (approvals → on-chain tx / BTC signing).                         |
+| `getOrders({ userAddress, cursor?, limit? })`                                  | Paginated orders for an EVM, Bitcoin, Tron or Solana address → `{ orders, nextCursor? }`.      |
+| `getOrder(id)`                                                                 | Single order by id (txId/txHash).                                                              |
+| `getRoutes()`                                                                  | Supported routes — chains, tokens, bridges. Source of valid `fromToken` / `toToken` addresses. |
+| `getMaxSpendable(address)`                                                     | Max spendable BTC for an address.                                                              |
 
 `getQuote` returns `GatewayQuoteV4`. Narrow it with `'onramp' in quote`,
 `'offramp' in quote`, or `'tokenSwap' in quote`, or use `getInnerQuote(quote)`.
@@ -89,6 +83,10 @@ publicClient: PublicClient<Transport>;
 `publicClient` reads chain state and simulates; `walletClient` signs and broadcasts.
 On a standard EVM chain you create both with viem (`createPublicClient` /
 `createWalletClient`) and inject them directly.
+
+Only offramps and token swaps use them, and `executeQuote` throws before creating
+such an order if either is missing. An onramp never touches them, so it can omit
+both — for example an onramp to Solana or Tron by a user with no EVM wallet.
 
 The SDK only calls the subset listed below — anything that satisfies these call
 signatures is accepted, regardless of the underlying chain. That is the seam used

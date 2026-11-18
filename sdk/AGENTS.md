@@ -62,8 +62,8 @@ otherwise — harmless for a string a caller interpolates, a crash for one it it
 Instantiated with optional `basePath` and `apiKey` arguments (defaults to mainnet). Core flow:
 
 1. **`getQuote(params)`** — fetch a quote (returns a discriminated union: onramp | offramp | layerZero)
-2. **`executeQuote({ quote, walletClient, publicClient, btcSigner? })`** — execute the full transaction flow for a quote
-3. **`getOrders(address)`** — list all orders for an EVM address
+2. **`executeQuote({ quote, walletClient?, publicClient?, btcSigner? })`** — execute the full transaction flow for a quote. The EVM clients are required for offramp and token swap only; an onramp (including to Solana or Tron) omits them
+3. **`getOrders({ userAddress })`** — list orders for an EVM, Bitcoin, Tron or Solana address
 4. **`getRoutes()`** — list supported token/chain routes
 5. **`getMaxSpendable(address)`** — max spendable BTC for an address
 
