@@ -155,5 +155,5 @@ Use this flow for Bitcoin↔chain swaps and cross-chain token swaps. Transaction
 </Steps>
 
 <Callout>
-The SDK wraps order creation and supported signing flows in `executeQuote()`, returning `{ order, tx }`. Poll orders separately for settlement. For Solana source transactions, use the API and a Solana signer directly; see the [SDK guide](/gateway/integration).
+The SDK wraps order creation and supported signing flows in `executeQuote()`, returning `{ order, tx }`. Poll orders separately for settlement. For Solana source transactions, `executeQuote()` takes viem-shaped Solana clients; see the [SDK guide](/gateway/integration).
 </Callout>

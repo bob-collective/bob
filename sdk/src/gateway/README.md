@@ -66,7 +66,8 @@ an order on every route. Use an address on the source chain; the SDK does not
 infer it from `fromUserAddress`. `ownerAddress` is no longer a quote parameter.
 
 `executeQuote` returns `ExecuteQuoteResult` = `{ order, tx }` where `tx` is a Bitcoin
-txid (onramp) or source-chain hash (offramp/tokenSwap). In the **walletless onramp flow** (no `btcSigner`
+txid (onramp) or source-chain hash (offramp/tokenSwap; the Base58 signature for an order from Solana).
+In the **walletless onramp flow** (no `btcSigner`
 passed), `tx` is absent — complete the BTC payment externally using
 `order.onramp.address` and `order.onramp.orderId`.
 
@@ -92,7 +93,7 @@ On a standard EVM chain you create both with viem (`createPublicClient` /
 
 The SDK only calls the subset listed below — anything that satisfies these call
 signatures is accepted, regardless of the underlying chain. That is the seam used
-for non-EVM chains like Tron.
+for non-EVM chains like Tron and [Solana](#solana-support).
 
 ### `publicClient` — required surface
 
@@ -221,11 +222,63 @@ offramp order` if `walletClient.account` is missing.
 - **`value` is a `bigint`** of the native amount (from `order.offramp.tx.value`),
   `data` is `0x`-prefixed hex.
 
-## Solana sources
+## Solana support
 
-For Solana source transactions, use the API directly with a Solana signer.
-`executeQuote` does not sign the base64 unsigned `VersionedTransaction` returned
-by the API. Supported routes can still use Solana as a destination.
+An offramp or token swap from Solana runs through the same seam as Tron: **inject
+a `walletClient` and a `publicClient` that conform to the viem interface above**,
+as adapters wrapping your Solana wallet and RPC. Gateway builds the whole
+transaction, and Solana has no token approvals, so the SDK calls only two methods:
+
+```typescript
+import type { Account, Hash, Hex } from 'viem';
+
+// --- walletClient ---
+interface SolanaWalletClient {
+    account: Account; // `.address` is the Base58 public key: the fee payer and only signer
+
+    // `data` holds the wire bytes of the unsigned `VersionedTransaction`, hex-encoded.
+    // Sign it, broadcast it, and resolve with its Base58 signature.
+    sendTransaction(args: { account: Account | string; data: Hex }): Promise<Hash>;
+}
+
+// --- publicClient ---
+interface SolanaPublicClient {
+    // `hash` is the signature `sendTransaction` returned. Block until the
+    // transaction is confirmed; report a failed one as `reverted`.
+    waitForTransactionReceipt(args: {
+        hash: Hash;
+        retryCount?: number;
+    }): Promise<{ status: 'success' | 'reverted' } & Record<string, unknown>>;
+}
+```
+
+With `@solana/web3.js` and a wallet-adapter or Reown AppKit provider, for example:
+
+```typescript
+import { Connection, VersionedTransaction } from '@solana/web3.js';
+import { hexToBytes } from 'viem';
+
+const walletClient = {
+    account: { address: publicKey.toBase58(), type: 'json-rpc' },
+    sendTransaction: ({ data }) =>
+        provider.sendTransaction(VersionedTransaction.deserialize(hexToBytes(data)), connection),
+};
+
+const publicClient = {
+    waitForTransactionReceipt: async ({ hash }) => {
+        const { value } = await connection.confirmTransaction(hash, 'confirmed');
+        return { status: value.err ? 'reverted' : 'success' };
+    },
+};
+```
+
+Before `sendTransaction`, `executeQuote` checks that the transaction's fee payer is
+`account.address` and that it needs no other signature. The flow is one
+`SendTransaction` step, and `tx` in the result is the signature.
+
+The transaction carries a recent blockhash, valid for about 60–90 seconds after
+the order is created. If the user approves too late, it cannot land: request a new
+quote and order. Solana can also be a destination on supported routes.
 
 ## Bitcoin signing (`btcSigner`)
 
