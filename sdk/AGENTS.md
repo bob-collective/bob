@@ -4,7 +4,7 @@
 
 ```shell
 pnpm install
-pnpm run build        # tsdown → dist/index.mjs + index.cjs with .d.mts/.d.cts (see `exports`)
+pnpm run build        # tsc --noEmit (typecheck), then tsdown → dist/index.mjs + index.cjs with .d.mts/.d.cts (see `exports`)
 pnpm run test         # vitest
 pnpm run lint         # eslint
 pnpm run format       # prettier
