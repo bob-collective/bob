@@ -153,9 +153,10 @@ tracked in bob-collective/bob-gateway#2042.
 
 ## Tron support
 
-To run an onramp/offramp against Tron you must **inject a `walletClient` and a
-`publicClient` that conform to the viem interface above** — adapters that wrap
-TronWeb (or your Tron signer of choice) and expose viem-shaped methods. The SDK
+To run an offramp or token swap from Tron you must **inject a `walletClient` and
+a `publicClient` that conform to the viem interface above** — adapters that wrap
+TronWeb (or your Tron signer of choice) and expose viem-shaped methods. An onramp
+to a Tron `toUserAddress` needs neither: only `btcSigner`. The SDK
 detects Tron token addresses with `isValidTronAddress` / `tronAddressToHex` and
 otherwise drives the exact same code path.
 
