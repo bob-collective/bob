@@ -680,7 +680,7 @@ export class GatewayApiClient {
 
             return { order, tx: transactionHash };
         } else if (instanceOfGatewayQuoteV4OneOf1(quote)) {
-            if (!walletClient || !publicClient) {
+            if (!walletClient?.account || !publicClient) {
                 throw new Error(`walletClient and publicClient are required for token swap order`);
             }
             const tokenAddress = quote.tokenSwap.inputAmount.address;
