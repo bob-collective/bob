@@ -25,7 +25,7 @@ jobs:
           cache: "pnpm"
           cache-dependency-path: sdk/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
-      - run: npx prettier --check {examples,src,test}
+      - run: pnpm format:check
       - run: pnpm lint
       - name: Run tests
         run: pnpm test
