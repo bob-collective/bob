@@ -1,3 +1,5 @@
+import { fetchJson, fetchText } from './http';
+
 /**
  * Base path for the mainnet Esplora API.
  * @default "https://btc-mainnet.gobob.xyz"
@@ -147,6 +149,11 @@ function encodeEsploraMerkleProof(merkle: string[]): string {
 }
 
 /**
+ * Bitcoin networks with a built-in Esplora base path.
+ */
+export type EsploraChainName = 'mainnet' | 'signet' | 'testnet' | 'regtest';
+
+/**
  * The `EsploraClient` interface provides a set of methods for interacting with an Esplora API
  * for Bitcoin network data retrieval.
  * See https://github.com/blockstream/esplora/blob/master/API.md for more information.
@@ -156,9 +163,10 @@ export class EsploraClient {
 
     /**
      * Create an instance of the `EsploraClient` with the specified network or URL.
-     * If the `networkOrUrl` parameter is omitted, it defaults to "mainnet."
+     * If the `chainNameOrUrl` parameter is omitted, it defaults to "mainnet."
      *
-     * @param chainName The Bitcoin network (e.g., "mainnet," "testnet," "regtest")
+     * @param chainNameOrUrl The Bitcoin network (e.g., "mainnet," "testnet," "regtest"), or the base URL
+     * of a custom Esplora API (must start with `http://` or `https://`; a trailing `/` is removed).
      *
      * @returns An instance of the `EsploraClient` configured for the specified network or URL.
      *
@@ -169,9 +177,13 @@ export class EsploraClient {
      * @example
      * // Create a client for the mainnet using the default URL.
      * const esploraClientMainnet = new EsploraClient();
+     *
+     * @example
+     * // Create a client for a self-hosted Esplora instance.
+     * const esploraClientCustom = new EsploraClient("http://localhost:3002");
      */
-    constructor(chainName: 'mainnet' | 'signet' | 'testnet' | 'regtest' = 'mainnet') {
-        switch (chainName) {
+    constructor(chainNameOrUrl: EsploraChainName | (string & {}) = 'mainnet') {
+        switch (chainNameOrUrl) {
             case 'mainnet':
                 this.basePath = MAINNET_ESPLORA_BASE_PATH;
                 break;
@@ -185,6 +197,10 @@ export class EsploraClient {
                 this.basePath = REGTEST_ESPLORA_BASE_PATH;
                 break;
             default:
+                if (/^https?:\/\//i.test(chainNameOrUrl)) {
+                    this.basePath = chainNameOrUrl.replace(/\/+$/, '');
+                    break;
+                }
                 throw new Error('Invalid chain');
         }
     }
@@ -449,19 +465,16 @@ export class EsploraClient {
      * Broadcast a raw transaction to the network.
      *
      * @param {string} txHex - The hex encoded transaction.
+     * @param {RequestInit} [initOverrides] - Optional request overrides passed to `fetch` (e.g. `{ signal }` to abort the request).
      * @returns {Promise<string>} A promise that resolves to the txid.
      */
-    async broadcastTx(txHex: string): Promise<string> {
-        const res = await fetch(`${this.basePath}/tx`, {
+    async broadcastTx(txHex: string, initOverrides?: RequestInit): Promise<string> {
+        // Ensure errors are surfaced instead of being treated as a txid
+        return fetchText('Esplora broadcast', `${this.basePath}/tx`, {
+            ...initOverrides,
             method: 'POST',
             body: txHex,
         });
-        // Ensure errors are surfaced instead of being treated as a txid
-        const text = await res.text();
-        if (!res.ok) {
-            throw new Error(`Esplora broadcast error: ${text}`);
-        }
-        return text;
     }
 
     /**
@@ -514,23 +527,13 @@ export class EsploraClient {
      * @ignore
      */
     private async getJson<T>(url: string, initOverrides?: RequestInit): Promise<T> {
-        const response = await fetch(url, initOverrides);
-        if (!response.ok) {
-            const text = await response.text();
-            const errorText = `Esplora error: ${text}`;
-            throw new Error(errorText);
-        }
-        return response.json() as Promise<T>;
+        return fetchJson<T>('Esplora', url, initOverrides);
     }
 
     /**
      * @ignore
      */
     private async getText(url: string, initOverrides?: RequestInit): Promise<string> {
-        const response = await fetch(url, initOverrides);
-        if (!response.ok) {
-            throw new Error(response.statusText);
-        }
-        return await response.text();
+        return fetchText('Esplora', url, initOverrides);
     }
 }

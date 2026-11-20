@@ -301,6 +301,11 @@ export interface GatewaySDKOptions {
     basePath?: string;
     /** API key for authenticated requests. Must be exactly 32 characters. */
     apiKey?: string;
+    /**
+     * Custom `fetch` implementation used for every Gateway API request (e.g. to add retries,
+     * logging or a proxy agent). Defaults to the global `fetch`.
+     */
+    fetchApi?: typeof fetch;
 }
 
 /**
@@ -339,7 +344,7 @@ export class GatewayApiClient {
      * ```
      */
     constructor(options: GatewaySDKOptions = {}) {
-        const { basePath, apiKey } = options;
+        const { basePath, apiKey, fetchApi } = options;
         if (apiKey && apiKey.length !== 32) {
             throw new Error('apiKey must be exactly 32 characters');
         }
@@ -348,6 +353,7 @@ export class GatewayApiClient {
             new Configuration({
                 basePath: basePath || MAINNET_GATEWAY_BASE_URL,
                 headers: apiKey ? { Authorization: `Bearer ${apiKey}` } : undefined,
+                fetchApi,
                 middleware: [
                     {
                         async post(context) {

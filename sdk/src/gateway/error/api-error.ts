@@ -10,6 +10,9 @@
  * Gateway, which never answers 403 itself. That refusal is therefore always a plain `ApiError`,
  * recognisable only by its `httpCode`.
  *
+ * `EsploraClient` and `MempoolClient` throw a plain `ApiError` too for a non-2xx response, with the
+ * response body text in the message and the status in `httpCode`.
+ *
  * Check {@link isGatewayError} first when the Gateway's `code` matters; check {@link isApiError}
  * to handle every HTTP failure, whatever answered it:
  *
