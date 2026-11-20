@@ -194,6 +194,24 @@ describe('orders from Solana', () => {
         expect(error.txStatus).toBe('reverted');
     });
 
+    it('reports a confirmation that could not be awaited as unconfirmed, naming the signature', async () => {
+        mockCreateOrder({ offramp: { order_id: 'sol-offramp-4', tx: solanaTx() } });
+        const { publicClient, params } = solanaClients();
+        const timeout = new Error('Transaction was not confirmed in 30.00 seconds');
+        publicClient.waitForTransactionReceipt.mockRejectedValue(timeout);
+
+        const error = await new GatewaySDK()
+            .executeQuote({ quote: offrampQuote(), ...params })
+            .catch((thrown: unknown) => thrown);
+
+        assert(error instanceof ExecuteQuoteError);
+        expect(error.orderId).toBe('sol-offramp-4');
+        expect(error.cause).toBe(timeout);
+        expect(error.step).toBe(ExecuteQuoteStepType.SendTransaction);
+        expect(error.txHash).toBe(SIGNATURE);
+        expect(error.txStatus).toBe('unconfirmed');
+    });
+
     it('reports a wallet rejection on the send step without a transaction', async () => {
         mockCreateOrder({ offramp: { order_id: 'sol-offramp-2', tx: solanaTx() } });
         const rejection = new Error('User rejected the request.');
@@ -247,22 +265,55 @@ describe('orders from Solana', () => {
         expect(walletClient.sendTransaction).not.toHaveBeenCalled();
     });
 
-    it('refuses a Solana transaction for an order from an EVM chain', async () => {
-        mockCreateOrder({ tokenSwap: { order_id: 'evm-swap-1', tx: solanaTx() } });
+    it.each([
+        ['offramp', () => offrampQuote('ethereum'), (tx: object) => ({ offramp: { order_id: 'evm-order-1', tx } })],
+        [
+            'token swap',
+            () => {
+                const nativeEth = {
+                    amount: '1',
+                    address: '0x0000000000000000000000000000000000000000',
+                    chain: 'ethereum',
+                };
+                return { tokenSwap: { ...tokenSwapQuote('ethereum').tokenSwap, inputAmount: nativeEth } };
+            },
+            (tx: object) => ({ tokenSwap: { order_id: 'evm-order-1', tx } }),
+        ],
+    ])('refuses a Solana transaction for an %s from an EVM chain', async (_, quote, order) => {
+        mockCreateOrder(order(solanaTx()));
         const { walletClient, params } = solanaClients();
-        const nativeEth = { amount: '1', address: '0x0000000000000000000000000000000000000000', chain: 'ethereum' };
 
         const error = await new GatewaySDK()
-            .executeQuote({
-                quote: { tokenSwap: { ...tokenSwapQuote('ethereum').tokenSwap, inputAmount: nativeEth } },
-                ...params,
-            })
+            .executeQuote({ quote: quote(), ...params })
             .catch((thrown: unknown) => thrown);
 
         assert(error instanceof ExecuteQuoteError);
-        expect(error.orderId).toBe('evm-swap-1');
+        expect(error.orderId).toBe('evm-order-1');
         expect(error.message).toBe('Gateway returned a Solana transaction for an order from ethereum');
         expect(walletClient.sendTransaction).not.toHaveBeenCalled();
+    });
+
+    it('refuses an EVM transaction for a token swap from Solana', async () => {
+        const evmTx = {
+            type: 'evm',
+            chain: 'solana',
+            to: '0x1234567890123456789012345678901234567890',
+            data: '0x',
+            value: '0',
+        };
+        mockCreateOrder({ tokenSwap: { order_id: 'sol-swap-3', tx: evmTx } });
+        const { walletClient, publicClient, params } = solanaClients();
+
+        const error = await new GatewaySDK()
+            .executeQuote({ quote: tokenSwapQuote(), ...params })
+            .catch((thrown: unknown) => thrown);
+
+        assert(error instanceof ExecuteQuoteError);
+        expect(error.orderId).toBe('sol-swap-3');
+        expect(error.message).toBe('Gateway returned a transaction of type evm for an order from solana');
+        expect(walletClient.sendTransaction).not.toHaveBeenCalled();
+        expect(walletClient.writeContract).not.toHaveBeenCalled();
+        expect(publicClient.simulateContract).not.toHaveBeenCalled();
     });
 });
 
