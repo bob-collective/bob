@@ -1,7 +1,8 @@
 import nock from 'nock';
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { EsploraClient, MAINNET_ESPLORA_BASE_PATH, REGTEST_ESPLORA_BASE_PATH } from '../src/esplora';
-import { ApiError, isApiError } from '../src/gateway';
+import { ApiError, GatewaySDK, isApiError } from '../src/gateway';
+import { MAINNET_GATEWAY_BASE_URL } from '../src/gateway/client';
 import { MAINNET_MEMPOOL_BASE_PATH, MempoolClient } from '../src/mempool';
 
 const TXID = '82420f81f3d956b464dee4a1eb2bee4810d88140dfda2e67f0fc4e32996045c6';
@@ -156,5 +157,26 @@ describe('EsploraClient base URL', () => {
 
     it('still rejects an unknown network name', () => {
         expect(() => new EsploraClient('mainet')).toThrow('Invalid chain');
+    });
+});
+
+describe('GatewaySDK fetchApi option', () => {
+    it('sends requests through the custom fetch', async () => {
+        const fetchApi = vi.fn<typeof fetch>(
+            async () => new Response('[]', { status: 200, headers: { 'Content-Type': 'application/json' } })
+        );
+
+        await expect(new GatewaySDK({ fetchApi }).getRoutes()).resolves.toEqual([]);
+        expect(fetchApi).toHaveBeenCalledTimes(1);
+        expect(String(fetchApi.mock.calls[0][0])).toBe(`${MAINNET_GATEWAY_BASE_URL}/v4/get-routes`);
+    });
+
+    it('still throws ApiError for an error response from the custom fetch', async () => {
+        const fetchApi = vi.fn<typeof fetch>(async () => new Response('<html>blocked</html>', { status: 403 }));
+
+        const err = await catchError(new GatewaySDK({ fetchApi }).getRoutes());
+
+        expect(err).toBeInstanceOf(ApiError);
+        expect((err as ApiError).httpCode).toBe(403);
     });
 });
