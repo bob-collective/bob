@@ -1,6 +1,6 @@
 import nock from 'nock';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { EsploraClient, MAINNET_ESPLORA_BASE_PATH } from '../src/esplora';
+import { EsploraClient, MAINNET_ESPLORA_BASE_PATH, REGTEST_ESPLORA_BASE_PATH } from '../src/esplora';
 import { ApiError, isApiError } from '../src/gateway';
 import { MAINNET_MEMPOOL_BASE_PATH, MempoolClient } from '../src/mempool';
 
@@ -138,5 +138,23 @@ describe('HTTP client initOverrides', () => {
         controller.abort();
 
         await expect(promise).rejects.toMatchObject({ name: 'AbortError' });
+    });
+});
+
+describe('EsploraClient base URL', () => {
+    it('uses a custom base URL, dropping a trailing slash', async () => {
+        nock('http://esplora.example:3002').get('/api/blocks/tip/height').reply(200, '42');
+
+        await expect(new EsploraClient('http://esplora.example:3002/api/').getLatestHeight()).resolves.toBe(42);
+    });
+
+    it('keeps the built-in defaults for network names', async () => {
+        nock(REGTEST_ESPLORA_BASE_PATH).get('/blocks/tip/height').reply(200, '7');
+
+        await expect(new EsploraClient('regtest').getLatestHeight()).resolves.toBe(7);
+    });
+
+    it('still rejects an unknown network name', () => {
+        expect(() => new EsploraClient('mainet')).toThrow('Invalid chain');
     });
 });
