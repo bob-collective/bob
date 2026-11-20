@@ -1,7 +1,7 @@
-import { Block } from 'bitcoinjs-lib';
 import { assert, describe, it } from 'vitest';
 import { MAINNET_ESPLORA_BASE_PATH } from '../src/esplora';
 import { getMerkleProof } from '../src/utils';
+import { merkleBlock, parseBlock } from './helpers/bitcoin';
 
 describe('Utils Tests', () => {
     // NOTE: this is a bit flaky due to slow response times from electrs
@@ -10,7 +10,7 @@ describe('Utils Tests', () => {
         const response = await fetch(`${MAINNET_ESPLORA_BASE_PATH}/block/${hash}/raw`);
         const blob = await response.blob();
         const buffer = Buffer.from(await blob.arrayBuffer());
-        const block = Block.fromBuffer(buffer);
+        const block = merkleBlock(parseBlock(buffer.toString('hex')).txs);
         const wTxId = '6b374690d8e2dbca4187f443cddd293536400d431f43a643b263ce59c4f9a3eb';
         const merkleProof = getMerkleProof(block, wTxId, true);
         assert.deepEqual(merkleProof, {

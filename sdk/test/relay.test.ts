@@ -1,4 +1,5 @@
-import * as bitcoin from 'bitcoinjs-lib';
+import { hex } from '@scure/base';
+import { Address, Script, TEST_NETWORK } from '@scure/btc-signer';
 import { assert, describe, it } from 'vitest';
 import { EsploraClient } from '../src/esplora';
 import { getBitcoinTxInfo, getBitcoinTxProof } from '../src/relay';
@@ -7,18 +8,21 @@ import { encodeRawOutput } from '../src/utils';
 describe.skip('Relay Tests', () => {
     // doesn't do anything, but left here to build more contract tests
     it('should encode output and op return', async () => {
-        const tx = new bitcoin.Transaction();
-        const output = bitcoin.address.fromBech32('bcrt1qv9pt88qqwdnjmsuzhzdy9v57qcmghj4alhdg5y').data;
-        console.log(Buffer.concat([Buffer.from([output.length]), output]).toString('hex'));
-        tx.addOutput(output, 15000);
-        tx.addOutput(
-            bitcoin.script.compile([
-                bitcoin.opcodes.OP_RETURN,
-                Buffer.from('675Ca18A04027fd50C88CcD03939E0e5C97b795f', 'hex'),
-            ]),
-            0
+        const decoded = Address({ ...TEST_NETWORK, bech32: 'bcrt' }).decode(
+            'bcrt1qv9pt88qqwdnjmsuzhzdy9v57qcmghj4alhdg5y'
         );
-        console.log(encodeRawOutput(tx).toString('hex'));
+        if (decoded.type !== 'wpkh') throw new Error('Expected a P2WPKH address');
+        // The witness program, as bitcoinjs-lib's `address.fromBech32(...).data` returned it.
+        const output = Buffer.from(decoded.hash);
+        console.log(Buffer.concat([Buffer.from([output.length]), output]).toString('hex'));
+        const outs = [
+            { script: output, value: 15000 },
+            {
+                script: Script.encode(['RETURN', hex.decode('675Ca18A04027fd50C88CcD03939E0e5C97b795f'.toLowerCase())]),
+                value: 0,
+            },
+        ];
+        console.log(encodeRawOutput({ outs }).toString('hex'));
     });
 
     it('should get tx info', async () => {

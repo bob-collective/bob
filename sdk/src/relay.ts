@@ -1,7 +1,11 @@
 /**
  * @ignore
  */
-import { Transaction } from 'bitcoinjs-lib';
+import { hex } from '@scure/base';
+/**
+ * @ignore
+ */
+import { RawTx } from '@scure/btc-signer';
 /**
  * @ignore
  */
@@ -57,13 +61,24 @@ export async function getBitcoinTxInfo(
     forWitness?: boolean
 ): Promise<BitcoinTxInfo> {
     const txHex = await esploraClient.getTransactionHex(txId);
-    const tx = Transaction.fromHex(txHex);
+    const rawTx = RawTx.decode(hex.decode(txHex));
+    const tx = {
+        ins: rawTx.inputs.map((input, i) => ({
+            // RawTx decodes the previous txid in display order; the encoders take the serialized (internal) order.
+            hash: input.txid.slice().reverse(),
+            index: input.index,
+            script: input.finalScriptSig,
+            sequence: input.sequence,
+            witness: rawTx.witnesses?.[i] ?? [],
+        })),
+        outs: rawTx.outputs.map((output) => ({ value: output.amount, script: output.script })),
+    };
 
     const versionBuffer = Buffer.allocUnsafe(4);
-    versionBuffer.writeInt32LE(tx.version);
+    versionBuffer.writeInt32LE(rawTx.version);
 
     const locktimeBuffer = Buffer.allocUnsafe(4);
-    locktimeBuffer.writeInt32LE(tx.locktime);
+    locktimeBuffer.writeUInt32LE(rawTx.lockTime);
 
     return {
         version: versionBuffer.toString('hex'),

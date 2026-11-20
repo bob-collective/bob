@@ -1,4 +1,5 @@
-import { Transaction as BitcoinTransaction } from 'bitcoinjs-lib';
+import { hex } from '@scure/base';
+import { RawTx } from '@scure/btc-signer';
 import {
     type Account,
     type Address,
@@ -9,6 +10,7 @@ import {
     maxUint256,
     type PublicClient,
     type ReplacementReturnType,
+    sha256,
     type TransactionReceipt,
     type Transport,
     type Chain as ViemChain,
@@ -175,7 +177,10 @@ async function submitTransaction(
 /** Txid of a signed raw Bitcoin transaction, or undefined when it does not parse. */
 function bitcoinTxId(txHex: string): string | undefined {
     try {
-        return BitcoinTransaction.fromHex(txHex).getId();
+        // Hash the serialization without witness directly: scure's `Transaction` also rejects versions outside -1..3
+        // and inputs without a scriptSig or witness, which a payment that may already be out can still have.
+        const stripped = RawTx.encode({ ...RawTx.decode(hex.decode(txHex)), segwitFlag: false });
+        return hex.encode(sha256(sha256(stripped, 'bytes'), 'bytes').reverse());
     } catch {
         return undefined;
     }

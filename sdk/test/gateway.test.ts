@@ -51,6 +51,8 @@ import {
     instanceOfGatewayQuoteV4OneOf1,
 } from '../src/gateway/generated-client';
 import * as gatewayUtils from '../src/gateway/utils';
+import fixtures from './fixtures/bitcoin-encoding.json';
+import { parseTx, txHash } from './helpers/bitcoin';
 
 const WBTC_OFT_ADDRESS = '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c';
 const MOCK_SIGNED_QUOTE_DATA = 'signed-quote-data';
@@ -2340,6 +2342,37 @@ describe('Gateway Tests', () => {
             expect(error.cause).toBe(broadcastError);
             expect(error.step).toBe(ExecuteQuoteStepType.SignBitcoinTransaction);
             expect(error.txHash).toBe(broadcastTxId);
+            expect(error.txStatus).toBe('unconfirmed');
+        });
+
+        // Version 4 with an input lacking both scriptSig and witness: valid to hash, though scure's `Transaction`
+        // refuses to give either an id.
+        const unusualTx =
+            '04000000' +
+            '01' +
+            '11'.repeat(32) +
+            '00000000' +
+            '00' +
+            'ffffffff' +
+            '01' +
+            '00'.repeat(8) +
+            '016a' +
+            '00000000';
+
+        it.each([
+            ['a segwit transaction, by its txid rather than wtxid', fixtures.txs.p2wpkh.hex, fixtures.txs.p2wpkh.txid],
+            [
+                'an unusual transaction',
+                unusualTx,
+                Buffer.from(txHash(parseTx(unusualTx)))
+                    .reverse()
+                    .toString('hex'),
+            ],
+        ])('names %s', async (_, signedTx, txid) => {
+            const error = await execute({ signAllInputs: async () => signedTx });
+
+            assert(error instanceof ExecuteQuoteError);
+            expect(error.txHash).toBe(txid);
             expect(error.txStatus).toBe('unconfirmed');
         });
     });

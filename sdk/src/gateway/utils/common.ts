@@ -1,4 +1,5 @@
-import * as bitcoin from 'bitcoinjs-lib';
+import { hex } from '@scure/base';
+import { Address as BtcAddress, NETWORK, OutScript } from '@scure/btc-signer';
 import { createPublicClient, formatUnits, http, parseUnits, Chain as ViemChain } from 'viem';
 import {
     avalanche,
@@ -17,10 +18,14 @@ import {
     robinhood,
 } from 'viem/chains';
 
-export function toHexScriptPubKey(userAddress: string, network: bitcoin.Network): string {
-    const address = bitcoin.address.toOutputScript(userAddress, network);
-    const buffer = Buffer.concat([Buffer.from([address.length]), address]);
-    return '0x' + buffer.toString('hex'); // Convert buffer to hex string
+/**
+ * Length-prefixed output script for `userAddress`, as a 0x-prefixed hex string.
+ *
+ * @param network - Address parameters of the network, e.g. `NETWORK` from `@scure/btc-signer` or a bitcoinjs-lib `networks` entry.
+ */
+export function toHexScriptPubKey(userAddress: string, network: typeof NETWORK): string {
+    const script = OutScript.encode(BtcAddress(network).decode(userAddress));
+    return '0x' + hex.encode(new Uint8Array([script.length, ...script]));
 }
 
 export function isHexPrefixed(str: string): boolean {

@@ -35,13 +35,11 @@
         "@types/yargs": "^17.0.35",
         "@typescript-eslint/eslint-plugin": "^8.54.0",
         "@typescript-eslint/parser": "^8.57.1",
-        "ecpair": "^2.1.0",
         "eslint": "^10.10.0",
         "eslint-config-prettier": "^10.1.8",
         "eslint-plugin-prettier": "^5.5.5",
         "nock": "^14.0.11",
         "prettier": "^3.8.1",
-        "tiny-secp256k1": "^2.2.4",
         "ts-node": "^10.0.0",
         "tsx": "^4.20.6",
         "typescript": "^5.7.3",
@@ -49,12 +47,10 @@
         "yargs": "^18.0.0"
     },
     "dependencies": {
-        "@bitcoinerlab/secp256k1": "^1.2.0",
         "@scure/base": "^1.2.4",
         "@scure/btc-signer": "^1.6.0",
         "bip39": "^3.1.0",
         "bitcoin-address-validation": "^3.0.0",
-        "bitcoinjs-lib": "^6.1.10",
         "global": "^4.4.0",
         "globals": "^17.4.0",
         "viem": "2.57.3"
