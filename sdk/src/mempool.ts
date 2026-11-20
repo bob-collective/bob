@@ -154,6 +154,7 @@ export class MempoolClient {
      *   in a longer period (low priority).
      * - `minimumFee`: The lowest fee rate that is still accepted by miners.
      *
+     * @param {RequestInit} [initOverrides] - Optional request overrides passed to `fetch` (e.g. `{ signal }` to abort the request).
      * @returns {Promise<MempoolRecommendedFee>} A promise that resolves to an object containing
      * the recommended fees for various confirmation times.
      *
@@ -163,14 +164,15 @@ export class MempoolClient {
      *   .then(fees => console.log(fees))
      *   .catch(error => console.error('Failed to fetch fees:', error));
      */
-    async getRecommendedFees(): Promise<MempoolRecommendedFee> {
-        return this.getJson<MempoolRecommendedFee>(`${this.basePath}/v1/fees/recommended`);
+    async getRecommendedFees(initOverrides?: RequestInit): Promise<MempoolRecommendedFee> {
+        return this.getJson<MempoolRecommendedFee>(`${this.basePath}/v1/fees/recommended`, initOverrides);
     }
 
     /**
      * Returns details about a transaction.
      *
      * @param {string} txid
+     * @param {RequestInit} [initOverrides] - Optional request overrides passed to `fetch` (e.g. `{ signal }` to abort the request).
      * @returns {Promise<MempoolTxInfo>}
      *
      * @example
@@ -179,14 +181,15 @@ export class MempoolClient {
      *   .then(txInfo => console.log(txInfo))
      *   .catch(error => console.error('Failed to fetch transaction info:', error));
      */
-    async getTxInfo(txid: string): Promise<MempoolTxInfo> {
-        return this.getJson<MempoolTxInfo>(`${this.basePath}/tx/${txid}`);
+    async getTxInfo(txid: string, initOverrides?: RequestInit): Promise<MempoolTxInfo> {
+        return this.getJson<MempoolTxInfo>(`${this.basePath}/tx/${txid}`, initOverrides);
     }
 
     /**
      * Returns details about a block.
      *
      * @param {string} hash
+     * @param {RequestInit} [initOverrides] - Optional request overrides passed to `fetch` (e.g. `{ signal }` to abort the request).
      * @returns {Promise<BlockDetails>}
      *
      * @example
@@ -195,13 +198,14 @@ export class MempoolClient {
      *   .then(block => console.log(block))
      *   .catch(error => console.error('Failed to fetch block:', error));
      */
-    async getBlock(hash: string): Promise<BlockDetails> {
-        return this.getJson<BlockDetails>(`${this.basePath}/block/${hash}`);
+    async getBlock(hash: string, initOverrides?: RequestInit): Promise<BlockDetails> {
+        return this.getJson<BlockDetails>(`${this.basePath}/block/${hash}`, initOverrides);
     }
 
     /**
      * Returns the hash of the last block.
      *
+     * @param {RequestInit} [initOverrides] - Optional request overrides passed to `fetch` (e.g. `{ signal }` to abort the request).
      * @returns {Promise<string>}
      *
      * @example
@@ -210,8 +214,8 @@ export class MempoolClient {
      *   .then(blocksHeigh => console.log(blocksHeigh))
      *   .catch(error => console.error('Failed to fetch blocks height:', error));
      */
-    async getBlocksTipHash() {
-        return this.getText(`${this.basePath}/blocks/tip/hash`);
+    async getBlocksTipHash(initOverrides?: RequestInit) {
+        return this.getText(`${this.basePath}/blocks/tip/hash`, initOverrides);
     }
 
     /**
@@ -220,6 +224,7 @@ export class MempoolClient {
      * This method returns estimated timestamp for given txid to be mined in seconds based on {@link getRecommendedFees}.
      *
      * @param {string} txid
+     * @param {RequestInit} [initOverrides] - Optional request overrides passed to `fetch` (e.g. `{ signal }` to abort the request).
      * @returns {Promise<number>} A timestamp when tx is expected to be mined in seconds
      *
      * - `Infinity`: the fee rate is < economyFee
@@ -230,14 +235,14 @@ export class MempoolClient {
      *   .then(timestamp => console.log(timestamp))
      *   .catch(error => console.error('Failed to fetch tx time:', error));
      */
-    async estimateTxTime(txid: string): Promise<number> {
+    async estimateTxTime(txid: string, initOverrides?: RequestInit): Promise<number> {
         const [lastBlockHash, recommendedFees, txInfo] = await Promise.all([
-            this.getBlocksTipHash(),
-            this.getRecommendedFees(),
-            this.getTxInfo(txid),
+            this.getBlocksTipHash(initOverrides),
+            this.getRecommendedFees(initOverrides),
+            this.getTxInfo(txid, initOverrides),
         ]);
 
-        const lastBlockDetails = await this.getBlock(lastBlockHash);
+        const lastBlockDetails = await this.getBlock(lastBlockHash, initOverrides);
 
         if (txInfo.status.confirmed) return txInfo.status.block_time || ~~(Date.now() / 1000);
 
@@ -258,14 +263,15 @@ export class MempoolClient {
      * Get pending (unconfirmed) transactions for a Bitcoin address from the mempool.
      *
      * @param {string} address - The Bitcoin address to check.
+     * @param {RequestInit} [initOverrides] - Optional request overrides passed to `fetch` (e.g. `{ signal }` to abort the request).
      * @returns {Promise<MempoolTxInfo[]>} Array of unconfirmed transactions.
      *
      * @example
      * const mempoolClient = new MempoolClient();
      * const pendingTxs = await mempoolClient.getAddressMempoolTxs('bc1q...');
      */
-    async getAddressMempoolTxs(address: string): Promise<MempoolTxInfo[]> {
-        return this.getJson<MempoolTxInfo[]>(`${this.basePath}/address/${address}/txs/mempool`);
+    async getAddressMempoolTxs(address: string, initOverrides?: RequestInit): Promise<MempoolTxInfo[]> {
+        return this.getJson<MempoolTxInfo[]>(`${this.basePath}/address/${address}/txs/mempool`, initOverrides);
     }
 
     /**

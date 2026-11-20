@@ -85,3 +85,58 @@ describe('HTTP client errors', () => {
         expect((err as ApiError).httpCode).toBe(500);
     });
 });
+
+describe('HTTP client initOverrides', () => {
+    const MEMPOOL_ORIGIN = MAINNET_MEMPOOL_BASE_PATH.replace('/api', '');
+
+    it('EsploraClient.broadcastTx forwards initOverrides and keeps POST + body', async () => {
+        nock(MAINNET_ESPLORA_BASE_PATH).post('/tx', 'deadbeef').matchHeader('x-test', 'esplora').reply(200, TXID);
+
+        await expect(
+            new EsploraClient().broadcastTx('deadbeef', { method: 'GET', headers: { 'x-test': 'esplora' } })
+        ).resolves.toBe(TXID);
+    });
+
+    it('EsploraClient.broadcastTx can be aborted', async () => {
+        nock(MAINNET_ESPLORA_BASE_PATH).post('/tx').delay(1000).reply(200, TXID);
+        const controller = new AbortController();
+
+        const promise = new EsploraClient().broadcastTx('deadbeef', { signal: controller.signal });
+        controller.abort();
+
+        await expect(promise).rejects.toMatchObject({ name: 'AbortError' });
+    });
+
+    it('MempoolClient methods forward initOverrides', async () => {
+        const scope = nock(MEMPOOL_ORIGIN, { reqheaders: { 'x-test': 'mempool' } })
+            .get('/api/v1/fees/recommended')
+            .reply(200, { fastestFee: 1, halfHourFee: 1, hourFee: 1, economyFee: 1, minimumFee: 1 })
+            .get(`/api/tx/${TXID}`)
+            .reply(200, { txid: TXID })
+            .get('/api/block/abc')
+            .reply(200, { id: 'abc' })
+            .get('/api/blocks/tip/hash')
+            .reply(200, 'abc')
+            .get('/api/address/bc1qtest/txs/mempool')
+            .reply(200, []);
+        const client = new MempoolClient();
+        const init = { headers: { 'x-test': 'mempool' } };
+
+        await client.getRecommendedFees(init);
+        await client.getTxInfo(TXID, init);
+        await client.getBlock('abc', init);
+        await expect(client.getBlocksTipHash(init)).resolves.toBe('abc');
+        await expect(client.getAddressMempoolTxs('bc1qtest', init)).resolves.toEqual([]);
+        expect(scope.isDone()).toBe(true);
+    });
+
+    it('MempoolClient.estimateTxTime passes the signal to every request', async () => {
+        nock(MEMPOOL_ORIGIN).get(/.*/).times(4).delay(1000).reply(200, {});
+        const controller = new AbortController();
+
+        const promise = new MempoolClient().estimateTxTime(TXID, { signal: controller.signal });
+        controller.abort();
+
+        await expect(promise).rejects.toMatchObject({ name: 'AbortError' });
+    });
+});

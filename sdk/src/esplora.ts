@@ -451,11 +451,13 @@ export class EsploraClient {
      * Broadcast a raw transaction to the network.
      *
      * @param {string} txHex - The hex encoded transaction.
+     * @param {RequestInit} [initOverrides] - Optional request overrides passed to `fetch` (e.g. `{ signal }` to abort the request).
      * @returns {Promise<string>} A promise that resolves to the txid.
      */
-    async broadcastTx(txHex: string): Promise<string> {
+    async broadcastTx(txHex: string, initOverrides?: RequestInit): Promise<string> {
         // Ensure errors are surfaced instead of being treated as a txid
         return fetchText('Esplora broadcast', `${this.basePath}/tx`, {
+            ...initOverrides,
             method: 'POST',
             body: txHex,
         });
