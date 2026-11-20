@@ -1,3 +1,5 @@
+import { fetchJson, fetchText } from './http';
+
 /**
  * Base path for the mainnet Memopool API.
  * @default "https://mempool.space/api"
@@ -269,22 +271,14 @@ export class MempoolClient {
     /**
      * @ignore
      */
-    private async getJson<T>(url: string): Promise<T> {
-        const response = await fetch(url);
-        if (!response.ok) {
-            throw new Error(response.statusText);
-        }
-        return response.json() as Promise<T>;
+    private async getJson<T>(url: string, initOverrides?: RequestInit): Promise<T> {
+        return fetchJson<T>('Mempool', url, initOverrides);
     }
 
     /**
      * @ignore
      */
-    private async getText<T extends string>(url: string): Promise<T> {
-        const response = await fetch(url);
-        if (!response.ok) {
-            throw new Error(response.statusText);
-        }
-        return response.text() as Promise<T>;
+    private async getText<T extends string>(url: string, initOverrides?: RequestInit): Promise<T> {
+        return (await fetchText('Mempool', url, initOverrides)) as T;
     }
 }
