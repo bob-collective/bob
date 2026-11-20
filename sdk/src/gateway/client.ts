@@ -25,7 +25,7 @@ import {
     type GatewayMaxSpendable,
     type GatewayOrderInfoV3,
     type GatewayQuoteV4,
-    type GatewayTxDataOneOf2,
+    type GatewayTxData,
     type GetOrdersV4Request,
     instanceOfGatewayCreateOrderV3OneOf,
     instanceOfGatewayCreateOrderV3OneOf1,
@@ -186,15 +186,23 @@ async function submitTransaction(
  * `walletClient.sendTransaction({ account, data })` signs and broadcasts the unsigned `VersionedTransaction` whose
  * wire bytes `data` holds, resolving with its signature, and `publicClient.waitForTransactionReceipt` confirms it.
  * Solana has no token approvals, so this is the order's only step.
+ *
+ * Called when either the order's source chain or its transaction is Solana; refuses the order unless both are.
  */
 async function sendSolanaOrderTransaction(
     orderId: string,
     srcChain: string,
-    tx: GatewayTxDataOneOf2,
+    tx: GatewayTxData,
     walletClient: WalletClient<Transport, ViemChain, Account>,
     publicClient: PublicClient<Transport>,
     callback?: (step: ExecuteQuoteStep) => void
 ): Promise<Hex> {
+    if (tx.type !== 'solana') {
+        throw new ExecuteQuoteError(
+            orderId,
+            `Gateway returned a transaction of type ${tx.type} for an order from ${srcChain}`
+        );
+    }
     if (!isSolanaChain(srcChain)) {
         throw new ExecuteQuoteError(orderId, `Gateway returned a Solana transaction for an order from ${srcChain}`);
     }
@@ -579,7 +587,7 @@ export class GatewayApiClient {
 
             const orderId = order.offramp.orderId;
 
-            if (order.offramp.tx.type === 'solana') {
+            if (order.offramp.tx.type === 'solana' || isSolanaChain(quote.offramp.srcChain)) {
                 const tx = await sendSolanaOrderTransaction(
                     orderId,
                     quote.offramp.srcChain,
@@ -589,13 +597,6 @@ export class GatewayApiClient {
                     callback
                 );
                 return { order, tx };
-            }
-
-            if (isSolanaChain(quote.offramp.srcChain)) {
-                throw new ExecuteQuoteError(
-                    orderId,
-                    `Gateway returned a transaction of type ${order.offramp.tx.type} for an order from ${quote.offramp.srcChain}`
-                );
             }
 
             const spenderAddress = order.offramp.tx.to as Address;
@@ -785,7 +786,7 @@ export class GatewayApiClient {
 
             const orderId = order.tokenSwap.orderId;
 
-            if (order.tokenSwap.tx.type === 'solana') {
+            if (order.tokenSwap.tx.type === 'solana' || isSolanaChain(quote.tokenSwap.srcChain)) {
                 const tx = await sendSolanaOrderTransaction(
                     orderId,
                     quote.tokenSwap.srcChain,
@@ -795,13 +796,6 @@ export class GatewayApiClient {
                     callback
                 );
                 return { order, tx };
-            }
-
-            if (isSolanaChain(quote.tokenSwap.srcChain)) {
-                throw new ExecuteQuoteError(
-                    orderId,
-                    `Gateway returned a transaction of type ${order.tokenSwap.tx.type} for an order from ${quote.tokenSwap.srcChain}`
-                );
             }
 
             if (needsApproval) {
