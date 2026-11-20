@@ -13,12 +13,25 @@ describe('ScureBitcoinSigner', () => {
         expect(await signer.getP2WPKHAddress()).toBe(BIP84_FIRST_RECEIVE_ADDRESS);
     });
 
+    it('accepts words separated by ideographic spaces, as in Japanese phrases', async () => {
+        const signer = await ScureBitcoinSigner.fromSeedPhrase(
+            BIP84_MNEMONIC.replaceAll(' ', '\u3000'),
+            BIP84_FIRST_RECEIVE_PATH
+        );
+
+        expect(await signer.getP2WPKHAddress()).toBe(BIP84_FIRST_RECEIVE_ADDRESS);
+    });
+
     // A wrong word count used to derive an unintended key silently. Spacing counts too: trimming would derive a
     // different key than earlier versions did for the same input, so such a phrase is rejected instead.
     it.each([
         ['an extra word', `${BIP84_MNEMONIC} abandon`],
         ['a trailing space', `${BIP84_MNEMONIC} `],
         ['a double space', BIP84_MNEMONIC.replace(' ', '  ')],
+        // Each of these still splits into 12 pieces on a single space, so the word count alone does not catch it.
+        ['a double space in place of a missing word', BIP84_MNEMONIC.replace(' abandon ', '  ')],
+        ['a trailing newline', `${BIP84_MNEMONIC}\n`],
+        ['an extra word after a tab', `${BIP84_MNEMONIC}\tabandon`],
     ])('rejects a phrase with %s', async (_case, phrase) => {
         await expect(ScureBitcoinSigner.fromSeedPhrase(phrase, BIP84_FIRST_RECEIVE_PATH)).rejects.toThrow(
             'Invalid mnemonic'
