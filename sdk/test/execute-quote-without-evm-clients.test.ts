@@ -1,7 +1,9 @@
 import nock from 'nock';
 import { afterEach, expect, it, vi } from 'vitest';
+import type { Account, Transport, Chain as ViemChain, WalletClient } from 'viem';
 import { GatewaySDK } from '../src/gateway';
 import { MAINNET_GATEWAY_BASE_URL } from '../src/gateway/client';
+import type { GatewayQuoteV4OneOf, GatewayQuoteV4OneOf1 } from '../src/gateway/generated-client';
 
 const BTC = '0x0000000000000000000000000000000000000000';
 const BTC_SENDER = 'bc1qafk4yhqvj4wep57m62dgrmutldusqde8adh20d';
@@ -69,4 +71,37 @@ it('onramps BTC to a Solana address with only a Bitcoin signer', async () => {
     expect(orderBody?.onramp).toMatchObject({ dstChain: 'solana', recipient: SOLANA_RECIPIENT });
     expect(sendBitcoin).toHaveBeenCalledWith(expect.objectContaining({ from: BTC_SENDER, to: 'bc1qdeposit' }));
     expect(result.tx).toBe('btc-txid');
+});
+
+const EVM_SENDER = '0x1F5fF4a5B9C15d5C78Fd492e6FCF25905eB3eCFF';
+const offrampQuote = {
+    offramp: {
+        srcChain: 'bob',
+        tokenAddress: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c',
+        inputAmount: amount('bob', '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c', '1000'),
+    },
+} as unknown as GatewayQuoteV4OneOf;
+const tokenSwapQuote = {
+    tokenSwap: {
+        srcChain: 'ethereum',
+        txTo: '0x1234567890123456789012345678901234567890',
+        inputAmount: amount('ethereum', '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599', '100000'),
+    },
+} as unknown as GatewayQuoteV4OneOf1;
+const walletClient = {
+    account: { address: EVM_SENDER },
+} as unknown as WalletClient<Transport, ViemChain, Account>;
+
+it.each([
+    ['offramp', offrampQuote, {}],
+    ['offramp', offrampQuote, { walletClient }],
+    ['token swap', tokenSwapQuote, {}],
+    ['token swap', tokenSwapQuote, { walletClient }],
+])('rejects a %s without the EVM clients before creating the order', async (kind, quote, clients) => {
+    const createOrder = nock(MAINNET_GATEWAY_BASE_URL).post('/v4/create-order').reply(201, {});
+
+    await expect(new GatewaySDK().executeQuote({ quote, ...clients })).rejects.toThrow(
+        `walletClient and publicClient are required for ${kind} order`
+    );
+    expect(createOrder.isDone()).toBe(false);
 });
