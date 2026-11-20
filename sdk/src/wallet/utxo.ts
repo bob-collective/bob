@@ -11,7 +11,7 @@ const bitcoinNetworks: Record<BitcoinNetworkName, typeof NETWORK> = {
     signet: TEST_NETWORK,
 };
 
-export const getBtcNetwork = (name: BitcoinNetworkName) => {
+export const getBtcNetwork = (name: BitcoinNetworkName): typeof NETWORK => {
     return bitcoinNetworks[name];
 };
 
