@@ -1,21 +1,6 @@
 import * as bitcoin from 'bitcoinjs-lib';
 import { createPublicClient, formatUnits, http, parseUnits, Chain as ViemChain } from 'viem';
-import {
-    avalanche,
-    base,
-    berachain,
-    bob,
-    bsc,
-    hyperEvm,
-    mainnet,
-    optimism,
-    sei,
-    soneium,
-    sonic,
-    unichain,
-    arbitrum,
-    robinhood,
-} from 'viem/chains';
+import { VIEM_CHAINS_BY_NAME } from '../chains';
 
 export function toHexScriptPubKey(userAddress: string, network: bitcoin.Network): string {
     const address = bitcoin.address.toOutputScript(userAddress, network);
@@ -50,25 +35,8 @@ export function formatBtc(btc: bigint) {
     return formatUnits(btc, 8);
 }
 
-export const supportedChainsMapping = {
-    bob,
-    ethereum: mainnet,
-    sonic,
-    bsc,
-    unichain,
-    bera: berachain,
-    sei,
-    avalanche,
-    base,
-    soneium,
-    optimism,
-    arbitrum,
-    hyperevm: hyperEvm,
-    // `hyperliquid` is the staging gateway's name for the same chain (id 999);
-    // register both aliases so the CLI resolves either until the API canonicalizes to `hyperevm`.
-    hyperliquid: hyperEvm,
-    robinhood,
-} as const;
+/** viem chain config by Gateway chain name (and alias). Derived from the registry in `../chains`. */
+export const supportedChainsMapping = VIEM_CHAINS_BY_NAME;
 
 const chainIdToChainConfigMapping = Object.values(supportedChainsMapping).reduce(
     (acc, chain) => {

@@ -17,6 +17,7 @@ import {
 } from 'viem';
 import { oftApprovalRequiredAbi, strategyCaller, USDTApproveAbi } from './abi';
 import { assertAllowanceHolderSpender } from './allowance-holder';
+import { ETHEREUM_USDT_ADDRESS } from './chains';
 import { ApiError, GatewayError, isGatewayErrorBody } from './error';
 import {
     Configuration,
@@ -223,7 +224,7 @@ function signerChain(walletClient: WalletClient<Transport, ViemChain, Account>, 
         : {};
 }
 
-export const ETHEREUM_USDT_ADDRESS = '0xdAC17F958D2ee523a2206206994597C13D831ec7';
+export { ETHEREUM_USDT_ADDRESS };
 
 /**
  * Base url for the mainnet Gateway API.

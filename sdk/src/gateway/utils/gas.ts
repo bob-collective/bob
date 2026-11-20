@@ -1,4 +1,5 @@
 import { type Account, type Address, type Hex, type PublicClient, type Transport } from 'viem';
+import { CHAINS_WITHOUT_GAS_ESTIMATION } from '../chains';
 
 const GAS_BUFFER_NUM = 12n;
 const GAS_BUFFER_DEN = 10n;
@@ -19,12 +20,6 @@ export function applyGasBuffer(estimate: bigint): bigint {
     const fixed = estimate + GAS_BUFFER_FIXED;
     return multiplied > fixed ? multiplied : fixed;
 }
-
-/**
- * The Tron adapter is not required to implement `estimateGas`, and its `sendTransaction`
- * takes no `gas` field (README — required surface), so a limit there breaks the contract.
- */
-const CHAINS_WITHOUT_GAS_ESTIMATION = new Set(['tron']);
 
 export function supportsGasEstimation(srcChain: string): boolean {
     return !CHAINS_WITHOUT_GAS_ESTIMATION.has(srcChain.toLowerCase());
