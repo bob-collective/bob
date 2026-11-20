@@ -19,6 +19,7 @@
  */
 export const GatewayErrorCodeV4Variants = {
     MissingRefundAddress: 'MISSING_REFUND_ADDRESS',
+    MissingSolanaTokenAccount: 'MISSING_SOLANA_TOKEN_ACCOUNT',
     CaptchaVerificationFailed: 'CAPTCHA_VERIFICATION_FAILED'
 } as const;
 export type GatewayErrorCodeV4Variants = typeof GatewayErrorCodeV4Variants[keyof typeof GatewayErrorCodeV4Variants];

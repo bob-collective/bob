@@ -311,7 +311,7 @@ function parseDetails({ code, raw }: ParseDetailsArgs): DetailsFor<AnyGatewayErr
         //   InsufficientConfirmedFunds, PerAccountLimitExceeded, GlobalLimitExceeded,
         //   InvalidRequest, InvalidOrderArgs, InvalidAffiliateFee, SlippageTooHigh, DisabledChain,
         //   InvalidDestinationChainId, OrderNotFound, OrderExpired, DuplicateOrder, InternalError,
-        //   MissingRefundAddress, CaptchaVerificationFailed
+        //   MissingRefundAddress, MissingSolanaTokenAccount, CaptchaVerificationFailed
         default:
             return null;
     }

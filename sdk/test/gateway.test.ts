@@ -3467,6 +3467,20 @@ describe('Gateway Tests', () => {
         expect(error.details).toBeNull();
     });
 
+    it('preserves the V4 missing-solana-token-account error', async () => {
+        const error = await gatewayErrorFrom({
+            code: 'MISSING_SOLANA_TOKEN_ACCOUNT',
+            error: 'the Solana recipient has no USDC token account; it must create one before receiving',
+        });
+        expect(isGatewayError(error)).toBe(true);
+        expect(error.code).toBe(GatewayErrorCodeV4Variants.MissingSolanaTokenAccount);
+        expect(error.message).toBe(
+            'the Solana recipient has no USDC token account; it must create one before receiving'
+        );
+        expect(error.httpCode).toBe(400);
+        expect(error.details).toBeNull();
+    });
+
     it('preserves the V4 missing-refund-address error', async () => {
         const error = await gatewayErrorFrom({
             code: 'MISSING_REFUND_ADDRESS',
