@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { assertAllowanceHolderSpender } from '../src/gateway/allowance-holder';
+import {
+    ALLOWANCE_HOLDER_BY_CHAIN,
+    CHAINS,
+    CHAINS_WITHOUT_GAS_ESTIMATION,
+    ChainRecord,
+    VIEM_CHAINS_BY_NAME,
+} from '../src/gateway/chains';
 import { ETHEREUM_USDT_ADDRESS } from '../src/gateway/client';
 import { getChainConfig, supportedChainsMapping, supportsGasEstimation } from '../src/gateway/utils';
 
@@ -111,5 +118,43 @@ describe('chain tables keep their pre-refactor values', () => {
 
     it('ETHEREUM_USDT_ADDRESS is unchanged', () => {
         expect(ETHEREUM_USDT_ADDRESS).toBe(OLD_ETHEREUM_USDT_ADDRESS);
+    });
+});
+
+describe('chain registry', () => {
+    const records: readonly ChainRecord[] = CHAINS;
+
+    it('derives the AllowanceHolder table with the old values', () => {
+        expect(ALLOWANCE_HOLDER_BY_CHAIN).toStrictEqual(OLD_ALLOWANCE_HOLDER_BY_CHAIN);
+    });
+
+    it('derives the chains without gas estimation with the old values', () => {
+        expect([...CHAINS_WITHOUT_GAS_ESTIMATION]).toStrictEqual(OLD_CHAINS_WITHOUT_GAS_ESTIMATION);
+    });
+
+    it('backs supportedChainsMapping', () => {
+        expect(supportedChainsMapping).toBe(VIEM_CHAINS_BY_NAME);
+    });
+
+    it('declares every name once', () => {
+        const names = records.flatMap((chain) => [chain.slug, ...(chain.aliases ?? [])]);
+        expect(names).toStrictEqual([...new Set(names)]);
+        expect(names.every((name) => name === name.toLowerCase())).toBe(true);
+    });
+
+    // Known gaps, kept as-is pending confirmation from the Gateway team (#1244 item 5).
+    // Update this list deliberately when a chain gains or loses an entry.
+    it('lists the known disagreements between chain config and AllowanceHolder', () => {
+        const withoutAllowanceHolder = records
+            .filter((chain) => chain.viemChain && !chain.allowanceHolder)
+            .map((chain) => chain.slug);
+        const withoutChainConfig = records
+            .filter((chain) => chain.allowanceHolder && !chain.viemChain)
+            .map((chain) => chain.slug);
+
+        // Resolve through getChainConfig, but an order from them that needs an approval is refused.
+        expect(withoutAllowanceHolder).toStrictEqual(['sonic', 'bera', 'sei', 'soneium', 'optimism']);
+        // Have an AllowanceHolder, but getChainConfig does not resolve them.
+        expect(withoutChainConfig).toStrictEqual(['tron', 'plasma', 'polygon']);
     });
 });
