@@ -51,6 +51,7 @@ import {
 
 export interface CreateOrderV3Request {
     gatewayQuoteV3: GatewayQuoteV3;
+    cFTurnstileResponse?: string | null;
 }
 
 export interface GetMaxSpendableV3Request {
@@ -83,6 +84,7 @@ export interface GetQuoteV3Request {
 
 export interface RegisterTxV3Request {
     registerTxV3: RegisterTxV3;
+    cFTurnstileResponse?: string | null;
 }
 
 /**
@@ -107,6 +109,10 @@ export class V3Api extends runtime.BaseAPI {
         const headerParameters: runtime.HTTPHeaders = {};
 
         headerParameters['Content-Type'] = 'application/json';
+
+        if (requestParameters['cFTurnstileResponse'] != null) {
+            headerParameters['CF-Turnstile-Response'] = String(requestParameters['cFTurnstileResponse']);
+        }
 
 
         let urlPath = `/v3/create-order`;
@@ -443,6 +449,10 @@ export class V3Api extends runtime.BaseAPI {
         const headerParameters: runtime.HTTPHeaders = {};
 
         headerParameters['Content-Type'] = 'application/json';
+
+        if (requestParameters['cFTurnstileResponse'] != null) {
+            headerParameters['CF-Turnstile-Response'] = String(requestParameters['cFTurnstileResponse']);
+        }
 
 
         let urlPath = `/v3/register-tx`;

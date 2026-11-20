@@ -7,8 +7,9 @@
  * balancer), and is thrown as a plain `ApiError`.
  *
  * A blocked location is refused by Cloudflare with a 403 HTML page before the request reaches the
- * Gateway, which never answers 403 itself. That refusal is therefore always a plain `ApiError`,
- * recognisable only by its `httpCode`.
+ * Gateway. That refusal is therefore always a plain `ApiError`, recognisable only by its `httpCode`.
+ * The Gateway answers 403 itself only with `CAPTCHA_VERIFICATION_FAILED`, a {@link GatewayError} —
+ * which is also an `ApiError`, so rule it out before reading a 403 as a geoblock.
  *
  * Check {@link isGatewayError} first when the Gateway's `code` matters; check {@link isApiError}
  * to handle every HTTP failure, whatever answered it:
@@ -18,7 +19,7 @@
  * try {
  *   await gatewaySDK.getRoutes();
  * } catch (err) {
- *   if (isApiError(err) && err.httpCode === 403) {
+ *   if (isApiError(err) && !isGatewayError(err) && err.httpCode === 403) {
  *     // geoblocked: Cloudflare refused the request
  *   }
  * }

@@ -14,7 +14,7 @@
 
 
 /**
- * New error codes for V3.
+ * New error codes for V3. `CAPTCHA_VERIFICATION_FAILED` is deprecated.
  * @export
  */
 export const GatewayErrorCodeV3Variants = {
@@ -22,7 +22,8 @@ export const GatewayErrorCodeV3Variants = {
     MissingOwnerAddress: 'MISSING_OWNER_ADDRESS',
     NonCompliantAddresses: 'NON_COMPLIANT_ADDRESSES',
     ServiceUnavailable: 'SERVICE_UNAVAILABLE',
-    TooManyAffiliates: 'TOO_MANY_AFFILIATES'
+    TooManyAffiliates: 'TOO_MANY_AFFILIATES',
+    CaptchaVerificationFailed: 'CAPTCHA_VERIFICATION_FAILED'
 } as const;
 export type GatewayErrorCodeV3Variants = typeof GatewayErrorCodeV3Variants[keyof typeof GatewayErrorCodeV3Variants];
 

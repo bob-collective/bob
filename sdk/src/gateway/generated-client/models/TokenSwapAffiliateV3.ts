@@ -14,21 +14,24 @@
 
 import { mapValues } from '../runtime';
 /**
- * A single affiliate fee on a token swap: `bps` of the swap input paid to
- * `address` by the aggregator on the source chain. Aggregators charge one
- * partner fee, so a swap carries at most one.
+ * A single affiliate fee on a token swap: `bps` of the amount the aggregator
+ * takes the fee from, paid to `address` on the payment chain (destination for
+ * Across, source for Bungee/Velora). Aggregators charge one partner fee, so a
+ * swap carries at most one.
  * @export
  * @interface TokenSwapAffiliateV3
  */
 export interface TokenSwapAffiliateV3 {
     /**
-     * Affiliate fee recipient, encoded for the source chain (`0x…` on EVM).
+     * Affiliate fee recipient, encoded for the payment chain (`0x…` on EVM,
+     * Tron Base58 on a Tron destination).
      * @type {string}
      * @memberof TokenSwapAffiliateV3
      */
     address: string;
     /**
-     * Affiliate fee size in basis points of the swap input.
+     * Affiliate fee size in basis points of the amount the aggregator takes
+     * the fee from.
      * @type {number}
      * @memberof TokenSwapAffiliateV3
      */

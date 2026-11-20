@@ -27,6 +27,21 @@
         "summary": "Create a new gateway order (V3).",
         "description": "Accepts a `GatewayQuoteV3` — the signed V3 quote with `ownerAddress` embedded in each variant.",
         "operationId": "create_order_v3",
+        "parameters": [
+          {
+            "name": "CF-Turnstile-Response",
+            "in": "header",
+            "description": "Deprecated: the captcha guard is scheduled for removal. Cloudflare Turnstile token; required for callers without a known integrator API key (the BOB UI key does not exempt) when captcha enforcement is enabled",
+            "required": false,
+            "deprecated": true,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -50,6 +65,16 @@
           },
           "400": {
             "description": "Create order error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayErrorV3"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Turnstile verification failed (deprecated)",
             "content": {
               "application/json": {
                 "schema": {
@@ -170,7 +195,7 @@
           {
             "name": "user_address",
             "in": "path",
-            "description": "User address",
+            "description": "Comma-separated user addresses (up to 20)",
             "required": true,
             "schema": {
               "type": "string"
@@ -255,7 +280,7 @@
               "type": "string"
             },
             "style": "form",
-            "example": "bob"
+            "example": "ethereum"
           },
           {
             "name": "sender",
@@ -277,7 +302,7 @@
               "type": "string"
             },
             "style": "form",
-            "example": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+            "example": "0x1bf42Bbf47411D47A6e3368E3b938c09968E4859"
           },
           {
             "name": "srcToken",
@@ -299,7 +324,7 @@
               "type": "string"
             },
             "style": "form",
-            "example": "0x0555E30da8f98308EdB960aa94C0Db47230d2B9c"
+            "example": "0xdAC17F958D2ee523a2206206994597C13D831ec7"
           },
           {
             "name": "amount",
@@ -332,7 +357,7 @@
               "type": "string"
             },
             "style": "form",
-            "example": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266:50,0x70997970C51812dc3A010C7d01b50e0d17dc79C8:25"
+            "example": "0x1bf42Bbf47411D47A6e3368E3b938c09968E4859:50,0x70997970C51812dc3A010C7d01b50e0d17dc79C8:25"
           },
           {
             "name": "ownerAddress",
@@ -343,7 +368,7 @@
               "type": "string"
             },
             "style": "form",
-            "example": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+            "example": "0x1bf42Bbf47411D47A6e3368E3b938c09968E4859"
           },
           {
             "name": "refundAddress",
@@ -412,6 +437,21 @@
         ],
         "summary": "Register a tx for a request (V3 body).",
         "operationId": "register_tx_v3",
+        "parameters": [
+          {
+            "name": "CF-Turnstile-Response",
+            "in": "header",
+            "description": "Deprecated: the captcha guard is scheduled for removal. Cloudflare Turnstile token; required for callers without a known integrator API key (the BOB UI key does not exempt) when captcha enforcement is enabled",
+            "required": false,
+            "deprecated": true,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -442,6 +482,16 @@
                 }
               }
             }
+          },
+          "403": {
+            "description": "Turnstile verification failed (deprecated)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayErrorV3"
+                }
+              }
+            }
           }
         }
       }
@@ -453,6 +503,21 @@
         ],
         "summary": "Create a new gateway order (V4).",
         "operationId": "create_order_v4",
+        "parameters": [
+          {
+            "name": "CF-Turnstile-Response",
+            "in": "header",
+            "description": "Deprecated: the captcha guard is scheduled for removal. Cloudflare Turnstile token; required for callers without a known integrator API key (the BOB UI key does not exempt) when captcha enforcement is enabled",
+            "required": false,
+            "deprecated": true,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -476,6 +541,26 @@
           },
           "400": {
             "description": "Create order error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayErrorV4"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Turnstile verification failed (deprecated)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayErrorV4"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Swap provider rate limited the quote; retry later",
             "content": {
               "application/json": {
                 "schema": {
@@ -595,7 +680,7 @@
           {
             "name": "user_address",
             "in": "path",
-            "description": "User address",
+            "description": "Comma-separated user addresses (up to 20)",
             "required": true,
             "schema": {
               "type": "string"
@@ -680,7 +765,7 @@
               "type": "string"
             },
             "style": "form",
-            "example": "bob"
+            "example": "ethereum"
           },
           {
             "name": "sender",
@@ -702,7 +787,7 @@
               "type": "string"
             },
             "style": "form",
-            "example": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+            "example": "0x1bf42Bbf47411D47A6e3368E3b938c09968E4859"
           },
           {
             "name": "srcToken",
@@ -724,7 +809,7 @@
               "type": "string"
             },
             "style": "form",
-            "example": "0x0555E30da8f98308EdB960aa94C0Db47230d2B9c"
+            "example": "0xdAC17F958D2ee523a2206206994597C13D831ec7"
           },
           {
             "name": "amount",
@@ -751,13 +836,13 @@
           {
             "name": "affiliates",
             "in": "query",
-            "description": "Comma-separated list of `<address>:<bps>` pairs",
+            "description": "Comma-separated list of `<address>:<bps>` pairs. Each address is EVM hex (`0x…`),\nexcept on a token swap to Tron, where it may also be a Tron Base58 address (`T…`)\nto direct the fee to a distinct Tron account.",
             "required": false,
             "schema": {
               "type": "string"
             },
             "style": "form",
-            "example": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266:50,0x70997970C51812dc3A010C7d01b50e0d17dc79C8:25"
+            "example": "0x1bf42Bbf47411D47A6e3368E3b938c09968E4859:50,0x70997970C51812dc3A010C7d01b50e0d17dc79C8:25"
           },
           {
             "name": "refundAddress",
@@ -784,6 +869,16 @@
           },
           "400": {
             "description": "Get a quote error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayErrorV4"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Swap provider rate limited the quote; retry later",
             "content": {
               "application/json": {
                 "schema": {
@@ -827,6 +922,21 @@
         "summary": "Delegate on-chain submission of a signed onramp Bitcoin transaction to the gateway (V4).",
         "description": "The gateway validates the transaction against the order, screens it, and broadcasts it, so\nthe user does not submit it themselves. Only the raw transaction is accepted (no txid), and\nonly for onramps: offramp and token-swap source transactions are indexed from the chain.",
         "operationId": "register_tx_v4",
+        "parameters": [
+          {
+            "name": "CF-Turnstile-Response",
+            "in": "header",
+            "description": "Deprecated: the captcha guard is scheduled for removal. Cloudflare Turnstile token; required for callers without a known integrator API key (the BOB UI key does not exempt) when captcha enforcement is enabled",
+            "required": false,
+            "deprecated": true,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -850,6 +960,16 @@
           },
           "400": {
             "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayErrorV4"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Turnstile verification failed (deprecated)",
             "content": {
               "application/json": {
                 "schema": {
@@ -1061,13 +1181,14 @@
       },
       "GatewayErrorCodeV3Variants": {
         "type": "string",
-        "description": "New error codes for V3.",
+        "description": "New error codes for V3. `CAPTCHA_VERIFICATION_FAILED` is deprecated.",
         "enum": [
           "BUNGEE_NO_ROUTE",
           "MISSING_OWNER_ADDRESS",
           "NON_COMPLIANT_ADDRESSES",
           "SERVICE_UNAVAILABLE",
-          "TOO_MANY_AFFILIATES"
+          "TOO_MANY_AFFILIATES",
+          "CAPTCHA_VERIFICATION_FAILED"
         ]
       },
       "GatewayErrorCodeV4": {
@@ -1089,9 +1210,10 @@
       },
       "GatewayErrorCodeV4Variants": {
         "type": "string",
-        "description": "New error codes for V4.",
+        "description": "New error codes for V4. `CAPTCHA_VERIFICATION_FAILED` is deprecated.",
         "enum": [
-          "MISSING_REFUND_ADDRESS"
+          "MISSING_REFUND_ADDRESS",
+          "CAPTCHA_VERIFICATION_FAILED"
         ]
       },
       "GatewayErrorDetailsV2": {
@@ -2315,7 +2437,7 @@
       },
       "GatewayTokenSwapQuoteV3": {
         "type": "object",
-        "description": "V3 token-swap quote: the V2 shape plus a resolved `affiliate` and\n`ownerAddress`. The quote *is* the create-order body, so both must round-trip\n— the aggregator charges the affiliate on the source chain, and Bungee\nrefunds `ownerAddress` on a source-chain failure.",
+        "description": "V3 token-swap quote: the V2 shape plus a resolved `affiliate` and\n`ownerAddress`. The quote *is* the create-order body, so both must round-trip\n— the aggregator charges the affiliate on the payment chain (destination for\nAcross, source for Bungee/Velora), and Bungee refunds `ownerAddress` on a\nsource-chain failure.",
         "required": [
           "srcChain",
           "dstChain",
@@ -2807,7 +2929,7 @@
       },
       "TokenSwapAffiliateV3": {
         "type": "object",
-        "description": "A single affiliate fee on a token swap: `bps` of the swap input paid to\n`address` by the aggregator on the source chain. Aggregators charge one\npartner fee, so a swap carries at most one.",
+        "description": "A single affiliate fee on a token swap: `bps` of the amount the aggregator\ntakes the fee from, paid to `address` on the payment chain (destination for\nAcross, source for Bungee/Velora). Aggregators charge one partner fee, so a\nswap carries at most one.",
         "required": [
           "address",
           "bps"
@@ -2815,12 +2937,12 @@
         "properties": {
           "address": {
             "type": "string",
-            "description": "Affiliate fee recipient, encoded for the source chain (`0x…` on EVM)."
+            "description": "Affiliate fee recipient, encoded for the payment chain (`0x…` on EVM,\nTron Base58 on a Tron destination)."
           },
           "bps": {
             "type": "integer",
             "format": "int32",
-            "description": "Affiliate fee size in basis points of the swap input.",
+            "description": "Affiliate fee size in basis points of the amount the aggregator takes\nthe fee from.",
             "minimum": 0
           }
         }

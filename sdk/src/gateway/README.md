@@ -300,12 +300,13 @@ A 4xx/5xx response throws an `ApiError` (`isApiError`) carrying the response's `
 - Any other body — an HTML page, an empty body, JSON without a `code` — came from something in
   front of the Gateway (Cloudflare, proxy, ingress) and throws a plain `ApiError`.
 
-A blocked location is refused by Cloudflare with a 403 HTML page; the Gateway never answers 403
-itself. Check `isGatewayError` first when the Gateway's `code` matters, and `isApiError` to handle
-every HTTP failure:
+A blocked location is refused by Cloudflare with a 403 HTML page. The Gateway answers 403 itself
+only with `CAPTCHA_VERIFICATION_FAILED` (`GatewayErrorCodeV4Variants.CaptchaVerificationFailed`),
+which is a `GatewayError` — and so also an `ApiError`. Check `isGatewayError` first when the
+Gateway's `code` matters, and `isApiError` to handle every HTTP failure:
 
 ```typescript
-if (isApiError(err) && err.httpCode === 403) {
+if (isApiError(err) && !isGatewayError(err) && err.httpCode === 403) {
     // geoblocked: Cloudflare refused the request
 }
 ```

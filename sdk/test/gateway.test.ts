@@ -3455,6 +3455,18 @@ describe('Gateway Tests', () => {
         });
     });
 
+    it('preserves the V4 captcha-verification-failed error', async () => {
+        const error = await gatewayErrorFrom(
+            { code: 'CAPTCHA_VERIFICATION_FAILED', error: 'Captcha verification failed' },
+            403
+        );
+        expect(isGatewayError(error)).toBe(true);
+        expect(error.code).toBe(GatewayErrorCodeV4Variants.CaptchaVerificationFailed);
+        expect(error.message).toBe('Captcha verification failed');
+        expect(error.httpCode).toBe(403);
+        expect(error.details).toBeNull();
+    });
+
     it('preserves the V4 missing-refund-address error', async () => {
         const error = await gatewayErrorFrom({
             code: 'MISSING_REFUND_ADDRESS',
@@ -4210,8 +4222,8 @@ describe('Gateway Tests', () => {
 });
 
 // Cloudflare refuses a blocked location with a 403 HTML page before the request reaches the
-// Gateway, which never answers 403 itself. Only a coded body is the Gateway's own error; anything
-// else comes from something in front of it, and both keep the status.
+// Gateway. Only a coded body is the Gateway's own error (its own 403 is a captcha failure);
+// anything else comes from something in front of it, and both keep the status.
 describe('GatewayApiClient — errors from a response', () => {
     const getRoutesError = (): Promise<unknown> =>
         new GatewaySDK().getRoutes().then(
@@ -4256,6 +4268,20 @@ describe('GatewayApiClient — errors from a response', () => {
         expect(error.httpCode).toBe(403);
         expect(error.message).toMatch(/^Non-JSON response: HTTP 403/);
         expect(error.cause).toBeInstanceOf(SyntaxError);
+    });
+
+    it("throws a GatewayError, not a geoblock, for the Gateway's own captcha 403", async () => {
+        nock(`${MAINNET_GATEWAY_BASE_URL}/v4`).get('/get-routes').reply(403, {
+            code: GatewayErrorCodeV4Variants.CaptchaVerificationFailed,
+            error: 'Captcha verification failed',
+        });
+
+        const error = await getRoutesError();
+
+        assert(isGatewayError(error));
+        expect(error.code).toBe(GatewayErrorCodeV4Variants.CaptchaVerificationFailed);
+        expect(error.httpCode).toBe(403);
+        expect(error.details).toBeNull();
     });
 
     it('throws an ApiError for an empty body', async () => {

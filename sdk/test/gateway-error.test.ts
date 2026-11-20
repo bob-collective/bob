@@ -118,7 +118,8 @@ describe('GatewayError.fromResponse — snake_case detail bodies', () => {
 });
 
 // Cloudflare refuses a blocked location with a 403 HTML page before the request reaches the
-// Gateway, which never answers 403 itself, so only the status identifies the geoblock. Every error
+// Gateway, so only the status identifies the geoblock (the Gateway's own 403, a captcha failure,
+// carries a code). Every error
 // read from a response therefore carries its status. Each factory returns its own class; choosing
 // between them is the client's job.
 describe('ApiError.fromResponse', () => {
