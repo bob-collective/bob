@@ -68,6 +68,20 @@ describe('Bitcoin transaction encoding', () => {
             witnessVector,
         });
     });
+    // bitcoinjs-lib wrote the locktime as signed and threw from 2^31 up; the version field is signed on the wire.
+    it('encodes the version and locktime fields at their extremes', async () => {
+        const body = '01' + '11'.repeat(32) + '00000000' + '00' + 'ffffffff' + '01' + '00'.repeat(8) + '016a';
+
+        for (const [version, locktime] of [
+            ['ffffffff', 'ffffffff'],
+            ['00000080', '00000080'],
+        ]) {
+            const info = await getBitcoinTxInfo(esploraReturning(version + body + locktime), '');
+
+            expect(info.version).toBe(version);
+            expect(info.locktime).toBe(locktime);
+        }
+    });
 });
 
 describe('getMerkleProof', () => {
