@@ -113,3 +113,5 @@ If we estimate it would cost $11 per TH/s (excluding electricity and other setup
 This excludes the opportunity cost from actually mining on Bitcoin mainnet, receiving fees and block rewards.
 
 Therefore, provided the value protected by the relay is less than $12m protocols secured by the relay are "economically safe".
+
+<!-- review bot rollout check, 2026-11-23 -->
