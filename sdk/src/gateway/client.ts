@@ -1,7 +1,6 @@
 import {
     type Account,
     type Address,
-    erc20Abi,
     Hex,
     isAddress,
     isAddressEqual,
@@ -14,8 +13,6 @@ import {
     type WalletClient,
     zeroAddress,
 } from 'viem';
-import { oftApprovalRequiredAbi, strategyCaller, USDTApproveAbi } from './abi';
-import { assertAllowanceHolderSpender } from './allowance-holder';
 import { ApiError, GatewayError, isGatewayErrorBody } from './error';
 import {
     Configuration,
@@ -45,7 +42,7 @@ import {
     type GetQuoteParams,
     type StrategyParams,
 } from './types';
-import { estimateGasWithBuffer, formatBtc, isValidTronAddress, supportsGasEstimation, tronAddressToHex } from './utils';
+import { formatBtc, supportsGasEstimation } from './utils';
 
 const RETRY_COUNT = 8; // Number of times to retry fetching transaction receipt after sending a transaction
 
@@ -523,6 +520,15 @@ export class GatewayApiClient {
             if (!walletClient.account) {
                 throw new Error(`walletClient is required for offramp order`);
             }
+            const {
+                assertAllowanceHolderSpender,
+                erc20Abi,
+                estimateGasWithBuffer,
+                isValidTronAddress,
+                oftApprovalRequiredAbi,
+                tronAddressToHex,
+                USDTApproveAbi,
+            } = await import('./execute-deps');
             const accountAddress = walletClient.account.address;
             const tokenAddress = quote.offramp.tokenAddress;
             const requiredAmount = BigInt(quote.offramp.inputAmount.amount);
@@ -673,6 +679,15 @@ export class GatewayApiClient {
 
             return { order, tx: transactionHash };
         } else if (instanceOfGatewayQuoteV4OneOf1(quote)) {
+            const {
+                assertAllowanceHolderSpender,
+                erc20Abi,
+                estimateGasWithBuffer,
+                isValidTronAddress,
+                oftApprovalRequiredAbi,
+                tronAddressToHex,
+                USDTApproveAbi,
+            } = await import('./execute-deps');
             const tokenAddress = quote.tokenSwap.inputAmount.address;
             const requiredAmount = BigInt(quote.tokenSwap.inputAmount.amount);
             const accountAddress = walletClient.account.address;
@@ -838,6 +853,7 @@ export class GatewayApiClient {
      * @returns Promise resolving to transaction hash
      */
     async executeStrategy({ walletClient, publicClient, ...params }: StrategyParams & EvmWalletClientParams) {
+        const { erc20Abi, strategyCaller } = await import('./execute-deps');
         const allowance = await publicClient.readContract({
             address: params.token,
             abi: erc20Abi,
