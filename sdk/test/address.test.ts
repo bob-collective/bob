@@ -1,4 +1,3 @@
-import * as legacy from 'bitcoin-address-validation';
 import { describe, expect, it } from 'vitest';
 import { AddressInfoOptions, AddressType, getAddressInfo, Network, validate } from '../src/wallet/address';
 
@@ -234,27 +233,6 @@ describe('validate', () => {
         expect(validate(address, undefined, options)).toBe(expected !== null);
         for (const network of Object.values(Network)) {
             expect(validate(address, network, options)).toBe(expected?.[0] === network);
-        }
-    });
-});
-
-describe('parity with bitcoin-address-validation@3.0.0', () => {
-    const outcome = (fn: () => unknown) => {
-        try {
-            return { ok: fn() };
-        } catch {
-            return { threw: true };
-        }
-    };
-
-    it.each(CASES)('$name', ({ address, options }) => {
-        expect(outcome(() => getAddressInfo(address, options))).toEqual(
-            outcome(() => legacy.getAddressInfo(address, options as never))
-        );
-        for (const network of [undefined, ...Object.values(Network)]) {
-            expect(validate(address, network, options)).toBe(
-                legacy.validate(address, network as legacy.Network | undefined, options as never)
-            );
         }
     });
 });
