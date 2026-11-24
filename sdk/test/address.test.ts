@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { BtcAddressInfo, BtcAddressInfoOptions, BtcAddressType, BtcNetwork, getBtcAddressInfo } from '../src';
 import { AddressInfoOptions, AddressType, getAddressInfo, Network, validate } from '../src/wallet/address';
 
 type Case = {
@@ -155,6 +156,7 @@ const INVALID: Case[] = [
         expected: null,
     },
     { name: 'bech32 excess padding', address: 'bc1qqyqszqgpqyqszqgpqyqszqgpqyqszqgppmrr6zf', expected: null },
+    { name: 'bech32 non-zero padding', address: 'bc1qq5zs2pg9q5zs2pg9q5zs2pg9q5zs2pg9q4uxapye', expected: null },
     { name: 'bech32 too short', address: 'bc1qq', expected: null },
     { name: 'bech32 over 90 characters', address: `bc1q${'q'.repeat(90)}`, expected: null },
 ];
@@ -205,7 +207,18 @@ const QUIRKS: Case[] = [
     },
 ];
 
-const CASES = [...VALID, ...CAST, ...INVALID, ...QUIRKS];
+// Intended divergences: bitcoin-address-validation@3.0.0 accepts these as mainnet p2sh, because
+// base58-js reads characters outside the base58 alphabet as the digit -1. They are rejected here.
+const DIVERGENCES: Case[] = [
+    { name: 'base58 with a "!" (old: mainnet p2sh)', address: '3JLL1f7EoHK4z3vrmoxmJvaGzMPWYdBZg!', expected: null },
+    {
+        name: 'base58 with a trailing space (old: mainnet p2sh)',
+        address: '3LWRuDHPqbUu3sD5EempQ5DrqgdPuMtf5 ',
+        expected: null,
+    },
+];
+
+const CASES = [...VALID, ...CAST, ...INVALID, ...QUIRKS, ...DIVERGENCES];
 
 describe('getAddressInfo', () => {
     it.each(CASES)('$name', ({ address, options, expected }) => {
@@ -223,8 +236,16 @@ describe('getAddressInfo', () => {
         );
     });
 
-    it('throws "Invalid address" for an invalid address', () => {
-        expect(() => getAddressInfo('not an address')).toThrow('Invalid address');
+    it.each([
+        ['not an address', 'Invalid address'],
+        // bech32's own padding errors, which the old library let through unchanged.
+        ['bc1qqyqszqgpqyqszqgpqyqszqgpqyqszqgppmrr6zf', 'Excess padding'],
+        ['bc1qq5zs2pg9q5zs2pg9q5zs2pg9q5zs2pg9q4uxapye', 'Non-zero padding'],
+        // An unknown prefix or witness version is reported before the padding.
+        ['ltc1qq5zs2pg9q5zs2pg9q5zs2pg9q5zs2pg9q4hj7s94', 'Invalid address'],
+        ['tb13q5zs2pg9q5zs2pg9q5zs2pg9q5zs2pg9q48xjyy4', 'Invalid address'],
+    ])('throws the old error message for %s', (address, message) => {
+        expect(() => getAddressInfo(address)).toThrow(new Error(message));
     });
 });
 
@@ -234,5 +255,19 @@ describe('validate', () => {
         for (const network of Object.values(Network)) {
             expect(validate(address, network, options)).toBe(expected?.[0] === network);
         }
+    });
+});
+
+describe('root exports', () => {
+    it('names the address types with a Btc prefix', () => {
+        const options: BtcAddressInfoOptions = { castTestnetTo: BtcNetwork.signet };
+        const info: BtcAddressInfo = getBtcAddressInfo('tb1q6v4wjumj7ze9f8fxlfqwx0cxn887sm24jjzn6z', options);
+
+        expect(info).toEqual({
+            network: BtcNetwork.signet,
+            type: BtcAddressType.p2wpkh,
+            bech32: true,
+            address: 'tb1q6v4wjumj7ze9f8fxlfqwx0cxn887sm24jjzn6z',
+        });
     });
 });

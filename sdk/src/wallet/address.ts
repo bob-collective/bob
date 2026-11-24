@@ -2,8 +2,13 @@ import { base58, bech32, bech32m } from '@scure/base';
 import { sha256 } from 'viem';
 
 // Drop-in replacement for the `bitcoin-address-validation` package (v3.0.0), built on @scure/base,
-// which the SDK already ships. It keeps that package's accept/reject behaviour exactly, quirks
-// included; each quirk is marked "Quirk" below and pinned in test/address.test.ts.
+// which the SDK already ships. It keeps that package's accept/reject behaviour and error messages,
+// quirks included; each quirk is marked "Quirk" below and pinned in test/address.test.ts.
+//
+// One intended divergence: base58-js (its base58 decoder) reads characters outside the base58
+// alphabet, other than I, O, l and 0, as the digit -1 instead of rejecting them, so the old package
+// accepts crafted strings such as '3JLL1f7EoHK4z3vrmoxmJvaGzMPWYdBZg!' or a trailing space. This
+// code rejects every such string; also pinned in the test.
 
 /** Bitcoin network an address belongs to. */
 export enum Network {
@@ -63,14 +68,12 @@ const normalize = (info: AddressInfo, options?: AddressInfoOptions): AddressInfo
 const parseBech32 = (address: string, options?: AddressInfoOptions): AddressInfo => {
     let prefix: string;
     let words: number[];
-    let data: Uint8Array;
     try {
         // Quirk: only lower-case taproot addresses are checked as bech32m, so an upper-case `BC1P…` is
         // rejected, and witness versions 2-16 are checked as bech32 instead of bech32m (BIP350).
         const coder =
             address.startsWith('bc1p') || address.startsWith('tb1p') || address.startsWith('bcrt1p') ? bech32m : bech32;
         ({ prefix, words } = coder.decode(address as `${string}1${string}`));
-        data = bech32.fromWords(words.slice(1));
     } catch {
         throw invalid();
     }
@@ -79,6 +82,16 @@ const parseBech32 = (address: string, options?: AddressInfoOptions): AddressInfo
     const witnessVersion = words[0];
     if (network === undefined || witnessVersion === undefined || witnessVersion > 16) {
         throw invalid();
+    }
+
+    let data: Uint8Array;
+    try {
+        data = bech32.fromWords(words.slice(1));
+    } catch (error) {
+        // Keep the messages of the `bech32` package the old code let through: "Excess padding" and
+        // "Non-zero padding" (@scure/base appends the padding value to the latter).
+        const message = error instanceof Error ? error.message : '';
+        throw message.startsWith('Non-zero padding') ? new Error('Non-zero padding') : error;
     }
 
     // Quirk: the program length is not checked against the witness version, so any 20-byte program
