@@ -115,10 +115,15 @@ describe('getBitcoinTxInfo', () => {
         expect(info.locktime).toBe('78563412');
     });
 
-    it('throws a RangeError for a locktime above the signed 32-bit range', async () => {
-        const txHex = withVersionAndLocktime(LEGACY_TX_HEX, '01000000', 'ffffffff');
+    it.each([
+        ['ffffffff', 0xffffffff],
+        ['00000080', 0x80000000],
+    ])('encodes the unsigned locktime %s (%i) above the signed 32-bit range', async (locktime) => {
+        const txHex = withVersionAndLocktime(LEGACY_TX_HEX, '01000000', locktime);
+        const info = await getBitcoinTxInfo(esploraWithTx(txHex), 'unused');
 
-        await expect(getBitcoinTxInfo(esploraWithTx(txHex), 'unused')).rejects.toThrow(RangeError);
+        expect(info.version).toBe('01000000');
+        expect(info.locktime).toBe(locktime);
     });
 });
 
