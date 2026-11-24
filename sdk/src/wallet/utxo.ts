@@ -1,6 +1,6 @@
 import { Transaction, Script, selectUTXO, TEST_NETWORK, NETWORK, p2wpkh, p2sh, p2tr } from '@scure/btc-signer';
 import { hex, base64 } from '@scure/base';
-import { AddressType, getAddressInfo as getAddressInfoRaw, Network, AddressInfo } from 'bitcoin-address-validation';
+import { AddressType, getAddressInfo as getAddressInfoRaw, Network, AddressInfo } from './address';
 import { EsploraClient, UTXO } from '../esplora';
 
 export type BitcoinNetworkName = Exclude<Network, 'regtest'>;

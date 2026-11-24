@@ -1,7 +1,7 @@
 import { base64, hex } from '@scure/base';
 import { Address, NETWORK, OutScript, p2sh, p2wpkh, Script, selectUTXO, Transaction } from '@scure/btc-signer';
 import { TransactionOutput } from '@scure/btc-signer/psbt';
-import { AddressType, getAddressInfo, Network } from 'bitcoin-address-validation';
+import { AddressType, getAddressInfo, Network } from '../src/wallet/address';
 import nock from 'nock';
 import { afterEach, assert, beforeEach, describe, expect, it, Mock, vi } from 'vitest';
 import { EsploraClient, MAINNET_ESPLORA_BASE_PATH, UTXO } from '../src/esplora';
