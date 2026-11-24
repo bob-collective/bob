@@ -168,13 +168,30 @@ async function submitTransaction(
     return minedHash;
 }
 
+type BitcoinTxIdModule = typeof import('./bitcoin-txid');
+
 /**
- * Txid of a signed raw Bitcoin transaction, or undefined when it does not parse. Only a failed
- * registration needs it, so the parser loads then rather than with the client.
+ * Load the txid parser, resolving `undefined` when its chunk fails to load. Only a failed registration
+ * needs it, so it stays out of the client's static imports.
  */
-async function parseBitcoinTxId(txHex: string): Promise<string | undefined> {
+function loadBitcoinTxId(): Promise<BitcoinTxIdModule | undefined> {
+    return import('./bitcoin-txid').catch(() => undefined);
+}
+
+/**
+ * Txid of a signed raw Bitcoin transaction, or undefined when it does not parse or the parser does not load.
+ *
+ * The parser is preloaded before signing: a registration that failed because the network dropped would
+ * otherwise fail to load it too, losing the txid exactly when the payment may be out. A failed preload gets
+ * one more attempt here.
+ */
+async function parseBitcoinTxId(
+    preload: Promise<BitcoinTxIdModule | undefined>,
+    txHex: string
+): Promise<string | undefined> {
+    const parser = (await preload) ?? (await loadBitcoinTxId());
     try {
-        return (await import('./bitcoin-txid')).bitcoinTxId(txHex);
+        return parser?.bitcoinTxId(txHex);
     } catch {
         return undefined;
     }
@@ -431,6 +448,7 @@ export class GatewayApiClient {
                 return { order };
             }
 
+            const bitcoinTxIdParser = loadBitcoinTxId();
             const orderId = order.onramp.orderId;
 
             let bitcoinTxHex: string;
@@ -500,7 +518,7 @@ export class GatewayApiClient {
                     tx = response;
                 }
             } catch (error) {
-                const txid = await parseBitcoinTxId(bitcoinTxHex);
+                const txid = await parseBitcoinTxId(bitcoinTxIdParser, bitcoinTxHex);
 
                 // The payment may be out regardless: a wallet behind sendBitcoin can broadcast it itself, and
                 // registration broadcasts it before it can still fail. Neither is known here, so name it.
