@@ -66,7 +66,7 @@ export const supportedChainsMapping = {
     robinhood,
 } as const;
 
-const chainIdToChainConfigMapping = Object.values(supportedChainsMapping).reduce(
+const chainIdToChainConfigMapping = /* @__PURE__ */ Object.values(supportedChainsMapping).reduce(
     (acc, chain) => {
         acc[chain.id] = chain;
         return acc;
