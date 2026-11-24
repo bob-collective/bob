@@ -57,6 +57,21 @@ describe('EsploraClient.getMerkleProof', () => {
         });
     });
 
+    it('gives lower-case hex for an upper-case hash', async () => {
+        const txId = '11'.repeat(32);
+        nock(MAINNET_ESPLORA_BASE_PATH)
+            .get(`/tx/${txId}/merkle-proof`)
+            .reply(200, {
+                block_height: 1,
+                merkle: ['00112233445566778899AABBCCDDEEFF00112233445566778899AABBCCDDEEFF'],
+                pos: 1,
+            });
+
+        const proof = await new EsploraClient('mainnet').getMerkleProof(txId);
+
+        expect(proof.merkle).toBe('ffeeddccbbaa99887766554433221100ffeeddccbbaa99887766554433221100');
+    });
+
     it('gives an empty proof for a transaction alone in its block', async () => {
         const txId = '00'.repeat(32);
         nock(MAINNET_ESPLORA_BASE_PATH)
