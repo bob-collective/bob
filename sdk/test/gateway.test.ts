@@ -2316,6 +2316,26 @@ describe('Gateway Tests', () => {
             expect(error.txStatus).toBe('unconfirmed');
         });
 
+        // The txid parser loads with `import()` only on this path; a chunk that fails to load must not
+        // replace the registration error.
+        it('reports the registration error without a txid when the parser fails to load', async () => {
+            vi.doMock('../src/gateway/bitcoin-txid', () => {
+                throw new Error('Failed to fetch dynamically imported module');
+            });
+            try {
+                const error = await execute({ sendBitcoin: async () => broadcastTx });
+
+                expect(error).toBeInstanceOf(ExecuteQuoteError);
+                assert(error instanceof ExecuteQuoteError);
+                expect(error.orderId).toBe('order-registertx-fail-after-signing');
+                expect(error.message).toBe('registerTx exploded');
+                expect(error.txHash).toBeUndefined();
+                expect(error.txStatus).toBeUndefined();
+            } finally {
+                vi.doUnmock('../src/gateway/bitcoin-txid');
+            }
+        });
+
         it.each([
             ['sendBitcoin', 'this SDK', new BitcoinBroadcastError(broadcastTxId, 'Could not fetch its raw hex')],
             [

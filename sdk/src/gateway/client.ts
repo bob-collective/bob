@@ -1,4 +1,3 @@
-import { Transaction as BitcoinTransaction } from 'bitcoinjs-lib';
 import {
     type Account,
     type Address,
@@ -172,10 +171,13 @@ async function submitTransaction(
     return minedHash;
 }
 
-/** Txid of a signed raw Bitcoin transaction, or undefined when it does not parse. */
-function bitcoinTxId(txHex: string): string | undefined {
+/**
+ * Txid of a signed raw Bitcoin transaction, or undefined when it does not parse. Only a failed
+ * registration needs it, so the parser loads then rather than with the client.
+ */
+async function parseBitcoinTxId(txHex: string): Promise<string | undefined> {
     try {
-        return BitcoinTransaction.fromHex(txHex).getId();
+        return (await import('./bitcoin-txid')).bitcoinTxId(txHex);
     } catch {
         return undefined;
     }
@@ -501,7 +503,7 @@ export class GatewayApiClient {
                     tx = response;
                 }
             } catch (error) {
-                const txid = bitcoinTxId(bitcoinTxHex);
+                const txid = await parseBitcoinTxId(bitcoinTxHex);
 
                 // The payment may be out regardless: a wallet behind sendBitcoin can broadcast it itself, and
                 // registration broadcasts it before it can still fail. Neither is known here, so name it.
