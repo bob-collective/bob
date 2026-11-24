@@ -36,8 +36,8 @@ const collectPossibleInputs = async (fromAddress: string, publicKey?: string, is
     // To construct the spending transaction and estimate the fee, we need the transactions for the UTXOs
     return Promise.all(
         utxos.map(async (utxo) => {
-            const hex = await esploraClient.getTransactionHex(utxo.txid);
-            const transaction = Transaction.fromRaw(Buffer.from(hex, 'hex'), { allowUnknownOutputs: true });
+            const txHex = await esploraClient.getTransactionHex(utxo.txid);
+            const transaction = Transaction.fromRaw(hex.decode(txHex), { allowUnknownOutputs: true });
             const input = getInputFromUtxoAndTx(
                 addressInfo.network as BitcoinNetworkName,
                 utxo,
@@ -200,13 +200,13 @@ export function getInputFromUtxoAndTx(
         if (!publicKey) {
             throw new Error('Bitcoin P2SH not supported without public key');
         }
-        const inner = p2wpkh(Buffer.from(publicKey!, 'hex'), getBtcNetwork(network));
+        const inner = p2wpkh(hex.decode(publicKey!), getBtcNetwork(network));
         redeemScript = p2sh(inner);
     } else if (addressType === AddressType.p2tr) {
         if (!publicKey) {
             throw new Error('Bitcoin P2TR not supported without public key');
         }
-        const xOnlyPublicKey = Buffer.from(publicKey, 'hex').subarray(1, 33);
+        const xOnlyPublicKey = hex.decode(publicKey).subarray(1, 33);
         redeemScript = p2tr(xOnlyPublicKey);
     }
 
@@ -216,7 +216,7 @@ export function getInputFromUtxoAndTx(
     };
 
     const nonWitnessUtxo = {
-        nonWitnessUtxo: Buffer.from(transaction.hex, 'hex'),
+        nonWitnessUtxo: hex.decode(transaction.hex),
     };
     const witnessUtxo = {
         witnessUtxo: {

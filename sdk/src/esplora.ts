@@ -1,3 +1,5 @@
+import { hex } from '@scure/base';
+
 /**
  * Base path for the mainnet Esplora API.
  * @default "https://btc-mainnet.gobob.xyz"
@@ -143,7 +145,7 @@ export type EsploraFeeEstimates = Record<ConfirmationTarget, number>;
  */
 function encodeEsploraMerkleProof(merkle: string[]): string {
     // convert to little-endian
-    return merkle.map((item) => Buffer.from(item, 'hex').reverse().toString('hex')).join('');
+    return merkle.map((item) => hex.encode(hex.decode(item).reverse())).join('');
 }
 
 /**

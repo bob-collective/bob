@@ -12,7 +12,7 @@ export class ScureBitcoinSigner implements BitcoinSigner {
 
     constructor(privateKeyHex: string) {
         const cleanPrivateKey = privateKeyHex.startsWith('0x') ? privateKeyHex.slice(2) : privateKeyHex;
-        this.privateKey = new Uint8Array(Buffer.from(cleanPrivateKey, 'hex'));
+        this.privateKey = hex.decode(cleanPrivateKey);
     }
 
     /**
@@ -22,7 +22,7 @@ export class ScureBitcoinSigner implements BitcoinSigner {
      */
     static fromWIF(wif: string): ScureBitcoinSigner {
         const decoded = btc.WIF().decode(wif);
-        return new ScureBitcoinSigner(Buffer.from(decoded).toString('hex'));
+        return new ScureBitcoinSigner(hex.encode(decoded));
     }
 
     /**
@@ -59,7 +59,7 @@ export class ScureBitcoinSigner implements BitcoinSigner {
             if (!childKey.privateKey) {
                 throw new Error('Failed to derive private key from seed phrase');
             }
-            return new ScureBitcoinSigner(Buffer.from(childKey.privateKey).toString('hex'));
+            return new ScureBitcoinSigner(hex.encode(childKey.privateKey));
         } catch (error) {
             throw new Error(`Failed to create signer from seed phrase: ${error}`, { cause: error });
         }
