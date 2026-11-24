@@ -23,21 +23,6 @@ export function toHexScriptPubKey(userAddress: string, network: bitcoin.Network)
     return '0x' + buffer.toString('hex'); // Convert buffer to hex string
 }
 
-export function isHexPrefixed(str: string): boolean {
-    return str.slice(0, 2) === '0x';
-}
-
-export function stripHexPrefix(str: string): string {
-    return isHexPrefixed(str) ? str.slice(2) : str;
-}
-
-export function slugify(str: string): string {
-    return str
-        .toLowerCase()
-        .replace(/ /g, '-')
-        .replace(/[^\w-]+/g, '');
-}
-
 export function parseBtc(btc: string) {
     return parseUnits(btc, 8);
 }
@@ -66,7 +51,7 @@ export const supportedChainsMapping = {
     robinhood,
 } as const;
 
-const chainIdToChainConfigMapping = Object.values(supportedChainsMapping).reduce(
+const chainIdToChainConfigMapping = /* @__PURE__ */ Object.values(supportedChainsMapping).reduce(
     (acc, chain) => {
         acc[chain.id] = chain;
         return acc;
@@ -107,32 +92,4 @@ export function getChainConfig(fromChain: string | number) {
     }
 
     return getChainConfigById(fromChain);
-}
-
-// Viem chain names are used to identify chains
-export function resolveChainId(chain: number): string {
-    return getChainConfig(chain).name.toLowerCase();
-}
-
-export function resolveChainName(chain: number | string): string {
-    if (typeof chain === 'number') {
-        return resolveChainId(chain);
-    }
-    return chain.toLowerCase();
-}
-
-export function safeBigInt(value: string): bigint {
-    try {
-        return BigInt(value);
-    } catch {
-        throw new Error(`Invalid BigInt for value "${value}"`);
-    }
-}
-
-export function safeNumber(value: string): number {
-    const n = Number(value);
-    if (Number.isNaN(n)) {
-        throw new Error(`Invalid number for value  "${value}"`);
-    }
-    return n;
 }

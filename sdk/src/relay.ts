@@ -10,6 +10,29 @@ import { EsploraClient } from './esplora';
  * @ignore
  */
 import { encodeRawInput, encodeRawOutput, encodeRawWitness } from './utils';
+/**
+ * @ignore
+ */
+import { hex } from '@scure/base';
+
+/**
+ * Encodes a 32-bit integer as 4 little-endian bytes in hex: signed for nVersion, unsigned for nLockTime.
+ * @ignore
+ */
+function le32Hex(value: number, signed: boolean): string {
+    const [min, max] = signed ? [-0x80000000, 0x7fffffff] : [0, 0xffffffff];
+    if (value < min || value > max) {
+        throw new RangeError(`The value ${value} is out of the ${signed ? 'signed' : 'unsigned'} 32-bit range`);
+    }
+    const bytes = new Uint8Array(4);
+    const view = new DataView(bytes.buffer);
+    if (signed) {
+        view.setInt32(0, value, true);
+    } else {
+        view.setUint32(0, value, true);
+    }
+    return hex.encode(bytes);
+}
 
 /**
  * Represents information about a Bitcoin transaction.
@@ -59,17 +82,11 @@ export async function getBitcoinTxInfo(
     const txHex = await esploraClient.getTransactionHex(txId);
     const tx = Transaction.fromHex(txHex);
 
-    const versionBuffer = Buffer.allocUnsafe(4);
-    versionBuffer.writeInt32LE(tx.version);
-
-    const locktimeBuffer = Buffer.allocUnsafe(4);
-    locktimeBuffer.writeInt32LE(tx.locktime);
-
     return {
-        version: versionBuffer.toString('hex'),
+        version: le32Hex(tx.version, true),
         inputVector: encodeRawInput(tx).toString('hex'),
         outputVector: encodeRawOutput(tx).toString('hex'),
-        locktime: locktimeBuffer.toString('hex'),
+        locktime: le32Hex(tx.locktime, false),
         witnessVector: forWitness ? encodeRawWitness(tx).toString('hex') : undefined,
     };
 }

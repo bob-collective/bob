@@ -1,8 +1,6 @@
-import { Transaction as BitcoinTransaction } from 'bitcoinjs-lib';
 import {
     type Account,
     type Address,
-    erc20Abi,
     Hex,
     isAddress,
     isAddressEqual,
@@ -15,8 +13,6 @@ import {
     type WalletClient,
     zeroAddress,
 } from 'viem';
-import { oftApprovalRequiredAbi, strategyCaller, USDTApproveAbi } from './abi';
-import { assertAllowanceHolderSpender } from './allowance-holder';
 import { ApiError, GatewayError, isGatewayErrorBody } from './error';
 import {
     Configuration,
@@ -46,7 +42,7 @@ import {
     type GetQuoteParams,
     type StrategyParams,
 } from './types';
-import { estimateGasWithBuffer, formatBtc, isValidTronAddress, supportsGasEstimation, tronAddressToHex } from './utils';
+import { formatBtc, supportsGasEstimation } from './utils';
 
 const RETRY_COUNT = 8; // Number of times to retry fetching transaction receipt after sending a transaction
 
@@ -172,10 +168,30 @@ async function submitTransaction(
     return minedHash;
 }
 
-/** Txid of a signed raw Bitcoin transaction, or undefined when it does not parse. */
-function bitcoinTxId(txHex: string): string | undefined {
+type BitcoinTxIdModule = typeof import('./bitcoin-txid');
+
+/**
+ * Load the txid parser, resolving `undefined` when its chunk fails to load. Only a failed registration
+ * needs it, so it stays out of the client's static imports.
+ */
+function loadBitcoinTxId(): Promise<BitcoinTxIdModule | undefined> {
+    return import('./bitcoin-txid').catch(() => undefined);
+}
+
+/**
+ * Txid of a signed raw Bitcoin transaction, or undefined when it does not parse or the parser does not load.
+ *
+ * The parser is preloaded before signing: a registration that failed because the network dropped would
+ * otherwise fail to load it too, losing the txid exactly when the payment may be out. A failed preload gets
+ * one more attempt here.
+ */
+async function parseBitcoinTxId(
+    preload: Promise<BitcoinTxIdModule | undefined>,
+    txHex: string
+): Promise<string | undefined> {
+    const parser = (await preload) ?? (await loadBitcoinTxId());
     try {
-        return BitcoinTransaction.fromHex(txHex).getId();
+        return parser?.bitcoinTxId(txHex);
     } catch {
         return undefined;
     }
@@ -432,6 +448,7 @@ export class GatewayApiClient {
                 return { order };
             }
 
+            const bitcoinTxIdParser = loadBitcoinTxId();
             const orderId = order.onramp.orderId;
 
             let bitcoinTxHex: string;
@@ -501,7 +518,7 @@ export class GatewayApiClient {
                     tx = response;
                 }
             } catch (error) {
-                const txid = bitcoinTxId(bitcoinTxHex);
+                const txid = await parseBitcoinTxId(bitcoinTxIdParser, bitcoinTxHex);
 
                 // The payment may be out regardless: a wallet behind sendBitcoin can broadcast it itself, and
                 // registration broadcasts it before it can still fail. Neither is known here, so name it.
@@ -521,6 +538,15 @@ export class GatewayApiClient {
             if (!walletClient.account) {
                 throw new Error(`walletClient is required for offramp order`);
             }
+            const {
+                assertAllowanceHolderSpender,
+                erc20Abi,
+                estimateGasWithBuffer,
+                isValidTronAddress,
+                oftApprovalRequiredAbi,
+                tronAddressToHex,
+                USDTApproveAbi,
+            } = await import('./execute-deps');
             const accountAddress = walletClient.account.address;
             const tokenAddress = quote.offramp.tokenAddress;
             const requiredAmount = BigInt(quote.offramp.inputAmount.amount);
@@ -671,6 +697,15 @@ export class GatewayApiClient {
 
             return { order, tx: transactionHash };
         } else if (instanceOfGatewayQuoteV4OneOf1(quote)) {
+            const {
+                assertAllowanceHolderSpender,
+                erc20Abi,
+                estimateGasWithBuffer,
+                isValidTronAddress,
+                oftApprovalRequiredAbi,
+                tronAddressToHex,
+                USDTApproveAbi,
+            } = await import('./execute-deps');
             const tokenAddress = quote.tokenSwap.inputAmount.address;
             const requiredAmount = BigInt(quote.tokenSwap.inputAmount.amount);
             const accountAddress = walletClient.account.address;
@@ -836,6 +871,7 @@ export class GatewayApiClient {
      * @returns Promise resolving to transaction hash
      */
     async executeStrategy({ walletClient, publicClient, ...params }: StrategyParams & EvmWalletClientParams) {
+        const { erc20Abi, strategyCaller } = await import('./execute-deps');
         const allowance = await publicClient.readContract({
             address: params.token,
             abi: erc20Abi,

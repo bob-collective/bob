@@ -143,7 +143,7 @@ export type EsploraFeeEstimates = Record<ConfirmationTarget, number>;
  */
 function encodeEsploraMerkleProof(merkle: string[]): string {
     // convert to little-endian
-    return merkle.map((item) => Buffer.from(item, 'hex').reverse().toString('hex')).join('');
+    return merkle.map((item) => (item.toLowerCase().match(/.{2}/g) ?? []).reverse().join('')).join('');
 }
 
 /**

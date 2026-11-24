@@ -24,9 +24,6 @@ importers:
       bip39:
         specifier: ^3.1.0
         version: 3.1.0
-      bitcoin-address-validation:
-        specifier: ^3.0.0
-        version: 3.0.0
       bitcoinjs-lib:
         specifier: ^6.1.10
         version: 6.1.10
@@ -1173,10 +1170,6 @@ packages:
     resolution: {integrity: sha512-LkkAPP8Zu+c0SVNRTRVDyMfKVORThX+rCViget00xdgLRrKkClCTz1T7cIrpr69ShwV5XJuuoZvMvJ43yURwkA==}
     engines: {node: '>= 8'}
 
-  base58-js@3.0.2:
-    resolution: {integrity: sha512-9WL6C9Ai3J+Me1PAOTZGvaH2xua6dGyZddGWhWXrV7O4i29cNUunAb42Zd87Jm0A6EW31gu47fKnYmAVJAx27Q==}
-    engines: {node: '>=16.0.0', npm: '>=7.0.0'}
-
   base64-js@1.5.1:
     resolution: {integrity: sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==}
 
@@ -1200,9 +1193,6 @@ packages:
 
   bitcoin-address-validation@2.2.3:
     resolution: {integrity: sha512-1uGCGl26Ye8JG5qcExtFLQfuib6qEZWNDo1ZlLlwp/z7ygUFby3IxolgEfgMGaC+LG9csbVASLcH8fRLv7DIOg==}
-
-  bitcoin-address-validation@3.0.0:
-    resolution: {integrity: sha512-R1X1c9EdgjgjTpjshjk5e16TbgF7HYasxBcu7l5ScWMxVs53845vMUg5PvnQ/R/3h8Grly6Y52DgH6/77gazLQ==}
 
   bitcoinjs-lib@6.1.10:
     resolution: {integrity: sha512-9KpnS5JKVP0j0yfTsBNFIsNA6+JdBDb7VtL35F20I/pJYobosi3TmZFGtu6qxhJCfb0vubJixr5Zv61/lUYETw==}
@@ -3661,8 +3651,6 @@ snapshots:
 
   base58-js@1.0.5: {}
 
-  base58-js@3.0.2: {}
-
   base64-js@1.5.1: {}
 
   basic-ftp@6.2.1: {}
@@ -3685,12 +3673,6 @@ snapshots:
   bitcoin-address-validation@2.2.3:
     dependencies:
       base58-js: 1.0.5
-      bech32: 2.0.0
-      sha256-uint8array: 0.10.7
-
-  bitcoin-address-validation@3.0.0:
-    dependencies:
-      base58-js: 3.0.2
       bech32: 2.0.0
       sha256-uint8array: 0.10.7
 

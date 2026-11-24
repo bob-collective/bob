@@ -2316,6 +2316,70 @@ describe('Gateway Tests', () => {
             expect(error.txStatus).toBe('unconfirmed');
         });
 
+        // The txid parser loads with `import()` only on this path; a chunk that fails to load must not
+        // replace the registration error.
+        it('reports the registration error without a txid when the parser fails to load', async () => {
+            vi.doMock('../src/gateway/bitcoin-txid', () => {
+                throw new Error('Failed to fetch dynamically imported module');
+            });
+            try {
+                const error = await execute({ sendBitcoin: async () => broadcastTx });
+
+                expect(error).toBeInstanceOf(ExecuteQuoteError);
+                assert(error instanceof ExecuteQuoteError);
+                expect(error.orderId).toBe('order-registertx-fail-after-signing');
+                expect(error.message).toBe('registerTx exploded');
+                expect(error.txHash).toBeUndefined();
+                expect(error.txStatus).toBeUndefined();
+            } finally {
+                vi.doUnmock('../src/gateway/bitcoin-txid');
+            }
+        });
+
+        // The network can drop between signing and registration, taking the parser's chunk with it: it is
+        // preloaded before signing so the txid is still named.
+        it('names the transaction when the parser no longer loads after signing', async () => {
+            try {
+                const error = await execute({
+                    sendBitcoin: async () => {
+                        // Let the preload settle, then fail every later load of the parser.
+                        await import('../src/gateway/bitcoin-txid');
+                        vi.doMock('../src/gateway/bitcoin-txid', () => {
+                            throw new Error('Failed to fetch dynamically imported module');
+                        });
+                        return broadcastTx;
+                    },
+                });
+
+                assert(error instanceof ExecuteQuoteError);
+                expect(error.message).toBe('registerTx exploded');
+                expect(error.txHash).toBe(broadcastTxId);
+                expect(error.txStatus).toBe('unconfirmed');
+            } finally {
+                vi.doUnmock('../src/gateway/bitcoin-txid');
+            }
+        });
+
+        it('retries loading the parser when its preload failed', async () => {
+            let loads = 0;
+            vi.doMock('../src/gateway/bitcoin-txid', async (importOriginal) => {
+                loads += 1;
+                if (loads === 1) throw new Error('Failed to fetch dynamically imported module');
+                return importOriginal();
+            });
+            try {
+                const error = await execute({ sendBitcoin: async () => broadcastTx });
+
+                assert(error instanceof ExecuteQuoteError);
+                expect(error.message).toBe('registerTx exploded');
+                expect(error.txHash).toBe(broadcastTxId);
+                expect(error.txStatus).toBe('unconfirmed');
+                expect(loads).toBe(2);
+            } finally {
+                vi.doUnmock('../src/gateway/bitcoin-txid');
+            }
+        });
+
         it.each([
             ['sendBitcoin', 'this SDK', new BitcoinBroadcastError(broadcastTxId, 'Could not fetch its raw hex')],
             [

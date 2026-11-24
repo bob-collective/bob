@@ -4,4 +4,7 @@ export {
     validate as isValidBtcAddress,
     getAddressInfo as getBtcAddressInfo,
     AddressType as BtcAddressType,
-} from 'bitcoin-address-validation';
+    Network as BtcNetwork,
+    type AddressInfo as BtcAddressInfo,
+    type AddressInfoOptions as BtcAddressInfoOptions,
+} from './address';
