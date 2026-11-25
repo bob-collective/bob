@@ -33,3 +33,12 @@ Follow [Conduit's guide](https://docs.conduit.xyz/guides/run-a-node/op-stack-nod
 
 - [BOB Mainnet](https://boltrpc.io/networks/bob)
 
+## Spectrum Nodes
+
+[Spectrum Nodes](https://spectrumnodes.com/networks/bob-rpc) serves BOB Mainnet and BOB Sepolia RPC from its self operated Tier III data centers, with archive data and debug tracing.
+
+**Supported Networks**
+
+- [BOB Mainnet](https://spectrumnodes.com/networks/bob-rpc)
+- [BOB Sepolia](https://spectrumnodes.com/networks/bob-rpc) (Testnet)
+
