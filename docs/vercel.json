@@ -6,6 +6,26 @@
       "source": "/assets/files/bob-dao-charter-v1-0-82d9bf1cc29070c51df8965e9dba786c.pdf",
       "destination": "/documents/bob-dao-charter-v1-0.pdf",
       "permanent": true
+    },
+    {
+      "source": "/gateway/",
+      "destination": "/gateway",
+      "permanent": true
+    },
+    {
+      "source": "/gateway/:path+/",
+      "destination": "/gateway/:path+",
+      "permanent": true
+    },
+    {
+      "source": "/api-reference/",
+      "destination": "/api-reference",
+      "permanent": true
+    },
+    {
+      "source": "/api-reference/:path+/",
+      "destination": "/api-reference/:path+",
+      "permanent": true
     }
   ],
   "rewrites": [

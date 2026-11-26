@@ -15,7 +15,7 @@ const { rewrite: rewriteSuffix } = rewritePath(
   `${docsContentRoute}{/*path}/content.md`,
 );
 
-export default function proxy(request: NextRequest) {
+function route(request: NextRequest) {
   const result = rewriteSuffix(request.nextUrl.pathname);
   if (result) {
     return NextResponse.rewrite(new URL(result, request.nextUrl));
@@ -36,6 +36,41 @@ export default function proxy(request: NextRequest) {
   }
 
   return NextResponse.next();
+}
+
+/**
+ * This app is public at its own *.vercel.app address as well as behind
+ * docs.gobob.xyz, which rewrites /gateway/* and /api-reference/* here. Only
+ * the docs.gobob.xyz copy should be indexed.
+ *
+ * `Host` is this deployment's host on both kinds of request, so it cannot tell
+ * them apart. `x-forwarded-host` can: Vercel sets it to the host the client
+ * asked for, overwriting any client-sent value. A proxied request therefore
+ * carries `docs.gobob.xyz`, while a direct one carries the same host as `Host`.
+ *
+ * Only that exact match counts as direct, so a missing or different value
+ * leaves the page indexable and docs.gobob.xyz can never be noindexed by it.
+ */
+function isDirectRequest(request: NextRequest): boolean {
+  const host = request.headers.get('host');
+  const forwardedHost = request.headers.get('x-forwarded-host');
+
+  if (host === null || forwardedHost === null) return false;
+
+  return host.toLowerCase() === forwardedHost.toLowerCase();
+}
+
+// A header rather than a redirect, so preview deployments stay viewable, and
+// rather than a robots.txt `Disallow`, which would stop crawlers from ever
+// reading the noindex.
+export default function proxy(request: NextRequest) {
+  const response = route(request);
+
+  if (isDirectRequest(request)) {
+    response.headers.set('X-Robots-Tag', 'noindex');
+  }
+
+  return response;
 }
 
 // Docs pages only: with a root `docsRoute` the patterns above would otherwise

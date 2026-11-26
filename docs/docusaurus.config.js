@@ -123,6 +123,25 @@ const config = {
         theme: {
           customCss: require.resolve("./src/css/custom.css"),
         },
+        sitemap: {
+          // The search page is noindex (see src/theme/SearchPage); keep it out
+          // of the sitemap explicitly as well.
+          ignorePatterns: ["/search"],
+          lastmod: "date",
+          // Pages with a known update date keep it. The rest (category index
+          // pages and the like) have none, and a sitemap entry without a
+          // lastmod is what this fills in: the build date, which moves on
+          // redeploy rather than per page.
+          createSitemapItems: async (params) => {
+            const { defaultCreateSitemapItems, ...rest } = params;
+            const items = await defaultCreateSitemapItems(rest);
+            const buildDate = new Date().toISOString();
+            return items.map((item) => ({
+              ...item,
+              lastmod: item.lastmod ?? buildDate,
+            }));
+          },
+        },
       }),
     ],
   ],
