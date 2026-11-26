@@ -5,7 +5,7 @@
   "scripts": {
     "docusaurus": "docusaurus",
     "start": "docusaurus start",
-    "build:docs": "docusaurus build && cp static/documents/BOB_Hybrid_L2_Vision_Paper_EN.pdf build/whitepaper.pdf",
+    "build:docs": "docusaurus build && cp static/documents/BOB_Hybrid_L2_Vision_Paper_EN.pdf build/whitepaper.pdf && node scripts/check-llms-links.mjs",
     "build": "yarn build:docs",
     "swizzle": "docusaurus swizzle",
     "deploy": "docusaurus deploy",
