@@ -46,8 +46,11 @@ const config = {
 
   plugins: [
     ['docusaurus-plugin-llms', {
-      pathTransformation: { ignorePaths: ['docs'] },
-      rootContent: `# BOB Documentation\n\nFor Gateway developer documentation (API reference, SDK integration):\n- Gateway docs: https://docs.gobob.xyz/gateway/\n- Gateway llms.txt: https://docs.gobob.xyz/gateway/llms.txt\n- Gateway MCP server for agents: https://mcp.gobob.xyz/mcp (setup: https://docs.gobob.xyz/gateway/agents#connect-an-agent-over-mcp)\n`,
+      // Content lives in docs/docs/ and is served under /docs/. The plugin
+      // derives the URL from the file path, so strip both `docs` segments
+      // (source folder + prefix) and add the one real `/docs/` route back.
+      pathTransformation: { ignorePaths: ['docs'], addPaths: ['docs'] },
+      rootContent: `# BOB Documentation\n\nFor Gateway developer documentation (API reference, SDK integration):\n- Gateway docs: https://docs.gobob.xyz/gateway\n- Gateway llms.txt: https://docs.gobob.xyz/gateway/llms.txt\n- Gateway MCP server for agents: https://mcp.gobob.xyz/mcp (setup: https://docs.gobob.xyz/gateway/agents#connect-an-agent-over-mcp)\n`,
     }],
     [
       "@docusaurus/plugin-client-redirects",
