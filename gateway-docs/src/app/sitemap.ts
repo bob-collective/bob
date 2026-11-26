@@ -14,16 +14,13 @@ export const revalidate = false;
 const LEGACY_REFERENCE = ['/api-reference/v1/', '/api-reference/v2/', '/api-reference/v3/'];
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  // Pages carry no per-file date, so this is the build time: it moves when the
-  // docs are redeployed, not when one page changes.
-  const lastModified = new Date();
-
+  // No `lastModified`: pages carry no per-file date, and the build time would
+  // change on every deploy without any page changing.
   return source
     .getPages()
     .filter((page) => !LEGACY_REFERENCE.some((prefix) => page.url.startsWith(prefix)))
     .map((page) => ({
       url: new URL(page.url, siteUrl).toString(),
-      lastModified,
       changeFrequency: 'weekly',
       priority: page.url === '/gateway/overview' ? 1 : 0.7,
     }));
