@@ -12,6 +12,7 @@ import { getMDXComponents } from '@/components/mdx';
 import type { Metadata } from 'next';
 import { createRelativeLink } from 'fumadocs-ui/mdx';
 import { gitConfig } from '@/lib/shared';
+import { describePage } from '@/lib/seo';
 import { openapi } from '@/lib/openapi';
 import { OpenAPIPage } from '@/components/openapi';
 import type { GeneratedPageProps } from 'fumadocs-openapi';
@@ -67,7 +68,10 @@ export async function generateMetadata(props: PageProps<'/[[...slug]]'>): Promis
 
   return {
     title: page.data.title,
-    description: page.data.description,
+    description: page.data.description ?? describePage(page),
+    // Resolved against `metadataBase` (docs.gobob.xyz), so the copy served from
+    // this deployment's own address names the public page as canonical.
+    alternates: { canonical: page.url },
     openGraph: {
       images: getPageImageUrl(page).url,
     },

@@ -14,6 +14,8 @@ export const revalidate = false;
 const LEGACY_REFERENCE = ['/api-reference/v1/', '/api-reference/v2/', '/api-reference/v3/'];
 
 export default function sitemap(): MetadataRoute.Sitemap {
+  // No `lastModified`: pages carry no per-file date, and the build time would
+  // change on every deploy without any page changing.
   return source
     .getPages()
     .filter((page) => !LEGACY_REFERENCE.some((prefix) => page.url.startsWith(prefix)))

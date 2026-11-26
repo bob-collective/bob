@@ -126,6 +126,14 @@ const config = {
         theme: {
           customCss: require.resolve("./src/css/custom.css"),
         },
+        sitemap: {
+          // The search page is noindex (see src/theme/SearchPage); keep it out
+          // of the sitemap explicitly as well.
+          ignorePatterns: ["/search"],
+          // No lastmod: on Vercel's shallow clone every page gets the same git
+          // date, which is not a real edit date, so none is emitted.
+          lastmod: null,
+        },
       }),
     ],
   ],
