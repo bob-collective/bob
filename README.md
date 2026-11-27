@@ -36,27 +36,27 @@ We use foundry extensively for maintaining and testing this contract suite:
 ### Build
 
 ```shell
-forge build
+forge build --root contracts
 
 # production
-FOUNDRY_PROFILE=optimized forge build
+FOUNDRY_PROFILE=optimized forge build --root contracts
 ```
 
 ### Test
 
 ```shell
-forge test
+forge test --root contracts
 ```
 
 ### Format
 
 ```shell
-forge fmt
+forge fmt --root contracts
 ```
 
 ## Local Testnet
 
-To deploy the relay contract to a local environment for testing use our convenience script [here](https://github.com/bob-collective/bob/blob/master/sdk/scripts/relay-retarget.ts):
+To deploy the relay contract to a local environment for testing use our convenience script [here](sdk/src/scripts/relay-genesis.ts):
 
 ```shell
 # start local ethereum testnet node
