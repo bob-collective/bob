@@ -1,6 +1,6 @@
 import * as btc from '@scure/btc-signer';
 import { hex } from '@scure/base';
-import { mnemonicToSeedSync } from 'bip39';
+import { mnemonicToSeedSync } from '@scure/bip39';
 import { HDKey } from '@scure/bip32';
 import { BitcoinSigner } from '../types';
 
@@ -50,9 +50,16 @@ export class ScureBitcoinSigner implements BitcoinSigner {
      * @param seedPhrase The BIP39 mnemonic seed phrase
      * @param derivationPath The derivation path (e.g., "m/84'/0'/0'/0/0")
      * @returns Promise resolving to a new ScureBitcoinSigner instance
+     * @throws If the phrase is not 12, 15, 18, 21 or 24 words separated by single spaces
      */
     static async fromSeedPhrase(seedPhrase: string, derivationPath: string): Promise<ScureBitcoinSigner> {
         try {
+            // @scure/bip39 only counts the pieces between literal spaces, so a tab, newline or doubled space can still
+            // reach a valid count and derive an unintended key. Check after NFKD, which turns the ideographic space of
+            // Japanese phrases into a plain one, and do not trim: that would change the key derived for the input.
+            if (!/^\S+( \S+)*$/.test(seedPhrase.normalize('NFKD'))) {
+                throw new Error('Invalid mnemonic');
+            }
             const seed = mnemonicToSeedSync(seedPhrase);
             const hdkey = HDKey.fromMasterSeed(seed);
             const childKey = hdkey.derive(derivationPath);
